@@ -175,7 +175,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 6;
+        public const int CurrentVersion = 7;
 
         public int version = CurrentVersion;
 
@@ -263,5 +263,23 @@ namespace ScalingLaws.Persistence
         public double researchPetaflopDaysCompleted;
         public int researchDaysCompleted;
         public long researchCashPaidUsd;
+
+        // ---- added in v7 ----
+
+        public List<LoanData> loans = new();
+    }
+
+    /// <summary>A facility being serviced. Added in v7.</summary>
+    [Serializable]
+    public sealed class LoanData
+    {
+        public int product;
+        public int takenOnDayIndex;
+        public long principalUsd;
+        public long totalRepaymentUsd;
+        public int termDays;
+        public int graceDays;
+        public long repaidUsd;
+        public int daysInArrears;
     }
 }

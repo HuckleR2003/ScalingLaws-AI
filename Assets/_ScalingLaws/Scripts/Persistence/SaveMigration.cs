@@ -76,7 +76,8 @@ namespace ScalingLaws.Persistence
                     var legacy = deserializer(json, typeof(SaveDataV1)) as SaveDataV1;
                     return legacy == null
                         ? null
-                        : UpgradeV5ToV6(UpgradeV4ToV5(UpgradeV3ToV4(UpgradeV2ToV3(UpgradeV1ToV2(legacy)))));
+                        : UpgradeV6ToV7(
+                            UpgradeV5ToV6(UpgradeV4ToV5(UpgradeV3ToV4(UpgradeV2ToV3(UpgradeV1ToV2(legacy))))));
 
                 case 2:
                     var v2 = deserializer(json, typeof(SaveData)) as SaveData;
@@ -92,7 +93,11 @@ namespace ScalingLaws.Persistence
 
                 case 5:
                     var v5 = deserializer(json, typeof(SaveData)) as SaveData;
-                    return v5 == null ? null : UpgradeV5ToV6(v5);
+                    return v5 == null ? null : UpgradeV6ToV7(UpgradeV5ToV6(v5));
+
+                case 6:
+                    var v6 = deserializer(json, typeof(SaveData)) as SaveData;
+                    return v6 == null ? null : UpgradeV6ToV7(v6);
 
                 case SaveData.CurrentVersion:
                     return deserializer(json, typeof(SaveData)) as SaveData;
@@ -301,6 +306,27 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 $"v5 to v6: founder set to neutral and {granted} research node(s) granted for things the "
                 + "company already owned, because the tree did not exist when they were bought.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v6 to v7: debt arrives. A campaign saved before v7 had no way to borrow, so there is
+        /// nothing to convert and nothing to invent. Written out rather than skipped so the chain
+        /// stays uniform and the next step has one obvious place to hook into.
+        /// </summary>
+        public static SaveData UpgradeV6ToV7(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+            data.loans ??= new List<LoanData>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v6 to v7: no facilities existed before v7, so the company starts debt free.");
 
             return data;
         }

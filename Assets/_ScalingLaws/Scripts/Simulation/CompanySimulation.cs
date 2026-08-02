@@ -90,6 +90,7 @@ namespace ScalingLaws.Simulation
             State.LifetimeOperatingCostUsd += operatingCost;
             State.RecordDailyRevenue(revenue);
 
+            ServiceDebt();
             AdvanceIntelligence();
             ExpireFundingOffer();
             UpdateReputation(share, served);
@@ -966,6 +967,153 @@ namespace ScalingLaws.Simulation
                 offer.RaiseUsd));
 
             return true;
+        }
+
+        // ------------------------------------------------------------------ debt
+
+        /// <summary>Every debt product with its gate evaluated. Locked ones still appear.</summary>
+        public List<LoanAvailability> LoanOffers()
+        {
+            var offers = new List<LoanAvailability>(LoanCatalog.All.Count);
+            foreach (var definition in LoanCatalog.All)
+            {
+                offers.Add(EvaluateLoan(definition));
+            }
+
+            return offers;
+        }
+
+        private LoanAvailability EvaluateLoan(LoanDefinition definition)
+        {
+            if (State.IsBankrupt)
+            {
+                return new LoanAvailability(definition.Product, false, "The company is insolvent.");
+            }
+
+            if (State.Loans.Has(definition.Product))
+            {
+                return new LoanAvailability(definition.Product, false, "Already drawn and still being serviced.");
+            }
+
+            if (State.Loans.OpenCount >= LoanCatalog.MaximumConcurrentLoans)
+            {
+                return new LoanAvailability(definition.Product, false,
+                    $"Already servicing {LoanCatalog.MaximumConcurrentLoans} facilities.");
+            }
+
+            if (State.Date.IsBefore(definition.EarliestDate))
+            {
+                return new LoanAvailability(definition.Product, false, $"Not offered before {definition.EarliestDate}.");
+            }
+
+            if (!State.HasResearch(definition.RequiredResearch))
+            {
+                return new LoanAvailability(definition.Product, false,
+                    $"Needs the {ResearchTree.Get(definition.RequiredResearch).DisplayName} research.");
+            }
+
+            if (State.AnnualRevenueRunRateUsd < definition.RequiredAnnualRevenueUsd)
+            {
+                return new LoanAvailability(definition.Product, false,
+                    $"Needs ${definition.RequiredAnnualRevenueUsd:N0} annual run rate, has ${State.AnnualRevenueRunRateUsd:N0}.");
+            }
+
+            var frontier = Math.Max(1.0, Market.FrontierCapability);
+            var ratio = State.BestCapability / frontier;
+            if (ratio < definition.RequiredCapabilityRatio)
+            {
+                return new LoanAvailability(definition.Product, false,
+                    $"Needs {definition.RequiredCapabilityRatio:P0} of the frontier, sits at {Math.Max(0.0, ratio):P0}.");
+            }
+
+            return new LoanAvailability(definition.Product, true, string.Empty);
+        }
+
+        /// <summary>
+        /// Draws a facility. The cash lands today and the schedule starts after the grace period,
+        /// whatever the company is doing by then.
+        /// </summary>
+        public bool TryTakeLoan(LoanProduct product, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!LoanCatalog.TryGet(product, out var definition))
+            {
+                failureReason = "Unknown facility.";
+                return false;
+            }
+
+            var availability = EvaluateLoan(definition);
+            if (!availability.IsAvailable)
+            {
+                failureReason = availability.Reason;
+                return false;
+            }
+
+            State.CashUsd += definition.PrincipalUsd;
+            State.Loans.Add(new Loan(
+                product,
+                State.Date,
+                definition.PrincipalUsd,
+                definition.TotalRepaymentUsd,
+                definition.TermDays,
+                definition.GraceDays));
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.LoanTaken,
+                State.Date,
+                $"{definition.DisplayName} drawn: ${definition.PrincipalUsd:N0} now, ${definition.TotalRepaymentUsd:N0} back "
+                + $"over {definition.TermDays} days from {State.Date.AddDays(definition.GraceDays)}.",
+                definition.PrincipalUsd));
+
+            return true;
+        }
+
+        private void ServiceDebt()
+        {
+            if (State.Loans.OpenCount == 0)
+            {
+                return;
+            }
+
+            var due = State.Loans.DailyServiceUsd(State.Date);
+            if (due <= 0L)
+            {
+                return;
+            }
+
+            var available = Math.Max(0L, State.CashUsd + CompanyState.CreditLineUsd);
+            var paid = State.Loans.Service(State.Date, available);
+            State.CashUsd -= paid;
+            State.LifetimeOperatingCostUsd += paid;
+
+            if (paid < due)
+            {
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.LoanMissed,
+                    State.Date,
+                    $"Missed ${due - paid:N0} of scheduled repayments.",
+                    due - paid));
+            }
+
+            var defaulted = State.Loans.FirstDefaulted();
+            if (defaulted == null)
+            {
+                return;
+            }
+
+            // A lender will carry a good company through a bad quarter, and no further. Default is
+            // not instantly fatal, but it costs standing that took years to build.
+            var definition = LoanCatalog.Get(defaulted.Product);
+            State.Reputation -= definition.ReputationOnDefault;
+            defaulted.Restore(defaulted.RepaidUsd, 0);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.LoanDefaulted,
+                State.Date,
+                $"{definition.DisplayName} has been in arrears for {LoanBook.ArrearsBeforeDefault} days. "
+                + $"The lender has called it publicly and the company has lost {definition.ReputationOnDefault:P0} of its standing.",
+                defaulted.OutstandingUsd));
         }
 
         // ------------------------------------------------------------------ intelligence

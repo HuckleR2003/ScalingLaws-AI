@@ -27,7 +27,11 @@ namespace ScalingLaws.Simulation
         ArchitectureResearchStarted = 20,
         ArchitectureResearchCompleted = 21,
         ResearchStarted = 22,
-        ResearchCompleted = 23
+        ResearchCompleted = 23,
+        LoanTaken = 24,
+        LoanSettled = 25,
+        LoanMissed = 26,
+        LoanDefaulted = 27
     }
 
     /// <summary>

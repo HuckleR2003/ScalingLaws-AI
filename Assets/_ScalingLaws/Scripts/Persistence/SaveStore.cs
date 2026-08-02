@@ -111,6 +111,21 @@ namespace ScalingLaws.Persistence
                 data.unlockedResearch.Add((int)node);
             }
 
+            foreach (var loan in state.Loans.Loans)
+            {
+                data.loans.Add(new LoanData
+                {
+                    product = (int)loan.Product,
+                    takenOnDayIndex = loan.TakenOn.DayIndex,
+                    principalUsd = loan.PrincipalUsd,
+                    totalRepaymentUsd = loan.TotalRepaymentUsd,
+                    termDays = loan.TermDays,
+                    graceDays = loan.GraceDays,
+                    repaidUsd = loan.RepaidUsd,
+                    daysInArrears = loan.DaysInArrears
+                });
+            }
+
             var research = state.ActiveResearch;
             data.hasResearchProject = research != null;
             if (research != null)
@@ -346,6 +361,19 @@ namespace ScalingLaws.Persistence
             foreach (var node in safe.unlockedResearch)
             {
                 state.UnlockedResearch.Add((ResearchNodeId)node);
+            }
+
+            foreach (var loan in safe.loans)
+            {
+                var restoredLoan = new Loan(
+                    (LoanProduct)loan.product,
+                    new GameDate(loan.takenOnDayIndex),
+                    loan.principalUsd,
+                    loan.totalRepaymentUsd,
+                    loan.termDays,
+                    loan.graceDays);
+                restoredLoan.Restore(loan.repaidUsd, loan.daysInArrears);
+                state.Loans.Add(restoredLoan);
             }
 
             if (safe.hasResearchProject)
@@ -708,6 +736,33 @@ namespace ScalingLaws.Persistence
                     model.traitLevels[index] = Math.Clamp(
                         model.traitLevels[index], 0, ModelTraitSetLimits.MaximumLevel);
                 }
+            }
+
+            // ---- v7 collections ----
+            safe.loans ??= new List<LoanData>();
+            safe.loans.RemoveAll(static loan =>
+                loan == null
+                || !Enum.IsDefined(typeof(LoanProduct), loan.product)
+                || loan.principalUsd <= 0
+                || loan.termDays <= 0);
+
+            if (safe.loans.Count > LoanCatalog.MaximumConcurrentLoans)
+            {
+                safe.loans.RemoveRange(
+                    LoanCatalog.MaximumConcurrentLoans,
+                    safe.loans.Count - LoanCatalog.MaximumConcurrentLoans);
+            }
+
+            foreach (var loan in safe.loans)
+            {
+                loan.termDays = Math.Clamp(loan.termDays, 1, 8000);
+                loan.graceDays = Math.Clamp(loan.graceDays, 0, loan.termDays - 1);
+                loan.principalUsd = Math.Clamp(loan.principalUsd, 1L, 1_000_000_000_000L);
+                loan.totalRepaymentUsd = Math.Clamp(
+                    loan.totalRepaymentUsd, loan.principalUsd, 5_000_000_000_000L);
+                loan.repaidUsd = Math.Clamp(loan.repaidUsd, 0L, loan.totalRepaymentUsd);
+                loan.daysInArrears = Math.Clamp(loan.daysInArrears, 0, 100_000);
+                loan.takenOnDayIndex = Math.Clamp(loan.takenOnDayIndex, 0, GameDate.MaximumDayIndex);
             }
 
             // ---- v6 fields ----

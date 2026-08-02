@@ -163,6 +163,9 @@ namespace ScalingLaws.Simulation
         /// <summary>Who owns the company after every round raised so far.</summary>
         public CapTable CapTable { get; }
 
+        /// <summary>Every loan being serviced. Non-dilutive money on a schedule that never pauses.</summary>
+        public LoanBook Loans { get; } = new();
+
         /// <summary>Finished runs waiting for a release decision.</summary>
         public IReadOnlyList<TrainedModel> Shelf => shelf;
 
