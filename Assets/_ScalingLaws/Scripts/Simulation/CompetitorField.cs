@@ -1,0 +1,186 @@
+using System;
+using System.Collections.Generic;
+using ScalingLaws.Core;
+using ScalingLaws.Data;
+
+namespace ScalingLaws.Simulation
+{
+    /// <summary>
+    /// Every rival lab, running as agents rather than as a lookup table.
+    ///
+    /// Seeded from <see cref="CompetitorCatalog"/> so an untouched campaign follows the real 2022 to
+    /// 2026 timeline. From there the agents can wait, rush and keep going past the end of the table,
+    /// which means the frontier is something that reacts to the player rather than something that
+    /// happens to them.
+    /// </summary>
+    public sealed class CompetitorField
+    {
+        private readonly List<CompetitorAgent> agents = new();
+
+        public IReadOnlyList<CompetitorAgent> Agents => agents;
+
+        /// <summary>The world of search boxes and ordinary software the first model has to beat.</summary>
+        public const double IncumbentCapability = 24.0;
+
+        public const double IncumbentBrand = 0.5;
+
+        public static CompetitorField CreateFromCatalog()
+        {
+            var field = new CompetitorField();
+
+            foreach (var pair in Strategies)
+            {
+                field.agents.Add(new CompetitorAgent(pair.Key, LabName(pair.Key), pair.Value));
+            }
+
+            // Releases are queued in date order per lab, which is the order the catalog holds them.
+            foreach (var release in CompetitorCatalog.All)
+            {
+                var agent = field.Find(release.Competitor);
+                agent?.QueuePlan(release);
+            }
+
+            return field;
+        }
+
+        /// <summary>
+        /// Rebuilds a saved field. The catalog plan is queued fresh and then wound forward past
+        /// everything that already shipped, so a loaded campaign keeps its future without replaying
+        /// its past.
+        /// </summary>
+        public void RestoreAgent(
+            CompetitorId competitor,
+            bool hasShipped,
+            string liveModelName,
+            double liveCapability,
+            double liveBrand,
+            double livePrice,
+            GameDate liveReleaseDate,
+            GameDate nextReleaseDate,
+            bool hasPlannedRelease,
+            int accumulatedDelayDays,
+            bool isWaitingForHardware)
+        {
+            var agent = Find(competitor);
+            if (agent == null)
+            {
+                return;
+            }
+
+            if (hasShipped)
+            {
+                agent.SkipPlannedReleasesUpTo(liveReleaseDate);
+            }
+
+            agent.Restore(
+                hasShipped,
+                liveModelName,
+                liveCapability,
+                liveBrand,
+                livePrice,
+                liveReleaseDate,
+                nextReleaseDate,
+                hasPlannedRelease,
+                accumulatedDelayDays,
+                isWaitingForHardware);
+        }
+
+        public CompetitorAgent Find(CompetitorId competitor)
+        {
+            foreach (var agent in agents)
+            {
+                if (agent.Competitor == competitor)
+                {
+                    return agent;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Runs every lab for one day. Returns the labs that shipped something.</summary>
+        public List<CompetitorAgent> Tick(GameDate date, double playerCapability, DeterministicRandom random)
+        {
+            var shipped = new List<CompetitorAgent>();
+            foreach (var agent in agents)
+            {
+                if (agent.Think(date, playerCapability, random))
+                {
+                    shipped.Add(agent);
+                }
+            }
+
+            return shipped;
+        }
+
+        public List<RivalModel> LiveModels(GameDate date)
+        {
+            var models = new List<RivalModel>(agents.Count);
+            foreach (var agent in agents)
+            {
+                if (agent.TryGetLiveModel(date, out var model))
+                {
+                    models.Add(model);
+                }
+            }
+
+            return models;
+        }
+
+        /// <summary>Best capability any rival has on the market. Falls back to the incumbent world.</summary>
+        public double FrontierCapability(GameDate date)
+        {
+            var best = IncumbentCapability;
+            foreach (var agent in agents)
+            {
+                var capability = agent.CurrentCapability(date);
+                if (capability > best)
+                {
+                    best = capability;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>Labs currently sitting out a hardware transition on purpose.</summary>
+        public List<CompetitorAgent> LabsWaitingForHardware()
+        {
+            var waiting = new List<CompetitorAgent>();
+            foreach (var agent in agents)
+            {
+                if (agent.IsWaitingForHardware)
+                {
+                    waiting.Add(agent);
+                }
+            }
+
+            return waiting;
+        }
+
+        private static readonly Dictionary<CompetitorId, CompetitorStrategy> Strategies = new()
+        {
+            { CompetitorId.OpenAi, CompetitorStrategy.FrontierRace },
+            { CompetitorId.Anthropic, CompetitorStrategy.PatientScaler },
+            { CompetitorId.GoogleDeepMind, CompetitorStrategy.PatientScaler },
+            { CompetitorId.MetaAi, CompetitorStrategy.OpenWeights },
+            { CompetitorId.MistralAi, CompetitorStrategy.OpenWeights },
+            { CompetitorId.DeepSeek, CompetitorStrategy.CostLeader },
+            { CompetitorId.XAi, CompetitorStrategy.FrontierRace },
+            { CompetitorId.AlibabaQwen, CompetitorStrategy.CostLeader }
+        };
+
+        private static string LabName(CompetitorId competitor) => competitor switch
+        {
+            CompetitorId.OpenAi => "OpenAI",
+            CompetitorId.Anthropic => "Anthropic",
+            CompetitorId.GoogleDeepMind => "Google DeepMind",
+            CompetitorId.MetaAi => "Meta AI",
+            CompetitorId.MistralAi => "Mistral AI",
+            CompetitorId.DeepSeek => "DeepSeek",
+            CompetitorId.XAi => "xAI",
+            CompetitorId.AlibabaQwen => "Qwen",
+            _ => competitor.ToString()
+        };
+    }
+}
