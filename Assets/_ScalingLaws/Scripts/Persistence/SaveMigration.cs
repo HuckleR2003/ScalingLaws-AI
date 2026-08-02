@@ -1,0 +1,399 @@
+using System;
+using System.Collections.Generic;
+using ScalingLaws.Core;
+using ScalingLaws.Data;
+using ScalingLaws.Simulation;
+
+namespace ScalingLaws.Persistence
+{
+    /// <summary>
+    /// The v1 file. Compute was two counters and nothing else: no purchase dates, no tiers, no
+    /// prices. It is kept here verbatim so the upgrade path has a real thing to read rather than a
+    /// guess about what used to be written.
+    /// </summary>
+    [Serializable]
+    public sealed class SaveDataV1
+    {
+        public int version = 1;
+        public string companyName = "Newco";
+        public int dayIndex;
+        public long cashUsd;
+        public uint randomState;
+        public double reputation;
+        public int ownedDataSources;
+        public long lifetimeRevenueUsd;
+        public long lifetimeOperatingCostUsd;
+        public bool isBankrupt;
+
+        /// <summary>v1 tracked rented and owned accelerators as bare counts.</summary>
+        public int rentedAccelerators;
+
+        public int ownedAccelerators;
+
+        public List<DeployedModelData> models = new();
+    }
+
+    /// <summary>
+    /// The ONE upgrade path for saves. Each step moves a file forward exactly one version, and the
+    /// runner applies them in order, so adding v3 later means writing one more method and nothing else.
+    ///
+    /// The v1 to v2 step has real work in it. v1 stored owned compute as a single integer, which
+    /// carries no purchase date, so the depreciation curve that v2 is built on has nothing to read.
+    /// The upgrade reconstructs a plausible batch and says so in <see cref="LastMigrationNotes"/>
+    /// rather than pretending the information was there: the accelerator is whatever the catalog
+    /// says was current on the save date, and the purchase date is set half a value half-life back,
+    /// which is the least flattering assumption that is still defensible.
+    /// </summary>
+    public static class SaveMigration
+    {
+        /// <summary>Plain description of what the last upgrade had to invent. Empty when nothing was migrated.</summary>
+        public static string LastMigrationNotes { get; private set; } = string.Empty;
+
+        /// <summary>Version the last call read from the file, before any upgrade.</summary>
+        public static int LastDetectedVersion { get; private set; }
+
+        /// <summary>
+        /// Reads a save of any supported version and returns it at <see cref="SaveData.CurrentVersion"/>.
+        /// Returns null when the payload cannot be understood at all.
+        /// </summary>
+        public static SaveData Upgrade(string json, Func<string, Type, object> deserializer)
+        {
+            LastMigrationNotes = string.Empty;
+            LastDetectedVersion = 0;
+
+            if (string.IsNullOrWhiteSpace(json) || deserializer == null)
+            {
+                return null;
+            }
+
+            var envelope = deserializer(json, typeof(SaveEnvelope)) as SaveEnvelope;
+            var version = envelope?.version ?? 0;
+            LastDetectedVersion = version;
+
+            switch (version)
+            {
+                case 1:
+                    var legacy = deserializer(json, typeof(SaveDataV1)) as SaveDataV1;
+                    return legacy == null
+                        ? null
+                        : UpgradeV5ToV6(UpgradeV4ToV5(UpgradeV3ToV4(UpgradeV2ToV3(UpgradeV1ToV2(legacy)))));
+
+                case 2:
+                    var v2 = deserializer(json, typeof(SaveData)) as SaveData;
+                    return v2 == null ? null : UpgradeV3ToV4(UpgradeV2ToV3(v2));
+
+                case 3:
+                    var v3 = deserializer(json, typeof(SaveData)) as SaveData;
+                    return v3 == null ? null : UpgradeV4ToV5(UpgradeV3ToV4(v3));
+
+                case 4:
+                    var v4 = deserializer(json, typeof(SaveData)) as SaveData;
+                    return v4 == null ? null : UpgradeV5ToV6(UpgradeV4ToV5(v4));
+
+                case 5:
+                    var v5 = deserializer(json, typeof(SaveData)) as SaveData;
+                    return v5 == null ? null : UpgradeV5ToV6(v5);
+
+                case SaveData.CurrentVersion:
+                    return deserializer(json, typeof(SaveData)) as SaveData;
+
+                default:
+                    // A file from the future, or one with no version at all. Neither is safe to guess at.
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// v2 to v3: three things that did not exist get built rather than defaulted.
+        ///
+        /// Trait levels are set to market par on each model's own release date, which is exactly
+        /// where a v2 model implicitly sat: v2 had no upgrade grid, so every model was neither ahead
+        /// nor behind. Setting them to zero instead would load a saved campaign with every model
+        /// several levels behind the market through no decision the player made.
+        ///
+        /// The rival field is replayed from day zero to the save date with no player pressure. A v2
+        /// save has no record of which labs were waiting on hardware, so the field is reconstructed
+        /// from the reference timeline. Any deviation the original campaign caused is lost, and
+        /// there is no way to recover it from what v2 wrote down.
+        /// </summary>
+        public static SaveData UpgradeV2ToV3(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+            data.shelf ??= new List<TrainedModelData>();
+            data.upgrades ??= new List<UpgradeProjectData>();
+            data.fundingRounds ??= new List<FundingRoundData>();
+            data.rivals ??= new List<CompetitorAgentData>();
+            data.revenueWindow ??= new List<long>();
+            data.founderEquity = 1.0;
+            data.intelSubscription = (int)IntelTier.PublicNews;
+            data.hasFundingOffer = false;
+
+            var restoredModels = 0;
+            if (data.models != null)
+            {
+                foreach (var model in data.models)
+                {
+                    if (model == null)
+                    {
+                        continue;
+                    }
+
+                    if (model.traitLevels != null && model.traitLevels.Count > 0)
+                    {
+                        continue;
+                    }
+
+                    var par = ModelTraitSet.AtMarketPar(new GameDate(model.releaseDayIndex));
+                    model.traitLevels = new List<int>(par.ToArray());
+                    restoredModels++;
+                }
+            }
+
+            var saveDate = new GameDate(data.dayIndex);
+            var replayed = ReplayRivalField(saveDate);
+            foreach (var agent in replayed.Agents)
+            {
+                data.rivals.Add(new CompetitorAgentData
+                {
+                    competitor = (int)agent.Competitor,
+                    hasShipped = agent.HasShipped,
+                    liveModelName = agent.LiveModelName,
+                    liveCapability = agent.LiveCapability,
+                    liveBrand = agent.LiveBrand,
+                    livePrice = agent.LivePrice,
+                    liveReleaseDayIndex = agent.LiveReleaseDate.DayIndex,
+                    nextReleaseDayIndex = agent.NextReleaseDate.DayIndex,
+                    hasPlannedRelease = agent.HasPlannedRelease,
+                    accumulatedDelayDays = agent.AccumulatedDelayDays,
+                    isWaitingForHardware = agent.IsWaitingForHardware
+                });
+            }
+
+            LastMigrationNotes =
+                $"v2 to v3: set trait levels to market par on {restoredModels} model(s), and rebuilt " +
+                $"{data.rivals.Count} rival labs by replaying the reference timeline to {saveDate}. " +
+                "v2 recorded no rival state, so any deviation the original campaign caused is gone.";
+
+            return data;
+        }
+
+        /// <summary>
+        /// v3 to v4: in-house architecture families did not exist, so there is nothing to convert
+        /// and nothing to invent. The lists are created empty and the campaign continues with the
+        /// six slots free. This is the honest shape of a migration that genuinely has no work to do,
+        /// and it is written out rather than skipped so the chain stays uniform.
+        /// </summary>
+        public static SaveData UpgradeV3ToV4(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+            data.customArchitectures ??= new List<CustomArchitectureData>();
+            data.architectureProject ??= new ArchitectureProjectData();
+            data.hasArchitectureProject = false;
+
+            LastMigrationNotes = string.IsNullOrEmpty(LastMigrationNotes)
+                ? "v3 to v4: no in-house families existed before v4, so all six slots start free."
+                : LastMigrationNotes + " v3 to v4: all six family slots start free.";
+
+            return data;
+        }
+
+        /// <summary>
+        /// v4 to v5: rental was a unit count, and is now contracted throughput.
+        ///
+        /// The conversion is exact rather than assumed, which is unusual for a migration here: the
+        /// save records the date, the date determines which generation the clouds were renting, and
+        /// that generation determines how many petaflops those units were. A campaign loaded through
+        /// this step keeps precisely the capacity it had.
+        /// </summary>
+        public static SaveData UpgradeV4ToV5(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+
+            if (data.rentedPetaflops <= 0.0 && data.rentedAccelerators > 0)
+            {
+                var saveDate = new GameDate(data.dayIndex);
+                var rentable = MarketModel.RentableGenerationOn(saveDate);
+                var perUnit = HardwareCatalog.TryGet(rentable, out var generation)
+                    ? generation.PetaflopsPerUnit
+                    : 0.0;
+
+                data.rentedPetaflops = data.rentedAccelerators * perUnit;
+
+                LastMigrationNotes = Append(LastMigrationNotes,
+                    $"v4 to v5: converted {data.rentedAccelerators:N0} rented units to "
+                    + $"{data.rentedPetaflops:N0} PF using {rentable}, the generation the clouds were offering on {saveDate}.");
+            }
+            else
+            {
+                LastMigrationNotes = Append(LastMigrationNotes, "v4 to v5: nothing was rented, so nothing to convert.");
+            }
+
+            return data;
+        }
+
+        /// <summary>
+        /// v5 to v6: founders, company archetypes and the technology tree arrive.
+        ///
+        /// The tree is the awkward one. Before v6 a company bought architectures and corpora with
+        /// cash alone, so a save can legitimately hold things the tree now gates. Locking them
+        /// retroactively would break a campaign that did nothing wrong, so the upgrade grants every
+        /// node whose unlocks the company already owns, and says how many. The founder is neutral,
+        /// because there was nobody to be.
+        /// </summary>
+        public static SaveData UpgradeV5ToV6(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+            data.founderTraits ??= new List<int>();
+            data.unlockedResearch ??= new List<int>();
+            data.archetype = (int)CompanyArchetype.Custom;
+            data.defaultPriceMultiplier = 1.0;
+            data.hasResearchProject = false;
+
+            data.unlockedResearch.Add((int)ResearchTree.StartingNode);
+
+            var owned = (DatasetSource)data.ownedDataSources;
+            var granted = 0;
+            foreach (var node in ResearchTree.All)
+            {
+                if (node.Id == ResearchTree.StartingNode)
+                {
+                    continue;
+                }
+
+                var earnedByData = node.UnlocksData != DatasetSource.None
+                    && (owned & node.UnlocksData) == node.UnlocksData;
+
+                var earnedByArchitecture = node.UnlocksArchitecture != ArchitectureId.None
+                    && data.adoptedArchitectures != null
+                    && data.adoptedArchitectures.Contains((int)node.UnlocksArchitecture);
+
+                var earnedByTier = node.UnlocksTier == ComputeTier.ColocatedServers
+                    && data.assets != null
+                    && data.assets.Count > 0;
+
+                if (earnedByData || earnedByArchitecture || earnedByTier)
+                {
+                    data.unlockedResearch.Add((int)node.Id);
+                    granted++;
+                }
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                $"v5 to v6: founder set to neutral and {granted} research node(s) granted for things the "
+                + "company already owned, because the tree did not exist when they were bought.");
+
+            return data;
+        }
+
+        private static string Append(string existing, string addition) =>
+            string.IsNullOrEmpty(existing) ? addition : existing + " " + addition;
+
+        /// <summary>
+        /// Runs the rival field forward from day zero with no player in it. Deterministic: the same
+        /// save date always reconstructs the same field.
+        /// </summary>
+        private static CompetitorField ReplayRivalField(GameDate upTo)
+        {
+            var field = CompetitorField.CreateFromCatalog();
+            var random = new DeterministicRandom(0x5CA1AB1E);
+
+            for (var day = 0; day <= upTo.DayIndex; day++)
+            {
+                field.Tick(new GameDate(day), 0.0, random);
+            }
+
+            return field;
+        }
+
+        /// <summary>
+        /// v1 to v2: turn the bare owned-accelerator count into a dated batch so depreciation has
+        /// something to work from.
+        /// </summary>
+        public static SaveData UpgradeV1ToV2(SaveDataV1 legacy)
+        {
+            if (legacy == null)
+            {
+                return null;
+            }
+
+            var upgraded = new SaveData
+            {
+                // Deliberately 2, not current. Each step moves the file forward exactly one version
+                // and the runner chains them, so this method never has to know what v3 looks like.
+                version = 2,
+                hardwareCatalogVersion = HardwareCatalog.CatalogVersion,
+                companyName = legacy.companyName,
+                dayIndex = legacy.dayIndex,
+                cashUsd = legacy.cashUsd,
+                randomState = legacy.randomState,
+                reputation = legacy.reputation,
+                trainingComputeShare = 0.7,
+                ownedDataSources = legacy.ownedDataSources,
+                lifetimeRevenueUsd = legacy.lifetimeRevenueUsd,
+                lifetimeOperatingCostUsd = legacy.lifetimeOperatingCostUsd,
+                lifetimeCapitalSpentUsd = 0,
+                isBankrupt = legacy.isBankrupt,
+                rentedAccelerators = Math.Max(0, legacy.rentedAccelerators),
+                models = legacy.models ?? new List<DeployedModelData>(),
+                adoptedArchitectures = new List<int> { (int)ArchitectureId.DenseTransformer }
+            };
+
+            var owned = Math.Max(0, legacy.ownedAccelerators);
+            if (owned == 0)
+            {
+                LastMigrationNotes = "v1 to v2: no owned accelerators to reconstruct.";
+                return upgraded;
+            }
+
+            var saveDate = new GameDate(legacy.dayIndex);
+            if (!HardwareCatalog.TryGetFrontier(saveDate, HardwareClass.Accelerator, out var generation))
+            {
+                generation = HardwareCatalog.Get(HardwareGenerationId.AcceleratorA100);
+            }
+
+            // v1 never recorded when the hardware was bought. Assume half a value half-life of age:
+            // old enough to have lost real value, not so old that the save is punished for a gap in
+            // the format rather than a decision the player made.
+            var assumedAgeDays = generation.ValueHalfLifeDays / 2;
+            var purchaseDate = saveDate.AddDays(-assumedAgeDays);
+
+            upgraded.assets.Add(new HardwareAssetData
+            {
+                generationId = (int)generation.Id,
+                tier = (int)ComputeTier.ColocatedServers,
+                units = owned,
+                purchaseDayIndex = purchaseDate.DayIndex,
+                pricePerUnitUsd = generation.LaunchPriceUsd,
+                leadTimeDays = 0
+            });
+
+            upgraded.lifetimeCapitalSpentUsd = generation.LaunchPriceUsd * owned;
+
+            LastMigrationNotes =
+                $"v1 to v2: reconstructed {owned:N0} owned accelerators as {generation.DisplayName} " +
+                $"bought {purchaseDate} at list price. v1 stored no purchase date, so the age is an assumption, not a record.";
+
+            return upgraded;
+        }
+    }
+}

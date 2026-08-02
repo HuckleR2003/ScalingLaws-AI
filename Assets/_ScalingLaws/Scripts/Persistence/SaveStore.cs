@@ -1,0 +1,829 @@
+using System;
+using System.Collections.Generic;
+using ScalingLaws.Core;
+using ScalingLaws.Data;
+using ScalingLaws.Simulation;
+using UnityEngine;
+
+namespace ScalingLaws.Persistence
+{
+    /// <summary>
+    /// The ONE way a campaign gets written down or read back.
+    ///
+    /// Loading always runs the same three steps in the same order: upgrade the file to the current
+    /// version, clamp every field into a range the simulation can survive, then build state from it.
+    /// A save that cannot be understood starts a new campaign rather than a corrupt one.
+    /// </summary>
+    public static class SaveStore
+    {
+        private const string SaveKey = "ScalingLaws.Campaign";
+
+        public static bool HasSave => PlayerPrefs.HasKey(SaveKey);
+
+        public static void Clear()
+        {
+            PlayerPrefs.DeleteKey(SaveKey);
+            PlayerPrefs.Save();
+        }
+
+        public static void Save(CompanyState state)
+        {
+            var data = Capture(state);
+            PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(data));
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Reads the stored campaign, or null when there is nothing readable there.</summary>
+        public static SaveData LoadData()
+        {
+            if (!PlayerPrefs.HasKey(SaveKey))
+            {
+                return null;
+            }
+
+            return Parse(PlayerPrefs.GetString(SaveKey, string.Empty));
+        }
+
+        /// <summary>
+        /// Turns raw JSON of any supported version into a sanitized current-version save. Exposed
+        /// separately from <see cref="LoadData"/> so tests can feed it a v1 payload directly.
+        /// </summary>
+        public static SaveData Parse(string json)
+        {
+            try
+            {
+                var upgraded = SaveMigration.Upgrade(json, JsonUtility.FromJson);
+                return upgraded == null ? null : Sanitize(upgraded);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[Scaling Laws] Save was unreadable and has been ignored: {exception.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>Loads a playable company, falling back to a fresh one when the save is unusable.</summary>
+        public static CompanyState LoadOrCreate(string companyName = "Newco")
+        {
+            var data = LoadData();
+            return data == null ? new CompanyState(companyName) : Restore(data);
+        }
+
+        // ------------------------------------------------------------------ capture
+
+        public static SaveData Capture(CompanyState state)
+        {
+            if (state == null)
+            {
+                throw new ArgumentNullException(nameof(state));
+            }
+
+            var data = new SaveData
+            {
+                version = SaveData.CurrentVersion,
+                hardwareCatalogVersion = HardwareCatalog.CatalogVersion,
+                companyName = state.CompanyName,
+                dayIndex = state.Date.DayIndex,
+                cashUsd = state.CashUsd,
+                randomState = state.Random.State,
+                reputation = state.Reputation,
+                trainingComputeShare = state.TrainingComputeShare,
+                ownedDataSources = (int)state.OwnedDataSources,
+                lifetimeRevenueUsd = state.LifetimeRevenueUsd,
+                lifetimeOperatingCostUsd = state.LifetimeOperatingCostUsd,
+                lifetimeCapitalSpentUsd = state.LifetimeCapitalSpentUsd,
+                datacenterOrdered = state.DatacenterOrdered,
+                datacenterReadyDayIndex = state.DatacenterReadyDate.DayIndex,
+                isBankrupt = state.IsBankrupt,
+                daysInDebt = state.DaysInDebt,
+                rentedPetaflops = state.Pool.RentedPetaflops,
+                archetype = (int)state.Archetype,
+                defaultPriceMultiplier = state.DefaultPriceMultiplier
+            };
+
+            foreach (var trait in state.Founder.Traits)
+            {
+                data.founderTraits.Add((int)trait);
+            }
+
+            foreach (var node in state.UnlockedResearch)
+            {
+                data.unlockedResearch.Add((int)node);
+            }
+
+            var research = state.ActiveResearch;
+            data.hasResearchProject = research != null;
+            if (research != null)
+            {
+                data.researchNode = (int)research.Node;
+                data.researchStartedDayIndex = research.StartedOn.DayIndex;
+                data.researchDurationDays = research.DurationDays;
+                data.researchPetaflopDaysRequired = research.PetaflopDaysRequired;
+                data.researchPetaflopDaysCompleted = research.PetaflopDaysCompleted;
+                data.researchDaysCompleted = research.DaysCompleted;
+                data.researchCashPaidUsd = research.CashPaidUsd;
+            }
+
+            foreach (var architecture in state.AdoptedArchitectures)
+            {
+                data.adoptedArchitectures.Add((int)architecture);
+            }
+
+            foreach (var asset in state.Pool.Assets)
+            {
+                data.assets.Add(new HardwareAssetData
+                {
+                    generationId = (int)asset.GenerationId,
+                    tier = (int)asset.Tier,
+                    units = asset.Units,
+                    purchaseDayIndex = asset.PurchaseDate.DayIndex,
+                    pricePerUnitUsd = asset.PurchasePricePerUnitUsd,
+                    leadTimeDays = asset.CommissionDate.DayIndex - asset.PurchaseDate.DayIndex
+                });
+            }
+
+            foreach (var model in state.DeployedModels)
+            {
+                data.models.Add(new DeployedModelData
+                {
+                    name = model.Name,
+                    architecture = (int)model.Architecture,
+                    capability = model.Capability,
+                    releaseDayIndex = model.ReleaseDate.DayIndex,
+                    activeParameterCount = model.ActiveParameterCount,
+                    priceMultiplier = model.PriceMultiplier,
+                    isRetired = model.IsRetired,
+                    traitLevels = new List<int>(model.Traits.ToArray())
+                });
+            }
+
+            foreach (var shelved in state.Shelf)
+            {
+                data.shelf.Add(new TrainedModelData
+                {
+                    name = shelved.Name,
+                    architecture = (int)shelved.Architecture,
+                    capability = shelved.Capability,
+                    completedDayIndex = shelved.CompletedOn.DayIndex,
+                    activeParameterCount = shelved.ActiveParameterCount,
+                    projectedCapability = shelved.ProjectedCapability
+                });
+            }
+
+            foreach (var project in state.UpgradeProjects)
+            {
+                data.upgrades.Add(new UpgradeProjectData
+                {
+                    modelIndex = project.ModelIndex,
+                    trait = (int)project.Trait,
+                    targetLevel = project.TargetLevel,
+                    startedDayIndex = project.StartedOn.DayIndex,
+                    durationDays = project.DurationDays,
+                    petaflopDaysRequired = project.PetaflopDaysRequired,
+                    petaflopDaysCompleted = project.PetaflopDaysCompleted,
+                    daysCompleted = project.DaysCompleted,
+                    cashPaidUsd = project.CashPaidUsd
+                });
+            }
+
+            foreach (var round in state.CapTable.Rounds)
+            {
+                data.fundingRounds.Add(new FundingRoundData
+                {
+                    stage = (int)round.Stage,
+                    closedDayIndex = round.ClosedOn.DayIndex,
+                    raisedUsd = round.RaisedUsd,
+                    postMoneyValuationUsd = round.PostMoneyValuationUsd,
+                    equitySold = round.EquitySold,
+                    wasDownRound = round.WasDownRound
+                });
+            }
+
+            data.founderEquity = state.CapTable.FounderEquity;
+            data.lastRoundClosedDayIndex = state.LastRoundClosedOn.DayIndex;
+            data.intelSubscription = (int)state.IntelSubscription;
+            data.daysUntilNextSignal = state.DaysUntilNextSignal;
+
+            var offer = state.CurrentFundingOffer;
+            data.hasFundingOffer = offer.IsOpen;
+            if (offer.IsOpen)
+            {
+                data.offerStage = (int)offer.Stage;
+                data.offerOpenedDayIndex = offer.OpenedOn.DayIndex;
+                data.offerExpiresDayIndex = offer.ExpiresOn.DayIndex;
+                data.offerRaiseUsd = offer.RaiseUsd;
+                data.offerPreMoneyUsd = offer.PreMoneyValuationUsd;
+                data.offerEquitySold = offer.EquitySold;
+                data.offerSentiment = offer.Sentiment;
+                data.offerIsDownRound = offer.IsDownRound;
+            }
+
+            foreach (var pair in state.CustomArchitectures)
+            {
+                data.customArchitectures.Add(new CustomArchitectureData
+                {
+                    slot = (int)pair.Key,
+                    displayName = pair.Value.DisplayName,
+                    availableFromDayIndex = pair.Value.AvailableFrom.DayIndex,
+                    parameterEfficiency = pair.Value.ParameterEfficiency,
+                    activeParameterFraction = pair.Value.ActiveParameterFraction,
+                    trainingEfficiency = pair.Value.TrainingEfficiency,
+                    inferenceCostMultiplier = pair.Value.InferenceCostMultiplier,
+                    capabilityBonus = pair.Value.CapabilityBonus,
+                    generation = state.FamilyGeneration(pair.Key)
+                });
+            }
+
+            var family = state.ActiveArchitectureProject;
+            data.hasArchitectureProject = family != null;
+            if (family != null)
+            {
+                var blueprint = family.Blueprint;
+                data.architectureProject = new ArchitectureProjectData
+                {
+                    name = blueprint.Name,
+                    slot = (int)blueprint.Slot,
+                    baseFamily = (int)blueprint.BaseFamily,
+                    sparsity = blueprint.Weight(ResearchDirection.Sparsity),
+                    throughput = blueprint.Weight(ResearchDirection.Throughput),
+                    quality = blueprint.Weight(ResearchDirection.Quality),
+                    serving = blueprint.Weight(ResearchDirection.Serving),
+                    reasoning = blueprint.Weight(ResearchDirection.Reasoning),
+                    researchBudgetUsd = blueprint.ResearchBudgetUsd,
+                    blueprintDurationDays = blueprint.DurationDays,
+                    startedDayIndex = family.StartedOn.DayIndex,
+                    durationDays = family.DurationDays,
+                    petaflopDaysRequired = family.PetaflopDaysRequired,
+                    petaflopDaysCompleted = family.PetaflopDaysCompleted,
+                    daysCompleted = family.DaysCompleted,
+                    cashPaidUsd = family.CashPaidUsd,
+                    researchPower = family.ResearchPower,
+                    variance = family.Variance,
+                    generation = family.Generation,
+                    baselineParameterEfficiency = family.Baseline.ParameterEfficiency,
+                    baselineActiveParameterFraction = family.Baseline.ActiveParameterFraction,
+                    baselineTrainingEfficiency = family.Baseline.TrainingEfficiency,
+                    baselineInferenceCostMultiplier = family.Baseline.InferenceCostMultiplier,
+                    baselineCapabilityBonus = family.Baseline.CapabilityBonus
+                };
+            }
+
+            foreach (var agent in state.Rivals.Agents)
+            {
+                data.rivals.Add(new CompetitorAgentData
+                {
+                    competitor = (int)agent.Competitor,
+                    hasShipped = agent.HasShipped,
+                    liveModelName = agent.LiveModelName,
+                    liveCapability = agent.LiveCapability,
+                    liveBrand = agent.LiveBrand,
+                    livePrice = agent.LivePrice,
+                    liveReleaseDayIndex = agent.LiveReleaseDate.DayIndex,
+                    nextReleaseDayIndex = agent.NextReleaseDate.DayIndex,
+                    hasPlannedRelease = agent.HasPlannedRelease,
+                    accumulatedDelayDays = agent.AccumulatedDelayDays,
+                    isWaitingForHardware = agent.IsWaitingForHardware
+                });
+            }
+
+            var run = state.ActiveRun;
+            data.hasActiveRun = run != null;
+            if (run != null)
+            {
+                data.activeRun = new TrainingRunData
+                {
+                    blueprintName = run.Blueprint.Name,
+                    architecture = (int)run.Blueprint.Architecture,
+                    parameterCountBillions = run.Blueprint.ParameterCountBillions,
+                    trainingTokensBillions = run.Blueprint.TrainingTokensBillions,
+                    dataSources = (int)run.Blueprint.DataSources,
+                    startDayIndex = run.StartDate.DayIndex,
+                    petaflopDaysRequired = run.PetaflopDaysRequired,
+                    petaflopDaysCompleted = run.PetaflopDaysCompleted,
+                    projectedCapability = run.ProjectedCapability,
+                    actualTokensBillions = run.ActualTokensBillions,
+                    computeCashSpentUsd = run.ComputeCashSpentUsd,
+                    dataCostPaidUsd = run.DataCostPaidUsd
+                };
+            }
+
+            return data;
+        }
+
+        // ------------------------------------------------------------------ restore
+
+        public static CompanyState Restore(SaveData data)
+        {
+            var safe = Sanitize(data);
+            var state = new CompanyState(safe.companyName, safe.randomState == 0 ? 1u : safe.randomState)
+            {
+                Date = new GameDate(safe.dayIndex),
+                CashUsd = safe.cashUsd,
+                Reputation = safe.reputation,
+                TrainingComputeShare = safe.trainingComputeShare,
+                OwnedDataSources = (DatasetSource)safe.ownedDataSources,
+                LifetimeRevenueUsd = safe.lifetimeRevenueUsd,
+                LifetimeOperatingCostUsd = safe.lifetimeOperatingCostUsd,
+                LifetimeCapitalSpentUsd = safe.lifetimeCapitalSpentUsd,
+                DatacenterOrdered = safe.datacenterOrdered,
+                DatacenterReadyDate = new GameDate(safe.datacenterReadyDayIndex),
+                IsBankrupt = safe.isBankrupt,
+                DaysInDebt = safe.daysInDebt,
+                Archetype = (CompanyArchetype)safe.archetype,
+                DefaultPriceMultiplier = safe.defaultPriceMultiplier
+            };
+
+            var founderTraits = new FounderTrait[safe.founderTraits.Count];
+            for (var index = 0; index < founderTraits.Length; index++)
+            {
+                founderTraits[index] = (FounderTrait)safe.founderTraits[index];
+            }
+
+            state.Founder = new FounderProfile(founderTraits);
+
+            state.UnlockedResearch.Clear();
+            state.UnlockedResearch.Add(ResearchTree.StartingNode);
+            foreach (var node in safe.unlockedResearch)
+            {
+                state.UnlockedResearch.Add((ResearchNodeId)node);
+            }
+
+            if (safe.hasResearchProject)
+            {
+                var project = new ResearchProject(
+                    (ResearchNodeId)safe.researchNode,
+                    new GameDate(safe.researchStartedDayIndex),
+                    safe.researchDurationDays,
+                    safe.researchPetaflopDaysRequired,
+                    safe.researchCashPaidUsd);
+                project.Restore(safe.researchDaysCompleted, safe.researchPetaflopDaysCompleted);
+                state.ActiveResearch = project;
+            }
+
+            state.Random.State = safe.randomState == 0 ? 1u : safe.randomState;
+
+            state.AdoptedArchitectures.Clear();
+            foreach (var architecture in safe.adoptedArchitectures)
+            {
+                state.AdoptedArchitectures.Add((ArchitectureId)architecture);
+            }
+
+            if (state.AdoptedArchitectures.Count == 0)
+            {
+                state.AdoptedArchitectures.Add(ArchitectureId.DenseTransformer);
+            }
+
+            state.Pool.SetRentedPetaflops(safe.rentedPetaflops);
+            foreach (var asset in safe.assets)
+            {
+                state.Pool.AddAsset(new HardwareAsset(
+                    (HardwareGenerationId)asset.generationId,
+                    (ComputeTier)asset.tier,
+                    asset.units,
+                    new GameDate(asset.purchaseDayIndex),
+                    asset.pricePerUnitUsd,
+                    asset.leadTimeDays));
+            }
+
+            foreach (var model in safe.models)
+            {
+                var deployed = new DeployedModel(
+                    model.name,
+                    (ArchitectureId)model.architecture,
+                    model.capability,
+                    new GameDate(model.releaseDayIndex),
+                    model.activeParameterCount,
+                    model.priceMultiplier);
+
+                if (model.traitLevels != null && model.traitLevels.Count > 0)
+                {
+                    deployed.RestoreTraits(ModelTraitSet.FromArray(model.traitLevels));
+                }
+
+                if (model.isRetired)
+                {
+                    deployed.Retire();
+                }
+
+                state.AddDeployedModel(deployed);
+            }
+
+            foreach (var shelved in safe.shelf)
+            {
+                state.AddToShelf(new TrainedModel(
+                    shelved.name,
+                    (ArchitectureId)shelved.architecture,
+                    shelved.capability,
+                    new GameDate(shelved.completedDayIndex),
+                    shelved.activeParameterCount,
+                    shelved.projectedCapability));
+            }
+
+            foreach (var upgrade in safe.upgrades)
+            {
+                var project = new ModelUpgradeProject(
+                    upgrade.modelIndex,
+                    (ModelTrait)upgrade.trait,
+                    upgrade.targetLevel,
+                    new GameDate(upgrade.startedDayIndex),
+                    upgrade.durationDays,
+                    upgrade.petaflopDaysRequired,
+                    upgrade.cashPaidUsd);
+                project.Restore(upgrade.daysCompleted, upgrade.petaflopDaysCompleted);
+                state.AddUpgradeProject(project);
+            }
+
+            var history = new List<FundingRoundRecord>(safe.fundingRounds.Count);
+            foreach (var round in safe.fundingRounds)
+            {
+                history.Add(new FundingRoundRecord(
+                    (FundingStage)round.stage,
+                    new GameDate(round.closedDayIndex),
+                    round.raisedUsd,
+                    round.postMoneyValuationUsd,
+                    round.equitySold,
+                    round.wasDownRound));
+            }
+
+            state.CapTable.Restore(history, safe.founderEquity);
+            state.LastRoundClosedOn = new GameDate(safe.lastRoundClosedDayIndex);
+            state.IntelSubscription = (IntelTier)safe.intelSubscription;
+            state.DaysUntilNextSignal = safe.daysUntilNextSignal;
+
+            if (safe.hasFundingOffer)
+            {
+                state.CurrentFundingOffer = new FundingOffer(
+                    (FundingStage)safe.offerStage,
+                    new GameDate(safe.offerOpenedDayIndex),
+                    new GameDate(safe.offerExpiresDayIndex),
+                    safe.offerRaiseUsd,
+                    safe.offerPreMoneyUsd,
+                    safe.offerEquitySold,
+                    safe.offerSentiment,
+                    safe.offerIsDownRound);
+            }
+
+            foreach (var rival in safe.rivals)
+            {
+                state.Rivals.RestoreAgent(
+                    (CompetitorId)rival.competitor,
+                    rival.hasShipped,
+                    rival.liveModelName,
+                    rival.liveCapability,
+                    rival.liveBrand,
+                    rival.livePrice,
+                    new GameDate(rival.liveReleaseDayIndex),
+                    new GameDate(rival.nextReleaseDayIndex),
+                    rival.hasPlannedRelease,
+                    rival.accumulatedDelayDays,
+                    rival.isWaitingForHardware);
+            }
+
+            foreach (var revenue in safe.revenueWindow)
+            {
+                state.RecordDailyRevenue(revenue);
+            }
+
+            foreach (var family in safe.customArchitectures)
+            {
+                var slot = (ArchitectureId)family.slot;
+                state.StoreCustomArchitecture(
+                    slot,
+                    new ArchitectureDefinition(
+                        slot,
+                        family.displayName,
+                        new GameDate(family.availableFromDayIndex),
+                        family.parameterEfficiency,
+                        family.activeParameterFraction,
+                        family.trainingEfficiency,
+                        family.inferenceCostMultiplier,
+                        family.capabilityBonus,
+                        adoptionCostUsd: 0),
+                    family.generation);
+            }
+
+            if (safe.hasArchitectureProject && safe.architectureProject != null)
+            {
+                var programme = safe.architectureProject;
+                var blueprint = new ArchitectureBlueprint(
+                    programme.name,
+                    (ArchitectureId)programme.slot,
+                    (ArchitectureId)programme.baseFamily,
+                    programme.sparsity,
+                    programme.throughput,
+                    programme.quality,
+                    programme.serving,
+                    programme.reasoning,
+                    programme.researchBudgetUsd,
+                    programme.blueprintDurationDays);
+
+                var baseline = new ArchitectureDefinition(
+                    ArchitectureId.None,
+                    "baseline",
+                    new GameDate(programme.startedDayIndex),
+                    programme.baselineParameterEfficiency,
+                    programme.baselineActiveParameterFraction,
+                    programme.baselineTrainingEfficiency,
+                    programme.baselineInferenceCostMultiplier,
+                    programme.baselineCapabilityBonus,
+                    adoptionCostUsd: 0);
+
+                var project = new ArchitectureProject(
+                    blueprint,
+                    new GameDate(programme.startedDayIndex),
+                    programme.durationDays,
+                    programme.petaflopDaysRequired,
+                    programme.cashPaidUsd,
+                    programme.researchPower,
+                    programme.variance,
+                    baseline,
+                    programme.generation);
+                project.Restore(programme.daysCompleted, programme.petaflopDaysCompleted);
+                state.ActiveArchitectureProject = project;
+            }
+
+            if (safe.hasActiveRun && safe.activeRun != null)
+            {
+                var blueprint = new ModelBlueprint(
+                    safe.activeRun.blueprintName,
+                    (ArchitectureId)safe.activeRun.architecture,
+                    safe.activeRun.parameterCountBillions,
+                    safe.activeRun.trainingTokensBillions,
+                    (DatasetSource)safe.activeRun.dataSources);
+
+                var run = new TrainingRun(
+                    blueprint,
+                    new GameDate(safe.activeRun.startDayIndex),
+                    safe.activeRun.petaflopDaysRequired,
+                    safe.activeRun.projectedCapability,
+                    safe.activeRun.actualTokensBillions,
+                    safe.activeRun.dataCostPaidUsd);
+
+                run.Contribute(safe.activeRun.petaflopDaysCompleted, safe.activeRun.computeCashSpentUsd);
+                state.ActiveRun = run;
+            }
+
+            return state;
+        }
+
+        // ------------------------------------------------------------------ sanitize
+
+        /// <summary>
+        /// Clamps a save into ranges the simulation can survive. Runs after migration and before
+        /// anything reads the values, on the assumption that a file on disk may have been edited,
+        /// truncated or written by a build that no longer exists.
+        /// </summary>
+        public static SaveData Sanitize(SaveData data)
+        {
+            var safe = data ?? new SaveData();
+
+            safe.version = SaveData.CurrentVersion;
+            safe.companyName = string.IsNullOrWhiteSpace(safe.companyName) ? "Newco" : safe.companyName.Trim();
+            safe.dayIndex = Math.Clamp(safe.dayIndex, 0, GameDate.MaximumDayIndex);
+            safe.cashUsd = Math.Clamp(safe.cashUsd, -1_000_000_000_000L, 1_000_000_000_000L);
+            safe.reputation = Math.Clamp(Finite(safe.reputation), 0.0, 1.0);
+            safe.trainingComputeShare = Math.Clamp(Finite(safe.trainingComputeShare, 0.7), 0.0, 1.0);
+            safe.lifetimeRevenueUsd = Math.Max(0L, safe.lifetimeRevenueUsd);
+            safe.lifetimeOperatingCostUsd = Math.Max(0L, safe.lifetimeOperatingCostUsd);
+            safe.lifetimeCapitalSpentUsd = Math.Max(0L, safe.lifetimeCapitalSpentUsd);
+            safe.datacenterReadyDayIndex = Math.Clamp(safe.datacenterReadyDayIndex, 0, GameDate.MaximumDayIndex);
+            safe.daysInDebt = Math.Clamp(safe.daysInDebt, 0, 100_000);
+            safe.rentedAccelerators = Math.Clamp(safe.rentedAccelerators, 0, 5_000_000);
+            safe.rentedPetaflops = Math.Clamp(Finite(safe.rentedPetaflops), 0.0, 5_000_000.0);
+            safe.ownedDataSources = SanitizeDataSources(safe.ownedDataSources);
+
+            safe.adoptedArchitectures ??= new List<int>();
+            safe.adoptedArchitectures.RemoveAll(static id => !Enum.IsDefined(typeof(ArchitectureId), id));
+
+            safe.assets ??= new List<HardwareAssetData>();
+            safe.assets.RemoveAll(static asset =>
+                asset == null
+                || asset.units <= 0
+                || !Enum.IsDefined(typeof(HardwareGenerationId), asset.generationId)
+                || !Enum.IsDefined(typeof(ComputeTier), asset.tier));
+
+            foreach (var asset in safe.assets)
+            {
+                asset.units = Math.Clamp(asset.units, 1, 10_000_000);
+                asset.purchaseDayIndex = Math.Clamp(asset.purchaseDayIndex, GameDate.MinimumDayIndex, GameDate.MaximumDayIndex);
+                asset.pricePerUnitUsd = Math.Clamp(asset.pricePerUnitUsd, 0L, 10_000_000L);
+                asset.leadTimeDays = Math.Clamp(asset.leadTimeDays, 0, 1500);
+            }
+
+            safe.models ??= new List<DeployedModelData>();
+            safe.models.RemoveAll(static model =>
+                model == null || !Enum.IsDefined(typeof(ArchitectureId), model.architecture));
+
+            foreach (var model in safe.models)
+            {
+                model.name = string.IsNullOrWhiteSpace(model.name) ? "Untitled model" : model.name.Trim();
+                model.capability = Math.Clamp(Finite(model.capability), 0.0, 100.0);
+                model.releaseDayIndex = Math.Clamp(model.releaseDayIndex, 0, GameDate.MaximumDayIndex);
+                model.activeParameterCount = Math.Clamp(Finite(model.activeParameterCount, 1e6), 1e6, 1e15);
+                model.priceMultiplier = Math.Clamp(Finite(model.priceMultiplier, 1.0), 0.05, 10.0);
+            }
+
+            // ---- v3 collections ----
+            safe.shelf ??= new List<TrainedModelData>();
+            safe.upgrades ??= new List<UpgradeProjectData>();
+            safe.fundingRounds ??= new List<FundingRoundData>();
+            safe.rivals ??= new List<CompetitorAgentData>();
+            safe.revenueWindow ??= new List<long>();
+
+            safe.founderEquity = Math.Clamp(Finite(safe.founderEquity, 1.0), 0.0, 1.0);
+            safe.lastRoundClosedDayIndex = Math.Clamp(
+                safe.lastRoundClosedDayIndex, GameDate.MinimumDayIndex, GameDate.MaximumDayIndex);
+            safe.daysUntilNextSignal = Math.Clamp(safe.daysUntilNextSignal, 0, 5000);
+            if (!Enum.IsDefined(typeof(IntelTier), safe.intelSubscription))
+            {
+                safe.intelSubscription = (int)IntelTier.PublicNews;
+            }
+
+            safe.shelf.RemoveAll(static item =>
+                item == null || !Enum.IsDefined(typeof(ArchitectureId), item.architecture));
+            foreach (var item in safe.shelf)
+            {
+                item.name = string.IsNullOrWhiteSpace(item.name) ? "Untitled model" : item.name.Trim();
+                item.capability = Math.Clamp(Finite(item.capability), 0.0, 100.0);
+                item.projectedCapability = Math.Clamp(Finite(item.projectedCapability), 0.0, 100.0);
+                item.completedDayIndex = Math.Clamp(item.completedDayIndex, 0, GameDate.MaximumDayIndex);
+                item.activeParameterCount = Math.Clamp(Finite(item.activeParameterCount, 1e6), 1e6, 1e15);
+            }
+
+            safe.upgrades.RemoveAll(item =>
+                item == null
+                || !Enum.IsDefined(typeof(ModelTrait), item.trait)
+                || item.modelIndex < 0
+                || item.modelIndex >= safe.models.Count);
+            if (safe.upgrades.Count > CompanyState.MaximumConcurrentUpgrades)
+            {
+                safe.upgrades.RemoveRange(
+                    CompanyState.MaximumConcurrentUpgrades,
+                    safe.upgrades.Count - CompanyState.MaximumConcurrentUpgrades);
+            }
+
+            foreach (var item in safe.upgrades)
+            {
+                item.targetLevel = Math.Clamp(item.targetLevel, 1, ModelTraitSetLimits.MaximumLevel);
+                item.durationDays = Math.Clamp(item.durationDays, 1, 400);
+                item.daysCompleted = Math.Clamp(item.daysCompleted, 0, item.durationDays);
+                item.petaflopDaysRequired = Math.Clamp(Finite(item.petaflopDaysRequired), 0.0, 1e12);
+                item.petaflopDaysCompleted = Math.Clamp(
+                    Finite(item.petaflopDaysCompleted), 0.0, item.petaflopDaysRequired);
+                item.cashPaidUsd = Math.Max(0L, item.cashPaidUsd);
+            }
+
+            safe.fundingRounds.RemoveAll(static round =>
+                round == null || !Enum.IsDefined(typeof(FundingStage), round.stage));
+            foreach (var round in safe.fundingRounds)
+            {
+                round.equitySold = Math.Clamp(Finite(round.equitySold), 0.0, 1.0);
+                round.raisedUsd = Math.Max(0L, round.raisedUsd);
+                round.postMoneyValuationUsd = Math.Max(1L, round.postMoneyValuationUsd);
+            }
+
+            safe.rivals.RemoveAll(static rival =>
+                rival == null || !Enum.IsDefined(typeof(CompetitorId), rival.competitor));
+            foreach (var rival in safe.rivals)
+            {
+                rival.liveCapability = Math.Clamp(Finite(rival.liveCapability), 0.0, 100.0);
+                rival.liveBrand = Math.Clamp(Finite(rival.liveBrand), 0.0, 1.0);
+                rival.livePrice = Math.Clamp(Finite(rival.livePrice, 1.0), 0.05, 20.0);
+            }
+
+            if (safe.hasFundingOffer && !Enum.IsDefined(typeof(FundingStage), safe.offerStage))
+            {
+                safe.hasFundingOffer = false;
+            }
+
+            safe.offerEquitySold = Math.Clamp(Finite(safe.offerEquitySold), 0.0, 0.95);
+            safe.offerRaiseUsd = Math.Max(0L, safe.offerRaiseUsd);
+            safe.offerPreMoneyUsd = Math.Max(0L, safe.offerPreMoneyUsd);
+
+            foreach (var model in safe.models)
+            {
+                model.traitLevels ??= new List<int>();
+                for (var index = 0; index < model.traitLevels.Count; index++)
+                {
+                    model.traitLevels[index] = Math.Clamp(
+                        model.traitLevels[index], 0, ModelTraitSetLimits.MaximumLevel);
+                }
+            }
+
+            // ---- v6 fields ----
+            safe.founderTraits ??= new List<int>();
+            safe.unlockedResearch ??= new List<int>();
+            safe.founderTraits.RemoveAll(static id => !Enum.IsDefined(typeof(FounderTrait), id));
+            safe.unlockedResearch.RemoveAll(static id => !Enum.IsDefined(typeof(ResearchNodeId), id));
+            safe.defaultPriceMultiplier = Math.Clamp(Finite(safe.defaultPriceMultiplier, 1.0), 0.05, 10.0);
+
+            if (!Enum.IsDefined(typeof(CompanyArchetype), safe.archetype))
+            {
+                safe.archetype = (int)CompanyArchetype.Custom;
+            }
+
+            if (safe.hasResearchProject
+                && (!Enum.IsDefined(typeof(ResearchNodeId), safe.researchNode) || safe.researchDurationDays <= 0))
+            {
+                safe.hasResearchProject = false;
+            }
+
+            safe.researchDurationDays = Math.Clamp(safe.researchDurationDays, 1, 1500);
+            safe.researchDaysCompleted = Math.Clamp(safe.researchDaysCompleted, 0, safe.researchDurationDays);
+            safe.researchPetaflopDaysRequired = Math.Clamp(Finite(safe.researchPetaflopDaysRequired), 0.0, 1e12);
+            safe.researchPetaflopDaysCompleted = Math.Clamp(
+                Finite(safe.researchPetaflopDaysCompleted), 0.0, safe.researchPetaflopDaysRequired);
+            safe.researchCashPaidUsd = Math.Max(0L, safe.researchCashPaidUsd);
+
+            // ---- v4 collections ----
+            safe.customArchitectures ??= new List<CustomArchitectureData>();
+            safe.architectureProject ??= new ArchitectureProjectData();
+
+            safe.customArchitectures.RemoveAll(static family =>
+                family == null || !ArchitectureCatalog.IsCustomSlot((ArchitectureId)family.slot));
+
+            foreach (var family in safe.customArchitectures)
+            {
+                family.displayName = string.IsNullOrWhiteSpace(family.displayName)
+                    ? "House family"
+                    : family.displayName.Trim();
+                family.availableFromDayIndex = Math.Clamp(
+                    family.availableFromDayIndex, GameDate.MinimumDayIndex, GameDate.MaximumDayIndex);
+                family.parameterEfficiency = Math.Clamp(Finite(family.parameterEfficiency, 1.0), 0.25, 4.0);
+                family.activeParameterFraction = Math.Clamp(Finite(family.activeParameterFraction, 1.0), 0.02, 1.0);
+                family.trainingEfficiency = Math.Clamp(Finite(family.trainingEfficiency, 1.0), 0.25, 2.0);
+                family.inferenceCostMultiplier = Math.Clamp(Finite(family.inferenceCostMultiplier, 1.0), 0.1, 10.0);
+                family.capabilityBonus = Math.Clamp(Finite(family.capabilityBonus), 0.0, 20.0);
+                family.generation = Math.Clamp(family.generation, 0, ArchitectureDesigner.MaximumGenerations);
+            }
+
+            if (safe.hasArchitectureProject)
+            {
+                var project = safe.architectureProject;
+                if (!ArchitectureCatalog.IsCustomSlot((ArchitectureId)project.slot) || project.durationDays <= 0)
+                {
+                    safe.hasArchitectureProject = false;
+                }
+                else
+                {
+                    project.name = string.IsNullOrWhiteSpace(project.name) ? "House family" : project.name.Trim();
+                    project.durationDays = Math.Clamp(
+                        project.durationDays,
+                        ArchitectureBlueprint.MinimumDurationDays,
+                        ArchitectureBlueprint.MaximumDurationDays);
+                    project.daysCompleted = Math.Clamp(project.daysCompleted, 0, project.durationDays);
+                    project.petaflopDaysRequired = Math.Clamp(Finite(project.petaflopDaysRequired), 0.0, 1e12);
+                    project.petaflopDaysCompleted = Math.Clamp(
+                        Finite(project.petaflopDaysCompleted), 0.0, project.petaflopDaysRequired);
+                    project.researchPower = Math.Clamp(Finite(project.researchPower), 0.0, 1.5);
+                    project.variance = Math.Clamp(Finite(project.variance), 0.0, 1.0);
+                    project.generation = Math.Clamp(project.generation, 0, ArchitectureDesigner.MaximumGenerations);
+                    project.researchBudgetUsd = Math.Clamp(
+                        project.researchBudgetUsd,
+                        ArchitectureBlueprint.MinimumBudgetUsd,
+                        ArchitectureBlueprint.MaximumBudgetUsd);
+                }
+            }
+
+            safe.activeRun ??= new TrainingRunData();
+            if (safe.hasActiveRun)
+            {
+                var run = safe.activeRun;
+                if (!Enum.IsDefined(typeof(ArchitectureId), run.architecture) || run.petaflopDaysRequired <= 0.0)
+                {
+                    safe.hasActiveRun = false;
+                }
+                else
+                {
+                    run.blueprintName = string.IsNullOrWhiteSpace(run.blueprintName) ? "Untitled model" : run.blueprintName.Trim();
+                    run.startDayIndex = Math.Clamp(run.startDayIndex, 0, GameDate.MaximumDayIndex);
+                    run.petaflopDaysRequired = Math.Clamp(Finite(run.petaflopDaysRequired, 1.0), 1.0, 1e12);
+                    run.petaflopDaysCompleted = Math.Clamp(Finite(run.petaflopDaysCompleted), 0.0, run.petaflopDaysRequired);
+                    run.projectedCapability = Math.Clamp(Finite(run.projectedCapability), 0.0, 100.0);
+                    run.actualTokensBillions = Math.Max(0.0, Finite(run.actualTokensBillions));
+                    run.dataSources = SanitizeDataSources(run.dataSources);
+                    run.computeCashSpentUsd = Math.Max(0L, run.computeCashSpentUsd);
+                    run.dataCostPaidUsd = Math.Max(0L, run.dataCostPaidUsd);
+                }
+            }
+
+            return safe;
+        }
+
+        private static int SanitizeDataSources(int mask)
+        {
+            var known = 0;
+            foreach (var source in DatasetCatalog.All)
+            {
+                known |= (int)source.Flag;
+            }
+
+            return mask & known;
+        }
+
+        private static double Finite(double value, double fallback = 0.0)
+        {
+            return double.IsNaN(value) || double.IsInfinity(value) ? fallback : value;
+        }
+    }
+}
