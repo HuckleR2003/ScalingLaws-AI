@@ -31,7 +31,11 @@ namespace ScalingLaws.Simulation
         LoanTaken = 24,
         LoanSettled = 25,
         LoanMissed = 26,
-        LoanDefaulted = 27
+        LoanDefaulted = 27,
+        StaffHired = 28,
+        StaffLeft = 29,
+        OfficeMoved = 30,
+        SafetyIncident = 31
     }
 
     /// <summary>

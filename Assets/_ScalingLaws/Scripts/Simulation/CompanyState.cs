@@ -166,6 +166,15 @@ namespace ScalingLaws.Simulation
         /// <summary>Every loan being serviced. Non-dilutive money on a schedule that never pauses.</summary>
         public LoanBook Loans { get; } = new();
 
+        /// <summary>Everyone on the payroll and the room they work in.</summary>
+        public StaffRoster Staff { get; } = new();
+
+        /// <summary>Public safety incidents, newest last. History, not a counter.</summary>
+        public List<SafetyIncident> Incidents { get; } = new();
+
+        /// <summary>Total paid in regulatory penalties. Investors ask about this.</summary>
+        public long LifetimeFinesUsd { get; set; }
+
         /// <summary>Finished runs waiting for a release decision.</summary>
         public IReadOnlyList<TrainedModel> Shelf => shelf;
 

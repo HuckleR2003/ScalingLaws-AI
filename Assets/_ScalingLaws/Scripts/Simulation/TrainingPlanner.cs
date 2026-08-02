@@ -40,8 +40,10 @@ namespace ScalingLaws.Simulation
             double bestOwnedCapability,
             double trainingComputeShare = 1.0,
             IArchitectureSource architectures = null,
-            double dataSupplyMultiplier = 1.0)
+            double dataSupplyMultiplier = 1.0,
+            double dataQualityMultiplier = 1.0)
         {
+            var qualityScale = Math.Clamp(SimUnits.Finite(dataQualityMultiplier, 1.0), 0.5, 2.0);
             var source = architectures ?? ArchitectureCatalog.AsSource;
             if (!source.TryGetArchitecture(blueprint.Architecture, out var architecture))
             {
@@ -90,7 +92,8 @@ namespace ScalingLaws.Simulation
             // player chose.
             var recipeBoost = Math.Sqrt(market.AlgorithmicEfficiency);
             var effectiveParameters = parameters * architecture.ParameterEfficiency * recipeBoost;
-            var effectiveTokens = actualTokens * blend.QualityMultiplier * recipeBoost;
+            // The data team earns its salary here: the same corpora, cleaned better.
+            var effectiveTokens = actualTokens * blend.QualityMultiplier * qualityScale * recipeBoost;
 
             var loss = ScalingLaw.Loss(effectiveParameters, effectiveTokens);
             var capability = Math.Clamp(

@@ -126,6 +126,32 @@ namespace ScalingLaws.Persistence
                 });
             }
 
+            data.officeTier = (int)state.Staff.Office;
+            data.lifetimeFinesUsd = state.LifetimeFinesUsd;
+
+            foreach (var hire in state.Staff.Hires)
+            {
+                data.staff.Add(new HireData
+                {
+                    role = (int)hire.Role,
+                    skill = hire.Skill,
+                    startedDayIndex = hire.StartedOn.DayIndex
+                });
+            }
+
+            foreach (var incident in state.Incidents)
+            {
+                data.incidents.Add(new IncidentData
+                {
+                    severity = (int)incident.Severity,
+                    dayIndex = incident.Date.DayIndex,
+                    headline = incident.Headline,
+                    reputationLoss = incident.ReputationLoss,
+                    fineUsd = incident.FineUsd,
+                    forcedWithdrawal = incident.ForcedWithdrawal
+                });
+            }
+
             var research = state.ActiveResearch;
             data.hasResearchProject = research != null;
             if (research != null)
@@ -361,6 +387,28 @@ namespace ScalingLaws.Persistence
             foreach (var node in safe.unlockedResearch)
             {
                 state.UnlockedResearch.Add((ResearchNodeId)node);
+            }
+
+            state.LifetimeFinesUsd = safe.lifetimeFinesUsd;
+
+            var restoredHires = new List<Hire>(safe.staff.Count);
+            foreach (var hire in safe.staff)
+            {
+                restoredHires.Add(new Hire(
+                    (StaffRole)hire.role, hire.skill, new GameDate(hire.startedDayIndex)));
+            }
+
+            state.Staff.Restore((OfficeTier)safe.officeTier, restoredHires);
+
+            foreach (var incident in safe.incidents)
+            {
+                state.Incidents.Add(new SafetyIncident(
+                    (IncidentSeverity)incident.severity,
+                    new GameDate(incident.dayIndex),
+                    incident.headline,
+                    incident.reputationLoss,
+                    incident.fineUsd,
+                    incident.forcedWithdrawal));
             }
 
             foreach (var loan in safe.loans)
@@ -736,6 +784,44 @@ namespace ScalingLaws.Persistence
                     model.traitLevels[index] = Math.Clamp(
                         model.traitLevels[index], 0, ModelTraitSetLimits.MaximumLevel);
                 }
+            }
+
+            // ---- v8 collections ----
+            safe.staff ??= new List<HireData>();
+            safe.incidents ??= new List<IncidentData>();
+            safe.lifetimeFinesUsd = Math.Max(0L, safe.lifetimeFinesUsd);
+
+            if (!Enum.IsDefined(typeof(OfficeTier), safe.officeTier))
+            {
+                safe.officeTier = (int)OfficeTier.Garage;
+            }
+
+            safe.staff.RemoveAll(static hire =>
+                hire == null || !Enum.IsDefined(typeof(StaffRole), hire.role) || hire.role == (int)StaffRole.None);
+
+            var desks = OfficeCatalog.Get((OfficeTier)safe.officeTier).Desks;
+            if (safe.staff.Count > desks)
+            {
+                safe.staff.RemoveRange(desks, safe.staff.Count - desks);
+            }
+
+            foreach (var hire in safe.staff)
+            {
+                hire.skill = Math.Clamp(hire.skill, 1, StaffLimits.MaximumSkill);
+                hire.startedDayIndex = Math.Clamp(hire.startedDayIndex, 0, GameDate.MaximumDayIndex);
+            }
+
+            safe.incidents.RemoveAll(static incident =>
+                incident == null || !Enum.IsDefined(typeof(IncidentSeverity), incident.severity));
+
+            foreach (var incident in safe.incidents)
+            {
+                incident.headline = string.IsNullOrWhiteSpace(incident.headline)
+                    ? "An incident the records no longer describe."
+                    : incident.headline;
+                incident.reputationLoss = Math.Clamp(Finite(incident.reputationLoss), 0.0, 1.0);
+                incident.fineUsd = Math.Max(0L, incident.fineUsd);
+                incident.dayIndex = Math.Clamp(incident.dayIndex, 0, GameDate.MaximumDayIndex);
             }
 
             // ---- v7 collections ----

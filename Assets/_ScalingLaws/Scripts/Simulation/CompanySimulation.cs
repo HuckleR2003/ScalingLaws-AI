@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -82,7 +82,8 @@ namespace ScalingLaws.Simulation
 
             var operatingCost =
                 SimUnits.ToDollars(profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier)
-                + DailyIntelRetainerUsd();
+                + DailyIntelRetainerUsd()
+                + SimUnits.ToDollars(State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier);
             var depreciation = SimUnits.ToDollars(profile.DailyDepreciationUsd);
 
             State.CashUsd += revenue - operatingCost;
@@ -90,6 +91,7 @@ namespace ScalingLaws.Simulation
             State.LifetimeOperatingCostUsd += operatingCost;
             State.RecordDailyRevenue(revenue);
 
+            RollSafetyIncident();
             ServiceDebt();
             AdvanceIntelligence();
             ExpireFundingOffer();
@@ -131,8 +133,17 @@ namespace ScalingLaws.Simulation
                 State.BestCapability,
                 State.TrainingComputeShare,
                 State,
-                State.Founder.DataSupplyMultiplier);
+                State.Founder.DataSupplyMultiplier,
+                State.Staff.DataQualityMultiplier());
         }
+
+        /// <summary>
+        /// A day count after both the founder's pace and the research team's. Every duration in the
+        /// game goes through here so the two never get applied twice or forgotten once.
+        /// </summary>
+        public int ScaleResearchDuration(int days) => Math.Max(
+            1,
+            (int)Math.Round(State.Founder.ScaleDuration(days) * State.Staff.ResearchSpeedMultiplier()));
 
         /// <summary>
         /// Commits to a run. Fails, with a reason, when the company does not own what the blueprint
@@ -610,7 +621,7 @@ namespace ScalingLaws.Simulation
                 trait,
                 level + 1,
                 State.Date,
-                State.Founder.ScaleDuration(definition.UpgradeDays(level)),
+                ScaleResearchDuration(definition.UpgradeDays(level)),
                 definition.UpgradePetaflopDays(level),
                 cost));
 
@@ -639,7 +650,7 @@ namespace ScalingLaws.Simulation
 
         private ResearchStanding EvaluateResearch(ResearchNode node)
         {
-            var duration = State.Founder.ScaleDuration(node.DurationDays);
+            var duration = ScaleResearchDuration(node.DurationDays);
             var unlocked = State.UnlockedResearch.Contains(node.Id);
             var inProgress = State.ActiveResearch != null && State.ActiveResearch.Node == node.Id;
 
@@ -787,7 +798,7 @@ namespace ScalingLaws.Simulation
             State.ActiveArchitectureProject = new ArchitectureProject(
                 blueprint,
                 State.Date,
-                State.Founder.ScaleDuration(ArchitectureDesigner.DurationDays(blueprint)),
+                ScaleResearchDuration(ArchitectureDesigner.DurationDays(blueprint)),
                 projection.PetaflopDaysRequired,
                 cash,
                 projection.ResearchPower,
@@ -967,6 +978,170 @@ namespace ScalingLaws.Simulation
                 offer.RaiseUsd));
 
             return true;
+        }
+
+        // ------------------------------------------------------------------ staff and offices
+
+        /// <summary>Hires one person. Fails when there is no desk, no money, or no such role.</summary>
+        public bool TryHire(StaffRole role, int skill, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (State.IsBankrupt)
+            {
+                failureReason = "The company is insolvent.";
+                return false;
+            }
+
+            if (!StaffCatalog.TryGet(role, out var definition))
+            {
+                failureReason = "Unknown role.";
+                return false;
+            }
+
+            if (!State.Staff.HasFreeDesk)
+            {
+                failureReason =
+                    $"No free desk. {State.Staff.OfficeDefinition.DisplayName} holds {State.Staff.Desks}.";
+                return false;
+            }
+
+            var safeSkill = Math.Clamp(skill, 1, StaffLimits.MaximumSkill);
+            var cost = definition.HiringCostUsd_ForSkill(safeSkill);
+            if (State.CashUsd < cost)
+            {
+                failureReason = $"Hiring costs ${cost:N0}, has ${State.CashUsd:N0}.";
+                return false;
+            }
+
+            State.CashUsd -= cost;
+            State.Staff.Add(new Hire(role, safeSkill, State.Date));
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.StaffHired,
+                State.Date,
+                $"{definition.DisplayName} at skill {safeSkill} joined. "
+                + $"Payroll is now ${State.Staff.DailyPayrollUsd:N0} a day across {State.Staff.Headcount} people.",
+                cost));
+
+            return true;
+        }
+
+        /// <summary>Lets somebody go. No severance, and the desk frees up immediately.</summary>
+        public bool TryLetGo(int index, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (index < 0 || index >= State.Staff.Headcount)
+            {
+                failureReason = "No such person.";
+                return false;
+            }
+
+            var hire = State.Staff.Hires[index];
+            State.Staff.RemoveAt(index);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.StaffLeft,
+                State.Date,
+                $"{StaffCatalog.Get(hire.Role).DisplayName} at skill {hire.Skill} left the company."));
+
+            return true;
+        }
+
+        /// <summary>Signs a new lease. The fit-out is paid today and the rent starts tomorrow.</summary>
+        public bool TryMoveOffice(OfficeTier tier, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!OfficeCatalog.TryGet(tier, out var definition))
+            {
+                failureReason = "Unknown office.";
+                return false;
+            }
+
+            if (tier == State.Staff.Office)
+            {
+                failureReason = "Already there.";
+                return false;
+            }
+
+            if (State.Date.IsBefore(definition.EarliestDate))
+            {
+                failureReason = $"Not available before {definition.EarliestDate}.";
+                return false;
+            }
+
+            if (State.CashUsd < definition.RequiredCashUsd || State.CashUsd < definition.FitOutCostUsd)
+            {
+                failureReason =
+                    $"Needs ${Math.Max(definition.RequiredCashUsd, definition.FitOutCostUsd):N0}, has ${State.CashUsd:N0}.";
+                return false;
+            }
+
+            if (definition.Desks < State.Staff.Headcount)
+            {
+                failureReason =
+                    $"{definition.DisplayName} holds {definition.Desks}, the company has {State.Staff.Headcount} people.";
+                return false;
+            }
+
+            State.CashUsd -= definition.FitOutCostUsd;
+            State.LifetimeCapitalSpentUsd += definition.FitOutCostUsd;
+            State.Staff.SetOffice(tier);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.OfficeMoved,
+                State.Date,
+                $"Moved into {definition.DisplayName}: {definition.Desks} desks at ${definition.MonthlyRentUsd:N0} a month.",
+                definition.FitOutCostUsd));
+
+            return true;
+        }
+
+        // ------------------------------------------------------------------ safety incidents
+
+        /// <summary>Chance of a public safety failure today, for the screen that shows it.</summary>
+        public double DailyIncidentRisk()
+        {
+            var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
+            return IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier());
+        }
+
+        private void RollSafetyIncident()
+        {
+            var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
+            if (best == null)
+            {
+                return;
+            }
+
+            var risk = IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier());
+            if (risk <= 0.0 || !State.Random.NextChance(risk))
+            {
+                return;
+            }
+
+            var incident = IncidentModel.Resolve(best, State.Date, State.AnnualRevenueRunRateUsd, State.Random);
+            State.Incidents.Add(incident);
+
+            State.Reputation -= incident.ReputationLoss;
+            State.CashUsd -= incident.FineUsd;
+            State.LifetimeFinesUsd += incident.FineUsd;
+            State.LifetimeOperatingCostUsd += incident.FineUsd;
+
+            if (incident.ForcedWithdrawal)
+            {
+                best.Retire();
+            }
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.SafetyIncident,
+                State.Date,
+                incident.FineUsd > 0
+                    ? $"{incident.Headline} Penalty ${incident.FineUsd:N0}."
+                    : incident.Headline,
+                incident.FineUsd));
         }
 
         // ------------------------------------------------------------------ debt
@@ -1150,7 +1325,8 @@ namespace ScalingLaws.Simulation
         {
             var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
             var researchPetaflops =
-                profile.EffectivePetaflops * share * State.Founder.TrainingThroughputMultiplier;
+                profile.EffectivePetaflops * share * State.Founder.TrainingThroughputMultiplier
+                * (1.0 + State.Staff.UtilizationBonus());
             var researchCash = profile.DailyOperatingCostUsd * share;
 
             var run = State.ActiveRun;
@@ -1246,8 +1422,12 @@ namespace ScalingLaws.Simulation
         {
             // The projection was a projection. What comes out of the oven is close to it, not equal
             // to it, and only this number is ever recorded as the model's capability.
+            // Where the team actually shows up. Two labs with identical blueprints and identical
+            // clusters do not get identical models: the one with the better research and safety
+            // people lands nearer its own plan. The ceiling is the same, the spread is not.
+            var spread = TrainingOutcomeStandardDeviation * State.Staff.OutcomeVarianceMultiplier();
             var measured = Math.Clamp(
-                run.ProjectedCapability + State.Random.NextGaussian(0.0, TrainingOutcomeStandardDeviation),
+                run.ProjectedCapability + State.Random.NextGaussian(0.0, spread),
                 0.0,
                 100.0);
 
@@ -1275,7 +1455,7 @@ namespace ScalingLaws.Simulation
             MarketConditions market)
         {
             var rivals = State.Rivals.LiveModels(State.Date);
-            var brand = Math.Clamp(State.Reputation + State.Founder.BrandBonus, 0.0, 1.0);
+            var brand = Math.Clamp(State.Reputation + State.Founder.BrandBonus + State.Staff.BrandBonus(), 0.0, 1.0);
             var share = MarketShareModel.PlayerShare(State.DeployedModels, brand, market, rivals);
             var demanded = market.TotalDemandBillionTokensPerDay * share;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -74,30 +74,11 @@ namespace ScalingLaws.Persistence
             {
                 case 1:
                     var legacy = deserializer(json, typeof(SaveDataV1)) as SaveDataV1;
-                    return legacy == null
-                        ? null
-                        : UpgradeV6ToV7(
-                            UpgradeV5ToV6(UpgradeV4ToV5(UpgradeV3ToV4(UpgradeV2ToV3(UpgradeV1ToV2(legacy))))));
+                    return legacy == null ? null : RunChainFrom(UpgradeV1ToV2(legacy), 2);
 
-                case 2:
-                    var v2 = deserializer(json, typeof(SaveData)) as SaveData;
-                    return v2 == null ? null : UpgradeV3ToV4(UpgradeV2ToV3(v2));
-
-                case 3:
-                    var v3 = deserializer(json, typeof(SaveData)) as SaveData;
-                    return v3 == null ? null : UpgradeV4ToV5(UpgradeV3ToV4(v3));
-
-                case 4:
-                    var v4 = deserializer(json, typeof(SaveData)) as SaveData;
-                    return v4 == null ? null : UpgradeV5ToV6(UpgradeV4ToV5(v4));
-
-                case 5:
-                    var v5 = deserializer(json, typeof(SaveData)) as SaveData;
-                    return v5 == null ? null : UpgradeV6ToV7(UpgradeV5ToV6(v5));
-
-                case 6:
-                    var v6 = deserializer(json, typeof(SaveData)) as SaveData;
-                    return v6 == null ? null : UpgradeV6ToV7(v6);
+                case >= 2 and < SaveData.CurrentVersion:
+                    var older = deserializer(json, typeof(SaveData)) as SaveData;
+                    return older == null ? null : RunChainFrom(older, version);
 
                 case SaveData.CurrentVersion:
                     return deserializer(json, typeof(SaveData)) as SaveData;
@@ -106,6 +87,33 @@ namespace ScalingLaws.Persistence
                     // A file from the future, or one with no version at all. Neither is safe to guess at.
                     return null;
             }
+        }
+
+        /// <summary>
+        /// Walks a save forward one version at a time until it is current.
+        ///
+        /// Written as a loop rather than as nested calls because the nesting had already gone wrong
+        /// once: a hand-chained expression quietly stopped short of the newest version and left the
+        /// later fields uninitialised. A loop cannot skip a step.
+        /// </summary>
+        private static SaveData RunChainFrom(SaveData data, int fromVersion)
+        {
+            var current = data;
+            for (var version = fromVersion; current != null && version < SaveData.CurrentVersion; version++)
+            {
+                current = version switch
+                {
+                    2 => UpgradeV2ToV3(current),
+                    3 => UpgradeV3ToV4(current),
+                    4 => UpgradeV4ToV5(current),
+                    5 => UpgradeV5ToV6(current),
+                    6 => UpgradeV6ToV7(current),
+                    7 => UpgradeV7ToV8(current),
+                    _ => current
+                };
+            }
+
+            return current;
         }
 
         /// <summary>
@@ -327,6 +335,30 @@ namespace ScalingLaws.Persistence
 
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v6 to v7: no facilities existed before v7, so the company starts debt free.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v7 to v8: staff, offices and safety incidents arrive. A campaign saved before v8 had no
+        /// payroll, so it starts in the garage with nobody in it and a clean record. Nothing to
+        /// convert; written out so the chain has every step present.
+        /// </summary>
+        public static SaveData UpgradeV7ToV8(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+            data.staff ??= new List<HireData>();
+            data.incidents ??= new List<IncidentData>();
+            data.officeTier = (int)OfficeTier.Garage;
+            data.lifetimeFinesUsd = 0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v7 to v8: no payroll existed before v8, so the company starts in the garage with a clean record.");
 
             return data;
         }

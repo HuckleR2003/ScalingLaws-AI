@@ -175,7 +175,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 7;
+        public const int CurrentVersion = 8;
 
         public int version = CurrentVersion;
 
@@ -267,6 +267,34 @@ namespace ScalingLaws.Persistence
         // ---- added in v7 ----
 
         public List<LoanData> loans = new();
+
+        // ---- added in v8 ----
+
+        public int officeTier;
+        public List<HireData> staff = new();
+        public List<IncidentData> incidents = new();
+        public long lifetimeFinesUsd;
+    }
+
+    /// <summary>One person on the payroll. Added in v8.</summary>
+    [Serializable]
+    public sealed class HireData
+    {
+        public int role;
+        public int skill = 1;
+        public int startedDayIndex;
+    }
+
+    /// <summary>A public safety failure that already happened. Added in v8.</summary>
+    [Serializable]
+    public sealed class IncidentData
+    {
+        public int severity;
+        public int dayIndex;
+        public string headline;
+        public double reputationLoss;
+        public long fineUsd;
+        public bool forcedWithdrawal;
     }
 
     /// <summary>A facility being serviced. Added in v7.</summary>
