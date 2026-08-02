@@ -1,0 +1,326 @@
+/*
+ * Scaling Laws theme.
+ *
+ * Deliberately a first pass in the visual language of the tycoon games this is modelled on:
+ * a deep blue field, a translucent left rail, and a grid of dark photo cards with an uppercase
+ * title, a level and a price. Every colour and size in this file is a token. Restyling the whole
+ * game later should mean editing this file and dropping in card art, not touching C#.
+ *
+ * Card art: every .card gets its background from a --card-image variable set in code, so the
+ * placeholder blocks below can be swapped for textures without a layout change.
+ */
+
+:root {
+    --blue-900: rgb(6, 32, 66);
+    --blue-800: rgb(9, 45, 90);
+    --blue-700: rgb(13, 62, 118);
+    --blue-600: rgb(18, 84, 158);
+    --blue-400: rgb(56, 138, 220);
+
+    --rail: rgba(6, 30, 62, 0.72);
+    --rail-active: rgba(120, 170, 225, 0.22);
+
+    --ink: rgb(255, 255, 255);
+    --ink-dim: rgba(226, 238, 252, 0.72);
+    --ink-faint: rgba(226, 238, 252, 0.45);
+
+    --good: rgb(78, 205, 148);
+    --warn: rgb(240, 186, 78);
+    --bad: rgb(233, 96, 96);
+    --locked: rgba(10, 24, 44, 0.78);
+
+    --card-radius: 4px;
+    --gutter: 16px;
+}
+
+.root {
+    flex-grow: 1;
+    background-color: var(--blue-800);
+    color: var(--ink);
+    font-size: 14px;
+}
+
+/* ---- top bar ---------------------------------------------------------- */
+
+.topbar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 46px;
+    padding-left: 18px;
+    padding-right: 18px;
+    background-color: var(--blue-900);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.topbar__group {
+    flex-direction: row;
+    align-items: center;
+}
+
+.topbar__stat {
+    margin-right: 22px;
+    -unity-font-style: bold;
+    font-size: 15px;
+}
+
+.topbar__stat--muted {
+    color: var(--ink-dim);
+    -unity-font-style: normal;
+}
+
+/* ---- left rail -------------------------------------------------------- */
+
+.shell {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.rail {
+    width: 252px;
+    background-color: var(--rail);
+    padding-top: 22px;
+    padding-bottom: 22px;
+}
+
+.rail__brand {
+    font-size: 30px;
+    -unity-font-style: bold;
+    padding-left: 24px;
+    letter-spacing: 2px;
+}
+
+.rail__subtitle {
+    color: var(--ink-dim);
+    padding-left: 24px;
+    padding-bottom: 26px;
+    font-size: 13px;
+}
+
+.rail__item {
+    height: 46px;
+    padding-left: 24px;
+    justify-content: center;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    font-size: 13px;
+    background-color: rgba(0, 0, 0, 0);
+    border-left-width: 3px;
+    border-left-color: rgba(0, 0, 0, 0);
+}
+
+.rail__item:hover {
+    background-color: rgba(120, 170, 225, 0.12);
+}
+
+.rail__item--active {
+    background-color: var(--rail-active);
+    border-left-color: var(--blue-400);
+}
+
+/* ---- content ---------------------------------------------------------- */
+
+.content {
+    flex-grow: 1;
+    padding: 26px;
+}
+
+.page-title {
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.page-subtitle {
+    color: var(--ink-dim);
+    margin-bottom: 20px;
+    white-space: normal;
+}
+
+/* ---- card grid, the MY OS layout -------------------------------------- */
+
+.grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.card {
+    width: 268px;
+    height: 134px;
+    margin-right: var(--gutter);
+    margin-bottom: var(--gutter);
+    border-radius: var(--card-radius);
+    background-color: var(--blue-700);
+    justify-content: flex-end;
+    padding: 14px;
+    overflow: hidden;
+}
+
+.card:hover {
+    background-color: var(--blue-600);
+}
+
+.card--locked {
+    background-color: var(--locked);
+}
+
+.card--behind {
+    border-left-width: 4px;
+    border-left-color: var(--bad);
+}
+
+.card--ahead {
+    border-left-width: 4px;
+    border-left-color: var(--good);
+}
+
+.card__title {
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    white-space: normal;
+}
+
+.card__line {
+    font-size: 14px;
+    color: var(--ink-dim);
+}
+
+.card__badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+}
+
+/* ---- creator form ----------------------------------------------------- */
+
+.panel {
+    background-color: rgba(6, 30, 62, 0.45);
+    border-radius: var(--card-radius);
+    padding: 18px;
+    margin-bottom: 16px;
+}
+
+.panel__heading {
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-bottom: 12px;
+}
+
+.field {
+    margin-bottom: 14px;
+}
+
+.field__label {
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.field__hint {
+    color: var(--ink-faint);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.readout {
+    flex-direction: row;
+    justify-content: space-between;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.readout__value {
+    -unity-font-style: bold;
+}
+
+.readout__value--good { color: var(--good); }
+.readout__value--warn { color: var(--warn); }
+.readout__value--bad { color: var(--bad); }
+
+.verdict {
+    padding: 12px;
+    border-radius: var(--card-radius);
+    margin-top: 8px;
+    white-space: normal;
+}
+
+.verdict--ok {
+    background-color: rgba(78, 205, 148, 0.14);
+    color: var(--good);
+}
+
+.verdict--blocked {
+    background-color: rgba(233, 96, 96, 0.14);
+    color: var(--bad);
+}
+
+/* ---- buttons ---------------------------------------------------------- */
+
+.button {
+    height: 44px;
+    min-width: 190px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.75);
+    border-radius: 3px;
+    color: var(--ink);
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    font-size: 14px;
+}
+
+.button:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.button:disabled {
+    border-color: rgba(255, 255, 255, 0.22);
+    color: var(--ink-faint);
+}
+
+.button--primary {
+    background-color: var(--blue-600);
+    border-color: var(--blue-400);
+}
+
+/* ---- bottom toolbar --------------------------------------------------- */
+
+.toolbar {
+    flex-direction: row;
+    align-items: center;
+    height: 58px;
+    padding-left: 14px;
+    padding-right: 14px;
+    background-color: var(--blue-900);
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.toolbar__button {
+    width: 44px;
+    height: 44px;
+    margin-right: 8px;
+    border-radius: 22px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-width: 0;
+    color: var(--ink);
+    -unity-font-style: bold;
+}
+
+.toolbar__button:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+.toolbar__spacer {
+    flex-grow: 1;
+}
