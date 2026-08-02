@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -125,6 +125,30 @@ namespace ScalingLaws.Persistence
                     daysInArrears = loan.DaysInArrears
                 });
             }
+
+            data.pricingModel = (int)state.Monetization.Model;
+
+
+            data.paidPriceMultiplier = state.Monetization.PaidPriceMultiplier;
+
+
+            data.subscriptionPriceUsdPerMonth = state.Monetization.SubscriptionPriceUsdPerMonth;
+
+
+            data.freeTierTokensPerUserPerDay = state.Monetization.FreeTierTokensPerUserPerDay;
+
+
+            data.companyMarketingDailyUsd = state.Monetization.CompanyMarketingDailyUsd;
+
+
+            data.modelMarketingDailyUsd = state.Monetization.ModelMarketingDailyUsd;
+
+
+            data.modelAwareness = state.Monetization.ModelAwareness;
+
+
+            data.lifetimeFreeTokensBillions = state.LifetimeFreeTokensBillions;
+
 
             data.officeTier = (int)state.Staff.Office;
             data.lifetimeFinesUsd = state.LifetimeFinesUsd;
@@ -390,6 +414,33 @@ namespace ScalingLaws.Persistence
             }
 
             state.LifetimeFinesUsd = safe.lifetimeFinesUsd;
+
+
+            state.LifetimeFreeTokensBillions = safe.lifetimeFreeTokensBillions;
+
+
+            state.Monetization.Restore(
+
+
+                (PricingModel)safe.pricingModel,
+
+
+                safe.paidPriceMultiplier,
+
+
+                safe.subscriptionPriceUsdPerMonth,
+
+
+                safe.freeTierTokensPerUserPerDay,
+
+
+                safe.companyMarketingDailyUsd,
+
+
+                safe.modelMarketingDailyUsd,
+
+
+                safe.modelAwareness);
 
             var restoredHires = new List<Hire>(safe.staff.Count);
             foreach (var hire in safe.staff)
@@ -785,6 +836,44 @@ namespace ScalingLaws.Persistence
                         model.traitLevels[index], 0, ModelTraitSetLimits.MaximumLevel);
                 }
             }
+
+            // ---- v9 fields ----
+
+
+            if (!Enum.IsDefined(typeof(PricingModel), safe.pricingModel))
+
+
+            {
+
+
+                safe.pricingModel = (int)PricingModel.PayPerToken;
+
+
+            }
+
+
+
+            safe.paidPriceMultiplier = Math.Clamp(Finite(safe.paidPriceMultiplier, 1.0), 0.05, 10.0);
+
+
+            safe.subscriptionPriceUsdPerMonth = Math.Clamp(Finite(safe.subscriptionPriceUsdPerMonth, 20.0), 0.0, 2000.0);
+
+
+            safe.freeTierTokensPerUserPerDay = Math.Clamp(Finite(safe.freeTierTokensPerUserPerDay), 0.0, 2_000_000.0);
+
+
+            safe.companyMarketingDailyUsd = Math.Clamp(safe.companyMarketingDailyUsd, 0L, 500_000_000L);
+
+
+            safe.modelMarketingDailyUsd = Math.Clamp(safe.modelMarketingDailyUsd, 0L, 500_000_000L);
+
+
+            safe.modelAwareness = Math.Clamp(Finite(safe.modelAwareness), 0.0, 0.35);
+
+
+            safe.lifetimeFreeTokensBillions = Math.Max(0.0, Finite(safe.lifetimeFreeTokensBillions));
+
+
 
             // ---- v8 collections ----
             safe.staff ??= new List<HireData>();

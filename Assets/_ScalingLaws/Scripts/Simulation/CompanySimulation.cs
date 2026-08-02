@@ -76,6 +76,7 @@ namespace ScalingLaws.Simulation
             var profile = State.Pool.BuildProfile(State.Date, market);
 
             ReportDeliveries();
+            SyncPricing(market);
 
             var trainingProgress = AdvanceResearch(profile);
             var (share, demanded, served, revenue) = ServeMarket(profile, market);
@@ -83,7 +84,8 @@ namespace ScalingLaws.Simulation
             var operatingCost =
                 SimUnits.ToDollars(profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier)
                 + DailyIntelRetainerUsd()
-                + SimUnits.ToDollars(State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier);
+                + SimUnits.ToDollars(State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier)
+                + State.Monetization.TotalMarketingDailyUsd;
             var depreciation = SimUnits.ToDollars(profile.DailyDepreciationUsd);
 
             State.CashUsd += revenue - operatingCost;
@@ -91,6 +93,7 @@ namespace ScalingLaws.Simulation
             State.LifetimeOperatingCostUsd += operatingCost;
             State.RecordDailyRevenue(revenue);
 
+            AdvanceMarketing();
             RollSafetyIncident();
             ServiceDebt();
             AdvanceIntelligence();
@@ -1455,8 +1458,19 @@ namespace ScalingLaws.Simulation
             MarketConditions market)
         {
             var rivals = State.Rivals.LiveModels(State.Date);
-            var brand = Math.Clamp(State.Reputation + State.Founder.BrandBonus + State.Staff.BrandBonus(), 0.0, 1.0);
+            var brand = Math.Clamp(
+                State.Reputation
+                + State.Founder.BrandBonus
+                + State.Staff.BrandBonus()
+                + State.Monetization.BrandBonus(),
+                0.0,
+                1.0);
+
             var share = MarketShareModel.PlayerShare(State.DeployedModels, brand, market, rivals);
+
+            // Reach from the free tier, then capped: a giveaway widens the funnel, it does not
+            // hand over the market.
+            share = Math.Clamp(share * State.Monetization.ReachMultiplier, 0.0, 1.0);
             var demanded = market.TotalDemandBillionTokensPerDay * share;
 
             var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
@@ -1485,8 +1499,17 @@ namespace ScalingLaws.Simulation
             var capacityBillions = capacityTokens / SimUnits.TokensPerBillion;
             var served = Math.Min(demanded, capacityBillions);
 
-            var priceMultiplier = MarketShareModel.EffectivePriceMultiplier(State.DeployedModels, brand, market);
-            var revenue = SimUnits.ToDollars(served * 1000.0 * market.PricePerMillionTokensUsd * priceMultiplier);
+            // The split that makes a free tier a strategy rather than a giveaway. Every token costs
+            // the same to produce; only some of them are invoiced.
+            var freeShare = State.Monetization.FreeShareOfTokens;
+            var freeTokens = served * freeShare;
+            var paidTokens = served - freeTokens;
+
+            State.FreeTokensServedBillions = freeTokens;
+            State.LifetimeFreeTokensBillions += freeTokens;
+
+            var rate = State.Monetization.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd);
+            var revenue = SimUnits.ToDollars(paidTokens * 1000.0 * rate);
 
             if (demanded - served > demanded * 0.15 && demanded > 0.0)
             {
@@ -1497,6 +1520,33 @@ namespace ScalingLaws.Simulation
             }
 
             return (share, demanded, served, revenue);
+        }
+
+        /// <summary>
+        /// Pushes the pricing policy onto every live model so the demand split sees one price.
+        /// Pricing is a company decision here, not a per-model one: a lab does not quietly charge
+        /// four different rates for the same API.
+        /// </summary>
+        private void SyncPricing(MarketConditions market)
+        {
+            var relative = State.Monetization.RelativePrice(market.PricePerMillionTokensUsd);
+            foreach (var model in State.DeployedModels)
+            {
+                if (model.IsLiveOn(State.Date))
+                {
+                    model.PriceMultiplier = relative;
+                }
+            }
+        }
+
+        /// <summary>Runs a day of marketing. Company spend compounds, model spend evaporates.</summary>
+        private void AdvanceMarketing()
+        {
+            var companyEffect = State.Monetization.AdvanceMarketing();
+            if (companyEffect > 0.0)
+            {
+                State.Reputation += companyEffect * State.Founder.ReputationGainMultiplier;
+            }
         }
 
         private void RunRivals()

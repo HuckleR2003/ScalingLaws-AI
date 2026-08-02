@@ -109,6 +109,7 @@ namespace ScalingLaws.Persistence
                     5 => UpgradeV5ToV6(current),
                     6 => UpgradeV6ToV7(current),
                     7 => UpgradeV7ToV8(current),
+                    8 => UpgradeV8ToV9(current),
                     _ => current
                 };
             }
@@ -362,6 +363,34 @@ namespace ScalingLaws.Persistence
 
             return data;
         }
+        /// <summary>
+        /// v8 to v9: pricing, the free tier and marketing arrive. A campaign saved before v9 was
+        /// implicitly charging per token at the market rate with no free tier and no advertising, so
+        /// those are exactly the defaults written in. Nothing is invented.
+        /// </summary>
+        public static SaveData UpgradeV8ToV9(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+            data.pricingModel = (int)PricingModel.PayPerToken;
+            data.paidPriceMultiplier = 1.0;
+            data.subscriptionPriceUsdPerMonth = 20.0;
+            data.freeTierTokensPerUserPerDay = 0.0;
+            data.companyMarketingDailyUsd = 0;
+            data.modelMarketingDailyUsd = 0;
+            data.modelAwareness = 0.0;
+            data.lifetimeFreeTokensBillions = 0.0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v8 to v9: pricing set to pay per token at the market rate, no free tier, no marketing.");
+
+            return data;
+        }
+
 
         private static string Append(string existing, string addition) =>
             string.IsNullOrEmpty(existing) ? addition : existing + " " + addition;

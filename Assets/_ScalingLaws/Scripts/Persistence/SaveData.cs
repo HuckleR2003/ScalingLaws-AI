@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace ScalingLaws.Persistence
@@ -175,7 +175,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 8;
+        public const int CurrentVersion = 9;
 
         public int version = CurrentVersion;
 
@@ -274,6 +274,17 @@ namespace ScalingLaws.Persistence
         public List<HireData> staff = new();
         public List<IncidentData> incidents = new();
         public long lifetimeFinesUsd;
+
+        // ---- added in v9 ----
+
+        public int pricingModel;
+        public double paidPriceMultiplier = 1.0;
+        public double subscriptionPriceUsdPerMonth = 20.0;
+        public double freeTierTokensPerUserPerDay;
+        public long companyMarketingDailyUsd;
+        public long modelMarketingDailyUsd;
+        public double modelAwareness;
+        public double lifetimeFreeTokensBillions;
     }
 
     /// <summary>One person on the payroll. Added in v8.</summary>

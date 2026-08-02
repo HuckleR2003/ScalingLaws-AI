@@ -169,6 +169,15 @@ namespace ScalingLaws.Simulation
         /// <summary>Everyone on the payroll and the room they work in.</summary>
         public StaffRoster Staff { get; } = new();
 
+        /// <summary>How the company charges, how generous it is, and what it spends being noticed.</summary>
+        public MonetizationPolicy Monetization { get; } = new();
+
+        /// <summary>Tokens given away yesterday. The number that turns reach into a problem.</summary>
+        public double FreeTokensServedBillions { get; set; }
+
+        /// <summary>Lifetime tokens served to accounts that never paid anything.</summary>
+        public double LifetimeFreeTokensBillions { get; set; }
+
         /// <summary>Public safety incidents, newest last. History, not a counter.</summary>
         public List<SafetyIncident> Incidents { get; } = new();
 
