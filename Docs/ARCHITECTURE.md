@@ -318,7 +318,28 @@ reputation, corpora, default price and a house trait that stacks on top of the t
 The tiles carry a colour and a one or two character mark rather than a texture, so the opening screen
 reads as four distinct companies with no art to import.
 
-## Mechanism 19 - Saves, versioning and the migration branch
+## Mechanism 19 - Debt is the opposite trade to equity
+
+`LoanCatalog` holds four facilities. A funding round costs a permanent slice of the company and
+never has to be repaid. A loan costs nothing permanent and has to be serviced daily on a schedule
+that does not care whether the quarter went well. That is the entire reason both exist.
+
+| Facility | Principal | Repays | Term | Gate |
+|---|---|---|---|---|
+| Bridge | 15M | 1.22x | 18 months | 45 percent of the frontier |
+| Venture debt | 120M | 1.45x | 4 years | 40M run rate, scaling laws |
+| Corporate bond | 900M | 1.62x | 7 years | 400M run rate, datacenter programme |
+| Sovereign compute | 10B | **2.25x** | 11 years | 2B run rate, 90 percent of the frontier, recursive self-improvement |
+
+The sovereign programme is the largest single sum in the game and the only one that can end a
+campaign by itself: ten billion in, twenty two and a half billion out, and a government that will
+not renegotiate.
+
+Arrears are tracked rather than instantly fatal. A lender carries a good company through a bad
+quarter and stops after `ArrearsBeforeDefault` days, at which point the default is called publicly
+and costs standing that took years to build. Defaulting does not clear the debt.
+
+## Mechanism 20 - Saves, versioning and the migration branch
 
 `SaveStore.Parse` always runs three steps in this order: upgrade, sanitize,
 build. A file that cannot be understood starts a new campaign instead of a
