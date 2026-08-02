@@ -1,0 +1,5 @@
+﻿<Solution>
+  <Project Path="ScalingLaws.Runtime.csproj" />
+  <Project Path="ScalingLaws.Tests.EditMode.csproj" />
+  <Project Path="ScalingLaws.Editor.csproj" />
+</Solution>
