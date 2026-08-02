@@ -55,6 +55,9 @@ namespace ScalingLaws.UI
             Create,
             Research,
             Family,
+            Team,
+            Fleet,
+            Business,
             Upgrade,
             Release,
             Funding,
@@ -236,6 +239,9 @@ namespace ScalingLaws.UI
             AddRailItem(rail, "RESEARCH", Screen.Research);
             AddRailItem(rail, "ARCHITECTURE", Screen.Family);
             AddRailItem(rail, "UPGRADE MODEL", Screen.Upgrade);
+            AddRailItem(rail, "TEAM", Screen.Team);
+            AddRailItem(rail, "FLEET", Screen.Fleet);
+            AddRailItem(rail, "BUSINESS", Screen.Business);
             AddRailItem(rail, "RELEASE", Screen.Release);
             AddRailItem(rail, "FUNDING", Screen.Funding);
             AddRailItem(rail, "RANKING", Screen.Ranking);
@@ -359,6 +365,15 @@ namespace ScalingLaws.UI
                     break;
                 case Screen.Research:
                     contentHost.Add(BuildResearchScreen());
+                    break;
+                case Screen.Team:
+                    contentHost.Add(BuildTeamScreen());
+                    break;
+                case Screen.Fleet:
+                    contentHost.Add(BuildFleetScreen());
+                    break;
+                case Screen.Business:
+                    contentHost.Add(BuildBusinessScreen());
                     break;
                 case Screen.Family:
                     families.Refresh();
@@ -497,6 +512,586 @@ namespace ScalingLaws.UI
             ResearchEra.Autonomy => "ERA 3   AUTONOMY   2024 TO 2025",
             _ => "ERA 4   SUPERINTELLIGENCE   2026 ONWARD"
         };
+
+        /// <summary>
+        /// Team and office on one screen, because they are one decision: desks cap headcount, so a
+        /// lease signed months ago is what decides whether the person you need today can start.
+        /// </summary>
+        private VisualElement BuildTeamScreen()
+        {
+            var roster = state.Staff;
+            var page = NewPage("TEAM",
+                $"{roster.Headcount} of {roster.Desks} desks in {roster.OfficeDefinition.DisplayName}. "
+                + $"Payroll {UiFormat.Money(roster.DailyPayrollUsd)} a day, rent "
+                + $"{UiFormat.Money(roster.DailyRentUsd)} a day. Every role saturates, so a seventh "
+                + "person in one discipline adds a fraction of what the second one did.");
+
+            var effects = new VisualElement();
+            effects.AddToClassList("panel");
+            effects.Add(Row("Training outcome spread",
+                $"{UiFormat.Percent(roster.OutcomeVarianceMultiplier())} of baseline"));
+            effects.Add(Row("Cluster utilization", $"+{UiFormat.Percent(roster.UtilizationBonus())}"));
+            effects.Add(Row("Data quality", $"x{UiFormat.Number(roster.DataQualityMultiplier(), 3)}"));
+            effects.Add(Row("Incident risk", $"x{UiFormat.Number(roster.IncidentRiskMultiplier(), 2)}"));
+            effects.Add(Row("Brand from the team", $"+{UiFormat.Number(roster.BrandBonus(), 3)}"));
+            effects.Add(Row("Research pace", $"x{UiFormat.Number(roster.ResearchSpeedMultiplier(), 3)}"));
+            page.Add(effects);
+
+            var hiring = new VisualElement();
+            hiring.AddToClassList("panel");
+            var hiringHeading = new Label("HIRE");
+            hiringHeading.AddToClassList("panel__heading");
+            hiring.Add(hiringHeading);
+
+            var hireGrid = new VisualElement();
+            hireGrid.AddToClassList("grid");
+            hiring.Add(hireGrid);
+
+            foreach (var definition in StaffCatalog.All)
+            {
+                hireGrid.Add(BuildHireCard(definition));
+            }
+
+            page.Add(hiring);
+
+            if (roster.Headcount > 0)
+            {
+                var team = new VisualElement();
+                team.AddToClassList("panel");
+                var teamHeading = new Label("ON THE PAYROLL");
+                teamHeading.AddToClassList("panel__heading");
+                team.Add(teamHeading);
+
+                for (var index = 0; index < roster.Headcount; index++)
+                {
+                    var slot = index;
+                    var hire = roster.Hires[index];
+                    var row = new VisualElement();
+                    row.AddToClassList("readout");
+                    row.Add(new Label(
+                        $"{StaffCatalog.Get(hire.Role).DisplayName}, skill {hire.Skill}, since {hire.StartedOn}"));
+
+                    var release = new Button(() =>
+                    {
+                        simulation.TryLetGo(slot, out _);
+                        Show(Screen.Team);
+                    })
+                    { text = $"{UiFormat.Money(hire.SalaryPerYearUsd)}/yr   LET GO" };
+                    release.AddToClassList("button");
+                    release.style.height = 28;
+                    release.style.minWidth = 210;
+                    row.Add(release);
+                    team.Add(row);
+                }
+
+                page.Add(team);
+            }
+
+            var offices = new VisualElement();
+            offices.AddToClassList("panel");
+            var officeHeading = new Label("OFFICE");
+            officeHeading.AddToClassList("panel__heading");
+            offices.Add(officeHeading);
+
+            var officeGrid = new VisualElement();
+            officeGrid.AddToClassList("grid");
+            offices.Add(officeGrid);
+
+            foreach (var definition in OfficeCatalog.All)
+            {
+                officeGrid.Add(BuildOfficeCard(definition));
+            }
+
+            page.Add(offices);
+            return page;
+        }
+
+        private VisualElement BuildHireCard(StaffRoleDefinition definition)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("card");
+            card.style.height = 176;
+
+            var title = new Label(definition.DisplayName.ToUpperInvariant());
+            title.AddToClassList("card__title");
+            card.Add(title);
+
+            var count = new Label($"{state.Staff.CountOf(definition.Role)} on the team");
+            count.AddToClassList("card__line");
+            card.Add(count);
+
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.marginTop = 6;
+
+            // One button per skill level, so the salary curve is visible at the point of decision.
+            for (var skill = 1; skill <= StaffLimits.MaximumSkill; skill++)
+            {
+                var level = skill;
+                var button = new Button(() =>
+                {
+                    simulation.TryHire(definition.Role, level, out _);
+                    Show(Screen.Team);
+                })
+                { text = level.ToString() };
+                button.AddToClassList("button");
+                button.style.height = 30;
+                button.style.minWidth = 40;
+                button.style.marginRight = 4;
+                button.tooltip =
+                    $"Skill {level}: {UiFormat.Money(definition.SalaryPerYearUsd(level))} a year, "
+                    + $"{UiFormat.Money(definition.HiringCostUsd_ForSkill(level))} to hire.";
+                button.SetEnabled(state.Staff.HasFreeDesk
+                    && state.CashUsd >= definition.HiringCostUsd_ForSkill(level));
+                row.Add(button);
+            }
+
+            card.Add(row);
+            card.tooltip = definition.Description;
+            return card;
+        }
+
+        private VisualElement BuildOfficeCard(OfficeDefinition definition)
+        {
+            var current = state.Staff.Office == definition.Tier;
+            var card = new Button(() =>
+            {
+                simulation.TryMoveOffice(definition.Tier, out _);
+                Show(Screen.Team);
+            });
+            card.AddToClassList("card");
+            card.EnableInClassList("card--ahead", current);
+
+            var title = new Label(definition.DisplayName.ToUpperInvariant());
+            title.AddToClassList("card__title");
+            card.Add(title);
+
+            var desks = new Label($"{definition.Desks} DESKS   x{UiFormat.Number(definition.EffectivenessMultiplier, 2)}");
+            desks.AddToClassList("card__line");
+            card.Add(desks);
+
+            var cost = new Label(current
+                ? "CURRENT"
+                : $"{UiFormat.Money(definition.MonthlyRentUsd)}/month   {UiFormat.Money(definition.FitOutCostUsd)} to move");
+            cost.AddToClassList("card__line");
+            card.Add(cost);
+
+            card.tooltip = definition.Description;
+            card.SetEnabled(!current);
+            return card;
+        }
+
+        /// <summary>
+        /// The fleet. Rented capacity on top, owned batches below with what each one is worth now
+        /// against what it cost, which is the number the whole hardware design exists to show.
+        /// </summary>
+        private VisualElement BuildFleetScreen()
+        {
+            var profile = simulation.Profile;
+            var market = simulation.Market;
+
+            var page = NewPage("FLEET",
+                $"{UiFormat.Petaflops(profile.RawPetaflops)} nameplate, "
+                + $"{UiFormat.Petaflops(profile.EffectivePetaflops)} usable. "
+                + $"{UiFormat.Money(profile.DailyOperatingCostUsd is var c ? (long)c : 0)} a day to run, "
+                + $"{UiFormat.Money((long)profile.DailyDepreciationUsd)} a day in value lost.");
+
+            var rental = new VisualElement();
+            rental.AddToClassList("panel");
+            var rentalHeading = new Label("RENTED CAPACITY");
+            rentalHeading.AddToClassList("panel__heading");
+            rental.Add(rentalHeading);
+
+            var rentedLabel = new Label();
+            rentedLabel.AddToClassList("field__label");
+            rental.Add(rentedLabel);
+
+            var rentedSlider = new Slider(0f, 40000f) { value = (float)state.Pool.RentedPetaflops };
+            rentedSlider.AddToClassList("field");
+            rentedSlider.RegisterValueChangedCallback(evt =>
+            {
+                simulation.SetRentedPetaflops(evt.newValue);
+                Show(Screen.Fleet);
+            });
+            rental.Add(rentedSlider);
+
+            rentedLabel.text =
+                $"{UiFormat.Petaflops(state.Pool.RentedPetaflops)} at "
+                + $"{UiFormat.Money((long)market.RentPricePerPetaflopDayUsd)} per PF-day, currently "
+                + $"{HardwareCatalog.Get(market.RentableGeneration).DisplayName}";
+
+            rental.Add(Hint(
+                "Contracted in petaflops, not boxes, so the bill does not move when the clouds change "
+                + "generation. It never ages and it bills every day it is held."));
+            page.Add(rental);
+
+            var ladder = new VisualElement();
+            ladder.AddToClassList("panel");
+            var ladderHeading = new Label("COMPUTE TIERS");
+            ladderHeading.AddToClassList("panel__heading");
+            ladder.Add(ladderHeading);
+
+            foreach (var status in state.ComputeTierLadder())
+            {
+                var definition = ComputeTierCatalog.Get(status.Tier);
+                var row = new VisualElement();
+                row.AddToClassList("readout");
+                row.Add(new Label(definition.DisplayName));
+
+                var value = new Label(status.IsUnlocked ? "OPEN" : status.LockReason);
+                value.AddToClassList("readout__value");
+                value.style.whiteSpace = WhiteSpace.Normal;
+                value.style.maxWidth = 620;
+                if (!status.IsUnlocked)
+                {
+                    value.AddToClassList("readout__value--warn");
+                }
+
+                row.Add(value);
+                ladder.Add(row);
+            }
+
+            page.Add(ladder);
+
+            var owned = new VisualElement();
+            owned.AddToClassList("panel");
+            var ownedHeading = new Label("OWNED HARDWARE");
+            ownedHeading.AddToClassList("panel__heading");
+            owned.Add(ownedHeading);
+
+            if (state.Pool.Assets.Count == 0)
+            {
+                owned.Add(Hint("Nothing owned. Everything is rented, which is the right answer until "
+                    + "the cluster is busy enough to justify the capital."));
+            }
+            else
+            {
+                for (var index = 0; index < state.Pool.Assets.Count; index++)
+                {
+                    var slot = index;
+                    var asset = state.Pool.Assets[index];
+                    var generation = HardwareCatalog.Get(asset.GenerationId);
+                    var residual = HardwareValuation.ResidualValueUsd(asset, state.Date);
+                    var paid = asset.TotalPurchasePriceUsd;
+                    var kept = paid <= 0 ? 0.0 : residual / (double)paid;
+
+                    var row = new VisualElement();
+                    row.AddToClassList("readout");
+                    row.Add(new Label($"{asset.Units:N0}x {generation.DisplayName}, bought {asset.PurchaseDate}"
+                        + (asset.IsOnline(state.Date) ? string.Empty : $" (arrives in {asset.DaysUntilOnline(state.Date)}d)")));
+
+                    var right = new VisualElement();
+                    right.style.flexDirection = FlexDirection.Row;
+                    right.style.alignItems = Align.Center;
+
+                    var worth = new Label($"{UiFormat.Money(residual)} of {UiFormat.Money(paid)}  ({UiFormat.Percent(kept, 0)})");
+                    worth.AddToClassList("readout__value");
+                    worth.AddToClassList(kept < 0.4 ? "readout__value--bad" : "readout__value--good");
+                    worth.style.marginRight = 10;
+                    right.Add(worth);
+
+                    var sell = new Button(() =>
+                    {
+                        simulation.TrySellHardware(slot, asset.Units, out _, out _);
+                        Show(Screen.Fleet);
+                    })
+                    { text = "SELL" };
+                    sell.AddToClassList("button");
+                    sell.style.height = 28;
+                    sell.style.minWidth = 90;
+                    right.Add(sell);
+
+                    row.Add(right);
+                    owned.Add(row);
+                }
+            }
+
+            page.Add(owned);
+
+            var buy = new VisualElement();
+            buy.AddToClassList("panel");
+            var buyHeading = new Label("BUY");
+            buyHeading.AddToClassList("panel__heading");
+            buy.Add(buyHeading);
+
+            var buyGrid = new VisualElement();
+            buyGrid.AddToClassList("grid");
+            buy.Add(buyGrid);
+
+            var tier = state.IsTierUnlocked(ComputeTier.OwnDatacenter) && state.IsDatacenterOnline
+                ? ComputeTier.OwnDatacenter
+                : ComputeTier.ColocatedServers;
+
+            foreach (var generation in HardwareCatalog.AvailableOn(state.Date, HardwareClass.Accelerator))
+            {
+                buyGrid.Add(BuildHardwareCard(generation, tier));
+            }
+
+            page.Add(buy);
+            return page;
+        }
+
+        private VisualElement BuildHardwareCard(HardwareGeneration generation, ComputeTier tier)
+        {
+            const int batch = 64;
+            var card = new Button(() =>
+            {
+                simulation.TryBuyHardware(generation.Id, batch, tier, out _);
+                Show(Screen.Fleet);
+            });
+            card.AddToClassList("card");
+
+            var unlocked = state.IsTierUnlocked(tier);
+            if (!unlocked)
+            {
+                card.AddToClassList("card--locked");
+            }
+
+            var title = new Label(generation.DisplayName.ToUpperInvariant());
+            title.AddToClassList("card__title");
+            card.Add(title);
+
+            var spec = new Label($"{UiFormat.Number(generation.PetaflopsPerUnit, 2)} PF   "
+                + $"{generation.MemoryGigabytes} GB   {UiFormat.Number(generation.PowerKilowatts, 2)} kW");
+            spec.AddToClassList("card__line");
+            card.Add(spec);
+
+            var price = new Label($"BUY {batch}   {UiFormat.Money(generation.LaunchPriceUsd * batch)} at list");
+            price.AddToClassList("card__line");
+            card.Add(price);
+
+            if (generation.IsProjection)
+            {
+                var badge = new Label("PROJECTED");
+                badge.AddToClassList("card__badge");
+                card.Add(badge);
+            }
+
+            card.SetEnabled(unlocked);
+            card.tooltip = generation.IsProjection
+                ? "Roadmap extrapolation, not a shipped product."
+                : $"Shipped {generation.ReleaseDate}.";
+            return card;
+        }
+
+        /// <summary>
+        /// Pricing, the free tier and marketing. The free tier slider is the most dangerous control
+        /// in the game and the screen says so with a number rather than a warning.
+        /// </summary>
+        private VisualElement BuildBusinessScreen()
+        {
+            var policy = state.Monetization;
+            var market = simulation.Market;
+
+            var page = NewPage("BUSINESS",
+                $"Market rate today is {UiFormat.Money((long)(market.PricePerMillionTokensUsd * 1000))} "
+                + "per billion tokens. What you charge against that decides your share; what you give "
+                + "away decides how much of what you serve is worth anything.");
+
+            var pricing = new VisualElement();
+            pricing.AddToClassList("panel");
+            var pricingHeading = new Label("PRICING");
+            pricingHeading.AddToClassList("panel__heading");
+            pricing.Add(pricingHeading);
+
+            var modelRow = new VisualElement();
+            modelRow.style.flexDirection = FlexDirection.Row;
+            foreach (PricingModel option in Enum.GetValues(typeof(PricingModel)))
+            {
+                var captured = option;
+                var button = new Button(() =>
+                {
+                    policy.Model = captured;
+                    Show(Screen.Business);
+                })
+                { text = MonetizationCatalog.PricingName(option).ToUpperInvariant() };
+                button.AddToClassList("button");
+                button.style.marginRight = 8;
+                button.SetEnabled(policy.Model != option);
+                modelRow.Add(button);
+            }
+
+            pricing.Add(modelRow);
+
+            if (policy.Model == PricingModel.PayPerToken)
+            {
+                var priceLabel = new Label(
+                    $"Your rate: x{UiFormat.Number(policy.PaidPriceMultiplier, 2)} of market "
+                    + $"({UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))} per billion)");
+                priceLabel.AddToClassList("field__label");
+                priceLabel.style.marginTop = 12;
+                pricing.Add(priceLabel);
+
+                var priceSlider = new Slider(0.1f, 3f) { value = (float)policy.PaidPriceMultiplier };
+                priceSlider.AddToClassList("field");
+                priceSlider.RegisterValueChangedCallback(evt =>
+                {
+                    policy.PaidPriceMultiplier = evt.newValue;
+                    Show(Screen.Business);
+                });
+                pricing.Add(priceSlider);
+                pricing.Add(Hint("Metered against the market. When token prices fall, so does your revenue "
+                    + "per token, whether or not anything else changed."));
+            }
+            else if (policy.Model == PricingModel.Subscription)
+            {
+                var subLabel = new Label(
+                    $"Monthly fee: {UiFormat.Money((long)policy.SubscriptionPriceUsdPerMonth)} "
+                    + $"(works out at {UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))} per billion tokens)");
+                subLabel.AddToClassList("field__label");
+                subLabel.style.marginTop = 12;
+                pricing.Add(subLabel);
+
+                var subSlider = new Slider(0f, 200f) { value = (float)policy.SubscriptionPriceUsdPerMonth };
+                subSlider.AddToClassList("field");
+                subSlider.RegisterValueChangedCallback(evt =>
+                {
+                    policy.SubscriptionPriceUsdPerMonth = evt.newValue;
+                    Show(Screen.Business);
+                });
+                pricing.Add(subSlider);
+                pricing.Add(Hint("A fee you set, decoupled from the market. It protects a good position "
+                    + "when prices fall and traps a bad one when they do not."));
+            }
+            else
+            {
+                pricing.Add(Hint("Nobody pays. Reach is the highest it can be and revenue is zero. "
+                    + "The serving bill is not."));
+            }
+
+            page.Add(pricing);
+
+            var free = new VisualElement();
+            free.AddToClassList("panel");
+            var freeHeading = new Label("FREE TIER");
+            freeHeading.AddToClassList("panel__heading");
+            free.Add(freeHeading);
+
+            var freeLabel = new Label(
+                $"{UiFormat.Count(policy.FreeTierTokensPerUserPerDay)} tokens per free account per day");
+            freeLabel.AddToClassList("field__label");
+            free.Add(freeLabel);
+
+            var freeSlider = new Slider(0f, (float)MonetizationCatalog.GenerousFreeTierTokensPerDay)
+            {
+                value = (float)policy.FreeTierTokensPerUserPerDay
+            };
+            freeSlider.AddToClassList("field");
+            freeSlider.SetEnabled(policy.Model != PricingModel.FreeOnly);
+            freeSlider.RegisterValueChangedCallback(evt =>
+            {
+                policy.FreeTierTokensPerUserPerDay = evt.newValue;
+                Show(Screen.Business);
+            });
+            free.Add(freeSlider);
+
+            free.Add(Row("Reach", $"x{UiFormat.Number(policy.ReachMultiplier, 2)} of your normal share"));
+
+            var givenAway = new VisualElement();
+            givenAway.AddToClassList("readout");
+            givenAway.Add(new Label("Served for nothing"));
+            var givenValue = new Label(UiFormat.Percent(policy.FreeShareOfTokens));
+            givenValue.AddToClassList("readout__value");
+            givenValue.AddToClassList(policy.FreeShareOfTokens > 0.45 ? "readout__value--bad" : "readout__value--warn");
+            givenAway.Add(givenValue);
+            free.Add(givenAway);
+
+            free.Add(Row("Given away yesterday",
+                $"{UiFormat.Billions(state.FreeTokensServedBillions)} tokens"));
+            free.Add(Row("Given away in total",
+                $"{UiFormat.Billions(state.LifetimeFreeTokensBillions)} tokens"));
+
+            free.Add(Hint("Serving capacity does not care which kind of token it is producing and "
+                + "neither does the bill. A generous tier widens the funnel and can quietly turn most "
+                + "of the fleet into a cost centre."));
+            page.Add(free);
+
+            page.Add(BuildCampaignPanel(CampaignKind.Company, "COMPANY MARKETING",
+                "Reputation, slowly, and it survives a model going out of date."));
+            page.Add(BuildCampaignPanel(CampaignKind.Model, "MODEL MARKETING",
+                "Attention on the current flagship. It stops working the day the invoices stop."));
+
+            return page;
+        }
+
+        private VisualElement BuildCampaignPanel(CampaignKind kind, string heading, string blurb)
+        {
+            var policy = state.Monetization;
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var label = new Label(heading);
+            label.AddToClassList("panel__heading");
+            panel.Add(label);
+
+            var current = kind == CampaignKind.Company
+                ? policy.CompanyMarketingDailyUsd
+                : policy.ModelMarketingDailyUsd;
+
+            panel.Add(Row("Spending now", $"{UiFormat.Money(current)} a day"));
+            if (kind == CampaignKind.Model)
+            {
+                panel.Add(Row("Awareness held", $"+{UiFormat.Number(policy.ModelAwareness, 3)} brand"));
+            }
+
+            var grid = new VisualElement();
+            grid.AddToClassList("grid");
+            panel.Add(grid);
+
+            var stop = new Button(() =>
+            {
+                if (kind == CampaignKind.Company)
+                {
+                    policy.CompanyMarketingDailyUsd = 0;
+                }
+                else
+                {
+                    policy.ModelMarketingDailyUsd = 0;
+                }
+
+                Show(Screen.Business);
+            })
+            { text = "STOP" };
+            stop.AddToClassList("card");
+            stop.Add(new Label("NOTHING"));
+            grid.Add(stop);
+
+            foreach (var campaign in MonetizationCatalog.OfKind(kind))
+            {
+                var captured = campaign;
+                var card = new Button(() =>
+                {
+                    if (kind == CampaignKind.Company)
+                    {
+                        policy.CompanyMarketingDailyUsd = captured.DailyBudgetUsd;
+                    }
+                    else
+                    {
+                        policy.ModelMarketingDailyUsd = captured.DailyBudgetUsd;
+                    }
+
+                    Show(Screen.Business);
+                });
+                card.AddToClassList("card");
+                card.EnableInClassList("card--ahead", current == campaign.DailyBudgetUsd);
+
+                var title = new Label(campaign.DisplayName.ToUpperInvariant());
+                title.AddToClassList("card__title");
+                card.Add(title);
+
+                var cost = new Label($"{UiFormat.Money(campaign.DailyBudgetUsd)}/day   "
+                    + $"{UiFormat.Money(campaign.MonthlyBudgetUsd)}/month");
+                cost.AddToClassList("card__line");
+                card.Add(cost);
+
+                card.tooltip = campaign.Description;
+                card.SetEnabled(state.Date.IsOnOrAfter(campaign.EarliestDate));
+                grid.Add(card);
+            }
+
+            panel.Add(Hint(blurb));
+            return panel;
+        }
 
         private VisualElement BuildReleaseScreen()
         {
