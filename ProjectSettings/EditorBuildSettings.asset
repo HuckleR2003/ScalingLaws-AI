@@ -1,0 +1,14 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_ScalingLaws/Scenes/MainMenu.unity
+    guid: cac3176e0544af947a0bd1e6e2ca76bc
+  - enabled: 1
+    path: Assets/_ScalingLaws/Scenes/Game.unity
+    guid: 7c3fcee7e30d46a4bb29a71a5ed0b895
+  m_configObjects: {}
