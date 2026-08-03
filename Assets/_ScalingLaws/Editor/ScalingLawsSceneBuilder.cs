@@ -28,7 +28,12 @@ namespace ScalingLaws.Editor
         private const string ThemeFolder = "Assets/UI Toolkit/UnityThemes";
 
         private const string PanelSettingsPath = UiFolder + "/ScalingLawsPanelSettings.asset";
-        private const string StyleSheetPath = UiFolder + "/ScalingLaws.uss";
+        /// <summary>
+        /// The stylesheet lives under Resources and nowhere else. There were briefly two copies, one
+        /// here and one there, and the one the game actually loaded silently fell half a file behind
+        /// the one being edited. One file, one path, no drift.
+        /// </summary>
+        private const string StyleSheetPath = "Assets/_ScalingLaws/Resources/ScalingLaws.uss";
         private const string RuntimeThemePath = ThemeFolder + "/UnityDefaultRuntimeTheme.tss";
 
         private static string MainMenuScenePath => $"{ScenesFolder}/{SceneFlow.MainMenuScene}.unity";

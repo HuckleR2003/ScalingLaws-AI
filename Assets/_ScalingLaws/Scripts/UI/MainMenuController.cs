@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -48,6 +48,7 @@ namespace ScalingLaws.UI
         private VisualElement root;
         private Stage stage = Stage.Menu;
         private bool awaitingOverwriteConfirmation;
+        private bool settingsOpen;
 
         private readonly List<FounderTrait> chosenTraits = new();
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
@@ -109,8 +110,11 @@ namespace ScalingLaws.UI
             stage = next;
             root.Clear();
             root.AddToClassList("root");
-            root.style.justifyContent = Justify.Center;
-            root.style.alignItems = Align.Center;
+
+            // The menu is a full bleed layout of its own; the later stages are centred cards.
+            var centred = next != Stage.Menu;
+            root.style.justifyContent = centred ? Justify.Center : Justify.FlexStart;
+            root.style.alignItems = centred ? Align.Center : Align.Stretch;
 
             switch (next)
             {
@@ -155,44 +159,298 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildMenu()
         {
-            var panel = Panel(470);
+            var page = new VisualElement();
+            page.AddToClassList("menu-root");
+            page.style.width = Length.Percent(100);
+            page.style.height = Length.Percent(100);
 
-            var brand = new Label("SCALING LAWS");
-            brand.AddToClassList("rail__brand");
-            brand.style.paddingLeft = 0;
-            panel.Add(brand);
+            var layout = new VisualElement();
+            layout.AddToClassList("menu-layout");
+            page.Add(layout);
 
-            var tagline = new Label("An AI company, from January 2022.");
-            tagline.AddToClassList("rail__subtitle");
-            tagline.style.paddingLeft = 0;
-            panel.Add(tagline);
+            layout.Add(BuildMenuCopy());
+            layout.Add(BuildConsoleCard());
 
-            var newGame = new Button(OnNewGame) { text = "NEW CAMPAIGN" };
-            newGame.AddToClassList("button");
-            newGame.AddToClassList("button--primary");
-            newGame.style.width = Length.Percent(100);
-            newGame.style.marginBottom = 10;
-            panel.Add(newGame);
+            var signature = new VisualElement();
+            signature.AddToClassList("studio-signature");
+            var studio = new Label("HCK LABS");
+            studio.AddToClassList("signature-studio");
+            var author = new Label("Marcin 'HCK' Firmuga");
+            author.AddToClassList("signature-author");
+            signature.Add(studio);
+            signature.Add(author);
+            page.Add(signature);
+
+            if (settingsOpen)
+            {
+                page.Add(BuildSettingsPanel());
+            }
+
+            return page;
+        }
+
+        private VisualElement BuildMenuCopy()
+        {
+            var copy = new VisualElement();
+            copy.AddToClassList("menu-copy");
+
+            var eyebrow = new Label("HCK LABS PRESENTS");
+            eyebrow.AddToClassList("menu-eyebrow");
+            copy.Add(eyebrow);
+
+            var lockup = new VisualElement();
+            lockup.AddToClassList("title-lockup");
+
+            var small = new Label("AN AI COMPANY TYCOON");
+            small.AddToClassList("title-line");
+            small.AddToClassList("title-line--small");
+            lockup.Add(small);
+
+            var first = new Label("SCALING");
+            first.AddToClassList("title-line");
+            lockup.Add(first);
+
+            var second = new Label("LAWS");
+            second.AddToClassList("title-line");
+            second.AddToClassList("title-line--accent");
+            lockup.Add(second);
+
+            copy.Add(lockup);
+
+            var subtitle = new Label(
+                "January 2022. Twelve million dollars, no product, and eleven months before the "
+                + "world finds out what any of this is for.");
+            subtitle.AddToClassList("menu-subtitle");
+            copy.Add(subtitle);
+
+            var actions = new VisualElement();
+            actions.AddToClassList("menu-actions");
+            copy.Add(actions);
 
             var resume = new Button(SceneFlow.ResumeCampaign) { text = "CONTINUE" };
-            resume.AddToClassList("button");
-            resume.style.width = Length.Percent(100);
-            resume.style.marginBottom = 10;
+            resume.AddToClassList("menu-button");
+            resume.AddToClassList("menu-button--primary");
             resume.SetEnabled(SaveStore.HasSave);
-            panel.Add(resume);
+            actions.Add(resume);
 
-            var quit = new Button(Quit) { text = "QUIT" };
-            quit.AddToClassList("button");
-            quit.style.width = Length.Percent(100);
-            panel.Add(quit);
+            var newGame = new Button(OnNewGame)
+            {
+                text = awaitingOverwriteConfirmation ? "CONFIRM: OVERWRITE" : "NEW COMPANY"
+            };
+            newGame.AddToClassList("menu-button");
+            if (awaitingOverwriteConfirmation)
+            {
+                newGame.AddToClassList("menu-button--danger");
+            }
 
-            panel.Add(Hint(awaitingOverwriteConfirmation
-                ? "This overwrites the saved campaign. Press NEW CAMPAIGN again to confirm."
+            actions.Add(newGame);
+
+            var note = new Label(awaitingOverwriteConfirmation
+                ? "This deletes the saved campaign. Press again to confirm."
                 : SaveStore.HasSave
                     ? "A saved campaign is on this machine."
-                    : "No saved campaign yet."));
+                    : "No saved campaign yet.");
+            note.AddToClassList("menu-note");
+            actions.Add(note);
+
+            var settings = new Button(() =>
+            {
+                settingsOpen = true;
+                Show(Stage.Menu);
+            })
+            { text = "SETTINGS" };
+            settings.AddToClassList("menu-button");
+            actions.Add(settings);
+
+            var quit = new Button(Quit) { text = "QUIT" };
+            quit.AddToClassList("menu-button");
+            quit.AddToClassList("menu-button--quiet");
+            actions.Add(quit);
+
+            return copy;
+        }
+
+        /// <summary>
+        /// The decorative panel, and the counterpart to the bakery window in BakaBakeBakery. Built
+        /// entirely from styled elements: a loss curve as bars, a rack of status lights, and a few
+        /// readouts. No texture is loaded, so the menu looked finished before any art existed and
+        /// keeps working if none ever arrives.
+        /// </summary>
+        private VisualElement BuildConsoleCard()
+        {
+            var card = new VisualElement();
+            card.AddToClassList("console-card");
+
+            var header = new VisualElement();
+            header.AddToClassList("console-header");
+
+            var kicker = new Label("TRAINING RUN 001");
+            kicker.AddToClassList("console-kicker");
+            header.Add(kicker);
+
+            var number = new Label("MUSE-1");
+            number.AddToClassList("console-number");
+            header.Add(number);
+
+            card.Add(header);
+
+            // A loss curve: tall on the left, flattening to the right, with the last few bars live.
+            var chart = new VisualElement();
+            chart.AddToClassList("loss-chart");
+            var heights = new[] { 100, 82, 70, 61, 54, 49, 45, 42, 39, 37, 35, 34, 33, 32 };
+            for (var index = 0; index < heights.Length; index++)
+            {
+                var bar = new VisualElement();
+                bar.AddToClassList("loss-bar");
+                if (index >= heights.Length - 3)
+                {
+                    bar.AddToClassList("loss-bar--live");
+                }
+
+                bar.style.height = Length.Percent(heights[index]);
+                chart.Add(bar);
+            }
+
+            card.Add(chart);
+
+            card.Add(ConsoleRow("PARAMETERS", "20.0B"));
+            card.Add(ConsoleRow("TRAINING TOKENS", "400B"));
+            card.Add(ConsoleRow("TOKENS PER PARAMETER", "20.0"));
+            card.Add(ConsoleRow("PROJECTED CAPABILITY", "21.5"));
+
+            var rack = new VisualElement();
+            rack.AddToClassList("rack-row");
+            for (var index = 0; index < 18; index++)
+            {
+                var led = new VisualElement();
+                led.AddToClassList("rack-led");
+                if (index % 3 != 2)
+                {
+                    led.AddToClassList("rack-led--on");
+                }
+
+                rack.Add(led);
+            }
+
+            card.Add(rack);
+
+            var caption = new Label("RENTED CAPACITY  ONLINE");
+            caption.AddToClassList("console-caption");
+            card.Add(caption);
+
+            return card;
+        }
+
+        private static VisualElement ConsoleRow(string label, string value)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("console-row");
+
+            var name = new Label(label);
+            name.AddToClassList("console-label");
+            row.Add(name);
+
+            var reading = new Label(value);
+            reading.AddToClassList("console-value");
+            row.Add(reading);
+
+            return row;
+        }
+
+        private VisualElement BuildSettingsPanel()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("settings-panel");
+
+            var sheet = new VisualElement();
+            sheet.AddToClassList("settings-sheet");
+            panel.Add(sheet);
+
+            var heading = new Label("SETTINGS");
+            heading.AddToClassList("page-title");
+            sheet.Add(heading);
+
+            var sub = new Label("These are kept separately from a campaign and survive deleting one.");
+            sub.AddToClassList("page-subtitle");
+            sheet.Add(sub);
+
+            var volumeRow = new VisualElement();
+            volumeRow.AddToClassList("setting-row");
+            volumeRow.Add(SettingCopy("MASTER VOLUME", "All music and interface sound."));
+
+            var volumeValue = new Label($"{Mathf.RoundToInt(GameSettings.MasterVolume * 100f)}%");
+            volumeValue.AddToClassList("setting-value");
+
+            var volumeSlider = new Slider(0f, 100f) { value = GameSettings.MasterVolume * 100f };
+            volumeSlider.style.width = 190;
+            volumeSlider.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetMasterVolume(evt.newValue / 100f);
+                volumeValue.text = $"{Mathf.RoundToInt(evt.newValue)}%";
+            });
+
+            volumeRow.Add(volumeSlider);
+            volumeRow.Add(volumeValue);
+            sheet.Add(volumeRow);
+
+            var fullscreenRow = new VisualElement();
+            fullscreenRow.AddToClassList("setting-row");
+            fullscreenRow.Add(SettingCopy("FULLSCREEN", "Use a borderless full screen window."));
+            var fullscreenToggle = new Toggle { value = GameSettings.Fullscreen };
+            fullscreenToggle.RegisterValueChangedCallback(evt => GameSettings.SetFullscreen(evt.newValue));
+            fullscreenRow.Add(fullscreenToggle);
+            sheet.Add(fullscreenRow);
+
+            var motionRow = new VisualElement();
+            motionRow.AddToClassList("setting-row");
+            motionRow.Add(SettingCopy("REDUCE MOTION",
+                "Shortens the opening sequence and holds the office camera still."));
+            var motionToggle = new Toggle { value = GameSettings.ReduceMotion };
+            motionToggle.RegisterValueChangedCallback(evt => GameSettings.SetReduceMotion(evt.newValue));
+            motionRow.Add(motionToggle);
+            sheet.Add(motionRow);
+
+            var about = new VisualElement();
+            about.AddToClassList("panel");
+            about.style.marginTop = 18;
+            var studio = new Label("HCK LABS");
+            studio.AddToClassList("signature-studio");
+            var author = new Label("Marcin 'HCK' Firmuga");
+            author.AddToClassList("signature-author");
+            var discipline = new Label("SOFTWARE AND GAMES");
+            discipline.AddToClassList("console-caption");
+            about.Add(studio);
+            about.Add(author);
+            about.Add(discipline);
+            sheet.Add(about);
+
+            var back = new Button(() =>
+            {
+                settingsOpen = false;
+                Show(Stage.Menu);
+            })
+            { text = "BACK" };
+            back.AddToClassList("menu-button");
+            back.style.marginTop = 18;
+            sheet.Add(back);
 
             return panel;
+        }
+
+        private static VisualElement SettingCopy(string name, string description)
+        {
+            var copy = new VisualElement();
+            copy.AddToClassList("setting-copy");
+
+            var label = new Label(name);
+            label.AddToClassList("setting-name");
+            copy.Add(label);
+
+            var detail = new Label(description);
+            detail.AddToClassList("setting-description");
+            copy.Add(detail);
+
+            return copy;
         }
 
         private void OnNewGame()

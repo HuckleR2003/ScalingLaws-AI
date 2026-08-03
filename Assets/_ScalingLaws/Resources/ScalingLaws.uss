@@ -40,6 +40,293 @@
     font-size: 14px;
 }
 
+/* ---- main menu -------------------------------------------------------- */
+
+/*
+ * Structure borrowed from BakaBakeBakery, tone deliberately not.
+ *
+ * That menu is warm, rounded and inviting because it is about a bakery. This one is about a server
+ * room in 2022, so the same skeleton gets hard edges, monospaced numerals, a printed circuit green
+ * for anything live, and a decorative panel that is a training run rather than a shop window.
+ *
+ * The panel on the right is built entirely from styled elements. No image is loaded for it, which
+ * is why the menu looked finished before any art existed and will keep working if art never arrives.
+ */
+
+.menu-root {
+    flex-grow: 1;
+    background-color: var(--blue-900);
+    justify-content: center;
+    padding-left: 90px;
+    padding-right: 90px;
+}
+
+.menu-layout {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-copy {
+    width: 560px;
+}
+
+.menu-eyebrow {
+    font-size: 12px;
+    letter-spacing: 6px;
+    color: var(--ink-faint);
+    margin-bottom: 18px;
+}
+
+.title-lockup {
+    margin-bottom: 18px;
+}
+
+.title-line {
+    font-size: 74px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: var(--ink);
+}
+
+.title-line--small {
+    font-size: 30px;
+    letter-spacing: 12px;
+    color: var(--ink-dim);
+}
+
+.title-line--accent {
+    color: var(--good);
+}
+
+.menu-subtitle {
+    color: var(--ink-dim);
+    font-size: 16px;
+    white-space: normal;
+    margin-bottom: 34px;
+    max-width: 460px;
+}
+
+.menu-actions {
+    width: 340px;
+}
+
+.menu-button {
+    height: 50px;
+    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.28);
+    border-radius: 2px;
+    color: var(--ink);
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    font-size: 14px;
+}
+
+.menu-button:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.menu-button:disabled {
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(226, 238, 252, 0.28);
+}
+
+.menu-button--primary {
+    background-color: rgba(18, 184, 134, 0.16);
+    border-color: var(--good);
+    color: var(--good);
+}
+
+.menu-button--primary:hover {
+    background-color: rgba(18, 184, 134, 0.28);
+}
+
+.menu-button--danger {
+    border-color: rgba(233, 96, 96, 0.55);
+    color: var(--bad);
+}
+
+.menu-button--quiet {
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--ink-faint);
+}
+
+.menu-note {
+    color: var(--ink-faint);
+    font-size: 12px;
+    white-space: normal;
+    margin-bottom: 14px;
+}
+
+/* ---- the decorative console ------------------------------------------- */
+
+.console-card {
+    width: 420px;
+    background-color: rgba(6, 30, 62, 0.55);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    padding: 20px;
+}
+
+.console-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.console-kicker {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--ink-faint);
+}
+
+.console-number {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: var(--good);
+}
+
+/* A loss curve drawn as bars, because a real chart would need a mesh and this reads at a glance. */
+.loss-chart {
+    flex-direction: row;
+    align-items: flex-end;
+    height: 130px;
+    margin-bottom: 16px;
+}
+
+.loss-bar {
+    flex-grow: 1;
+    margin-right: 3px;
+    background-color: rgba(120, 170, 225, 0.32);
+    border-top-width: 2px;
+    border-top-color: var(--blue-400);
+}
+
+.loss-bar--live {
+    background-color: rgba(18, 184, 134, 0.30);
+    border-top-color: var(--good);
+}
+
+.console-row {
+    flex-direction: row;
+    justify-content: space-between;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.console-label {
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 1px;
+}
+
+.console-value {
+    font-size: 12px;
+    color: var(--ink-dim);
+    -unity-font-style: bold;
+}
+
+.rack-row {
+    flex-direction: row;
+    margin-top: 14px;
+    margin-bottom: 12px;
+}
+
+.rack-led {
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+    border-radius: 5px;
+    background-color: rgba(120, 170, 225, 0.18);
+}
+
+.rack-led--on {
+    background-color: var(--good);
+}
+
+.console-caption {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--ink-faint);
+}
+
+.studio-signature {
+    position: absolute;
+    left: 90px;
+    bottom: 34px;
+}
+
+.signature-studio {
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    color: var(--ink-dim);
+}
+
+.signature-author {
+    font-size: 11px;
+    color: var(--ink-faint);
+}
+
+/* ---- settings overlay -------------------------------------------------- */
+
+.settings-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(3, 14, 30, 0.88);
+    justify-content: center;
+    align-items: center;
+}
+
+.settings-sheet {
+    width: 620px;
+    background-color: var(--blue-800);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 3px;
+    padding: 26px;
+}
+
+.setting-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.setting-copy {
+    width: 300px;
+}
+
+.setting-name {
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    font-size: 13px;
+}
+
+.setting-description {
+    color: var(--ink-faint);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.setting-value {
+    width: 56px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
 /* ---- top bar ---------------------------------------------------------- */
 
 .topbar {
@@ -174,6 +461,38 @@
 .card--ahead {
     border-left-width: 4px;
     border-left-color: var(--good);
+}
+
+/* ---- card art -------------------------------------------------------- */
+
+/*
+ * Photographs are pulled in as a background and then buried under a heavy scrim.
+ *
+ * The scrim is deliberately strong. Stock photography arrives bright, in the wrong aspect ratio and
+ * often covered in printed labels, and none of that survives at 75 percent darkness scaled to fill.
+ * What does survive is tone, which is the only thing a card at 268 by 134 was ever going to convey.
+ * This is why the art brief says to judge a candidate at the size it will actually appear.
+ */
+.card--art {
+    background-size: cover;
+    background-position-x: center;
+    background-position-y: center;
+    -unity-background-image-tint-color: rgba(70, 90, 120, 0.55);
+}
+
+.card--art .card__title,
+.card--art .card__line,
+.card--art .card__badge {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.card__scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(6, 26, 54, 0.62);
 }
 
 .card__title {
