@@ -36,3 +36,5 @@ sysinfo.txt
 TestResults*.xml
 *.log
 PlayResults*.xml
+
+CLAUDE.md
