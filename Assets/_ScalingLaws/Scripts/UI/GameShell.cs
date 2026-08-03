@@ -67,6 +67,20 @@ namespace ScalingLaws.UI
 
         private void OnEnable()
         {
+            try
+            {
+                Boot();
+            }
+            catch (Exception exception)
+            {
+                // A screen that throws while building used to render nothing, which looks exactly
+                // like a hung game. Show the reason instead.
+                UiBootstrap.ShowFailure(GetComponent<UIDocument>()?.rootVisualElement, "The game screen", exception);
+            }
+        }
+
+        private void Boot()
+        {
             // Resuming is the menu's decision. Loading a corrupt or missing save falls back to a new
             // campaign rather than failing, which is the same rule SaveStore applies everywhere.
             state = SceneFlow.ResumeSavedCampaign
@@ -165,11 +179,7 @@ namespace ScalingLaws.UI
             var root = document.rootVisualElement;
             root.Clear();
 
-            if (theme != null)
-            {
-                root.styleSheets.Add(theme);
-            }
-
+            UiBootstrap.Prepare(root, theme);
             root.AddToClassList("root");
 
             root.Add(BuildTopBar());

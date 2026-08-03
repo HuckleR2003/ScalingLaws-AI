@@ -60,12 +60,16 @@ namespace ScalingLaws.UI
         private void OnEnable()
         {
             root = GetComponent<UIDocument>().rootVisualElement;
-            if (theme != null && !root.styleSheets.Contains(theme))
-            {
-                root.styleSheets.Add(theme);
-            }
+            UiBootstrap.Prepare(root, theme);
 
-            Show(Stage.Menu);
+            try
+            {
+                Show(Stage.Menu);
+            }
+            catch (Exception exception)
+            {
+                UiBootstrap.ShowFailure(root, "The menu", exception);
+            }
         }
 
         private void Update()
@@ -89,6 +93,18 @@ namespace ScalingLaws.UI
         // ------------------------------------------------------------------ shell
 
         private void Show(Stage next)
+        {
+            try
+            {
+                Render(next);
+            }
+            catch (Exception exception)
+            {
+                UiBootstrap.ShowFailure(root, $"The {next} screen", exception);
+            }
+        }
+
+        private void Render(Stage next)
         {
             stage = next;
             root.Clear();
