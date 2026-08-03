@@ -33,16 +33,63 @@ regenerate darker.
 **Size 1024x512. Opaque JPG or PNG.** Used behind upgrade, research and hardware cards, under a
 dark overlay the game applies.
 
-Shared style block, paste unchanged into every prompt:
+### The first version of this document produced cinema instead of subjects
+
+The original prompts put a thirty word photography brief first and the actual subject last. Image
+models weight early tokens hardest, so they read the mood and ignored the object: a prompt for a
+glass chess set returned a dark blue shape in front of a bookshelf. That was a fault in the prompt,
+not in the tool.
+
+Words like *underexposed*, *shallow depth of field*, *colour grade* and *cinematic* are the trigger.
+They are cinematographer vocabulary, and a model that sees them makes a film still.
+
+### The structure that works
+
+**Subject first, in plain words. Style second, in as few words as possible. Negatives last.**
 
 ```
-Photorealistic product photography, single hero object placed slightly right of centre, three
-quarter view from above, shallow depth of field with the background fully out of focus. Deep navy
-plain backdrop, near black at the frame edges. One soft cold blue rim light from the left, one
-weak warm fill from the right, both low intensity. Underexposed by one stop, muted desaturated
-colour grade, no bright highlights, no reflections into the lens. No text, no logos, no branding,
-no people, no UI. Clean and technical.
+[what the object is, 5 to 10 plain words]. Studio product photo on a plain dark navy background.
+Dim blue light from one side. Nothing else in frame. No text, no logo, no people.
 ```
+
+That is the whole style block. It is deliberately short. Every adjective removed is one less thing
+competing with the subject.
+
+If an image still comes back atmospheric rather than literal, cut further, not more. `A server rack.
+Plain dark navy background. Studio photo.` produces a better card than any paragraph.
+
+### Ready to paste
+
+Each line below is a complete prompt. Do not add anything to them.
+
+| File | Prompt |
+|---|---|
+| `card_gpu.png` | A graphics card circuit board with black heatsink fins. Studio product photo on a plain dark navy background. Dim blue light from one side. Nothing else in frame. No text, no logo, no people. |
+| `card_cpu.png` | A computer processor chip, square with gold pins. Studio product photo on a plain dark navy background. Dim blue light from one side. Nothing else in frame. No text, no logo, no people. |
+| `card_ram.png` | Four computer memory sticks standing in a row. Studio product photo on a plain dark navy background. Dim blue light from one side. Nothing else in frame. No text, no logo, no people. |
+| `card_storage.png` | Two small solid state drives stacked on top of each other. Studio product photo on a plain dark navy background. Dim blue light from one side. Nothing else in frame. No text, no logo, no people. |
+| `card_network.png` | A network switch with rows of small ports and blue cables. Studio product photo on a plain dark navy background. Dim blue light from one side. No text, no logo, no people. |
+| `card_rack.png` | A single black server rack cabinet full of servers. Studio product photo on a plain dark navy background. Dim blue light from one side. No text, no logo, no people. |
+| `card_datacenter.png` | A row of server cabinets in a dark server room. Wide shot, dark, empty of people. No text, no logo. |
+| `card_cloud.png` | A panel of hundreds of fibre optic cables. Studio photo on a plain dark navy background. Dim blue light. No text, no logo, no people. |
+| `card_power.png` | An electrical breaker cabinet with thick copper bars. Studio photo on a plain dark navy background. Dim blue light. No text, no logo, no people. |
+| `card_office.png` | An empty dark meeting room seen through a glass wall at night. No people, no text, no logo. |
+
+Trait cards, same rule. Keep the subject blunt.
+
+| File | Prompt |
+|---|---|
+| `trait_reasoning.png` | A glass chess set on a dark table. Studio photo on a plain dark navy background. Dim blue light. No text, no people. |
+| `trait_knowledge.png` | Tall library shelves full of books, dark. No text, no people. |
+| `trait_coding.png` | A computer screen showing blurred green code in a dark room. No readable text, no people. |
+| `trait_multilingual.png` | Metal printing press letter blocks arranged in a grid. Studio photo on a plain dark navy background. Dim blue light. No people. |
+| `trait_multimodal.png` | A camera lens and a microphone side by side. Studio photo on a plain dark navy background. Dim blue light. No text, no people. |
+| `trait_context.png` | A long roll of white paper unrolling on a dark surface. Studio photo, dark navy background. No text, no people. |
+| `trait_safety.png` | A heavy closed steel padlock. Studio photo on a plain dark navy background. Dim blue light. No text, no people. |
+| `trait_speed.png` | A dark tunnel with streaks of light, motion blur. No text, no people. |
+| `trait_efficiency.png` | Neatly bundled network cables in a rack, all the same length. Dark, dim blue light. No text, no people. |
+| `trait_tools.png` | A robot arm gripper holding a small circuit board. Studio photo on a plain dark navy background. No text, no people. |
+| `trait_ecosystem.png` | A dark patch panel where one port glows blue and the rest are dark. No text, no people. |
 
 ### Hardware and infrastructure
 
@@ -123,19 +170,39 @@ costs nothing. Leave it that way until everything else is done.
 
 ## Which tool for which job
 
-Not everything should come from the same generator. This split costs nothing and gives the best
-result per hour spent.
+Not everything should come from the same place, and some of it should not be generated at all.
 
-| Asset | Tool | Why |
+| Asset | Where from | Why |
 |---|---|---|
-| Card, trait and era art | **Grok** | Photographic, forgiving, and it sits under an overlay anyway. |
-| Parody logos | **Ideogram** free tier | Best at flat vector marks and, more importantly, the least likely to bolt on random letters. Letters are both the ugliest failure and the legal risk. |
-| Tab and UI icons | **Lucide** (lucide.dev) | Not generated at all. See below. |
-| Hardware icons | **Rendered, not generated** | See below. |
+| Hardware and datacenter cards | **Stock photos.** Unsplash or Pexels | See below. This is the recommendation. |
+| Trait and era cards | **Bing Image Creator** (DALL-E 3, free) | These are abstract, so there is nothing to search for. DALL-E 3 follows a literal subject far better than Grok does. |
+| Parody logos | **Ideogram** free tier | Best at flat vector marks and the least likely to bolt on random letters. Letters on a parody mark are both the ugliest failure and the legal risk. |
+| Tab and UI icons | **Lucide** (lucide.dev) | Not generated at all. |
+| Hardware icons | **Rendered from the 3D kits** | Matches the office scene by construction. |
 
-Free alternatives if a tier runs out: **Bing Image Creator** (DALL-E 3, free with daily limits) is
-the strongest free photographic option. **Leonardo.ai** has a daily free allowance. Running **Flux**
-or **SDXL** locally through ComfyUI is free and unlimited if the machine can take it.
+### Stop generating photos of hardware. Search for them.
+
+A photograph of a real graphics card already exists, thousands of times, taken properly, free to
+use commercially. Fighting a prompt to approximate one is the slowest path to a worse result.
+
+- **Unsplash** (unsplash.com) - the Unsplash licence allows commercial use with no attribution
+  required. Search `server room`, `data center`, `circuit board`, `graphics card`, `fibre optic`,
+  `server rack`.
+- **Pexels** (pexels.com) - same terms, different library. Worth checking both.
+
+Pick dark ones. Then in any editor, do the same two things to every image so they read as a set:
+drop the exposure until it looks slightly too dark, and pull the saturation down. That is thirty
+seconds per image and it does more for consistency than any prompt.
+
+Generation is still the right answer for the eleven trait cards and the four era banners, because
+`a glass chess set lit from below to represent reasoning` is not something anyone has photographed
+and uploaded.
+
+### If a free tier runs out
+
+**Bing Image Creator** (DALL-E 3) is free with a daily allowance and is the strongest free option
+for literal subjects. **Leonardo.ai** has a daily allowance. **Flux** or **SDXL** run locally
+through ComfyUI are free and unlimited if the machine can take it.
 
 ---
 
@@ -183,16 +250,30 @@ section rather than the photographic one.
 
 ## Doing it in batches
 
-Generate **four card images first**, from different sections: `card_gpu`, `trait_safety`,
-`era_scaling`, `card_datacenter`. Put them side by side.
+Do **two images first**, not twenty: `trait_safety` and `trait_speed`. Put them side by side.
 
-Check three things before generating anything else:
-1. Are they the same darkness? If one is noticeably brighter, the style block is being ignored and
-   needs to be restated more forcefully.
-2. Does white uppercase text read over the top-left of all four?
-3. Does any of them have text, a logo or a watermark in it? Regenerate; do not paint it out.
+Then check, in this order:
 
-Fixing the style block after twenty images means regenerating twenty images.
+1. **Is the subject actually in the picture?** A padlock and a light tunnel. If either came back as
+   an atmospheric scene with no clear object, the prompt is still too long. Cut words until the
+   object appears. This is the failure that wasted the first attempt.
+2. Are they the same darkness? If one is noticeably brighter, fix it in an editor rather than
+   regenerating. Exposure is faster to correct than to prompt for.
+3. Does white uppercase text read over the top-left corner of both?
+4. Any text, logo or watermark inside the image? Regenerate. Do not paint it out.
+
+Only when two are right should the rest be generated. Fixing an approach after twenty images means
+redoing twenty images.
+
+## If it keeps fighting you
+
+The cards are displayed at **268x134 pixels** under a dark overlay with a title and a price on top.
+At that size almost nothing of a photograph survives except its overall tone.
+
+So if an image is close enough that it reads as "something technical and dark", it is done. Judge
+every candidate at the size it will actually appear, not full screen. A card that looks
+disappointing at 1024 wide is usually fine in the game, and chasing perfection at full resolution is
+time spent on pixels nobody will see.
 
 ---
 
