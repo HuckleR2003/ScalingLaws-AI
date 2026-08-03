@@ -110,6 +110,49 @@ namespace ScalingLaws.Tests.PlayMode
             }
         }
 
+        /// <summary>
+        /// The test that should have existed first.
+        ///
+        /// A broken layout passes every other check here: the tree is built, the buttons are there,
+        /// nothing throws. It just renders as one full-width column of unstyled bars because the
+        /// stylesheet never loaded. Counting elements proves nothing; the resolved layout has to be
+        /// checked directly.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheLayoutIsActuallyStyled()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+            yield return null;
+            yield return null;
+            yield return null;
+
+            var root = FindDocument().rootVisualElement;
+            Assert.That(root.styleSheets.count, Is.GreaterThan(0),
+                "No stylesheet on the root, so every rule in it is doing nothing.");
+
+            var shell = root.Q(className: "shell");
+            Assert.That(shell, Is.Not.Null, "No shell element.");
+            Assert.That(shell.resolvedStyle.flexDirection, Is.EqualTo(FlexDirection.Row),
+                "The shell is stacking vertically, so the rail is sitting on top of the content.");
+
+            var rail = root.Q(className: "rail");
+            Assert.That(rail, Is.Not.Null, "No rail element.");
+            Assert.That(rail.resolvedStyle.width, Is.InRange(200f, 320f),
+                $"The rail resolved to {rail.resolvedStyle.width} wide instead of its fixed column.");
+
+            var topbar = root.Q(className: "topbar");
+            Assert.That(topbar, Is.Not.Null, "No top bar.");
+            Assert.That(topbar.resolvedStyle.flexDirection, Is.EqualTo(FlexDirection.Row),
+                "The top bar is stacking, which is why the money and the date print over each other.");
+            Assert.That(topbar.resolvedStyle.height, Is.InRange(30f, 80f));
+
+            var railItem = root.Q<Button>(className: "rail__item");
+            Assert.That(railItem, Is.Not.Null, "No rail entries.");
+            Assert.That(railItem.resolvedStyle.width, Is.LessThan(340f),
+                $"A rail entry is {railItem.resolvedStyle.width} wide, so it is spanning the screen.");
+        }
+
         [UnityTest]
         public IEnumerator TextHasAFontToRenderWith()
         {

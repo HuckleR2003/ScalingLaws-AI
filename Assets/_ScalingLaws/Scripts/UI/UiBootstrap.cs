@@ -58,6 +58,35 @@ namespace ScalingLaws.UI
             return cachedFont;
         }
 
+        /// <summary>
+        /// Where the stylesheet lives for a runtime load. It is duplicated into Resources on
+        /// purpose: relying on a serialized field meant one missed editor step rendered the whole
+        /// game as an unstyled column of full-width bars, and nothing in the build failed.
+        /// </summary>
+        public const string StyleSheetResourcePath = "ScalingLaws";
+
+        /// <summary>
+        /// The stylesheet, from the serialized field if it was wired and from Resources if it was
+        /// not. The UI must never silently render unstyled.
+        /// </summary>
+        public static StyleSheet ResolveTheme(StyleSheet assigned)
+        {
+            if (assigned != null)
+            {
+                return assigned;
+            }
+
+            var loaded = Resources.Load<StyleSheet>(StyleSheetResourcePath);
+            if (loaded == null)
+            {
+                Debug.LogError(
+                    $"[Scaling Laws] No stylesheet. Expected one at Resources/{StyleSheetResourcePath}.uss. "
+                    + "Every screen will render as an unstyled column.");
+            }
+
+            return loaded;
+        }
+
         /// <summary>Applies the stylesheet, the font and the base size to a document root.</summary>
         public static void Prepare(VisualElement root, StyleSheet theme)
         {
@@ -66,9 +95,10 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            if (theme != null && !root.styleSheets.Contains(theme))
+            var sheet = ResolveTheme(theme);
+            if (sheet != null && !root.styleSheets.Contains(sheet))
             {
-                root.styleSheets.Add(theme);
+                root.styleSheets.Add(sheet);
             }
 
             var font = ResolveFont();
