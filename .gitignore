@@ -35,3 +35,4 @@ crashlytics-build.properties
 sysinfo.txt
 TestResults*.xml
 *.log
+PlayResults*.xml

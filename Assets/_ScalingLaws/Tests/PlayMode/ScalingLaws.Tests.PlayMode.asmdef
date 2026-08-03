@@ -1,0 +1,21 @@
+{
+  "name": "ScalingLaws.Tests.PlayMode",
+  "rootNamespace": "ScalingLaws.Tests.PlayMode",
+  "references": [
+    "ScalingLaws.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
