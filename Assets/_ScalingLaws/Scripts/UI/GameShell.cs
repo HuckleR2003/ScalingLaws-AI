@@ -468,6 +468,7 @@ namespace ScalingLaws.UI
                 Show(Screen.Research);
             });
             card.AddToClassList("card");
+            CardArt.Apply(card, CardArt.ForEra(node.Era));
 
             if (standing.IsUnlocked)
             {
@@ -850,6 +851,7 @@ namespace ScalingLaws.UI
                 Show(Screen.Fleet);
             });
             card.AddToClassList("card");
+            CardArt.Apply(card, CardArt.ForHardware(generation.Class));
 
             var unlocked = state.IsTierUnlocked(tier);
             if (!unlocked)

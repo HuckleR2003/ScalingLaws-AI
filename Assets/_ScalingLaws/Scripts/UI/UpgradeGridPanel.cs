@@ -96,6 +96,7 @@ namespace ScalingLaws.UI
             var definition = ModelTraitCatalog.Get(standing.Trait);
             var card = new Button();
             card.AddToClassList("card");
+            CardArt.Apply(card, CardArt.ForTrait(standing.Trait));
 
             if (!standing.IsAvailable)
             {

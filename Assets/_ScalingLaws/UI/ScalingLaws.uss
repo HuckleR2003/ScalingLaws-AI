@@ -176,6 +176,38 @@
     border-left-color: var(--good);
 }
 
+/* ---- card art -------------------------------------------------------- */
+
+/*
+ * Photographs are pulled in as a background and then buried under a heavy scrim.
+ *
+ * The scrim is deliberately strong. Stock photography arrives bright, in the wrong aspect ratio and
+ * often covered in printed labels, and none of that survives at 75 percent darkness scaled to fill.
+ * What does survive is tone, which is the only thing a card at 268 by 134 was ever going to convey.
+ * This is why the art brief says to judge a candidate at the size it will actually appear.
+ */
+.card--art {
+    background-size: cover;
+    background-position-x: center;
+    background-position-y: center;
+    -unity-background-image-tint-color: rgba(70, 90, 120, 0.55);
+}
+
+.card--art .card__title,
+.card--art .card__line,
+.card--art .card__badge {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.card__scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(6, 26, 54, 0.62);
+}
+
 .card__title {
     font-size: 17px;
     -unity-font-style: bold;
