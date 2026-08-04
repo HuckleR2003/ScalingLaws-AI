@@ -126,6 +126,15 @@ namespace ScalingLaws.Persistence
                 });
             }
 
+            data.founderName = state.FounderName;
+
+
+            data.skillLevels = new List<int>(state.Skills.LevelsToArray());
+
+
+            data.skillExperience = new List<long>(state.Skills.ExperienceToArray());
+
+
             data.pricingModel = (int)state.Monetization.Model;
 
 
@@ -412,6 +421,12 @@ namespace ScalingLaws.Persistence
             {
                 state.UnlockedResearch.Add((ResearchNodeId)node);
             }
+
+            state.FounderName = safe.founderName;
+
+
+            state.Skills.Restore(safe.skillLevels, safe.skillExperience);
+
 
             state.LifetimeFinesUsd = safe.lifetimeFinesUsd;
 
@@ -836,6 +851,44 @@ namespace ScalingLaws.Persistence
                         model.traitLevels[index], 0, ModelTraitSetLimits.MaximumLevel);
                 }
             }
+
+            // ---- v10 fields ----
+
+
+            safe.founderName = string.IsNullOrWhiteSpace(safe.founderName) ? "Anonymous" : safe.founderName.Trim();
+
+
+            safe.skillLevels ??= new List<int>();
+
+
+            safe.skillExperience ??= new List<long>();
+
+
+            for (var index = 0; index < safe.skillLevels.Count; index++)
+
+
+            {
+
+
+                safe.skillLevels[index] = Math.Clamp(safe.skillLevels[index], 0, PlayerSkillLimits.MaximumLevel);
+
+
+            }
+
+
+
+            for (var index = 0; index < safe.skillExperience.Count; index++)
+
+
+            {
+
+
+                safe.skillExperience[index] = Math.Max(0L, safe.skillExperience[index]);
+
+
+            }
+
+
 
             // ---- v9 fields ----
 

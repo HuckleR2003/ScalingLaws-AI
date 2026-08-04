@@ -381,6 +381,20 @@ file may have been hand edited or written by a build that no longer exists.
 
 ---
 
+## Mechanism 21 - Founder skills grow, traits do not
+
+Traits are fixed for the campaign. Skills are the moving half of the same idea: seven of them,
+level 0 to 100, all starting at 20 with 200 points to spend at creation at 10 per click.
+
+Twenty is the neutral point rather than the floor, so `EffectAt` measures the distance from it and a
+skill the player ignored is a real weakness instead of a bonus they failed to collect. `SkillSet`
+exposes one named accessor per skill, each clamped, and those are the only way the simulation reads
+a level. Nothing consumes the raw number.
+
+Experience is awarded exclusively on completion: a finished training run, a finished upgrade, a
+finished research node, a released model. Never for elapsed days, because a skill that grows while
+the player waits turns the game into an idle timer and every timing decision stops mattering.
+
 ## Commands
 
 Unity lives in `C:\Program Files\Unity\Hub\Editor\6000.4.11f1`. In PowerShell,

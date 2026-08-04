@@ -75,6 +75,12 @@ namespace ScalingLaws.Simulation
             var market = MarketModel.Evaluate(State.Date, State.Rivals.FrontierCapability(State.Date));
             var profile = State.Pool.BuildProfile(State.Date, market);
 
+            State.SkillsLevelledToday.Clear();
+
+
+            State.Staff.SaturationMultiplier = State.Skills.TeamSaturationMultiplier();
+
+
             ReportDeliveries();
             SyncPricing(market);
 
@@ -82,7 +88,7 @@ namespace ScalingLaws.Simulation
             var (share, demanded, served, revenue) = ServeMarket(profile, market);
 
             var operatingCost =
-                SimUnits.ToDollars(profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier)
+                SimUnits.ToDollars(profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier * State.Skills.OperatingCostMultiplier())
                 + DailyIntelRetainerUsd()
                 + SimUnits.ToDollars(State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier)
                 + State.Monetization.TotalMarketingDailyUsd;
@@ -137,7 +143,7 @@ namespace ScalingLaws.Simulation
                 State.TrainingComputeShare,
                 State,
                 State.Founder.DataSupplyMultiplier,
-                State.Staff.DataQualityMultiplier());
+                State.Staff.DataQualityMultiplier() * State.Skills.DataQualityMultiplier());
         }
 
         /// <summary>
@@ -531,6 +537,13 @@ namespace ScalingLaws.Simulation
                     ? $"{model.Name} is live after {waited} days on the shelf. Par moved {slippage:0.0} capability against it while it waited. Frontier stands at {market.FrontierCapability:0.0}."
                     : $"{model.Name} is live. Frontier stands at {market.FrontierCapability:0.0}."));
 
+            State.AwardSkill(PlayerSkill.Management, 480);
+
+
+            State.AwardSkill(PlayerSkill.Teamwork, 260);
+
+
+
             var relativeStanding = market.FrontierCapability <= 0.0
                 ? 1.0
                 : Math.Clamp(model.EffectiveCapability(State.Date) / market.FrontierCapability, 0.0, 1.3);
@@ -747,6 +760,12 @@ namespace ScalingLaws.Simulation
             State.ActiveResearch = null;
 
             var node = ResearchTree.Get(project.Node);
+
+
+            State.AwardSkill(PlayerSkill.Concept, 620);
+
+
+            State.AwardSkill(PlayerSkill.DataEngineering, 200);
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchCompleted,
                 State.Date,
@@ -764,7 +783,8 @@ namespace ScalingLaws.Simulation
                 State.Date,
                 State,
                 State.CashUsd,
-                blueprint.IsIteration ? State.FamilyGeneration(blueprint.BaseFamily) + 1 : 0);
+                blueprint.IsIteration ? State.FamilyGeneration(blueprint.BaseFamily) + 1 : 0,
+                State.Skills.ResearchDepthMultiplier());
         }
 
         /// <summary>
@@ -1108,7 +1128,7 @@ namespace ScalingLaws.Simulation
         public double DailyIncidentRisk()
         {
             var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
-            return IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier());
+            return IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier() * State.Skills.IncidentRiskMultiplier());
         }
 
         private void RollSafetyIncident()
@@ -1119,7 +1139,7 @@ namespace ScalingLaws.Simulation
                 return;
             }
 
-            var risk = IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier());
+            var risk = IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier() * State.Skills.IncidentRiskMultiplier());
             if (risk <= 0.0 || !State.Random.NextChance(risk))
             {
                 return;
@@ -1409,6 +1429,9 @@ namespace ScalingLaws.Simulation
                 model.Traits.SetLevel(project.Trait, project.TargetLevel);
 
                 var definition = ModelTraitCatalog.Get(project.Trait);
+
+
+                State.AwardSkill(PlayerSkill.Software, 320);
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.UpgradeCompleted,
                     State.Date,
@@ -1428,7 +1451,8 @@ namespace ScalingLaws.Simulation
             // Where the team actually shows up. Two labs with identical blueprints and identical
             // clusters do not get identical models: the one with the better research and safety
             // people lands nearer its own plan. The ceiling is the same, the spread is not.
-            var spread = TrainingOutcomeStandardDeviation * State.Staff.OutcomeVarianceMultiplier();
+            var spread = TrainingOutcomeStandardDeviation * State.Staff.OutcomeVarianceMultiplier()
+                * State.Skills.TrainingSpreadMultiplier();
             var measured = Math.Clamp(
                 run.ProjectedCapability + State.Random.NextGaussian(0.0, spread),
                 0.0,
@@ -1444,6 +1468,20 @@ namespace ScalingLaws.Simulation
                 run.ProjectedCapability));
 
             State.ActiveRun = null;
+
+
+
+            // Experience is only ever awarded for finishing something. Never for elapsed time,
+
+
+            // which would reward leaving the game running.
+
+
+            State.AwardSkill(PlayerSkill.Development, 900);
+
+
+            State.AwardSkill(PlayerSkill.Concept, 350);
+
 
             var delta = measured - run.ProjectedCapability;
             State.RaiseEvent(new CompanyEvent(
@@ -1489,7 +1527,8 @@ namespace ScalingLaws.Simulation
             var architecture = State.ResolveArchitecture(best.Architecture);
             var flopPerToken = best.InferenceFlopPerToken
                 * architecture.InferenceCostMultiplier
-                * best.EfficiencyMultiplier(State.Date);
+                * best.EfficiencyMultiplier(State.Date)
+                * State.Skills.ServingCostMultiplier();
             if (flopPerToken <= 0.0)
             {
                 return (share, demanded, 0.0, 0L);

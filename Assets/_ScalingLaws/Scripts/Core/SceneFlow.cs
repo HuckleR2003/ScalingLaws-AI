@@ -1,3 +1,4 @@
+﻿using System;
 using UnityEngine.SceneManagement;
 
 namespace ScalingLaws.Core
@@ -29,6 +30,12 @@ namespace ScalingLaws.Core
         public static int RequestedTraitA { get; set; }
 
         public static int RequestedTraitB { get; set; }
+
+        /// <summary>What the founder is called. Carried into the campaign, never into the save key.</summary>
+        public static string RequestedFounderName { get; set; } = "Anonymous";
+
+        /// <summary>Skill levels chosen at creation, in catalog order. Empty means every default.</summary>
+        public static int[] RequestedSkillLevels { get; set; } = Array.Empty<int>();
 
         /// <summary>Starts a campaign from the opening flow rather than from defaults.</summary>
         public static void StartNewCampaign(string companyName, int archetype, int traitA, int traitB)

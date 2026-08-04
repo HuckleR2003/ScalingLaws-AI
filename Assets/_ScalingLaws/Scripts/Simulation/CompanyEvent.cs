@@ -1,4 +1,4 @@
-using ScalingLaws.Core;
+﻿using ScalingLaws.Core;
 
 namespace ScalingLaws.Simulation
 {
@@ -35,7 +35,8 @@ namespace ScalingLaws.Simulation
         StaffHired = 28,
         StaffLeft = 29,
         OfficeMoved = 30,
-        SafetyIncident = 31
+        SafetyIncident = 31,
+        SkillLevelled = 32
     }
 
     /// <summary>

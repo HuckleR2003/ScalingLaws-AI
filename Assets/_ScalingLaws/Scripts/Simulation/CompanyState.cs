@@ -89,6 +89,37 @@ namespace ScalingLaws.Simulation
         /// <summary>The founder's traits, folded into multipliers. Fixed for the campaign.</summary>
         public FounderProfile Founder { get; set; }
 
+        /// <summary>The founder's name. Shown wherever the company is not the subject.</summary>
+        public string FounderName { get; set; } = "Anonymous";
+
+        /// <summary>
+        /// The founder's skills. The only progression in the game that is earned rather than bought,
+        /// which is why it cannot be accelerated with money.
+        /// </summary>
+        public SkillSet Skills { get; } = new();
+
+        /// <summary>Levels gained today, for the day report to surface. Cleared each tick.</summary>
+        public List<PlayerSkill> SkillsLevelledToday { get; } = new();
+
+        /// <summary>
+        /// Grants experience and raises an event on a level up. Every call site names a real action:
+        /// experience is never awarded for the passage of time alone, because that would reward
+        /// leaving the game running.
+        /// </summary>
+        public void AwardSkill(PlayerSkill skill, long amount)
+        {
+            if (Skills.AddExperience(skill, amount) <= 0)
+            {
+                return;
+            }
+
+            SkillsLevelledToday.Add(skill);
+            RaiseEvent(new CompanyEvent(
+                CompanyEventType.SkillLevelled,
+                Date,
+                $"{PlayerSkillCatalog.Get(skill).DisplayName} is now level {Skills.Level(skill)}."));
+        }
+
         /// <summary>Price a newly released model launches at, from the house style.</summary>
         public double DefaultPriceMultiplier { get; set; } = 1.0;
 

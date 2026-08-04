@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -154,7 +154,8 @@ namespace ScalingLaws.Simulation
             GameDate date,
             IArchitectureSource architectures,
             long availableCashUsd,
-            int generation)
+            int generation,
+            double conceptMultiplier = 1.0)
         {
             var source = architectures ?? ArchitectureCatalog.AsSource;
             var blocking = new StringBuilder();
@@ -191,7 +192,7 @@ namespace ScalingLaws.Simulation
 
             var power = ResearchPower(blueprint.ResearchBudgetUsd, blueprint.DurationDays);
             var focus = blueprint.Focus;
-            var depth = power * (0.55 + 0.45 * focus);
+            var depth = power * (0.55 + 0.45 * focus) * Math.Clamp(SimUnits.Finite(conceptMultiplier, 1.0), 0.5, 2.0);
 
             // Each generation of the same lineage reaches less than the one before it.
             if (blueprint.IsIteration)

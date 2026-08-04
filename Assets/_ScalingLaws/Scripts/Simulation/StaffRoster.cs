@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -51,6 +51,12 @@ namespace ScalingLaws.Simulation
         public IReadOnlyList<Hire> Hires => hires;
 
         public OfficeTier Office { get; private set; } = OfficeTier.Garage;
+
+        /// <summary>
+        /// How much further each discipline improves before it flattens. Driven by the founder's
+        /// Teamwork skill and set once per tick, so the roster never has to know a skill exists.
+        /// </summary>
+        public double SaturationMultiplier { get; set; } = 1.0;
 
         public int Headcount => hires.Count;
 
@@ -140,7 +146,7 @@ namespace ScalingLaws.Simulation
             }
 
             raw *= OfficeCatalog.Get(Office).EffectivenessMultiplier;
-            return raw / (1.0 + raw / SaturationPoint);
+            return raw / (1.0 + raw / (SaturationPoint * Math.Clamp(SaturationMultiplier, 0.5, 2.0)));
         }
 
         /// <summary>

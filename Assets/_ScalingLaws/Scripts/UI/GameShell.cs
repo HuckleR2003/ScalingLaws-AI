@@ -93,6 +93,12 @@ namespace ScalingLaws.UI
                     (FounderTrait)SceneFlow.RequestedTraitA,
                     (FounderTrait)SceneFlow.RequestedTraitB);
 
+            if (!SceneFlow.ResumeSavedCampaign)
+            {
+                state.FounderName = SceneFlow.RequestedFounderName;
+                state.Skills.Restore(SceneFlow.RequestedSkillLevels, Array.Empty<long>());
+            }
+
             simulation = new CompanySimulation(state);
             clock = new SimClock(state.Date, SimSpeed.Paused);
 

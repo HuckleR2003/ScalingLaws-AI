@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Persistence;
+using ScalingLaws.Simulation;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -51,8 +52,10 @@ namespace ScalingLaws.UI
         private bool settingsOpen;
 
         private readonly List<FounderTrait> chosenTraits = new();
+        private readonly SkillSet skills = new();
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
         private string companyName = "Prometheus AI";
+        private string founderName = "Anonymous";
 
         private int introLine;
         private float introTimer;
@@ -518,59 +521,277 @@ namespace ScalingLaws.UI
         {
             root.style.backgroundColor = StyleKeyword.Null;
 
-            var column = new VisualElement();
-            column.style.width = 900;
-            column.Add(Heading("WHO ARE YOU"));
-            column.Add(Hint($"Pick {FounderTraitCatalog.TraitsPerFounder}. They apply for the whole campaign "
-                + "and every one of them is a trade, not a bonus."));
+            var page = new VisualElement();
+            page.AddToClassList("creator");
+
+            var heading = new Label("WHO ARE YOU");
+            heading.AddToClassList("page-title");
+            page.Add(heading);
+
+            var columns = new VisualElement();
+            columns.AddToClassList("creator__columns");
+            page.Add(columns);
+
+            columns.Add(BuildIdentityColumn());
+            columns.Add(BuildSkillsColumn());
+
+            var traits = new VisualElement();
+            traits.AddToClassList("panel");
+            var traitsHeading = new Label("TRAITS");
+            traitsHeading.AddToClassList("panel__heading");
+            traits.Add(traitsHeading);
+            traits.Add(Hint($"Pick {FounderTraitCatalog.TraitsPerFounder}. They last the whole campaign "
+                + "and every one is a trade, not a bonus."));
 
             var grid = new VisualElement();
-            grid.AddToClassList("grid");
-            column.Add(grid);
+            grid.AddToClassList("trait-grid");
+            traits.Add(grid);
 
             foreach (var definition in FounderTraitCatalog.All)
             {
                 grid.Add(BuildTraitCard(definition));
             }
 
+            page.Add(traits);
+
+            var ready = chosenTraits.Count == FounderTraitCatalog.TraitsPerFounder;
             var next = new Button(() => Show(Stage.Company)) { text = "CONTINUE" };
-            next.AddToClassList("button");
-            next.AddToClassList("button--primary");
-            next.style.marginTop = 12;
-            next.style.alignSelf = Align.FlexStart;
-            next.SetEnabled(chosenTraits.Count == FounderTraitCatalog.TraitsPerFounder);
-            column.Add(next);
+            next.AddToClassList("menu-button");
+            next.AddToClassList("menu-button--primary");
+            next.style.width = 340;
+            next.style.marginTop = 14;
+            next.SetEnabled(ready);
+            page.Add(next);
+
+            if (!ready)
+            {
+                page.Add(Hint($"{FounderTraitCatalog.TraitsPerFounder - chosenTraits.Count} more trait to pick."));
+            }
+
+            return page;
+        }
+
+        private VisualElement BuildIdentityColumn()
+        {
+            var column = new VisualElement();
+            column.AddToClassList("creator__identity");
+
+            // A vertical plate where a portrait will go. Sized to the art brief rather than to
+            // whatever happens to be here now, so dropping a picture in changes nothing else.
+            var portrait = new VisualElement();
+            portrait.AddToClassList("portrait");
+            var portraitHint = new Label("PORTRAIT");
+            portraitHint.AddToClassList("portrait__label");
+            portrait.Add(portraitHint);
+            column.Add(portrait);
+
+            var line = new Label("They call me");
+            line.AddToClassList("creator__line");
+            column.Add(line);
+
+            var nameField = new TextField { value = founderName };
+            nameField.AddToClassList("creator__name");
+            nameField.RegisterValueChangedCallback(evt => founderName = evt.newValue);
+            column.Add(nameField);
+
+            var note = new Label("Your name follows you across every campaign screen. The company gets "
+                + "its own on the next page.");
+            note.AddToClassList("field__hint");
+            column.Add(note);
 
             return column;
+        }
+
+        private VisualElement BuildSkillsColumn()
+        {
+            var column = new VisualElement();
+            column.AddToClassList("creator__skills");
+
+            var spent = skills.TotalAllocated;
+            var remaining = PlayerSkillLimits.StartingPoints - spent;
+
+            var header = new VisualElement();
+            header.AddToClassList("skills-header");
+
+            var title = new Label("SKILLS");
+            title.AddToClassList("panel__heading");
+            header.Add(title);
+
+            var budget = new Label($"{remaining} POINTS LEFT");
+            budget.AddToClassList("skills-budget");
+            budget.EnableInClassList("skills-budget--spent", remaining <= 0);
+            header.Add(budget);
+
+            column.Add(header);
+            column.Add(Hint($"Everything starts at {PlayerSkillLimits.StartingLevel}, where it has no effect "
+                + $"either way. Each click adds {PlayerSkillLimits.PointsPerClick}. These keep growing as you "
+                + "play, and they are the only thing in the game that money cannot buy."));
+
+            foreach (var definition in PlayerSkillCatalog.All)
+            {
+                column.Add(BuildSkillRow(definition, remaining));
+            }
+
+            return column;
+        }
+
+        private VisualElement BuildSkillRow(PlayerSkillDefinition definition, int remaining)
+        {
+            var level = skills.Level(definition.Skill);
+
+            var row = new VisualElement();
+            row.AddToClassList("skill-row");
+
+            var top = new VisualElement();
+            top.AddToClassList("skill-row__top");
+
+            var name = new Label(definition.DisplayName.ToUpperInvariant());
+            name.AddToClassList("skill-row__name");
+            top.Add(name);
+
+            var value = new Label($"{level} / {PlayerSkillLimits.MaximumLevel}");
+            value.AddToClassList("skill-row__value");
+            value.EnableInClassList("skill-row__value--raised", level > PlayerSkillLimits.StartingLevel);
+            value.EnableInClassList("skill-row__value--lowered", level < PlayerSkillLimits.StartingLevel);
+            top.Add(value);
+
+            row.Add(top);
+
+            var track = new VisualElement();
+            track.AddToClassList("skill-track");
+            var fill = new VisualElement();
+            fill.AddToClassList("skill-track__fill");
+            fill.style.width = Length.Percent(level);
+            track.Add(fill);
+            row.Add(track);
+
+            var bottom = new VisualElement();
+            bottom.AddToClassList("skill-row__bottom");
+
+            var effect = new Label(definition.Description);
+            effect.AddToClassList("skill-row__effect");
+            bottom.Add(effect);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("skill-row__buttons");
+
+            var minus = new Button(() => AdjustSkill(definition.Skill, -PlayerSkillLimits.PointsPerClick))
+            { text = "-" };
+            minus.AddToClassList("skill-button");
+            minus.SetEnabled(level > PlayerSkillLimits.StartingLevel);
+            buttons.Add(minus);
+
+            var plus = new Button(() => AdjustSkill(definition.Skill, PlayerSkillLimits.PointsPerClick))
+            { text = "+" };
+            plus.AddToClassList("skill-button");
+            plus.SetEnabled(remaining >= PlayerSkillLimits.PointsPerClick
+                && level + PlayerSkillLimits.PointsPerClick <= PlayerSkillLimits.MaximumLevel);
+            buttons.Add(plus);
+
+            bottom.Add(buttons);
+            row.Add(bottom);
+
+            row.tooltip = $"At 100: {definition.EffectAtFull}.";
+            return row;
+        }
+
+        private void AdjustSkill(PlayerSkill skill, int delta)
+        {
+            var level = skills.Level(skill);
+            var target = Mathf.Clamp(level + delta, PlayerSkillLimits.StartingLevel, PlayerSkillLimits.MaximumLevel);
+
+            if (delta > 0)
+            {
+                var remaining = PlayerSkillLimits.StartingPoints - skills.TotalAllocated;
+                if (remaining < target - level)
+                {
+                    return;
+                }
+            }
+
+            skills.SetLevel(skill, target);
+            Show(Stage.Founder);
         }
 
         private VisualElement BuildTraitCard(FounderTraitDefinition definition)
         {
             var picked = chosenTraits.Contains(definition.Trait);
             var card = new Button(() => ToggleTrait(definition.Trait));
-            card.AddToClassList("card");
-            card.EnableInClassList("card--ahead", picked);
-            card.EnableInClassList("card--locked",
+            card.AddToClassList("trait-card");
+            card.EnableInClassList("trait-card--picked", picked);
+            card.EnableInClassList("trait-card--locked",
                 !picked && chosenTraits.Count >= FounderTraitCatalog.TraitsPerFounder);
 
             var title = new Label(definition.DisplayName.ToUpperInvariant());
-            title.AddToClassList("card__title");
+            title.AddToClassList("trait-card__title");
             card.Add(title);
 
-            var effects = new Label(definition.EffectSummary);
-            effects.AddToClassList("card__line");
-            effects.style.whiteSpace = WhiteSpace.Normal;
+            var flavour = new Label(definition.Flavour);
+            flavour.AddToClassList("trait-card__flavour");
+            card.Add(flavour);
+
+            // The effects sit in their own slightly lighter block so the numbers read as a data
+            // panel rather than as more prose. Every line is generated from the multiplier itself,
+            // so a balance change can never leave the card describing the old value.
+            var effects = new VisualElement();
+            effects.AddToClassList("trait-effects");
+            foreach (var line in TraitEffectLines(definition))
+            {
+                effects.Add(line);
+            }
+
             card.Add(effects);
 
             if (picked)
             {
                 var badge = new Label("PICKED");
-                badge.AddToClassList("card__badge");
+                badge.AddToClassList("trait-card__badge");
                 card.Add(badge);
             }
 
-            card.tooltip = definition.Flavour;
+            card.tooltip = definition.EffectSummary;
             return card;
+        }
+
+        private static IEnumerable<VisualElement> TraitEffectLines(FounderTraitDefinition definition)
+        {
+            yield return EffectLine("Brand", definition.BrandBonus, 0.0, true);
+            yield return EffectLine("Operating cost", definition.OperatingCostMultiplier, 1.0, false);
+            yield return EffectLine("Research time", definition.ResearchDurationMultiplier, 1.0, false);
+            yield return EffectLine("Training speed", definition.TrainingThroughputMultiplier, 1.0, true);
+            yield return EffectLine("Hardware price", definition.HardwarePriceMultiplier, 1.0, false);
+            yield return EffectLine("Data supply", definition.DataSupplyMultiplier, 1.0, true);
+            yield return EffectLine("Valuation", definition.ValuationMultiplier, 1.0, true);
+            yield return EffectLine("Reputation gain", definition.ReputationGainMultiplier, 1.0, true);
+        }
+
+        /// <summary>
+        /// One "label  +12%" row, or nothing at all when the trait does not touch that number.
+        /// Colour follows whether the change helps, not whether it is positive: a cost going down
+        /// is green even though the figure is negative.
+        /// </summary>
+        private static VisualElement EffectLine(string label, double value, double neutral, bool higherIsBetter)
+        {
+            var delta = value - neutral;
+            if (Math.Abs(delta) < 0.0005)
+            {
+                return new VisualElement { style = { display = DisplayStyle.None } };
+            }
+
+            var row = new VisualElement();
+            row.AddToClassList("trait-effects__row");
+
+            var name = new Label(label);
+            name.AddToClassList("trait-effects__label");
+            row.Add(name);
+
+            var amount = new Label($"{(delta > 0 ? "+" : string.Empty)}{delta * 100.0:0.#}%");
+            amount.AddToClassList("trait-effects__value");
+            amount.EnableInClassList("trait-effects__value--good", delta > 0 == higherIsBetter);
+            amount.EnableInClassList("trait-effects__value--bad", delta > 0 != higherIsBetter);
+            row.Add(amount);
+
+            return row;
         }
 
         private void ToggleTrait(FounderTrait trait)
@@ -682,6 +903,10 @@ namespace ScalingLaws.UI
 
         private void Begin()
         {
+            SceneFlow.RequestedFounderName =
+                string.IsNullOrWhiteSpace(founderName) ? "Anonymous" : founderName.Trim();
+            SceneFlow.RequestedSkillLevels = skills.LevelsToArray();
+
             SceneFlow.StartNewCampaign(
                 companyName,
                 (int)chosenArchetype,

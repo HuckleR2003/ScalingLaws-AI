@@ -643,3 +643,270 @@
 .toolbar__spacer {
     flex-grow: 1;
 }
+
+/* ---------------------------------------------------------------------------
+   Founder creator. Two columns over a full width trait grid: the portrait and
+   the name on the left because that is what the player looks at first, the
+   skill budget on the right because it is what they spend the longest on.
+   --------------------------------------------------------------------------- */
+
+.creator {
+    width: 1180px;
+    align-self: center;
+}
+
+.creator__columns {
+    flex-direction: row;
+    margin-bottom: 14px;
+}
+
+.creator__identity {
+    width: 330px;
+    margin-right: 14px;
+    padding: 18px;
+    background-color: rgb(22, 26, 34);
+    border-width: 1px;
+    border-color: rgb(44, 52, 66);
+    border-radius: 6px;
+    align-items: center;
+}
+
+.portrait {
+    width: 210px;
+    height: 300px;
+    background-color: rgb(14, 17, 23);
+    border-width: 1px;
+    border-color: rgb(52, 62, 78);
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.portrait__label {
+    font-size: 11px;
+    color: rgb(78, 90, 108);
+    -unity-font-style: bold;
+}
+
+.creator__line {
+    font-size: 20px;
+    color: rgb(150, 162, 180);
+    margin-bottom: 6px;
+}
+
+.creator__name {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.creator__name > .unity-text-field__input {
+    height: 40px;
+    font-size: 18px;
+    padding-left: 10px;
+    background-color: rgb(12, 15, 20);
+    border-width: 1px;
+    border-color: rgb(64, 122, 196);
+    border-radius: 4px;
+    color: rgb(226, 233, 244);
+}
+
+.creator__skills {
+    flex-grow: 1;
+    padding: 18px;
+    background-color: rgb(22, 26, 34);
+    border-width: 1px;
+    border-color: rgb(44, 52, 66);
+    border-radius: 6px;
+}
+
+.skills-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.skills-budget {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(112, 196, 132);
+}
+
+.skills-budget--spent {
+    color: rgb(120, 132, 150);
+}
+
+.skill-row {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background-color: rgb(17, 20, 27);
+    border-radius: 4px;
+}
+
+.skill-row__top {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.skill-row__name {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(206, 216, 230);
+    letter-spacing: 1px;
+}
+
+.skill-row__value {
+    font-size: 13px;
+    color: rgb(150, 162, 180);
+}
+
+.skill-row__value--raised {
+    color: rgb(112, 196, 132);
+}
+
+.skill-row__value--lowered {
+    color: rgb(214, 106, 106);
+}
+
+.skill-track {
+    height: 5px;
+    margin: 6px 0;
+    background-color: rgb(10, 12, 16);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.skill-track__fill {
+    height: 5px;
+    background-color: rgb(64, 122, 196);
+}
+
+.skill-row__bottom {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.skill-row__effect {
+    flex-grow: 1;
+    font-size: 11px;
+    color: rgb(122, 134, 152);
+    white-space: normal;
+}
+
+.skill-row__buttons {
+    flex-direction: row;
+}
+
+.skill-button {
+    width: 30px;
+    height: 24px;
+    margin-left: 4px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    background-color: rgb(34, 42, 54);
+    border-width: 1px;
+    border-color: rgb(58, 70, 88);
+    border-radius: 3px;
+    color: rgb(214, 224, 238);
+}
+
+.skill-button:hover {
+    background-color: rgb(46, 58, 76);
+}
+
+.skill-button:disabled {
+    opacity: 0.35;
+}
+
+/* Four per row, sized so the fourth card ends flush with the panel. */
+
+.trait-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.trait-card {
+    width: 268px;
+    margin: 0 10px 10px 0;
+    padding: 12px;
+    background-color: rgb(20, 24, 31);
+    border-width: 1px;
+    border-color: rgb(44, 52, 66);
+    border-radius: 5px;
+    align-items: flex-start;
+}
+
+.trait-card:hover {
+    border-color: rgb(70, 86, 110);
+}
+
+.trait-card--picked {
+    border-color: rgb(64, 122, 196);
+    background-color: rgb(24, 32, 46);
+}
+
+.trait-card--locked {
+    opacity: 0.42;
+}
+
+.trait-card__title {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(226, 233, 244);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.trait-card__flavour {
+    font-size: 11px;
+    color: rgb(126, 138, 156);
+    white-space: normal;
+    margin-bottom: 8px;
+    min-height: 30px;
+}
+
+/* Lighter than the card it sits in, so the numbers read as their own block. */
+
+.trait-effects {
+    width: 100%;
+    padding: 7px 8px;
+    background-color: rgb(29, 35, 45);
+    border-radius: 4px;
+}
+
+.trait-effects__row {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.trait-effects__label {
+    font-size: 11px;
+    color: rgb(146, 158, 176);
+}
+
+.trait-effects__value {
+    font-size: 11px;
+    -unity-font-style: bold;
+}
+
+.trait-effects__value--good {
+    color: rgb(112, 196, 132);
+}
+
+.trait-effects__value--bad {
+    color: rgb(214, 106, 106);
+}
+
+.trait-card__badge {
+    margin-top: 8px;
+    padding: 2px 8px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(18, 22, 28);
+    background-color: rgb(64, 122, 196);
+    border-radius: 3px;
+}

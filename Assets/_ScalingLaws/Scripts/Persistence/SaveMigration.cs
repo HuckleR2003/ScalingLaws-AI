@@ -110,6 +110,7 @@ namespace ScalingLaws.Persistence
                     6 => UpgradeV6ToV7(current),
                     7 => UpgradeV7ToV8(current),
                     8 => UpgradeV8ToV9(current),
+                    9 => UpgradeV9ToV10(current),
                     _ => current
                 };
             }
@@ -390,6 +391,30 @@ namespace ScalingLaws.Persistence
 
             return data;
         }
+        /// <summary>
+        /// v9 to v10: the founder gains a name and seven skills. A campaign saved before v10 was run
+        /// by nobody in particular, so the name is left blank and every skill starts at the baseline
+        /// where all effects read zero. That leaves an older save exactly as balanced as it was, and
+        /// the 200 creation points are simply never spent.
+        /// </summary>
+        public static SaveData UpgradeV9ToV10(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = SaveData.CurrentVersion;
+            data.founderName = string.IsNullOrWhiteSpace(data.companyName) ? "Anonymous" : "Founder";
+            data.skillLevels ??= new List<int>();
+            data.skillExperience ??= new List<long>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v9 to v10: skills start at the baseline, so an older save keeps the balance it had.");
+
+            return data;
+        }
+
 
 
         private static string Append(string existing, string addition) =>

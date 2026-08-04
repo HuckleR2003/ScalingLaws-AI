@@ -175,7 +175,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 9;
+        public const int CurrentVersion = 10;
 
         public int version = CurrentVersion;
 
@@ -285,6 +285,14 @@ namespace ScalingLaws.Persistence
         public long modelMarketingDailyUsd;
         public double modelAwareness;
         public double lifetimeFreeTokensBillions;
+
+        // ---- added in v10 ----
+
+        public string founderName = "Anonymous";
+
+        public List<int> skillLevels = new();
+
+        public List<long> skillExperience = new();
     }
 
     /// <summary>One person on the payroll. Added in v8.</summary>
