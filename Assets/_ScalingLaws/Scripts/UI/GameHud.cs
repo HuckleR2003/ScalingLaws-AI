@@ -54,13 +54,23 @@ namespace ScalingLaws.UI
         /// are not decided yet and a slot that already has its own element is one edit away from
         /// carrying one.
         /// </summary>
-        public void AddSlot(string label, object key, Action onClick)
+        public void AddSlot(string label, object key, Action onClick, string iconName = null)
         {
             var slot = new Button(onClick) { userData = key };
             slot.AddToClassList("hud-slot");
 
             var icon = new VisualElement();
             icon.AddToClassList("hud-slot__icon");
+
+            // A missing file leaves the plate as it was rather than throwing, so a category is still
+            // reachable while its icon is being drawn.
+            var texture = string.IsNullOrEmpty(iconName) ? null : PageArt.Icon(iconName);
+            if (texture != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(texture);
+                icon.AddToClassList("hud-slot__icon--art");
+            }
+
             slot.Add(icon);
 
             var caption = new Label(label);

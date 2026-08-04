@@ -39,6 +39,34 @@ namespace ScalingLaws.UI
         private readonly List<ArchitectureId> architectureOptions = new();
         private readonly Dictionary<DatasetSource, Toggle> dataSourceToggles = new();
 
+        private readonly VisualElement stageRail = new();
+        private readonly VisualElement effectBanner = new();
+        private readonly VisualElement stageHost = new();
+        private readonly Button backButton = new();
+        private readonly Button nextButton = new();
+
+        private int stage;
+        private double previousCapability;
+
+        /// <summary>
+        /// The run is defined by four decisions and reviewed as a fifth. Showing all of them at once
+        /// is honest and unreadable: a player who has not internalised the scaling law cannot tell
+        /// which of eleven controls moved the number. One decision at a time can afford to explain
+        /// itself, which is how Devices Tycoon and Smartphone Tycoon both handle a build.
+        /// </summary>
+        private static readonly string[] StageNames = { "FOUNDATION", "SCALE", "DATA", "COMPUTE", "REVIEW" };
+
+        private static readonly string[] StageBlurbs =
+        {
+            "What the model is built on, and what it is called. The family sets the ceiling for "
+            + "everything chosen after it.",
+            "How big it is, and how much it reads. This single trade decides most of the result.",
+            "What it learns from. The run draws from the best corpus first, so one good archive "
+            + "lifts the whole mix.",
+            "How much throughput to rent. This buys time and never quality, which is the point.",
+            "What the run is projected to produce, and what it costs to find out."
+        };
+
         /// <summary>Sliders move in log space so one drag covers a billion to a hundred trillion.</summary>
         private const float MinimumLogParameters = -1.0f;   // 0.1B
         private const float MaximumLogParameters = 4.0f;    // 10,000B
@@ -70,31 +98,116 @@ namespace ScalingLaws.UI
             title.AddToClassList("page-title");
             root.Add(title);
 
-            var subtitle = new Label(
-                "Four decisions define a run and none of them can be changed once it starts. "
-                + "The numbers below are a projection, not a result.");
-            subtitle.AddToClassList("page-subtitle");
-            root.Add(subtitle);
+            stageRail.AddToClassList("stage-rail");
+            root.Add(stageRail);
 
-            var columns = new VisualElement();
-            columns.style.flexDirection = FlexDirection.Row;
-            root.Add(columns);
+            effectBanner.AddToClassList("effect-banner");
+            root.Add(effectBanner);
 
-            var left = new VisualElement();
-            left.style.flexGrow = 1;
-            left.style.marginRight = 18;
-            columns.Add(left);
+            stageHost.AddToClassList("stage-host");
+            root.Add(stageHost);
 
-            var right = new VisualElement();
-            right.style.width = 380;
-            columns.Add(right);
+            var footer = new VisualElement();
+            footer.AddToClassList("stage-footer");
 
-            left.Add(BuildIdentityPanel());
-            left.Add(BuildShapePanel());
-            left.Add(BuildDataPanel());
-            left.Add(BuildComputePanel());
+            backButton.text = "BACK";
+            backButton.AddToClassList("menu-button");
+            backButton.AddToClassList("menu-button--quiet");
+            backButton.style.width = 130;
+            backButton.clicked += () => GoTo(stage - 1);
+            footer.Add(backButton);
 
-            right.Add(BuildProjectionPanel());
+            nextButton.AddToClassList("menu-button");
+            nextButton.AddToClassList("menu-button--primary");
+            nextButton.style.width = 230;
+            nextButton.style.marginLeft = 10;
+            nextButton.clicked += OnNext;
+            footer.Add(nextButton);
+
+            root.Add(footer);
+
+            // Subscribed once. The panels are rebuilt whenever the stage changes, so a subscription
+            // made inside one of them would fire as many times as the player had visited it.
+            startButton.clicked += StartTraining;
+
+            ShowStage();
+        }
+
+        private void OnNext()
+        {
+            if (stage >= StageNames.Length - 1)
+            {
+                StartTraining();
+                return;
+            }
+
+            GoTo(stage + 1);
+        }
+
+        private void GoTo(int target)
+        {
+            var clamped = Math.Clamp(target, 0, StageNames.Length - 1);
+            if (clamped == stage)
+            {
+                return;
+            }
+
+            stage = clamped;
+            ShowStage();
+
+            // The same diagonal arrival the screens use, so moving through the creator belongs to
+            // the rest of the interface rather than reading as a form redrawing itself.
+            stageHost.AddToClassList("stage-host--entering");
+            stageHost.schedule.Execute(() => stageHost.RemoveFromClassList("stage-host--entering"))
+                .ExecuteLater(16);
+        }
+
+        /// <summary>
+        /// Puts the current stage in front. The controls are shared instances rather than copies, so
+        /// adding one to a new stage moves it: there is exactly one parameter slider in existence and
+        /// no way for a second copy to drift out of step with the blueprint.
+        /// </summary>
+        private void ShowStage()
+        {
+            stageRail.Clear();
+            for (var index = 0; index < StageNames.Length; index++)
+            {
+                var step = index;
+                var pip = new Button(() => GoTo(step));
+                pip.AddToClassList("stage-pip");
+                pip.EnableInClassList("stage-pip--on", index == stage);
+                pip.EnableInClassList("stage-pip--done", index < stage);
+
+                var number = new Label((index + 1).ToString());
+                number.AddToClassList("stage-pip__number");
+                pip.Add(number);
+
+                var name = new Label(StageNames[index]);
+                name.AddToClassList("stage-pip__name");
+                pip.Add(name);
+
+                stageRail.Add(pip);
+            }
+
+            stageHost.Clear();
+
+            var blurb = new Label(StageBlurbs[stage]);
+            blurb.AddToClassList("stage__blurb");
+            stageHost.Add(blurb);
+
+            stageHost.Add(stage switch
+            {
+                0 => BuildIdentityPanel(),
+                1 => BuildShapePanel(),
+                2 => BuildDataPanel(),
+                3 => BuildComputePanel(),
+                _ => BuildProjectionPanel()
+            });
+
+            backButton.SetEnabled(stage > 0);
+            nextButton.text = stage >= StageNames.Length - 1 ? "START TRAINING" : "NEXT";
+
+            Reprice();
         }
 
         private VisualElement BuildIdentityPanel()
@@ -195,7 +308,6 @@ namespace ScalingLaws.UI
             startButton.AddToClassList("button--primary");
             startButton.style.marginTop = 14;
             startButton.style.width = Length.Percent(100);
-            startButton.clicked += StartTraining;
             panel.Add(startButton);
 
             return panel;
@@ -377,10 +489,84 @@ namespace ScalingLaws.UI
             }
 
             startButton.SetEnabled(projection.IsFeasible && simulation.State.ActiveRun == null);
+            nextButton.SetEnabled(stage < StageNames.Length - 1
+                || (projection.IsFeasible && simulation.State.ActiveRun == null));
+
             if (simulation.State.ActiveRun != null)
             {
                 verdict.text = "A run is already in flight. One at a time.";
             }
+
+            RenderEffectBanner(projection);
+        }
+
+        /// <summary>
+        /// The band under the stage rail. It answers the only question that matters while the player
+        /// is dragging something: did that help, and can I afford it.
+        ///
+        /// The delta is measured against the previous repricing rather than against a baseline,
+        /// because the lesson being taught is what each change is worth, not what the model is worth.
+        /// </summary>
+        private void RenderEffectBanner(TrainingProjection projection)
+        {
+            var delta = previousCapability > 0.0
+                ? projection.ProjectedCapability - previousCapability
+                : 0.0;
+            previousCapability = projection.ProjectedCapability;
+
+            effectBanner.Clear();
+            effectBanner.EnableInClassList("effect-banner--blocked", !projection.IsFeasible);
+
+            var deltaText = Math.Abs(delta) < 0.05
+                ? "unchanged by that"
+                : $"{(delta > 0 ? "+" : string.Empty)}{delta:0.0} from your last change";
+            var deltaTone = Math.Abs(delta) < 0.05
+                ? null
+                : delta > 0 ? "effect-figure__note--good" : "effect-figure__note--bad";
+
+            var bill = projection.ComputeCashCostUsd;
+
+            effectBanner.Add(EffectFigure("PROJECTED CAPABILITY",
+                UiFormat.Number(projection.ProjectedCapability), deltaText, deltaTone));
+            effectBanner.Add(EffectFigure("FRONTIER TODAY",
+                UiFormat.Number(simulation.Market.FrontierCapability),
+                "what this ships against", null));
+            effectBanner.Add(EffectFigure("TIME TO TRAIN",
+                UiFormat.Days(projection.TrainingDays), "at the throughput you rented", null));
+            effectBanner.Add(EffectFigure("CASH IT BURNS", UiFormat.Money(bill),
+                $"of {UiFormat.Money(simulation.State.CashUsd)} on hand",
+                bill > simulation.State.CashUsd ? "effect-figure__note--bad" : null));
+
+            if (!projection.IsFeasible)
+            {
+                var blocked = new Label(projection.BlockingReason);
+                blocked.AddToClassList("effect-banner__blocked");
+                effectBanner.Add(blocked);
+            }
+        }
+
+        private static VisualElement EffectFigure(string label, string value, string note, string noteClass)
+        {
+            var figure = new VisualElement();
+            figure.AddToClassList("effect-figure");
+
+            var caption = new Label(label);
+            caption.AddToClassList("effect-figure__label");
+            figure.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("effect-figure__value");
+            figure.Add(amount);
+
+            var hint = new Label(note);
+            hint.AddToClassList("effect-figure__note");
+            if (!string.IsNullOrEmpty(noteClass))
+            {
+                hint.AddToClassList(noteClass);
+            }
+
+            figure.Add(hint);
+            return figure;
         }
 
         private static long SimUnitsToDaily(ComputeProfile profile) =>

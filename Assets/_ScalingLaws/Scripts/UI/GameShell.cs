@@ -211,6 +211,7 @@ namespace ScalingLaws.UI
             root.Add(shell);
 
             contentHost = new VisualElement();
+            contentHost.AddToClassList("content-host");
             contentHost.style.flexGrow = 1;
             shell.Add(contentHost);
 
@@ -273,17 +274,17 @@ namespace ScalingLaws.UI
 
         private void AddHudSlots()
         {
-            hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create));
-            hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research));
-            hud.AddSlot("ARCH", Screen.Family, () => Show(Screen.Family));
-            hud.AddSlot("UPGRADE", Screen.Upgrade, () => Show(Screen.Upgrade));
+            hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create), "hud_model");
+            hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research), "hud_research");
+            hud.AddSlot("ARCHITECTURE", Screen.Family, () => Show(Screen.Family), "hud_architecture");
+            hud.AddSlot("UPGRADE", Screen.Upgrade, () => Show(Screen.Upgrade), "hud_upgrade");
             hud.AddSlot("TEAM", Screen.Team, () => Show(Screen.Team));
-            hud.AddSlot("FLEET", Screen.Fleet, () => Show(Screen.Fleet));
-            hud.AddSlot("BUSINESS", Screen.Business, () => Show(Screen.Business));
-            hud.AddSlot("RELEASE", Screen.Release, () => Show(Screen.Release));
-            hud.AddSlot("FUNDING", Screen.Funding, () => Show(Screen.Funding));
-            hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking));
-            hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed));
+            hud.AddSlot("COMPUTE", Screen.Fleet, () => Show(Screen.Fleet), "hud_fleet");
+            hud.AddSlot("BUSINESS", Screen.Business, () => Show(Screen.Business), "hud_business");
+            hud.AddSlot("RELEASE", Screen.Release, () => Show(Screen.Release), "hud_release");
+            hud.AddSlot("CAPITAL", Screen.Funding, () => Show(Screen.Funding), "hud_funding");
+            hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking");
+            hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence");
         }
 
         private void SetSpeed(SimSpeed speed)
@@ -345,10 +346,20 @@ namespace ScalingLaws.UI
 
         private void Show(Screen screen)
         {
+            var changed = current != screen;
             current = screen;
             contentHost.Clear();
 
             hud.SetActiveSlot(screen);
+
+            // Borrowed from Baka Bake Bakery, where the opening changes screens on a diagonal rather
+            // than by cutting. It costs nothing and it is the difference between a screen appearing
+            // and a screen arriving. Only on a real change: the clock rebuilds the open page every
+            // tick, and animating that would make the whole interface twitch once a day.
+            if (changed)
+            {
+                PlayPageTransition();
+            }
 
             switch (screen)
             {
@@ -1286,7 +1297,42 @@ namespace ScalingLaws.UI
             return page;
         }
 
-        private static VisualElement NewPage(string title, string subtitle)
+        /// <summary>
+        /// Slides the incoming page up and in from the lower right, and sweeps a thin skewed band of
+        /// the accent across behind it.
+        ///
+        /// Both are done by setting the finished state one frame after the starting state, because a
+        /// USS transition only fires on a change and an element that is born at its target value has
+        /// not changed. The sweep removes itself when it is done so nothing accumulates.
+        /// </summary>
+        private void PlayPageTransition()
+        {
+            contentHost.AddToClassList("content-host--entering");
+            contentHost.schedule.Execute(() => contentHost.RemoveFromClassList("content-host--entering"))
+                .ExecuteLater(16);
+
+            var sweep = new VisualElement();
+            sweep.AddToClassList("page-sweep");
+            sweep.pickingMode = PickingMode.Ignore;
+            HudAccent.PaintSlice(sweep, 0.1f, 0.9f);
+            contentHost.Add(sweep);
+
+            sweep.schedule.Execute(() => sweep.AddToClassList("page-sweep--gone")).ExecuteLater(16);
+            sweep.schedule.Execute(() => sweep.RemoveFromHierarchy()).ExecuteLater(520);
+        }
+
+        /// <summary>Which photograph belongs under which heading. Pages with no art get none.</summary>
+        private static string BannerFor(Screen screen) => screen switch
+        {
+            Screen.Business => "background_business",
+            Screen.Funding => "background_funding",
+            Screen.Ranking => "background_ranking",
+            Screen.Release => "background_release",
+            Screen.Upgrade => "background_upgrade",
+            _ => null
+        };
+
+        private VisualElement NewPage(string title, string subtitle)
         {
             var page = new VisualElement();
             page.AddToClassList("content");
@@ -1294,6 +1340,14 @@ namespace ScalingLaws.UI
             var heading = new Label(title);
             heading.AddToClassList("page-title");
             page.Add(heading);
+
+            // The strip goes between the heading and the body, never behind the heading. Text over a
+            // photograph is a legibility gamble even after the vignette; text above one is not.
+            var banner = PageArt.BannerFor(BannerFor(current));
+            if (banner != null)
+            {
+                page.Add(banner);
+            }
 
             var sub = new Label(subtitle);
             sub.AddToClassList("page-subtitle");

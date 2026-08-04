@@ -1564,3 +1564,273 @@
     color: rgb(232, 240, 252);
     background-color: rgba(255, 255, 255, 0.10);
 }
+
+/* ---------------------------------------------------------------------------
+   Category art, page banners and the diagonal screen change.
+   --------------------------------------------------------------------------- */
+
+/* Wider spacing between categories, and the icons carry real art now, so they
+   are the thing you read and the label is the caption. */
+
+.hud-slot {
+    width: 92px;
+    margin-left: 9px;
+    margin-right: 9px;
+    height: 60px;
+    border-radius: 4px;
+    transition-property: background-color;
+    transition-duration: 120ms;
+}
+
+.hud-slot__icon {
+    width: 34px;
+    height: 34px;
+    margin-bottom: 5px;
+    transition-property: opacity, scale;
+    transition-duration: 120ms;
+}
+
+/* A plate is a placeholder. Once there is art, the plate would be a box behind it. */
+
+.hud-slot__icon--art {
+    background-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+    -unity-background-scale-mode: scale-to-fit;
+    opacity: 0.62;
+}
+
+.hud-slot:hover > .hud-slot__icon--art {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0.92;
+    scale: 1.06 1.06;
+}
+
+.hud-slot--on > .hud-slot__icon--art {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 1;
+}
+
+/* ---- the banner under a page heading ---- */
+
+.page-banner {
+    height: 84px;
+    margin-top: 2px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    border-radius: 4px;
+    overflow: hidden;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.page-banner__edge {
+    height: 2px;
+    opacity: 0.75;
+}
+
+/* ---- the diagonal screen change ---- */
+
+.content-host {
+    overflow: hidden;
+}
+
+/* Where the incoming page starts. One frame later the class comes off and the
+   transition below carries it home. */
+
+.content-host--entering > .content {
+    translate: 26px 18px;
+    opacity: 0;
+}
+
+.content {
+    transition-property: translate, opacity;
+    transition-duration: 260ms;
+    transition-timing-function: ease-out-cubic;
+}
+
+/* A skewed band of the accent crossing the page behind the new content. */
+
+.page-sweep {
+    position: absolute;
+    left: -60%;
+    top: -30%;
+    width: 46%;
+    height: 170%;
+    opacity: 0.30;
+    rotate: 14deg;
+    transition-property: left, opacity;
+    transition-duration: 420ms;
+    transition-timing-function: ease-in-out-sine;
+}
+
+.page-sweep--gone {
+    left: 130%;
+    opacity: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   The staged creator: a rail of steps, a band of live figures under it, and one
+   decision at a time below that. Nothing on it scrolls.
+   --------------------------------------------------------------------------- */
+
+.stage-rail {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+
+.stage-pip {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    margin-right: 6px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 0;
+    border-bottom-width: 2px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    transition-property: background-color, border-color;
+    transition-duration: 140ms;
+}
+
+.stage-pip:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.stage-pip--done {
+    border-color: rgba(226, 78, 62, 0.45);
+}
+
+.stage-pip--on {
+    background-color: rgba(226, 78, 62, 0.10);
+    border-color: rgb(226, 78, 62);
+}
+
+.stage-pip__number {
+    width: 20px;
+    height: 20px;
+    margin-right: 9px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(150, 162, 180);
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+}
+
+.stage-pip--on .stage-pip__number {
+    color: rgb(248, 238, 238);
+    background-color: rgb(140, 34, 44);
+}
+
+.stage-pip__name {
+    font-size: 11px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 180);
+}
+
+.stage-pip--on .stage-pip__name {
+    color: rgb(238, 244, 255);
+}
+
+/* ---- the live figures band ---- */
+
+.effect-banner {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-bottom: 12px;
+    background-color: rgb(20, 24, 32);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-left-width: 2px;
+    border-left-color: rgb(226, 78, 62);
+    border-radius: 4px;
+}
+
+.effect-banner--blocked {
+    border-left-color: rgb(214, 106, 106);
+    background-color: rgb(28, 20, 22);
+}
+
+.effect-figure {
+    width: 25%;
+    padding-right: 14px;
+}
+
+.effect-figure__label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(126, 140, 160);
+}
+
+.effect-figure__value {
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: rgb(228, 236, 248);
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+
+.effect-figure__note {
+    font-size: 10px;
+    color: rgb(116, 128, 148);
+    white-space: normal;
+}
+
+.effect-figure__note--good {
+    color: rgb(112, 200, 136);
+}
+
+.effect-figure__note--bad {
+    color: rgb(222, 110, 110);
+}
+
+.effect-banner__blocked {
+    width: 100%;
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgb(230, 150, 150);
+    white-space: normal;
+}
+
+/* ---- the stage itself ---- */
+
+.stage-host {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    transition-property: translate, opacity;
+    transition-duration: 240ms;
+    transition-timing-function: ease-out-cubic;
+}
+
+.stage-host--entering {
+    translate: 22px 14px;
+    opacity: 0;
+}
+
+.stage__blurb {
+    font-size: 13px;
+    color: rgb(150, 162, 180);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.stage-footer {
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    margin-top: 10px;
+}
