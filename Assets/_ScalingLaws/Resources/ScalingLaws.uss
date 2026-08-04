@@ -923,16 +923,35 @@
     margin-bottom: 0;
 }
 
+/* The block is the grid plus the banner, joined the same way the lab tiles are. */
+
+.trait-block {
+    flex-shrink: 0;
+    margin-top: 6px;
+    background-color: rgb(14, 17, 23);
+    border-width: 1px;
+    border-color: rgb(44, 52, 66);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
 .trait-grid {
     flex-direction: row;
     flex-wrap: wrap;
     flex-shrink: 0;
-    margin-top: 6px;
+    padding-top: 6px;
+    padding-left: 6px;
 }
 
+/* margin-left has to be stated. The runtime theme puts a margin on every Button, and
+   inheriting it made four cards 1352px wide against a 1340px page, so the fourth wrapped
+   to a row of its own and the grid quietly became three across. */
+
 .trait-card {
-    width: 326px;
+    width: 322px;
     flex-shrink: 0;
+    margin-top: 0;
+    margin-left: 0;
     margin-right: 6px;
     margin-bottom: 6px;
     padding: 0;
@@ -1015,6 +1034,30 @@
 
 .trait-effects__value--bad {
     color: rgb(220, 108, 108);
+}
+
+.trait-banner {
+    margin: 0;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(158, 180, 212);
+    background-color: rgb(27, 34, 46);
+    border-width: 0;
+    border-top-width: 1px;
+    border-color: rgb(46, 56, 70);
+    border-radius: 0;
+}
+
+.trait-banner:hover {
+    background-color: rgb(34, 44, 60);
+    color: rgb(226, 238, 255);
+}
+
+.trait-banner:disabled {
+    opacity: 0.4;
 }
 
 .trait-card__badge {

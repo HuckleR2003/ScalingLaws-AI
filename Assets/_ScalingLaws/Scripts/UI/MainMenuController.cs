@@ -25,6 +25,9 @@ namespace ScalingLaws.UI
         /// <summary>Seconds each line of the cold open holds before the next appears.</summary>
         public const float IntroLineSeconds = 2.4f;
 
+        /// <summary>Traits shown before the SHOW MORE banner. One row, and the row is four wide.</summary>
+        public const int TraitsPerRow = 4;
+
         private static readonly string[] IntroLines =
         {
             "JANUARY 2022",
@@ -56,6 +59,7 @@ namespace ScalingLaws.UI
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
         private string companyName = "Prometheus AI";
         private string founderName = "Anonymous";
+        private bool showAllTraits;
         private WorldRegion chosenRegion = WorldRegion.America;
         private Country chosenCountry = Country.UnitedStates;
 
@@ -598,14 +602,41 @@ namespace ScalingLaws.UI
                 + "and every one is a trade, not a bonus."));
             traits.Add(traitsHeader);
 
+            // One row of four, with the rest behind a banner joined to the bottom of it. Eight cards
+            // at once is two more rows than the page has room for, and the page not scrolling is
+            // worth more than seeing every trait at the same time.
+            var all = FounderTraitCatalog.All;
+            var pickedIsHidden = chosenTraits.Exists(trait => IndexOfTrait(trait) >= TraitsPerRow);
+            var expanded = showAllTraits || pickedIsHidden;
+            var visible = expanded ? all.Count : Math.Min(TraitsPerRow, all.Count);
+
+            var block = new VisualElement();
+            block.AddToClassList("trait-block");
+
             var grid = new VisualElement();
             grid.AddToClassList("trait-grid");
-            traits.Add(grid);
+            block.Add(grid);
 
-            foreach (var definition in FounderTraitCatalog.All)
+            for (var index = 0; index < visible; index++)
             {
-                grid.Add(BuildTraitCard(definition));
+                grid.Add(BuildTraitCard(all[index]));
             }
+
+            var toggle = new Button(() => { showAllTraits = !showAllTraits; Show(Stage.Founder); })
+            {
+                text = expanded ? "SHOW LESS" : $"SHOW MORE  ({all.Count - visible})"
+            };
+            toggle.AddToClassList("trait-banner");
+
+            // Collapsing while a pick is in the hidden half would hide a decision the player made.
+            toggle.SetEnabled(!pickedIsHidden || showAllTraits);
+            if (pickedIsHidden && !showAllTraits)
+            {
+                toggle.tooltip = "One of your picks is in this half.";
+            }
+
+            block.Add(toggle);
+            traits.Add(block);
 
             page.Add(traits);
 
@@ -702,7 +733,7 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("skill-row");
 
-            row.Add(SkillIcons.Badge(definition.Skill, 30));
+            row.Add(SkillIcons.Badge(definition.Skill, 36));
 
             var body = new VisualElement();
             body.AddToClassList("skill-row__body");
@@ -860,6 +891,20 @@ namespace ScalingLaws.UI
             row.Add(amount);
 
             return row;
+        }
+
+        private static int IndexOfTrait(FounderTrait trait)
+        {
+            var all = FounderTraitCatalog.All;
+            for (var index = 0; index < all.Count; index++)
+            {
+                if (all[index].Trait == trait)
+                {
+                    return index;
+                }
+            }
+
+            return 0;
         }
 
         private void ToggleTrait(FounderTrait trait)
