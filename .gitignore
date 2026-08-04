@@ -38,3 +38,8 @@ TestResults*.xml
 PlayResults*.xml
 
 CLAUDE.md
+
+# Generated previews and one-off build logs
+office_preview.png
+room.log
+snap.log

@@ -733,7 +733,10 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("skill-row");
 
-            row.Add(SkillIcons.Badge(definition.Skill, 36));
+            // 42 is the tallest box that still fits inside the height the text beside it already
+            // sets, so the row does not grow by a pixel. The rest of the size came from cropping
+            // the art tight to its glyph: half of each source image was empty margin.
+            row.Add(SkillIcons.Badge(definition.Skill, 42));
 
             var body = new VisualElement();
             body.AddToClassList("skill-row__body");
