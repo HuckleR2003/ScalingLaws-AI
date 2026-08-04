@@ -56,6 +56,8 @@ namespace ScalingLaws.UI
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
         private string companyName = "Prometheus AI";
         private string founderName = "Anonymous";
+        private WorldRegion chosenRegion = WorldRegion.America;
+        private Country chosenCountry = Country.UnitedStates;
 
         private int introLine;
         private float introTimer;
@@ -114,8 +116,11 @@ namespace ScalingLaws.UI
             root.Clear();
             root.AddToClassList("root");
 
-            // The menu is a full bleed layout of its own; the later stages are centred cards.
-            var centred = next != Stage.Menu;
+            // The menu and the cold open are single screens that fit. The two creator pages do not,
+            // and when they overflowed a fixed root every child shrank to make room: the skill bars
+            // collapsed onto their own titles and the second row of traits was cut off the bottom.
+            // They scroll instead, and nothing inside them is allowed to shrink.
+            var centred = next == Stage.Intro;
             root.style.justifyContent = centred ? Justify.Center : Justify.FlexStart;
             root.style.alignItems = centred ? Align.Center : Align.Stretch;
 
@@ -128,12 +133,56 @@ namespace ScalingLaws.UI
                     root.Add(BuildIntro());
                     break;
                 case Stage.Founder:
-                    root.Add(BuildFounder());
+                    root.Add(Scroller(BuildFounder()));
                     break;
                 default:
-                    root.Add(BuildCompany());
+                    root.Add(Scroller(BuildCompany()));
                     break;
             }
+        }
+
+        /// <summary>Wraps a page so it scrolls when it is taller than the window instead of squashing.</summary>
+        private static VisualElement Scroller(VisualElement content)
+        {
+            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            scroll.AddToClassList("page-scroll");
+            scroll.style.flexGrow = 1;
+            scroll.contentContainer.style.alignItems = Align.Center;
+            scroll.contentContainer.style.paddingTop = 26;
+            scroll.contentContainer.style.paddingBottom = 26;
+            scroll.Add(content);
+            return scroll;
+        }
+
+        /// <summary>The BACK and CONTINUE pair every creator page ends with, pinned to the right.</summary>
+        private VisualElement Footer(string continueText, Action onContinue, Action onBack, bool ready,
+            string blockedReason)
+        {
+            var footer = new VisualElement();
+            footer.AddToClassList("creator-footer");
+
+            if (!ready && !string.IsNullOrEmpty(blockedReason))
+            {
+                var reason = new Label(blockedReason);
+                reason.AddToClassList("creator-footer__reason");
+                footer.Add(reason);
+            }
+
+            var back = new Button(onBack) { text = "BACK" };
+            back.AddToClassList("menu-button");
+            back.AddToClassList("menu-button--quiet");
+            back.style.width = 150;
+            footer.Add(back);
+
+            var forward = new Button(onContinue) { text = continueText };
+            forward.AddToClassList("menu-button");
+            forward.AddToClassList("menu-button--primary");
+            forward.style.width = 230;
+            forward.style.marginLeft = 10;
+            forward.SetEnabled(ready);
+            footer.Add(forward);
+
+            return footer;
         }
 
         private static VisualElement Panel(int width)
@@ -554,19 +603,10 @@ namespace ScalingLaws.UI
 
             page.Add(traits);
 
-            var ready = chosenTraits.Count == FounderTraitCatalog.TraitsPerFounder;
-            var next = new Button(() => Show(Stage.Company)) { text = "CONTINUE" };
-            next.AddToClassList("menu-button");
-            next.AddToClassList("menu-button--primary");
-            next.style.width = 340;
-            next.style.marginTop = 14;
-            next.SetEnabled(ready);
-            page.Add(next);
-
-            if (!ready)
-            {
-                page.Add(Hint($"{FounderTraitCatalog.TraitsPerFounder - chosenTraits.Count} more trait to pick."));
-            }
+            var remaining = FounderTraitCatalog.TraitsPerFounder - chosenTraits.Count;
+            page.Add(Footer("CONTINUE", () => Show(Stage.Company), () => Show(Stage.Intro),
+                remaining == 0,
+                remaining == 1 ? "One more trait to pick." : $"{remaining} more traits to pick."));
 
             return page;
         }
@@ -576,15 +616,8 @@ namespace ScalingLaws.UI
             var column = new VisualElement();
             column.AddToClassList("creator__identity");
 
-            // A vertical plate where a portrait will go. Sized to the art brief rather than to
-            // whatever happens to be here now, so dropping a picture in changes nothing else.
-            var portrait = new VisualElement();
-            portrait.AddToClassList("portrait");
-            var portraitHint = new Label("PORTRAIT");
-            portraitHint.AddToClassList("portrait__label");
-            portrait.Add(portraitHint);
-            column.Add(portrait);
-
+            // The name sits above the portrait so the plate can take every pixel left over. When it
+            // was underneath, the column ended in dead space no matter how tall the page got.
             var line = new Label("They call me");
             line.AddToClassList("creator__line");
             column.Add(line);
@@ -594,10 +627,12 @@ namespace ScalingLaws.UI
             nameField.RegisterValueChangedCallback(evt => founderName = evt.newValue);
             column.Add(nameField);
 
-            var note = new Label("Your name follows you across every campaign screen. The company gets "
-                + "its own on the next page.");
-            note.AddToClassList("field__hint");
-            column.Add(note);
+            var portrait = new VisualElement();
+            portrait.AddToClassList("portrait");
+            var portraitHint = new Label("PORTRAIT");
+            portraitHint.AddToClassList("portrait__label");
+            portrait.Add(portraitHint);
+            column.Add(portrait);
 
             return column;
         }
@@ -639,38 +674,49 @@ namespace ScalingLaws.UI
         {
             var level = skills.Level(definition.Skill);
 
+            // Three fixed columns: icon, text, controls. The level used to share a column with the
+            // plus button and ended up underneath it, so it lives in the control stack now and the
+            // bar can never run under the title.
             var row = new VisualElement();
             row.AddToClassList("skill-row");
 
-            var top = new VisualElement();
-            top.AddToClassList("skill-row__top");
+            row.Add(SkillIcons.Badge(definition.Skill));
+
+            var body = new VisualElement();
+            body.AddToClassList("skill-row__body");
 
             var name = new Label(definition.DisplayName.ToUpperInvariant());
             name.AddToClassList("skill-row__name");
-            top.Add(name);
-
-            var value = new Label($"{level} / {PlayerSkillLimits.MaximumLevel}");
-            value.AddToClassList("skill-row__value");
-            value.EnableInClassList("skill-row__value--raised", level > PlayerSkillLimits.StartingLevel);
-            value.EnableInClassList("skill-row__value--lowered", level < PlayerSkillLimits.StartingLevel);
-            top.Add(value);
-
-            row.Add(top);
+            body.Add(name);
 
             var track = new VisualElement();
             track.AddToClassList("skill-track");
             var fill = new VisualElement();
             fill.AddToClassList("skill-track__fill");
             fill.style.width = Length.Percent(level);
+            fill.EnableInClassList("skill-track__fill--lowered", level < PlayerSkillLimits.StartingLevel);
             track.Add(fill);
-            row.Add(track);
 
-            var bottom = new VisualElement();
-            bottom.AddToClassList("skill-row__bottom");
+            var baseline = new VisualElement();
+            baseline.AddToClassList("skill-track__baseline");
+            baseline.style.left = Length.Percent(PlayerSkillLimits.StartingLevel);
+            track.Add(baseline);
+            body.Add(track);
 
             var effect = new Label(definition.Description);
             effect.AddToClassList("skill-row__effect");
-            bottom.Add(effect);
+            body.Add(effect);
+
+            row.Add(body);
+
+            var controls = new VisualElement();
+            controls.AddToClassList("skill-row__controls");
+
+            var value = new Label($"{level} / {PlayerSkillLimits.MaximumLevel}");
+            value.AddToClassList("skill-row__value");
+            value.EnableInClassList("skill-row__value--raised", level > PlayerSkillLimits.StartingLevel);
+            value.EnableInClassList("skill-row__value--lowered", level < PlayerSkillLimits.StartingLevel);
+            controls.Add(value);
 
             var buttons = new VisualElement();
             buttons.AddToClassList("skill-row__buttons");
@@ -688,8 +734,8 @@ namespace ScalingLaws.UI
                 && level + PlayerSkillLimits.PointsPerClick <= PlayerSkillLimits.MaximumLevel);
             buttons.Add(plus);
 
-            bottom.Add(buttons);
-            row.Add(bottom);
+            controls.Add(buttons);
+            row.Add(controls);
 
             row.tooltip = $"At 100: {definition.EffectAtFull}.";
             return row;
@@ -812,15 +858,24 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildCompany()
         {
-            var column = new VisualElement();
-            column.style.width = 900;
-            column.Add(Heading("WHICH LAB"));
-            column.Add(Hint("Four companies that could have existed in 2022. Each starts you somewhere "
-                + "different on the same map."));
+            var page = new VisualElement();
+            page.AddToClassList("creator");
+
+            var heading = new Label("YOUR LAB");
+            heading.AddToClassList("page-title");
+            page.Add(heading);
+
+            page.Add(Hint("Four companies that could have existed in 2022, and one country to run "
+                + "whichever you take from."));
+
+            // Tiles and the custom banner are one block with no gap between them, so the fifth
+            // option reads as part of the same choice rather than as an afterthought below it.
+            var block = new VisualElement();
+            block.AddToClassList("lab-block");
 
             var grid = new VisualElement();
-            grid.AddToClassList("grid");
-            column.Add(grid);
+            grid.AddToClassList("lab-grid");
+            block.Add(grid);
 
             foreach (var identity in CompanyIdentityCatalog.Tiles())
             {
@@ -831,12 +886,15 @@ namespace ScalingLaws.UI
             {
                 text = "CREATE YOUR OWN COMPANY"
             };
-            custom.AddToClassList("button");
-            custom.style.width = Length.Percent(100);
-            custom.style.marginTop = 6;
-            column.Add(custom);
+            custom.AddToClassList("lab-banner");
+            custom.EnableInClassList("lab-banner--on",
+                CompanyIsChosen && chosenArchetype == CompanyArchetype.Custom);
+            block.Add(custom);
+            page.Add(block);
 
-            if (chosenArchetype != CompanyArchetype.Custom || CompanyIsChosen)
+            page.Add(BuildRegionSection());
+
+            if (CompanyIsChosen)
             {
                 var identity = CompanyIdentityCatalog.Get(chosenArchetype);
 
@@ -844,21 +902,166 @@ namespace ScalingLaws.UI
                 opening.AddToClassList("panel");
                 opening.style.marginTop = 14;
                 opening.Add(Hint(identity.Opening));
-                column.Add(opening);
 
                 var nameField = new TextField("Company name") { value = companyName };
                 nameField.AddToClassList("field");
                 nameField.RegisterValueChangedCallback(evt => companyName = evt.newValue);
-                column.Add(nameField);
-
-                var begin = new Button(Begin) { text = "BEGIN, JANUARY 2022" };
-                begin.AddToClassList("button");
-                begin.AddToClassList("button--primary");
-                begin.style.width = Length.Percent(100);
-                column.Add(begin);
+                opening.Add(nameField);
+                page.Add(opening);
             }
 
-            return column;
+            page.Add(Footer("BEGIN, JANUARY 2022", Begin, () => Show(Stage.Founder),
+                CompanyIsChosen, "Pick a lab first."));
+
+            return page;
+        }
+
+        /// <summary>
+        /// The map, the country list it opens, and the four numbers that come with the choice.
+        /// The three parts are one block with no gaps, because they are one decision.
+        /// </summary>
+        private VisualElement BuildRegionSection()
+        {
+            var section = new VisualElement();
+            section.AddToClassList("region");
+
+            var header = new VisualElement();
+            header.AddToClassList("region__header");
+
+            var title = new Label("REGION");
+            title.AddToClassList("panel__heading");
+            header.Add(title);
+
+            var chosen = new Label(chosenCountry == Country.None
+                ? "No country chosen"
+                : WorldRegionCatalog.Get(chosenCountry).DisplayName.ToUpperInvariant());
+            chosen.AddToClassList("region__chosen");
+            header.Add(chosen);
+            section.Add(header);
+
+            var body = new VisualElement();
+            body.AddToClassList("region__body");
+
+            var map = new WorldMapElement(chosenRegion, PickRegion);
+            body.Add(map);
+
+            var list = new VisualElement();
+            list.AddToClassList("region__list");
+
+            if (chosenRegion == WorldRegion.None)
+            {
+                var prompt = new Label("Click a continent.");
+                prompt.AddToClassList("field__hint");
+                list.Add(prompt);
+            }
+            else
+            {
+                var listTitle = new Label(WorldRegionCatalog.Get(chosenRegion).DisplayName.ToUpperInvariant());
+                listTitle.AddToClassList("region__list-title");
+                list.Add(listTitle);
+
+                var blurb = new Label(WorldRegionCatalog.Get(chosenRegion).Blurb);
+                blurb.AddToClassList("field__hint");
+                list.Add(blurb);
+
+                foreach (var country in WorldRegionCatalog.CountriesIn(chosenRegion))
+                {
+                    var entry = new Button(() => PickCountry(country.Country)) { text = country.DisplayName };
+                    entry.AddToClassList("country");
+                    entry.EnableInClassList("country--on", country.Country == chosenCountry);
+                    list.Add(entry);
+                }
+            }
+
+            body.Add(list);
+            section.Add(body);
+            section.Add(BuildRegionEffects());
+
+            return section;
+        }
+
+        private VisualElement BuildRegionEffects()
+        {
+            var strip = new VisualElement();
+            strip.AddToClassList("region-effects");
+
+            if (chosenRegion == WorldRegion.None)
+            {
+                var none = new Label("Pick a region to see what it costs and what it is worth.");
+                none.AddToClassList("field__hint");
+                strip.Add(none);
+                return strip;
+            }
+
+            // Before a country is picked the region average stands in, so the three can be compared
+            // without committing. It is labelled as an average rather than passed off as exact.
+            var exact = chosenCountry != Country.None;
+            var profile = exact
+                ? WorldRegionCatalog.Get(chosenCountry)
+                : WorldRegionCatalog.Average(chosenRegion);
+
+            var caption = new Label(exact
+                ? WorldRegionCatalog.Get(chosenCountry).Note
+                : $"Average across {WorldRegionCatalog.CountriesIn(chosenRegion).Count} countries. "
+                  + "Pick one for the real figures.");
+            caption.AddToClassList("region-effects__caption");
+            strip.Add(caption);
+
+            var row = new VisualElement();
+            row.AddToClassList("region-effects__row");
+
+            row.Add(EffectTile("HARDWARE ACCESS", profile.HardwarePriceMultiplier, 1.0, false,
+                "What accelerators cost here"));
+            row.Add(EffectTile("CORPORATE TAX", profile.TaxRate, 0.0, false, "Share of operating profit"));
+            row.Add(EffectTile("INNOVATION", profile.InnovationMultiplier, 1.0, true,
+                "Research and upgrade speed"));
+            row.Add(EffectTile("LOCAL COMPETITION", profile.LocalCompetitionMultiplier, 1.0, false,
+                "How hard your brand has to work"));
+
+            strip.Add(row);
+            return strip;
+        }
+
+        private static VisualElement EffectTile(string label, double value, double neutral,
+            bool higherIsBetter, string note)
+        {
+            var tile = new VisualElement();
+            tile.AddToClassList("region-tile");
+
+            var name = new Label(label);
+            name.AddToClassList("region-tile__label");
+            tile.Add(name);
+
+            var delta = value - neutral;
+            var amount = new Label(neutral == 0.0
+                ? $"{value * 100.0:0.#}%"
+                : $"{(delta > 0 ? "+" : string.Empty)}{delta * 100.0:0.#}%");
+            amount.AddToClassList("region-tile__value");
+
+            var helpful = Math.Abs(delta) < 0.0005 || delta > 0 == higherIsBetter;
+            amount.EnableInClassList("region-tile__value--good", Math.Abs(delta) >= 0.0005 && helpful);
+            amount.EnableInClassList("region-tile__value--bad", Math.Abs(delta) >= 0.0005 && !helpful);
+            tile.Add(amount);
+
+            var hint = new Label(note);
+            hint.AddToClassList("region-tile__note");
+            tile.Add(hint);
+
+            return tile;
+        }
+
+        private void PickRegion(WorldRegion region)
+        {
+            chosenRegion = region;
+            chosenCountry = Country.None;
+            Show(Stage.Company);
+        }
+
+        private void PickCountry(Country country)
+        {
+            chosenCountry = country;
+            chosenRegion = WorldRegionCatalog.Get(country).Region;
+            Show(Stage.Company);
         }
 
         private bool CompanyIsChosen { get; set; }
@@ -866,28 +1069,27 @@ namespace ScalingLaws.UI
         private VisualElement BuildCompanyCard(CompanyIdentityDefinition identity)
         {
             var card = new Button(() => Choose(identity.Archetype));
-            card.AddToClassList("card");
-            card.EnableInClassList("card--ahead", CompanyIsChosen && chosenArchetype == identity.Archetype);
+            card.AddToClassList("lab-card");
+            card.EnableInClassList("lab-card--on", CompanyIsChosen && chosenArchetype == identity.Archetype);
 
             // The logo is the mark drawn in the house colour. No texture to import, and it still
             // reads as four different companies at a glance.
             var mark = new Label(identity.Mark);
-            mark.style.fontSize = 34;
-            mark.style.unityFontStyleAndWeight = FontStyle.Bold;
+            mark.AddToClassList("lab-mark");
             mark.style.color = HexColor(identity.AccentHex);
             card.Add(mark);
 
             var title = new Label(identity.DisplayName.ToUpperInvariant());
-            title.AddToClassList("card__title");
+            title.AddToClassList("lab-card__name");
             card.Add(title);
 
             var tagline = new Label(identity.Tagline);
-            tagline.AddToClassList("card__line");
+            tagline.AddToClassList("lab-card__line");
             card.Add(tagline);
 
             var stats = new Label($"{UiFormat.Money(identity.StartingCashUsd)}   "
                 + $"{FounderTraitCatalog.Get(identity.HouseTrait).DisplayName}");
-            stats.AddToClassList("card__line");
+            stats.AddToClassList("lab-card__line");
             card.Add(stats);
 
             return card;
@@ -906,6 +1108,8 @@ namespace ScalingLaws.UI
             SceneFlow.RequestedFounderName =
                 string.IsNullOrWhiteSpace(founderName) ? "Anonymous" : founderName.Trim();
             SceneFlow.RequestedSkillLevels = skills.LevelsToArray();
+            SceneFlow.RequestedRegion = (int)chosenRegion;
+            SceneFlow.RequestedCountry = (int)chosenCountry;
 
             SceneFlow.StartNewCampaign(
                 companyName,

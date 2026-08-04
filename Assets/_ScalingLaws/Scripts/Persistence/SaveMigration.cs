@@ -111,6 +111,7 @@ namespace ScalingLaws.Persistence
                     7 => UpgradeV7ToV8(current),
                     8 => UpgradeV8ToV9(current),
                     9 => UpgradeV9ToV10(current),
+                    10 => UpgradeV10ToV11(current),
                     _ => current
                 };
             }
@@ -138,7 +139,7 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 3;
             data.shelf ??= new List<TrainedModelData>();
             data.upgrades ??= new List<UpgradeProjectData>();
             data.fundingRounds ??= new List<FundingRoundData>();
@@ -210,7 +211,7 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 4;
             data.customArchitectures ??= new List<CustomArchitectureData>();
             data.architectureProject ??= new ArchitectureProjectData();
             data.hasArchitectureProject = false;
@@ -237,7 +238,7 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 5;
 
             if (data.rentedPetaflops <= 0.0 && data.rentedAccelerators > 0)
             {
@@ -277,7 +278,7 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 6;
             data.founderTraits ??= new List<int>();
             data.unlockedResearch ??= new List<int>();
             data.archetype = (int)CompanyArchetype.Custom;
@@ -332,7 +333,7 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 7;
             data.loans ??= new List<LoanData>();
 
             LastMigrationNotes = Append(LastMigrationNotes,
@@ -353,7 +354,7 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 8;
             data.staff ??= new List<HireData>();
             data.incidents ??= new List<IncidentData>();
             data.officeTier = (int)OfficeTier.Garage;
@@ -376,7 +377,7 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 9;
             data.pricingModel = (int)PricingModel.PayPerToken;
             data.paidPriceMultiplier = 1.0;
             data.subscriptionPriceUsdPerMonth = 20.0;
@@ -404,13 +405,41 @@ namespace ScalingLaws.Persistence
                 return null;
             }
 
-            data.version = SaveData.CurrentVersion;
+            data.version = 10;
             data.founderName = string.IsNullOrWhiteSpace(data.companyName) ? "Anonymous" : "Founder";
             data.skillLevels ??= new List<int>();
             data.skillExperience ??= new List<long>();
 
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v9 to v10: skills start at the baseline, so an older save keeps the balance it had.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v10 to v11: the company gains a home country.
+        ///
+        /// There is nothing in a v10 file to infer one from, so it is registered in the United
+        /// States. That is the least flattering defensible choice rather than a kind one: it is the
+        /// most crowded market in the game and its tax rate is mid-table. Picking a tax haven here
+        /// would hand an old save money it never earned.
+        /// </summary>
+        public static SaveData UpgradeV10ToV11(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 11;
+            data.worldRegion = (int)WorldRegion.America;
+            data.homeCountry = (int)Country.UnitedStates;
+            data.lifetimeTaxPaidUsd = 0L;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v10 to v11: no home country was recorded, so the company is registered in the "
+                + "United States. Tax paid before the upgrade is reported as zero because it was "
+                + "never charged.");
 
             return data;
         }

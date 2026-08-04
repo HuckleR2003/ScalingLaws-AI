@@ -395,6 +395,21 @@ Experience is awarded exclusively on completion: a finished training run, a fini
 finished research node, a released model. Never for elapsed days, because a skill that grows while
 the player waits turns the game into an idle timer and every timing decision stops mattering.
 
+## Mechanism 22 - Where the company is registered
+
+Three regions on a drawn world map, sixteen countries behind them, chosen once and never moved.
+The region is only how the country is found; the country carries the numbers.
+
+Four axes, and every one of them lands on a rule that already existed: hardware price, a tax on
+daily operating profit, research duration, and the brand term in the demand split. No country wins
+on all four, and the cheapest silicon is never in the emptiest market, which is the trade.
+
+Tax is charged on profit and not on turnover, so a bad year is not made worse by geography. A
+country that punished a loss would be a trap rather than a choice.
+
+The map is drawn with `Painter2D` from coarse polygons rather than imported as a texture: nothing
+to license, nothing to keep in step with the palette, and it stays sharp at any size.
+
 ## Commands
 
 Unity lives in `C:\Program Files\Unity\Hub\Editor\6000.4.11f1`. In PowerShell,

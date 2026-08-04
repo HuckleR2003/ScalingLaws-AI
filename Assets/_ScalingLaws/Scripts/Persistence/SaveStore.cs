@@ -128,36 +128,28 @@ namespace ScalingLaws.Persistence
 
             data.founderName = state.FounderName;
 
-
             data.skillLevels = new List<int>(state.Skills.LevelsToArray());
 
-
             data.skillExperience = new List<long>(state.Skills.ExperienceToArray());
-
+            data.worldRegion = (int)state.Region;
+            data.homeCountry = (int)state.HomeCountry;
+            data.lifetimeTaxPaidUsd = state.LifetimeTaxPaidUsd;
 
             data.pricingModel = (int)state.Monetization.Model;
 
-
             data.paidPriceMultiplier = state.Monetization.PaidPriceMultiplier;
-
 
             data.subscriptionPriceUsdPerMonth = state.Monetization.SubscriptionPriceUsdPerMonth;
 
-
             data.freeTierTokensPerUserPerDay = state.Monetization.FreeTierTokensPerUserPerDay;
-
 
             data.companyMarketingDailyUsd = state.Monetization.CompanyMarketingDailyUsd;
 
-
             data.modelMarketingDailyUsd = state.Monetization.ModelMarketingDailyUsd;
-
 
             data.modelAwareness = state.Monetization.ModelAwareness;
 
-
             data.lifetimeFreeTokensBillions = state.LifetimeFreeTokensBillions;
-
 
             data.officeTier = (int)state.Staff.Office;
             data.lifetimeFinesUsd = state.LifetimeFinesUsd;
@@ -424,36 +416,28 @@ namespace ScalingLaws.Persistence
 
             state.FounderName = safe.founderName;
 
-
             state.Skills.Restore(safe.skillLevels, safe.skillExperience);
-
+            state.Region = (WorldRegion)safe.worldRegion;
+            state.HomeCountry = (Country)safe.homeCountry;
+            state.LifetimeTaxPaidUsd = safe.lifetimeTaxPaidUsd;
 
             state.LifetimeFinesUsd = safe.lifetimeFinesUsd;
 
-
             state.LifetimeFreeTokensBillions = safe.lifetimeFreeTokensBillions;
-
 
             state.Monetization.Restore(
 
-
                 (PricingModel)safe.pricingModel,
-
 
                 safe.paidPriceMultiplier,
 
-
                 safe.subscriptionPriceUsdPerMonth,
-
 
                 safe.freeTierTokensPerUserPerDay,
 
-
                 safe.companyMarketingDailyUsd,
 
-
                 safe.modelMarketingDailyUsd,
-
 
                 safe.modelAwareness);
 
@@ -854,79 +838,60 @@ namespace ScalingLaws.Persistence
 
             // ---- v10 fields ----
 
-
             safe.founderName = string.IsNullOrWhiteSpace(safe.founderName) ? "Anonymous" : safe.founderName.Trim();
-
-
             safe.skillLevels ??= new List<int>();
-
-
             safe.skillExperience ??= new List<long>();
 
-
             for (var index = 0; index < safe.skillLevels.Count; index++)
-
-
             {
-
-
                 safe.skillLevels[index] = Math.Clamp(safe.skillLevels[index], 0, PlayerSkillLimits.MaximumLevel);
-
-
             }
-
-
 
             for (var index = 0; index < safe.skillExperience.Count; index++)
-
-
             {
-
-
                 safe.skillExperience[index] = Math.Max(0L, safe.skillExperience[index]);
-
-
             }
 
+            // ---- v11 fields ----
 
+            // An edited file can name a country that does not exist, or one that is not in the
+            // region it claims. Both fall back rather than throw, same rule as every other enum here.
+            if (!Enum.IsDefined(typeof(WorldRegion), safe.worldRegion) || safe.worldRegion == 0)
+            {
+                safe.worldRegion = (int)WorldRegion.America;
+            }
+
+            if (!Enum.IsDefined(typeof(Country), safe.homeCountry) || safe.homeCountry == 0
+                || WorldRegionCatalog.Get((Country)safe.homeCountry).Region != (WorldRegion)safe.worldRegion)
+            {
+                safe.homeCountry = (int)WorldRegionCatalog.FirstIn((WorldRegion)safe.worldRegion);
+            }
+
+            safe.lifetimeTaxPaidUsd = Math.Max(0L, safe.lifetimeTaxPaidUsd);
 
             // ---- v9 fields ----
 
-
             if (!Enum.IsDefined(typeof(PricingModel), safe.pricingModel))
-
 
             {
 
-
                 safe.pricingModel = (int)PricingModel.PayPerToken;
-
 
             }
 
-
-
             safe.paidPriceMultiplier = Math.Clamp(Finite(safe.paidPriceMultiplier, 1.0), 0.05, 10.0);
-
 
             safe.subscriptionPriceUsdPerMonth = Math.Clamp(Finite(safe.subscriptionPriceUsdPerMonth, 20.0), 0.0, 2000.0);
 
-
             safe.freeTierTokensPerUserPerDay = Math.Clamp(Finite(safe.freeTierTokensPerUserPerDay), 0.0, 2_000_000.0);
-
 
             safe.companyMarketingDailyUsd = Math.Clamp(safe.companyMarketingDailyUsd, 0L, 500_000_000L);
 
-
             safe.modelMarketingDailyUsd = Math.Clamp(safe.modelMarketingDailyUsd, 0L, 500_000_000L);
-
 
             safe.modelAwareness = Math.Clamp(Finite(safe.modelAwareness), 0.0, 0.35);
 
-
             safe.lifetimeFreeTokensBillions = Math.Max(0.0, Finite(safe.lifetimeFreeTokensBillions));
-
-
 
             // ---- v8 collections ----
             safe.staff ??= new List<HireData>();

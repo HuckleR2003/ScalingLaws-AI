@@ -175,7 +175,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 10;
+        public const int CurrentVersion = 11;
 
         public int version = CurrentVersion;
 
@@ -293,6 +293,12 @@ namespace ScalingLaws.Persistence
         public List<int> skillLevels = new();
 
         public List<long> skillExperience = new();
+
+        // ---- added in v11 ----
+
+        public int worldRegion = 1;
+        public int homeCountry = 1;
+        public long lifetimeTaxPaidUsd;
     }
 
     /// <summary>One person on the payroll. Added in v8.</summary>

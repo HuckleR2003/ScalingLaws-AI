@@ -645,59 +645,51 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Founder creator. Two columns over a full width trait grid: the portrait and
-   the name on the left because that is what the player looks at first, the
-   skill budget on the right because it is what they spend the longest on.
+   Creator pages: who you are, and which lab.
+
+   Every block below sets flex-shrink: 0. Both pages are taller than the window,
+   and the first version let them squash instead of scroll, which pushed the
+   skill bars up onto their own titles and cut the second row of traits off the
+   bottom of the screen.
    --------------------------------------------------------------------------- */
+
+.page-scroll {
+    flex-grow: 1;
+    width: 100%;
+}
 
 .creator {
     width: 1180px;
+    flex-shrink: 0;
     align-self: center;
 }
 
 .creator__columns {
     flex-direction: row;
-    margin-bottom: 14px;
+    flex-shrink: 0;
+    margin-bottom: 12px;
 }
 
 .creator__identity {
-    width: 330px;
-    margin-right: 14px;
-    padding: 18px;
+    width: 300px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    padding: 16px;
     background-color: rgb(22, 26, 34);
     border-width: 1px;
     border-color: rgb(44, 52, 66);
     border-radius: 6px;
-    align-items: center;
-}
-
-.portrait {
-    width: 210px;
-    height: 300px;
-    background-color: rgb(14, 17, 23);
-    border-width: 1px;
-    border-color: rgb(52, 62, 78);
-    border-radius: 4px;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-}
-
-.portrait__label {
-    font-size: 11px;
-    color: rgb(78, 90, 108);
-    -unity-font-style: bold;
 }
 
 .creator__line {
-    font-size: 20px;
+    font-size: 17px;
     color: rgb(150, 162, 180);
     margin-bottom: 6px;
 }
 
 .creator__name {
-    width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .creator__name > .unity-text-field__input {
@@ -711,9 +703,30 @@
     color: rgb(226, 233, 244);
 }
 
+/* Takes every pixel the name field did not, so the card never ends in dead space. */
+
+.portrait {
+    flex-grow: 1;
+    min-height: 340px;
+    background-color: rgb(13, 16, 22);
+    border-width: 1px;
+    border-color: rgb(52, 62, 78);
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.portrait__label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgb(74, 86, 104);
+    -unity-font-style: bold;
+}
+
 .creator__skills {
     flex-grow: 1;
-    padding: 18px;
+    flex-shrink: 0;
+    padding: 16px;
     background-color: rgb(22, 26, 34);
     border-width: 1px;
     border-color: rgb(44, 52, 66);
@@ -724,6 +737,7 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .skills-budget {
@@ -736,16 +750,32 @@
     color: rgb(120, 132, 150);
 }
 
+/* Icon, text, controls. Three columns that cannot collide. */
+
 .skill-row {
-    margin-top: 10px;
-    padding: 8px 10px;
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 7px;
+    padding: 7px 10px;
     background-color: rgb(17, 20, 27);
     border-radius: 4px;
 }
 
-.skill-row__top {
-    flex-direction: row;
-    justify-content: space-between;
+.skill-icon {
+    flex-shrink: 0;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.skill-icon--missing {
+    background-color: rgb(28, 34, 44);
+    border-radius: 4px;
+}
+
+.skill-row__body {
+    flex-grow: 1;
+    flex-shrink: 1;
 }
 
 .skill-row__name {
@@ -755,9 +785,53 @@
     letter-spacing: 1px;
 }
 
+.skill-track {
+    height: 6px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    flex-shrink: 0;
+    background-color: rgb(10, 12, 16);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.skill-track__fill {
+    height: 6px;
+    background-color: rgb(64, 122, 196);
+}
+
+.skill-track__fill--lowered {
+    background-color: rgb(168, 82, 82);
+}
+
+/* A tick where every skill started, so a level reads as a distance from it. */
+
+.skill-track__baseline {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 6px;
+    background-color: rgb(96, 112, 134);
+}
+
+.skill-row__effect {
+    font-size: 11px;
+    color: rgb(122, 134, 152);
+    white-space: normal;
+}
+
+.skill-row__controls {
+    width: 92px;
+    flex-shrink: 0;
+    margin-left: 12px;
+    align-items: flex-end;
+}
+
 .skill-row__value {
-    font-size: 13px;
-    color: rgb(150, 162, 180);
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(160, 172, 190);
+    margin-bottom: 4px;
 }
 
 .skill-row__value--raised {
@@ -768,40 +842,14 @@
     color: rgb(214, 106, 106);
 }
 
-.skill-track {
-    height: 5px;
-    margin: 6px 0;
-    background-color: rgb(10, 12, 16);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.skill-track__fill {
-    height: 5px;
-    background-color: rgb(64, 122, 196);
-}
-
-.skill-row__bottom {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.skill-row__effect {
-    flex-grow: 1;
-    font-size: 11px;
-    color: rgb(122, 134, 152);
-    white-space: normal;
-}
-
 .skill-row__buttons {
     flex-direction: row;
 }
 
 .skill-button {
-    width: 30px;
+    width: 32px;
     height: 24px;
-    margin-left: 4px;
+    margin-left: 5px;
     font-size: 15px;
     -unity-font-style: bold;
     background-color: rgb(34, 42, 54);
@@ -812,79 +860,95 @@
 }
 
 .skill-button:hover {
-    background-color: rgb(46, 58, 76);
+    background-color: rgb(48, 62, 82);
+    border-color: rgb(78, 98, 124);
 }
 
 .skill-button:disabled {
-    opacity: 0.35;
+    opacity: 0.3;
 }
 
-/* Four per row, sized so the fourth card ends flush with the panel. */
+/* ---- traits: four per row, compact ---- */
 
 .trait-grid {
     flex-direction: row;
     flex-wrap: wrap;
-    margin-top: 10px;
+    flex-shrink: 0;
+    margin-top: 8px;
 }
 
 .trait-card {
-    width: 268px;
-    margin: 0 10px 10px 0;
-    padding: 12px;
+    width: 272px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    padding: 0;
     background-color: rgb(20, 24, 31);
     border-width: 1px;
     border-color: rgb(44, 52, 66);
     border-radius: 5px;
-    align-items: flex-start;
+    align-items: stretch;
+    overflow: hidden;
 }
 
 .trait-card:hover {
-    border-color: rgb(70, 86, 110);
+    border-color: rgb(74, 92, 118);
 }
 
 .trait-card--picked {
-    border-color: rgb(64, 122, 196);
-    background-color: rgb(24, 32, 46);
+    border-color: rgb(78, 142, 220);
+    background-color: rgb(24, 33, 48);
 }
 
 .trait-card--locked {
-    opacity: 0.42;
+    opacity: 0.38;
 }
 
 .trait-card__title {
-    font-size: 14px;
+    font-size: 13px;
     -unity-font-style: bold;
-    color: rgb(226, 233, 244);
+    color: rgb(228, 236, 248);
     letter-spacing: 1px;
-    margin-bottom: 4px;
+    padding-top: 9px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .trait-card__flavour {
     font-size: 11px;
-    color: rgb(126, 138, 156);
+    color: rgb(124, 136, 154);
     white-space: normal;
-    margin-bottom: 8px;
-    min-height: 30px;
+    padding-top: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 8px;
+    height: 46px;
 }
 
-/* Lighter than the card it sits in, so the numbers read as their own block. */
+/* Its own shade so the numbers read as data, not as more prose. */
 
 .trait-effects {
-    width: 100%;
-    padding: 7px 8px;
-    background-color: rgb(29, 35, 45);
-    border-radius: 4px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: rgb(31, 38, 49);
+    border-top-width: 1px;
+    border-color: rgb(46, 56, 70);
+}
+
+.trait-card--picked .trait-effects {
+    background-color: rgb(33, 45, 64);
 }
 
 .trait-effects__row {
     flex-direction: row;
     justify-content: space-between;
-    margin-bottom: 2px;
 }
 
 .trait-effects__label {
     font-size: 11px;
-    color: rgb(146, 158, 176);
+    color: rgb(142, 154, 172);
 }
 
 .trait-effects__value {
@@ -893,20 +957,278 @@
 }
 
 .trait-effects__value--good {
-    color: rgb(112, 196, 132);
+    color: rgb(112, 200, 136);
 }
 
 .trait-effects__value--bad {
-    color: rgb(214, 106, 106);
+    color: rgb(220, 108, 108);
 }
 
 .trait-card__badge {
-    margin-top: 8px;
-    padding: 2px 8px;
+    padding-top: 3px;
+    padding-bottom: 3px;
     font-size: 10px;
     -unity-font-style: bold;
     letter-spacing: 1px;
-    color: rgb(18, 22, 28);
-    background-color: rgb(64, 122, 196);
-    border-radius: 3px;
+    color: rgb(14, 20, 30);
+    background-color: rgb(78, 142, 220);
+    -unity-text-align: middle-center;
+}
+
+/* ---- footer ---- */
+
+.creator-footer {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 14px;
+}
+
+.creator-footer__reason {
+    flex-grow: 1;
+    font-size: 12px;
+    color: rgb(196, 156, 96);
+}
+
+/* ---- your lab: tiles and the banner are one block ---- */
+
+.lab-block {
+    flex-shrink: 0;
+    margin-top: 8px;
+    border-width: 1px;
+    border-color: rgb(44, 52, 66);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.lab-grid {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.lab-card {
+    width: 25%;
+    flex-shrink: 0;
+    margin: 0;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgb(20, 24, 31);
+    border-width: 0;
+    border-left-width: 1px;
+    border-color: rgb(40, 48, 60);
+    border-radius: 0;
+    align-items: center;
+}
+
+.lab-card:hover {
+    background-color: rgb(27, 34, 44);
+}
+
+.lab-card--on {
+    background-color: rgb(27, 40, 60);
+}
+
+.lab-mark {
+    font-size: 30px;
+    -unity-font-style: bold;
+}
+
+.lab-card__name {
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(228, 236, 248);
+    margin-top: 4px;
+}
+
+.lab-card__line {
+    font-size: 11px;
+    color: rgb(128, 140, 158);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-top: 3px;
+}
+
+.lab-banner {
+    margin: 0;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(196, 214, 240);
+    background-color: rgb(27, 34, 46);
+    border-width: 0;
+    border-top-width: 1px;
+    border-color: rgb(46, 56, 70);
+    border-radius: 0;
+}
+
+.lab-banner:hover {
+    background-color: rgb(34, 44, 60);
+}
+
+.lab-banner--on {
+    background-color: rgb(30, 48, 74);
+    color: rgb(226, 238, 255);
+}
+
+/* ---- region: map, list and the four numbers, joined ---- */
+
+.region {
+    flex-shrink: 0;
+    margin-top: 14px;
+    border-width: 1px;
+    border-color: rgb(44, 52, 66);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.region__header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    background-color: rgb(22, 26, 34);
+}
+
+.region__chosen {
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(120, 176, 250);
+}
+
+.region__body {
+    flex-direction: row;
+    background-color: rgb(18, 22, 29);
+}
+
+.world-map {
+    flex-grow: 1;
+    height: 330px;
+    border-right-width: 1px;
+    border-color: rgb(40, 48, 60);
+}
+
+.world-map__pick {
+    margin: 0;
+    padding: 0;
+    font-size: 10px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgba(180, 205, 240, 0.55);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-text-align: lower-center;
+}
+
+.world-map__pick:hover {
+    color: rgb(226, 238, 255);
+    background-color: rgba(90, 150, 230, 0.10);
+}
+
+.world-map__pick--on {
+    color: rgb(226, 238, 255);
+}
+
+.region__list {
+    width: 280px;
+    flex-shrink: 0;
+    padding: 12px;
+}
+
+.region__list-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(226, 233, 244);
+}
+
+.country {
+    margin: 0;
+    margin-top: 4px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 12px;
+    color: rgb(190, 202, 218);
+    background-color: rgb(24, 30, 39);
+    border-width: 1px;
+    border-color: rgb(42, 52, 66);
+    border-radius: 4px;
+    -unity-text-align: middle-left;
+}
+
+.country:hover {
+    background-color: rgb(32, 42, 56);
+}
+
+.country--on {
+    background-color: rgb(30, 52, 82);
+    border-color: rgb(78, 142, 220);
+    color: rgb(232, 242, 255);
+}
+
+/* Different shade, joined to the body above it with no gap. */
+
+.region-effects {
+    padding-top: 10px;
+    padding-bottom: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+    background-color: rgb(28, 34, 45);
+    border-top-width: 1px;
+    border-color: rgb(46, 56, 70);
+}
+
+.region-effects__caption {
+    font-size: 11px;
+    color: rgb(138, 150, 168);
+    margin-bottom: 8px;
+    white-space: normal;
+}
+
+.region-effects__row {
+    flex-direction: row;
+}
+
+.region-tile {
+    width: 25%;
+    padding-right: 12px;
+}
+
+.region-tile__label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(130, 144, 164);
+}
+
+.region-tile__value {
+    font-size: 19px;
+    -unity-font-style: bold;
+    color: rgb(214, 224, 238);
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.region-tile__value--good {
+    color: rgb(112, 200, 136);
+}
+
+.region-tile__value--bad {
+    color: rgb(220, 108, 108);
+}
+
+.region-tile__note {
+    font-size: 10px;
+    color: rgb(112, 124, 142);
+    white-space: normal;
 }

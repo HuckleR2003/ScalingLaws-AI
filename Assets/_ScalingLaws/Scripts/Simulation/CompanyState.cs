@@ -92,6 +92,18 @@ namespace ScalingLaws.Simulation
         /// <summary>The founder's name. Shown wherever the company is not the subject.</summary>
         public string FounderName { get; set; } = "Anonymous";
 
+        /// <summary>Where the company is registered. Chosen once at creation and never moved.</summary>
+        public WorldRegion Region { get; set; } = WorldRegion.America;
+
+        /// <summary>
+        /// The country inside that region. It carries the actual numbers; the region is only how
+        /// the player finds it on the map.
+        /// </summary>
+        public Country HomeCountry { get; set; } = Country.UnitedStates;
+
+        /// <summary>The four modifiers the home country applies. Read, never stored.</summary>
+        public CountryDefinition Home => WorldRegionCatalog.Get(HomeCountry);
+
         /// <summary>
         /// The founder's skills. The only progression in the game that is earned rather than bought,
         /// which is why it cannot be accelerated with money.
@@ -314,6 +326,9 @@ namespace ScalingLaws.Simulation
 
         public long LifetimeRevenueUsd { get; set; }
         public long LifetimeOperatingCostUsd { get; set; }
+
+        /// <summary>Tax paid to date. Counted inside operating cost as well, this is the breakdown.</summary>
+        public long LifetimeTaxPaidUsd { get; set; }
         public long LifetimeCapitalSpentUsd { get; set; }
 
         /// <summary>Whether the datacenter shell has been paid for, and when it opens.</summary>

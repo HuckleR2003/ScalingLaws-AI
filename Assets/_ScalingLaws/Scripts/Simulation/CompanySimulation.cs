@@ -94,9 +94,16 @@ namespace ScalingLaws.Simulation
                 + State.Monetization.TotalMarketingDailyUsd;
             var depreciation = SimUnits.ToDollars(profile.DailyDepreciationUsd);
 
-            State.CashUsd += revenue - operatingCost;
+            // Tax is charged on profit, not on turnover, so a loss-making year is not made worse
+            // by where the company is registered. It is the only cost in the game the player can
+            // reduce by choosing a place rather than by spending money.
+            var taxable = Math.Max(0L, revenue - operatingCost);
+            var tax = (long)Math.Round(taxable * State.Home.TaxRate);
+
+            State.CashUsd += revenue - operatingCost - tax;
             State.LifetimeRevenueUsd += revenue;
-            State.LifetimeOperatingCostUsd += operatingCost;
+            State.LifetimeOperatingCostUsd += operatingCost + tax;
+            State.LifetimeTaxPaidUsd += tax;
             State.RecordDailyRevenue(revenue);
 
             AdvanceMarketing();
@@ -152,7 +159,8 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public int ScaleResearchDuration(int days) => Math.Max(
             1,
-            (int)Math.Round(State.Founder.ScaleDuration(days) * State.Staff.ResearchSpeedMultiplier()));
+            (int)Math.Round(State.Founder.ScaleDuration(days) * State.Staff.ResearchSpeedMultiplier()
+                / State.Home.InnovationMultiplier));
 
         /// <summary>
         /// Commits to a run. Fails, with a reason, when the company does not own what the blueprint
@@ -282,7 +290,8 @@ namespace ScalingLaws.Simulation
 
             var pricePerUnit = SimUnits.ToDollars(
                 MarketModel.PurchasePricePerUnitUsd(generation, tierDefinition, MarketModel.ScarcityOn(State.Date))
-                * State.Founder.HardwarePriceMultiplier);
+                * State.Founder.HardwarePriceMultiplier
+                * State.Home.HardwarePriceMultiplier);
             var total = pricePerUnit * units;
             if (State.CashUsd < total)
             {
@@ -1500,7 +1509,8 @@ namespace ScalingLaws.Simulation
                 State.Reputation
                 + State.Founder.BrandBonus
                 + State.Staff.BrandBonus()
-                + State.Monetization.BrandBonus(),
+                + State.Monetization.BrandBonus()
+                - (State.Home.LocalCompetitionMultiplier - 1.0) * 0.12,
                 0.0,
                 1.0);
 

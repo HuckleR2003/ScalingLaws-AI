@@ -37,6 +37,12 @@ namespace ScalingLaws.Core
         /// <summary>Skill levels chosen at creation, in catalog order. Empty means every default.</summary>
         public static int[] RequestedSkillLevels { get; set; } = Array.Empty<int>();
 
+        /// <summary>Where the company registers. Zero means the default, America.</summary>
+        public static int RequestedRegion { get; set; }
+
+        /// <summary>The country inside that region. Zero means the region's first entry.</summary>
+        public static int RequestedCountry { get; set; }
+
         /// <summary>Starts a campaign from the opening flow rather than from defaults.</summary>
         public static void StartNewCampaign(string companyName, int archetype, int traitA, int traitB)
         {

@@ -97,6 +97,20 @@ namespace ScalingLaws.UI
             {
                 state.FounderName = SceneFlow.RequestedFounderName;
                 state.Skills.Restore(SceneFlow.RequestedSkillLevels, Array.Empty<long>());
+
+                var region = Enum.IsDefined(typeof(WorldRegion), SceneFlow.RequestedRegion)
+                             && SceneFlow.RequestedRegion != 0
+                    ? (WorldRegion)SceneFlow.RequestedRegion
+                    : WorldRegion.America;
+                var country = Enum.IsDefined(typeof(Country), SceneFlow.RequestedCountry)
+                              && SceneFlow.RequestedCountry != 0
+                    ? (Country)SceneFlow.RequestedCountry
+                    : WorldRegionCatalog.FirstIn(region);
+
+                state.Region = region;
+                state.HomeCountry = WorldRegionCatalog.Get(country).Region == region
+                    ? country
+                    : WorldRegionCatalog.FirstIn(region);
             }
 
             simulation = new CompanySimulation(state);
