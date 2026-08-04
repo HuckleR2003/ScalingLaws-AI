@@ -24,6 +24,35 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The bug this exists for cost more time than any other in the project.
+        ///
+        /// The game scene's UIDocument lost its PanelSettings reference. Without one there is no
+        /// panel to draw into, so the whole interface renders nowhere and the screen is the camera's
+        /// clear colour and nothing else. Every other check here still passed: the tree was built,
+        /// the labels were there, every category opened. The game was simply invisible.
+        ///
+        /// The reference is a serialized field, so it can only be checked on the asset. That is
+        /// exactly what makes it invisible to the rest of this suite and worth its own test.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator BothScenesHaveAPanelToRenderInto()
+        {
+            foreach (var sceneName in new[] { SceneFlow.MainMenuScene, SceneFlow.GameScene })
+            {
+                SceneFlow.ResumeSavedCampaign = false;
+                SceneManager.LoadScene(sceneName);
+                yield return null;
+                yield return null;
+
+                var document = FindDocument();
+                Assert.That(document, Is.Not.Null, $"No UIDocument in {sceneName}.");
+                Assert.That(document.panelSettings, Is.Not.Null,
+                    $"{sceneName} has a UIDocument with no PanelSettings, so nothing it builds is "
+                    + "ever drawn. The screen is the camera clear colour and the game looks hung.");
+            }
+        }
+
+        /// <summary>
         /// Waits until the panel has actually laid out.
         ///
         /// Reading resolvedStyle before a layout pass returns defaults rather than applied values, so

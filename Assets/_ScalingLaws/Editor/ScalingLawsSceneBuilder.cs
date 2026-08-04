@@ -96,6 +96,21 @@ namespace ScalingLaws.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, path);
+
+            // The game scene once shipped with this reference empty. Nothing failed: the interface
+            // was built exactly as normal and then drawn into no panel at all, so the screen was the
+            // camera clear colour and the game looked hung. It is read back from what was actually
+            // written rather than trusted from what was assigned.
+            var written = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+            if (written == null)
+            {
+                Debug.LogError($"{path} did not save.");
+            }
+            else if (document.panelSettings == null)
+            {
+                Debug.LogError($"{path} saved with no PanelSettings on its UIDocument. Nothing it "
+                    + "builds will ever be drawn.");
+            }
         }
 
         /// <summary>
