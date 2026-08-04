@@ -60,6 +60,30 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
+        /// A ramp between two arbitrary colours, for bars that are not part of the bottom accent.
+        /// The creator figures use their own blue and violet so they read as readouts rather than
+        /// as another piece of the interface chrome.
+        /// </summary>
+        public static void PaintRamp(VisualElement element, Color from, Color to)
+        {
+            var texture = new Texture2D(Width, 1, TextureFormat.RGBA32, false)
+            {
+                name = "HudRamp",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            for (var x = 0; x < Width; x++)
+            {
+                texture.SetPixel(x, 0, Color.Lerp(from, to, x / (float)(Width - 1)));
+            }
+
+            texture.Apply();
+            element.style.backgroundImage = new StyleBackground(texture);
+        }
+
+        /// <summary>
         /// Paints part of the gradient onto an element. An element covering the middle third of the
         /// screen gets the middle third of the gradient, so several separate strips still read as
         /// one line crossing the whole interface.

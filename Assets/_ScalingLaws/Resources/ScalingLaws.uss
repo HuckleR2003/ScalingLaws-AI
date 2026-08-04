@@ -1834,3 +1834,55 @@
     flex-shrink: 0;
     margin-top: 10px;
 }
+
+/* ---- title and stage rail share one line ---- */
+
+.stage-header {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.stage-header__title {
+    width: 190px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+}
+
+.stage-header > .stage-rail {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-top: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.stage-header .stage-pip {
+    flex-shrink: 1;
+    padding-left: 10px;
+    padding-right: 8px;
+}
+
+/* ---- figures carry a bar instead of a sentence ---- */
+
+.effect-figure__track {
+    height: 4px;
+    margin-top: 7px;
+    margin-right: 14px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.effect-figure__fill {
+    height: 4px;
+}
+
+.effect-figure__value--up {
+    color: rgb(150, 226, 176);
+}
+
+.effect-figure__value--down {
+    color: rgb(232, 142, 142);
+}

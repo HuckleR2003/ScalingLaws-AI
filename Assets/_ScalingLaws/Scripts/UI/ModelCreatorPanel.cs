@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -94,12 +95,19 @@ namespace ScalingLaws.UI
 
         private void Build()
         {
+            // Title and stage rail share a line. Two full width rows of chrome above a creator that
+            // must not scroll is height spent on saying where you are rather than on the decision.
+            var header = new VisualElement();
+            header.AddToClassList("stage-header");
+
             var title = new Label("NEW MODEL");
             title.AddToClassList("page-title");
-            root.Add(title);
+            title.AddToClassList("stage-header__title");
+            header.Add(title);
 
             stageRail.AddToClassList("stage-rail");
-            root.Add(stageRail);
+            header.Add(stageRail);
+            root.Add(header);
 
             effectBanner.AddToClassList("effect-banner");
             root.Add(effectBanner);
@@ -517,25 +525,24 @@ namespace ScalingLaws.UI
             effectBanner.Clear();
             effectBanner.EnableInClassList("effect-banner--blocked", !projection.IsFeasible);
 
-            var deltaText = Math.Abs(delta) < 0.05
-                ? "unchanged by that"
-                : $"{(delta > 0 ? "+" : string.Empty)}{delta:0.0} from your last change";
-            var deltaTone = Math.Abs(delta) < 0.05
-                ? null
-                : delta > 0 ? "effect-figure__note--good" : "effect-figure__note--bad";
-
             var bill = projection.ComputeCashCostUsd;
+            var frontier = Math.Max(1.0, simulation.Market.FrontierCapability);
+            var cash = Math.Max(1.0, simulation.State.CashUsd);
 
+            // Each figure carries a bar rather than a sentence. The bar is measured against the thing
+            // that makes the number mean something: capability against the frontier it has to beat,
+            // the bill against the money actually in the account.
             effectBanner.Add(EffectFigure("PROJECTED CAPABILITY",
-                UiFormat.Number(projection.ProjectedCapability), deltaText, deltaTone));
+                UiFormat.Number(projection.ProjectedCapability),
+                projection.ProjectedCapability / frontier, FigureTone.Cool, delta));
             effectBanner.Add(EffectFigure("FRONTIER TODAY",
                 UiFormat.Number(simulation.Market.FrontierCapability),
-                "what this ships against", null));
+                simulation.Market.FrontierCapability / 100.0, FigureTone.Cool, 0.0));
             effectBanner.Add(EffectFigure("TIME TO TRAIN",
-                UiFormat.Days(projection.TrainingDays), "at the throughput you rented", null));
+                UiFormat.Days(projection.TrainingDays),
+                projection.TrainingDays / 365.0, FigureTone.Warm, 0.0));
             effectBanner.Add(EffectFigure("CASH IT BURNS", UiFormat.Money(bill),
-                $"of {UiFormat.Money(simulation.State.CashUsd)} on hand",
-                bill > simulation.State.CashUsd ? "effect-figure__note--bad" : null));
+                bill / cash, FigureTone.Warm, 0.0));
 
             if (!projection.IsFeasible)
             {
@@ -545,7 +552,23 @@ namespace ScalingLaws.UI
             }
         }
 
-        private static VisualElement EffectFigure(string label, string value, string note, string noteClass)
+        private enum FigureTone
+        {
+            Cool,
+            Warm
+        }
+
+        private static readonly Color CoolLow = new(0.44f, 0.72f, 0.98f);
+        private static readonly Color CoolHigh = new(0.13f, 0.36f, 0.78f);
+        private static readonly Color WarmLow = new(0.72f, 0.64f, 0.96f);
+        private static readonly Color WarmHigh = new(0.42f, 0.24f, 0.72f);
+
+        /// <summary>
+        /// One reading: a caption, the number, and a bar that fills with it. The bar carries the
+        /// comparison the sentence used to make, in less height and without having to be read.
+        /// </summary>
+        private static VisualElement EffectFigure(string label, string value, double fraction,
+            FigureTone tone, double delta)
         {
             var figure = new VisualElement();
             figure.AddToClassList("effect-figure");
@@ -556,16 +579,22 @@ namespace ScalingLaws.UI
 
             var amount = new Label(value);
             amount.AddToClassList("effect-figure__value");
+            amount.EnableInClassList("effect-figure__value--up", delta > 0.05);
+            amount.EnableInClassList("effect-figure__value--down", delta < -0.05);
             figure.Add(amount);
 
-            var hint = new Label(note);
-            hint.AddToClassList("effect-figure__note");
-            if (!string.IsNullOrEmpty(noteClass))
-            {
-                hint.AddToClassList(noteClass);
-            }
+            var track = new VisualElement();
+            track.AddToClassList("effect-figure__track");
 
-            figure.Add(hint);
+            var fill = new VisualElement();
+            fill.AddToClassList("effect-figure__fill");
+            fill.style.width = Length.Percent((float)(Math.Clamp(fraction, 0.0, 1.0) * 100.0));
+            HudAccent.PaintRamp(fill,
+                tone == FigureTone.Cool ? CoolLow : WarmLow,
+                tone == FigureTone.Cool ? CoolHigh : WarmHigh);
+            track.Add(fill);
+
+            figure.Add(track);
             return figure;
         }
 

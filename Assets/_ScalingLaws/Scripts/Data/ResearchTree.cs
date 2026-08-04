@@ -27,6 +27,14 @@ namespace ScalingLaws.Data
         MultimodalGeneration = 104,
         CuratedCorpora = 105,
 
+        // Model types. A separate line of work from capability: these decide what the model is
+        // for, not how good it is, and every one of them is a bet on a segment arriving.
+        CodingModels = 111,
+        ConversationalModels = 112,
+        AutomationModels = 113,
+        AgenticWorkstation = 114,
+        ModelSeries = 115,
+
         // Era 2, the scaling race.
         ScalingLaws = 201,
         MixtureOfExperts = 202,
@@ -170,6 +178,52 @@ namespace ScalingLaws.Data
                 requires: new[] { ResearchNodeId.FineTuningAndPrompting },
                 unlocksArchitecture: ArchitectureId.EfficientAttention,
                 unlocksTrait: ModelTrait.Latency, gatesTrait: true),
+
+            // ------------------------------------------------- model types
+            //
+            // Priced and dated against when the audience for each one actually turns up. Researching
+            // the agent line in 2023 buys a market with no customers in it, which is the hardware
+            // timing mistake wearing a different hat.
+
+            new(ResearchNodeId.ModelSeries, ResearchEra.Foundations,
+                "Model series and versioning",
+                "Ship the next model as a version of the last one instead of as a stranger. The name "
+                + "carries its own audience across, and so does its reputation when it was bad.",
+                GameDate.FromCalendar(2022, 9, 1), costUsd: 3_000_000, durationDays: 75,
+                petaflopDaysRequired: 120,
+                requires: new[] { ResearchNodeId.FineTuningAndPrompting }),
+
+            new(ResearchNodeId.CodingModels, ResearchEra.Foundations,
+                "Code specialisation",
+                "Repository scale context, test execution and diffs as training signal. Almost nobody "
+                + "wants this in 2022. By 2025 it is the segment that pays.",
+                GameDate.FromCalendar(2022, 8, 1), costUsd: 7_500_000, durationDays: 120,
+                petaflopDaysRequired: 600,
+                requires: new[] { ResearchNodeId.CuratedCorpora }),
+
+            new(ResearchNodeId.ConversationalModels, ResearchEra.Foundations,
+                "Conversational tuning",
+                "Tone, refusal behaviour and memory across a session. Turns a tool people try into a "
+                + "product people open every morning.",
+                GameDate.FromCalendar(2022, 10, 1), costUsd: 6_000_000, durationDays: 100,
+                petaflopDaysRequired: 450,
+                requires: new[] { ResearchNodeId.HumanFeedback }),
+
+            new(ResearchNodeId.AutomationModels, ResearchEra.Scaling,
+                "Process automation",
+                "Structured output, long documents and tool calls that a compliance team will sign "
+                + "off. Sells slowly, and then never leaves.",
+                GameDate.FromCalendar(2023, 6, 1), costUsd: 18_000_000, durationDays: 180,
+                petaflopDaysRequired: 2_400,
+                requires: new[] { ResearchNodeId.ContextWindowExpansion }),
+
+            new(ResearchNodeId.AgenticWorkstation, ResearchEra.Autonomy,
+                "Autonomous workstation",
+                "A model with a machine of its own: a shell, a filesystem and hours of unsupervised "
+                + "work. The most expensive line on the tree and the only one that owns the endgame.",
+                GameDate.FromCalendar(2024, 6, 1), costUsd: 85_000_000, durationDays: 300,
+                petaflopDaysRequired: 22_000,
+                requires: new[] { ResearchNodeId.AutonomousAgents, ResearchNodeId.AutomationModels }),
 
             new(ResearchNodeId.MultimodalGeneration, ResearchEra.Foundations,
                 "Multimodal generation",
