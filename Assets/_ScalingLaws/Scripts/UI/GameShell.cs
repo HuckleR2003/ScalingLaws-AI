@@ -48,6 +48,7 @@ namespace ScalingLaws.UI
         private Label dateLabel;
         private Label rankLabel;
         private GameHud hud;
+        private ResearchNodeId selectedResearch = ResearchNodeId.None;
         private VisualElement trainingBanner;
 
         /// <summary>Seconds the opening reveal holds before the office takes the screen back.</summary>
@@ -529,6 +530,17 @@ namespace ScalingLaws.UI
         /// at the end, because the whole point of the last era is that the player can see it coming
         /// for years before they can touch it.
         /// </summary>
+        /// <summary>
+        /// The tree, laid out as a run of nodes that alternates above and below a spine.
+        ///
+        /// A grid of cards is a list with borders on it, and it hides the one thing the tree is for:
+        /// that these are a sequence with prerequisites, not a menu. The zigzag makes the order
+        /// readable at a glance and fits three times as many nodes on a screen, because a circle
+        /// with an icon in it is smaller than a card with a paragraph in it.
+        ///
+        /// Selecting a node opens its card underneath. That is where the paragraph goes, and it is
+        /// where a node gets room to say what it actually unlocks rather than a one line summary.
+        /// </summary>
         private VisualElement BuildResearchScreen()
         {
             var active = state.ActiveResearch;
@@ -536,100 +548,306 @@ namespace ScalingLaws.UI
                 active != null
                     ? $"{ResearchTree.Get(active.Node).DisplayName} in progress: {UiFormat.Percent(active.Progress, 0)}, "
                       + $"{active.DaysCompleted} of {active.DurationDays} days."
-                    : "Nothing being researched. Every architecture, corpus, upgrade line and compute tier "
-                      + "in the game sits behind a node here, and the calendar cost cannot be bought out of.");
+                    : "Every architecture, corpus, upgrade line, model type and compute tier in the "
+                      + "game sits behind a node here. The calendar cost cannot be bought out of.");
 
             var board = simulation.ResearchBoard();
 
             foreach (ResearchEra era in Enum.GetValues(typeof(ResearchEra)))
             {
-                var section = new VisualElement();
-                section.AddToClassList("panel");
-
-                var heading = new Label(EraTitle(era));
-                heading.AddToClassList("panel__heading");
-                section.Add(heading);
-
-                var grid = new VisualElement();
-                grid.AddToClassList("grid");
-                section.Add(grid);
-
-                var any = false;
+                var nodes = new List<ResearchStanding>();
                 foreach (var standing in board)
                 {
-                    if (standing.Node.Era != era)
+                    if (standing.Node.Era == era)
                     {
-                        continue;
+                        nodes.Add(standing);
                     }
-
-                    any = true;
-                    grid.Add(BuildResearchCard(standing));
                 }
 
-                if (any)
+                if (nodes.Count == 0)
                 {
-                    page.Add(section);
+                    continue;
                 }
+
+                var section = new VisualElement();
+                section.AddToClassList("era");
+
+                var heading = new Label(EraTitle(era));
+                heading.AddToClassList("era__heading");
+                section.Add(heading);
+
+                var track = new VisualElement();
+                track.AddToClassList("tree-track");
+
+                var spine = new VisualElement();
+                spine.AddToClassList("tree-spine");
+                track.Add(spine);
+
+                for (var index = 0; index < nodes.Count; index++)
+                {
+                    track.Add(BuildTreeNode(nodes[index], index % 2 == 0));
+                }
+
+                section.Add(track);
+                page.Add(section);
+            }
+
+            if (selectedResearch != ResearchNodeId.None)
+            {
+                foreach (var standing in board)
+                {
+                    if (standing.Node.Id == selectedResearch)
+                    {
+                        page.Add(BuildResearchCard(standing));
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                var hint = new Label("Pick a node to see what it opens.");
+                hint.AddToClassList("field__hint");
+                page.Add(hint);
             }
 
             return page;
         }
 
-        private VisualElement BuildResearchCard(ResearchStanding standing)
+        /// <summary>
+        /// One node on the spine. High or low, and its state is carried by the ring rather than by
+        /// a word, so a whole era reads without any of it being spelled out.
+        /// </summary>
+        private VisualElement BuildTreeNode(ResearchStanding standing, bool above)
         {
             var node = standing.Node;
-            var card = new Button(() =>
+
+            var column = new VisualElement();
+            column.AddToClassList("tree-node");
+            column.EnableInClassList("tree-node--above", above);
+
+            var button = new Button(() =>
             {
-                simulation.TryStartResearch(node.Id, out _);
+                selectedResearch = selectedResearch == node.Id ? ResearchNodeId.None : node.Id;
                 Show(Screen.Research);
             });
-            card.AddToClassList("card");
-            CardArt.Apply(card, CardArt.ForEra(node.Era));
 
-            if (standing.IsUnlocked)
+            button.AddToClassList("tree-pip");
+            button.EnableInClassList("tree-pip--done", standing.IsUnlocked);
+            button.EnableInClassList("tree-pip--running", standing.IsInProgress);
+            button.EnableInClassList("tree-pip--ready", !standing.IsUnlocked && standing.CanStart);
+            button.EnableInClassList("tree-pip--picked", selectedResearch == node.Id);
+
+            var icon = new VisualElement();
+            icon.AddToClassList("tree-pip__icon");
+
+            var art = PageArt.Icon(ResearchIconFor(node.Id));
+            if (art != null)
             {
-                card.AddToClassList("card--ahead");
-            }
-            else if (!standing.CanStart)
-            {
-                card.AddToClassList("card--locked");
-            }
-
-            var title = new Label(node.DisplayName.ToUpperInvariant());
-            title.AddToClassList("card__title");
-            card.Add(title);
-
-            var line = new Label(standing.IsUnlocked
-                ? "COMPLETE"
-                : standing.IsInProgress
-                    ? "IN PROGRESS"
-                    : $"{UiFormat.Money(node.CostUsd)}   {UiFormat.Days(standing.DurationDays)}   "
-                      + $"{UiFormat.PetaflopDays(node.PetaflopDaysRequired)}");
-            line.AddToClassList("card__line");
-            card.Add(line);
-
-            if (!standing.IsUnlocked && !standing.CanStart && !standing.IsInProgress)
-            {
-                var blocked = new Label(standing.BlockedReason);
-                blocked.AddToClassList("card__line");
-                blocked.style.whiteSpace = WhiteSpace.Normal;
-                card.Add(blocked);
-            }
-
-            if (node.HasWarning)
-            {
-                var badge = new Label("ALERT");
-                badge.AddToClassList("card__badge");
-                card.Add(badge);
-                card.tooltip = node.Warning;
+                icon.style.backgroundImage = new StyleBackground(art);
             }
             else
             {
-                card.tooltip = node.Description;
+                icon.AddToClassList("tree-pip__icon--none");
             }
 
-            card.SetEnabled(standing.CanStart);
+            button.Add(icon);
+            column.Add(button);
+
+            var label = new Label(node.DisplayName.ToUpperInvariant());
+            label.AddToClassList("tree-node__label");
+            column.Add(label);
+
+            return column;
+        }
+
+        /// <summary>
+        /// Which icon a node uses. Several nodes share one, because the icon says what kind of thing
+        /// is being unlocked rather than naming the node, and that is what makes a tree scannable.
+        /// </summary>
+        private static string ResearchIconFor(ResearchNodeId id) => id switch
+        {
+            ResearchNodeId.CodingModels => "research_code",
+            ResearchNodeId.ConversationalModels => "research_chat",
+            ResearchNodeId.AutomationModels => "research_process",
+            ResearchNodeId.AgenticWorkstation => "research_agent",
+            ResearchNodeId.ModelSeries => "research_series",
+            ResearchNodeId.CuratedCorpora => "research_data",
+            ResearchNodeId.LicensedArchives => "research_data",
+            ResearchNodeId.SyntheticDataGeneration => "research_data",
+            ResearchNodeId.EfficientAttention => "research_speed",
+            ResearchNodeId.MixtureOfExperts => "research_architecture",
+            ResearchNodeId.HybridArchitectures => "research_architecture",
+            ResearchNodeId.LongContextMixtures => "research_architecture",
+            ResearchNodeId.ContextWindowExpansion => "research_context",
+            ResearchNodeId.DatacenterProgramme => "research_datacenter",
+            ResearchNodeId.HumanFeedback => "research_safety",
+            ResearchNodeId.ReasoningModels => "research_reasoning",
+            ResearchNodeId.MultimodalGeneration => "research_multimodal",
+            ResearchNodeId.AutonomousAgents => "research_agent",
+            ResearchNodeId.RecursiveSelfImprovement => "research_recursive",
+            ResearchNodeId.ArtificialSuperintelligence => "research_asi",
+            _ => "research_foundation"
+        };
+
+        /// <summary>
+        /// The card under the spine. Everything a node does, spelled out: what it opens, what it
+        /// costs in money, calendar and compute, and what it needs first.
+        /// </summary>
+        private VisualElement BuildResearchCard(ResearchStanding standing)
+        {
+            var node = standing.Node;
+
+            var card = new VisualElement();
+            card.AddToClassList("research-card");
+
+            var header = new VisualElement();
+            header.AddToClassList("research-card__header");
+
+            var title = new Label(node.DisplayName.ToUpperInvariant());
+            title.AddToClassList("research-card__title");
+            header.Add(title);
+
+            var status = new Label(standing.IsUnlocked
+                ? "DONE"
+                : standing.IsInProgress ? "IN PROGRESS" : standing.CanStart ? "AVAILABLE" : "LOCKED");
+            status.AddToClassList("research-card__status");
+            status.EnableInClassList("research-card__status--done", standing.IsUnlocked);
+            status.EnableInClassList("research-card__status--ready", !standing.IsUnlocked && standing.CanStart);
+            header.Add(status);
+            card.Add(header);
+
+            var body = new Label(node.Description);
+            body.AddToClassList("research-card__body");
+            card.Add(body);
+
+            var unlocks = new VisualElement();
+            unlocks.AddToClassList("research-card__unlocks");
+
+            foreach (var line in UnlockLines(node))
+            {
+                unlocks.Add(line);
+            }
+
+            card.Add(unlocks);
+
+            var costs = new VisualElement();
+            costs.AddToClassList("research-card__costs");
+            costs.Add(CostFigure("COST", UiFormat.Money(node.CostUsd)));
+            costs.Add(CostFigure("CALENDAR", UiFormat.Days(standing.DurationDays)));
+            costs.Add(CostFigure("COMPUTE", $"{UiFormat.Number(node.PetaflopDaysRequired)} PF-days"));
+            costs.Add(CostFigure("NOT BEFORE", node.EarliestDate.ToString()));
+            card.Add(costs);
+
+            if (!string.IsNullOrEmpty(node.Warning))
+            {
+                var warning = new Label(node.Warning);
+                warning.AddToClassList("research-card__warning");
+                card.Add(warning);
+            }
+
+            if (!standing.IsUnlocked)
+            {
+                var start = new Button(() =>
+                {
+                    simulation.TryStartResearch(node.Id, out _);
+                    Show(Screen.Research);
+                })
+                { text = standing.IsInProgress ? "ALREADY RUNNING" : "START THIS" };
+
+                start.AddToClassList("menu-button");
+                start.AddToClassList("menu-button--primary");
+                start.style.marginTop = 12;
+                start.SetEnabled(standing.CanStart);
+                card.Add(start);
+
+                if (!standing.CanStart && !string.IsNullOrEmpty(standing.BlockedReason))
+                {
+                    var blocked = new Label(standing.BlockedReason);
+                    blocked.AddToClassList("research-card__blocked");
+                    card.Add(blocked);
+                }
+            }
+
             return card;
+        }
+
+        /// <summary>Everything this node opens, read off the node rather than written out twice.</summary>
+        private static IEnumerable<VisualElement> UnlockLines(ResearchNode node)
+        {
+            if (node.UnlocksArchitecture != ArchitectureId.None)
+            {
+                yield return UnlockLine("ARCHITECTURE",
+                    ArchitectureCatalog.Get(node.UnlocksArchitecture).DisplayName);
+            }
+
+            if (node.UnlocksData != DatasetSource.None)
+            {
+                foreach (var corpus in DatasetCatalog.All)
+                {
+                    if ((node.UnlocksData & corpus.Flag) == corpus.Flag)
+                    {
+                        yield return UnlockLine("CORPUS", corpus.DisplayName);
+                    }
+                }
+            }
+
+            if (node.UnlocksTier != ComputeTier.None)
+            {
+                yield return UnlockLine("COMPUTE TIER", node.UnlocksTier.ToString());
+            }
+
+            // ModelTrait has no None member, so the gate flag is the only honest signal that a node
+            // actually opens an upgrade line rather than defaulting to the zero trait.
+            if (node.GatesTrait)
+            {
+                yield return UnlockLine("UPGRADE LINE", node.UnlocksTrait.ToString());
+            }
+
+            foreach (var definition in ModelTypeCatalog.All)
+            {
+                if (definition.Requires == node.Id)
+                {
+                    yield return UnlockLine("MODEL TYPE", definition.DisplayName);
+                }
+            }
+
+            foreach (var required in node.Prerequisites)
+            {
+                yield return UnlockLine("NEEDS FIRST", ResearchTree.Get(required).DisplayName);
+            }
+        }
+
+        private static VisualElement UnlockLine(string kind, string what)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("unlock-row");
+
+            var tag = new Label(kind);
+            tag.AddToClassList("unlock-row__tag");
+            tag.EnableInClassList("unlock-row__tag--needs", kind == "NEEDS FIRST");
+            row.Add(tag);
+
+            var name = new Label(what);
+            name.AddToClassList("unlock-row__name");
+            row.Add(name);
+
+            return row;
+        }
+
+        private static VisualElement CostFigure(string label, string value)
+        {
+            var figure = new VisualElement();
+            figure.AddToClassList("cost-figure");
+
+            var caption = new Label(label);
+            caption.AddToClassList("cost-figure__label");
+            figure.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("cost-figure__value");
+            figure.Add(amount);
+
+            return figure;
         }
 
         private static string EraTitle(ResearchEra era) => era switch

@@ -2292,3 +2292,255 @@
     border-color: rgb(120, 176, 250);
     color: rgb(226, 238, 255);
 }
+
+/* ---- banners, half again taller ---- */
+
+.page-banner {
+    height: 189px;
+}
+
+/* ---- the research spine ---- */
+
+.era {
+    flex-shrink: 0;
+    margin-bottom: 14px;
+}
+
+.era__heading {
+    font-size: 12px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(140, 154, 176);
+    margin-bottom: 4px;
+}
+
+.tree-track {
+    flex-direction: row;
+    align-items: center;
+    height: 148px;
+    flex-shrink: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+}
+
+.tree-spine {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    top: 73px;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.tree-node {
+    width: 96px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.tree-node--above {
+    padding-bottom: 54px;
+}
+
+.tree-node {
+    padding-top: 54px;
+}
+
+.tree-node--above {
+    padding-top: 0;
+}
+
+.tree-pip {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    background-color: rgb(18, 22, 30);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 24px;
+    align-items: center;
+    justify-content: center;
+    transition-property: border-color, background-color, scale;
+    transition-duration: 140ms;
+}
+
+.tree-pip:hover {
+    border-color: rgb(120, 176, 250);
+    scale: 1.08 1.08;
+}
+
+.tree-pip--ready {
+    border-color: rgba(226, 78, 62, 0.75);
+}
+
+.tree-pip--running {
+    border-color: rgb(214, 162, 62);
+    background-color: rgba(120, 84, 20, 0.35);
+}
+
+.tree-pip--done {
+    border-color: rgb(112, 200, 136);
+    background-color: rgba(30, 72, 46, 0.55);
+}
+
+.tree-pip--picked {
+    border-color: rgb(178, 158, 226);
+    background-color: rgba(70, 56, 108, 0.55);
+}
+
+.tree-pip__icon {
+    width: 24px;
+    height: 24px;
+    opacity: 0.85;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.tree-pip__icon--none {
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.35);
+    border-radius: 5px;
+}
+
+.tree-node__label {
+    margin-top: 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(126, 140, 160);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* ---- the card under the spine ---- */
+
+.research-card {
+    flex-shrink: 0;
+    margin-top: 4px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: rgb(20, 24, 32);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-left-width: 2px;
+    border-left-color: rgb(178, 158, 226);
+    border-radius: 4px;
+}
+
+.research-card__header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.research-card__title {
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(232, 240, 252);
+}
+
+.research-card__status {
+    font-size: 10px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(140, 154, 176);
+}
+
+.research-card__status--ready {
+    color: rgb(232, 150, 130);
+}
+
+.research-card__status--done {
+    color: rgb(112, 200, 136);
+}
+
+.research-card__body {
+    margin-top: 6px;
+    font-size: 12px;
+    color: rgb(160, 172, 190);
+    white-space: normal;
+}
+
+.research-card__unlocks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.unlock-row {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 8px;
+    margin-bottom: 6px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 6px;
+    padding-right: 10px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 3px;
+}
+
+.unlock-row__tag {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-right: 8px;
+    font-size: 8px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(18, 24, 20);
+    background-color: rgb(112, 200, 136);
+    border-radius: 2px;
+}
+
+.unlock-row__tag--needs {
+    color: rgb(28, 22, 18);
+    background-color: rgb(214, 162, 62);
+}
+
+.unlock-row__name {
+    font-size: 11px;
+    color: rgb(214, 224, 238);
+}
+
+.research-card__costs {
+    flex-direction: row;
+    margin-top: 8px;
+}
+
+.cost-figure {
+    width: 25%;
+}
+
+.cost-figure__label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(126, 140, 160);
+}
+
+.cost-figure__value {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(220, 230, 244);
+}
+
+.research-card__warning {
+    margin-top: 8px;
+    font-size: 11px;
+    color: rgb(226, 168, 110);
+    white-space: normal;
+}
+
+.research-card__blocked {
+    margin-top: 6px;
+    font-size: 11px;
+    color: rgb(226, 140, 140);
+    white-space: normal;
+}
