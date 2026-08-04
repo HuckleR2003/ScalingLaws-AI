@@ -36,12 +36,14 @@ namespace ScalingLaws.Data
             PlayerSkill skill,
             string displayName,
             string description,
+            string shortEffect,
             string effectAtFull,
             double fullEffect)
         {
             Skill = skill;
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? skill.ToString() : displayName;
             Description = description ?? string.Empty;
+            ShortEffect = shortEffect ?? string.Empty;
             EffectAtFull = effectAtFull ?? string.Empty;
             FullEffect = Math.Clamp(SimUnits.Finite(fullEffect), 0.0, 1.0);
         }
@@ -49,8 +51,15 @@ namespace ScalingLaws.Data
         public PlayerSkill Skill { get; }
         public string DisplayName { get; }
 
-        /// <summary>One line on what this is, for the creator screen.</summary>
+        /// <summary>A sentence on what this is. Long enough to need a tooltip rather than a row.</summary>
         public string Description { get; }
+
+        /// <summary>
+        /// Two or three words naming the number this moves. The creator screen shows seven of these
+        /// side by side, and a full sentence in that space wraps to two lines and doubles the height
+        /// of the panel, which is the difference between the page fitting and the page scrolling.
+        /// </summary>
+        public string ShortEffect { get; }
 
         /// <summary>Plain statement of the effect at level 100, for the card.</summary>
         public string EffectAtFull { get; }
@@ -111,36 +120,43 @@ namespace ScalingLaws.Data
         {
             new(PlayerSkill.Development, "Development",
                 "Running the training itself. Schedules, checkpoints, and knowing which run to kill.",
+                "Training variance",
                 "Training lands within a third of the usual spread of its projection",
                 fullEffect: 0.65),
 
             new(PlayerSkill.Management, "Management",
                 "Payroll, contracts, and the difference between spending money and wasting it.",
+                "Daily burn",
                 "18 percent off everything the company spends running itself",
                 fullEffect: 0.18),
 
             new(PlayerSkill.Teamwork, "Teamwork",
                 "Getting more out of the people already hired before hiring more of them.",
+                "Team scaling",
                 "Each discipline keeps improving 60 percent further before it saturates",
                 fullEffect: 0.60),
 
             new(PlayerSkill.Concept, "Concept",
                 "Architecture and research direction. Choosing what to build before building it.",
+                "Research depth",
                 "In-house research reaches 35 percent further and lands more predictably",
                 fullEffect: 0.35),
 
             new(PlayerSkill.Software, "Software",
                 "Serving infrastructure. Making a token cheaper to produce without making it worse.",
+                "Cost per token",
                 "22 percent off the cost of every token served",
                 fullEffect: 0.22),
 
             new(PlayerSkill.DataEngineering, "Data Engineering",
                 "Corpora, cleaning and licensing. The unglamorous half of model quality.",
+                "Data quality",
                 "Every corpus behaves as if it were 20 percent better",
                 fullEffect: 0.20),
 
             new(PlayerSkill.Safety, "Safety",
                 "Evaluation and red teaming. Finding it before a regulator does.",
+                "Incident risk",
                 "70 percent less likely to have a public failure",
                 fullEffect: 0.70)
         };

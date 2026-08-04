@@ -116,10 +116,10 @@ namespace ScalingLaws.UI
             root.Clear();
             root.AddToClassList("root");
 
-            // The menu and the cold open are single screens that fit. The two creator pages do not,
-            // and when they overflowed a fixed root every child shrank to make room: the skill bars
-            // collapsed onto their own titles and the second row of traits was cut off the bottom.
-            // They scroll instead, and nothing inside them is allowed to shrink.
+            // Both creator pages are laid out to fit a normal window with no scrolling at all. The
+            // scroller is there as a floor, not as the plan: without it a page that does not fit is
+            // squashed rather than overflowed, which is what put the skill bars through their own
+            // titles and cut the second row of traits off the bottom of the screen.
             var centred = next == Stage.Intro;
             root.style.justifyContent = centred ? Justify.Center : Justify.FlexStart;
             root.style.alignItems = centred ? Align.Center : Align.Stretch;
@@ -148,8 +148,8 @@ namespace ScalingLaws.UI
             scroll.AddToClassList("page-scroll");
             scroll.style.flexGrow = 1;
             scroll.contentContainer.style.alignItems = Align.Center;
-            scroll.contentContainer.style.paddingTop = 26;
-            scroll.contentContainer.style.paddingBottom = 26;
+            scroll.contentContainer.style.paddingTop = 14;
+            scroll.contentContainer.style.paddingBottom = 14;
             scroll.Add(content);
             return scroll;
         }
@@ -585,12 +585,18 @@ namespace ScalingLaws.UI
             columns.Add(BuildSkillsColumn());
 
             var traits = new VisualElement();
-            traits.AddToClassList("panel");
+            traits.AddToClassList("traits");
+
+            var traitsHeader = new VisualElement();
+            traitsHeader.AddToClassList("traits__header");
+
             var traitsHeading = new Label("TRAITS");
             traitsHeading.AddToClassList("panel__heading");
-            traits.Add(traitsHeading);
-            traits.Add(Hint($"Pick {FounderTraitCatalog.TraitsPerFounder}. They last the whole campaign "
+            traitsHeader.Add(traitsHeading);
+
+            traitsHeader.Add(Hint($"Pick {FounderTraitCatalog.TraitsPerFounder}. They last the whole campaign "
                 + "and every one is a trade, not a bonus."));
+            traits.Add(traitsHeader);
 
             var grid = new VisualElement();
             grid.AddToClassList("trait-grid");
@@ -660,12 +666,28 @@ namespace ScalingLaws.UI
             column.Add(header);
             column.Add(Hint($"Everything starts at {PlayerSkillLimits.StartingLevel}, where it has no effect "
                 + $"either way. Each click adds {PlayerSkillLimits.PointsPerClick}. These keep growing as you "
-                + "play, and they are the only thing in the game that money cannot buy."));
+                + "play, and they are the only thing money cannot buy."));
 
-            foreach (var definition in PlayerSkillCatalog.All)
+            // Seven rows in one stack is taller than the page has room for. Four and three side by
+            // side is the same information in a little over half the height.
+            var split = new VisualElement();
+            split.AddToClassList("skills-split");
+
+            var left = new VisualElement();
+            left.AddToClassList("skills-split__column");
+            var right = new VisualElement();
+            right.AddToClassList("skills-split__column");
+            right.AddToClassList("skills-split__column--right");
+
+            for (var index = 0; index < PlayerSkillCatalog.All.Count; index++)
             {
-                column.Add(BuildSkillRow(definition, remaining));
+                var host = index < 4 ? left : right;
+                host.Add(BuildSkillRow(PlayerSkillCatalog.All[index], remaining));
             }
+
+            split.Add(left);
+            split.Add(right);
+            column.Add(split);
 
             return column;
         }
@@ -680,7 +702,7 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("skill-row");
 
-            row.Add(SkillIcons.Badge(definition.Skill));
+            row.Add(SkillIcons.Badge(definition.Skill, 30));
 
             var body = new VisualElement();
             body.AddToClassList("skill-row__body");
@@ -703,7 +725,7 @@ namespace ScalingLaws.UI
             track.Add(baseline);
             body.Add(track);
 
-            var effect = new Label(definition.Description);
+            var effect = new Label(definition.ShortEffect);
             effect.AddToClassList("skill-row__effect");
             body.Add(effect);
 
@@ -737,7 +759,7 @@ namespace ScalingLaws.UI
             controls.Add(buttons);
             row.Add(controls);
 
-            row.tooltip = $"At 100: {definition.EffectAtFull}.";
+            row.tooltip = $"{definition.Description}  At 100: {definition.EffectAtFull}.";
             return row;
         }
 
