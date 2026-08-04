@@ -30,6 +30,7 @@ namespace ScalingLaws.UI
 
         private readonly Action<SimSpeed> onSpeed;
         private readonly Action onSkipDay;
+        private readonly Action onCompanyInfo;
 
         private readonly List<Button> speedButtons = new();
         private readonly List<Button> slots = new();
@@ -38,12 +39,14 @@ namespace ScalingLaws.UI
         private Label dateLabel;
         private Label clockLabel;
         private Button pauseButton;
+        private Button infoButton;
         private VisualElement dayFill;
 
-        public GameHud(Action<SimSpeed> onSpeed, Action onSkipDay)
+        public GameHud(Action<SimSpeed> onSpeed, Action onSkipDay, Action onCompanyInfo = null)
         {
             this.onSpeed = onSpeed;
             this.onSkipDay = onSkipDay;
+            this.onCompanyInfo = onCompanyInfo;
             Root = Build();
         }
 
@@ -94,6 +97,12 @@ namespace ScalingLaws.UI
         }
 
         private VisualElement SlotHost { get; set; }
+
+        /// <summary>Lights the info button while the panels it opens are on screen.</summary>
+        public void SetCompanyInfoOpen(bool open)
+        {
+            infoButton?.EnableInClassList("hud-info--on", open);
+        }
 
         public void SetActiveSlot(object key)
         {
@@ -191,6 +200,11 @@ namespace ScalingLaws.UI
             var skip = new Button(() => onSkipDay?.Invoke()) { text = "SKIP DAY" };
             skip.AddToClassList("hud-skip");
             controls.Add(skip);
+
+            infoButton = new Button(() => onCompanyInfo?.Invoke()) { text = "COMPANY INFO" };
+            infoButton.AddToClassList("hud-skip");
+            infoButton.AddToClassList("hud-info");
+            controls.Add(infoButton);
 
             module.Add(controls);
             return module;

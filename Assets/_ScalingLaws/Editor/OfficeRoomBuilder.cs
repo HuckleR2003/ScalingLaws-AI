@@ -66,6 +66,15 @@ namespace ScalingLaws.Editor
             BuildServerBay(Group(root.transform, "Servers"), palette);
             BuildWaypoints(Group(root.transform, "Waypoints"));
 
+            // The practicals go in the prefab rather than in a scene, so instantiating the room
+            // anywhere gives a lit room. They were in the viewing scene only, which meant the copy
+            // that the game shows would have come out flat.
+            AddPointLight(root.transform, "LampBedside",
+                new Vector3(7.8f, GroundHeight + 1.3f, 8.2f), 2.2f, 4.5f);
+            AddPointLight(root.transform, "LampLiving", new Vector3(4.6f, 2.2f, 3.4f), 1.8f, 5.5f);
+            AddPointLight(root.transform, "LampWorkshop", new Vector3(9.6f, 2.2f, 4.4f), 1.6f, 5.0f);
+            AddPointLight(root.transform, "RackGlow", new Vector3(7.7f, 1.4f, 7.2f), 1.2f, 3.5f);
+
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);
 
@@ -326,11 +335,6 @@ namespace ScalingLaws.Editor
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             instance.transform.position = Vector3.zero;
 
-            // Warm practicals, roughly where the lamps are, so the room reads as lit from inside.
-            AddPointLight(instance.transform, "LampBedside", new Vector3(7.8f, GroundHeight + 1.3f, 8.2f), 2.2f, 4.5f);
-            AddPointLight(instance.transform, "LampLiving", new Vector3(4.6f, 2.2f, 3.4f), 1.8f, 5.5f);
-            AddPointLight(instance.transform, "LampWorkshop", new Vector3(9.6f, 2.2f, 4.4f), 1.6f, 5.0f);
-            AddPointLight(instance.transform, "RackGlow", new Vector3(7.7f, 1.4f, 7.2f), 1.2f, 3.5f);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
         }

@@ -28,6 +28,8 @@ namespace ScalingLaws.Editor
         private const string ThemeFolder = "Assets/UI Toolkit/UnityThemes";
 
         private const string PanelSettingsPath = UiFolder + "/ScalingLawsPanelSettings.asset";
+        private const string OfficePrefabPath = "Assets/_ScalingLaws/Prefabs/OfficeRoom.prefab";
+        private const string OfficeTargetPath = "Assets/_ScalingLaws/Resources/OfficeView.renderTexture";
         /// <summary>
         /// The stylesheet lives under Resources and nowhere else. There were briefly two copies, one
         /// here and one there, and the one the game actually loaded silently fell half a file behind
@@ -89,10 +91,33 @@ namespace ScalingLaws.Editor
 
             var uiObject = new GameObject(objectName);
             var document = uiObject.AddComponent<UIDocument>();
-            document.panelSettings = panelSettings;
+
+            // Written through SerializedObject rather than through the property.
+            //
+            // The property assignment persisted for the menu scene and was empty in the game scene
+            // every single time it was rebuilt, which is how the game shipped invisible for a week.
+            // Whatever the setter does, it does not reliably survive the save on the second scene of
+            // a run. The serialized field is the thing that actually gets written to disk, so that
+            // is what gets set, exactly as the stylesheet already does.
+            var serialized = new SerializedObject(document);
+            var property = serialized.FindProperty("m_PanelSettings");
+            if (property == null)
+            {
+                Debug.LogError("UIDocument has no m_PanelSettings field. Unity changed the format.");
+            }
+            else
+            {
+                property.objectReferenceValue = panelSettings;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             var controller = uiObject.AddComponent<TController>();
             AssignStyleSheet(controller, styleSheet);
+
+            if (typeof(TController) == typeof(GameShell))
+            {
+                AddOfficeStage();
+            }
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, path);
@@ -106,11 +131,76 @@ namespace ScalingLaws.Editor
             {
                 Debug.LogError($"{path} did not save.");
             }
-            else if (document.panelSettings == null)
+            else if (new SerializedObject(document).FindProperty("m_PanelSettings")?.objectReferenceValue == null)
             {
                 Debug.LogError($"{path} saved with no PanelSettings on its UIDocument. Nothing it "
                     + "builds will ever be drawn.");
             }
+        }
+
+        /// <summary>
+        /// Puts the generated room in the game scene with its own camera, rendering into a texture
+        /// the interface can show.
+        ///
+        /// A second camera into a render target rather than a second window: the office has to
+        /// appear inside a UI panel alongside everything else, and UI Toolkit can show a texture but
+        /// cannot show a camera. It also means the room is drawn only while the SITE screen is open,
+        /// because a disabled camera costs nothing.
+        ///
+        /// The angle is the one every placement in the room assumes and must not be changed here.
+        /// </summary>
+        private static void AddOfficeStage()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(OfficePrefabPath);
+            if (prefab == null)
+            {
+                Debug.LogWarning("No office prefab yet. Run Scaling Laws > Build office room first.");
+                return;
+            }
+
+            var target = AssetDatabase.LoadAssetAtPath<RenderTexture>(OfficeTargetPath);
+            if (target == null)
+            {
+                target = new RenderTexture(1280, 720, 24, RenderTextureFormat.ARGB32)
+                {
+                    name = "OfficeView",
+                    antiAliasing = 4
+                };
+
+                AssetDatabase.CreateAsset(target, OfficeTargetPath);
+            }
+
+            var room = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            room.name = "OfficeRoom";
+
+            // Far away from the interface camera so neither can ever see the other's geometry.
+            room.transform.position = new Vector3(0f, -500f, 0f);
+
+            var cameraObject = new GameObject("OfficeCamera");
+            cameraObject.transform.SetParent(room.transform, false);
+
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.orthographic = true;
+            camera.orthographicSize = 7.5f;
+            camera.nearClipPlane = 0.1f;
+            camera.farClipPlane = 100f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.055f, 0.065f, 0.090f);
+            camera.targetTexture = target;
+            camera.rect = new Rect(0f, 0f, 1f, 1f);
+            cameraObject.transform.rotation = Quaternion.Euler(30f, -45f, 0f);
+            cameraObject.transform.position = new Vector3(6f, -500f + 3f, 4.5f)
+                - cameraObject.transform.forward * 30f;
+
+            var keyObject = new GameObject("OfficeKeyLight");
+            keyObject.transform.SetParent(room.transform, false);
+
+            var key = keyObject.AddComponent<Light>();
+            key.type = LightType.Directional;
+            key.intensity = 1.1f;
+            key.color = new Color(1.0f, 0.96f, 0.90f);
+            key.shadows = LightShadows.Soft;
+            keyObject.transform.rotation = Quaternion.Euler(45f, 200f, 0f);
         }
 
         /// <summary>

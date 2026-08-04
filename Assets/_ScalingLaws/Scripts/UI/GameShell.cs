@@ -48,6 +48,16 @@ namespace ScalingLaws.UI
         private Label dateLabel;
         private Label rankLabel;
         private GameHud hud;
+        private VisualElement trainingBanner;
+
+        /// <summary>Seconds the opening reveal holds before the office takes the screen back.</summary>
+        public const float CompanyInfoRevealSeconds = 3f;
+
+        private bool companyInfoOpen = true;
+        private float companyInfoTimer = CompanyInfoRevealSeconds;
+        private VisualElement trainingFill;
+        private Label trainingLabel;
+        private Label trainingDays;
         private readonly List<CompanyEvent> recentEvents = new();
 
         private Screen current = Screen.Site;
@@ -155,6 +165,23 @@ namespace ScalingLaws.UI
                 return;
             }
 
+            // The opening reveal. A new campaign shows who the company is, then gets out of the way
+            // so the room is the thing on screen. It is a countdown rather than a one shot because
+            // the player can dismiss it early by opening it again.
+            if (companyInfoTimer > 0f)
+            {
+                companyInfoTimer -= Time.unscaledDeltaTime;
+                if (companyInfoTimer <= 0f && companyInfoOpen)
+                {
+                    companyInfoOpen = false;
+                    hud.SetCompanyInfoOpen(false);
+                    if (current == Screen.Site)
+                    {
+                        Show(Screen.Site);
+                    }
+                }
+            }
+
             var days = clock.Advance(Time.unscaledDeltaTime);
 
             // The clock has to be pushed every frame, not once a day. It used to be refreshed only
@@ -227,11 +254,78 @@ namespace ScalingLaws.UI
             contentHost.style.flexGrow = 1;
             shell.Add(contentHost);
 
-            hud = new GameHud(SetSpeed, SkipDay);
+            hud = new GameHud(SetSpeed, SkipDay, ToggleCompanyInfo);
             AddHudSlots();
             root.Add(hud.Root);
 
+            root.Add(BuildTrainingBanner());
+
             RefreshChrome();
+        }
+
+        /// <summary>
+        /// The strip that says a run is in flight.
+        ///
+        /// It lives on the root rather than inside a screen, because the run keeps going whatever
+        /// the player is looking at and the one thing they must never have to hunt for is whether
+        /// the company is currently spending money on compute.
+        /// </summary>
+        private VisualElement BuildTrainingBanner()
+        {
+            trainingBanner = new VisualElement();
+            trainingBanner.AddToClassList("training-banner");
+            trainingBanner.pickingMode = PickingMode.Ignore;
+            trainingBanner.style.display = DisplayStyle.None;
+
+            var row = new VisualElement();
+            row.AddToClassList("training-banner__row");
+
+            trainingLabel = new Label("MODEL IS CURRENTLY TRAINING");
+            trainingLabel.AddToClassList("training-banner__label");
+            row.Add(trainingLabel);
+
+            trainingDays = new Label();
+            trainingDays.AddToClassList("training-banner__days");
+            row.Add(trainingDays);
+
+            trainingBanner.Add(row);
+
+            var track = new VisualElement();
+            track.AddToClassList("training-banner__track");
+
+            trainingFill = new VisualElement();
+            trainingFill.AddToClassList("training-banner__fill");
+            track.Add(trainingFill);
+
+            trainingBanner.Add(track);
+            return trainingBanner;
+        }
+
+        /// <summary>
+        /// Days left is derived from how much compute is still owed at the throughput actually
+        /// running, not from a number stored when the run started. If the player rents more capacity
+        /// halfway through, the estimate has to move, because the run really does finish sooner.
+        /// </summary>
+        private void RefreshTrainingBanner()
+        {
+            var run = state.ActiveRun;
+            if (run == null)
+            {
+                trainingBanner.style.display = DisplayStyle.None;
+                return;
+            }
+
+            trainingBanner.style.display = DisplayStyle.Flex;
+
+            var progress = run.Progress;
+            trainingFill.style.width = Length.Percent((float)(progress * 100.0));
+
+            var remaining = Math.Max(0.0, run.PetaflopDaysRequired - run.PetaflopDaysCompleted);
+            var perDay = Math.Max(1e-6, simulation.Profile.EffectivePetaflops * state.TrainingComputeShare);
+            var days = (int)Math.Ceiling(remaining / perDay);
+
+            trainingLabel.text = $"{run.Blueprint.Name.ToUpperInvariant()} IS TRAINING";
+            trainingDays.text = days <= 0 ? "FINISHING" : $"{days} DAYS LEFT";
         }
 
         private VisualElement BuildTopBar()
@@ -298,6 +392,18 @@ namespace ScalingLaws.UI
             hud.AddSlot("CAPITAL", Screen.Funding, () => Show(Screen.Funding), "hud_funding");
             hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking");
             hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence");
+        }
+
+        private void ToggleCompanyInfo()
+        {
+            companyInfoOpen = !companyInfoOpen;
+            companyInfoTimer = 0f;
+            hud.SetCompanyInfoOpen(companyInfoOpen);
+
+            if (current == Screen.Site)
+            {
+                Show(Screen.Site);
+            }
         }
 
         private void SetSpeed(SimSpeed speed)
@@ -1386,31 +1492,67 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BuildSiteScreen()
         {
-            var page = NewPage(state.CompanyName.ToUpperInvariant(),
-                $"{state.FounderName}, {WorldRegionCatalog.Get(state.HomeCountry).DisplayName}. "
-                + "Everything the company owns is in this room.");
+            var page = new VisualElement();
+            page.AddToClassList("content");
+            page.AddToClassList("site-page");
 
+            // The office fills the screen and everything else is laid over it. The readouts are the
+            // guests here, not the room: a tycoon that opens on a table of numbers has already told
+            // the player what kind of game it thinks it is.
             var stage = new VisualElement();
             stage.AddToClassList("site-stage");
 
-            var pending = new Label("THE OFFICE");
-            pending.AddToClassList("site-stage__title");
-            stage.Add(pending);
+            var view = Resources.Load<RenderTexture>("OfficeView");
+            if (view != null)
+            {
+                stage.style.backgroundImage = Background.FromRenderTexture(view);
+                stage.AddToClassList("site-stage--live");
+            }
+            else
+            {
+                var pending = new Label("THE OFFICE");
+                pending.AddToClassList("site-stage__title");
+                stage.Add(pending);
 
-            var note = new Label("The room is built. Wiring it to a live camera is the next step, "
-                + "and after that the people in it become clickable.");
-            note.AddToClassList("site-stage__note");
-            stage.Add(note);
+                var note = new Label("The room exists but the scene has not been rebuilt since it was "
+                    + "wired up. Run Scaling Laws, Rebuild scenes.");
+                note.AddToClassList("site-stage__note");
+                stage.Add(note);
+            }
+
+            if (companyInfoOpen)
+            {
+                var overlay = new VisualElement();
+                overlay.AddToClassList("site-overlay");
+
+                var title = new Label(state.CompanyName.ToUpperInvariant());
+                title.AddToClassList("page-title");
+                overlay.Add(title);
+
+                var subtitle = new Label(
+                    $"{state.FounderName}, {WorldRegionCatalog.Get(state.HomeCountry).DisplayName}. "
+                    + "Everything the company owns is in this room.");
+                subtitle.AddToClassList("page-subtitle");
+                overlay.Add(subtitle);
+
+                var strip = new VisualElement();
+                strip.AddToClassList("site-strip");
+                strip.Add(SiteFigure("STAFF", state.Staff.Headcount.ToString()));
+                strip.Add(SiteFigure("MODELS LIVE", state.DeployedModels.Count.ToString()));
+                strip.Add(SiteFigure("CASH", UiFormat.Money(state.CashUsd)));
+                strip.Add(SiteFigure("DAY", UiFormat.Days(state.Date.DayIndex)));
+                overlay.Add(strip);
+
+                stage.Add(overlay);
+
+                // Born off to the left, then released a frame later so the transition has a change
+                // to animate from. Same trick the page arrival uses.
+                overlay.AddToClassList("site-overlay--entering");
+                overlay.schedule.Execute(() => overlay.RemoveFromClassList("site-overlay--entering"))
+                    .ExecuteLater(16);
+            }
+
             page.Add(stage);
-
-            var strip = new VisualElement();
-            strip.AddToClassList("site-strip");
-            strip.Add(SiteFigure("STAFF", state.Staff.Headcount.ToString()));
-            strip.Add(SiteFigure("MODELS LIVE", state.DeployedModels.Count.ToString()));
-            strip.Add(SiteFigure("CASH", UiFormat.Money(state.CashUsd)));
-            strip.Add(SiteFigure("DAY", UiFormat.Days(state.Date.DayIndex)));
-            page.Add(strip);
-
             return page;
         }
 
@@ -1473,6 +1615,7 @@ namespace ScalingLaws.UI
             rankLabel.text = position > 0 ? $"rank #{position}" : "unranked";
 
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
+            RefreshTrainingBanner();
         }
     }
 }

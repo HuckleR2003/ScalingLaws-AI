@@ -2007,3 +2007,288 @@
     -unity-font-style: bold;
     color: rgb(228, 236, 248);
 }
+
+/* ---- the run in flight, top right, always visible ---- */
+
+.training-banner {
+    position: absolute;
+    top: 58px;
+    right: 20px;
+    width: 320px;
+    padding-top: 9px;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgba(64, 16, 26, 0.94);
+    border-width: 1px;
+    border-color: rgb(196, 148, 46);
+    border-radius: 4px;
+}
+
+.training-banner__row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.training-banner__label {
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(244, 214, 150);
+}
+
+.training-banner__days {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(232, 176, 96);
+}
+
+.training-banner__track {
+    height: 4px;
+    margin-top: 8px;
+    background-color: rgba(0, 0, 0, 0.45);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.training-banner__fill {
+    height: 4px;
+    background-color: rgb(214, 162, 62);
+}
+
+/* ---- what is written on the laptop ---- */
+
+.laptop-screen {
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    top: 19%;
+    align-items: center;
+}
+
+.laptop-screen__name {
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(228, 238, 252);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.laptop-screen__rule {
+    width: 58%;
+    height: 2px;
+    margin-top: 8px;
+    margin-bottom: 10px;
+    background-color: rgb(72, 208, 148);
+}
+
+.laptop-screen__status {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgb(140, 156, 178);
+}
+
+/* ---- the two closing tiles ---- */
+
+.deploy-tiles {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.deploy-tile {
+    width: 50%;
+    margin: 0;
+    margin-right: 10px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: rgb(20, 24, 31);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 5px;
+    align-items: flex-start;
+    transition-property: background-color, border-color;
+    transition-duration: 140ms;
+}
+
+.deploy-tile:hover {
+    border-color: rgba(226, 78, 62, 0.55);
+}
+
+.deploy-tile--on {
+    background-color: rgb(31, 22, 27);
+    border-color: rgb(226, 78, 62);
+}
+
+.deploy-tile__title {
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(232, 240, 252);
+    margin-bottom: 6px;
+}
+
+.deploy-tile__body {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    white-space: normal;
+}
+
+.deploy-row {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.chip {
+    margin: 0;
+    margin-right: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(160, 172, 190);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 3px;
+}
+
+.chip:hover {
+    color: rgb(226, 236, 250);
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.chip--on {
+    color: rgb(240, 232, 238);
+    background-color: rgba(226, 78, 62, 0.18);
+    border-color: rgb(226, 78, 62);
+}
+
+/* ---- the gauge ---- */
+
+.load-bar {
+    margin-top: 10px;
+}
+
+.load-bar__head {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.load-bar__label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(130, 144, 164);
+}
+
+.load-bar__value {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(214, 224, 238);
+}
+
+.load-bar__track {
+    height: 6px;
+    margin-top: 5px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.load-bar__fill {
+    height: 6px;
+}
+
+.load-bar__note {
+    margin-top: 6px;
+    font-size: 11px;
+    color: rgb(126, 138, 158);
+    white-space: normal;
+}
+
+.stage-slider {
+    margin-top: 10px;
+}
+
+.stage-slider__head {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.stage-slider__label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(130, 144, 164);
+}
+
+.stage-slider__value {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(220, 230, 244);
+}
+
+/* ---- the office fills the screen, the readouts are laid over it ---- */
+
+.site-page {
+    padding-top: 0;
+}
+
+.site-stage {
+    flex-grow: 1;
+    min-height: 420px;
+    justify-content: flex-end;
+    background-color: rgb(14, 17, 23);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-radius: 5px;
+    overflow: hidden;
+    align-items: stretch;
+}
+
+.site-stage--live {
+    -unity-background-scale-mode: scale-and-crop;
+    align-items: stretch;
+    justify-content: flex-end;
+}
+
+.site-overlay {
+    padding-top: 16px;
+    padding-bottom: 14px;
+    padding-left: 18px;
+    padding-right: 18px;
+    background-color: rgba(8, 10, 14, 0.82);
+    border-top-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    transition-property: translate, opacity;
+    transition-duration: 300ms;
+    transition-timing-function: ease-out-cubic;
+}
+
+.site-overlay--entering {
+    translate: 0 40px;
+    opacity: 0;
+}
+
+.hud-info {
+    margin-left: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: rgb(198, 210, 228);
+}
+
+.hud-info:hover {
+    background-color: rgba(255, 255, 255, 0.11);
+}
+
+.hud-info--on {
+    background-color: rgba(120, 176, 250, 0.16);
+    border-color: rgb(120, 176, 250);
+    color: rgb(226, 238, 255);
+}

@@ -48,6 +48,10 @@ namespace ScalingLaws.UI
 
         private int stage;
         private double previousCapability;
+        private bool commercialise;
+        private int dots;
+        private Label laptopName;
+        private Label laptopStatus;
 
         /// <summary>
         /// The run is defined by four decisions and reviewed as a fifth. Showing all of them at once
@@ -55,7 +59,8 @@ namespace ScalingLaws.UI
         /// which of eleven controls moved the number. One decision at a time can afford to explain
         /// itself, which is how Devices Tycoon and Smartphone Tycoon both handle a build.
         /// </summary>
-        private static readonly string[] StageNames = { "FOUNDATION", "SCALE", "DATA", "COMPUTE", "REVIEW" };
+        private static readonly string[] StageNames =
+            { "FOUNDATION", "SCALE", "DATA", "COMPUTE", "REVIEW", "AFTER THE RUN" };
 
         private static readonly string[] StageBlurbs =
         {
@@ -65,7 +70,9 @@ namespace ScalingLaws.UI
             "What it learns from. The run draws from the best corpus first, so one good archive "
             + "lifts the whole mix.",
             "How much throughput to rent. This buys time and never quality, which is the point.",
-            "What the run is projected to produce, and what it costs to find out."
+            "What the run is projected to produce, and what it costs to find out.",
+            "What happens the day it finishes. This can be changed later, and the market will have "
+            + "moved by then."
         };
 
         /// <summary>Sliders move in log space so one drag covers a billion to a hundred trillion.</summary>
@@ -205,11 +212,12 @@ namespace ScalingLaws.UI
 
             stageHost.Add(stage switch
             {
-                0 => WithArt("newmodel_1", BuildFoundationColumn()),
+                0 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
                 1 => WithArt("newmodel_2", BuildShapePanel()),
                 2 => BuildDataPanel(),
                 3 => BuildComputePanel(),
-                _ => BuildProjectionPanel()
+                4 => BuildProjectionPanel(),
+                _ => BuildDeployStage()
             });
 
             backButton.SetEnabled(stage > 0);
@@ -227,7 +235,7 @@ namespace ScalingLaws.UI
         /// column and the controls take the whole width, which is the same failure rule the page
         /// banners use.
         /// </summary>
-        private static VisualElement WithArt(string artName, VisualElement body)
+        private static VisualElement WithArt(string artName, VisualElement body, VisualElement overlay = null)
         {
             var row = new VisualElement();
             row.AddToClassList("stage-split");
@@ -238,6 +246,12 @@ namespace ScalingLaws.UI
                 var art = new VisualElement();
                 art.AddToClassList("stage-art");
                 art.style.backgroundImage = new StyleBackground(texture);
+
+                if (overlay != null)
+                {
+                    art.Add(overlay);
+                }
+
                 row.Add(art);
             }
 
@@ -248,6 +262,49 @@ namespace ScalingLaws.UI
 
             return row;
         }
+
+        /// <summary>
+        /// What is written on the laptop in the first stage: the model's name, and a line under it
+        /// saying it has not been built yet.
+        ///
+        /// It is a real element positioned over the picture rather than baked into the art, so the
+        /// name updates as it is typed and the art stays one file with nothing written on it.
+        /// </summary>
+        private VisualElement BuildLaptopScreen()
+        {
+            var screen = new VisualElement();
+            screen.AddToClassList("laptop-screen");
+
+            laptopName = new Label(DisplayName());
+            laptopName.AddToClassList("laptop-screen__name");
+            screen.Add(laptopName);
+
+            var rule = new VisualElement();
+            rule.AddToClassList("laptop-screen__rule");
+            screen.Add(rule);
+
+            laptopStatus = new Label("PREPARING");
+            laptopStatus.AddToClassList("laptop-screen__status");
+            screen.Add(laptopStatus);
+
+            // Three dots that fill and clear. Cheap, and it is the difference between a still and a
+            // machine that is doing something.
+            screen.schedule.Execute(() =>
+            {
+                if (laptopStatus == null || laptopStatus.panel == null)
+                {
+                    return;
+                }
+
+                dots = (dots + 1) % 4;
+                laptopStatus.text = "PREPARING" + new string('.', dots);
+            }).Every(420);
+
+            return screen;
+        }
+
+        private string DisplayName() =>
+            string.IsNullOrWhiteSpace(nameField.value) ? "UNTITLED" : nameField.value.ToUpperInvariant();
 
         /// <summary>
         /// The first stage: who the model is, plus the two decisions that are designed and not yet
@@ -295,6 +352,208 @@ namespace ScalingLaws.UI
             return row;
         }
 
+        /// <summary>
+        /// The last stage: what happens the day the run finishes.
+        ///
+        /// Two tiles rather than a dropdown, because this is the decision that turns a research
+        /// project into a business and it should not look like a setting. Keeping it local is a real
+        /// option and not a delay: the model can be trained on, upgraded and released whenever, and
+        /// the whole cost of waiting is that the frontier moves while you do.
+        ///
+        /// Everything on the commercial side writes straight into
+        /// <see cref="MonetizationPolicy"/>, so nothing here is a promise the simulation has not
+        /// already agreed to.
+        /// </summary>
+        private VisualElement BuildDeployStage()
+        {
+            var page = new VisualElement();
+
+            var tiles = new VisualElement();
+            tiles.AddToClassList("deploy-tiles");
+            tiles.Add(DeployTile("KEEP IT LOCAL",
+                "It finishes onto the shelf and stays there. Train on it, upgrade it, release it the "
+                + "day the market looks right. Holding costs nothing but time.",
+                !commercialise, () => { commercialise = false; Reprice(); }));
+
+            tiles.Add(DeployTile("COMMERCIALISE",
+                "It ships the day it finishes. You decide now what a free account gets and what a "
+                + "paid one costs, and both of those decide how many people ever try it.",
+                commercialise, () => { commercialise = true; Reprice(); }));
+
+            page.Add(tiles);
+
+            if (!commercialise)
+            {
+                var note = new Label(
+                    "Nothing else to set. The release screen will be waiting when you want it.");
+                note.AddToClassList("field__hint");
+                page.Add(note);
+                return page;
+            }
+
+            var policy = simulation.State.Monetization;
+            var market = simulation.Market;
+
+            var free = NewPanel("FREE TIER");
+
+            var freeRow = new VisualElement();
+            freeRow.AddToClassList("deploy-row");
+
+            var noFree = new Button(() =>
+            {
+                policy.Model = PricingModel.Subscription;
+                policy.FreeTierTokensPerUserPerDay = 0.0;
+                Reprice();
+            })
+            { text = "NO FREE ACCESS" };
+            noFree.AddToClassList("chip");
+            noFree.EnableInClassList("chip--on", policy.FreeTierTokensPerUserPerDay <= 0.0);
+            freeRow.Add(noFree);
+
+            var freeOnly = new Button(() =>
+            {
+                policy.Model = PricingModel.FreeOnly;
+                Reprice();
+            })
+            { text = "FREE ONLY" };
+            freeOnly.AddToClassList("chip");
+            freeOnly.EnableInClassList("chip--on", policy.Model == PricingModel.FreeOnly);
+            freeRow.Add(freeOnly);
+
+            free.Add(freeRow);
+
+            free.Add(BuildSlider("TOKENS A DAY, FREE ACCOUNT",
+                UiFormat.Count(policy.FreeTierTokensPerUserPerDay),
+                0f, (float)(MonetizationCatalog.GenerousFreeTierTokensPerDay * 1.5),
+                (float)policy.FreeTierTokensPerUserPerDay,
+                value =>
+                {
+                    policy.FreeTierTokensPerUserPerDay = value;
+                    if (value > 0.0 && policy.Model == PricingModel.Subscription)
+                    {
+                        policy.Model = PricingModel.Subscription;
+                    }
+
+                    Reprice();
+                }));
+
+            // What a free account costs the company, in dollars, at today's token price. This is the
+            // trap the design wants visible: generosity is bought reach and it is billed daily.
+            var costPerFreeUserMonth = policy.FreeTierTokensPerUserPerDay / 1_000_000.0
+                * market.PricePerMillionTokensUsd * 30.0;
+
+            free.Add(LoadBar("REACH BOUGHT",
+                (policy.ReachMultiplier - 1.0) / MonetizationCatalog.FreeTierReachBonus,
+                $"A free account costs you about {UiFormat.Money((long)Math.Round(costPerFreeUserMonth))} "
+                + "a month to serve, every month, whether or not it ever pays."));
+
+            page.Add(free);
+
+            var paid = NewPanel("SUBSCRIPTION");
+            paid.Add(BuildSlider("PRICE A MONTH",
+                $"${policy.SubscriptionPriceUsdPerMonth:0}",
+                0f, 200f, (float)policy.SubscriptionPriceUsdPerMonth,
+                value =>
+                {
+                    policy.Model = policy.Model == PricingModel.FreeOnly
+                        ? PricingModel.FreeOnly
+                        : PricingModel.Subscription;
+                    policy.SubscriptionPriceUsdPerMonth = value;
+                    Reprice();
+                }));
+
+            var paidNote = new Label(
+                "A subscription ignores the market rate, which protects a good position and traps a "
+                + "bad one. Price it high and fewer people ever sign up; price it low and you are "
+                + "serving tokens at a loss the moment the frontier moves.");
+            paidNote.AddToClassList("field__hint");
+            paid.Add(paidNote);
+            page.Add(paid);
+
+            return page;
+        }
+
+        private static VisualElement DeployTile(string title, string body, bool picked, Action onClick)
+        {
+            var tile = new Button(onClick);
+            tile.AddToClassList("deploy-tile");
+            tile.EnableInClassList("deploy-tile--on", picked);
+
+            var name = new Label(title);
+            name.AddToClassList("deploy-tile__title");
+            tile.Add(name);
+
+            var text = new Label(body);
+            text.AddToClassList("deploy-tile__body");
+            tile.Add(text);
+
+            return tile;
+        }
+
+        /// <summary>A filling gauge. Used wherever the question is "does this feel like enough".</summary>
+        private static VisualElement LoadBar(string label, double fraction, string verdict)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("load-bar");
+
+            var head = new VisualElement();
+            head.AddToClassList("load-bar__head");
+
+            var name = new Label(label);
+            name.AddToClassList("load-bar__label");
+            head.Add(name);
+
+            var amount = new Label(UiFormat.Percent(Math.Clamp(fraction, 0.0, 1.0)));
+            amount.AddToClassList("load-bar__value");
+            head.Add(amount);
+
+            block.Add(head);
+
+            var track = new VisualElement();
+            track.AddToClassList("load-bar__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("load-bar__fill");
+            fill.style.width = Length.Percent((float)(Math.Clamp(fraction, 0.0, 1.0) * 100.0));
+            HudAccent.PaintRamp(fill, new Color(0.72f, 0.64f, 0.96f), new Color(0.42f, 0.24f, 0.72f));
+            track.Add(fill);
+
+            block.Add(track);
+
+            var note = new Label(verdict);
+            note.AddToClassList("load-bar__note");
+            block.Add(note);
+
+            return block;
+        }
+
+        private static VisualElement BuildSlider(string label, string readout, float minimum, float maximum,
+            float value, Action<float> onChange)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("stage-slider");
+
+            var head = new VisualElement();
+            head.AddToClassList("stage-slider__head");
+
+            var name = new Label(label);
+            name.AddToClassList("stage-slider__label");
+            head.Add(name);
+
+            var amount = new Label(readout);
+            amount.AddToClassList("stage-slider__value");
+            head.Add(amount);
+
+            block.Add(head);
+
+            var slider = new Slider(minimum, maximum) { value = Mathf.Clamp(value, minimum, maximum) };
+            slider.AddToClassList("stage-slider__control");
+            slider.RegisterValueChangedCallback(evt => onChange(evt.newValue));
+            block.Add(slider);
+
+            return block;
+        }
+
         private VisualElement BuildIdentityPanel()
         {
             var panel = NewPanel("IDENTITY");
@@ -302,7 +561,15 @@ namespace ScalingLaws.UI
             nameField.label = "Model name";
             nameField.value = "Muse 1";
             nameField.AddToClassList("field");
-            nameField.RegisterValueChangedCallback(_ => Reprice());
+            nameField.RegisterValueChangedCallback(_ =>
+            {
+                if (laptopName != null)
+                {
+                    laptopName.text = DisplayName();
+                }
+
+                Reprice();
+            });
             panel.Add(nameField);
 
             architectureField.label = "Architecture";
@@ -397,18 +664,8 @@ namespace ScalingLaws.UI
             startButton.AddToClassList("button--primary");
             startButton.style.marginTop = 14;
             startButton.style.width = Length.Percent(100);
+            startButton.style.display = DisplayStyle.None;
             panel.Add(startButton);
-
-            var commercial = NewPanel("AFTER THE RUN");
-            commercial.Add(ComingRow("Keep it local", "Train on, release whenever"));
-            commercial.Add(ComingRow("Commercialise", "Free tier, subscription, serving"));
-
-            var note = new Label(
-                "A finished model does not have to ship. Holding it costs nothing but time, and the "
-                + "market moves while you hold it. This decision comes next.");
-            note.AddToClassList("field__hint");
-            commercial.Add(note);
-            panel.Add(commercial);
 
             return panel;
         }
