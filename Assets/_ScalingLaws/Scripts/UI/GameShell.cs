@@ -50,10 +50,11 @@ namespace ScalingLaws.UI
         private GameHud hud;
         private readonly List<CompanyEvent> recentEvents = new();
 
-        private Screen current = Screen.Create;
+        private Screen current = Screen.Site;
 
         private enum Screen
         {
+            Site,
             Create,
             Research,
             Family,
@@ -123,7 +124,11 @@ namespace ScalingLaws.UI
             families = new ArchitectureCreatorPanel(simulation);
 
             BuildTree();
-            Show(Screen.Create);
+
+            // The campaign opens on the office rather than on a form. It is the only screen that
+            // shows the company as a place instead of as a number, and it is what a new player
+            // should be looking at in the first ten seconds.
+            Show(Screen.Site);
         }
 
         private void OnDisable()
@@ -151,6 +156,13 @@ namespace ScalingLaws.UI
             }
 
             var days = clock.Advance(Time.unscaledDeltaTime);
+
+            // The clock has to be pushed every frame, not once a day. It used to be refreshed only
+            // inside the branch below, which runs when a day rolls over, so the dial and the line
+            // along the bottom edge were redrawn at exactly the moment they reset to zero. Both
+            // looked frozen, and the game looked paused while it was running.
+            hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
+
             if (days <= 0)
             {
                 return;
@@ -274,6 +286,7 @@ namespace ScalingLaws.UI
 
         private void AddHudSlots()
         {
+            hud.AddSlot("SITE", Screen.Site, () => Show(Screen.Site));
             hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create), "hud_model");
             hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research), "hud_research");
             hud.AddSlot("ARCHITECTURE", Screen.Family, () => Show(Screen.Family), "hud_architecture");
@@ -363,6 +376,9 @@ namespace ScalingLaws.UI
 
             switch (screen)
             {
+                case Screen.Site:
+                    contentHost.Add(BuildSiteScreen());
+                    break;
                 case Screen.Create:
                     creator.Refresh();
                     contentHost.Add(creator.Root);
@@ -1329,6 +1345,10 @@ namespace ScalingLaws.UI
             Screen.Ranking => "background_ranking",
             Screen.Release => "background_release",
             Screen.Upgrade => "background_upgrade",
+            Screen.Research => "background_research",
+            Screen.Family => "background_architecture",
+            Screen.Fleet => "background_compute",
+            Screen.Team => "background_team",
             _ => null
         };
 
@@ -1354,6 +1374,60 @@ namespace ScalingLaws.UI
             page.Add(sub);
 
             return page;
+        }
+
+        /// <summary>
+        /// The office. Today it is a still of the room with the company written over it; the scene
+        /// itself is built and lives in a prefab, and this is where it gets mounted once the camera
+        /// and the render target are wired up.
+        ///
+        /// It is a screen rather than a background because everything that will eventually be
+        /// clickable is in it: the people, the racks, the desk the player sits at.
+        /// </summary>
+        private VisualElement BuildSiteScreen()
+        {
+            var page = NewPage(state.CompanyName.ToUpperInvariant(),
+                $"{state.FounderName}, {WorldRegionCatalog.Get(state.HomeCountry).DisplayName}. "
+                + "Everything the company owns is in this room.");
+
+            var stage = new VisualElement();
+            stage.AddToClassList("site-stage");
+
+            var pending = new Label("THE OFFICE");
+            pending.AddToClassList("site-stage__title");
+            stage.Add(pending);
+
+            var note = new Label("The room is built. Wiring it to a live camera is the next step, "
+                + "and after that the people in it become clickable.");
+            note.AddToClassList("site-stage__note");
+            stage.Add(note);
+            page.Add(stage);
+
+            var strip = new VisualElement();
+            strip.AddToClassList("site-strip");
+            strip.Add(SiteFigure("STAFF", state.Staff.Headcount.ToString()));
+            strip.Add(SiteFigure("MODELS LIVE", state.DeployedModels.Count.ToString()));
+            strip.Add(SiteFigure("CASH", UiFormat.Money(state.CashUsd)));
+            strip.Add(SiteFigure("DAY", UiFormat.Days(state.Date.DayIndex)));
+            page.Add(strip);
+
+            return page;
+        }
+
+        private static VisualElement SiteFigure(string label, string value)
+        {
+            var figure = new VisualElement();
+            figure.AddToClassList("site-figure");
+
+            var caption = new Label(label);
+            caption.AddToClassList("site-figure__label");
+            figure.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("site-figure__value");
+            figure.Add(amount);
+
+            return figure;
         }
 
         private static VisualElement Row(string label, string value)

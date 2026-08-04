@@ -205,8 +205,8 @@ namespace ScalingLaws.UI
 
             stageHost.Add(stage switch
             {
-                0 => BuildIdentityPanel(),
-                1 => BuildShapePanel(),
+                0 => WithArt("newmodel_1", BuildFoundationColumn()),
+                1 => WithArt("newmodel_2", BuildShapePanel()),
                 2 => BuildDataPanel(),
                 3 => BuildComputePanel(),
                 _ => BuildProjectionPanel()
@@ -216,6 +216,83 @@ namespace ScalingLaws.UI
             nextButton.text = stage >= StageNames.Length - 1 ? "START TRAINING" : "NEXT";
 
             Reprice();
+        }
+
+        /// <summary>
+        /// Art on the left, the decision on the right.
+        ///
+        /// The picture is not decoration: it is what stops the creator reading as a settings dialog.
+        /// It is given a fixed share of the width rather than its own size, so a taller or shorter
+        /// photograph changes nothing about where the controls sit. A missing file collapses the
+        /// column and the controls take the whole width, which is the same failure rule the page
+        /// banners use.
+        /// </summary>
+        private static VisualElement WithArt(string artName, VisualElement body)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("stage-split");
+
+            var texture = PageArt.Page(artName);
+            if (texture != null)
+            {
+                var art = new VisualElement();
+                art.AddToClassList("stage-art");
+                art.style.backgroundImage = new StyleBackground(texture);
+                row.Add(art);
+            }
+
+            var column = new VisualElement();
+            column.AddToClassList("stage-split__body");
+            column.Add(body);
+            row.Add(column);
+
+            return row;
+        }
+
+        /// <summary>
+        /// The first stage: who the model is, plus the two decisions that are designed and not yet
+        /// built. They are shown rather than hidden because a player deciding what to train should
+        /// be able to see that a series and a type exist before they can use either.
+        /// </summary>
+        private VisualElement BuildFoundationColumn()
+        {
+            var column = new VisualElement();
+            column.Add(BuildIdentityPanel());
+
+            var series = NewPanel("SERIES / MODEL UPGRADE RELEASE");
+            series.Add(ComingRow("Model family", "Needs research"));
+            series.Add(ComingRow("Type", "General purpose"));
+
+            var note = new Label(
+                "A series ships the next model as a version of the last one, so its audience and its "
+                + "reputation carry over. The type decides which audience it can reach at all. Both "
+                + "are researched, and neither is wired into this screen yet.");
+            note.AddToClassList("field__hint");
+            series.Add(note);
+
+            column.Add(series);
+            return column;
+        }
+
+        /// <summary>A row for a decision that exists in the design and not yet in the game.</summary>
+        private static VisualElement ComingRow(string label, string value)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("coming-row");
+
+            var name = new Label(label);
+            name.AddToClassList("coming-row__label");
+            row.Add(name);
+
+            var amount = new Label(value);
+            amount.AddToClassList("coming-row__value");
+            row.Add(amount);
+
+            var tag = new Label("INCOMING");
+            tag.AddToClassList("coming-row__tag");
+            row.Add(tag);
+
+            return row;
         }
 
         private VisualElement BuildIdentityPanel()
@@ -281,6 +358,10 @@ namespace ScalingLaws.UI
             hint.AddToClassList("field__hint");
             panel.Add(hint);
 
+            panel.Add(ComingRow("Mix by percentage", "Fixed shares for now"));
+            panel.Add(ComingRow("Data cleaning", "Standard"));
+            panel.Add(ComingRow("Recency cutoff", "Everything available"));
+
             return panel;
         }
 
@@ -317,6 +398,17 @@ namespace ScalingLaws.UI
             startButton.style.marginTop = 14;
             startButton.style.width = Length.Percent(100);
             panel.Add(startButton);
+
+            var commercial = NewPanel("AFTER THE RUN");
+            commercial.Add(ComingRow("Keep it local", "Train on, release whenever"));
+            commercial.Add(ComingRow("Commercialise", "Free tier, subscription, serving"));
+
+            var note = new Label(
+                "A finished model does not have to ship. Holding it costs nothing but time, and the "
+                + "market moves while you hold it. This decision comes next.");
+            note.AddToClassList("field__hint");
+            commercial.Add(note);
+            panel.Add(commercial);
 
             return panel;
         }

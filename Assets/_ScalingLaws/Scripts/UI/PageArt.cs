@@ -26,6 +26,9 @@ namespace ScalingLaws.UI
 
         public static Texture2D Banner(string name) => Load("Banners/" + name);
 
+        /// <summary>The picture beside a creator stage. Null when there is not one for that stage.</summary>
+        public static Texture2D Page(string name) => Load("Pages/" + name);
+
         private static Texture2D Load(string path)
         {
             if (Cache.TryGetValue(path, out var cached))

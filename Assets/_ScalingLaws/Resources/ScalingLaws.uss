@@ -1886,3 +1886,124 @@
 .effect-figure__value--down {
     color: rgb(232, 142, 142);
 }
+
+/* ---- taller banners ---- */
+
+.page-banner {
+    height: 126px;
+}
+
+/* ---- a creator stage with its own picture ---- */
+
+.stage-split {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.stage-art {
+    width: 46%;
+    flex-shrink: 0;
+    margin-right: 16px;
+    min-height: 300px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.stage-split__body {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+/* ---- a decision that is designed and not yet built ---- */
+
+.coming-row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: rgba(255, 255, 255, 0.025);
+    border-left-width: 2px;
+    border-color: rgba(178, 158, 226, 0.55);
+    border-radius: 3px;
+}
+
+.coming-row__label {
+    width: 150px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: rgb(150, 162, 180);
+}
+
+.coming-row__value {
+    flex-grow: 1;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(214, 224, 238);
+}
+
+.coming-row__tag {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(24, 20, 34);
+    background-color: rgb(178, 158, 226);
+    border-radius: 2px;
+}
+
+/* ---- the site screen ---- */
+
+.site-stage {
+    flex-grow: 1;
+    min-height: 320px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(15, 19, 26);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-radius: 5px;
+}
+
+.site-stage__title {
+    font-size: 17px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(120, 134, 156);
+}
+
+.site-stage__note {
+    max-width: 480px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgb(104, 116, 136);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.site-strip {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-top: 12px;
+}
+
+.site-figure {
+    width: 25%;
+    padding-right: 14px;
+}
+
+.site-figure__label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(126, 140, 160);
+}
+
+.site-figure__value {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(228, 236, 248);
+}
