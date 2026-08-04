@@ -112,6 +112,7 @@ namespace ScalingLaws.Persistence
                     8 => UpgradeV8ToV9(current),
                     9 => UpgradeV9ToV10(current),
                     10 => UpgradeV10ToV11(current),
+                    11 => UpgradeV11ToV12(current),
                     _ => current
                 };
             }
@@ -445,6 +446,53 @@ namespace ScalingLaws.Persistence
         }
 
 
+
+        /// <summary>
+        /// v11 to v12: models gain a type.
+        ///
+        /// Everything written before this was built without types and competed for one
+        /// undifferentiated crowd, which is exactly what a general model does. So every existing
+        /// model becomes general. That is not a kindness: general is the type that ages worst as the
+        /// market specialises, and it is the only reading of an old file that is actually true.
+        /// </summary>
+        public static SaveData UpgradeV11ToV12(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 12;
+            data.activeRunType = (int)ModelType.General;
+
+            if (data.models != null)
+            {
+                foreach (var model in data.models)
+                {
+                    if (model != null)
+                    {
+                        model.modelType = (int)ModelType.General;
+                    }
+                }
+            }
+
+            if (data.shelf != null)
+            {
+                foreach (var model in data.shelf)
+                {
+                    if (model != null)
+                    {
+                        model.modelType = (int)ModelType.General;
+                    }
+                }
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v11 to v12: nothing in an older save recorded what a model was for, so every one of "
+                + "them is general. That is what they were competing as.");
+
+            return data;
+        }
 
         private static string Append(string existing, string addition) =>
             string.IsNullOrEmpty(existing) ? addition : existing + " " + addition;

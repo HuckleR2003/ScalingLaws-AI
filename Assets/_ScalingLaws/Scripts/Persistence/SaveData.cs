@@ -24,6 +24,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class DeployedModelData
     {
+        public int modelType;
         public string name;
         public int architecture;
         public double capability;
@@ -40,6 +41,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class TrainedModelData
     {
+        public int modelType;
         public string name;
         public int architecture;
         public double capability;
@@ -175,7 +177,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 11;
+        public const int CurrentVersion = 12;
 
         public int version = CurrentVersion;
 
@@ -299,6 +301,11 @@ namespace ScalingLaws.Persistence
         public int worldRegion = 1;
         public int homeCountry = 1;
         public long lifetimeTaxPaidUsd;
+
+        // ---- added in v12 ----
+
+        /// <summary>Model type, on the run in flight. Zero means the file predates types.</summary>
+        public int activeRunType;
     }
 
     /// <summary>One person on the payroll. Added in v8.</summary>

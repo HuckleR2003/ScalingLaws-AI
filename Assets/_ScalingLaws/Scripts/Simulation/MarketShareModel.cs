@@ -46,8 +46,8 @@ namespace ScalingLaws.Simulation
                     playerScore += Math.Exp(Utility(
                         model.EffectiveCapability(market.Date),
                         Math.Clamp(playerReputation + model.BrandBonus(market.Date), 0.0, 1.0),
-                        model.PriceMultiplier,
-                        model.AgeYears(market.Date)));
+                        model.PriceMultiplier / ToleranceFactor(model.Type, market.Date),
+                        model.AgeYears(market.Date))) * ReachFactor(model.Type, market.Date);
                 }
             }
 
@@ -119,11 +119,55 @@ namespace ScalingLaws.Simulation
                 playerScore += Math.Exp(Utility(
                     model.EffectiveCapability(market.Date),
                     Math.Clamp(playerReputation + model.BrandBonus(market.Date), 0.0, 1.0),
-                    model.PriceMultiplier,
-                    model.AgeYears(market.Date)));
+                    model.PriceMultiplier / ToleranceFactor(model.Type, market.Date),
+                    model.AgeYears(market.Date))) * ReachFactor(model.Type, market.Date);
             }
 
             return playerScore;
+        }
+
+        /// <summary>
+        /// How much of the market a type can reach, measured against a general model on the same
+        /// date rather than in absolute terms.
+        ///
+        /// The ratio is what keeps this from being a balance change. Everything in this game was
+        /// tuned against a general model, so a general model stays at exactly 1.0 forever and only
+        /// the specialists move. A coding model in 2022 comes out below one and is punished for
+        /// arriving early; the same model in 2026 comes out above one and is paid for the wait.
+        ///
+        /// It weights the price average as well as the demand split, because the price the market
+        /// sees is the price paid by the users who are actually there.
+        /// </summary>
+        /// <summary>
+        /// How much less this type's audience minds the price, measured against a general model on
+        /// the same date.
+        ///
+        /// This is the half of the mechanic that makes specialising worth doing. Reach alone never
+        /// can: the consumer segment is the largest one in every year of the game, so a model that
+        /// trades consumer appeal for developer appeal always reaches fewer people. What it gets in
+        /// return is an audience that does not leave when the price goes up, and the honest place to
+        /// put that is the price term, not the headcount.
+        /// </summary>
+        public static double ToleranceFactor(ModelType type, GameDate date)
+        {
+            var baseline = ModelTypeCatalog.PriceToleranceOn(ModelType.General, date);
+            if (baseline <= 0.0)
+            {
+                return 1.0;
+            }
+
+            return Math.Clamp(ModelTypeCatalog.PriceToleranceOn(type, date) / baseline, 0.6, 1.8);
+        }
+
+        public static double ReachFactor(ModelType type, GameDate date)
+        {
+            var baseline = ModelTypeCatalog.ReachOn(ModelType.General, date);
+            if (baseline <= 0.0)
+            {
+                return 1.0;
+            }
+
+            return Math.Clamp(ModelTypeCatalog.ReachOn(type, date) / baseline, 0.25, 2.5);
         }
 
         /// <summary>Sum of the exponentiated utilities of every rival's current best model.</summary>
@@ -180,8 +224,8 @@ namespace ScalingLaws.Simulation
                     var weight = Math.Exp(Utility(
                         model.EffectiveCapability(market.Date),
                         Math.Clamp(playerReputation + model.BrandBonus(market.Date), 0.0, 1.0),
-                        model.PriceMultiplier,
-                        model.AgeYears(market.Date)));
+                        model.PriceMultiplier / ToleranceFactor(model.Type, market.Date),
+                        model.AgeYears(market.Date))) * ReachFactor(model.Type, market.Date);
                     weightSum += weight;
                     weightedPrice += weight * model.PriceMultiplier;
                 }

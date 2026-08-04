@@ -219,6 +219,7 @@ namespace ScalingLaws.Persistence
                     activeParameterCount = model.ActiveParameterCount,
                     priceMultiplier = model.PriceMultiplier,
                     isRetired = model.IsRetired,
+                    modelType = (int)model.Type,
                     traitLevels = new List<int>(model.Traits.ToArray())
                 });
             }
@@ -232,7 +233,8 @@ namespace ScalingLaws.Persistence
                     capability = shelved.Capability,
                     completedDayIndex = shelved.CompletedOn.DayIndex,
                     activeParameterCount = shelved.ActiveParameterCount,
-                    projectedCapability = shelved.ProjectedCapability
+                    projectedCapability = shelved.ProjectedCapability,
+                    modelType = (int)shelved.Type
                 });
             }
 
@@ -519,7 +521,8 @@ namespace ScalingLaws.Persistence
                     model.capability,
                     new GameDate(model.releaseDayIndex),
                     model.activeParameterCount,
-                    model.priceMultiplier);
+                    model.priceMultiplier,
+                    (ModelType)model.modelType);
 
                 if (model.traitLevels != null && model.traitLevels.Count > 0)
                 {
@@ -542,7 +545,8 @@ namespace ScalingLaws.Persistence
                     shelved.capability,
                     new GameDate(shelved.completedDayIndex),
                     shelved.activeParameterCount,
-                    shelved.projectedCapability));
+                    shelved.projectedCapability,
+                    (ModelType)shelved.modelType));
             }
 
             foreach (var upgrade in safe.upgrades)
@@ -869,6 +873,25 @@ namespace ScalingLaws.Persistence
 
             safe.lifetimeTaxPaidUsd = Math.Max(0L, safe.lifetimeTaxPaidUsd);
 
+            // ---- v12 fields ----
+
+            safe.activeRunType = LegalType(safe.activeRunType);
+            foreach (var model in safe.models)
+            {
+                if (model != null)
+                {
+                    model.modelType = LegalType(model.modelType);
+                }
+            }
+
+            foreach (var model in safe.shelf)
+            {
+                if (model != null)
+                {
+                    model.modelType = LegalType(model.modelType);
+                }
+            }
+
             // ---- v9 fields ----
 
             if (!Enum.IsDefined(typeof(PricingModel), safe.pricingModel))
@@ -1057,6 +1080,15 @@ namespace ScalingLaws.Persistence
 
             return safe;
         }
+
+        /// <summary>
+        /// A model type that is not on the enum, or is None, becomes general. Same rule as every
+        /// other enum here: fall back to something legal rather than trusting an edited file.
+        /// </summary>
+        private static int LegalType(int value) =>
+            Enum.IsDefined(typeof(ModelType), value) && value != (int)ModelType.None
+                ? value
+                : (int)ModelType.General;
 
         private static int SanitizeDataSources(int mask)
         {

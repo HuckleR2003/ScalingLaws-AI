@@ -457,6 +457,17 @@ namespace ScalingLaws.Simulation
 
         public bool HasDataSource(DatasetSource source) => (OwnedDataSources & source) == source;
 
+        /// <summary>
+        /// Whether the company is allowed to build this kind of model yet. General needs nothing;
+        /// every other type is behind its own node, which is what makes choosing one a bet on when
+        /// its audience turns up rather than a free preference.
+        /// </summary>
+        public bool CanBuildType(ModelType type)
+        {
+            var required = ModelTypeCatalog.Get(type).Requires;
+            return required == ResearchNodeId.None || HasResearch(required);
+        }
+
         public bool HasArchitecture(ArchitectureId architecture) => AdoptedArchitectures.Contains(architecture);
     }
 }

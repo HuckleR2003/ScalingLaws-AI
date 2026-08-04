@@ -22,8 +22,12 @@ namespace ScalingLaws.Simulation
             ArchitectureId architecture,
             double parameterCountBillions,
             double trainingTokensBillions,
-            DatasetSource dataSources)
+            DatasetSource dataSources,
+            ModelType type = ModelType.General)
         {
+            // Optional and defaulted rather than required, because every existing caller predates
+            // types and a general model is exactly what all of them meant.
+            Type = type == ModelType.None ? ModelType.General : type;
             Name = string.IsNullOrWhiteSpace(name) ? "Untitled model" : name.Trim();
             Architecture = architecture == ArchitectureId.None ? ArchitectureId.DenseTransformer : architecture;
             ParameterCountBillions = Math.Clamp(
@@ -39,6 +43,9 @@ namespace ScalingLaws.Simulation
 
         public string Name { get; }
         public ArchitectureId Architecture { get; }
+
+        /// <summary>What the model is for. Decides which audience it can reach at all.</summary>
+        public ModelType Type { get; }
         public double ParameterCountBillions { get; }
         public double TrainingTokensBillions { get; }
         public DatasetSource DataSources { get; }
@@ -51,19 +58,22 @@ namespace ScalingLaws.Simulation
             ParameterCountBillions <= 0.0 ? 0.0 : TrainingTokensBillions / ParameterCountBillions;
 
         public ModelBlueprint WithName(string name) =>
-            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources);
+            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type);
 
         public ModelBlueprint WithParameters(double parameterCountBillions) =>
-            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources);
+            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources, Type);
 
         public ModelBlueprint WithTokens(double trainingTokensBillions) =>
-            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources);
+            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources, Type);
 
         public ModelBlueprint WithArchitecture(ArchitectureId architecture) =>
-            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources);
+            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type);
+
+        public ModelBlueprint WithType(ModelType type) =>
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, type);
 
         public ModelBlueprint WithDataSources(DatasetSource dataSources) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources, Type);
 
         public override string ToString() =>
             $"{Name}: {ParameterCountBillions:N0}B params, {TrainingTokensBillions:N0}B tokens, {Architecture}";

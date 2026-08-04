@@ -20,8 +20,10 @@ namespace ScalingLaws.Simulation
             double capability,
             GameDate releaseDate,
             double activeParameterCount,
-            double priceMultiplier)
+            double priceMultiplier,
+            ModelType type = ModelType.General)
         {
+            Type = type == ModelType.None ? ModelType.General : type;
             Name = string.IsNullOrWhiteSpace(name) ? "Untitled model" : name.Trim();
             Architecture = architecture;
             Capability = Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0);
@@ -62,6 +64,9 @@ namespace ScalingLaws.Simulation
 
         public string Name { get; }
         public ArchitectureId Architecture { get; }
+
+        /// <summary>What it is for. Read by the demand split and by the price the market accepts.</summary>
+        public ModelType Type { get; }
 
         /// <summary>Measured capability of the finished run. Never a projection.</summary>
         public double Capability { get; }

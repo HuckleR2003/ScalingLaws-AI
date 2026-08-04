@@ -22,8 +22,10 @@ namespace ScalingLaws.Simulation
             double capability,
             GameDate completedOn,
             double activeParameterCount,
-            double projectedCapability)
+            double projectedCapability,
+            ModelType type = ModelType.General)
         {
+            Type = type == ModelType.None ? ModelType.General : type;
             Name = string.IsNullOrWhiteSpace(name) ? "Untitled model" : name.Trim();
             Architecture = architecture;
             Capability = Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0);
@@ -34,6 +36,9 @@ namespace ScalingLaws.Simulation
 
         public string Name { get; }
         public ArchitectureId Architecture { get; }
+
+        /// <summary>Fixed when training started. A finished model cannot be repurposed.</summary>
+        public ModelType Type { get; }
 
         /// <summary>Measured on completion. Waiting does not change it.</summary>
         public double Capability { get; }
@@ -74,7 +79,8 @@ namespace ScalingLaws.Simulation
                 Capability,
                 date,
                 ActiveParameterCount,
-                priceMultiplier);
+                priceMultiplier,
+                Type);
 
             // Traits were frozen on the day training finished. Par has moved since, and the model
             // ships already behind on anything nobody topped up.

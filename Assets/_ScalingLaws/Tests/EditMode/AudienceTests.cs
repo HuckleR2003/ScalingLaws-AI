@@ -2,6 +2,8 @@ using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
+using ScalingLaws.Persistence;
+using ScalingLaws.Simulation;
 
 namespace ScalingLaws.Tests
 {
@@ -161,6 +163,98 @@ namespace ScalingLaws.Tests
                 var mix = ModelTypeCatalog.AudienceMixOn(definition.Type, Year(2029));
                 Assert.AreEqual(1.0, mix.Sum(), 1e-9, definition.DisplayName);
             }
+        }
+
+        [Test]
+        public void AGeneralModelIsTheBaselineAndNeverMoves()
+        {
+            // Every number in this game was tuned against a general model. If this ever drifts off
+            // 1.0 the type system has quietly become a balance change to everything else in it.
+            for (var year = 2022; year <= 2036; year++)
+            {
+                Assert.AreEqual(1.0,
+                    MarketShareModel.ReachFactor(ModelType.General, Year(year)), 1e-9,
+                    $"The baseline moved in {year}.");
+            }
+        }
+
+        [Test]
+        public void SpecialisingEarlyCostsShareAndTheBetImprovesWithTime()
+        {
+            var early = MarketShareModel.ReachFactor(ModelType.Coding, Year(2022));
+            var later = MarketShareModel.ReachFactor(ModelType.Coding, Year(2027));
+
+            // A coding model reaches fewer people than a general one in every year of the game, and
+            // that is correct: consumers are always the biggest segment. What has to change is the
+            // size of the penalty, which is the part the player is timing.
+            Assert.Less(early, 1.0, "A coding model in 2022 has to reach fewer people.");
+            Assert.Greater(later, early, "Waiting for the segment has to shrink the penalty.");
+        }
+
+        [Test]
+        public void TheAudienceASpecialistBuysIsTheOneThatPays()
+        {
+            // The other half of the mechanic. Reach is headcount and can never favour a specialist;
+            // what it buys is an audience that does not walk when the price goes up.
+            Assert.Greater(MarketShareModel.ToleranceFactor(ModelType.Coding, Year(2027)), 1.0);
+            Assert.Greater(MarketShareModel.ToleranceFactor(ModelType.Automation, Year(2030)),
+                MarketShareModel.ToleranceFactor(ModelType.Coding, Year(2030)));
+            Assert.AreEqual(1.0, MarketShareModel.ToleranceFactor(ModelType.General, Year(2030)), 1e-9,
+                "The general model is the baseline for this too, or it becomes a balance change.");
+        }
+
+        [Test]
+        public void ATypeCannotBeBuiltBeforeItIsResearched()
+        {
+            var state = new CompanyState("Gated", 3);
+
+            Assert.IsTrue(state.CanBuildType(ModelType.General), "The default type has to be free.");
+            Assert.IsFalse(state.CanBuildType(ModelType.Agentic));
+
+            var simulation = new CompanySimulation(state);
+            var blueprint = new ModelBlueprint("Agent one", ArchitectureId.DenseTransformer,
+                7.0, 140.0, DatasetSource.WebCrawl, ModelType.Agentic);
+
+            Assert.IsFalse(simulation.TryStartTraining(blueprint, out var reason));
+            Assert.IsNotEmpty(reason);
+        }
+
+        [Test]
+        public void TheTypeSurvivesEveryStepFromBlueprintToProduct()
+        {
+            var blueprint = new ModelBlueprint("Coder", ArchitectureId.DenseTransformer,
+                7.0, 140.0, DatasetSource.WebCrawl, ModelType.Coding);
+
+            Assert.AreEqual(ModelType.Coding, blueprint.Type);
+
+            // Each of these returns a new struct, and any one of them forgetting to carry the type
+            // would silently reset a specialised model to general the moment it was renamed.
+            Assert.AreEqual(ModelType.Coding, blueprint.WithName("Renamed").Type);
+            Assert.AreEqual(ModelType.Coding, blueprint.WithParameters(20.0).Type);
+            Assert.AreEqual(ModelType.Coding, blueprint.WithTokens(400.0).Type);
+            Assert.AreEqual(ModelType.Coding, blueprint.WithDataSources(DatasetSource.CuratedWeb).Type);
+            Assert.AreEqual(ModelType.Coding, blueprint.WithArchitecture(ArchitectureId.SparseMixture).Type);
+
+            var shelved = new TrainedModel("Coder", ArchitectureId.DenseTransformer, 40.0,
+                Year(2024), 7e9, 40.0, ModelType.Coding);
+
+            Assert.AreEqual(ModelType.Coding, shelved.Type);
+            Assert.AreEqual(ModelType.Coding, shelved.Release(Year(2024), 1.0).Type,
+                "Releasing a model has to keep what it was built for.");
+        }
+
+        [Test]
+        public void AnOlderSaveBecomesGeneralRatherThanNothing()
+        {
+            var data = new SaveData { version = 11 };
+            data.models.Add(new DeployedModelData());
+            data.shelf.Add(new TrainedModelData());
+
+            var upgraded = SaveMigration.UpgradeV11ToV12(data);
+
+            Assert.AreEqual(12, upgraded.version);
+            Assert.AreEqual((int)ModelType.General, upgraded.models[0].modelType);
+            Assert.AreEqual((int)ModelType.General, upgraded.shelf[0].modelType);
         }
 
         [Test]

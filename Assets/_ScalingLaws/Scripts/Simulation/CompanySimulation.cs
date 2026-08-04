@@ -168,6 +168,13 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public bool TryStartTraining(ModelBlueprint blueprint, out string failureReason)
         {
+            if (!State.CanBuildType(blueprint.Type))
+            {
+                failureReason = $"{ModelTypeCatalog.Get(blueprint.Type).DisplayName} models need "
+                    + $"{ResearchTree.Get(ModelTypeCatalog.Get(blueprint.Type).Requires).DisplayName} first.";
+                return false;
+            }
+
             failureReason = string.Empty;
 
             if (State.IsBankrupt)
@@ -1474,7 +1481,8 @@ namespace ScalingLaws.Simulation
                 measured,
                 State.Date,
                 activeParameters,
-                run.ProjectedCapability));
+                run.ProjectedCapability,
+                run.Blueprint.Type));
 
             State.ActiveRun = null;
 
