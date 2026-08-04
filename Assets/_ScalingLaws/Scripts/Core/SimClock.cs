@@ -77,6 +77,13 @@ namespace ScalingLaws.Core
             return days;
         }
 
+        /// <summary>
+        /// How far into the current day the clock has run, 0 to 1. The simulation only ever moves in
+        /// whole days, so this is presentation: it is what the day bar and the clock face read from,
+        /// and nothing in the rules is allowed to depend on it.
+        /// </summary>
+        public double DayProgress => Speed == SimSpeed.Paused ? 0.0 : Math.Clamp(accumulator, 0.0, 1.0);
+
         /// <summary>Jumps the calendar without consuming real time. Used by save loading and tests.</summary>
         public void SetDate(GameDate date)
         {

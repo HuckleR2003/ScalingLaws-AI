@@ -114,14 +114,14 @@ namespace ScalingLaws.Tests.PlayMode
             Assert.That(CountLabels(root), Is.GreaterThan(5),
                 "The game scene has almost no text on it.");
 
-            // The rail is what makes it navigable at all.
+            // The bottom interface is what makes it navigable at all.
             var buttons = root.Query<Button>().ToList();
             Assert.That(buttons.Count, Is.GreaterThan(6),
-                $"Only {buttons.Count} buttons on the game screen; the rail and toolbar are missing.");
+                $"Only {buttons.Count} buttons on the game screen; the bottom interface is missing.");
         }
 
         [UnityTest]
-        public IEnumerator EveryRailScreenOpensWithoutThrowing()
+        public IEnumerator EveryCategoryOpensWithoutThrowing()
         {
             SceneFlow.ResumeSavedCampaign = false;
             SceneManager.LoadScene(SceneFlow.GameScene);
@@ -129,11 +129,11 @@ namespace ScalingLaws.Tests.PlayMode
             yield return null;
 
             var root = FindDocument().rootVisualElement;
-            var railButtons = root.Query<Button>(className: "rail__item").ToList();
+            var slots = root.Query<Button>(className: "hud-slot").ToList();
 
-            Assert.That(railButtons.Count, Is.GreaterThan(5), "The rail is missing entries.");
+            Assert.That(slots.Count, Is.GreaterThan(5), "The bottom interface has almost no categories.");
 
-            foreach (var button in railButtons)
+            foreach (var button in slots)
             {
                 using var click = new NavigationSubmitEvent() { target = button };
                 button.SendEvent(click);
@@ -172,14 +172,21 @@ namespace ScalingLaws.Tests.PlayMode
                 + "renders as an unstyled column.");
 
             var shell = root.Q(className: "shell");
-            var rail = root.Q(className: "rail");
+            var hud = root.Q(className: "hud__bar");
             var topbar = root.Q(className: "topbar");
-            var railItem = root.Q<Button>(className: "rail__item");
+            var slot = root.Q<Button>(className: "hud-slot");
+            var dayBar = root.Q(className: "hud__day-fill");
 
             Assert.That(shell, Is.Not.Null, "No shell element.");
-            Assert.That(rail, Is.Not.Null, "No rail element.");
+            Assert.That(hud, Is.Not.Null, "No bottom interface.");
             Assert.That(topbar, Is.Not.Null, "No top bar.");
-            Assert.That(railItem, Is.Not.Null, "No rail entries.");
+            Assert.That(slot, Is.Not.Null, "No categories in the bottom interface.");
+            Assert.That(dayBar, Is.Not.Null, "No day line along the bottom edge.");
+
+            // The accent is baked into a texture because USS has no gradient. If that ever silently
+            // stops being assigned the line goes invisible rather than wrong, which is hard to spot.
+            Assert.That(dayBar.resolvedStyle.backgroundImage.texture, Is.Not.Null,
+                "The day line has no gradient texture, so it renders as nothing at all.");
 
             // Resolved styles need a real layout pass, and a runtime panel in batch mode never gets
             // one: every resolvedStyle stays NaN however many frames are waited or however explicitly
@@ -192,14 +199,16 @@ namespace ScalingLaws.Tests.PlayMode
                     + "verified; the resolved geometry needs the editor Test Runner or a real display.");
             }
 
-            Assert.That(shell.resolvedStyle.flexDirection, Is.EqualTo(FlexDirection.Row),
-                "The shell is stacking vertically, so the rail is sitting on top of the content.");
-            Assert.That(rail.resolvedStyle.width, Is.InRange(200f, 320f),
-                $"The rail resolved to {rail.resolvedStyle.width} wide instead of its fixed column.");
+            Assert.That(hud.resolvedStyle.flexDirection, Is.EqualTo(FlexDirection.Row),
+                "The bottom interface is stacking, so the clock is sitting on top of the categories.");
+            Assert.That(hud.resolvedStyle.height, Is.InRange(60f, 110f),
+                $"The bottom interface resolved to {hud.resolvedStyle.height} tall instead of its bar.");
             Assert.That(topbar.resolvedStyle.flexDirection, Is.EqualTo(FlexDirection.Row),
                 "The top bar is stacking, which is why the money and the date print over each other.");
-            Assert.That(railItem.resolvedStyle.width, Is.LessThan(340f),
-                $"A rail entry is {railItem.resolvedStyle.width} wide, so it is spanning the screen.");
+            Assert.That(slot.resolvedStyle.width, Is.LessThan(200f),
+                $"A category slot is {slot.resolvedStyle.width} wide, so it is spanning the screen.");
+            Assert.That(dayBar.resolvedStyle.height, Is.LessThan(8f),
+                "The day line is meant to be a hairline along the bottom edge, not a band.");
         }
 
         [UnityTest]

@@ -10,8 +10,10 @@ using UnityEngine.UIElements;
 namespace ScalingLaws.UI
 {
     /// <summary>
-    /// The shell: money and date across the top, a rail of screens down the left, a speed toolbar
-    /// along the bottom. The layout the tycoon games this borrows from all share, because it works.
+    /// The shell: money and standing across the top, the screen itself filling the middle, and the
+    /// bottom interface carrying the clock, the speed controls and every category the player can
+    /// open. There is no side rail: eleven text buttons down the left was a list of screens rather
+    /// than a control panel, and it spent a fifth of the window on navigation.
     ///
     /// The shell owns the clock and nothing else. It never computes a game number itself: every
     /// value on screen is read from <see cref="CompanySimulation"/> or a snapshot of it, so the UI
@@ -45,7 +47,7 @@ namespace ScalingLaws.UI
         private Label companyLabel;
         private Label dateLabel;
         private Label rankLabel;
-        private readonly List<Button> railButtons = new();
+        private GameHud hud;
         private readonly List<CompanyEvent> recentEvents = new();
 
         private Screen current = Screen.Create;
@@ -208,13 +210,14 @@ namespace ScalingLaws.UI
             shell.AddToClassList("shell");
             root.Add(shell);
 
-            shell.Add(BuildRail());
-
             contentHost = new VisualElement();
             contentHost.style.flexGrow = 1;
             shell.Add(contentHost);
 
-            root.Add(BuildToolbar());
+            hud = new GameHud(SetSpeed, SkipDay);
+            AddHudSlots();
+            root.Add(hud.Root);
+
             RefreshChrome();
         }
 
@@ -247,97 +250,68 @@ namespace ScalingLaws.UI
             right.Add(rankLabel);
             right.Add(companyLabel);
             right.Add(dateLabel);
-            bar.Add(right);
 
-            return bar;
-        }
-
-        private VisualElement BuildRail()
-        {
-            var rail = new VisualElement();
-            rail.AddToClassList("rail");
-
-            var brand = new Label("MY MODEL");
-            brand.AddToClassList("rail__brand");
-            rail.Add(brand);
-
-            var subtitle = new Label(companyName);
-            subtitle.AddToClassList("rail__subtitle");
-            rail.Add(subtitle);
-
-            AddRailItem(rail, "NEW MODEL", Screen.Create);
-            AddRailItem(rail, "RESEARCH", Screen.Research);
-            AddRailItem(rail, "ARCHITECTURE", Screen.Family);
-            AddRailItem(rail, "UPGRADE MODEL", Screen.Upgrade);
-            AddRailItem(rail, "TEAM", Screen.Team);
-            AddRailItem(rail, "FLEET", Screen.Fleet);
-            AddRailItem(rail, "BUSINESS", Screen.Business);
-            AddRailItem(rail, "RELEASE", Screen.Release);
-            AddRailItem(rail, "FUNDING", Screen.Funding);
-            AddRailItem(rail, "RANKING", Screen.Ranking);
-            AddRailItem(rail, "INTELLIGENCE", Screen.Feed);
-
-            return rail;
-        }
-
-        private void AddRailItem(VisualElement rail, string label, Screen screen)
-        {
-            var button = new Button(() => Show(screen)) { text = label };
-            button.AddToClassList("rail__item");
-            button.userData = screen;
-            railButtons.Add(button);
-            rail.Add(button);
-        }
-
-        private VisualElement BuildToolbar()
-        {
-            var toolbar = new VisualElement();
-            toolbar.AddToClassList("toolbar");
-
-            AddSpeedButton(toolbar, "II", SimSpeed.Paused);
-            AddSpeedButton(toolbar, ">", SimSpeed.Slow);
-            AddSpeedButton(toolbar, ">>", SimSpeed.Normal);
-            AddSpeedButton(toolbar, ">>>", SimSpeed.Fast);
-            AddSpeedButton(toolbar, "MAX", SimSpeed.Turbo);
-
-            var spacer = new VisualElement();
-            spacer.AddToClassList("toolbar__spacer");
-            toolbar.Add(spacer);
-
+            // The date is on the dial now, so this is the redundant copy. It stays because the top
+            // bar is what the player reads while the dial is what they operate.
             var save = new Button(() =>
             {
                 SaveStore.Save(state);
                 daysSinceAutoSave = 0;
             })
             { text = "SAVE" };
-            save.AddToClassList("button");
-            save.style.minWidth = 110;
-            save.style.height = 40;
-            save.style.marginRight = 8;
-            toolbar.Add(save);
+            save.AddToClassList("topbar__action");
+            right.Add(save);
 
-            var menu = new Button(() =>
-            {
-                if (!state.IsBankrupt)
-                {
-                    SaveStore.Save(state);
-                }
+            var menu = new Button(SceneFlow.LoadMainMenu) { text = "MENU" };
+            menu.AddToClassList("topbar__action");
+            right.Add(menu);
 
-                SceneFlow.LoadMainMenu();
-            })
-            { text = "MENU" };
-            menu.AddToClassList("button");
-            menu.style.minWidth = 110;
-            menu.style.height = 40;
-            toolbar.Add(menu);
+            bar.Add(right);
 
-            return toolbar;
+            return bar;
+        }
+
+        private void AddHudSlots()
+        {
+            hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create));
+            hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research));
+            hud.AddSlot("ARCH", Screen.Family, () => Show(Screen.Family));
+            hud.AddSlot("UPGRADE", Screen.Upgrade, () => Show(Screen.Upgrade));
+            hud.AddSlot("TEAM", Screen.Team, () => Show(Screen.Team));
+            hud.AddSlot("FLEET", Screen.Fleet, () => Show(Screen.Fleet));
+            hud.AddSlot("BUSINESS", Screen.Business, () => Show(Screen.Business));
+            hud.AddSlot("RELEASE", Screen.Release, () => Show(Screen.Release));
+            hud.AddSlot("FUNDING", Screen.Funding, () => Show(Screen.Funding));
+            hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking));
+            hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed));
+        }
+
+        private void SetSpeed(SimSpeed speed)
+        {
+            clock.Speed = speed;
+            RefreshChrome();
         }
 
         /// <summary>
-        /// The run is over. The save is already cleared by the caller, so this is a summary and a way
-        /// back out, not a screen to be rescued from.
+        /// Runs exactly one day and stops. It is the only control that moves the calendar without
+        /// real time passing, which is what makes it useful while paused: the player decides, then
+        /// steps, rather than waiting for a bar to fill.
         /// </summary>
+        private void SkipDay()
+        {
+            if (state.IsBankrupt)
+            {
+                return;
+            }
+
+            simulation.AdvanceDay();
+            clock.SetDate(state.Date);
+
+            DrainEvents();
+            RefreshChrome();
+            Show(current);
+        }
+
         private void ShowGameOver()
         {
             contentHost.Clear();
@@ -369,23 +343,12 @@ namespace ScalingLaws.UI
             contentHost.Add(page);
         }
 
-        private void AddSpeedButton(VisualElement toolbar, string label, SimSpeed speed)
-        {
-            var button = new Button(() => clock.Speed = speed) { text = label };
-            button.AddToClassList("toolbar__button");
-            toolbar.Add(button);
-        }
-
         private void Show(Screen screen)
         {
             current = screen;
             contentHost.Clear();
 
-            foreach (var button in railButtons)
-            {
-                var isActive = button.userData is Screen value && value == screen;
-                button.EnableInClassList("rail__item--active", isActive);
-            }
+            hud.SetActiveSlot(screen);
 
             switch (screen)
             {
@@ -1380,6 +1343,8 @@ namespace ScalingLaws.UI
 
             var position = RankingBoard.PlayerPosition(simulation.Ranking());
             rankLabel.text = position > 0 ? $"rank #{position}" : "unranked";
+
+            hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
         }
     }
 }

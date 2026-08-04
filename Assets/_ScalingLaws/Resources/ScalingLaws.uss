@@ -1328,3 +1328,239 @@
     color: rgb(112, 124, 142);
     white-space: normal;
 }
+
+/* ---------------------------------------------------------------------------
+   The bottom interface.
+
+   Almost all of it is black, graphite and soft white. The accent only ever
+   appears as a thin line: the contour of the dial, the underline of the
+   selected category, and the day bar along the very bottom edge. Those are
+   slices of one gradient, which is what makes them read as a single system
+   rather than as three red things.
+   --------------------------------------------------------------------------- */
+
+.hud {
+    flex-shrink: 0;
+}
+
+.hud__bar {
+    flex-direction: row;
+    align-items: flex-end;
+    height: 74px;
+    padding-left: 18px;
+    padding-right: 22px;
+    background-color: rgba(9, 10, 13, 0.90);
+    border-top-width: 1px;
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- the time module ---- */
+
+.hud-time {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+/* Zero width and height so the disc can hang above the bar without anything
+   in the row making room for it. */
+
+.hud-time__overhang {
+    width: 0;
+    height: 0;
+    align-items: flex-start;
+    justify-content: flex-end;
+}
+
+.hud-dial {
+    position: absolute;
+    left: 24px;
+    bottom: 30px;
+    width: 148px;
+    height: 74px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 6px;
+}
+
+.hud-time__date {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgb(150, 160, 178);
+}
+
+.hud-time__clock {
+    font-size: 21px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 248);
+}
+
+.hud-time__controls {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 200px;
+    padding-bottom: 14px;
+}
+
+.hud-speed {
+    width: 42px;
+    height: 30px;
+    margin: 0;
+    margin-right: 5px;
+    padding: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(126, 138, 158);
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-radius: 3px;
+}
+
+.hud-speed:hover {
+    color: rgb(216, 226, 242);
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.hud-speed--pause {
+    width: 32px;
+}
+
+.hud-speed--on {
+    color: rgb(244, 232, 232);
+    border-color: rgb(226, 78, 62);
+    background-color: rgba(226, 78, 62, 0.14);
+}
+
+.hud-skip {
+    height: 30px;
+    margin: 0;
+    margin-left: 8px;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(246, 234, 236);
+    background-color: rgba(94, 22, 40, 0.85);
+    border-width: 1px;
+    border-color: rgba(226, 78, 62, 0.55);
+    border-radius: 3px;
+}
+
+.hud-skip:hover {
+    background-color: rgb(120, 28, 50);
+    border-color: rgb(226, 78, 62);
+}
+
+/* ---- category slots ---- */
+
+.hud__slots {
+    flex-direction: row;
+    flex-grow: 1;
+    justify-content: flex-end;
+    align-items: flex-end;
+    height: 100%;
+    padding-bottom: 6px;
+}
+
+.hud-slot {
+    width: 84px;
+    height: 56px;
+    margin: 0;
+    margin-left: 2px;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.hud-slot:hover {
+    background-color: rgba(255, 255, 255, 0.045);
+}
+
+/* The plate a real icon drops into later. Sized now so adding art moves nothing. */
+
+.hud-slot__icon {
+    width: 26px;
+    height: 26px;
+    margin-bottom: 5px;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-radius: 4px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hud-slot:hover > .hud-slot__icon {
+    background-color: rgba(255, 255, 255, 0.20);
+}
+
+.hud-slot--on > .hud-slot__icon {
+    background-color: rgba(232, 240, 255, 0.80);
+}
+
+.hud-slot__label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(118, 130, 150);
+    margin-bottom: 7px;
+}
+
+.hud-slot:hover > .hud-slot__label {
+    color: rgb(206, 218, 236);
+}
+
+.hud-slot--on > .hud-slot__label {
+    color: rgb(236, 243, 255);
+}
+
+/* The selected marker: a piece of the same gradient, at the point across the
+   row where its own slot sits. */
+
+.hud-slot__underline {
+    width: 60%;
+    height: 2px;
+    opacity: 0;
+}
+
+.hud-slot--on > .hud-slot__underline {
+    opacity: 1;
+}
+
+/* ---- the day line ---- */
+
+.hud__day {
+    height: 3px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hud__day-fill {
+    height: 3px;
+    width: 0;
+}
+
+/* ---- top bar actions, now that the toolbar is gone ---- */
+
+.topbar__action {
+    height: 26px;
+    margin: 0;
+    margin-left: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(190, 202, 220);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 3px;
+}
+
+.topbar__action:hover {
+    color: rgb(232, 240, 252);
+    background-color: rgba(255, 255, 255, 0.10);
+}
