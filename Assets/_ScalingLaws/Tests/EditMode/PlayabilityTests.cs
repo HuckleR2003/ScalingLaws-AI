@@ -469,6 +469,38 @@ namespace ScalingLaws.Tests.EditMode
                 $"The end game must stay out of reach in the first four years. {context}");
         }
 
+        /// <summary>
+        /// The campaign does not end when the first difficulty band does. Year five is where the
+        /// reference timeline runs out, specialised audiences matter, and a weak save or a slowly
+        /// compounding number tends to reveal itself. A competent no-lookahead player must still be
+        /// solvent, participating in the market and able to react to the next decision.
+        /// </summary>
+        [Test]
+        public void FiveYearsLeaveTheBaselinePlayerSolventAndInTheRace()
+        {
+            var simulation = NewGame();
+            var bot = new ScriptedOperator(simulation);
+            bot.Run(1826);
+
+            var report = simulation.AdvanceDay();
+            var gap = report.FrontierCapability - simulation.State.BestCapability;
+            var context =
+                $"cap {simulation.State.BestCapability:F1}, frontier {report.FrontierCapability:F1}, "
+                + $"share {report.MarketShare:P1}, cash {simulation.State.CashUsd:N0}, "
+                + $"models {bot.ModelsShipped}, rounds {bot.RoundsRaised}, "
+                + $"research {simulation.State.UnlockedResearch.Count}/{ResearchTree.All.Count}";
+
+            Assert.That(simulation.State.IsBankrupt, Is.False, context);
+            Assert.That(bot.ModelsShipped, Is.GreaterThanOrEqualTo(4),
+                $"Five years should contain several deliberate model generations. {context}");
+            Assert.That(simulation.State.LifetimeRevenueUsd, Is.GreaterThan(0L),
+                $"A surviving company must still have a business, not only a credit line. {context}");
+            Assert.That(gap, Is.LessThan(30.0),
+                $"The frontier may move past an ordinary player, but it cannot become unreachable. {context}");
+            Assert.That(report.MarketShare, Is.InRange(0.001, 0.90),
+                $"Year five must neither erase the player nor hand them the whole market. {context}");
+        }
+
         [Test]
         public void ThePlayerEndsUpOnTheBoard()
         {
@@ -611,6 +643,29 @@ namespace ScalingLaws.Tests.EditMode
             var resumed = new CompanySimulation(restored);
             resumed.Advance(120);
             Assert.That(restored.Date, Is.EqualTo(original.State.Date.AddDays(120)));
+        }
+
+        [Test]
+        public void AYearFourSaveRunsIdenticallyThroughYearFive()
+        {
+            var original = NewGame(seed: 901);
+            new ScriptedOperator(original).Run(1460);
+
+            var restored = SaveStore.Restore(SaveStore.Parse(JsonUtility.ToJson(SaveStore.Capture(original.State))));
+            var resumed = new CompanySimulation(restored);
+
+            original.Advance(366);
+            resumed.Advance(366);
+
+            Assert.That(restored.Date, Is.EqualTo(original.State.Date));
+            Assert.That(restored.CashUsd, Is.EqualTo(original.State.CashUsd));
+            Assert.That(restored.LifetimeRevenueUsd, Is.EqualTo(original.State.LifetimeRevenueUsd));
+            Assert.That(restored.LifetimeOperatingCostUsd, Is.EqualTo(original.State.LifetimeOperatingCostUsd));
+            Assert.That(restored.LifetimeTaxPaidUsd, Is.EqualTo(original.State.LifetimeTaxPaidUsd));
+            Assert.That(restored.LifetimeFinesUsd, Is.EqualTo(original.State.LifetimeFinesUsd));
+            Assert.That(restored.BestCapability, Is.EqualTo(original.State.BestCapability).Within(1e-9));
+            Assert.That(restored.Rivals.FrontierCapability(restored.Date),
+                Is.EqualTo(original.State.Rivals.FrontierCapability(original.State.Date)).Within(1e-9));
         }
 
         [Test]

@@ -48,6 +48,7 @@ namespace ScalingLaws.Simulation
             AdoptedArchitectures = new HashSet<ArchitectureId> { ArchitectureId.DenseTransformer };
             Reputation = 0.05;
             Rivals = CompetitorField.CreateFromCatalog();
+            Segments = new SegmentMarket(Rivals.Agents.Count);
             CapTable = new CapTable();
             UnlockedResearch = new HashSet<ResearchNodeId> { ResearchTree.StartingNode };
             Founder = FounderProfile.Neutral;
@@ -146,6 +147,15 @@ namespace ScalingLaws.Simulation
 
         /// <summary>The live field of rival labs. Agents, not a lookup table.</summary>
         public CompetitorField Rivals { get; }
+
+        /// <summary>
+        /// Who is using what, per audience segment. Persisted, because a user base that reset on
+        /// load would make every save a fresh market and quietly delete the whole point of it.
+        /// </summary>
+        public SegmentMarket Segments { get; private set; }
+
+        /// <summary>Rebuilds the standing when the number of labs changes. Only saves need this.</summary>
+        public void ResetSegments(int rivalCount) => Segments = new SegmentMarket(rivalCount);
 
         private readonly Dictionary<ArchitectureId, ArchitectureDefinition> customArchitectures = new();
         private readonly Dictionary<ArchitectureId, int> familyGenerations = new();

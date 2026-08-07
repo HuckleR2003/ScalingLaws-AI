@@ -92,6 +92,31 @@ namespace ScalingLaws.Persistence
         public bool hasPlannedRelease;
         public int accumulatedDelayDays;
         public bool isWaitingForHardware;
+
+        /// <summary>Added in v13. Capability crept since release, and the roll already made.</summary>
+        public double drift;
+
+        public double pendingCapabilityAdjustment;
+
+        /// <summary>
+        /// Added in v13. The release this lab is working toward. Past the end of the reference
+        /// table a lab invents its own, with a random gain, and that invention has to be written
+        /// down or a reload silently rebuilds a different rival field.
+        /// </summary>
+        public bool hasPendingRelease;
+
+        public string pendingName;
+        public int pendingReleaseDayIndex;
+        public double pendingCapability;
+        public double pendingBrand;
+        public double pendingPrice;
+        public bool pendingIsProjection;
+
+        /// <summary>How many catalog releases the lab still had queued. Recorded, never inferred.</summary>
+        public int plannedReleasesRemaining = -1;
+
+        /// <summary>Which accelerator generation a patient lab is holding out for.</summary>
+        public int waitingForGeneration;
     }
 
     [Serializable]
@@ -177,7 +202,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 12;
+        public const int CurrentVersion = 13;
 
         public int version = CurrentVersion;
 
@@ -306,6 +331,17 @@ namespace ScalingLaws.Persistence
 
         /// <summary>Model type, on the run in flight. Zero means the file predates types.</summary>
         public int activeRunType;
+
+        // ---- added in v13 ----
+
+        /// <summary>Player share of each audience segment, in catalog order.</summary>
+        public List<double> segmentPlayerShares = new();
+
+        /// <summary>Rival shares, segment major. Length is segments times rivals.</summary>
+        public List<double> segmentRivalShares = new();
+
+        /// <summary>How many labs the standing was written for. A mismatch drops it.</summary>
+        public int segmentRivalCount;
     }
 
     /// <summary>One person on the payroll. Added in v8.</summary>

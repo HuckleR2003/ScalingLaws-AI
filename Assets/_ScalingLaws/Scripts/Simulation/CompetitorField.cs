@@ -59,7 +59,12 @@ namespace ScalingLaws.Simulation
             GameDate nextReleaseDate,
             bool hasPlannedRelease,
             int accumulatedDelayDays,
-            bool isWaitingForHardware)
+            bool isWaitingForHardware,
+            double drift = 0.0,
+            double pendingCapabilityAdjustment = 0.0,
+            CompetitorRelease? pending = null,
+            int plannedRemaining = -1,
+            HardwareGenerationId waitingFor = HardwareGenerationId.None)
         {
             var agent = Find(competitor);
             if (agent == null)
@@ -72,6 +77,14 @@ namespace ScalingLaws.Simulation
                 agent.SkipPlannedReleasesUpTo(liveReleaseDate);
             }
 
+            // A lab that already pulled its next release off the plan must not be handed it a second
+            // time. Skipping only up to what it last shipped left the pending entry still queued, so
+            // a restored lab shipped the same model twice and its whole later cadence was offset.
+            if (plannedRemaining >= 0)
+            {
+                agent.TrimPlanTo(plannedRemaining);
+            }
+
             agent.Restore(
                 hasShipped,
                 liveModelName,
@@ -82,7 +95,29 @@ namespace ScalingLaws.Simulation
                 nextReleaseDate,
                 hasPlannedRelease,
                 accumulatedDelayDays,
-                isWaitingForHardware);
+                isWaitingForHardware,
+                drift,
+                pendingCapabilityAdjustment,
+                waitingFor);
+
+            if (pending.HasValue)
+            {
+                agent.RestorePending(pending.Value);
+            }
+        }
+
+        /// <summary>Position of a lab in the field, or -1. The segment standing is indexed by it.</summary>
+        public int IndexOf(CompetitorId competitor)
+        {
+            for (var index = 0; index < agents.Count; index++)
+            {
+                if (agents[index].Competitor == competitor)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         public CompetitorAgent Find(CompetitorId competitor)

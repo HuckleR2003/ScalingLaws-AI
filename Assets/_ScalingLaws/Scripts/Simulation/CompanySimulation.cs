@@ -1508,6 +1508,82 @@ namespace ScalingLaws.Simulation
                 run.ComputeCashSpentUsd));
         }
 
+        /// <summary>
+        /// Every product on the market today, player and rival, described the same way.
+        ///
+        /// This is the piece that makes competitors play the same game. A rival used to be
+        /// capability, brand and price while a player model additionally carried type, traits,
+        /// architecture and serving cost, and the share model compared them as though they were the
+        /// same kind of thing. They are now literally the same kind of thing.
+        /// </summary>
+        private List<MarketEntrant> BuildEntrants(double brand, IReadOnlyList<RivalModel> rivals)
+        {
+            var entrants = new List<MarketEntrant>(State.DeployedModels.Count + rivals.Count);
+
+            foreach (var model in State.DeployedModels)
+            {
+                if (model == null || !model.IsLiveOn(State.Date))
+                {
+                    continue;
+                }
+
+                // The player's serving burden is read off the same numbers that bill the player for
+                // serving, so a cheap model to run is cheap here too rather than being asserted.
+                var architecture = State.ResolveArchitecture(model.Architecture);
+                var burden = architecture.InferenceCostMultiplier
+                    * model.EfficiencyMultiplier(State.Date)
+                    * State.Skills.ServingCostMultiplier()
+                    * ModelTypeCatalog.Get(model.Type).ServingCostMultiplier;
+
+                entrants.Add(new MarketEntrant(
+                    -1,
+                    model.Name,
+                    model.Type,
+                    model.EffectiveCapability(State.Date),
+                    Math.Clamp(brand + model.BrandBonus(State.Date), 0.0, 1.0),
+                    model.PriceMultiplier,
+                    model.AgeYears(State.Date),
+                    burden));
+            }
+
+            for (var index = 0; index < rivals.Count; index++)
+            {
+                var rival = rivals[index];
+                var slot = State.Rivals.IndexOf(rival.Competitor);
+                if (slot < 0)
+                {
+                    continue;
+                }
+
+                entrants.Add(new MarketEntrant(
+                    slot,
+                    rival.DisplayName,
+                    rival.Type,
+                    rival.Capability,
+                    rival.BrandStrength,
+                    rival.PriceMultiplier,
+                    rival.ReleaseDate.YearsUntil(State.Date),
+                    rival.ServingBurden));
+            }
+
+            return entrants;
+        }
+
+        /// <summary>Per segment standing, for the Foundation screen and for the balance tests.</summary>
+        public List<SegmentStanding> SegmentStandings()
+        {
+            var names = new List<string>(State.Rivals.Agents.Count);
+            foreach (var agent in State.Rivals.Agents)
+            {
+                names.Add(agent.LabName);
+            }
+
+            return State.Segments.Standings(
+                State.Date,
+                MarketModel.DemandOn(State.Date),
+                names);
+        }
+
         private (double Share, double Demanded, double Served, long Revenue) ServeMarket(
             ComputeProfile profile,
             MarketConditions market)
@@ -1522,7 +1598,14 @@ namespace ScalingLaws.Simulation
                 0.0,
                 1.0);
 
-            var share = MarketShareModel.PlayerShare(State.DeployedModels, brand, market, rivals);
+            // The segmented market replaced a single instant logit over one global pool. It is the
+            // same utility function scoring the same products; what changed is that the standing
+            // moves toward the answer over days instead of being it, and that it is tracked per
+            // audience rather than as one number for everybody.
+            var share = State.Segments.Advance(
+                BuildEntrants(brand, rivals),
+                State.Date,
+                market.TotalDemandBillionTokensPerDay);
 
             // Reach from the free tier, then capped: a giveaway widens the funnel, it does not
             // hand over the market.

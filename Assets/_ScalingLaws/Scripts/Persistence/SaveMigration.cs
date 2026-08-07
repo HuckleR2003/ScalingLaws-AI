@@ -113,6 +113,7 @@ namespace ScalingLaws.Persistence
                     9 => UpgradeV9ToV10(current),
                     10 => UpgradeV10ToV11(current),
                     11 => UpgradeV11ToV12(current),
+                    12 => UpgradeV12ToV13(current),
                     _ => current
                 };
             }
@@ -490,6 +491,38 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v11 to v12: nothing in an older save recorded what a model was for, so every one of "
                 + "them is general. That is what they were competing as.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v12 to v13: the market gains a memory.
+        ///
+        /// Before this, share was recomputed from scratch every day, so there is nothing in an older
+        /// file to read a user base out of. Rather than invent one, the standing is left empty and
+        /// flagged as unrecorded, and the first tick after loading snaps it to whatever today's
+        /// products deserve.
+        ///
+        /// That is the honest translation. The old file's world really did say "share is whatever
+        /// the models are worth right now", so jumping to exactly that is not a guess, it is the
+        /// same statement in the new format.
+        /// </summary>
+        public static SaveData UpgradeV12ToV13(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 13;
+            data.segmentPlayerShares = new List<double>();
+            data.segmentRivalShares = new List<double>();
+            data.segmentRivalCount = 0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v12 to v13: no user base was recorded because share used to be recomputed daily. "
+                + "The first day after loading sets the standing to what the live models are worth, "
+                + "which is what the older file meant.");
 
             return data;
         }

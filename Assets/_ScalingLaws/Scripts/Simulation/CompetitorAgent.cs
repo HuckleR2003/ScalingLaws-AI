@@ -14,8 +14,12 @@ namespace ScalingLaws.Simulation
             double capability,
             double brandStrength,
             double priceMultiplier,
-            GameDate releaseDate)
+            GameDate releaseDate,
+            ModelType type = ModelType.General,
+            double servingBurden = 1.0)
         {
+            Type = type == ModelType.None ? ModelType.General : type;
+            ServingBurden = Math.Clamp(SimUnits.Finite(servingBurden, 1.0), 0.1, 6.0);
             Competitor = competitor;
             DisplayName = displayName ?? string.Empty;
             Capability = Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0);
@@ -26,6 +30,12 @@ namespace ScalingLaws.Simulation
 
         public CompetitorId Competitor { get; }
         public string DisplayName { get; }
+
+        /// <summary>What the lab built this model for. Scored by the same rule as the player's.</summary>
+        public ModelType Type { get; }
+
+        /// <summary>Relative cost to serve a token. Derived from the strategy, not invented.</summary>
+        public double ServingBurden { get; }
         public double Capability { get; }
         public double BrandStrength { get; }
         public double PriceMultiplier { get; }
@@ -86,6 +96,50 @@ namespace ScalingLaws.Simulation
         public string LabName { get; }
         public CompetitorStrategy Strategy { get; }
 
+        /// <summary>
+        /// What this lab builds for. Read off the strategy rather than stored, because a strategy
+        /// that did not change what a lab makes was only ever a release timer with a name on it.
+        ///
+        /// The mapping is the obvious one and that is the point: a cost leader chases the cheapest
+        /// high volume segment, an enterprise lab builds for process work, a fast follower copies
+        /// whatever the player is winning with and therefore stays general.
+        /// </summary>
+        public ModelType TargetType => Strategy switch
+        {
+            CompetitorStrategy.FrontierRace => ModelType.General,
+            CompetitorStrategy.PatientScaler => ModelType.Coding,
+            CompetitorStrategy.CostLeader => ModelType.Conversational,
+            CompetitorStrategy.OpenWeights => ModelType.Coding,
+            CompetitorStrategy.EnterpriseFocus => ModelType.Automation,
+            _ => ModelType.General
+        };
+
+        /// <summary>
+        /// What a token costs this lab to serve, relative to a plain dense model.
+        ///
+        /// Two things move it and both are already in the strategy: the type it builds, which has a
+        /// serving multiplier in the catalog, and whether the lab is optimising for cost at all. A
+        /// cost leader has cheaper tokens because that is the whole strategy; a frontier lab has
+        /// dearer ones because it is running the largest model it can afford.
+        /// </summary>
+        public double ServingBurden
+        {
+            get
+            {
+                var typeCost = ModelTypeCatalog.Get(TargetType).ServingCostMultiplier;
+                var houseCost = Strategy switch
+                {
+                    CompetitorStrategy.CostLeader => 0.72,
+                    CompetitorStrategy.OpenWeights => 0.85,
+                    CompetitorStrategy.FrontierRace => 1.30,
+                    CompetitorStrategy.PatientScaler => 1.10,
+                    _ => 1.0
+                };
+
+                return Math.Clamp(typeCost * houseCost, 0.1, 6.0);
+            }
+        }
+
         public bool HasShipped { get; private set; }
         public string LiveModelName { get; private set; } = string.Empty;
         public double LiveCapability { get; private set; }
@@ -107,6 +161,40 @@ namespace ScalingLaws.Simulation
         private CompetitorRelease pending;
         private double pendingCapabilityAdjustment;
         private double drift;
+
+        /// <summary>
+        /// How far this lab's live model has crept from what it shipped with.
+        ///
+        /// It is a real part of the agent's state and it was not being saved, so a restored campaign
+        /// handed every rival back a model it had already improved on. Nothing noticed until the
+        /// market started reading rival quality directly.
+        /// </summary>
+        public double Drift => drift;
+
+        /// <summary>The roll already made against the next release. Also has to survive a save.</summary>
+        public double PendingCapabilityAdjustment => pendingCapabilityAdjustment;
+
+        /// <summary>
+        /// The release this lab is currently working toward, or null.
+        ///
+        /// Once the reference table runs out the lab invents its own next model, with a random gain,
+        /// and keeps it here. That invented release was never saved, so a restored campaign had labs
+        /// that believed they had something planned and had lost what it was. The whole rival field
+        /// past the end of the real data was quietly different after a save.
+        /// </summary>
+        public bool TryGetPending(out CompetitorRelease release)
+        {
+            release = pending;
+            return HasPlannedRelease && pending.Competitor != CompetitorId.None;
+        }
+
+        /// <summary>Puts a saved plan back. Only <see cref="CompetitorField"/> should call this.</summary>
+        internal void RestorePending(CompetitorRelease release)
+        {
+            pending = release;
+            HasPlannedRelease = true;
+            NextReleaseDate = release.ReleaseDate;
+        }
 
         public void QueuePlan(CompetitorRelease release) => plan.Enqueue(release);
 
@@ -137,7 +225,9 @@ namespace ScalingLaws.Simulation
                 CurrentCapability(date),
                 LiveBrand,
                 LivePrice,
-                LiveReleaseDate);
+                LiveReleaseDate,
+                TargetType,
+                ServingBurden);
             return true;
         }
 
@@ -320,8 +410,14 @@ namespace ScalingLaws.Simulation
             GameDate nextReleaseDate,
             bool hasPlannedRelease,
             int accumulatedDelayDays,
-            bool isWaitingForHardware)
+            bool isWaitingForHardware,
+            double restoredDrift,
+            double restoredPendingAdjustment,
+            HardwareGenerationId restoredWaitingFor)
         {
+            drift = Math.Clamp(SimUnits.Finite(restoredDrift), -MaximumDrift, MaximumDrift);
+            WaitingFor = restoredWaitingFor;
+            pendingCapabilityAdjustment = SimUnits.Finite(restoredPendingAdjustment);
             HasShipped = hasShipped;
             LiveModelName = liveModelName ?? string.Empty;
             LiveCapability = Math.Clamp(SimUnits.Finite(liveCapability), 0.0, 100.0);
@@ -353,6 +449,22 @@ namespace ScalingLaws.Simulation
         public void SkipPlannedReleasesUpTo(GameDate date)
         {
             while (plan.Count > 0 && plan.Peek().ReleaseDate <= date)
+            {
+                plan.Dequeue();
+            }
+        }
+
+        /// <summary>
+        /// Cuts the plan back to the length it had when the game was saved.
+        ///
+        /// Reconstructing this by date was wrong in both directions: too little and a restored lab
+        /// ships the same model twice, too much and it throws away real planned releases because the
+        /// entry it was holding had been invented past the end of the table and dated years out.
+        /// The length is a fact the save can simply record, so it does.
+        /// </summary>
+        internal void TrimPlanTo(int remaining)
+        {
+            while (plan.Count > remaining)
             {
                 plan.Dequeue();
             }

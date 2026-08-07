@@ -36,8 +36,12 @@ namespace ScalingLaws.Data
     public sealed class AudienceSegmentDefinition
     {
         public AudienceSegmentDefinition(AudienceSegment segment, string displayName, string description,
-            double willingnessToPay, (int Year, double Weight)[] anchors)
+            double willingnessToPay, double adoptionRatePerDay, double brandWeight,
+            double servingCostWeight, (int Year, double Weight)[] anchors)
         {
+            AdoptionRatePerDay = Math.Clamp(adoptionRatePerDay, 0.002, 0.5);
+            BrandWeight = Math.Clamp(brandWeight, 0.0, 2.5);
+            ServingCostWeight = Math.Clamp(servingCostWeight, 0.0, 2.0);
             Segment = segment;
             DisplayName = displayName ?? segment.ToString();
             Description = description ?? string.Empty;
@@ -55,6 +59,21 @@ namespace ScalingLaws.Data
         /// loses far fewer of them.
         /// </summary>
         public double WillingnessToPay { get; }
+
+        /// <summary>
+        /// How much of the gap to its preferred product a segment closes in one day.
+        ///
+        /// This is the switching friction, and it is the only thing that makes segments behave
+        /// differently in kind rather than in degree. Developers re-evaluate in weeks. An enterprise
+        /// contract does not care what shipped on Tuesday and will not care for a year.
+        /// </summary>
+        public double AdoptionRatePerDay { get; }
+
+        /// <summary>How much this segment cares who built it. Consumers care most, developers least.</summary>
+        public double BrandWeight { get; }
+
+        /// <summary>How much an expensive-to-serve model is punished here. Support buyers notice.</summary>
+        public double ServingCostWeight { get; }
 
         /// <summary>Raw size at each anchor year. Read through <see cref="AudienceCatalog"/>.</summary>
         public (int Year, double Weight)[] Anchors { get; }
@@ -120,7 +139,8 @@ namespace ScalingLaws.Data
             new(AudienceSegment.Consumer, "Consumer",
                 "People asking questions. The largest crowd by a distance and the least willing to pay "
                 + "for any of it.",
-                willingnessToPay: 1.00,
+                willingnessToPay: 1.00, adoptionRatePerDay: 0.045, brandWeight: 1.35,
+                servingCostWeight: 0.55,
                 new (int, double)[]
                 {
                     (2022, 30), (2023, 62), (2024, 74), (2026, 82),
@@ -130,7 +150,8 @@ namespace ScalingLaws.Data
             new(AudienceSegment.Developer, "Developers",
                 "Engineers writing code. Almost nobody in 2022, and the first group to find out it "
                 + "would happily pay.",
-                willingnessToPay: 1.20,
+                willingnessToPay: 1.20, adoptionRatePerDay: 0.090, brandWeight: 0.55,
+                servingCostWeight: 0.35,
                 new (int, double)[]
                 {
                     (2022, 4), (2023, 14), (2024, 26), (2025, 34), (2027, 40),
@@ -140,7 +161,8 @@ namespace ScalingLaws.Data
             new(AudienceSegment.Enterprise, "Enterprise",
                 "Companies replacing work that used to be done by a department. Slow to arrive, "
                 + "expensive to win, and almost impossible to lose once won.",
-                willingnessToPay: 1.65,
+                willingnessToPay: 1.65, adoptionRatePerDay: 0.012, brandWeight: 1.15,
+                servingCostWeight: 0.25,
                 new (int, double)[]
                 {
                     (2022, 3), (2024, 9), (2026, 20), (2028, 30), (2031, 38), (2036, 44)
@@ -148,7 +170,8 @@ namespace ScalingLaws.Data
 
             new(AudienceSegment.Creative, "Creative",
                 "Writing, images and marketing. Arrived early, never grew the way the others did.",
-                willingnessToPay: 1.05,
+                willingnessToPay: 1.05, adoptionRatePerDay: 0.060, brandWeight: 1.00,
+                servingCostWeight: 0.85,
                 new (int, double)[]
                 {
                     (2022, 6), (2023, 12), (2025, 16), (2028, 17), (2036, 18)
@@ -157,7 +180,8 @@ namespace ScalingLaws.Data
             new(AudienceSegment.Agentic, "Autonomous",
                 "Models given a machine and a task and left alone with both. Does not exist until a "
                 + "model can hold a job down for an hour without supervision.",
-                willingnessToPay: 2.10,
+                willingnessToPay: 2.10, adoptionRatePerDay: 0.030, brandWeight: 0.70,
+                servingCostWeight: 1.30,
                 new (int, double)[]
                 {
                     (2022, 0), (2024, 1), (2026, 6), (2028, 18), (2030, 34), (2033, 52), (2036, 64)

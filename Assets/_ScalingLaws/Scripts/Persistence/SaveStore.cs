@@ -134,6 +134,9 @@ namespace ScalingLaws.Persistence
             data.worldRegion = (int)state.Region;
             data.homeCountry = (int)state.HomeCountry;
             data.lifetimeTaxPaidUsd = state.LifetimeTaxPaidUsd;
+            data.segmentPlayerShares = new List<double>(state.Segments.PlayerSharesToArray());
+            data.segmentRivalShares = new List<double>(state.Segments.RivalSharesToArray());
+            data.segmentRivalCount = state.Segments.RivalCount;
 
             data.pricingModel = (int)state.Monetization.Model;
 
@@ -350,7 +353,18 @@ namespace ScalingLaws.Persistence
                     nextReleaseDayIndex = agent.NextReleaseDate.DayIndex,
                     hasPlannedRelease = agent.HasPlannedRelease,
                     accumulatedDelayDays = agent.AccumulatedDelayDays,
-                    isWaitingForHardware = agent.IsWaitingForHardware
+                    isWaitingForHardware = agent.IsWaitingForHardware,
+                    drift = agent.Drift,
+                    pendingCapabilityAdjustment = agent.PendingCapabilityAdjustment,
+                    hasPendingRelease = agent.TryGetPending(out var pendingRelease),
+                    pendingName = pendingRelease.DisplayName,
+                    pendingReleaseDayIndex = pendingRelease.ReleaseDate.DayIndex,
+                    pendingCapability = pendingRelease.Capability,
+                    pendingBrand = pendingRelease.BrandStrength,
+                    pendingPrice = pendingRelease.PriceMultiplier,
+                    pendingIsProjection = pendingRelease.IsProjection,
+                    plannedReleasesRemaining = agent.PlannedReleasesRemaining,
+                    waitingForGeneration = (int)agent.WaitingFor
                 });
             }
 
@@ -422,6 +436,7 @@ namespace ScalingLaws.Persistence
             state.Region = (WorldRegion)safe.worldRegion;
             state.HomeCountry = (Country)safe.homeCountry;
             state.LifetimeTaxPaidUsd = safe.lifetimeTaxPaidUsd;
+            state.Segments.Restore(safe.segmentPlayerShares, safe.segmentRivalShares, safe.segmentRivalCount);
 
             state.LifetimeFinesUsd = safe.lifetimeFinesUsd;
 
@@ -606,7 +621,21 @@ namespace ScalingLaws.Persistence
                     new GameDate(rival.nextReleaseDayIndex),
                     rival.hasPlannedRelease,
                     rival.accumulatedDelayDays,
-                    rival.isWaitingForHardware);
+                    rival.isWaitingForHardware,
+                    rival.drift,
+                    rival.pendingCapabilityAdjustment,
+                    rival.hasPendingRelease
+                        ? new CompetitorRelease(
+                            (CompetitorId)rival.competitor,
+                            rival.pendingName,
+                            new GameDate(rival.pendingReleaseDayIndex),
+                            rival.pendingCapability,
+                            rival.pendingBrand,
+                            rival.pendingPrice,
+                            rival.pendingIsProjection)
+                        : null,
+                    rival.plannedReleasesRemaining,
+                    (HardwareGenerationId)rival.waitingForGeneration);
             }
 
             foreach (var revenue in safe.revenueWindow)
@@ -872,6 +901,24 @@ namespace ScalingLaws.Persistence
             }
 
             safe.lifetimeTaxPaidUsd = Math.Max(0L, safe.lifetimeTaxPaidUsd);
+
+            // ---- v13 fields ----
+
+            safe.segmentPlayerShares ??= new List<double>();
+            safe.segmentRivalShares ??= new List<double>();
+            safe.segmentRivalCount = Math.Max(0, safe.segmentRivalCount);
+
+            for (var index = 0; index < safe.segmentPlayerShares.Count; index++)
+            {
+                safe.segmentPlayerShares[index] = Math.Clamp(
+                    SimUnits.Finite(safe.segmentPlayerShares[index]), 0.0, 1.0);
+            }
+
+            for (var index = 0; index < safe.segmentRivalShares.Count; index++)
+            {
+                safe.segmentRivalShares[index] = Math.Clamp(
+                    SimUnits.Finite(safe.segmentRivalShares[index]), 0.0, 1.0);
+            }
 
             // ---- v12 fields ----
 
