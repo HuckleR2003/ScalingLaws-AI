@@ -46,6 +46,20 @@ namespace ScalingLaws.Core
         }
 
         /// <summary>Guards a double that is about to become money or a rate. NaN and infinity become zero.</summary>
+        /// <summary>
+        /// Rounds a value to a grid the save format can actually hold.
+        ///
+        /// JsonUtility writes a double at about fifteen significant digits, so a value carrying
+        /// seventeen comes back subtly different and a restored campaign is no longer the campaign
+        /// that was saved. A number that cannot survive its own save file is not well defined state,
+        /// so anything destined for the save is put on a grid first rather than being repaired
+        /// afterwards. One part in a billion is far below anything the game measures.
+        /// </summary>
+        public const int StorableDigits = 9;
+
+        public static double Storable(double value) =>
+            double.IsNaN(value) || double.IsInfinity(value) ? 0.0 : Math.Round(value, StorableDigits);
+
         public static double Finite(double value, double fallback = 0.0)
         {
             return double.IsNaN(value) || double.IsInfinity(value) ? fallback : value;

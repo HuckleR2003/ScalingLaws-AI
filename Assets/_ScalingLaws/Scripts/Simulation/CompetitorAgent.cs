@@ -188,12 +188,20 @@ namespace ScalingLaws.Simulation
             return HasPlannedRelease && pending.Competitor != CompetitorId.None;
         }
 
-        /// <summary>Puts a saved plan back. Only <see cref="CompetitorField"/> should call this.</summary>
+        /// <summary>
+        /// Puts a saved plan back. Only <see cref="CompetitorField"/> should call this.
+        ///
+        /// It deliberately does not touch <see cref="NextReleaseDate"/>. The two look like the same
+        /// fact and are not: the pending release carries the date it was scheduled for, while the
+        /// agent carries the date it currently intends to ship, and a lab that has decided to wait
+        /// for the next accelerator generation has pushed the second one months past the first.
+        /// Setting it from the release threw that decision away and un-waited every patient lab on
+        /// load, which is the whole reason the restored rival field ran ahead of the real one.
+        /// </summary>
         internal void RestorePending(CompetitorRelease release)
         {
             pending = release;
             HasPlannedRelease = true;
-            NextReleaseDate = release.ReleaseDate;
         }
 
         public void QueuePlan(CompetitorRelease release) => plan.Enqueue(release);
@@ -207,7 +215,7 @@ namespace ScalingLaws.Simulation
             }
 
             var elapsed = Math.Max(0, date.DayIndex - LiveReleaseDate.DayIndex);
-            drift = Math.Min(MaximumDrift, elapsed * DriftPerDay);
+            drift = SimUnits.Storable(Math.Min(MaximumDrift, elapsed * DriftPerDay));
             return Math.Clamp(LiveCapability + drift, 0.0, 100.0);
         }
 
@@ -284,7 +292,7 @@ namespace ScalingLaws.Simulation
                 Competitor,
                 $"{LabName} next",
                 date.AddDays(cadence),
-                Math.Clamp(LiveCapability + drift + gain, 0.0, 100.0),
+                SimUnits.Storable(Math.Clamp(LiveCapability + drift + gain, 0.0, 100.0)),
                 LiveBrand,
                 LivePrice,
                 isProjection: true);
@@ -360,7 +368,8 @@ namespace ScalingLaws.Simulation
         private void Ship(GameDate date)
         {
             LiveModelName = pending.DisplayName;
-            LiveCapability = Math.Clamp(pending.Capability + pendingCapabilityAdjustment, 0.0, 100.0);
+            LiveCapability = SimUnits.Storable(
+                Math.Clamp(pending.Capability + pendingCapabilityAdjustment, 0.0, 100.0));
             LiveBrand = pending.BrandStrength;
             LivePrice = pending.PriceMultiplier;
             LiveReleaseDate = date;

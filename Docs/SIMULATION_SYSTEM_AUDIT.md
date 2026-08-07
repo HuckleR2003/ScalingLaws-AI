@@ -114,17 +114,50 @@ exposed four things the save had never written down, all in `CompetitorAgent`, a
 All four are now written and restored, plus the plan queue length, which is recorded rather than
 reconstructed by date because inferring it was wrong in both directions.
 
-### Still open
+### Root cause, found 2026-08-04
 
-`PlayabilityTests.AYearFourSaveRunsIdenticallyThroughYearFive` still fails on its last assertion.
+**First divergence: day zero, immediately after the restore. Lab Anthropic, a PatientScaler. Field
+`NextReleaseDate`: 1670 continuous against 1496 restored.**
 
-Everything on the player side now replays bit-identically across a save: date, cash, lifetime
-revenue, operating cost, tax, fines and capability all match exactly. **The rival frontier does
-not**: 77.358 continuous against 78.315 restored, stable across the last three fixes.
+It was not missing state at all. It was the fix for the missing state overwriting good state.
 
-The four fixes above each moved the number (73.815, then 75.892, then 78.315) and then it stopped
-moving, which says there is at least one more piece of agent state that is not written down. It has
-not been found yet.
+`RestorePending` set `NextReleaseDate = release.ReleaseDate`. Those two look like the same fact and
+are not. The pending release carries the date it was **scheduled** for; the agent carries the date it
+currently **intends** to ship, and a lab that has decided to hold out for the next accelerator
+generation has pushed the second months past the first. Writing one over the other un-waited every
+patient lab on load, so the restored field shipped early and led the real one for the rest of the
+campaign.
 
-**The assertion has deliberately not been loosened.** A red test naming a real bug is worth more than
-a green suite that lies, and this one is doing exactly the job it was written for.
+Why the four earlier fields were not enough: each was genuinely missing and each moved the number,
+which made it look like progress toward one cause. It was progress against four separate causes, and
+the fifth was introduced by the third fix. The number stopped moving because the remaining error had
+nothing to do with what was still being added.
+
+**Second cause, found immediately after: the save format could not hold the state.** `JsonUtility`
+writes a double at about fifteen significant digits, so a `drift` of 1.0999999999999999 came back as
+1.1, and an invented release capability lost its last two digits. A value that cannot survive its own
+save file is not well defined state, so `SimUnits.Storable` puts anything destined for the save onto
+a grid of one part in a billion **when it is created**, not when it is written. Repairing on write
+would leave the in-memory value and the saved one disagreeing, which is the same bug wearing a hat.
+
+### Lesson
+
+Finding the *first* divergence took one probe and one run. Chasing the *final* number took six runs
+and produced a fix that caused a new bug. Instrument for the earliest point at which two runs stop
+agreeing, never for the size of the gap at the end.
+
+### Tests added
+
+`RivalPersistenceTests`, four ratchets:
+
+- `APatientLabKeepsItsDelayAcrossASave` names the exact bug, and fails loudly if no lab is actually
+  waiting, so it cannot rot into a test of nothing.
+- `EveryCausalFieldOnEveryLabSurvivesASave` compares all fifteen causal fields plus the pending
+  release on every lab after 1200 days.
+- `CausalDoublesSurviveTheSaveFormatExactly` pins the quantisation contract.
+- `TheRandomStreamResumesWhereItStopped` asserts the next value out of a restored stream.
+
+### Status
+
+`AYearFourSaveRunsIdenticallyThroughYearFive` passes, unchanged. Full EditMode suite: **214/214**.
+Continuous and restored campaigns match on every compared field through year five.
