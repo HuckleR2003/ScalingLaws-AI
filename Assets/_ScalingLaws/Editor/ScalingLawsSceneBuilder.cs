@@ -30,6 +30,20 @@ namespace ScalingLaws.Editor
         private const string PanelSettingsPath = UiFolder + "/ScalingLawsPanelSettings.asset";
         private const string OfficePrefabPath = "Assets/_ScalingLaws/Prefabs/OfficeRoom.prefab";
         private const string OfficeTargetPath = "Assets/_ScalingLaws/Resources/OfficeView.renderTexture";
+
+        /// <summary>
+        /// Where a scene is copied before it is overwritten. The trailing tilde keeps Unity from
+        /// importing the folder, so the copies never become assets and never end up in a build.
+        /// </summary>
+        private const string BackupFolder = "SceneBackups~";
+
+        /// <summary>
+        /// Prefab instances this builder is allowed to find in a scene it is about to replace.
+        ///
+        /// The generator itself drops exactly one, the office room. Anything more was put there by a
+        /// person, and a person's work is not something a regeneration gets to delete.
+        /// </summary>
+        private const int GeneratedPrefabInstances = 1;
         /// <summary>
         /// The stylesheet lives under Resources and nowhere else. There were briefly two copies, one
         /// here and one there, and the one the game actually loaded silently fell half a file behind
@@ -71,6 +85,67 @@ namespace ScalingLaws.Editor
             Debug.Log("[Scaling Laws] Scenes rebuilt and added to build settings.");
         }
 
+        /// <summary>
+        /// Refuses to regenerate a scene somebody has been working in, and copies it either way.
+        ///
+        /// This exists because it already happened. A rebuild replaced a scene holding a full day of
+        /// hand placed doors, windows and furniture, and the only reason the work survived is that
+        /// its author had saved a copy somewhere else an hour earlier. A tool that can silently eat
+        /// a day is not a convenience.
+        ///
+        /// The test is deliberately crude and errs toward refusing: count the prefab instances on
+        /// disk, and if there are more than this builder produces, stop and say so. Regenerating is
+        /// never urgent enough to be worth guessing.
+        /// </summary>
+        internal static bool MayOverwriteScene(string path)
+        {
+            var full = Path.GetFullPath(path);
+            if (!File.Exists(full))
+            {
+                return true;
+            }
+
+            var text = File.ReadAllText(full);
+            var placed = CountOccurrences(text, "\nPrefabInstance:");
+
+            // Copied before anything is decided, so even a refusal leaves a spare.
+            var backups = Path.Combine(Directory.GetCurrentDirectory(), BackupFolder);
+            Directory.CreateDirectory(backups);
+
+            var stamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var copy = Path.Combine(backups, $"{Path.GetFileNameWithoutExtension(path)}_{stamp}.unity");
+            File.Copy(full, copy, overwrite: true);
+
+            if (placed <= GeneratedPrefabInstances)
+            {
+                return true;
+            }
+
+            Debug.LogError(
+                $"[Scaling Laws] Refusing to regenerate {path}. It holds {placed} prefab instances, "
+                + $"and this builder only ever creates {GeneratedPrefabInstances}. Somebody placed "
+                + "that work by hand and a rebuild would delete it.\n\n"
+                + $"A copy is at {BackupFolder}/{Path.GetFileName(copy)} regardless.\n\n"
+                + "To regenerate anyway: move the hand placed objects into a prefab, or delete the "
+                + "scene yourself first. The builder will not make that decision for you.");
+
+            return false;
+        }
+
+        private static int CountOccurrences(string text, string token)
+        {
+            var count = 0;
+            var at = text.IndexOf(token, System.StringComparison.Ordinal);
+
+            while (at >= 0)
+            {
+                count++;
+                at = text.IndexOf(token, at + token.Length, System.StringComparison.Ordinal);
+            }
+
+            return count;
+        }
+
         private static void BuildScene<TController>(
             string path,
             string objectName,
@@ -78,6 +153,11 @@ namespace ScalingLaws.Editor
             StyleSheet styleSheet)
             where TController : MonoBehaviour
         {
+            if (!MayOverwriteScene(path))
+            {
+                return;
+            }
+
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             // UI Toolkit runtime panels render on their own, but a scene with no camera logs a

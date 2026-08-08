@@ -304,6 +304,13 @@ namespace ScalingLaws.Editor
 
         private static void BuildViewingScene(GameObject prefab)
         {
+            // Same rule as the scene builder: never replace a scene a person has been working in.
+            if (!ScalingLawsSceneBuilder.MayOverwriteScene(ScenePath))
+            {
+                Debug.LogWarning($"Kept {ScenePath} as it is. The prefab was still rebuilt.");
+                return;
+            }
+
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             // Fixed for good. Every placement above assumes this angle, so once it is set it must

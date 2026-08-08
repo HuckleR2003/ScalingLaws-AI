@@ -43,3 +43,6 @@ CLAUDE.md
 office_preview.png
 room.log
 snap.log
+
+# Automatic copies taken before any scene regeneration
+SceneBackups~/
