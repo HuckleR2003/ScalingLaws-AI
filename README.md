@@ -1,5 +1,7 @@
 # Scaling Laws
 
+<img width="1920" height="400" alt="SCALING LAWS Banner" src="https://github.com/user-attachments/assets/851a78d3-a820-41a0-92de-a0d62400217f" />
+
 An AI company tycoon in Unity. The campaign starts on 1 January 2022 with twelve million dollars
 and no product, and runs through the model race that followed.
 
