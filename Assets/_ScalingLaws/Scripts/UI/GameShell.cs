@@ -51,6 +51,10 @@ namespace ScalingLaws.UI
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
         private VisualElement trainingBanner;
         private VisualElement pulseBanner;
+        private Button cashButton;
+        private Label cashArrows;
+        private FinanceReport financeReport;
+        private VisualElement financeHost;
         private Label pulseUsers;
         private Label pulseMood;
         private Label pulseSatisfaction;
@@ -265,10 +269,75 @@ namespace ScalingLaws.UI
             AddHudSlots();
             root.Add(hud.Root);
 
+            financeReport = new FinanceReport(simulation.State.Ledger, () => simulation.State.Date,
+                ToggleFinanceReport);
+
+            financeHost = new VisualElement();
+            financeHost.AddToClassList("finance-host");
+            financeHost.style.display = DisplayStyle.None;
+            financeHost.Add(financeReport.Root);
+            root.Add(financeHost);
+
             root.Add(BuildPulseBanner());
             root.Add(BuildTrainingBanner());
 
             RefreshChrome();
+        }
+
+        /// <summary>
+        /// Which way the money is going, in the same arrows the people counter uses.
+        ///
+        /// Measured on this month's cash flow so far against the month before it, because a single
+        /// day swings on whether an invoice happened to land, and a player glancing at the corner
+        /// wants the trend rather than yesterday.
+        /// </summary>
+        private void RefreshCashArrows(CompanyState state)
+        {
+            if (cashArrows == null)
+            {
+                return;
+            }
+
+            var ledger = state.Ledger;
+            var thisMonth = Ledger.MonthKeyOf(state.Date);
+            var flow = ledger.MonthCashFlow(thisMonth);
+            var before = ledger.MonthCashFlow(thisMonth - 1);
+
+            // Against the size of the company rather than against the previous month alone, so a tiny
+            // company does not show three arrows over a rounding error.
+            var scale = Math.Max(1.0, Math.Abs(before) + Math.Abs(flow));
+            var momentum = Math.Clamp((flow - before) / scale, -1.0, 1.0);
+            var steps = (int)(Math.Abs(momentum) / 0.12);
+            var arrows = Math.Sign(momentum) * Math.Clamp(steps, 0, 3);
+
+            cashArrows.text = arrows == 0
+                ? "="
+                : new string(arrows > 0 ? '▲' : '▼', Math.Abs(arrows));
+
+            cashArrows.EnableInClassList("topbar__arrows--up", arrows > 0);
+            cashArrows.EnableInClassList("topbar__arrows--down", arrows < 0);
+            cashArrows.EnableInClassList("topbar__arrows--flat", arrows == 0);
+
+            cashButton.tooltip = flow >= 0
+                ? $"This month is up {UiFormat.Money(flow)} so far. Click for the books."
+                : $"This month is down {UiFormat.Money(Math.Abs(flow))} so far. Click for the books.";
+        }
+
+        /// <summary>Opens the books over whatever screen is showing, or closes them.</summary>
+        private void ToggleFinanceReport()
+        {
+            if (financeHost == null)
+            {
+                return;
+            }
+
+            var opening = financeHost.style.display == DisplayStyle.None;
+            financeHost.style.display = opening ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (opening)
+            {
+                financeReport.Open();
+            }
         }
 
         /// <summary>
@@ -436,12 +505,21 @@ namespace ScalingLaws.UI
 
             var left = new VisualElement();
             left.AddToClassList("topbar__group");
+            // The money is a button. Clicking it, or the arrows beside it, opens the books.
+            cashButton = new Button(ToggleFinanceReport);
+            cashButton.AddToClassList("topbar__money");
+
             cashLabel = new Label();
             cashLabel.AddToClassList("topbar__stat");
+            cashButton.Add(cashLabel);
+
+            cashArrows = new Label();
+            cashArrows.AddToClassList("topbar__arrows");
+            cashButton.Add(cashArrows);
             valuationLabel = new Label();
             valuationLabel.AddToClassList("topbar__stat");
             valuationLabel.AddToClassList("topbar__stat--muted");
-            left.Add(cashLabel);
+            left.Add(cashButton);
             left.Add(valuationLabel);
             bar.Add(left);
 
@@ -1925,6 +2003,7 @@ namespace ScalingLaws.UI
         private void RefreshChrome()
         {
             cashLabel.text = UiFormat.Money(state.CashUsd);
+            RefreshCashArrows(state);
             valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
             companyLabel.text = state.CompanyName;
             dateLabel.text = state.Date.ToString();

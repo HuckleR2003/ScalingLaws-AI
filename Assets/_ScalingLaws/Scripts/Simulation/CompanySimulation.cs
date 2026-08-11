@@ -87,11 +87,15 @@ namespace ScalingLaws.Simulation
             var trainingProgress = AdvanceResearch(profile);
             var (share, demanded, served, revenue) = ServeMarket(profile, market);
 
-            var operatingCost =
-                SimUnits.ToDollars(profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier * State.Skills.OperatingCostMultiplier())
-                + DailyIntelRetainerUsd()
-                + SimUnits.ToDollars(State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier)
-                + State.Monetization.TotalMarketingDailyUsd;
+            var servingCost = SimUnits.ToDollars(
+                profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier
+                * State.Skills.OperatingCostMultiplier());
+            var intelCost = DailyIntelRetainerUsd();
+            var salaryCost = SimUnits.ToDollars(
+                State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier);
+            var marketingCost = State.Monetization.TotalMarketingDailyUsd;
+
+            var operatingCost = servingCost + intelCost + salaryCost + marketingCost;
             var depreciation = SimUnits.ToDollars(profile.DailyDepreciationUsd);
 
             // Tax is charged on profit, not on turnover, so a loss-making year is not made worse
@@ -100,7 +104,24 @@ namespace ScalingLaws.Simulation
             var taxable = Math.Max(0L, revenue - operatingCost);
             var tax = (long)Math.Round(taxable * State.Home.TaxRate);
 
-            State.CashUsd += revenue - operatingCost - tax;
+            // The books, written from the same numbers the cash movement uses rather than from a
+            // second pass over the day. Serving is split by the share of tokens nobody was invoiced
+            // for, which the market already computes and states costs the same to produce.
+            var freeShare = served > 0.0
+                ? Math.Clamp(State.FreeTokensServedBillions / served, 0.0, 1.0)
+                : 0.0;
+
+            var freeServing = (long)Math.Round(servingCost * freeShare);
+
+            State.PostCash(LedgerLine.Subscriptions, revenue);
+            State.PostCash(LedgerLine.ServingFree, freeServing);
+            State.PostCash(LedgerLine.ServingPaid, servingCost - freeServing);
+            State.PostCash(LedgerLine.Salaries, salaryCost);
+            State.PostCash(LedgerLine.Marketing, marketingCost);
+            State.PostCash(LedgerLine.Intelligence, intelCost);
+            State.PostCash(LedgerLine.Tax, tax);
+            State.PostNonCash(LedgerLine.Depreciation, depreciation);
+
             State.LifetimeRevenueUsd += revenue;
             State.LifetimeOperatingCostUsd += operatingCost + tax;
             State.LifetimeTaxPaidUsd += tax;
@@ -319,7 +340,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= total;
+            State.PostCash(LedgerLine.Hardware, total);
             State.LifetimeCapitalSpentUsd += total;
             State.Pool.AddAsset(new HardwareAsset(
                 generationId,
@@ -365,7 +386,7 @@ namespace ScalingLaws.Simulation
                 State.Date);
 
             proceedsUsd = SimUnits.ToDollars(perUnit * sellUnits);
-            State.CashUsd += proceedsUsd;
+            State.PostCash(LedgerLine.AssetSales, proceedsUsd);
             State.Pool.ReplaceAssetAt(assetIndex, asset.WithUnits(asset.Units - sellUnits));
 
             var recovered = asset.PurchasePricePerUnitUsd * sellUnits;
@@ -403,7 +424,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= definition.FacilityCapexUsd;
+            State.PostCash(LedgerLine.Facilities, definition.FacilityCapexUsd);
             State.LifetimeCapitalSpentUsd += definition.FacilityCapexUsd;
             State.DatacenterOrdered = true;
             State.DatacenterReadyDate = State.Date.AddDays(definition.LeadTimeDays);
@@ -452,7 +473,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= architecture.AdoptionCostUsd;
+            State.PostCash(LedgerLine.Research, architecture.AdoptionCostUsd);
             State.AdoptedArchitectures.Add(architectureId);
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ArchitectureAdopted,
@@ -500,7 +521,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= definition.AcquisitionCostUsd;
+            State.PostCash(LedgerLine.DataAcquisition, definition.AcquisitionCostUsd);
             State.OwnedDataSources |= source;
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.DataSourceAcquired,
@@ -647,7 +668,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= cost;
+            State.PostCash(LedgerLine.Research, cost);
             State.AddUpgradeProject(new ModelUpgradeProject(
                 modelIndex,
                 trait,
@@ -743,7 +764,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= node.CostUsd;
+            State.PostCash(LedgerLine.Research, node.CostUsd);
             State.ActiveResearch = new ResearchProject(
                 nodeId, State.Date, standing.DurationDays, node.PetaflopDaysRequired, node.CostUsd);
 
@@ -831,7 +852,7 @@ namespace ScalingLaws.Simulation
             }
 
             var cash = ArchitectureDesigner.CashCostUsd(blueprint);
-            State.CashUsd -= cash;
+            State.PostCash(LedgerLine.Research, cash);
 
             var generation = blueprint.IsIteration ? State.FamilyGeneration(blueprint.BaseFamily) + 1 : 0;
             State.ActiveArchitectureProject = new ArchitectureProject(
@@ -998,7 +1019,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd += offer.RaiseUsd;
+            State.PostCash(LedgerLine.Funding, offer.RaiseUsd);
             State.CapTable.Record(new FundingRoundRecord(
                 offer.Stage,
                 State.Date,
@@ -1053,7 +1074,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= cost;
+            State.PostCash(LedgerLine.Salaries, cost);
             State.Staff.Add(new Hire(role, safeSkill, State.Date));
 
             State.RaiseEvent(new CompanyEvent(
@@ -1125,7 +1146,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd -= definition.FitOutCostUsd;
+            State.PostCash(LedgerLine.Facilities, definition.FitOutCostUsd);
             State.LifetimeCapitalSpentUsd += definition.FitOutCostUsd;
             State.Staff.SetOffice(tier);
 
@@ -1165,7 +1186,7 @@ namespace ScalingLaws.Simulation
             State.Incidents.Add(incident);
 
             State.Reputation -= incident.ReputationLoss;
-            State.CashUsd -= incident.FineUsd;
+            State.PostCash(LedgerLine.Fines, incident.FineUsd);
             State.LifetimeFinesUsd += incident.FineUsd;
             State.LifetimeOperatingCostUsd += incident.FineUsd;
 
@@ -1264,7 +1285,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.CashUsd += definition.PrincipalUsd;
+            State.PostCash(LedgerLine.Funding, definition.PrincipalUsd);
             State.Loans.Add(new Loan(
                 product,
                 State.Date,
@@ -1298,7 +1319,7 @@ namespace ScalingLaws.Simulation
 
             var available = Math.Max(0L, State.CashUsd + CompanyState.CreditLineUsd);
             var paid = State.Loans.Service(State.Date, available);
-            State.CashUsd -= paid;
+            State.PostCash(LedgerLine.Interest, paid);
             State.LifetimeOperatingCostUsd += paid;
 
             if (paid < due)

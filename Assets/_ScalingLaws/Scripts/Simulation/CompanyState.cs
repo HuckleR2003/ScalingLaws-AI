@@ -323,6 +323,35 @@ namespace ScalingLaws.Simulation
         public string CompanyName { get; set; }
         public GameDate Date { get; set; }
         public long CashUsd { get; set; }
+
+        /// <summary>
+        /// The books. Written where the money moves, never recalculated, so the report and the bank
+        /// balance cannot disagree.
+        /// </summary>
+        public Ledger Ledger { get; } = new();
+
+        /// <summary>
+        /// Moves cash and records why in one step.
+        ///
+        /// Cash used to be a public setter poked from a dozen places, which is exactly how a company
+        /// ends up with a balance nobody can explain. Anything that still writes CashUsd directly is
+        /// spending money the report will not know about.
+        /// </summary>
+        public void PostCash(LedgerLine line, long amountUsd)
+        {
+            if (amountUsd == 0L)
+            {
+                return;
+            }
+
+            var magnitude = Math.Abs(amountUsd);
+            CashUsd += Ledger.Info(line).IsIncome ? magnitude : -magnitude;
+            Ledger.Post(Date, line, magnitude);
+        }
+
+        /// <summary>Records something real that is not cash, depreciation being the only one today.</summary>
+        public void PostNonCash(LedgerLine line, long amountUsd) =>
+            Ledger.Post(Date, line, amountUsd);
         public ComputePool Pool { get; }
         public DeterministicRandom Random { get; }
 

@@ -228,6 +228,8 @@ namespace ScalingLaws.Persistence
                 });
             }
 
+            state.Ledger.Capture(data.ledgerMonths, data.ledgerAmounts);
+
             foreach (var shelved in state.Shelf)
             {
                 data.shelf.Add(new TrainedModelData
@@ -569,6 +571,8 @@ namespace ScalingLaws.Persistence
                     (ModelType)shelved.modelType,
                     shelved.family));
             }
+
+            state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts);
 
             foreach (var upgrade in safe.upgrades)
             {

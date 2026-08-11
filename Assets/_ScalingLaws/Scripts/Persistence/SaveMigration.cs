@@ -116,6 +116,7 @@ namespace ScalingLaws.Persistence
                     12 => UpgradeV12ToV13(current),
                     13 => UpgradeV13ToV14(current),
                     14 => UpgradeV14ToV15(current),
+                    15 => UpgradeV15ToV16(current),
                     _ => current
                 };
             }
@@ -612,6 +613,33 @@ namespace ScalingLaws.Persistence
                     ? " A training run was in flight and v14 never recorded what type it was building, "
                       + "so it resumes as a general model."
                     : string.Empty));
+
+            return data;
+        }
+
+        /// <summary>
+        /// v15 to v16: the books.
+        ///
+        /// An older file has no ledger and there is no way to reconstruct one. The daily totals it did
+        /// keep are lifetime sums, not a month by month breakdown by reason, and inventing a history
+        /// from them would put numbers in front of the player that no day of their game produced. The
+        /// report starts empty and fills from the next day played, which is the only honest reading.
+        /// </summary>
+        public static SaveData UpgradeV15ToV16(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 16;
+            data.ledgerMonths = new List<int>();
+            data.ledgerAmounts = new List<long>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v15 to v16: the financial report starts empty. An older save recorded lifetime totals "
+                + "but never why the money moved, so its history cannot be rebuilt without inventing "
+                + "months that never happened.");
 
             return data;
         }

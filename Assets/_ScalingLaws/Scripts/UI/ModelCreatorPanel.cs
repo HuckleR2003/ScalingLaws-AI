@@ -239,10 +239,6 @@ namespace ScalingLaws.UI
 
             stageHost.Clear();
 
-            var blurb = new Label(StageBlurbs[stage]);
-            blurb.AddToClassList("stage__blurb");
-            stageHost.Add(blurb);
-
             stageHost.Add(stage switch
             {
                 0 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
@@ -364,7 +360,10 @@ namespace ScalingLaws.UI
         private VisualElement BuildFoundationColumn()
         {
             var column = new VisualElement();
-            column.Add(BuildIdentityPanel());
+
+            var top = new VisualElement();
+            top.AddToClassList("panel-row");
+            top.Add(BuildIdentityPanel());
 
             var series = NewPanel("SERIES / MODEL UPGRADE RELEASE");
             familyField = new DropdownField("Model family");
@@ -377,7 +376,8 @@ namespace ScalingLaws.UI
             series.Add(familyHint);
 
             RefreshFamilyField();
-            column.Add(series);
+            top.Add(series);
+            column.Add(top);
             column.Add(BuildTypePicker());
 
             // The market, right under the decision it informs. Half the gap the panels above use,
@@ -426,10 +426,12 @@ namespace ScalingLaws.UI
                 familyField.index = 0;
             }
 
-            familyHint.text = ChosenFamily().Length == 0
+            familyField.tooltip = ChosenFamily().Length == 0
                 ? "A new line stands on its own and starts with nobody using it."
                 : $"This supersedes whatever {ChosenFamily()} currently sells. One line is one product, "
                     + "so the older model stops competing the day this one ships.";
+
+            familyHint.text = ChosenFamily().Length == 0 ? "New line" : "Supersedes " + ChosenFamily();
         }
 
         /// <summary>Empty for a new line, otherwise the line the player picked.</summary>
@@ -773,11 +775,12 @@ namespace ScalingLaws.UI
             architectureField.RegisterValueChangedCallback(_ => Reprice());
             panel.Add(architectureField);
 
-            var hint = new Label(
-                "A sparse mixture costs a quarter of the FLOPs per token and a little quality per parameter. "
-                + "On a fixed budget that trade is usually worth taking.");
-            hint.AddToClassList("field__hint");
-            panel.Add(hint);
+            // The sentence lives in the tooltip rather than on the page. The same rule the founder
+            // skills follow: a full sentence at this column width wraps to two lines and the panel
+            // below it falls off the bottom of the screen.
+            architectureField.tooltip =
+                "A sparse mixture costs a quarter of the FLOPs per token and a little quality per "
+                + "parameter. On a fixed budget that trade is usually worth taking.";
 
             return panel;
         }
@@ -815,11 +818,16 @@ namespace ScalingLaws.UI
             column.Add(panel);
             column.Add(BuildBeltBlock());
 
+            var bottom = new VisualElement();
+            bottom.AddToClassList("panel-row");
+
             scaleReadout = NewPanel("SCALING READOUT");
-            column.Add(scaleReadout);
+            bottom.Add(scaleReadout);
 
             scaleNotes = NewPanel("NOTES");
-            column.Add(scaleNotes);
+            bottom.Add(scaleNotes);
+
+            column.Add(bottom);
 
             return column;
         }

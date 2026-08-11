@@ -1921,7 +1921,9 @@
 }
 
 .stage-art {
-    width: 46%;
+    /* Was 46%. Half the window on a photograph, while the panels beside it were being cut off at
+       the bottom of the screen. The laptop still reads clearly at this size. */
+    width: 34%;
     flex-shrink: 0;
     margin-right: 16px;
     min-height: 300px;
@@ -3073,3 +3075,196 @@
     color: rgb(226, 124, 116);
     border-left-color: rgb(168, 62, 58);
 }
+
+
+/* ---------------------------------------------------------------------------
+   Two panels sharing a row.
+
+   The creator was one column of stacked panels, so every stage grew downward
+   until the last block fell off the screen. Anything that reads as a pair goes
+   side by side instead: identity next to the series line, the scaling readout
+   next to its notes.
+   --------------------------------------------------------------------------- */
+
+.panel-row {
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: flex-start;
+}
+
+.panel-row > .panel {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    margin-right: 8px;
+}
+
+.panel-row > .panel:last-child {
+    margin-right: 0;
+}
+
+/* A stage is allowed to scroll rather than deform. This is a floor against the
+   clipping, not the layout plan: if a stage needs the scroller, it is too tall. */
+
+.stage-split__body {
+    overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   The money in the top bar is a button, with the same arrows the people
+   counter uses so the two read as one language.
+   --------------------------------------------------------------------------- */
+
+.topbar__money {
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.topbar__money:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.topbar__arrows {
+    margin-left: 6px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: -1px;
+}
+
+.topbar__arrows--up { color: rgb(104, 200, 132); }
+.topbar__arrows--down { color: rgb(214, 96, 88); }
+.topbar__arrows--flat { color: rgb(104, 114, 132); }
+
+/* ---- the books ---- */
+
+.finance-host {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 8, 14, 0.82);
+}
+
+.finance {
+    width: 720px;
+    max-height: 82%;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: rgb(12, 18, 27);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+}
+
+.finance__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.finance__title {
+    flex-grow: 1;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(196, 208, 226);
+}
+
+.finance__toggle {
+    margin: 0;
+    margin-left: 6px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 2px;
+    color: rgb(168, 180, 198);
+}
+
+.finance__toggle--on {
+    background-color: rgba(120, 176, 250, 0.16);
+    border-color: rgb(120, 176, 250);
+    color: rgb(226, 236, 250);
+}
+
+.finance__headline {
+    font-size: 26px;
+    -unity-font-style: bold;
+}
+
+.finance__headline--up { color: rgb(120, 214, 148); }
+.finance__headline--down { color: rgb(226, 116, 108); }
+
+.finance__caption {
+    font-size: 10px;
+    color: rgb(132, 144, 164);
+    margin-bottom: 10px;
+}
+
+.finance-chart {
+    height: 92px;
+    flex-shrink: 0;
+    margin-bottom: 12px;
+}
+
+.finance__rows {
+    flex-shrink: 1;
+}
+
+.finance__group {
+    margin-top: 8px;
+    margin-bottom: 4px;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: rgb(112, 124, 144);
+}
+
+.finance-row {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.finance-row__name {
+    flex-grow: 1;
+    font-size: 11px;
+    color: rgb(186, 198, 216);
+}
+
+.finance-row__tag {
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: rgb(120, 132, 152);
+    margin-right: 8px;
+}
+
+.finance-row__value {
+    width: 120px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.finance-row__value--in { color: rgb(120, 214, 148); }
+.finance-row__value--out { color: rgb(226, 116, 108); }
