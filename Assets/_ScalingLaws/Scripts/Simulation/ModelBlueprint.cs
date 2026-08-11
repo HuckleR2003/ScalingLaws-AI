@@ -23,8 +23,11 @@ namespace ScalingLaws.Simulation
             double parameterCountBillions,
             double trainingTokensBillions,
             DatasetSource dataSources,
-            ModelType type = ModelType.General)
+            ModelType type = ModelType.General,
+            string family = null)
         {
+            // A line the model belongs to. Empty means it starts one of its own.
+            Family = string.IsNullOrWhiteSpace(family) ? string.Empty : family.Trim();
             // Optional and defaulted rather than required, because every existing caller predates
             // types and a general model is exactly what all of them meant.
             Type = type == ModelType.None ? ModelType.General : type;
@@ -46,6 +49,18 @@ namespace ScalingLaws.Simulation
 
         /// <summary>What the model is for. Decides which audience it can reach at all.</summary>
         public ModelType Type { get; }
+
+        /// <summary>
+        /// The product line this model belongs to, or empty for a line of its own.
+        ///
+        /// A line is one product as far as buyers are concerned, so only its strongest live model
+        /// reaches the market. That is what makes shipping a successor an upgrade rather than a second
+        /// thing to choose between, and it is why a company cannot improve its standing by leaving ten
+        /// old models on sale.
+        /// </summary>
+        public string Family { get; }
+
+        public bool HasFamily => Family.Length > 0;
         public double ParameterCountBillions { get; }
         public double TrainingTokensBillions { get; }
         public DatasetSource DataSources { get; }
@@ -58,22 +73,25 @@ namespace ScalingLaws.Simulation
             ParameterCountBillions <= 0.0 ? 0.0 : TrainingTokensBillions / ParameterCountBillions;
 
         public ModelBlueprint WithName(string name) =>
-            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type);
+            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family);
 
         public ModelBlueprint WithParameters(double parameterCountBillions) =>
-            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources, Type);
+            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources, Type, Family);
 
         public ModelBlueprint WithTokens(double trainingTokensBillions) =>
-            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources, Type);
+            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources, Type, Family);
 
         public ModelBlueprint WithArchitecture(ArchitectureId architecture) =>
-            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type);
+            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family);
 
         public ModelBlueprint WithType(ModelType type) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, type);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, type, Family);
 
         public ModelBlueprint WithDataSources(DatasetSource dataSources) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources, Type);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources, Type, Family);
+
+        public ModelBlueprint WithFamily(string family) =>
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, family);
 
         public override string ToString() =>
             $"{Name}: {ParameterCountBillions:N0}B params, {TrainingTokensBillions:N0}B tokens, {Architecture}";

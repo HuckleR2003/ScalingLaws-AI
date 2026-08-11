@@ -115,6 +115,7 @@ namespace ScalingLaws.Persistence
                     11 => UpgradeV11ToV12(current),
                     12 => UpgradeV12ToV13(current),
                     13 => UpgradeV13ToV14(current),
+                    14 => UpgradeV14ToV15(current),
                     _ => current
                 };
             }
@@ -555,6 +556,62 @@ namespace ScalingLaws.Persistence
                 "v13 to v14: the market standing now records model type as well as audience and lab. "
                 + "An older file cannot say what its users were being sold, so the standing is "
                 + "rebuilt from what is on the market the first day after loading.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v14 to v15: product lines, and the type a run in flight is building.
+        ///
+        /// Every existing model becomes a line of its own, which is exactly what it was: before lines
+        /// existed each release stood alone in the market and none of them superseded another. Grouping
+        /// them by name would look tidier and would be a guess, and it would silently withdraw models
+        /// the player still has on sale.
+        ///
+        /// A run in flight is the awkward one. v14 never wrote the model type into the run at all, so a
+        /// file saved during training genuinely does not know what was being built. It comes back as a
+        /// general model, which is what the game did with it before this field existed, and the player
+        /// keeps the run rather than losing it.
+        /// </summary>
+        public static SaveData UpgradeV14ToV15(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 15;
+
+            foreach (var model in data.models)
+            {
+                if (model != null)
+                {
+                    model.family = string.Empty;
+                }
+            }
+
+            foreach (var shelved in data.shelf)
+            {
+                if (shelved != null)
+                {
+                    shelved.family = string.Empty;
+                }
+            }
+
+            var rebuiltRun = false;
+            if (data.hasActiveRun && data.activeRun != null)
+            {
+                data.activeRun.family = string.Empty;
+                rebuiltRun = data.activeRun.modelType == 0;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v14 to v15: every existing model became a product line of its own, which is what it "
+                + "already was, because before lines existed no release superseded another."
+                + (rebuiltRun
+                    ? " A training run was in flight and v14 never recorded what type it was building, "
+                      + "so it resumes as a general model."
+                    : string.Empty));
 
             return data;
         }

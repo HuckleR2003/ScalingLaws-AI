@@ -223,6 +223,7 @@ namespace ScalingLaws.Persistence
                     priceMultiplier = model.PriceMultiplier,
                     isRetired = model.IsRetired,
                     modelType = (int)model.Type,
+                    family = model.Family,
                     traitLevels = new List<int>(model.Traits.ToArray())
                 });
             }
@@ -237,7 +238,8 @@ namespace ScalingLaws.Persistence
                     completedDayIndex = shelved.CompletedOn.DayIndex,
                     activeParameterCount = shelved.ActiveParameterCount,
                     projectedCapability = shelved.ProjectedCapability,
-                    modelType = (int)shelved.Type
+                    modelType = (int)shelved.Type,
+                    family = shelved.Family
                 });
             }
 
@@ -385,7 +387,9 @@ namespace ScalingLaws.Persistence
                     projectedCapability = run.ProjectedCapability,
                     actualTokensBillions = run.ActualTokensBillions,
                     computeCashSpentUsd = run.ComputeCashSpentUsd,
-                    dataCostPaidUsd = run.DataCostPaidUsd
+                    dataCostPaidUsd = run.DataCostPaidUsd,
+                    modelType = (int)run.Blueprint.Type,
+                    family = run.Blueprint.Family
                 };
             }
 
@@ -537,7 +541,8 @@ namespace ScalingLaws.Persistence
                     new GameDate(model.releaseDayIndex),
                     model.activeParameterCount,
                     model.priceMultiplier,
-                    (ModelType)model.modelType);
+                    (ModelType)model.modelType,
+                    model.family);
 
                 if (model.traitLevels != null && model.traitLevels.Count > 0)
                 {
@@ -561,7 +566,8 @@ namespace ScalingLaws.Persistence
                     new GameDate(shelved.completedDayIndex),
                     shelved.activeParameterCount,
                     shelved.projectedCapability,
-                    (ModelType)shelved.modelType));
+                    (ModelType)shelved.modelType,
+                    shelved.family));
             }
 
             foreach (var upgrade in safe.upgrades)
@@ -708,7 +714,9 @@ namespace ScalingLaws.Persistence
                     (ArchitectureId)safe.activeRun.architecture,
                     safe.activeRun.parameterCountBillions,
                     safe.activeRun.trainingTokensBillions,
-                    (DatasetSource)safe.activeRun.dataSources);
+                    (DatasetSource)safe.activeRun.dataSources,
+                    (ModelType)safe.activeRun.modelType,
+                    safe.activeRun.family);
 
                 var run = new TrainingRun(
                     blueprint,

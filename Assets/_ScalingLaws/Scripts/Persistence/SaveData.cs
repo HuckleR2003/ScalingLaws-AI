@@ -33,6 +33,9 @@ namespace ScalingLaws.Persistence
         public double priceMultiplier = 1.0;
         public bool isRetired;
 
+        /// <summary>The product line, empty for a model that starts its own. Added in v15.</summary>
+        public string family = string.Empty;
+
         /// <summary>Trait levels in catalog order. Added in v3.</summary>
         public List<int> traitLevels = new();
     }
@@ -48,6 +51,9 @@ namespace ScalingLaws.Persistence
         public int completedDayIndex;
         public double activeParameterCount;
         public double projectedCapability;
+
+        /// <summary>The product line, empty for a model that starts its own. Added in v15.</summary>
+        public string family = string.Empty;
     }
 
     /// <summary>An upgrade programme in flight. Added in v3.</summary>
@@ -134,6 +140,15 @@ namespace ScalingLaws.Persistence
         public double actualTokensBillions;
         public long computeCashSpentUsd;
         public long dataCostPaidUsd;
+
+        /// <summary>
+        /// What the run is building, added in v15. It was never written at all, so a save taken during
+        /// training restored the blueprint with the default type and a coding model came back general.
+        /// </summary>
+        public int modelType;
+
+        /// <summary>The product line the run will join. Added in v15.</summary>
+        public string family = string.Empty;
     }
 
     /// <summary>A family the company designed itself. Added in v4.</summary>
@@ -202,7 +217,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 14;
+        public const int CurrentVersion = 15;
 
         public int version = CurrentVersion;
 

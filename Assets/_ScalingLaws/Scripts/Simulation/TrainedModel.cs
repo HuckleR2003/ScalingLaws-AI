@@ -23,10 +23,15 @@ namespace ScalingLaws.Simulation
             GameDate completedOn,
             double activeParameterCount,
             double projectedCapability,
-            ModelType type = ModelType.General)
+            ModelType type = ModelType.General,
+            string family = null)
         {
+            // A model that joins no line starts one, named after itself. Without this "start a new
+            // line" produced a model belonging to nothing, which nothing could ever supersede, and the
+            // family dropdown would have stayed empty forever however many models were released.
             Type = type == ModelType.None ? ModelType.General : type;
             Name = string.IsNullOrWhiteSpace(name) ? "Untitled model" : name.Trim();
+            Family = string.IsNullOrWhiteSpace(family) ? Name : family.Trim();
             Architecture = architecture;
             Capability = Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0);
             CompletedOn = completedOn;
@@ -39,6 +44,13 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Fixed when training started. A finished model cannot be repurposed.</summary>
         public ModelType Type { get; }
+
+        /// <summary>
+        /// The line this belongs to, chosen before the run and carried to the shelf. Fixed for the same
+        /// reason the type is: a finished model is a finished model, and deciding afterwards which line
+        /// it supersedes would let a player rewrite what they had committed to.
+        /// </summary>
+        public string Family { get; }
 
         /// <summary>Measured on completion. Waiting does not change it.</summary>
         public double Capability { get; }
@@ -80,7 +92,8 @@ namespace ScalingLaws.Simulation
                 date,
                 ActiveParameterCount,
                 priceMultiplier,
-                Type);
+                Type,
+                Family);
 
             // Traits were frozen on the day training finished. Par has moved since, and the model
             // ships already behind on anything nobody topped up.

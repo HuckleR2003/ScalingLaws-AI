@@ -21,10 +21,12 @@ namespace ScalingLaws.Simulation
             GameDate releaseDate,
             double activeParameterCount,
             double priceMultiplier,
-            ModelType type = ModelType.General)
+            ModelType type = ModelType.General,
+            string family = null)
         {
-            Type = type == ModelType.None ? ModelType.General : type;
             Name = string.IsNullOrWhiteSpace(name) ? "Untitled model" : name.Trim();
+            Family = string.IsNullOrWhiteSpace(family) ? Name : family.Trim();
+            Type = type == ModelType.None ? ModelType.General : type;
             Architecture = architecture;
             Capability = Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0);
             ReleaseDate = releaseDate;
@@ -82,6 +84,17 @@ namespace ScalingLaws.Simulation
             get => price;
             set => price = Math.Clamp(SimUnits.Finite(value, 1.0), 0.05, 10.0);
         }
+
+        /// <summary>
+        /// The product line this model belongs to, or empty for a line of its own.
+        /// See <see cref="ModelBlueprint.Family"/> for why only one member of a line competes.
+        /// </summary>
+        public string Family { get; }
+
+        /// <summary>Models in the same line are the same product to a buyer. Empty lines never match.</summary>
+        public bool SharesLineWith(DeployedModel other) =>
+            other != null && Family.Length > 0
+            && string.Equals(Family, other.Family, StringComparison.OrdinalIgnoreCase);
 
         public bool IsRetired { get; private set; }
 

@@ -1482,7 +1482,8 @@ namespace ScalingLaws.Simulation
                 State.Date,
                 activeParameters,
                 run.ProjectedCapability,
-                run.Blueprint.Type));
+                run.Blueprint.Type,
+                run.Blueprint.Family));
 
             State.ActiveRun = null;
 
@@ -1516,6 +1517,63 @@ namespace ScalingLaws.Simulation
         /// architecture and serving cost, and the share model compared them as though they were the
         /// same kind of thing. They are now literally the same kind of thing.
         /// </summary>
+        /// <summary>
+        /// Whether a stronger, or equally strong but newer, model in the same line is also on sale.
+        ///
+        /// Ties break on release date so the answer is stable and never depends on list order, which
+        /// would otherwise make the market quietly sensitive to how the save was written.
+        /// </summary>
+        private bool IsSupersededInItsLine(DeployedModel model)
+        {
+            if (model.Family.Length == 0)
+            {
+                return false;
+            }
+
+            var mine = model.EffectiveCapability(State.Date);
+
+            foreach (var other in State.DeployedModels)
+            {
+                if (other == null || ReferenceEquals(other, model)
+                    || !other.IsLiveOn(State.Date) || !model.SharesLineWith(other))
+                {
+                    continue;
+                }
+
+                var theirs = other.EffectiveCapability(State.Date);
+                if (theirs > mine)
+                {
+                    return true;
+                }
+
+                if (theirs < mine)
+                {
+                    continue;
+                }
+
+                // Equal capability, so the newer one leads. Two models of the same strength released
+                // on the same day fall through to the name, because without a total order neither
+                // superseded the other and both stayed on sale, which is the whole thing this rule
+                // exists to prevent.
+                if (other.ReleaseDate.DayIndex != model.ReleaseDate.DayIndex)
+                {
+                    if (other.ReleaseDate.DayIndex > model.ReleaseDate.DayIndex)
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if (string.CompareOrdinal(other.Name, model.Name) > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private List<MarketEntrant> BuildEntrants(double brand, IReadOnlyList<RivalModel> rivals)
         {
             var entrants = new List<MarketEntrant>(State.DeployedModels.Count + rivals.Count);
@@ -1523,6 +1581,15 @@ namespace ScalingLaws.Simulation
             foreach (var model in State.DeployedModels)
             {
                 if (model == null || !model.IsLiveOn(State.Date))
+                {
+                    continue;
+                }
+
+                // One product line is one product. A buyer choosing between your last four releases
+                // is not four separate chances at their business, and without this a company could
+                // raise its standing simply by never withdrawing anything: every live model added its
+                // own score to the same bucket, so shipping often beat shipping well.
+                if (IsSupersededInItsLine(model))
                 {
                     continue;
                 }

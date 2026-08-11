@@ -63,6 +63,10 @@ namespace ScalingLaws.UI
         private VisualElement scaleNotes;
         private VisualElement typePicker;
         private VisualElement dataReadout;
+        private DropdownField familyField;
+        private Label familyHint;
+        private readonly List<string> familyLines = new();
+        private const string NewLineOption = "Start a new line";
         private Label laptopType;
         private ModelType chosenType = ModelType.General;
 
@@ -363,7 +367,16 @@ namespace ScalingLaws.UI
             column.Add(BuildIdentityPanel());
 
             var series = NewPanel("SERIES / MODEL UPGRADE RELEASE");
-            series.Add(ComingRow("Model family", "Needs research"));
+            familyField = new DropdownField("Model family");
+            familyField.AddToClassList("field");
+            familyField.RegisterValueChangedCallback(_ => Reprice());
+            series.Add(familyField);
+
+            familyHint = new Label();
+            familyHint.AddToClassList("field__hint");
+            series.Add(familyHint);
+
+            RefreshFamilyField();
             column.Add(series);
             column.Add(BuildTypePicker());
 
@@ -385,6 +398,52 @@ namespace ScalingLaws.UI
         /// the player had no way to choose one, so every model shipped general and the whole type axis
         /// was visible but unreachable.
         /// </summary>
+        /// <summary>
+        /// The lines the company already sells, plus the option to start one. Rebuilt whenever the
+        /// stage is, because a run finishing between two visits adds a line.
+        /// </summary>
+        private void RefreshFamilyField()
+        {
+            if (familyField == null)
+            {
+                return;
+            }
+
+            familyLines.Clear();
+            familyLines.Add(NewLineOption);
+
+            foreach (var model in simulation.State.DeployedModels)
+            {
+                if (model != null && model.Family.Length > 0 && !familyLines.Contains(model.Family))
+                {
+                    familyLines.Add(model.Family);
+                }
+            }
+
+            familyField.choices = familyLines;
+            if (familyField.index < 0 || familyField.index >= familyLines.Count)
+            {
+                familyField.index = 0;
+            }
+
+            familyHint.text = ChosenFamily().Length == 0
+                ? "A new line stands on its own and starts with nobody using it."
+                : $"This supersedes whatever {ChosenFamily()} currently sells. One line is one product, "
+                    + "so the older model stops competing the day this one ships.";
+        }
+
+        /// <summary>Empty for a new line, otherwise the line the player picked.</summary>
+        private string ChosenFamily()
+        {
+            if (familyField == null || familyField.index <= 0
+                || familyField.index >= familyLines.Count)
+            {
+                return string.Empty;
+            }
+
+            return familyLines[familyField.index];
+        }
+
         private VisualElement BuildTypePicker()
         {
             typePicker = NewPanel("WHAT IS IT FOR");
@@ -1160,7 +1219,8 @@ namespace ScalingLaws.UI
                 Math.Pow(10.0, parameterSlider.value),
                 Math.Pow(10.0, tokenSlider.value),
                 sources,
-                type);
+                type,
+                ChosenFamily());
         }
 
         /// <summary>Sets the token count to the compute-optimal partner for the current size.</summary>
@@ -1248,6 +1308,7 @@ namespace ScalingLaws.UI
             RefreshLaptopConsole();
             RefreshScale(projection, blueprint);
             RefreshDataReadout(projection, blueprint);
+            RefreshFamilyField();
         }
 
         /// <summary>
