@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 
 namespace ScalingLaws.Tests.EditMode
@@ -146,7 +147,8 @@ namespace ScalingLaws.Tests.EditMode
             double memoryNeeded = 100.0, double memoryAvailable = 400.0, double ratio = 1.0)
         {
             var projection = new TrainingProjection(
-                default,
+                new ModelBlueprint("Subject", ArchitectureId.DenseTransformer, 20.0, 400.0,
+                    DatasetSource.None, ModelType.General),
                 isFeasible: true,
                 blockingReason: string.Empty,
                 projectedLoss: 2.0,

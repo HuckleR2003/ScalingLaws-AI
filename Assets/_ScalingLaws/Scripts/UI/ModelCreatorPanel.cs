@@ -859,6 +859,12 @@ namespace ScalingLaws.UI
                 UiFormat.Percent(profile.TrainingEfficiency), profile.TrainingEfficiency));
             scaleReadout.Add(ThinBar("Budget efficiency",
                 UiFormat.Percent(profile.BudgetEfficiency), profile.BudgetEfficiency));
+            // Relative to a twenty billion parameter model, so one is neutral. Capped at three on the
+            // bar because past that the exact figure matters less than the fact it is bad.
+            scaleReadout.Add(ThinBar("Cost to serve",
+                $"{UiFormat.Number(profile.ServingBurden, 2)}x",
+                Math.Clamp(profile.ServingBurden / 3.0, 0.0, 1.0)));
+
             scaleReadout.Add(ThinBar("Memory used",
                 UiFormat.Percent(Math.Min(1.0, profile.MemoryPressure)),
                 Math.Min(1.0, profile.MemoryPressure)));

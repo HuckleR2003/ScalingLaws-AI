@@ -188,6 +188,40 @@ namespace ScalingLaws.Simulation
             return score + Math.Exp(Utility(24.0, 0.5, 1.0, 0.0));
         }
 
+        /// <summary>The creator's default model size, and therefore the size that scores exactly 1.0.</summary>
+        public const double ReferenceActiveParameters = 2e10;
+
+        /// <summary>
+        /// How much of a big model's serving cost reaches the price the audience pays.
+        ///
+        /// Not all of it. A larger model justifies a higher price on its own merits, and distillation
+        /// and quantisation take a further bite, which is already modelled by
+        /// <see cref="DeployedModel.ServingDistillationFactor"/>. Passing the whole cost through would
+        /// make anything above a hundred billion parameters unsellable, which is not what happened.
+        /// </summary>
+        public const double SizePassThrough = 0.6;
+
+        /// <summary>
+        /// What a model's size does to the cost of serving it, relative to a twenty billion parameter
+        /// model.
+        ///
+        /// This existed nowhere before, and its absence made the whole Scale stage consequence free
+        /// past the training bill. <c>InferenceFlopPerToken</c> already scales with active parameters
+        /// and already bills the player, but the market's burden term dropped the size entirely, so a
+        /// ten times larger model cost the audience nothing extra and the warning that an oversized
+        /// model would be expensive to serve later was simply untrue.
+        ///
+        /// Square rooted rather than linear because only part of the cost passes into the price.
+        /// </summary>
+        public static double SizeBurden(double activeParameterCount)
+        {
+            var parameters = Math.Max(1e6,
+                SimUnits.Finite(activeParameterCount, ReferenceActiveParameters));
+
+            var ratio = parameters / ReferenceActiveParameters;
+            return Math.Clamp(1.0 + (Math.Sqrt(ratio) - 1.0) * SizePassThrough, 0.15, 8.0);
+        }
+
         public static double Utility(double capability, double brand, double priceMultiplier, double ageYears)
         {
             var safePrice = Math.Clamp(SimUnits.Finite(priceMultiplier, 1.0), 0.05, 10.0);

@@ -1529,11 +1529,16 @@ namespace ScalingLaws.Simulation
 
                 // The player's serving burden is read off the same numbers that bill the player for
                 // serving, so a cheap model to run is cheap here too rather than being asserted.
+                //
+                // That comment was a lie until 2026-08-11. It omitted the size, which is the dominant
+                // term in what serving actually costs, so a ten times larger model was just as cheap
+                // in the market's eyes and the Scale stage had no consequence past the training bill.
                 var architecture = State.ResolveArchitecture(model.Architecture);
                 var burden = architecture.InferenceCostMultiplier
                     * model.EfficiencyMultiplier(State.Date)
                     * State.Skills.ServingCostMultiplier()
-                    * ModelTypeCatalog.Get(model.Type).ServingCostMultiplier;
+                    * ModelTypeCatalog.Get(model.Type).ServingCostMultiplier
+                    * MarketShareModel.SizeBurden(model.ActiveParameterCount);
 
                 entrants.Add(new MarketEntrant(
                     -1,

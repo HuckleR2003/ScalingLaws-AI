@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
+using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
@@ -34,8 +35,9 @@ namespace ScalingLaws.Simulation
     {
         private TrainingProfile(ShapeProfile profile, double ratio, double bandPosition,
             double trainingEfficiency, double budgetEfficiency, double memoryPressure,
-            IReadOnlyList<string> notes)
+            double servingBurden, IReadOnlyList<string> notes)
         {
+            ServingBurden = Math.Max(0.0, SimUnits.Finite(servingBurden, 1.0));
             Profile = profile;
             Ratio = Math.Max(0.0, SimUnits.Finite(ratio));
             BandPosition = Math.Clamp(SimUnits.Finite(bandPosition), 0.0, 1.0);
@@ -76,6 +78,13 @@ namespace ScalingLaws.Simulation
 
         public bool Fits => MemoryPressure <= 1.0;
 
+        /// <summary>
+        /// What this model will cost to serve relative to a twenty billion parameter one, once it is
+        /// live. Shown on the Scale stage so the bill is visible before the run is paid for rather
+        /// than months later.
+        /// </summary>
+        public double ServingBurden { get; }
+
         public string ProfileName => Profile switch
         {
             ShapeProfile.Oversized => "OVERSIZED",
@@ -115,6 +124,21 @@ namespace ScalingLaws.Simulation
                 ? 0.0
                 : projection.ShapeEfficiency * projection.ComputeCashCostUsd / spend;
 
+            // The size the audience will actually feel, which is the active parameters rather than the
+            // headline count. A sparse model is cheap to serve for its size and that is the whole
+            // reason to build one.
+            // A readout must never throw while the screen is being drawn, and an unknown architecture
+            // is reachable through a blocked or default projection. Falling back to a fully dense model
+            // is the least flattering assumption that is still defensible, which is the same rule the
+            // save migrations follow when they have to invent a value.
+            var fraction = projection.Blueprint.Architecture == ArchitectureId.None
+                ? 1.0
+                : ArchitectureCatalog.Get(projection.Blueprint.Architecture).ActiveParameterFraction;
+
+            var active = projection.Blueprint.ParameterCountBillions * 1e9 * fraction;
+
+            var serving = MarketShareModel.SizeBurden(active);
+
             return new TrainingProfile(
                 profile,
                 ratio,
@@ -122,7 +146,8 @@ namespace ScalingLaws.Simulation
                 projection.ShapeEfficiency,
                 budget,
                 memory,
-                BuildNotes(projection, profile, memory));
+                serving,
+                BuildNotes(projection, profile, memory, serving));
         }
 
         /// <summary>
@@ -150,7 +175,7 @@ namespace ScalingLaws.Simulation
             PositionOnBelt(TrainingProjection.OvertrainedAbove));
 
         private static List<string> BuildNotes(TrainingProjection projection, ShapeProfile profile,
-            double memory)
+            double memory, double serving)
         {
             var notes = new List<string>(4);
 
@@ -185,6 +210,17 @@ namespace ScalingLaws.Simulation
                     notes.Add("A small model trained hard. Cheap to serve for years, "
                         + "and it will never reach the frontier.");
                     break;
+            }
+
+            if (serving > 1.6)
+            {
+                notes.Add($"This model will be expensive to serve later, about "
+                    + $"{serving:0.0} times a twenty billion parameter one per token. "
+                    + "Cost sensitive audiences notice.");
+            }
+            else if (serving < 0.7)
+            {
+                notes.Add("Cheap to serve. It will hold price sensitive audiences for years.");
             }
 
             if (projection.DataAcquisitionCostUsd > projection.ComputeCashCostUsd / 2)
