@@ -157,6 +157,24 @@ namespace ScalingLaws.Data
 
         public static IReadOnlyList<ModelTypeDefinition> All => Entries;
 
+        /// <summary>
+        /// Whether the calendar has opened this type yet, on the same clock the player researches on.
+        ///
+        /// A type with no prerequisite is available from day one. Everything else waits for its own
+        /// node's earliest date, so moving a research date moves the whole field with it rather than
+        /// leaving a hand-copied year behind to drift.
+        /// </summary>
+        public static bool IsReachableOn(ModelType type, GameDate date)
+        {
+            var definition = Get(type);
+            if (definition.Requires == ResearchNodeId.None)
+            {
+                return true;
+            }
+
+            return date.DayIndex >= ResearchTree.Get(definition.Requires).EarliestDate.DayIndex;
+        }
+
         public static ModelTypeDefinition Get(ModelType type) =>
             ByType.TryGetValue(type, out var found) ? found : Entries[0];
 

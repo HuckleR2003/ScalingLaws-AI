@@ -332,6 +332,22 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
+        /// How strongly this audience prefers to buy nothing at all, scored on the same scale as a
+        /// real product so the two are directly comparable.
+        ///
+        /// Without this term every audience is fully served on every day of the game by construction:
+        /// the shares are normalised to one, so somebody always holds everybody. That made the
+        /// unserved slice of the market permanently empty and, worse, meant a market could never be
+        /// grown into. It could only be taken from somebody, which is the wrong shape for 2022 where
+        /// almost nobody had adopted anything yet.
+        ///
+        /// A walk-away is priced at the audience's own bar, at list price, with no brand behind it.
+        /// Nobody markets the choice to keep doing things the old way.
+        /// </summary>
+        public static double WalkAwayScore(AudienceSegmentDefinition segment) =>
+            Math.Exp(MarketShareModel.Utility(segment.ReservationCapability, 0.0, 1.0, 0.0));
+
+        /// <summary>
         /// Moves every audience one day toward what its buyers would prefer today, and returns the
         /// player's share of the whole market, which is what the rest of the simulation consumes.
         /// </summary>
@@ -375,6 +391,12 @@ namespace ScalingLaws.Simulation
                     target[owner * typeCount + TypeIndex(entrants[entry].Type)] += score;
                     sum += score;
                 }
+
+                // The audience always has the option of buying nothing, and it competes with the
+                // products on offer rather than being subtracted afterwards. Because it sits in the
+                // denominator only, the row now sums to less than one whenever the field is weak,
+                // and the remainder is demand nobody has earned yet.
+                sum += WalkAwayScore(definition);
 
                 if (sum <= 0.0)
                 {
@@ -494,7 +516,7 @@ namespace ScalingLaws.Simulation
             for (var index = 0; index < segments.Count; index++)
             {
                 var row = shares[index];
-                var users = segments[index].UsersFor(total * segmentShares[index]);
+                var users = segments[index].UsersFor(total * segmentShares[index], date.Year);
                 addressable += users;
 
                 for (var owner = 0; owner < ownerCount; owner++)

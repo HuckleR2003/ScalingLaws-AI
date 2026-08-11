@@ -104,15 +104,68 @@ namespace ScalingLaws.Simulation
         /// high volume segment, an enterprise lab builds for process work, a fast follower copies
         /// whatever the player is winning with and therefore stays general.
         /// </summary>
-        public ModelType TargetType => Strategy switch
+        public ModelType TargetType => TargetTypeOn(NextReleaseDate);
+
+        /// <summary>What the model currently on sale is, which is what it was on the day it shipped.</summary>
+        public ModelType LiveType => TargetTypeOn(LiveReleaseDate);
+
+        /// <summary>
+        /// The ladder each strategy climbs. Ordered easiest to hardest, and a lab takes the last rung
+        /// the calendar has opened.
+        ///
+        /// A fixed mapping was wrong twice over. Nothing in the field was ever assigned
+        /// EnterpriseFocus, so Automation was unreachable, and Agentic had no branch at all, so no
+        /// rival could build an agent in any year of any game. Two of five types were dead by
+        /// construction and the market readout showed them at zero for fourteen years straight.
+        /// </summary>
+        private static readonly Dictionary<CompetitorStrategy, ModelType[]> Ladders = new()
         {
-            CompetitorStrategy.FrontierRace => ModelType.General,
-            CompetitorStrategy.PatientScaler => ModelType.Coding,
-            CompetitorStrategy.CostLeader => ModelType.Conversational,
-            CompetitorStrategy.OpenWeights => ModelType.Coding,
-            CompetitorStrategy.EnterpriseFocus => ModelType.Automation,
-            _ => ModelType.General
+            // A frontier lab's product is the one everybody can use. It never leaves that ground.
+            [CompetitorStrategy.FrontierRace] = new[] { ModelType.General },
+
+            // The one lab that climbs, and the only one. Quiet and unremarkable early on the audience
+            // that reprices loyalty fastest, then straight to autonomous work the moment it exists.
+            // That is the narrative arc this strategy was written for, and it is what stops the field
+            // from arriving in the late game as one indistinguishable block.
+            [CompetitorStrategy.PatientScaler] = new[] { ModelType.Coding, ModelType.Agentic },
+
+            // Cheap tokens want the highest volume audience there is, and that never stops being talk.
+            [CompetitorStrategy.CostLeader] = new[] { ModelType.Conversational },
+
+            // Open weights land with developers and stay there.
+            [CompetitorStrategy.OpenWeights] = new[] { ModelType.Coding },
+
+            // Process work, which is what an enterprise buyer is actually purchasing.
+            [CompetitorStrategy.EnterpriseFocus] = new[] { ModelType.Automation }
         };
+
+        /// <summary>
+        /// What this lab would build on a given date.
+        ///
+        /// The gate is the type's own research node and its own earliest date, which is the identical
+        /// clock the player waits on. A rival cannot ship an agent before the player could have
+        /// researched one. That is the whole point of putting both on one calendar: if the field ran
+        /// on a private schedule, losing a category would never be the player being outplayed.
+        /// </summary>
+        public static ModelType TargetTypeOn(GameDate date, CompetitorStrategy strategy)
+        {
+            if (!Ladders.TryGetValue(strategy, out var ladder))
+            {
+                return ModelType.General;
+            }
+
+            for (var rung = ladder.Length - 1; rung >= 0; rung--)
+            {
+                if (ModelTypeCatalog.IsReachableOn(ladder[rung], date))
+                {
+                    return ladder[rung];
+                }
+            }
+
+            return ModelType.General;
+        }
+
+        private ModelType TargetTypeOn(GameDate date) => TargetTypeOn(date, Strategy);
 
         /// <summary>
         /// What a token costs this lab to serve, relative to a plain dense model.
@@ -234,7 +287,7 @@ namespace ScalingLaws.Simulation
                 LiveBrand,
                 LivePrice,
                 LiveReleaseDate,
-                TargetType,
+                LiveType,
                 ServingBurden);
             return true;
         }

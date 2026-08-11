@@ -38,11 +38,14 @@ namespace ScalingLaws.Data
         public AudienceSegmentDefinition(AudienceSegment segment, string displayName, string description,
             double willingnessToPay, double adoptionRatePerDay, double brandWeight,
             double servingCostWeight, double tokensPerUserPerDay,
-            (int Year, double Weight)[] anchors)
+            (int Year, double Weight)[] anchors,
+            double reservationCapability = 0.0, double intensityGrowthPerYear = 1.0)
         {
             TokensPerUserPerDay = Math.Max(1.0, tokensPerUserPerDay);
             AdoptionRatePerDay = Math.Clamp(adoptionRatePerDay, 0.002, 0.5);
             BrandWeight = Math.Clamp(brandWeight, 0.0, 2.5);
+            ReservationCapability = Math.Clamp(reservationCapability, 0.0, 100.0);
+            IntensityGrowthPerYear = Math.Clamp(intensityGrowthPerYear, 1.0, 2.0);
             ServingCostWeight = Math.Clamp(servingCostWeight, 0.0, 2.0);
             Segment = segment;
             DisplayName = displayName ?? segment.ToString();
@@ -95,8 +98,40 @@ namespace ScalingLaws.Data
         public double UsersFor(double billionTokensPerDay) =>
             Math.Max(0.0, billionTokensPerDay) * SimUnits.TokensPerBillion / TokensPerUserPerDay;
 
+        /// <summary>
+        /// How many people that much demand represents in a given year. This is the one the game
+        /// uses; the year free version above is the 2022 baseline and is kept for the curve tests.
+        /// </summary>
+        public double UsersFor(double billionTokensPerDay, int year) =>
+            Math.Max(0.0, billionTokensPerDay) * SimUnits.TokensPerBillion
+            / Math.Max(1.0, IntensityIn(year));
+
         /// <summary>Raw size at each anchor year. Read through <see cref="AudienceCatalog"/>.</summary>
         public (int Year, double Weight)[] Anchors { get; }
+
+        /// <summary>
+        /// How good a model has to be before this audience considers it worth using at all.
+        ///
+        /// This is the outside option, and it is the reason a market can be partly unserved. An
+        /// enterprise in 2022 was not choosing between vendors, it was choosing not to buy, and no
+        /// amount of price cutting moved it. Scored on the same capability scale as everything else,
+        /// so the bar and the products are always comparable.
+        /// </summary>
+        public double ReservationCapability { get; }
+
+        /// <summary>
+        /// How much more one of these people gets through each year.
+        ///
+        /// Without this, users are token demand divided by a constant, and since demand grows by
+        /// orders of magnitude across the game the user count grows with it. That produced sixty two
+        /// billion users by 2035, which is not a number to show anybody. People do not merely arrive,
+        /// they also use it far more heavily than they did, and that is most of the growth in tokens.
+        /// </summary>
+        public double IntensityGrowthPerYear { get; }
+
+        /// <summary>Tokens one of these people gets through per day in a given year.</summary>
+        public double IntensityIn(int year) =>
+            TokensPerUserPerDay * Math.Pow(IntensityGrowthPerYear, Math.Max(0, year - 2022));
 
         /// <summary>
         /// Size in the given year, interpolated between anchors and held flat outside them. Linear
@@ -149,7 +184,7 @@ namespace ScalingLaws.Data
     /// </summary>
     public static class AudienceCatalog
     {
-        public const string CatalogVersion = "audience-2026-08-04";
+        public const string CatalogVersion = "audience-2026-08-11";
 
         /// <summary>Last year the curves say anything. Past this the final anchor holds.</summary>
         public const int HorizonYear = 2036;
@@ -165,7 +200,8 @@ namespace ScalingLaws.Data
                 {
                     (2022, 30), (2023, 62), (2024, 74), (2026, 82),
                     (2029, 88), (2032, 92), (2036, 95)
-                }),
+                },
+                reservationCapability: 6.0, intensityGrowthPerYear: 1.28),
 
             new(AudienceSegment.Developer, "Developers",
                 "Engineers writing code. Almost nobody in 2022, and the first group to find out it "
@@ -176,7 +212,8 @@ namespace ScalingLaws.Data
                 {
                     (2022, 4), (2023, 14), (2024, 26), (2025, 34), (2027, 40),
                     (2030, 42), (2036, 44)
-                }),
+                },
+                reservationCapability: 11.0, intensityGrowthPerYear: 1.32),
 
             new(AudienceSegment.Enterprise, "Enterprise",
                 "Companies replacing work that used to be done by a department. Slow to arrive, "
@@ -186,7 +223,8 @@ namespace ScalingLaws.Data
                 new (int, double)[]
                 {
                     (2022, 3), (2024, 9), (2026, 20), (2028, 30), (2031, 38), (2036, 44)
-                }),
+                },
+                reservationCapability: 26.0, intensityGrowthPerYear: 1.24),
 
             new(AudienceSegment.Creative, "Creative",
                 "Writing, images and marketing. Arrived early, never grew the way the others did.",
@@ -195,7 +233,8 @@ namespace ScalingLaws.Data
                 new (int, double)[]
                 {
                     (2022, 6), (2023, 12), (2025, 16), (2028, 17), (2036, 18)
-                }),
+                },
+                reservationCapability: 9.0, intensityGrowthPerYear: 1.26),
 
             new(AudienceSegment.Agentic, "Autonomous",
                 "Models given a machine and a task and left alone with both. Does not exist until a "
@@ -205,7 +244,8 @@ namespace ScalingLaws.Data
                 new (int, double)[]
                 {
                     (2022, 0), (2024, 1), (2026, 6), (2028, 18), (2030, 34), (2033, 52), (2036, 64)
-                })
+                },
+                reservationCapability: 44.0, intensityGrowthPerYear: 1.18)
         };
 
         private static readonly Dictionary<AudienceSegment, AudienceSegmentDefinition> BySegment = BuildIndex();

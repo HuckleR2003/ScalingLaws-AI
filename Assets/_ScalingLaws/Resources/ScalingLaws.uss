@@ -2729,3 +2729,78 @@
     color: rgb(120, 150, 190);
     margin-top: 2px;
 }
+
+/* ---------------------------------------------------------------------------
+   The people counter, top right. Sits above the training strip, which starts
+   at 58px, so the two never argue over the corner.
+   --------------------------------------------------------------------------- */
+
+.pulse {
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    width: 320px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgba(14, 17, 22, 0.92);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 4px;
+}
+
+/* Losing people is the one state that gets a colour of its own. */
+
+.pulse--alarm {
+    border-color: rgb(168, 62, 58);
+    background-color: rgba(38, 15, 17, 0.94);
+}
+
+.pulse__block {
+    align-items: flex-start;
+}
+
+.pulse__block--right {
+    align-items: flex-end;
+}
+
+.pulse__users {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 250);
+}
+
+.pulse__mood {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(196, 208, 226);
+}
+
+.pulse__caption {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgb(112, 124, 144);
+}
+
+.pulse__arrows {
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: -1px;
+}
+
+.pulse__arrows--up {
+    color: rgb(104, 200, 132);
+}
+
+.pulse__arrows--down {
+    color: rgb(214, 96, 88);
+}
+
+.pulse__arrows--flat {
+    color: rgb(104, 114, 132);
+}

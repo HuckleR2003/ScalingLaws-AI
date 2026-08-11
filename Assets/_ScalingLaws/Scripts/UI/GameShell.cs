@@ -50,6 +50,11 @@ namespace ScalingLaws.UI
         private GameHud hud;
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
         private VisualElement trainingBanner;
+        private VisualElement pulseBanner;
+        private Label pulseUsers;
+        private Label pulseMood;
+        private Label pulseSatisfaction;
+        private Label pulseArrows;
 
         /// <summary>Seconds the opening reveal holds before the office takes the screen back.</summary>
         public const float CompanyInfoRevealSeconds = 3f;
@@ -190,6 +195,7 @@ namespace ScalingLaws.UI
             // along the bottom edge were redrawn at exactly the moment they reset to zero. Both
             // looked frozen, and the game looked paused while it was running.
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
+            RefreshPulseBanner();
 
             if (days <= 0)
             {
@@ -259,9 +265,89 @@ namespace ScalingLaws.UI
             AddHudSlots();
             root.Add(hud.Root);
 
+            root.Add(BuildPulseBanner());
             root.Add(BuildTrainingBanner());
 
             RefreshChrome();
+        }
+
+        /// <summary>
+        /// The people counter, top right, above the training strip.
+        ///
+        /// Three facts and nothing else: how many people use something the company built, whether
+        /// they would rather be somewhere else, and which way the number is going. The arrows are a
+        /// forecast rather than a history, because by the time a decline shows up in a history the
+        /// decision that caused it is months old.
+        /// </summary>
+        private VisualElement BuildPulseBanner()
+        {
+            pulseBanner = new VisualElement();
+            pulseBanner.AddToClassList("pulse");
+            pulseBanner.pickingMode = PickingMode.Ignore;
+
+            var left = new VisualElement();
+            left.AddToClassList("pulse__block");
+
+            pulseUsers = new Label("0");
+            pulseUsers.AddToClassList("pulse__users");
+            left.Add(pulseUsers);
+
+            var caption = new Label("USERS");
+            caption.AddToClassList("pulse__caption");
+            left.Add(caption);
+
+            pulseBanner.Add(left);
+
+            pulseArrows = new Label();
+            pulseArrows.AddToClassList("pulse__arrows");
+            pulseBanner.Add(pulseArrows);
+
+            var right = new VisualElement();
+            right.AddToClassList("pulse__block");
+            right.AddToClassList("pulse__block--right");
+
+            pulseMood = new Label("-");
+            pulseMood.AddToClassList("pulse__mood");
+            right.Add(pulseMood);
+
+            pulseSatisfaction = new Label();
+            pulseSatisfaction.AddToClassList("pulse__caption");
+            right.Add(pulseSatisfaction);
+
+            pulseBanner.Add(right);
+            return pulseBanner;
+        }
+
+        /// <summary>
+        /// Pushed every frame alongside the clock, so a market that moves while the player watches
+        /// actually looks like it is moving.
+        /// </summary>
+        private void RefreshPulseBanner()
+        {
+            if (pulseBanner == null || simulation == null)
+            {
+                return;
+            }
+
+            var sentiment = simulation.Sentiment();
+
+            pulseUsers.text = UiFormat.Count(sentiment.Users);
+            pulseMood.text = sentiment.Mood;
+            pulseSatisfaction.text = UiFormat.Percent(sentiment.Satisfaction);
+
+            var arrows = sentiment.Arrows;
+            pulseArrows.text = arrows == 0
+                ? "="
+                : new string(arrows > 0 ? '\u25B2' : '\u25BC', Math.Abs(arrows));
+
+            pulseArrows.EnableInClassList("pulse__arrows--up", arrows > 0);
+            pulseArrows.EnableInClassList("pulse__arrows--down", arrows < 0);
+            pulseArrows.EnableInClassList("pulse__arrows--flat", arrows == 0);
+
+            pulseBanner.EnableInClassList("pulse--alarm", sentiment.Satisfaction < 0.25);
+            pulseArrows.tooltip =
+                $"Forecast {sentiment.Momentum:+0.0%;-0.0%;0.0%} against today. Largest rival holds "
+                + $"{UiFormat.Count(sentiment.BestRivalUsers)}.";
         }
 
         /// <summary>
@@ -1833,6 +1919,7 @@ namespace ScalingLaws.UI
             rankLabel.text = position > 0 ? $"rank #{position}" : "unranked";
 
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
+            RefreshPulseBanner();
             RefreshTrainingBanner();
         }
     }

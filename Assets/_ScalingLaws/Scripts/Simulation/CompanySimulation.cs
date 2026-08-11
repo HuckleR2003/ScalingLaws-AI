@@ -1592,19 +1592,100 @@ namespace ScalingLaws.Simulation
         public MarketBreakdown MarketByType() =>
             State.Segments.Breakdown(State.Date, MarketModel.DemandOn(State.Date), OwnerNames());
 
+        /// <summary>
+        /// The player's standing in the market as reputation the audiences can see. Extracted so the
+        /// tick and every readout score the same company; two copies of this drifted apart once
+        /// already elsewhere in this file and it took a save replay to find.
+        /// </summary>
+        public double PlayerBrand() => Math.Clamp(
+            State.Reputation
+            + State.Founder.BrandBonus
+            + State.Staff.BrandBonus()
+            + State.Monetization.BrandBonus()
+            - (State.Home.LocalCompetitionMultiplier - 1.0) * 0.12,
+            0.0,
+            1.0);
+
+        /// <summary>
+        /// What the player's users think and where their number is heading.
+        ///
+        /// Satisfaction is measured against the alternative each audience actually has, including the
+        /// option of buying nothing. That is the only comparison that means anything: a model can be
+        /// excellent and still lose people if something better is on sale, and it can be modest and
+        /// keep them if it is the best thing there is.
+        /// </summary>
+        public UserSentiment Sentiment()
+        {
+            var breakdown = MarketByType();
+            var users = breakdown.TotalUsersOverall * breakdown.OverallShareOf(0);
+
+            var bestRival = 0.0;
+            for (var owner = 1; owner < breakdown.OwnerUsersOverall.Count; owner++)
+            {
+                bestRival = Math.Max(bestRival, breakdown.OwnerUsersOverall[owner]);
+            }
+
+            var entrants = BuildEntrants(PlayerBrand(), State.Rivals.LiveModels(State.Date));
+            var segments = AudienceCatalog.All;
+            var segmentShares = AudienceCatalog.SharesOn(State.Date);
+
+            var satisfactionWeight = 0.0;
+            var satisfaction = 0.0;
+            var momentum = 0.0;
+
+            for (var index = 0; index < segments.Count; index++)
+            {
+                var definition = segments[index];
+
+                var mine = 0.0;
+                var theirs = SegmentMarket.WalkAwayScore(definition);
+
+                for (var entry = 0; entry < entrants.Count; entry++)
+                {
+                    var score = SegmentMarket.Attractiveness(entrants[entry], definition, State.Date);
+                    if (entrants[entry].IsPlayer)
+                    {
+                        mine = Math.Max(mine, score);
+                    }
+                    else
+                    {
+                        theirs = Math.Max(theirs, score);
+                    }
+                }
+
+                var held = State.Segments.PlayerShareIn(definition.Segment);
+
+                if (held > 0.0 && mine + theirs > 0.0)
+                {
+                    // How strongly this audience prefers what the player sells over the best thing
+                    // they could switch to, walking away included.
+                    //
+                    // The first version of this divided by whichever was larger, which saturated at
+                    // one: a company that was merely the best option read as delighted no matter what
+                    // it charged, and quadrupling the price moved the figure by nothing at all. A
+                    // preference share cannot saturate, so being ahead still costs something when the
+                    // deal gets worse. Same logit family as the market itself.
+                    satisfaction += mine / (mine + theirs) * held;
+                    satisfactionWeight += held;
+                }
+
+                // Where this audience is heading, weighted by how much of the market it is.
+                momentum += (State.Segments.LastTargets[index] - held) * segmentShares[index];
+            }
+
+            return new UserSentiment(
+                users,
+                satisfactionWeight <= 0.0 ? 0.0 : satisfaction / satisfactionWeight,
+                momentum,
+                bestRival);
+        }
+
         private (double Share, double Demanded, double Served, long Revenue) ServeMarket(
             ComputeProfile profile,
             MarketConditions market)
         {
             var rivals = State.Rivals.LiveModels(State.Date);
-            var brand = Math.Clamp(
-                State.Reputation
-                + State.Founder.BrandBonus
-                + State.Staff.BrandBonus()
-                + State.Monetization.BrandBonus()
-                - (State.Home.LocalCompetitionMultiplier - 1.0) * 0.12,
-                0.0,
-                1.0);
+            var brand = PlayerBrand();
 
             // The segmented market replaced a single instant logit over one global pool. It is the
             // same utility function scoring the same products; what changed is that the standing

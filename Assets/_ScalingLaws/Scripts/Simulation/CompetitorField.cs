@@ -197,7 +197,9 @@ namespace ScalingLaws.Simulation
         {
             { CompetitorId.OpenAi, CompetitorStrategy.FrontierRace },
             { CompetitorId.Anthropic, CompetitorStrategy.PatientScaler },
-            { CompetitorId.GoogleDeepMind, CompetitorStrategy.PatientScaler },
+            // The cloud lab is the enterprise play, and until this line existed nothing in the field
+            // was EnterpriseFocus at all, which is why Automation had no builder in any year.
+            { CompetitorId.GoogleDeepMind, CompetitorStrategy.EnterpriseFocus },
             { CompetitorId.MetaAi, CompetitorStrategy.OpenWeights },
             { CompetitorId.MistralAi, CompetitorStrategy.OpenWeights },
             { CompetitorId.DeepSeek, CompetitorStrategy.CostLeader },
