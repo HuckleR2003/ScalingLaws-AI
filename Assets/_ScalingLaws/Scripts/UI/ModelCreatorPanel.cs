@@ -49,9 +49,29 @@ namespace ScalingLaws.UI
         private int stage;
         private double previousCapability;
         private bool commercialise;
+        private readonly DemographicPanel demographics = new();
         private int dots;
         private Label laptopName;
         private Label laptopStatus;
+        private Label laptopArchitecture;
+        private Label laptopType;
+        private ModelType chosenType = ModelType.General;
+
+        /// <summary>
+        /// Keeps the laptop reading what the player has actually chosen. Called from the same place
+        /// the projection is repriced, so the screen cannot drift from the blueprint behind it.
+        /// </summary>
+        private void RefreshLaptopConsole()
+        {
+            if (laptopArchitecture == null)
+            {
+                return;
+            }
+
+            var architecture = CurrentBlueprint().Architecture;
+            laptopArchitecture.text = $"> {simulation.State.ResolveArchitecture(architecture).DisplayName}";
+            laptopType.text = $"> {ModelTypeCatalog.Get(chosenType).DisplayName}";
+        }
 
         /// <summary>
         /// The run is defined by four decisions and reviewed as a fifth. Showing all of them at once
@@ -287,6 +307,23 @@ namespace ScalingLaws.UI
             laptopStatus.AddToClassList("laptop-screen__status");
             screen.Add(laptopStatus);
 
+            // Two lines along the bottom of the laptop, written in the terminal voice. It costs
+            // nothing and it turns a stock photograph into a machine that is being configured.
+            var console = new VisualElement();
+            console.AddToClassList("laptop-console");
+
+            laptopArchitecture = new Label();
+            laptopArchitecture.AddToClassList("laptop-console__line");
+            console.Add(laptopArchitecture);
+
+            laptopType = new Label();
+            laptopType.AddToClassList("laptop-console__line");
+            laptopType.AddToClassList("laptop-console__line--type");
+            console.Add(laptopType);
+
+            screen.Add(console);
+            RefreshLaptopConsole();
+
             // Three dots that fill and clear. Cheap, and it is the difference between a still and a
             // machine that is doing something.
             screen.schedule.Execute(() =>
@@ -318,16 +355,15 @@ namespace ScalingLaws.UI
 
             var series = NewPanel("SERIES / MODEL UPGRADE RELEASE");
             series.Add(ComingRow("Model family", "Needs research"));
-            series.Add(ComingRow("Type", "General purpose"));
-
-            var note = new Label(
-                "A series ships the next model as a version of the last one, so its audience and its "
-                + "reputation carry over. The type decides which audience it can reach at all. Both "
-                + "are researched, and neither is wired into this screen yet.");
-            note.AddToClassList("field__hint");
-            series.Add(note);
-
+            series.Add(ComingRow("Type", ModelTypeCatalog.Get(chosenType).DisplayName));
             column.Add(series);
+
+            // The market, right under the decision it informs. Half the gap the panels above use,
+            // because this is the evidence for that choice rather than a separate subject.
+            demographics.Show(simulation.MarketByType());
+            demographics.Root.AddToClassList("demographics--tight");
+            column.Add(demographics.Root);
+
             return column;
         }
 
@@ -855,6 +891,7 @@ namespace ScalingLaws.UI
             }
 
             RenderEffectBanner(projection);
+            RefreshLaptopConsole();
         }
 
         /// <summary>

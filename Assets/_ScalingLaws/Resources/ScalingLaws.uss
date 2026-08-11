@@ -2544,3 +2544,188 @@
     color: rgb(226, 140, 140);
     white-space: normal;
 }
+
+/* ---------------------------------------------------------------------------
+   The demographic band on the Foundation stage.
+
+   A pie on the left, the categories on the right. Compact on purpose: this is
+   evidence for the decision above it, not a screen of its own.
+   --------------------------------------------------------------------------- */
+
+.demographics {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgb(18, 22, 29);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-radius: 4px;
+}
+
+/* Half the gap the panels above use, because it belongs to the panel above it. */
+
+.demographics--tight {
+    margin-top: 6px;
+}
+
+.demographics__chart {
+    width: 128px;
+    flex-shrink: 0;
+    align-items: center;
+    margin-right: 12px;
+}
+
+.market-pie {
+    width: 104px;
+    height: 104px;
+    flex-shrink: 0;
+}
+
+.demographics__headline {
+    margin-top: 6px;
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(228, 236, 248);
+}
+
+.demographics__caption {
+    font-size: 9px;
+    color: rgb(122, 134, 154);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.demographics__table {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.demographics__rows {
+    flex-shrink: 0;
+}
+
+.demo-row {
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    margin-bottom: 2px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border-width: 0;
+    border-left-width: 2px;
+    border-color: rgba(0, 0, 0, 0);
+    border-radius: 2px;
+    transition-property: background-color, border-color;
+    transition-duration: 110ms;
+}
+
+.demo-row:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgb(120, 176, 250);
+}
+
+.demo-row:hover > .demo-row__name {
+    color: rgb(236, 244, 255);
+}
+
+.demo-row--on {
+    background-color: rgba(120, 176, 250, 0.14);
+    border-color: rgb(120, 176, 250);
+}
+
+.demo-row--header {
+    background-color: rgba(0, 0, 0, 0);
+    margin-bottom: 4px;
+}
+
+.demo-row--header:hover {
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.demo-row__head {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgb(108, 120, 140);
+}
+
+.demo-row__swatch {
+    width: 6px;
+    height: 6px;
+    margin-right: 7px;
+    border-radius: 3px;
+}
+
+.demo-row__name {
+    width: 40%;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(196, 208, 226);
+}
+
+.demo-row__users {
+    width: 22%;
+    font-size: 11px;
+    color: rgb(180, 192, 210);
+    -unity-text-align: middle-right;
+}
+
+.demo-row__share {
+    width: 16%;
+    font-size: 11px;
+    color: rgb(120, 132, 152);
+    -unity-text-align: middle-right;
+}
+
+.demo-row__share--held {
+    color: rgb(120, 200, 250);
+    -unity-font-style: bold;
+}
+
+.demo-row__leader {
+    width: 22%;
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    -unity-text-align: middle-right;
+}
+
+.demo-row__leader--you {
+    color: rgb(112, 200, 136);
+    -unity-font-style: bold;
+}
+
+/* The header row has no swatch, so its first cell has to start where the others do. */
+
+.demo-row--header > .demo-row__name {
+    margin-left: 13px;
+}
+
+/* ---- the two lines along the bottom of the laptop ---- */
+
+.laptop-console {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 108px;
+    align-items: flex-start;
+    padding-left: 6px;
+}
+
+.laptop-console__line {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(96, 178, 140);
+}
+
+.laptop-console__line--type {
+    color: rgb(120, 150, 190);
+    margin-top: 2px;
+}
