@@ -46,3 +46,37 @@ snap.log
 
 # Automatic copies taken before any scene regeneration
 SceneBackups~/
+
+# Installers and binaries never belong in the project tree. A 1.8 GB Rider installer
+# was once downloaded into Art/Background and swept into a commit, which made the push
+# impossible rather than merely slow: GitHub rejects any single file over 100 MB.
+*.exe
+*.msi
+*.dmg
+*.pkg
+
+# Imported Asset Store packs stay local. The repo is public and their EULAs generally
+# forbid redistributing the source assets, so the repo carries the game and the art
+# that belongs to it, not somebody else's kit. A fresh clone will therefore show the
+# office furniture as missing references until the packs are imported again.
+/Assets/Brick Project Studio/
+/Assets/Brick Project Studio.meta
+/Assets/JustPlay/
+/Assets/JustPlay.meta
+/Assets/LowPolyOfficeProps_LITE/
+/Assets/LowPolyOfficeProps_LITE.meta
+/Assets/TDG Storage Solutions/
+/Assets/TDG Storage Solutions.meta
+/Assets/WindowAndDoorsPack01/
+/Assets/WindowAndDoorsPack01.meta
+/Assets/nappin/
+/Assets/nappin.meta
+/Assets/Awb-Free Low Poly Vehicles/
+/Assets/Awb-Free Low Poly Vehicles.meta
+
+# Test results are regenerated on every run, so tracking them means every test run
+# dirties the tree and blocks a rebase.
+TestResults.xml
+PlayResults.xml
+Probe.xml
+Drift.xml
