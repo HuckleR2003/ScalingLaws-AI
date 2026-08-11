@@ -37,8 +37,10 @@ namespace ScalingLaws.Data
     {
         public AudienceSegmentDefinition(AudienceSegment segment, string displayName, string description,
             double willingnessToPay, double adoptionRatePerDay, double brandWeight,
-            double servingCostWeight, (int Year, double Weight)[] anchors)
+            double servingCostWeight, double tokensPerUserPerDay,
+            (int Year, double Weight)[] anchors)
         {
+            TokensPerUserPerDay = Math.Max(1.0, tokensPerUserPerDay);
             AdoptionRatePerDay = Math.Clamp(adoptionRatePerDay, 0.002, 0.5);
             BrandWeight = Math.Clamp(brandWeight, 0.0, 2.5);
             ServingCostWeight = Math.Clamp(servingCostWeight, 0.0, 2.0);
@@ -74,6 +76,24 @@ namespace ScalingLaws.Data
 
         /// <summary>How much an expensive-to-serve model is punished here. Support buyers notice.</summary>
         public double ServingCostWeight { get; }
+
+        /// <summary>
+        /// Tokens one person in this audience gets through in a day.
+        ///
+        /// This is what turns a token pool into a number of people, and it is the reason a developer
+        /// is not worth the same as a consumer. Somebody asking a few questions a day and an agent
+        /// running unsupervised for hours are both "a user", and they are two orders of magnitude
+        /// apart. Counting them as one thing would make the whole audience system lie.
+        /// </summary>
+        public double TokensPerUserPerDay { get; }
+
+        /// <summary>
+        /// How many people that many tokens represents. The pool is in billions per day, which is
+        /// the unit the rest of the market speaks, so the conversion lives here rather than at every
+        /// call site where it could be got wrong once and never noticed.
+        /// </summary>
+        public double UsersFor(double billionTokensPerDay) =>
+            Math.Max(0.0, billionTokensPerDay) * SimUnits.TokensPerBillion / TokensPerUserPerDay;
 
         /// <summary>Raw size at each anchor year. Read through <see cref="AudienceCatalog"/>.</summary>
         public (int Year, double Weight)[] Anchors { get; }
@@ -140,7 +160,7 @@ namespace ScalingLaws.Data
                 "People asking questions. The largest crowd by a distance and the least willing to pay "
                 + "for any of it.",
                 willingnessToPay: 1.00, adoptionRatePerDay: 0.045, brandWeight: 1.35,
-                servingCostWeight: 0.55,
+                servingCostWeight: 0.55, tokensPerUserPerDay: 12_000,
                 new (int, double)[]
                 {
                     (2022, 30), (2023, 62), (2024, 74), (2026, 82),
@@ -151,7 +171,7 @@ namespace ScalingLaws.Data
                 "Engineers writing code. Almost nobody in 2022, and the first group to find out it "
                 + "would happily pay.",
                 willingnessToPay: 1.20, adoptionRatePerDay: 0.090, brandWeight: 0.55,
-                servingCostWeight: 0.35,
+                servingCostWeight: 0.35, tokensPerUserPerDay: 180_000,
                 new (int, double)[]
                 {
                     (2022, 4), (2023, 14), (2024, 26), (2025, 34), (2027, 40),
@@ -162,7 +182,7 @@ namespace ScalingLaws.Data
                 "Companies replacing work that used to be done by a department. Slow to arrive, "
                 + "expensive to win, and almost impossible to lose once won.",
                 willingnessToPay: 1.65, adoptionRatePerDay: 0.012, brandWeight: 1.15,
-                servingCostWeight: 0.25,
+                servingCostWeight: 0.25, tokensPerUserPerDay: 900_000,
                 new (int, double)[]
                 {
                     (2022, 3), (2024, 9), (2026, 20), (2028, 30), (2031, 38), (2036, 44)
@@ -171,7 +191,7 @@ namespace ScalingLaws.Data
             new(AudienceSegment.Creative, "Creative",
                 "Writing, images and marketing. Arrived early, never grew the way the others did.",
                 willingnessToPay: 1.05, adoptionRatePerDay: 0.060, brandWeight: 1.00,
-                servingCostWeight: 0.85,
+                servingCostWeight: 0.85, tokensPerUserPerDay: 40_000,
                 new (int, double)[]
                 {
                     (2022, 6), (2023, 12), (2025, 16), (2028, 17), (2036, 18)
@@ -181,7 +201,7 @@ namespace ScalingLaws.Data
                 "Models given a machine and a task and left alone with both. Does not exist until a "
                 + "model can hold a job down for an hour without supervision.",
                 willingnessToPay: 2.10, adoptionRatePerDay: 0.030, brandWeight: 0.70,
-                servingCostWeight: 1.30,
+                servingCostWeight: 1.30, tokensPerUserPerDay: 3_000_000,
                 new (int, double)[]
                 {
                     (2022, 0), (2024, 1), (2026, 6), (2028, 18), (2030, 34), (2033, 52), (2036, 64)

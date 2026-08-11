@@ -114,6 +114,7 @@ namespace ScalingLaws.Persistence
                     10 => UpgradeV10ToV11(current),
                     11 => UpgradeV11ToV12(current),
                     12 => UpgradeV12ToV13(current),
+                    13 => UpgradeV13ToV14(current),
                     _ => current
                 };
             }
@@ -523,6 +524,37 @@ namespace ScalingLaws.Persistence
                 "v12 to v13: no user base was recorded because share used to be recomputed daily. "
                 + "The first day after loading sets the standing to what the live models are worth, "
                 + "which is what the older file meant.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v13 to v14: the standing gains a third axis, the model type.
+        ///
+        /// A v13 file recorded who held each audience but not what they were selling them, and there
+        /// is no way to read that back out. Every recorded share would have to be assigned to some
+        /// type, and picking one would be inventing a market history that never happened.
+        ///
+        /// So the standing is dropped and flagged as unrecorded, and the first tick after loading
+        /// sets it to whatever today's products deserve. The same treatment v13 gave a v12 file, for
+        /// the same reason: a market with no recorded history has no inertia to respect.
+        /// </summary>
+        public static SaveData UpgradeV13ToV14(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 14;
+            data.segmentShares = new List<double>();
+            data.segmentOwnerCount = 0;
+            data.segmentTypeCount = 0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v13 to v14: the market standing now records model type as well as audience and lab. "
+                + "An older file cannot say what its users were being sold, so the standing is "
+                + "rebuilt from what is on the market the first day after loading.");
 
             return data;
         }

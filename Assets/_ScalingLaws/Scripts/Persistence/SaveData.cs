@@ -202,7 +202,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 13;
+        public const int CurrentVersion = 14;
 
         public int version = CurrentVersion;
 
@@ -334,14 +334,23 @@ namespace ScalingLaws.Persistence
 
         // ---- added in v13 ----
 
-        /// <summary>Player share of each audience segment, in catalog order.</summary>
+        /// <summary>Superseded in v14. Read by the migration only.</summary>
         public List<double> segmentPlayerShares = new();
 
-        /// <summary>Rival shares, segment major. Length is segments times rivals.</summary>
         public List<double> segmentRivalShares = new();
 
-        /// <summary>How many labs the standing was written for. A mismatch drops it.</summary>
         public int segmentRivalCount;
+
+        // ---- added in v14 ----
+
+        /// <summary>
+        /// The whole standing, audience major then owner then model type. Owner zero is the player.
+        /// A mismatch on either count drops it rather than stretching it.
+        /// </summary>
+        public List<double> segmentShares = new();
+
+        public int segmentOwnerCount;
+        public int segmentTypeCount;
     }
 
     /// <summary>One person on the payroll. Added in v8.</summary>

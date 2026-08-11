@@ -197,15 +197,15 @@ namespace ScalingLaws.Data
                 "Code specialisation",
                 "Repository scale context, test execution and diffs as training signal. Almost nobody "
                 + "wants this in 2022. By 2025 it is the segment that pays.",
-                GameDate.FromCalendar(2022, 8, 1), costUsd: 7_500_000, durationDays: 120,
+                GameDate.FromCalendar(2022, 12, 1), costUsd: 7_500_000, durationDays: 120,
                 petaflopDaysRequired: 600,
-                requires: new[] { ResearchNodeId.CuratedCorpora }),
+                requires: new[] { ResearchNodeId.ConversationalModels }),
 
             new(ResearchNodeId.ConversationalModels, ResearchEra.Foundations,
                 "Conversational tuning",
                 "Tone, refusal behaviour and memory across a session. Turns a tool people try into a "
                 + "product people open every morning.",
-                GameDate.FromCalendar(2022, 10, 1), costUsd: 6_000_000, durationDays: 100,
+                GameDate.FromCalendar(2022, 8, 1), costUsd: 6_000_000, durationDays: 100,
                 petaflopDaysRequired: 450,
                 requires: new[] { ResearchNodeId.HumanFeedback }),
 
@@ -215,7 +215,7 @@ namespace ScalingLaws.Data
                 + "off. Sells slowly, and then never leaves.",
                 GameDate.FromCalendar(2023, 6, 1), costUsd: 18_000_000, durationDays: 180,
                 petaflopDaysRequired: 2_400,
-                requires: new[] { ResearchNodeId.ContextWindowExpansion }),
+                requires: new[] { ResearchNodeId.CodingModels, ResearchNodeId.ContextWindowExpansion }),
 
             new(ResearchNodeId.AgenticWorkstation, ResearchEra.Autonomy,
                 "Autonomous workstation",
@@ -223,7 +223,7 @@ namespace ScalingLaws.Data
                 + "work. The most expensive line on the tree and the only one that owns the endgame.",
                 GameDate.FromCalendar(2024, 6, 1), costUsd: 85_000_000, durationDays: 300,
                 petaflopDaysRequired: 22_000,
-                requires: new[] { ResearchNodeId.AutonomousAgents, ResearchNodeId.AutomationModels }),
+                requires: new[] { ResearchNodeId.AutomationModels, ResearchNodeId.AutonomousAgents }),
 
             new(ResearchNodeId.MultimodalGeneration, ResearchEra.Foundations,
                 "Multimodal generation",

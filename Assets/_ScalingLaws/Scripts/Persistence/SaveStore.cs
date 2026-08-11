@@ -134,9 +134,9 @@ namespace ScalingLaws.Persistence
             data.worldRegion = (int)state.Region;
             data.homeCountry = (int)state.HomeCountry;
             data.lifetimeTaxPaidUsd = state.LifetimeTaxPaidUsd;
-            data.segmentPlayerShares = new List<double>(state.Segments.PlayerSharesToArray());
-            data.segmentRivalShares = new List<double>(state.Segments.RivalSharesToArray());
-            data.segmentRivalCount = state.Segments.RivalCount;
+            data.segmentShares = new List<double>(state.Segments.ToArray());
+            data.segmentOwnerCount = state.Segments.OwnerCount;
+            data.segmentTypeCount = ModelTypeCatalog.All.Count;
 
             data.pricingModel = (int)state.Monetization.Model;
 
@@ -436,7 +436,7 @@ namespace ScalingLaws.Persistence
             state.Region = (WorldRegion)safe.worldRegion;
             state.HomeCountry = (Country)safe.homeCountry;
             state.LifetimeTaxPaidUsd = safe.lifetimeTaxPaidUsd;
-            state.Segments.Restore(safe.segmentPlayerShares, safe.segmentRivalShares, safe.segmentRivalCount);
+            state.Segments.Restore(safe.segmentShares, safe.segmentOwnerCount, safe.segmentTypeCount);
 
             state.LifetimeFinesUsd = safe.lifetimeFinesUsd;
 
@@ -904,20 +904,14 @@ namespace ScalingLaws.Persistence
 
             // ---- v13 fields ----
 
-            safe.segmentPlayerShares ??= new List<double>();
-            safe.segmentRivalShares ??= new List<double>();
-            safe.segmentRivalCount = Math.Max(0, safe.segmentRivalCount);
+            safe.segmentShares ??= new List<double>();
+            safe.segmentOwnerCount = Math.Max(0, safe.segmentOwnerCount);
+            safe.segmentTypeCount = Math.Max(0, safe.segmentTypeCount);
 
-            for (var index = 0; index < safe.segmentPlayerShares.Count; index++)
+            for (var index = 0; index < safe.segmentShares.Count; index++)
             {
-                safe.segmentPlayerShares[index] = Math.Clamp(
-                    SimUnits.Finite(safe.segmentPlayerShares[index]), 0.0, 1.0);
-            }
-
-            for (var index = 0; index < safe.segmentRivalShares.Count; index++)
-            {
-                safe.segmentRivalShares[index] = Math.Clamp(
-                    SimUnits.Finite(safe.segmentRivalShares[index]), 0.0, 1.0);
+                safe.segmentShares[index] = Math.Clamp(
+                    SimUnits.Finite(safe.segmentShares[index]), 0.0, 1.0);
             }
 
             // ---- v12 fields ----

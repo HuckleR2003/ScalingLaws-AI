@@ -1569,20 +1569,28 @@ namespace ScalingLaws.Simulation
             return entrants;
         }
 
-        /// <summary>Per segment standing, for the Foundation screen and for the balance tests.</summary>
-        public List<SegmentStanding> SegmentStandings()
+        /// <summary>Owner names in standing order. Index zero is always the player.</summary>
+        private List<string> OwnerNames()
         {
-            var names = new List<string>(State.Rivals.Agents.Count);
+            var names = new List<string>(State.Rivals.Agents.Count + 1) { State.CompanyName };
             foreach (var agent in State.Rivals.Agents)
             {
                 names.Add(agent.LabName);
             }
 
-            return State.Segments.Standings(
-                State.Date,
-                MarketModel.DemandOn(State.Date),
-                names);
+            return names;
         }
+
+        /// <summary>The market by who people are. For balance tests and the audience readout.</summary>
+        public List<SegmentStanding> SegmentStandings() =>
+            State.Segments.Standings(State.Date, MarketModel.DemandOn(State.Date), OwnerNames());
+
+        /// <summary>
+        /// The market by what people are being sold, which is what the Foundation panel draws.
+        /// Built from the same standing the tick just moved, never recomputed a second way.
+        /// </summary>
+        public MarketBreakdown MarketByType() =>
+            State.Segments.Breakdown(State.Date, MarketModel.DemandOn(State.Date), OwnerNames());
 
         private (double Share, double Demanded, double Served, long Revenue) ServeMarket(
             ComputeProfile profile,
