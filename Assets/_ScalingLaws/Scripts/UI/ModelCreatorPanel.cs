@@ -62,6 +62,7 @@ namespace ScalingLaws.UI
         private VisualElement scaleReadout;
         private VisualElement scaleNotes;
         private VisualElement typePicker;
+        private VisualElement dataReadout;
         private Label laptopType;
         private ModelType chosenType = ModelType.General;
 
@@ -935,11 +936,72 @@ namespace ScalingLaws.UI
             hint.AddToClassList("field__hint");
             panel.Add(hint);
 
-            panel.Add(ComingRow("Mix by percentage", "Fixed shares for now"));
-            panel.Add(ComingRow("Data cleaning", "Standard"));
-            panel.Add(ComingRow("Recency cutoff", "Everything available"));
+            dataReadout = new VisualElement();
+            dataReadout.AddToClassList("data-readout");
+            panel.Add(dataReadout);
 
             return panel;
+        }
+
+        /// <summary>
+        /// What the chosen corpus actually is, in the four numbers the blend already computes.
+        ///
+        /// This stage used to end in three rows reading "fixed shares for now", "standard" and
+        /// "everything available". Meanwhile the blend behind it had a real quality multiplier, a real
+        /// token ceiling, a real bill and a real sufficiency check, and the player could see none of
+        /// them. Three labels promising features hid four facts that were already true.
+        /// </summary>
+        private void RefreshDataReadout(TrainingProjection projection, ModelBlueprint blueprint)
+        {
+            if (dataReadout == null)
+            {
+                return;
+            }
+
+            var blend = projection.Blend;
+            dataReadout.Clear();
+
+            // Quality is a multiplier around one, so it is shown against a band rather than as a
+            // percentage of nothing. Below one actively hurts the run.
+            dataReadout.Add(ThinBar("Corpus quality",
+                $"{UiFormat.Number(blend.QualityMultiplier, 2)}x",
+                Math.Clamp((blend.QualityMultiplier - 0.5) / 1.0, 0.0, 1.0)));
+
+            var needed = Math.Max(1.0, blueprint.TrainingTokensBillions);
+            dataReadout.Add(ThinBar("Tokens available",
+                $"{UiFormat.Billions(blend.AvailableTokensBillions)}",
+                Math.Clamp(blend.AvailableTokensBillions / needed, 0.0, 1.0)));
+
+            var costRow = new Label(blend.AcquisitionCostUsd > 0L
+                ? $"Licensing this mix costs {UiFormat.Money(blend.AcquisitionCostUsd)}."
+                : "Nothing in this mix has to be paid for.");
+            costRow.AddToClassList("scale-note");
+            dataReadout.Add(costRow);
+
+            if (blend.SourceCount == 0)
+            {
+                var none = new Label("No corpus selected. The run cannot start without one.");
+                none.AddToClassList("scale-note");
+                none.AddToClassList("scale-note--bad");
+                dataReadout.Add(none);
+            }
+            else if (!blend.IsSufficient)
+            {
+                var short_ = new Label(
+                    $"This mix holds {UiFormat.Billions(blend.AvailableTokensBillions)} and the run "
+                    + $"wants {UiFormat.Billions(blueprint.TrainingTokensBillions)}. Add a source or "
+                    + "train on fewer tokens.");
+
+                short_.AddToClassList("scale-note");
+                short_.AddToClassList("scale-note--bad");
+                dataReadout.Add(short_);
+            }
+            else
+            {
+                var ok = new Label($"{blend.SourceCount} sources, enough for this run.");
+                ok.AddToClassList("scale-note");
+                dataReadout.Add(ok);
+            }
         }
 
         private VisualElement BuildComputePanel()
@@ -1173,6 +1235,7 @@ namespace ScalingLaws.UI
             RenderEffectBanner(projection);
             RefreshLaptopConsole();
             RefreshScale(projection, blueprint);
+            RefreshDataReadout(projection, blueprint);
         }
 
         /// <summary>

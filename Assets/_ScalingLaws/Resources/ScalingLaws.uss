@@ -3029,3 +3029,16 @@
 .type-tile__note--locked {
     color: rgb(150, 126, 108);
 }
+
+/* The DATA stage's real numbers, which the blend was already computing while
+   three placeholder rows sat on top of them. */
+
+.data-readout {
+    flex-shrink: 0;
+    margin-top: 8px;
+}
+
+.scale-note--bad {
+    color: rgb(226, 124, 116);
+    border-left-color: rgb(168, 62, 58);
+}
