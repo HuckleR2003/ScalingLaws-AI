@@ -61,6 +61,7 @@ namespace ScalingLaws.UI
         private Label beltProfile;
         private VisualElement scaleReadout;
         private VisualElement scaleNotes;
+        private VisualElement typePicker;
         private Label laptopType;
         private ModelType chosenType = ModelType.General;
 
@@ -362,8 +363,8 @@ namespace ScalingLaws.UI
 
             var series = NewPanel("SERIES / MODEL UPGRADE RELEASE");
             series.Add(ComingRow("Model family", "Needs research"));
-            series.Add(ComingRow("Type", ModelTypeCatalog.Get(chosenType).DisplayName));
             column.Add(series);
+            column.Add(BuildTypePicker());
 
             // The market, right under the decision it informs. Half the gap the panels above use,
             // because this is the evidence for that choice rather than a separate subject.
@@ -375,6 +376,98 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>A row for a decision that exists in the design and not yet in the game.</summary>
+        /// <summary>
+        /// What the model is for. Five tiles, locked until their research node lands, in the order the
+        /// research chain opens them.
+        ///
+        /// This is the control that was missing. The market has been split by type for two sessions and
+        /// the player had no way to choose one, so every model shipped general and the whole type axis
+        /// was visible but unreachable.
+        /// </summary>
+        private VisualElement BuildTypePicker()
+        {
+            typePicker = NewPanel("WHAT IS IT FOR");
+            RefreshTypePicker();
+            return typePicker;
+        }
+
+        private void RefreshTypePicker()
+        {
+            if (typePicker == null)
+            {
+                return;
+            }
+
+            typePicker.Clear();
+            typePicker.Add(SectionHeading("WHAT IS IT FOR"));
+
+            var grid = new VisualElement();
+            grid.AddToClassList("type-grid");
+
+            // If the current choice is no longer legal, fall back before drawing, so the highlighted
+            // tile is always the type the blueprint will actually use.
+            if (!simulation.State.CanBuildType(chosenType))
+            {
+                chosenType = ModelType.General;
+            }
+
+            foreach (var definition in ModelTypeCatalog.All)
+            {
+                grid.Add(BuildTypeTile(definition));
+            }
+
+            typePicker.Add(grid);
+        }
+
+        private VisualElement BuildTypeTile(ModelTypeDefinition definition)
+        {
+            var unlocked = simulation.State.CanBuildType(definition.Type);
+            var picked = definition.Type == chosenType;
+
+            var tile = new Button(() =>
+            {
+                if (!unlocked)
+                {
+                    return;
+                }
+
+                chosenType = definition.Type;
+                RefreshTypePicker();
+                Reprice();
+            });
+
+            tile.AddToClassList("type-tile");
+            tile.EnableInClassList("type-tile--on", picked);
+            tile.EnableInClassList("type-tile--locked", !unlocked);
+            tile.SetEnabled(unlocked);
+
+            var name = new Label(definition.DisplayName.ToUpperInvariant());
+            name.AddToClassList("type-tile__name");
+            tile.Add(name);
+
+            if (unlocked)
+            {
+                // What it costs to serve, because that is the part a player forgets until the bill
+                // arrives months later.
+                var serving = new Label(definition.ServingCostMultiplier <= 1.0
+                    ? "Cheap to serve"
+                    : $"{UiFormat.Number(definition.ServingCostMultiplier, 2)}x to serve");
+
+                serving.AddToClassList("type-tile__note");
+                tile.Add(serving);
+            }
+            else
+            {
+                var gate = new Label($"Needs {ResearchTree.Get(definition.Requires).DisplayName}");
+                gate.AddToClassList("type-tile__note");
+                gate.AddToClassList("type-tile__note--locked");
+                tile.Add(gate);
+            }
+
+            tile.tooltip = definition.Description;
+            return tile;
+        }
+
         private static VisualElement ComingRow(string label, string value)
         {
             var row = new VisualElement();
@@ -982,12 +1075,18 @@ namespace ScalingLaws.UI
                 }
             }
 
+            // A type the player has not researched must never reach a blueprint, whatever the field
+            // says. Loading a save from a run that had the research, into one that does not, is the
+            // case that would otherwise ship a model nobody could have built.
+            var type = simulation.State.CanBuildType(chosenType) ? chosenType : ModelType.General;
+
             return new ModelBlueprint(
                 string.IsNullOrWhiteSpace(nameField.value) ? "Untitled model" : nameField.value,
                 architecture,
                 Math.Pow(10.0, parameterSlider.value),
                 Math.Pow(10.0, tokenSlider.value),
-                sources);
+                sources,
+                type);
         }
 
         /// <summary>Sets the token count to the compute-optimal partner for the current size.</summary>

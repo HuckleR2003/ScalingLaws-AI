@@ -2959,3 +2959,73 @@
     border-left-width: 2px;
     border-left-color: rgba(255, 255, 255, 0.14);
 }
+
+/* ---------------------------------------------------------------------------
+   What the model is for. Five tiles, locked until their research lands.
+   Widths leave real slack: four trait cards once measured 1352px against a
+   1340px page because a styled Button inherits the theme's margin.
+   --------------------------------------------------------------------------- */
+
+.type-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.type-tile {
+    width: 122px;
+    margin: 0;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    align-items: flex-start;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 3px;
+    transition-property: background-color, border-color;
+    transition-duration: 110ms;
+}
+
+.type-tile:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-color: rgb(120, 176, 250);
+}
+
+.type-tile--on {
+    background-color: rgba(120, 176, 250, 0.16);
+    border-color: rgb(120, 176, 250);
+}
+
+.type-tile--locked {
+    background-color: rgba(255, 255, 255, 0.015);
+    border-color: rgba(255, 255, 255, 0.05);
+    opacity: 0.55;
+}
+
+.type-tile--locked:hover {
+    background-color: rgba(255, 255, 255, 0.015);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.type-tile__name {
+    font-size: 9px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(216, 226, 240);
+    white-space: normal;
+}
+
+.type-tile__note {
+    margin-top: 3px;
+    font-size: 8px;
+    color: rgb(126, 138, 158);
+    white-space: normal;
+}
+
+.type-tile__note--locked {
+    color: rgb(150, 126, 108);
+}
