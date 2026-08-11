@@ -831,14 +831,20 @@ namespace ScalingLaws.UI
             var profile = TrainingProfile.Read(projection);
 
             belt.Set(profile);
-            beltRatio.text = $"{UiFormat.Number(projection.TokensPerParameter)} : 1"
-                + $"   (optimum {UiFormat.Number(projection.OptimalTokensPerParameter)})";
+
+            // Never quote an optimum that was not computed. With no usable compute the planner cannot
+            // produce one, and printing "optimum 0.0" beside a confident OVERSIZED badge was the screen
+            // asserting something it had failed to work out.
+            beltRatio.text = profile.IsEstimated
+                ? $"{UiFormat.Number(projection.TokensPerParameter)} : 1"
+                    + $"   (optimum {UiFormat.Number(projection.OptimalTokensPerParameter)})"
+                : $"{UiFormat.Number(projection.TokensPerParameter)} : 1   (no optimum until you have compute)";
 
             beltProfile.text = profile.ProfileName;
             beltProfile.EnableInClassList("belt-block__badge--good",
-                profile.Profile == ShapeProfile.Balanced);
+                profile.IsEstimated && profile.Profile == ShapeProfile.Balanced);
             beltProfile.EnableInClassList("belt-block__badge--bad",
-                profile.Profile == ShapeProfile.Oversized);
+                profile.IsEstimated && profile.Profile == ShapeProfile.Oversized);
 
             tokenBytesLabel.text = $"About {TokenBytes(blueprint.TrainingTokensBillions)} of text, "
                 + "at roughly four bytes a token.";

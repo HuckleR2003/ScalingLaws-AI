@@ -133,6 +133,42 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsFalse(double.IsNaN(profile.MemoryPressure));
         }
 
+        /// <summary>
+        /// Found by looking at the game rather than by any test.
+        ///
+        /// On day one the fleet has no usable compute, so the planner cannot produce an optimal ratio
+        /// and returns zero. Dividing by it gave a shape ratio of zero, which pinned the marker to the
+        /// far left of the belt and printed a confident OVERSIZED badge beside the words "optimum 0.0".
+        /// The screen was asserting a fact about a shape it had failed to evaluate.
+        /// </summary>
+        [Test]
+        public void ARunWithNoOptimumSaysSoInsteadOfGuessingAtAZone()
+        {
+            var unmeasured = Fake(shapeEfficiency: 0.0, computeCost: 0, dataCost: 0, optimal: 0.0);
+
+            Assert.IsFalse(unmeasured.IsEstimated,
+                "With no optimum there is nothing to compare the shape against.");
+
+            Assert.AreEqual("NO ESTIMATE", unmeasured.ProfileName,
+                "A badge naming a zone is a claim, and no measurement was taken.");
+
+            Assert.AreEqual(0.5, unmeasured.BandPosition, 1e-9,
+                "The marker sits neutral rather than pinned to a zone it was never measured into.");
+
+            Assert.IsNotEmpty(unmeasured.Notes);
+            StringAssert.Contains("No compute", unmeasured.Notes[0],
+                "The player has to be told why the readings are blank.");
+        }
+
+        [Test]
+        public void AMeasuredRunStillReportsItsZoneNormally()
+        {
+            var measured = Fake(shapeEfficiency: 0.9, computeCost: 1_000_000, dataCost: 0);
+
+            Assert.IsTrue(measured.IsEstimated);
+            Assert.AreEqual("BALANCED", measured.ProfileName);
+        }
+
         private static ShapeProfile ProfileAt(double ratio) => FakeRatio(ratio).Profile;
 
         private static TrainingProfile FakeRatio(double ratio) =>
@@ -144,7 +180,8 @@ namespace ScalingLaws.Tests.EditMode
         /// input the bar is actually reading.
         /// </summary>
         private static TrainingProfile Fake(double shapeEfficiency, long computeCost, long dataCost,
-            double memoryNeeded = 100.0, double memoryAvailable = 400.0, double ratio = 1.0)
+            double memoryNeeded = 100.0, double memoryAvailable = 400.0, double ratio = 1.0,
+            double optimal = 20.0)
         {
             var projection = new TrainingProjection(
                 new ModelBlueprint("Subject", ArchitectureId.DenseTransformer, 20.0, 400.0,
@@ -155,7 +192,7 @@ namespace ScalingLaws.Tests.EditMode
                 projectedCapability: 50.0,
                 shapeEfficiency: shapeEfficiency,
                 tokensPerParameter: 20.0 * ratio,
-                optimalTokensPerParameter: 20.0,
+                optimalTokensPerParameter: optimal,
                 trainingPetaflopDays: 1000.0,
                 effectivePetaflops: 10.0,
                 trainingDays: 100,

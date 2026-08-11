@@ -108,6 +108,26 @@ namespace ScalingLaws.Tests.EditMode
             Assert.AreEqual(1, slight.Arrows);
         }
 
+        /// <summary>
+        /// Found by looking at the game. On the first day, with nothing shipped, the corner banner read
+        /// LEAVING in red over a market of zero people. A company that has not released anything is not
+        /// a company whose customers are walking out.
+        /// </summary>
+        [Test]
+        public void ACompanyThatHasShippedNothingIsNotACompanyLosingCustomers()
+        {
+            var nothing = new UserSentiment(0.0, 0.0, 0.0, 0.0);
+
+            Assert.IsFalse(nothing.HasAudience);
+            Assert.AreEqual("NO USERS YET", nothing.Mood,
+                "LEAVING over an empty market is an alarm about something that has not happened.");
+
+            var someone = new UserSentiment(1.0, 0.05, 0.0, 0.0);
+            Assert.IsTrue(someone.HasAudience);
+            Assert.AreEqual("LEAVING", someone.Mood,
+                "With real users at five percent satisfaction the alarm is earned.");
+        }
+
         [Test]
         public void TheMoodWordAlwaysMatchesTheNumberBesideIt()
         {
@@ -118,6 +138,8 @@ namespace ScalingLaws.Tests.EditMode
             Assert.AreEqual("CONTENT", new UserSentiment(1.0, 0.50, 0.0, 0.0).Mood);
             Assert.AreEqual("RESTLESS", new UserSentiment(1.0, 0.30, 0.0, 0.0).Mood);
             Assert.AreEqual("LEAVING", new UserSentiment(1.0, 0.10, 0.0, 0.0).Mood);
+            Assert.AreEqual("NO USERS YET", new UserSentiment(0.0, 0.90, 0.0, 0.0).Mood,
+                "No users outranks any satisfaction figure, because there is nobody to be satisfied.");
         }
 
         [Test]

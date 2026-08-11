@@ -26,6 +26,7 @@ namespace ScalingLaws.UI
 
         private double position = 0.5;
         private bool inBand = true;
+        private bool estimated = true;
 
         public ScaleBelt()
         {
@@ -36,7 +37,8 @@ namespace ScalingLaws.UI
         public void Set(TrainingProfile profile)
         {
             position = profile.BandPosition;
-            inBand = profile.Profile == ShapeProfile.Balanced;
+            inBand = profile.IsEstimated && profile.Profile == ShapeProfile.Balanced;
+            estimated = profile.IsEstimated;
             MarkDirtyRepaint();
         }
 
@@ -50,6 +52,15 @@ namespace ScalingLaws.UI
 
             var painter = context.painter2D;
             var (from, to) = TrainingProfile.BandOnBelt();
+
+            // Greyed out when there is no optimum to sit against. A coloured belt with a marker on it
+            // reads as a measurement whether or not one was taken.
+            if (!estimated)
+            {
+                var flat = new Color(0.16f, 0.18f, 0.22f);
+                Block(painter, 0f, rect.width, rect.height * 0.28f, rect.height * 0.44f, flat);
+                return;
+            }
 
             var trackTop = rect.height * 0.28f;
             var trackHeight = rect.height * 0.44f;

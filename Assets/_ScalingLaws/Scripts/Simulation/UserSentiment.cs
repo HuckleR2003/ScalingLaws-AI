@@ -57,8 +57,15 @@ namespace ScalingLaws.Simulation
             }
         }
 
+        /// <summary>
+        /// Whether there is anybody to have an opinion. A company that has not shipped is not a
+        /// company whose users are unhappy, and the banner read LEAVING in bright red over an empty
+        /// market on the first day of the game.
+        /// </summary>
+        public bool HasAudience => Users > 0.0;
+
         /// <summary>A word for the satisfaction figure, so the banner is readable without a legend.</summary>
-        public string Mood => Satisfaction switch
+        public string Mood => !HasAudience ? "NO USERS YET" : Satisfaction switch
         {
             >= 0.85 => "DELIGHTED",
             >= 0.65 => "HAPPY",

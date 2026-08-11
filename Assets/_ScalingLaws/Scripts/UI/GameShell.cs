@@ -329,11 +329,23 @@ namespace ScalingLaws.UI
                 return;
             }
 
+            // Only on the site screen. It is a glance at the company, not a permanent overlay, and on
+            // every other tab it sat on top of that tab's own header.
+            var onSite = current == Screen.Site;
+            pulseBanner.style.display = onSite ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (!onSite)
+            {
+                return;
+            }
+
             var sentiment = simulation.Sentiment();
 
             pulseUsers.text = UiFormat.Count(sentiment.Users);
             pulseMood.text = sentiment.Mood;
-            pulseSatisfaction.text = UiFormat.Percent(sentiment.Satisfaction);
+            pulseSatisfaction.text = sentiment.HasAudience
+                ? UiFormat.Percent(sentiment.Satisfaction)
+                : "NOTHING SHIPPED";
 
             var arrows = sentiment.Arrows;
             pulseArrows.text = arrows == 0
@@ -344,7 +356,9 @@ namespace ScalingLaws.UI
             pulseArrows.EnableInClassList("pulse__arrows--down", arrows < 0);
             pulseArrows.EnableInClassList("pulse__arrows--flat", arrows == 0);
 
-            pulseBanner.EnableInClassList("pulse--alarm", sentiment.Satisfaction < 0.25);
+            // Only alarming when there are actually people to lose.
+            pulseBanner.EnableInClassList("pulse--alarm",
+                sentiment.HasAudience && sentiment.Satisfaction < 0.25);
             pulseArrows.tooltip =
                 $"Forecast {sentiment.Momentum:+0.0%;-0.0%;0.0%} against today. Largest rival holds "
                 + $"{UiFormat.Count(sentiment.BestRivalUsers)}.";

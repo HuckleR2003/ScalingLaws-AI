@@ -524,6 +524,26 @@
     border-radius: var(--card-radius);
     padding: 18px;
     margin-bottom: 16px;
+
+    /* UI Toolkit shrinks children before it overflows them. Without this the two panels below
+       the Scale belt were squashed to nothing and the whole SCALING READOUT section was invisible
+       on screen while every test passed. The belt survived only because it already said 0. */
+    flex-shrink: 0;
+}
+
+/* A stage that stacks several panels. Stated because it was referenced from C# before it existed
+   here at all, which is what let the shrink above go unnoticed. */
+
+.creator-column {
+    flex-grow: 1;
+    flex-shrink: 0;
+}
+
+/* The Scale stage carries four blocks, so it buys the room back from its own padding. */
+
+.creator-column > .panel {
+    padding: 12px;
+    margin-bottom: 8px;
 }
 
 .panel__heading {
@@ -2012,7 +2032,9 @@
 
 .training-banner {
     position: absolute;
-    top: 58px;
+
+    /* Below the pulse banner, which now starts at 54px and is about 46px tall. */
+    top: 108px;
     right: 20px;
     width: 320px;
     padding-top: 9px;
@@ -2063,7 +2085,11 @@
     position: absolute;
     left: 22%;
     right: 22%;
-    top: 19%;
+
+    /* Measured off a screenshot: at 19% the name printed in the empty space above the lid. The
+       console lines below it sit 108px further down and were already landing correctly, so this
+       moves the whole block down together rather than separating them. */
+    top: 32%;
     align-items: center;
 }
 
@@ -2737,9 +2763,12 @@
 
 .pulse {
     position: absolute;
-    top: 12px;
+
+    /* The top bar is 46px and holds the date, SAVE and MENU. This used to sit at 12px and cover
+       all three. */
+    top: 54px;
     right: 20px;
-    width: 320px;
+    width: 268px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -2747,17 +2776,19 @@
     padding-bottom: 5px;
     padding-left: 12px;
     padding-right: 12px;
-    background-color: rgba(14, 17, 22, 0.92);
+    background-color: rgba(10, 14, 20, 0.55);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.06);
     border-radius: 4px;
 }
 
-/* Losing people is the one state that gets a colour of its own. */
+/* Losing people is the one state that gets a colour of its own, and even then it is a tint rather
+   than a slab. The first version was a solid burgundy block that pulled the eye away from the
+   screen the player was actually working on. */
 
 .pulse--alarm {
-    border-color: rgb(168, 62, 58);
-    background-color: rgba(38, 15, 17, 0.94);
+    border-color: rgba(168, 62, 58, 0.7);
+    background-color: rgba(38, 15, 17, 0.6);
 }
 
 .pulse__block {
@@ -2769,13 +2800,13 @@
 }
 
 .pulse__users {
-    font-size: 18px;
+    font-size: 15px;
     -unity-font-style: bold;
     color: rgb(232, 240, 250);
 }
 
 .pulse__mood {
-    font-size: 12px;
+    font-size: 10px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(196, 208, 226);

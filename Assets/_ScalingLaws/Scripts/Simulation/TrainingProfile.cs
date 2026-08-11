@@ -35,9 +35,10 @@ namespace ScalingLaws.Simulation
     {
         private TrainingProfile(ShapeProfile profile, double ratio, double bandPosition,
             double trainingEfficiency, double budgetEfficiency, double memoryPressure,
-            double servingBurden, IReadOnlyList<string> notes)
+            double servingBurden, bool isEstimated, IReadOnlyList<string> notes)
         {
             ServingBurden = Math.Max(0.0, SimUnits.Finite(servingBurden, 1.0));
+            IsEstimated = isEstimated;
             Profile = profile;
             Ratio = Math.Max(0.0, SimUnits.Finite(ratio));
             BandPosition = Math.Clamp(SimUnits.Finite(bandPosition), 0.0, 1.0);
@@ -79,13 +80,23 @@ namespace ScalingLaws.Simulation
         public bool Fits => MemoryPressure <= 1.0;
 
         /// <summary>
+        /// Whether there is an optimum to compare against at all.
+        ///
+        /// A run the planner could not cost, because the fleet has no usable compute, carries an
+        /// optimal ratio of zero. Dividing by it produced a ratio of zero, which drove the marker to
+        /// the far left of the belt and printed OVERSIZED next to "optimum 0.0". The screen was
+        /// stating a confident falsehood about a shape it had not been able to evaluate.
+        /// </summary>
+        public bool IsEstimated { get; }
+
+        /// <summary>
         /// What this model will cost to serve relative to a twenty billion parameter one, once it is
         /// live. Shown on the Scale stage so the bill is visible before the run is paid for rather
         /// than months later.
         /// </summary>
         public double ServingBurden { get; }
 
-        public string ProfileName => Profile switch
+        public string ProfileName => !IsEstimated ? "NO ESTIMATE" : Profile switch
         {
             ShapeProfile.Oversized => "OVERSIZED",
             ShapeProfile.ComputeHungry => "COMPUTE-HUNGRY",
@@ -101,6 +112,7 @@ namespace ScalingLaws.Simulation
         public static TrainingProfile Read(TrainingProjection projection)
         {
             var ratio = projection.ShapeRatio;
+            var estimated = projection.OptimalTokensPerParameter > 0.0;
 
             var profile = ratio switch
             {
@@ -142,12 +154,16 @@ namespace ScalingLaws.Simulation
             return new TrainingProfile(
                 profile,
                 ratio,
-                PositionOnBelt(ratio),
+
+                // Dead centre when there is nothing to compare against, so the marker sits neutral
+                // rather than pinned to a zone it was never measured into.
+                estimated ? PositionOnBelt(ratio) : 0.5,
                 projection.ShapeEfficiency,
                 budget,
                 memory,
                 serving,
-                BuildNotes(projection, profile, memory, serving));
+                estimated,
+                BuildNotes(projection, profile, memory, serving, estimated));
         }
 
         /// <summary>
@@ -175,9 +191,15 @@ namespace ScalingLaws.Simulation
             PositionOnBelt(TrainingProjection.OvertrainedAbove));
 
         private static List<string> BuildNotes(TrainingProjection projection, ShapeProfile profile,
-            double memory, double serving)
+            double memory, double serving, bool estimated)
         {
             var notes = new List<string>(4);
+
+            if (!estimated)
+            {
+                notes.Add("No compute available, so this shape cannot be costed yet. "
+                    + "Rent or buy capacity and the readings below will mean something.");
+            }
 
             // Memory first. Everything else is advice; this one stops the run.
             if (memory > 1.0)
@@ -188,6 +210,11 @@ namespace ScalingLaws.Simulation
             else if (memory > 0.85)
             {
                 notes.Add("Memory is nearly full. A slightly larger model will not fit at all.");
+            }
+
+            if (!estimated)
+            {
+                return notes;
             }
 
             switch (profile)
