@@ -98,10 +98,29 @@ namespace ScalingLaws.Simulation
         public long TotalCashCostUsd => ComputeCashCostUsd;
 
         /// <summary>Is the run undertrained relative to compute-optimal, meaning too big for its data.</summary>
-        public bool IsUndertrained => TokensPerParameter < OptimalTokensPerParameter * 0.6;
+        /// <summary>
+        /// Where the efficient band starts and ends, as a fraction of the optimal ratio.
+        ///
+        /// These were inline magic numbers on the two properties below. The Scale belt and the
+        /// profile badge both have to draw the same band, and a band drawn from a second copy of
+        /// these numbers would eventually disagree with the words printed next to it.
+        /// </summary>
+        public const double UndertrainedBelow = 0.6;
+
+        public const double OvertrainedAbove = 1.8;
+
+        public bool IsUndertrained => TokensPerParameter < OptimalTokensPerParameter * UndertrainedBelow;
 
         /// <summary>Is the run overtrained, meaning the parameters ran out before the tokens did.</summary>
-        public bool IsOvertrained => TokensPerParameter > OptimalTokensPerParameter * 1.8;
+        public bool IsOvertrained => TokensPerParameter > OptimalTokensPerParameter * OvertrainedAbove;
+
+        /// <summary>
+        /// The ratio as a multiple of optimal. One is compute optimal, below one is short of tokens,
+        /// above one is spending on data past the point it buys much.
+        /// </summary>
+        public double ShapeRatio => OptimalTokensPerParameter <= 0.0
+            ? 0.0
+            : TokensPerParameter / OptimalTokensPerParameter;
 
         public static TrainingProjection Blocked(ModelBlueprint blueprint, string reason) =>
             new(blueprint, false, reason, 3.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DatasetBlend.Empty);

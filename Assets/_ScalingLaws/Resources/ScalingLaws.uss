@@ -2804,3 +2804,158 @@
 .pulse__arrows--flat {
     color: rgb(104, 114, 132);
 }
+
+/* ---------------------------------------------------------------------------
+   The Scale stage: the tokens-per-parameter belt, four thin bars, and notes.
+   The belt itself is drawn in ScaleBelt.cs because USS has no gradients.
+   --------------------------------------------------------------------------- */
+
+.belt-block {
+    flex-shrink: 0;
+    margin-top: 8px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgb(18, 22, 29);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-radius: 4px;
+}
+
+.belt-block__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+}
+
+.belt-block__title {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(126, 138, 158);
+}
+
+.belt-block__ratio {
+    flex-grow: 1;
+    margin-left: 10px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(216, 226, 240);
+}
+
+.belt-block__badge {
+    font-size: 9px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 7px;
+    padding-right: 7px;
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 2px;
+    color: rgb(206, 216, 232);
+}
+
+.belt-block__badge--good {
+    background-color: rgba(52, 112, 82, 0.5);
+    color: rgb(150, 224, 178);
+}
+
+.belt-block__badge--bad {
+    background-color: rgba(120, 52, 48, 0.5);
+    color: rgb(238, 158, 150);
+}
+
+.belt {
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.belt-block__zones {
+    flex-direction: row;
+    margin-top: 3px;
+}
+
+.belt-zone {
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: rgb(104, 114, 132);
+}
+
+/* The captions have to sit under the zones they name, and the efficient band is
+   centred, so the three widths mirror the band edges the belt draws. */
+
+.belt-zone--left {
+    width: 34%;
+}
+
+.belt-zone--mid {
+    width: 32%;
+    -unity-text-align: middle-center;
+    color: rgb(124, 176, 146);
+}
+
+.belt-zone--right {
+    width: 34%;
+    -unity-text-align: middle-right;
+}
+
+/* ---- the four thin bars ---- */
+
+.thin-bar {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: 5px;
+}
+
+.thin-bar__label {
+    width: 42%;
+    font-size: 10px;
+    color: rgb(168, 180, 198);
+}
+
+.thin-bar__track {
+    flex-grow: 1;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.thin-bar__fill {
+    height: 4px;
+    border-radius: 2px;
+}
+
+.thin-bar__value {
+    width: 52px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(214, 224, 238);
+    -unity-text-align: middle-right;
+}
+
+/* ---- memory and notes ---- */
+
+.scale-memory {
+    margin-top: 6px;
+    font-size: 10px;
+    color: rgb(158, 170, 190);
+}
+
+.scale-memory--over {
+    color: rgb(226, 124, 116);
+    -unity-font-style: bold;
+}
+
+.scale-note {
+    font-size: 10px;
+    color: rgb(150, 162, 182);
+    white-space: normal;
+    margin-bottom: 4px;
+    padding-left: 8px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.14);
+}

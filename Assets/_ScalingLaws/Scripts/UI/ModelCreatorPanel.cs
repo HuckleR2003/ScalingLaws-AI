@@ -54,6 +54,13 @@ namespace ScalingLaws.UI
         private Label laptopName;
         private Label laptopStatus;
         private Label laptopArchitecture;
+        private readonly ScaleBelt belt = new();
+        private readonly Label tokenBytesLabel = new();
+        private readonly Label memoryLabel = new();
+        private Label beltRatio;
+        private Label beltProfile;
+        private VisualElement scaleReadout;
+        private VisualElement scaleNotes;
         private Label laptopType;
         private ModelType chosenType = ModelType.General;
 
@@ -622,8 +629,18 @@ namespace ScalingLaws.UI
             return panel;
         }
 
+        /// <summary>
+        /// The Scale stage: shape, then what the shape is worth, then what is wrong with it.
+        ///
+        /// It used to be two sliders and a sentence saying "around twenty tokens per parameter",
+        /// which is true and useless, because nothing on the screen said whether you were at four or
+        /// at eighty. The belt answers that without being read.
+        /// </summary>
         private VisualElement BuildShapePanel()
         {
+            var column = new VisualElement();
+            column.AddToClassList("creator-column");
+
             var panel = NewPanel("SHAPE");
 
             parameterLabel.AddToClassList("field__label");
@@ -636,18 +653,182 @@ namespace ScalingLaws.UI
             ConfigureSlider(tokenSlider, MinimumLogTokens, MaximumLogTokens, 2.6f);
             panel.Add(tokenSlider);
 
-            var hint = new Label(
-                "Around twenty tokens per parameter converts the most compute into capability. "
-                + "Far from it and the same bill buys a worse model.");
-            hint.AddToClassList("field__hint");
-            panel.Add(hint);
+            tokenBytesLabel.AddToClassList("field__hint");
+            panel.Add(tokenBytesLabel);
+
+            memoryLabel.AddToClassList("scale-memory");
+            panel.Add(memoryLabel);
+
+            column.Add(panel);
+            column.Add(BuildBeltBlock());
+
+            scaleReadout = NewPanel("SCALING READOUT");
+            column.Add(scaleReadout);
+
+            scaleNotes = NewPanel("NOTES");
+            column.Add(scaleNotes);
+
+            return column;
+        }
+
+        /// <summary>
+        /// The belt, its three zone captions, and the one word describing where the marker landed.
+        /// </summary>
+        private VisualElement BuildBeltBlock()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("belt-block");
+
+            var head = new VisualElement();
+            head.AddToClassList("belt-block__head");
+
+            var title = new Label("TOKENS PER PARAMETER");
+            title.AddToClassList("belt-block__title");
+            head.Add(title);
+
+            beltRatio = new Label();
+            beltRatio.AddToClassList("belt-block__ratio");
+            head.Add(beltRatio);
+
+            beltProfile = new Label();
+            beltProfile.AddToClassList("belt-block__badge");
+            head.Add(beltProfile);
+
+            block.Add(head);
+            block.Add(belt);
+
+            var zones = new VisualElement();
+            zones.AddToClassList("belt-block__zones");
+            zones.Add(ZoneCaption("COMPUTE-STARVED", "belt-zone--left"));
+            zones.Add(ZoneCaption("EFFICIENT ZONE", "belt-zone--mid"));
+            zones.Add(ZoneCaption("DATA-HEAVY SPILL", "belt-zone--right"));
+            block.Add(zones);
 
             var balance = new Button(BalanceShape) { text = "MATCH THE OPTIMUM" };
             balance.AddToClassList("button");
-            balance.style.marginTop = 10;
-            panel.Add(balance);
+            balance.style.marginTop = 8;
+            balance.style.marginLeft = 0;
+            balance.style.marginRight = 0;
+            balance.style.marginBottom = 0;
+            block.Add(balance);
 
-            return panel;
+            return block;
+        }
+
+        private static Label ZoneCaption(string text, string extra)
+        {
+            var label = new Label(text);
+            label.AddToClassList("belt-zone");
+            label.AddToClassList(extra);
+            return label;
+        }
+
+        /// <summary>
+        /// Four thin bars and a note list, rebuilt from one <see cref="TrainingProfile"/> each time the
+        /// blueprint is repriced. The panel computes none of these.
+        /// </summary>
+        private void RefreshScale(TrainingProjection projection, ModelBlueprint blueprint)
+        {
+            if (scaleReadout == null)
+            {
+                return;
+            }
+
+            var profile = TrainingProfile.Read(projection);
+
+            belt.Set(profile);
+            beltRatio.text = $"{UiFormat.Number(projection.TokensPerParameter)} : 1"
+                + $"   (optimum {UiFormat.Number(projection.OptimalTokensPerParameter)})";
+
+            beltProfile.text = profile.ProfileName;
+            beltProfile.EnableInClassList("belt-block__badge--good",
+                profile.Profile == ShapeProfile.Balanced);
+            beltProfile.EnableInClassList("belt-block__badge--bad",
+                profile.Profile == ShapeProfile.Oversized);
+
+            tokenBytesLabel.text = $"About {TokenBytes(blueprint.TrainingTokensBillions)} of text, "
+                + "at roughly four bytes a token.";
+
+            memoryLabel.text = $"Estimated memory need: "
+                + $"{UiFormat.Number(projection.MemoryRequiredGigabytes, 0)} GB of "
+                + $"{UiFormat.Number(projection.MemoryAvailableGigabytes, 0)} GB available";
+            memoryLabel.EnableInClassList("scale-memory--over", !profile.Fits);
+
+            scaleReadout.Clear();
+            scaleReadout.Add(SectionHeading("SCALING READOUT"));
+
+            // Capability is shown against the scale it is measured on rather than against a private
+            // maximum, so the bar means the same thing here as it does on the rankings screen.
+            scaleReadout.Add(ThinBar("Expected capability",
+                UiFormat.Number(projection.ProjectedCapability), projection.ProjectedCapability / 100.0));
+            scaleReadout.Add(ThinBar("Training efficiency",
+                UiFormat.Percent(profile.TrainingEfficiency), profile.TrainingEfficiency));
+            scaleReadout.Add(ThinBar("Budget efficiency",
+                UiFormat.Percent(profile.BudgetEfficiency), profile.BudgetEfficiency));
+            scaleReadout.Add(ThinBar("Memory used",
+                UiFormat.Percent(Math.Min(1.0, profile.MemoryPressure)),
+                Math.Min(1.0, profile.MemoryPressure)));
+
+            scaleNotes.Clear();
+            scaleNotes.Add(SectionHeading("NOTES"));
+
+            foreach (var note in profile.Notes)
+            {
+                var line = new Label(note);
+                line.AddToClassList("scale-note");
+                scaleNotes.Add(line);
+            }
+        }
+
+        private static Label SectionHeading(string text)
+        {
+            var heading = new Label(text);
+            heading.AddToClassList("panel__heading");
+            return heading;
+        }
+
+        private static VisualElement ThinBar(string label, string value, double fraction)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("thin-bar");
+
+            var caption = new Label(label);
+            caption.AddToClassList("thin-bar__label");
+            row.Add(caption);
+
+            var track = new VisualElement();
+            track.AddToClassList("thin-bar__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("thin-bar__fill");
+            fill.style.width = Length.Percent((float)(Math.Clamp(fraction, 0.0, 1.0) * 100.0));
+            HudAccent.PaintRamp(fill, CoolLow, CoolHigh);
+            track.Add(fill);
+
+            row.Add(track);
+
+            var amount = new Label(value);
+            amount.AddToClassList("thin-bar__value");
+            row.Add(amount);
+
+            return row;
+        }
+
+        /// <summary>
+        /// Tokens as a pile of text on a disk, which is a size people have a feel for. Four bytes a
+        /// token is the usual figure for English prose in a byte pair vocabulary.
+        /// </summary>
+        private static string TokenBytes(double tokensBillions)
+        {
+            var bytes = Math.Max(0.0, tokensBillions) * 1e9 * 4.0;
+
+            return bytes switch
+            {
+                >= 1e15 => $"{bytes / 1e15:0.0} PB",
+                >= 1e12 => $"{bytes / 1e12:0.0} TB",
+                >= 1e9 => $"{bytes / 1e9:0.0} GB",
+                _ => $"{bytes / 1e6:0.0} MB"
+            };
         }
 
         private VisualElement BuildDataPanel()
@@ -892,6 +1073,7 @@ namespace ScalingLaws.UI
 
             RenderEffectBanner(projection);
             RefreshLaptopConsole();
+            RefreshScale(projection, blueprint);
         }
 
         /// <summary>
