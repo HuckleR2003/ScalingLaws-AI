@@ -9,8 +9,10 @@ namespace ScalingLaws.Simulation
     public readonly struct MarketEntrant
     {
         public MarketEntrant(int ownerIndex, string displayName, ModelType type, double capability,
-            double brand, double priceMultiplier, double ageYears, double servingBurden)
+            double brand, double priceMultiplier, double ageYears, double servingBurden,
+            double reliability = 1.0)
         {
+            Reliability = Math.Clamp(SimUnits.Finite(reliability, 1.0), 0.05, 1.0);
             OwnerIndex = ownerIndex;
             DisplayName = displayName ?? string.Empty;
             Type = type == ModelType.None ? ModelType.General : type;
@@ -33,6 +35,13 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Cost to produce a token relative to a plain dense model. Above one is expensive.</summary>
         public double ServingBurden { get; }
+
+        /// <summary>
+        /// What using it is actually like. One is a service with headroom; below one is one that
+        /// queues. Kept separate from the burden because they are different facts: a model can be
+        /// cheap to run and still unusable because there is not enough of the fleet to go round.
+        /// </summary>
+        public double Reliability { get; }
 
         public bool IsPlayer => OwnerIndex < 0;
 
@@ -328,7 +337,9 @@ namespace ScalingLaws.Simulation
             // come out of the price eventually and they are the ones who notice.
             var burden = 1.0 + (entrant.ServingBurden - 1.0) * segment.ServingCostWeight;
 
-            return Math.Exp(utility) * fit / Math.Max(0.2, burden);
+            // Reliability multiplies rather than divides, and it applies after the fit: a product
+            // nobody can reach is not attractive to anybody, however well suited it is to them.
+            return Math.Exp(utility) * fit * entrant.Reliability / Math.Max(0.2, burden);
         }
 
         /// <summary>

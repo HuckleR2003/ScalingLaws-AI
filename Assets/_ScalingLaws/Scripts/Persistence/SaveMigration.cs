@@ -119,6 +119,7 @@ namespace ScalingLaws.Persistence
                     15 => UpgradeV15ToV16(current),
                     16 => UpgradeV16ToV17(current),
                     17 => UpgradeV17ToV18(current),
+                    18 => UpgradeV18ToV19(current),
                     _ => current
                 };
             }
@@ -707,6 +708,35 @@ namespace ScalingLaws.Persistence
                 "v17 to v18: the fan base starts at zero, because a following is earned day by day "
                 + "and an older save has no record of those days. The freshness of the product line "
                 + "is read from the newest model's own release date, which was recorded.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v18 to v19: hosting packages, and yesterday's service load.
+        ///
+        /// A v18 company held no packages, so zero of each is the true reading rather than a guess.
+        /// The service load is left empty, which restores as a fleet with nothing queueing: that is
+        /// the most flattering assumption in the file and the only defensible one, because an older
+        /// save has no record of how loaded the cluster was and inventing a bad day would punish a
+        /// player for loading a game.
+        /// </summary>
+        public static SaveData UpgradeV18ToV19(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 19;
+            data.hostingPackages = new List<int>();
+            data.qualityDemanded = 0.0;
+            data.qualityCapacity = 0.0;
+            data.qualityPackagedShare = 0.0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v18 to v19: no hosting packages, which is what a v18 company had. The service load "
+                + "starts empty, so the first day after loading is measured rather than assumed.");
 
             return data;
         }

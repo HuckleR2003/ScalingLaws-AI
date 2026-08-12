@@ -1655,7 +1655,12 @@ namespace ScalingLaws.Simulation
                     Math.Clamp(brand + model.BrandBonus(State.Date), 0.0, 1.0),
                     model.PriceMultiplier,
                     model.AgeYears(State.Date),
-                    burden));
+                    burden,
+
+                    // Yesterday's measured experience, because today's is not known until the market
+                    // has been served. One day of lag is honest and it stops the calculation eating
+                    // its own tail.
+                    State.LastQuality.Reliability));
             }
 
             for (var index = 0; index < rivals.Count; index++)
@@ -1892,6 +1897,10 @@ namespace ScalingLaws.Simulation
             var capacityTokens = servingPetaflops * SimUnits.FlopsPerPetaflop * SimUnits.SecondsPerDay / flopPerToken;
             var capacityBillions = capacityTokens / SimUnits.TokensPerBillion;
             var served = Math.Min(demanded, capacityBillions);
+
+            // What today was like to use, recorded for tomorrow's market and for the operations panel.
+            State.LastQuality = new ServiceQuality(
+                demanded, capacityBillions, State.Pool.PackagedQuality);
 
             // The split that makes a free tier a strategy rather than a giveaway. Every token costs
             // the same to produce; only some of them are invoiced.

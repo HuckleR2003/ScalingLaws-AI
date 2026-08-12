@@ -3704,3 +3704,249 @@
     letter-spacing: 1px;
     color: rgb(226, 208, 214);
 }
+
+/* ---------------------------------------------------------------------------
+   The hosting switch across the top of FLEET, built to the author's sketch:
+   two slanted halves with a picture at each end. Owning is shut rather than
+   hidden, because it is a goal and not a secret.
+   --------------------------------------------------------------------------- */
+
+.hswitch {
+    flex-direction: row;
+    align-items: stretch;
+    height: 74px;
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    background-color: rgb(16, 20, 27);
+    border-width: 2px;
+    border-color: rgb(232, 226, 214);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hswitch__art {
+    width: 128px;
+    flex-shrink: 0;
+    background-color: rgb(28, 34, 44);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.hswitch__half {
+    flex-grow: 1;
+    margin: 0;
+    border-width: 0;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-color: rgb(232, 226, 214);
+    border-radius: 0;
+    background-color: rgb(244, 240, 232);
+    font-size: 21px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(20, 22, 28);
+    white-space: normal;
+}
+
+.hswitch__half--on {
+    background-color: rgb(252, 250, 246);
+    color: rgb(114, 12, 46);
+}
+
+.hswitch__half--on:hover {
+    background-color: rgb(255, 255, 255);
+}
+
+.hswitch__half--locked {
+    background-color: rgb(120, 122, 126);
+    color: rgb(74, 76, 82);
+}
+
+/* ---- the service readout ---- */
+
+.service__row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.service__dial {
+    width: 128px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.gauge {
+    width: 116px;
+    height: 66px;
+    flex-shrink: 0;
+}
+
+.service__percent {
+    margin-top: -22px;
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(58, 62, 70);
+}
+
+.service__caption {
+    margin-top: 4px;
+    font-size: 9px;
+    color: rgb(140, 148, 164);
+}
+
+.gauge-scale {
+    width: 92px;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: stretch;
+    height: 62px;
+    margin-left: 10px;
+    margin-right: 14px;
+}
+
+.gauge-scale__words {
+    flex-grow: 1;
+    justify-content: space-between;
+}
+
+.gauge-scale__word {
+    font-size: 10px;
+    color: rgb(150, 156, 170);
+}
+
+.gauge-scale__word--critical { color: rgb(196, 62, 44); }
+.gauge-scale__word--unstable { color: rgb(176, 152, 30); }
+.gauge-scale__word--stable { color: rgb(58, 158, 60); }
+
+.gauge-scale__word--on {
+    -unity-font-style: bold;
+}
+
+.gauge-scale__bar {
+    width: 7px;
+    margin-left: 6px;
+    background-color: rgb(58, 158, 60);
+    border-top-width: 20px;
+    border-top-color: rgb(196, 62, 44);
+    border-bottom-width: 0;
+}
+
+.gauge-scale__arrow {
+    position: absolute;
+    right: -12px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(28, 30, 36);
+}
+
+.service__words {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.service__response {
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.service__headline {
+    margin-top: 3px;
+    font-size: 10px;
+    color: rgb(168, 178, 196);
+    white-space: normal;
+}
+
+.service__effect {
+    margin-top: 4px;
+    font-size: 10px;
+    color: rgb(132, 144, 164);
+    white-space: normal;
+}
+
+.service__effect--bad {
+    color: rgb(226, 130, 110);
+}
+
+/* ---- the three reserved blocks ---- */
+
+.pack-row {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.pack {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 8px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 3px;
+}
+
+.pack:last-child { margin-right: 0; }
+
+.pack--on {
+    background-color: rgba(120, 176, 250, 0.12);
+    border-color: rgb(120, 176, 250);
+}
+
+.pack__name {
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(222, 232, 246);
+}
+
+.pack__size {
+    margin-top: 2px;
+    font-size: 9px;
+    color: rgb(150, 200, 250);
+}
+
+.pack__pitch {
+    margin-top: 5px;
+    font-size: 9px;
+    color: rgb(146, 156, 174);
+    white-space: normal;
+}
+
+.pack__price {
+    margin-top: 6px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(198, 208, 224);
+}
+
+.pack__controls {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 7px;
+}
+
+.pack__step {
+    width: 26px;
+    margin: 0;
+    margin-right: 6px;
+    padding: 0;
+    font-size: 13px;
+    -unity-font-style: bold;
+    background-color: rgba(255, 255, 255, 0.07);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 2px;
+    color: rgb(226, 234, 248);
+}
+
+.pack__count {
+    width: 44px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(226, 234, 248);
+}
+
+.pack__total {
+    margin-top: 5px;
+    font-size: 9px;
+    color: rgb(120, 200, 250);
+}

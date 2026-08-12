@@ -217,7 +217,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 18;
+        public const int CurrentVersion = 19;
 
         public int version = CurrentVersion;
 
@@ -263,6 +263,15 @@ namespace ScalingLaws.Persistence
 
         /// <summary>When the newest model went on sale, for judging a stale line. Added in v18.</summary>
         public int lastReleaseDayIndex;
+
+        /// <summary>Hosting packages held, one count per kind, in catalog order. Added in v19.</summary>
+        public List<int> hostingPackages = new();
+
+        /// <summary>Yesterday's service load, which tomorrow's market reads. Added in v19.</summary>
+        public double qualityDemanded;
+
+        public double qualityCapacity;
+        public double qualityPackagedShare;
 
         public bool hasActiveRun;
         public TrainingRunData activeRun = new();

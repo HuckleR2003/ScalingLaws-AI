@@ -411,6 +411,16 @@ namespace ScalingLaws.Simulation
         /// <summary>What moved the company's standing on the last day simulated.</summary>
         public StandingChange LastStandingChange { get; set; }
 
+        /// <summary>
+        /// How the service held up on the last day simulated.
+        ///
+        /// **Persisted, and it has to be.** It looks derived and it is not: tomorrow's market reads
+        /// it, so it is causal, and a save that dropped it replayed one day differently. That is the
+        /// same mistake as the rival release date and the quantised drift, and it was caught by the
+        /// same replay test.
+        /// </summary>
+        public ServiceQuality LastQuality { get; set; }
+
         /// <summary>Best measured capability the company has live. Projections never count here.</summary>
         public double BestCapability
         {

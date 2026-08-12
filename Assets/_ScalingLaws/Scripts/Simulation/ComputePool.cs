@@ -43,6 +43,75 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public double RentedPetaflops { get; private set; }
 
+        /// <summary>
+        /// Hosting packages held, by kind. Whole units, and they stack.
+        ///
+        /// Kept beside the slider rather than inside it because they are a different contract: the
+        /// slider buys shared petaflops that queue, a package buys reserved capacity that does not.
+        /// Folding them into one number would throw away the only thing that distinguishes them.
+        /// </summary>
+        public Dictionary<HostingPackage, int> Packages { get; } = new();
+
+        public int PackageCount(HostingPackage id) =>
+            Packages.TryGetValue(id, out var held) ? held : 0;
+
+        public void SetPackageCount(HostingPackage id, int units)
+        {
+            var definition = HostingCatalog.Get(id);
+            Packages[id] = Math.Clamp(units, 0, definition.UnitCap);
+        }
+
+        /// <summary>Petaflops the packages add on top of the slider.</summary>
+        public double PackagedPetaflops
+        {
+            get
+            {
+                var total = 0.0;
+                foreach (var definition in HostingCatalog.All)
+                {
+                    total += definition.Petaflops * PackageCount(definition.Id);
+                }
+
+                return total;
+            }
+        }
+
+        /// <summary>
+        /// How much of the packaged capacity is genuinely reserved, weighted by size. Bulk pulls this
+        /// down, which is exactly what it is sold as.
+        /// </summary>
+        public double PackagedQuality
+        {
+            get
+            {
+                var weighted = 0.0;
+                var total = 0.0;
+
+                foreach (var definition in HostingCatalog.All)
+                {
+                    var petaflops = definition.Petaflops * PackageCount(definition.Id);
+                    weighted += petaflops * definition.ReservedQuality;
+                    total += petaflops;
+                }
+
+                return total <= 0.0 ? 0.0 : weighted / total;
+            }
+        }
+
+        public long PackagesDailyCostUsd
+        {
+            get
+            {
+                var total = 0L;
+                foreach (var definition in HostingCatalog.All)
+                {
+                    total += definition.DailyCostUsd * PackageCount(definition.Id);
+                }
+
+                return total;
+            }
+        }
+
         public void SetRentedPetaflops(double petaflops)
         {
             RentedPetaflops = Math.Clamp(SimUnits.Finite(petaflops), 0.0, 5_000_000.0);
@@ -206,6 +275,16 @@ namespace ScalingLaws.Simulation
                 weightedCeiling += rentedPetaflops * rented.UtilizationCeiling;
                 memoryGigabytes += (double)rented.MemoryGigabytes * rentedUnits;
                 cloudRent += rentedPetaflops * market.RentPricePerPetaflopHourUsd * SimUnits.HoursPerDay;
+            }
+
+            // Packaged capacity is rented capacity with a better contract behind it. It joins here so
+            // memory, utilisation and every downstream reader see one fleet rather than two.
+            var packaged = PackagedPetaflops;
+            if (packaged > 0.0)
+            {
+                weightedCeiling += packaged * 0.92;
+                rentedPetaflops += packaged;
+                cloudRent += PackagesDailyCostUsd;
             }
 
             var rawPetaflops = ownedPetaflops + rentedPetaflops;

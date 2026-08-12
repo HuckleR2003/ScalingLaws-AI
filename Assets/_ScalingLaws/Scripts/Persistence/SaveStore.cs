@@ -232,6 +232,15 @@ namespace ScalingLaws.Persistence
             data.ledgerCarriedForward = state.Ledger.CarriedForwardUsd;
             data.fans = state.Fans;
             data.lastReleaseDayIndex = state.LastReleaseDate.DayIndex;
+            data.qualityDemanded = state.LastQuality.Demanded;
+            data.qualityCapacity = state.LastQuality.Capacity;
+            data.qualityPackagedShare = state.LastQuality.PackagedShare;
+
+            data.hostingPackages.Clear();
+            foreach (var definition in HostingCatalog.All)
+            {
+                data.hostingPackages.Add(state.Pool.PackageCount(definition.Id));
+            }
 
             foreach (var shelved in state.Shelf)
             {
@@ -578,6 +587,14 @@ namespace ScalingLaws.Persistence
             state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts, safe.ledgerCarriedForward);
             state.Fans = Math.Max(0.0, SimUnits.Finite(safe.fans));
             state.LastReleaseDate = new GameDate(Math.Max(0, safe.lastReleaseDayIndex));
+            state.LastQuality = new ServiceQuality(
+                safe.qualityDemanded, safe.qualityCapacity, safe.qualityPackagedShare);
+
+            for (var index = 0; index < HostingCatalog.All.Count; index++)
+            {
+                var units = index < safe.hostingPackages.Count ? safe.hostingPackages[index] : 0;
+                state.Pool.SetPackageCount(HostingCatalog.All[index].Id, units);
+            }
 
             foreach (var upgrade in safe.upgrades)
             {

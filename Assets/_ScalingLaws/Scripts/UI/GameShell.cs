@@ -120,7 +120,10 @@ namespace ScalingLaws.UI
             Release,
             Funding,
             Ranking,
-            Feed
+            Feed,
+
+            /// <summary>Reserved. The slot exists so the bar stops moving under the player later.</summary>
+            Marketing
         }
 
         private void OnEnable()
@@ -665,6 +668,7 @@ namespace ScalingLaws.UI
             hud.AddSlot("CAPITAL", Screen.Funding, () => Show(Screen.Funding), "hud_funding");
             hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking");
             hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence");
+            hud.AddSlot("MARKETING", Screen.Marketing, () => Show(Screen.Marketing));
         }
 
         private void ToggleCompanyInfo()
@@ -770,6 +774,10 @@ namespace ScalingLaws.UI
                     break;
                 case Screen.Fleet:
                     contentHost.Add(BuildFleetScreen());
+                    break;
+
+                case Screen.Marketing:
+                    contentHost.Add(BuildMarketingScreen());
                     break;
                 case Screen.Business:
                     contentHost.Add(BuildBusinessScreen());
@@ -1313,6 +1321,210 @@ namespace ScalingLaws.UI
         /// electricity scales with what you own and run, housing is floor space and cooling, upkeep
         /// is the hardware wearing out while it works. A single figure hides which lever moves it.
         /// </summary>
+        /// <summary>
+        /// The two ways to have compute, as one slanted strip across the top of the screen.
+        ///
+        /// Renting is the whole game for now and owning a datacenter is years away for any company,
+        /// so the second half is deliberately shut rather than hidden: a player should be able to see
+        /// that owning exists and what it will take, because that is a goal rather than a secret.
+        /// </summary>
+        private VisualElement BuildHostingSwitch()
+        {
+            var strip = new VisualElement();
+            strip.AddToClassList("hswitch");
+
+            var artLeft = new VisualElement();
+            artLeft.AddToClassList("hswitch__art");
+            artLeft.AddToClassList("hswitch__art--left");
+            strip.Add(artLeft);
+
+            var renting = new Button(() => { }) { text = "RENTING HOSTING" };
+            renting.AddToClassList("hswitch__half");
+            renting.AddToClassList("hswitch__half--on");
+            strip.Add(renting);
+
+            var owning = new Button(() => { }) { text = "YOUR OWN DATACENTER" };
+            owning.AddToClassList("hswitch__half");
+            owning.AddToClassList("hswitch__half--locked");
+            owning.SetEnabled(false);
+            owning.tooltip =
+                "Not yet. Owning silicon needs two released models, eighty million in cash, two "
+                + "hundred million of lifetime revenue and the datacenter programme researched. "
+                + "Renting is the right answer until the cluster is busy enough to justify capital.";
+
+            strip.Add(owning);
+
+            var artRight = new VisualElement();
+            artRight.AddToClassList("hswitch__art");
+            artRight.AddToClassList("hswitch__art--right");
+            strip.Add(artRight);
+
+            return strip;
+        }
+
+        /// <summary>
+        /// What the service is like right now: the load dial, the severity scale, the response time.
+        ///
+        /// This is the readout for the mechanic that decides whether users stay. It sits directly
+        /// under the rent controls because those two things are one decision.
+        /// </summary>
+        private VisualElement BuildServicePanel()
+        {
+            var quality = simulation.State.LastQuality;
+
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+            panel.AddToClassList("service");
+
+            var heading = new Label("SERVICE");
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            var row = new VisualElement();
+            row.AddToClassList("service__row");
+
+            var dialBlock = new VisualElement();
+            dialBlock.AddToClassList("service__dial");
+
+            var gauge = new ServiceGauge();
+            gauge.Set(quality);
+            dialBlock.Add(gauge);
+
+            var percent = new Label(UiFormat.Percent(quality.Utilisation, 0));
+            percent.AddToClassList("service__percent");
+            dialBlock.Add(percent);
+
+            var caption = new Label("Server Usage");
+            caption.AddToClassList("service__caption");
+            dialBlock.Add(caption);
+
+            row.Add(dialBlock);
+
+            var scale = new ServiceScale();
+            scale.Set(quality.Status);
+            row.Add(scale);
+
+            var words = new VisualElement();
+            words.AddToClassList("service__words");
+
+            var response = new Label($"Response Time: {quality.ResponseMilliseconds:N0}ms");
+            response.AddToClassList("service__response");
+            response.style.color = ServiceGauge.ColourFor(quality.Status);
+            words.Add(response);
+
+            var headline = new Label(quality.Headline);
+            headline.AddToClassList("service__headline");
+            words.Add(headline);
+
+            var effect = new Label(quality.Reliability >= 1.0
+                ? "No penalty. The market sees the product at its full strength."
+                : $"Costing you {UiFormat.Percent(1.0 - quality.Reliability)} of how attractive the "
+                    + "product looks to everyone deciding today.");
+
+            effect.AddToClassList("service__effect");
+            effect.EnableInClassList("service__effect--bad", quality.Reliability < 1.0);
+            words.Add(effect);
+
+            row.Add(words);
+            panel.Add(row);
+
+            return panel;
+        }
+
+        /// <summary>
+        /// The three reserved blocks, bought in whole units that stack.
+        ///
+        /// Not a ladder. Standard is the sensible default, the edge tier buys experience rather than
+        /// volume, and bulk buys volume at the cost of experience. A player who takes bulk to chase a
+        /// large audience and then cannot keep it has made a real mistake rather than hit a rule
+        /// nobody told them about, which is why each card states what it does under load.
+        /// </summary>
+        private VisualElement BuildPackagePanel()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var heading = new Label("RESERVED CAPACITY");
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            var row = new VisualElement();
+            row.AddToClassList("pack-row");
+
+            foreach (var definition in HostingCatalog.All)
+            {
+                row.Add(BuildPackageCard(definition));
+            }
+
+            panel.Add(row);
+            return panel;
+        }
+
+        private VisualElement BuildPackageCard(HostingPackageDefinition definition)
+        {
+            var held = simulation.State.Pool.PackageCount(definition.Id);
+
+            var card = new VisualElement();
+            card.AddToClassList("pack");
+            card.EnableInClassList("pack--on", held > 0);
+
+            var name = new Label(definition.DisplayName.ToUpperInvariant());
+            name.AddToClassList("pack__name");
+            card.Add(name);
+
+            var size = new Label(
+                $"{UiFormat.Petaflops(definition.Petaflops)}  "
+                + $"about {UiFormat.Count(HostingCatalog.CoversAccounts(definition.Petaflops))} accounts");
+
+            size.AddToClassList("pack__size");
+            card.Add(size);
+
+            var pitch = new Label(definition.Pitch);
+            pitch.AddToClassList("pack__pitch");
+            card.Add(pitch);
+
+            var price = new Label($"{UiFormat.Money(definition.MonthlyCostUsd)} a month each");
+            price.AddToClassList("pack__price");
+            card.Add(price);
+
+            var controls = new VisualElement();
+            controls.AddToClassList("pack__controls");
+
+            var fewer = new Button(() => SetPackage(definition.Id, held - 1)) { text = "-" };
+            fewer.AddToClassList("pack__step");
+            fewer.SetEnabled(held > 0);
+            controls.Add(fewer);
+
+            var count = new Label(held > 0 ? $"x{held}" : "none");
+            count.AddToClassList("pack__count");
+            controls.Add(count);
+
+            var more = new Button(() => SetPackage(definition.Id, held + 1)) { text = "+" };
+            more.AddToClassList("pack__step");
+            more.SetEnabled(held < definition.UnitCap);
+            controls.Add(more);
+
+            card.Add(controls);
+
+            if (held > 0)
+            {
+                var total = new Label(
+                    $"{UiFormat.Petaflops(definition.Petaflops * held)} for "
+                    + $"{UiFormat.Money(definition.MonthlyCostUsd * held)} a month");
+
+                total.AddToClassList("pack__total");
+                card.Add(total);
+            }
+
+            return card;
+        }
+
+        private void SetPackage(HostingPackage id, int units)
+        {
+            simulation.State.Pool.SetPackageCount(id, units);
+            Show(Screen.Fleet);
+        }
+
         private VisualElement BuildFleetBill(ComputeProfile profile)
         {
             var block = new VisualElement();
@@ -1374,6 +1586,52 @@ namespace ScalingLaws.UI
             return key;
         }
 
+        /// <summary>
+        /// A placeholder that says so.
+        ///
+        /// The slot exists now so the bottom bar stops rearranging itself under the player every time
+        /// a system lands. What it will hold is written down in CLAUDE.md rather than guessed at here,
+        /// and nothing on this screen pretends to work.
+        /// </summary>
+        private VisualElement BuildMarketingScreen()
+        {
+            var page = NewPage("MARKETING",
+                "Not built yet. This screen is a reserved place in the bar, not a feature.");
+
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var heading = new Label("WHAT WILL GO HERE");
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            foreach (var line in new[]
+            {
+                "Campaigns with a duration: one, two, three or six months, or open ended at a worse rate.",
+                "Up to three channels at once, out of press, radio, social, television and billboards.",
+                "Targeting by region and by audience, so a coding model can be sold to developers.",
+                "Creator contracts, humorous or professional, fast and short lived, and able to misfire.",
+                "Community and forums, cheap or free, with real reputation risk and a cooldown.",
+                "Sponsorship behind an advanced section: expensive, long, and about standing rather than users."
+            })
+            {
+                var item = new Label(line);
+                item.AddToClassList("scale-note");
+                panel.Add(item);
+            }
+
+            var rule = new Label(
+                "The rule this system has to obey: marketing buys awareness, never quality. A bad "
+                + "product advertised hard gets tried and abandoned, which costs money twice.");
+
+            rule.AddToClassList("field__hint");
+            rule.style.marginTop = 10;
+            panel.Add(rule);
+
+            page.Add(panel);
+            return page;
+        }
+
         private VisualElement BuildFleetScreen()
         {
             var profile = simulation.Profile;
@@ -1385,6 +1643,9 @@ namespace ScalingLaws.UI
                 + $"{UiFormat.Money(profile.DailyOperatingCostUsd is var c ? (long)c : 0)} a day to run, "
                 + $"{UiFormat.Money((long)profile.DailyDepreciationUsd)} a day in value lost.");
 
+            page.Add(BuildHostingSwitch());
+            page.Add(BuildServicePanel());
+            page.Add(BuildPackagePanel());
             page.Add(BuildFleetBill(profile));
 
             var topRow = new VisualElement();
