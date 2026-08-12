@@ -573,12 +573,15 @@ namespace ScalingLaws.UI
             tiles.Add(DeployTile("KEEP IT LOCAL",
                 "It finishes onto the shelf and stays there. Train on it, upgrade it, release it the "
                 + "day the market looks right. Holding costs nothing but time.",
-                !commercialise, () => { commercialise = false; Reprice(); }));
+                // ShowStage, not Reprice. Reprice recalculates the numbers and leaves the page as it
+                // is, so choosing COMMERCIALISE set the flag and the pricing panels it is supposed to
+                // reveal were never built. The tile looked dead because nothing it did was visible.
+                !commercialise, () => { commercialise = false; ShowStage(); }));
 
             tiles.Add(DeployTile("COMMERCIALISE",
                 "It ships the day it finishes. You decide now what a free account gets and what a "
                 + "paid one costs, and both of those decide how many people ever try it.",
-                commercialise, () => { commercialise = true; Reprice(); }));
+                commercialise, () => { commercialise = true; ShowStage(); }));
 
             page.Add(tiles);
 

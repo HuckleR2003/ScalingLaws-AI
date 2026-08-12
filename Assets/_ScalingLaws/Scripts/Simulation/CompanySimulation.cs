@@ -2026,7 +2026,8 @@ namespace ScalingLaws.Simulation
                 State.Date.DayIndex - State.LastReleaseDate.DayIndex,
                 State.Monetization.PaidPriceMultiplier,
                 marketing,
-                State.Founder.ReputationGainMultiplier);
+                State.Founder.ReputationGainMultiplier,
+                State.Reputation);
 
             State.LastStandingChange = change;
             State.Reputation += change.Total;

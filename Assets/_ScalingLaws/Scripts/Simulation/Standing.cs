@@ -85,8 +85,19 @@ namespace ScalingLaws.Simulation
     /// </summary>
     public static class Standing
     {
-        /// <summary>Reputation lost every day to nothing in particular.</summary>
-        public const double DailyDrift = 0.0006;
+        /// <summary>
+        /// The share of its standing a company loses each day to being forgotten.
+        ///
+        /// A fraction, not a fixed amount, and the difference decides whether the opening of the game
+        /// is playable. A flat 0.0006 a day took a new company from its starting five percent to zero
+        /// in eighty two days, which is less time than the first model takes to train: the player
+        /// arrived at their first release with no standing and no possible way to have kept any.
+        /// Nobody can forget a company they never heard of.
+        ///
+        /// At forty percent standing this costs the same 0.0006 a day the flat rate did, so the
+        /// middle of the curve is unchanged and only the ends move.
+        /// </summary>
+        public const double DailyDriftRate = 0.0015;
 
         /// <summary>Full marks for serving a large share of the market well.</summary>
         public const double ServiceGain = 0.0012;
@@ -123,7 +134,12 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public static StandingChange Today(double marketShare, double servedBillions,
             double freeTierGenerosity, int daysSinceLastRelease, double priceMultiplier,
-            double marketingIntensity, double reputationGainMultiplier)
+            double marketingIntensity, double reputationGainMultiplier,
+
+            // Defaulted to the middle of the range so a caller that only wants to look at one driver
+            // does not have to state a standing it is not testing. The simulation always passes the
+            // real one.
+            double currentReputation = 0.4)
         {
             var service = servedBillions > 0.0
                 ? ServiceGain * Math.Clamp(marketShare * 10.0, 0.0, 1.0)
@@ -149,7 +165,7 @@ namespace ScalingLaws.Simulation
             var lift = Math.Max(0.0, SimUnits.Finite(reputationGainMultiplier, 1.0));
 
             return new StandingChange(service * lift, free * lift, age, price,
-                marketing * lift, -DailyDrift);
+                marketing * lift, -DailyDriftRate * Math.Clamp(currentReputation, 0.0, 1.0));
         }
 
         /// <summary>

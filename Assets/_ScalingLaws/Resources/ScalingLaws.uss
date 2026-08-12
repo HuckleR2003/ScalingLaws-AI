@@ -3646,3 +3646,61 @@
     font-size: 10px;
     color: rgb(214, 200, 206);
 }
+
+/* The header doubles as the fold control, and the chart is clipped so a losing
+   month cannot draw over the money underneath it. */
+
+.mb__fold {
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.mb__fold:hover > .mb__title {
+    color: rgb(252, 214, 58);
+}
+
+.mb__chevron {
+    margin-left: 7px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.mb-chart {
+    overflow: hidden;
+}
+
+/* The training strip, closer to the style the author liked: a thin warm rule,
+   the fill behind the words, and the day count where the eye already is. */
+
+.mb__training {
+    height: 58px;
+    justify-content: center;
+    padding-left: 14px;
+    padding-right: 14px;
+    background-color: rgb(22, 12, 18);
+    border-top-width: 1px;
+    border-top-color: rgb(252, 214, 58);
+}
+
+.mb__training-fill {
+    background-color: rgb(126, 16, 52);
+}
+
+.mb__training-caption {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: rgb(252, 214, 58);
+}
+
+.mb__training-days {
+    margin-top: 3px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(226, 208, 214);
+}

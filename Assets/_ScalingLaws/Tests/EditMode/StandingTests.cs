@@ -23,7 +23,7 @@ namespace ScalingLaws.Tests.EditMode
         private static StandingChange Neutral() => Standing.Today(
             marketShare: 0.0, servedBillions: 0.0, freeTierGenerosity: 0.0,
             daysSinceLastRelease: 0, priceMultiplier: 1.0, marketingIntensity: 0.0,
-            reputationGainMultiplier: 1.0);
+            reputationGainMultiplier: 1.0, currentReputation: 0.4);
 
         [Test]
         public void ACompanyDoingNothingSlowlyFades()
@@ -34,15 +34,50 @@ namespace ScalingLaws.Tests.EditMode
                 "Standing has to cost something to keep. Otherwise a company that stops trying keeps "
                 + "the reputation it earned five years ago forever.");
 
-            Assert.AreEqual(-Standing.DailyDrift, change.Total, 1e-12,
-                "With every driver at rest the only movement is the drift.");
+            Assert.AreEqual(-Standing.DailyDriftRate * 0.4, change.Total, 1e-12,
+                "With every driver at rest the only movement is the drift, and the drift is a share "
+                + "of what the company has rather than a fixed amount.");
+        }
+
+        /// <summary>
+        /// The opening of the game has to be survivable.
+        ///
+        /// A flat drift took a new company from its starting five percent to nothing in eighty two
+        /// days, which is less time than a first model takes to train. The player reached their first
+        /// release with no standing and no way to have kept any. Nobody forgets a company they never
+        /// heard of.
+        /// </summary>
+        [Test]
+        public void AnUnknownCompanyIsNotForgottenFasterThanItCanShip()
+        {
+            var reputation = 0.05;
+
+            for (var day = 0; day < 200; day++)
+            {
+                reputation += Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 0.0, 1.0, reputation).Total;
+                reputation = System.Math.Clamp(reputation, 0.0, 1.0);
+            }
+
+            Assert.Greater(reputation, 0.0,
+                "Two hundred days of doing nothing wiped out a new company's standing entirely, "
+                + "before it could possibly have shipped anything.");
+        }
+
+        [Test]
+        public void AWellKnownCompanyIsForgottenFasterThanAnUnknownOne()
+        {
+            var famous = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 0.0, 1.0, 0.9).Drift;
+            var obscure = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 0.0, 1.0, 0.05).Drift;
+
+            Assert.Less(famous, obscure,
+                "There is more to lose at the top, which is what makes standing worth defending.");
         }
 
         [Test]
         public void ServingPeopleWellIsTheStrongestThingACompanyCanDo()
         {
-            var serving = Standing.Today(0.5, 100.0, 0.0, 0, 1.0, 0.0, 1.0);
-            var marketing = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 1.0, 1.0);
+            var serving = Standing.Today(0.5, 100.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
+            var marketing = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 1.0, 1.0, 0.4);
 
             Assert.Greater(serving.Service, 0.0);
             Assert.Greater(serving.Service, marketing.Marketing * 3.0,
@@ -53,8 +88,8 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void AGenerousFreeTierBuysGoodwillAndAMeanOneDoesNot()
         {
-            var mean = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 0.0, 1.0);
-            var generous = Standing.Today(0.0, 0.0, 1.0, 0, 1.0, 0.0, 1.0);
+            var mean = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
+            var generous = Standing.Today(0.0, 0.0, 1.0, 0, 1.0, 0.0, 1.0, 0.4);
 
             Assert.AreEqual(0.0, mean.FreeTier, 1e-12);
             Assert.Greater(generous.FreeTier, 0.0);
@@ -64,9 +99,9 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ALineNobodyRefreshesDragsTheCompanyDown()
         {
-            var fresh = Standing.Today(0.0, 0.0, 0.0, 30, 1.0, 0.0, 1.0);
-            var ageing = Standing.Today(0.0, 0.0, 0.0, Standing.FreshDays + 200, 1.0, 0.0, 1.0);
-            var abandoned = Standing.Today(0.0, 0.0, 0.0, Standing.StaleDays + 500, 1.0, 0.0, 1.0);
+            var fresh = Standing.Today(0.0, 0.0, 0.0, 30, 1.0, 0.0, 1.0, 0.4);
+            var ageing = Standing.Today(0.0, 0.0, 0.0, Standing.FreshDays + 200, 1.0, 0.0, 1.0, 0.4);
+            var abandoned = Standing.Today(0.0, 0.0, 0.0, Standing.StaleDays + 500, 1.0, 0.0, 1.0, 0.4);
 
             Assert.AreEqual(0.0, fresh.ModelAge, 1e-12, "Eight months is not yet stale.");
             Assert.Less(ageing.ModelAge, 0.0);
@@ -79,9 +114,9 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void PriceCutsAreLikedAndPriceRisesAreResented()
         {
-            var par = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 0.0, 1.0);
-            var cheap = Standing.Today(0.0, 0.0, 0.0, 0, 0.5, 0.0, 1.0);
-            var dear = Standing.Today(0.0, 0.0, 0.0, 0, 2.0, 0.0, 1.0);
+            var par = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
+            var cheap = Standing.Today(0.0, 0.0, 0.0, 0, 0.5, 0.0, 1.0, 0.4);
+            var dear = Standing.Today(0.0, 0.0, 0.0, 0, 2.0, 0.0, 1.0, 0.4);
 
             Assert.AreEqual(0.0, par.Price, 1e-12, "A price at par is not an opinion either way.");
             Assert.Greater(cheap.Price, 0.0);
@@ -99,7 +134,7 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ACharismaticFounderCannotSlowDownDecay()
         {
-            var plain = Standing.Today(0.4, 50.0, 1.0, Standing.StaleDays, 1.0, 1.0, 1.0);
+            var plain = Standing.Today(0.4, 50.0, 1.0, Standing.StaleDays, 1.0, 1.0, 1.0, 0.4);
             var charming = Standing.Today(0.4, 50.0, 1.0, Standing.StaleDays, 1.0, 1.0, 2.0);
 
             Assert.Greater(charming.Service, plain.Service);
@@ -110,10 +145,10 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void TheHeadlineNamesWhicheverDriverIsActuallyDoingTheMost()
         {
-            var stale = Standing.Today(0.0, 0.0, 0.0, Standing.StaleDays, 1.0, 0.0, 1.0);
+            var stale = Standing.Today(0.0, 0.0, 0.0, Standing.StaleDays, 1.0, 0.0, 1.0, 0.4);
             StringAssert.Contains("ageing", stale.Headline);
 
-            var serving = Standing.Today(1.0, 100.0, 0.0, 0, 1.0, 0.0, 1.0);
+            var serving = Standing.Today(1.0, 100.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
             StringAssert.Contains("serving", serving.Headline);
 
             Assert.AreEqual("fading quietly", Neutral().Headline,

@@ -46,7 +46,10 @@ namespace ScalingLaws.UI
             }
 
             var painter = context.painter2D;
-            var baseline = rect.height - 6f;
+
+            // Two thirds down, not at the very bottom. A losing month is drawn below the line and at
+            // six pixels of clearance those bars ran out of the chart and over the money underneath.
+            var baseline = rect.height * 0.66f;
 
             painter.strokeColor = Rule;
             painter.lineWidth = 1f;
@@ -71,7 +74,9 @@ namespace ScalingLaws.UI
 
             for (var index = 0; index < values.Length; index++)
             {
-                var height = (float)(Math.Abs(values[index]) / (double)extent) * (baseline - 4f);
+                // Scaled to whichever side has less room, so neither direction can escape the box.
+                var room = Math.Min(baseline - 3f, rect.height - baseline - 3f);
+                var height = (float)(Math.Abs(values[index]) / (double)extent) * room;
                 if (height < 2f)
                 {
                     height = 2f;
@@ -125,6 +130,15 @@ namespace ScalingLaws.UI
 
         private readonly VisualElement trainingFill = new();
         private readonly Label trainingDays = new();
+        private readonly Label chevron = new();
+
+        /// <summary>Folded away by the player, or folded by default because there is nothing to show.</summary>
+        private bool collapsed;
+
+        private bool hidden;
+
+        /// <summary>The player asked to see the banner even though nothing has shipped.</summary>
+        private bool openedEmpty;
 
         public ModelBanner(Func<ProductStanding> product, Func<TrainingRun> activeRun,
             Func<IReadOnlyList<long>> dailySeries, Action openManagement)
@@ -139,8 +153,29 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("mb__head");
 
+            // The title is the collapse control. With no product the banner is one maroon strip and
+            // nothing else, and a player running several lines can fold any of them away rather than
+            // losing the corner to a stack of panels.
+            var fold = new Button(() =>
+            {
+                if (!product().Exists)
+                {
+                    openedEmpty = !openedEmpty;
+                }
+                else
+                {
+                    collapsed = !collapsed;
+                }
+
+                Refresh();
+            });
+            fold.AddToClassList("mb__fold");
             title.AddToClassList("mb__title");
-            head.Add(title);
+            fold.Add(title);
+
+            chevron.AddToClassList("mb__chevron");
+            fold.Add(chevron);
+            head.Add(fold);
 
             var divider = new Label("|");
             divider.AddToClassList("mb__divider");
@@ -243,9 +278,21 @@ namespace ScalingLaws.UI
             return training;
         }
 
+        /// <summary>Hides the banner entirely, for screens that need the whole window.</summary>
+        public void SetHidden(bool value)
+        {
+            hidden = value;
+            Root.style.display = hidden ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
         /// <summary>Pushed every frame with the clock, so a run visibly advances.</summary>
         public void Refresh()
         {
+            if (hidden)
+            {
+                return;
+            }
+
             var run = activeRun();
 
             if (run != null)
@@ -255,11 +302,22 @@ namespace ScalingLaws.UI
             }
 
             training.style.display = DisplayStyle.None;
-            body.style.display = DisplayStyle.Flex;
-            manage.style.display = DisplayStyle.Flex;
 
             var standing = product();
             title.text = standing.Name.ToUpperInvariant();
+
+            // Nothing on sale means nothing to report, so the banner is just its own header until
+            // there is. The player can still open it to see the month's money.
+            var shut = collapsed || !standing.Exists && !openedEmpty;
+
+            body.style.display = shut ? DisplayStyle.None : DisplayStyle.Flex;
+            manage.style.display = shut ? DisplayStyle.None : DisplayStyle.Flex;
+            chevron.text = shut ? "+" : "-";
+
+            if (shut)
+            {
+                return;
+            }
 
             happinessFill.style.width = Length.Percent((float)(standing.Happiness * 100.0));
             topicalityFill.style.width = Length.Percent((float)(standing.Topicality * 100.0));

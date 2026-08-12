@@ -31,7 +31,16 @@ namespace ScalingLaws.UI
             { ResearchNodeId.CodingModels, "research_coding" },
             { ResearchNodeId.AutomationModels, "research_automation" },
             { ResearchNodeId.AgenticWorkstation, "research_agentic" },
-            { ResearchNodeId.ModelSeries, "research_series" }
+            { ResearchNodeId.ModelSeries, "research_series" },
+            { ResearchNodeId.ScalingLaws, "research_scalinglaws" },
+            { ResearchNodeId.MixtureOfExperts, "research_mixtureofexperts" },
+            { ResearchNodeId.ContextWindowExpansion, "research_context" },
+            { ResearchNodeId.LicensedArchives, "research_licensed" },
+            { ResearchNodeId.AutonomousAgents, "research_autonomousagents" },
+            { ResearchNodeId.SyntheticDataGeneration, "research_syntheticdata" },
+            { ResearchNodeId.ReasoningModels, "research_reasoning" },
+            { ResearchNodeId.LongContextMixtures, "research_longcontext" },
+            { ResearchNodeId.DatacenterProgramme, "research_datacenter" }
         };
 
         private static readonly Dictionary<ResearchNodeId, Texture2D> Loaded = new();

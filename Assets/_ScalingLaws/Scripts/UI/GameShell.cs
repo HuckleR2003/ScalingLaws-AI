@@ -325,7 +325,6 @@ namespace ScalingLaws.UI
                 () => Show(Screen.Release));
 
             root.Add(modelBanner.Root);
-            root.Add(BuildTrainingBanner());
 
             RefreshChrome();
         }
@@ -913,7 +912,10 @@ namespace ScalingLaws.UI
             var icon = new VisualElement();
             icon.AddToClassList("tree-pip__icon");
 
-            var art = PageArt.Icon(ResearchIconFor(node.Id));
+            // One icon lookup, not two. ResearchIconFor guessed at names like research_code and
+            // research_chat that were never drawn, so every node fell through to the empty badge
+            // while the real files sat in Resources/Research under their catalogued names.
+            var art = ResearchIcons.Get(node.Id);
             if (art != null)
             {
                 icon.style.backgroundImage = new StyleBackground(art);
@@ -2179,6 +2181,9 @@ namespace ScalingLaws.UI
             cashLabel.text = UiFormat.Money(state.CashUsd);
             RefreshCashArrows(state);
             RefreshStanding(state);
+            // Only on the site screen. It sat on top of the model creator and the research tree,
+            // which is the same mistake the counter it replaced made.
+            modelBanner?.SetHidden(current != Screen.Site);
             modelBanner?.Refresh();
             valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
             companyLabel.text = state.CompanyName;
@@ -2189,7 +2194,6 @@ namespace ScalingLaws.UI
 
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
 
-            RefreshTrainingBanner();
         }
     }
 }
