@@ -161,3 +161,68 @@ agreeing, never for the size of the gap at the end.
 
 `AYearFourSaveRunsIdenticallyThroughYearFive` passes, unchanged. Full EditMode suite: **214/214**.
 Continuous and restored campaigns match on every compared field through year five.
+
+
+## Measured economy, 2026-08-12
+
+Two scripted players, fourteen years, seed 4242. Numbers from the ledger, not from estimates.
+
+### The coaster: rents 150 PF once, never changes it, ships a small model every eight months
+
+| year | cash | revenue | expenses | users | price $/M |
+|---|---|---|---|---|---|
+| 2022 | 109M | 135.1M | 38.7M | 5 235 278 | 8.99 |
+| 2023 | 231M | 167.0M | 45.0M | 3 647 709 | 4.04 |
+| 2024 | 276M | 67.6M | 22.0M | 984 194 | 1.82 |
+| 2029 | 283M | 0.7M | 1.4M | 335 254 | 0.04 |
+| 2035 | 278M | 0.16M | 1.0M | 11 677 | 0.04 |
+
+### The keeper-up: scales rented capacity with cash, doubles model size each generation
+
+| year | cash | revenue | expenses | users | price $/M |
+|---|---|---|---|---|---|
+| 2022 | 56.8M | 120.4M | 75.8M | 4 189 623 | 8.99 |
+| 2023 | 72.6M | 169.9M | 154.1M | 7 676 254 | 4.04 |
+| 2024 | 74.9M | 152.5M | 149.9M | 2 435 832 | 1.82 |
+| 2025 | 29.8M | 8.4M | 53.5M | 104 078 | 0.82 |
+| 2030 | 4.7M | 0.002M | 1.1M | 454 | 0.04 |
+| 2035 | **-2.8M** | 0 | 3.1M | 2 | 0.04 |
+
+### What these say
+
+**The money is earned in 2022 to 2024 and only then.** Three years produce 90 percent of all revenue
+either player ever sees. Everything after is decline.
+
+**The coaster's fortune is an artefact of never spending.** Reporting "270M in cash with 12 000
+users" as a single state was misleading: the cash was earned when the company held five million
+users, and it simply sat there. `CLAUDE.md` claims a company that ships one model and coasts is
+bankrupt inside three years. Measured, the coaster ends with 278M. **The claim is inverted.**
+
+**The player who keeps up goes bankrupt instead.** That is the opposite of the intended pressure:
+effort is punished and idleness is rewarded, because spending on capacity buys revenue that the
+price decay takes back faster than the capacity can be released.
+
+**Revenue per user falls about half every year.** Token price decays at roughly x0.44 a year
+(`PriceDecayPerYear` 0.80, halving every 10.4 months) while `IntensityGrowthPerYear` runs 1.18 to
+1.32. The product is x0.56 a year, so holding the same users halves the business annually. Reaching
+`PriceFloorPerMillionTokensUsd` of 0.04 in 2029 ends the economy entirely: a company serving a
+million people earns 1.7M a year.
+
+**2025 is a cliff, not a slope.** Revenue drops 18-fold in one year, users 23-fold. A player cannot
+react to that inside one release cycle, so it reads as a trapdoor rather than as competition.
+
+**There is no floor to recover from.** Less revenue buys less capacity, which lowers capability,
+which loses users, which lowers revenue. Nothing in the game interrupts the spiral.
+
+### What has NOT been changed
+
+Nothing above is fixed yet. These are compounding constants at the centre of the economy, and
+`PriceDecayPerYear`, `IntensityGrowthPerYear` and `PriceFloorPerMillionTokensUsd` each move every
+other number in the game. Changing one on the strength of two scripted runs, without a sweep across
+seeds and strategies, is how a balance pass makes things quietly worse. The sweep is the next job.
+
+The two levers are not interchangeable and picking between them is a design decision, not a tuning
+one: raising intensity growth holds revenue per user but shrinks the headcount the player sees,
+because users are the token pool divided by intensity. Raising the price floor holds the late
+economy without touching user counts. They answer different questions about what the late game is
+supposed to be about.
