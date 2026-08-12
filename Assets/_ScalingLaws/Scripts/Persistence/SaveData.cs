@@ -217,7 +217,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 16;
+        public const int CurrentVersion = 17;
 
         public int version = CurrentVersion;
 
@@ -254,6 +254,9 @@ namespace ScalingLaws.Persistence
         public List<int> ledgerMonths = new();
 
         public List<long> ledgerAmounts = new();
+
+        /// <summary>Net cash from months dropped off the history. Added in v17.</summary>
+        public long ledgerCarriedForward;
 
         public bool hasActiveRun;
         public TrainingRunData activeRun = new();

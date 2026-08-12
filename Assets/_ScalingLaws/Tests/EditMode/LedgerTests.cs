@@ -37,11 +37,7 @@ namespace ScalingLaws.Tests.EditMode
             var simulation = RunFor(900);
             var state = simulation.State;
 
-            var reconstructed = CompanyState.StartingCashUsd;
-            foreach (var key in state.Ledger.RecordedMonths())
-            {
-                reconstructed += state.Ledger.MonthCashFlow(key);
-            }
+            var reconstructed = CompanyState.StartingCashUsd + state.Ledger.TotalCashFlowUsd;
 
             Assert.AreEqual(state.CashUsd, reconstructed,
                 $"The bank says {state.CashUsd:N0} and the books say {reconstructed:N0}. Money moved "

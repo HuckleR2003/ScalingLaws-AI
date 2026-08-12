@@ -136,6 +136,10 @@ namespace ScalingLaws.Simulation
             var memoryGigabytes = 0.0;
             var powerDraw = 0.0;
             var operatingCost = 0.0;
+            var cloudRent = 0.0;
+            var electricity = 0.0;
+            var housing = 0.0;
+            var maintenance = 0.0;
             var depreciation = 0.0;
             var residualValue = 0L;
 
@@ -171,9 +175,11 @@ namespace ScalingLaws.Simulation
                 var assetPower = generation.PowerKilowatts * asset.Units;
                 powerDraw += assetPower;
 
-                operatingCost += assetPower * SimUnits.HoursPerDay * tier.PowerCostPerKilowattHourUsd;
-                operatingCost += assetPower * tier.HousingCostPerKilowattMonthUsd / DaysPerMonth;
-                operatingCost += asset.TotalPurchasePriceUsd * tier.MaintenanceRatePerYear / DaysPerYear;
+                // Kept as four running totals rather than one. The sum is identical; what changes is
+                // that the books can now say which bill it was.
+                electricity += assetPower * SimUnits.HoursPerDay * tier.PowerCostPerKilowattHourUsd;
+                housing += assetPower * tier.HousingCostPerKilowattMonthUsd / DaysPerMonth;
+                maintenance += asset.TotalPurchasePriceUsd * tier.MaintenanceRatePerYear / DaysPerYear;
 
                 if (generation.Class == HardwareClass.Accelerator)
                 {
@@ -199,7 +205,7 @@ namespace ScalingLaws.Simulation
                 rentedUnits = (int)Math.Ceiling(RentedPetaflops / rented.PetaflopsPerUnit);
                 weightedCeiling += rentedPetaflops * rented.UtilizationCeiling;
                 memoryGigabytes += (double)rented.MemoryGigabytes * rentedUnits;
-                operatingCost += rentedPetaflops * market.RentPricePerPetaflopHourUsd * SimUnits.HoursPerDay;
+                cloudRent += rentedPetaflops * market.RentPricePerPetaflopHourUsd * SimUnits.HoursPerDay;
             }
 
             var rawPetaflops = ownedPetaflops + rentedPetaflops;
@@ -211,6 +217,9 @@ namespace ScalingLaws.Simulation
             // Starving only costs the owned half. Rented capacity arrives with its hosts, memory
             // and fabric already attached, which is part of what the hourly rate pays for.
             var effectivePetaflops = (ownedPetaflops * balance + rentedPetaflops) * ceiling * scaling;
+
+            var bill = new FleetBill(cloudRent, electricity, housing, maintenance);
+            operatingCost += bill.TotalUsd;
 
             return new ComputeProfile(
                 totalAccelerators,
@@ -226,7 +235,8 @@ namespace ScalingLaws.Simulation
                 PowerCapacityKilowatts(),
                 operatingCost,
                 depreciation,
-                residualValue);
+                residualValue,
+                bill);
         }
 
         /// <summary>

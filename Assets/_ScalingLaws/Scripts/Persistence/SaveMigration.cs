@@ -117,6 +117,7 @@ namespace ScalingLaws.Persistence
                     13 => UpgradeV13ToV14(current),
                     14 => UpgradeV14ToV15(current),
                     15 => UpgradeV15ToV16(current),
+                    16 => UpgradeV16ToV17(current),
                     _ => current
                 };
             }
@@ -640,6 +641,33 @@ namespace ScalingLaws.Persistence
                 "v15 to v16: the financial report starts empty. An older save recorded lifetime totals "
                 + "but never why the money moved, so its history cannot be rebuilt without inventing "
                 + "months that never happened.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v16 to v17: the carried forward total.
+        ///
+        /// A v16 file kept at most sixty months and nothing else, so once a game passed five years
+        /// the books could no longer explain the balance. There is no way to recover what the dropped
+        /// months contained, so the carried total starts at zero: the report will under-explain an old
+        /// save by whatever aged out before it was loaded, and it says so rather than inventing a
+        /// figure that would make the arithmetic look right.
+        /// </summary>
+        public static SaveData UpgradeV16ToV17(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 17;
+            data.ledgerCarriedForward = 0L;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v16 to v17: months older than five years are now carried forward as a total. An "
+                + "older save cannot say what its dropped months held, so the carried figure starts "
+                + "at zero and the report explains everything from here on.");
 
             return data;
         }

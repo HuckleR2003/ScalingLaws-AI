@@ -113,9 +113,27 @@ namespace ScalingLaws.Simulation
 
             var freeServing = (long)Math.Round(servingCost * freeShare);
 
+            // The four bills, scaled by the same multipliers the charged total already carries, and
+            // the last one taken as the remainder so the parts add up to the whole exactly. Rounding
+            // four numbers independently and hoping they match the fifth is how a report drifts a few
+            // cents a day and a few thousand a decade.
+            var bill = profile.Bill;
+            var billScale = bill.TotalUsd > 0.0 ? servingCost / bill.TotalUsd : 0.0;
+
+            var rent = (long)Math.Round(bill.CloudRentUsd * billScale);
+            var power = (long)Math.Round(bill.ElectricityUsd * billScale);
+            var housing = (long)Math.Round(bill.HousingUsd * billScale);
+            var upkeep = servingCost - rent - power - housing;
+
             State.PostCash(LedgerLine.Subscriptions, revenue);
-            State.PostCash(LedgerLine.ServingFree, freeServing);
-            State.PostCash(LedgerLine.ServingPaid, servingCost - freeServing);
+            State.PostCash(LedgerLine.CloudRent, rent);
+            State.PostCash(LedgerLine.Electricity, power);
+            State.PostCash(LedgerLine.Housing, housing);
+            State.PostCash(LedgerLine.Maintenance, upkeep);
+
+            // A memo rather than a payment. The free tier sends no invoice of its own, it eats a
+            // share of the fleet bill already counted above.
+            State.PostNonCash(LedgerLine.ServingFree, freeServing);
             State.PostCash(LedgerLine.Salaries, salaryCost);
             State.PostCash(LedgerLine.Marketing, marketingCost);
             State.PostCash(LedgerLine.Intelligence, intelCost);

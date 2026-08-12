@@ -1220,6 +1220,75 @@ namespace ScalingLaws.UI
         /// The fleet. Rented capacity on top, owned batches below with what each one is worth now
         /// against what it cost, which is the number the whole hardware design exists to show.
         /// </summary>
+        /// <summary>
+        /// What the fleet costs, and what the cost is made of.
+        ///
+        /// The screen used to say one number a day to run. Four separate bills go into that number
+        /// and the player pays them for different reasons: rent stops the day you release capacity,
+        /// electricity scales with what you own and run, housing is floor space and cooling, upkeep
+        /// is the hardware wearing out while it works. A single figure hides which lever moves it.
+        /// </summary>
+        private VisualElement BuildFleetBill(ComputeProfile profile)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("panel");
+            block.AddToClassList("fleet-bill");
+
+            var head = new VisualElement();
+            head.AddToClassList("fleet-bill__head");
+
+            var heading = new Label("WHAT THE DAY COSTS");
+            heading.AddToClassList("panel__heading");
+            heading.style.marginBottom = 0;
+            head.Add(heading);
+
+            var total = new Label(UiFormat.Money((long)profile.Bill.TotalUsd) + " a day");
+            total.AddToClassList("fleet-bill__total");
+            head.Add(total);
+
+            block.Add(head);
+
+            var bar = new FleetBillBar();
+            bar.Set(profile.Bill);
+            block.Add(bar);
+
+            var legend = new VisualElement();
+            legend.AddToClassList("fleet-bill__legend");
+            legend.Add(BillKey("CLOUD RENT", profile.Bill.CloudRentUsd, FleetBillBar.RentColour));
+            legend.Add(BillKey("ELECTRICITY", profile.Bill.ElectricityUsd, FleetBillBar.PowerColour));
+            legend.Add(BillKey("HOUSING", profile.Bill.HousingUsd, FleetBillBar.HousingColour));
+            legend.Add(BillKey("UPKEEP", profile.Bill.MaintenanceUsd, FleetBillBar.UpkeepColour));
+            block.Add(legend);
+
+            // Power is the one that can stop the fleet rather than only cost money.
+            var power = new Label(
+                $"Drawing {profile.PowerDrawKilowatts:N0} kW of {profile.PowerCapacityKilowatts:N0} kW available."
+                + (profile.IsOverPowerBudget ? "  OVER BUDGET: capacity is being wasted." : string.Empty));
+
+            power.AddToClassList("fleet-bill__power");
+            power.EnableInClassList("fleet-bill__power--over", profile.IsOverPowerBudget);
+            block.Add(power);
+
+            return block;
+        }
+
+        private static VisualElement BillKey(string name, double amount, Color colour)
+        {
+            var key = new VisualElement();
+            key.AddToClassList("fleet-key");
+
+            var swatch = new VisualElement();
+            swatch.AddToClassList("fleet-key__swatch");
+            swatch.style.backgroundColor = colour;
+            key.Add(swatch);
+
+            var label = new Label($"{name}  {UiFormat.Money((long)amount)}");
+            label.AddToClassList("fleet-key__label");
+            key.Add(label);
+
+            return key;
+        }
+
         private VisualElement BuildFleetScreen()
         {
             var profile = simulation.Profile;
@@ -1230,6 +1299,11 @@ namespace ScalingLaws.UI
                 + $"{UiFormat.Petaflops(profile.EffectivePetaflops)} usable. "
                 + $"{UiFormat.Money(profile.DailyOperatingCostUsd is var c ? (long)c : 0)} a day to run, "
                 + $"{UiFormat.Money((long)profile.DailyDepreciationUsd)} a day in value lost.");
+
+            page.Add(BuildFleetBill(profile));
+
+            var topRow = new VisualElement();
+            topRow.AddToClassList("panel-row");
 
             var rental = new VisualElement();
             rental.AddToClassList("panel");
@@ -1258,7 +1332,7 @@ namespace ScalingLaws.UI
             rental.Add(Hint(
                 "Contracted in petaflops, not boxes, so the bill does not move when the clouds change "
                 + "generation. It never ages and it bills every day it is held."));
-            page.Add(rental);
+            topRow.Add(rental);
 
             var ladder = new VisualElement();
             ladder.AddToClassList("panel");
@@ -1286,7 +1360,11 @@ namespace ScalingLaws.UI
                 ladder.Add(row);
             }
 
-            page.Add(ladder);
+            topRow.Add(ladder);
+            page.Add(topRow);
+
+            var bottomRow = new VisualElement();
+            bottomRow.AddToClassList("panel-row");
 
             var owned = new VisualElement();
             owned.AddToClassList("panel");
@@ -1341,7 +1419,7 @@ namespace ScalingLaws.UI
                 }
             }
 
-            page.Add(owned);
+            bottomRow.Add(owned);
 
             var buy = new VisualElement();
             buy.AddToClassList("panel");
@@ -1362,7 +1440,8 @@ namespace ScalingLaws.UI
                 buyGrid.Add(BuildHardwareCard(generation, tier));
             }
 
-            page.Add(buy);
+            bottomRow.Add(buy);
+            page.Add(bottomRow);
             return page;
         }
 

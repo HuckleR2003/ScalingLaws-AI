@@ -229,6 +229,7 @@ namespace ScalingLaws.Persistence
             }
 
             state.Ledger.Capture(data.ledgerMonths, data.ledgerAmounts);
+            data.ledgerCarriedForward = state.Ledger.CarriedForwardUsd;
 
             foreach (var shelved in state.Shelf)
             {
@@ -572,7 +573,7 @@ namespace ScalingLaws.Persistence
                     shelved.family));
             }
 
-            state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts);
+            state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts, safe.ledgerCarriedForward);
 
             foreach (var upgrade in safe.upgrades)
             {

@@ -23,8 +23,10 @@ namespace ScalingLaws.Simulation
             double powerCapacityKilowatts,
             double dailyOperatingCostUsd,
             double dailyDepreciationUsd,
-            long residualValueUsd)
+            long residualValueUsd,
+            FleetBill bill = default)
         {
+            Bill = bill;
             AcceleratorCount = Math.Max(0, acceleratorCount);
             RentedAcceleratorCount = Math.Max(0, rentedAcceleratorCount);
             AcceleratorsInTransit = Math.Max(0, acceleratorsInTransit);
@@ -70,6 +72,16 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Value the owned fleet loses today. Not cash, but it is what makes early buying expensive.</summary>
         public double DailyDepreciationUsd { get; }
+
+        /// <summary>
+        /// What the daily bill is actually made of.
+        ///
+        /// The four amounts were already computed separately in <see cref="ComputePool"/> and then
+        /// added together, so the books could only ever say "operating cost". Rented capacity was
+        /// being reported to the player as the cost of serving paying users, on a screen where they
+        /// had no users at all.
+        /// </summary>
+        public FleetBill Bill { get; }
 
         /// <summary>What the owned fleet would fetch if sold today.</summary>
         public long ResidualValueUsd { get; }

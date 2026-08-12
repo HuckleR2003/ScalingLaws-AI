@@ -3312,3 +3312,102 @@
 .effect-figure__track {
     margin-top: 4px;
 }
+
+/* ---------------------------------------------------------------------------
+   The demographic table: narrower first column and a scroller.
+
+   MODEL TYPE was taking forty percent for two short words, which pushed LEADER
+   off the right edge, and the list ran past the bottom of the panel with no way
+   to reach the rest.
+   --------------------------------------------------------------------------- */
+
+.demo-row__name {
+    width: 20%;
+}
+
+.demo-row--header > .demo-row__name {
+    margin-left: 13px;
+}
+
+.demo-row__users {
+    width: 24%;
+}
+
+.demo-row__share {
+    width: 18%;
+}
+
+.demo-row__leader {
+    width: 24%;
+}
+
+.demographics__rows {
+    max-height: 118px;
+    overflow: scroll;
+}
+
+/* ---------------------------------------------------------------------------
+   The fleet screen. Four stacked panels ran off the bottom of the window, so
+   they sit in two rows, and the daily bill is broken into the four things it
+   is actually made of.
+   --------------------------------------------------------------------------- */
+
+.fleet-bill {
+    flex-shrink: 0;
+}
+
+.fleet-bill__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.fleet-bill__total {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(230, 238, 250);
+}
+
+.fleet-bar {
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.fleet-bill__legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 7px;
+}
+
+.fleet-key {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 16px;
+}
+
+.fleet-key__swatch {
+    width: 8px;
+    height: 8px;
+    margin-right: 5px;
+    border-radius: 2px;
+}
+
+.fleet-key__label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(168, 180, 198);
+}
+
+.fleet-bill__power {
+    margin-top: 8px;
+    font-size: 10px;
+    color: rgb(148, 160, 180);
+}
+
+.fleet-bill__power--over {
+    color: rgb(230, 140, 96);
+    -unity-font-style: bold;
+}

@@ -16,8 +16,11 @@ namespace ScalingLaws.Simulation
         Funding = 3,
 
         // What goes out.
-        ServingPaid = 10,
+        CloudRent = 10,
         ServingFree = 11,
+        Electricity = 23,
+        Housing = 24,
+        Maintenance = 25,
         Salaries = 12,
         Marketing = 13,
         Intelligence = 14,
@@ -83,8 +86,15 @@ namespace ScalingLaws.Simulation
             new(LedgerLine.AssetSales, "Hardware sold", "Capital", true, true),
             new(LedgerLine.Funding, "Funding raised and loans", "Capital", true, true),
 
-            new(LedgerLine.ServingPaid, "Serving paying users", "Model", false, true),
-            new(LedgerLine.ServingFree, "Serving the free tier", "Model", false, true),
+            new(LedgerLine.CloudRent, "Cloud capacity rented", "Fleet", false, true),
+            new(LedgerLine.Electricity, "Electricity", "Fleet", false, true),
+            new(LedgerLine.Housing, "Housing and cooling", "Fleet", false, true),
+            new(LedgerLine.Maintenance, "Hardware upkeep", "Fleet", false, true),
+
+            // A memo, not a payment. The free tier does not send an invoice of its own; it eats a
+            // share of a fleet bill that is already counted above. Adding it to the cash total would
+            // charge the company twice and stop the report reconciling with the bank.
+            new(LedgerLine.ServingFree, "of which the free tier ate", "Model", false, false),
             new(LedgerLine.Salaries, "Salaries", "Company", false, true),
             new(LedgerLine.Marketing, "Marketing", "Company", false, true),
             new(LedgerLine.Intelligence, "Intelligence retainer", "Company", false, true),
@@ -105,6 +115,16 @@ namespace ScalingLaws.Simulation
         private readonly Dictionary<int, long[]> currentMonthDays = new();
 
         private int currentMonthKey = -1;
+
+        /// <summary>
+        /// Net cash from every month that has been dropped off the back of the history.
+        ///
+        /// Without this the books stop explaining the balance the moment the retention window fills.
+        /// A stability scan caught it in year six of a fourteen year game: the bank and the ledger
+        /// disagreed by exactly the twelve months that had aged out, and the report had quietly
+        /// stopped being able to account for the company.
+        /// </summary>
+        public long CarriedForwardUsd { get; private set; }
 
         public static IReadOnlyList<LedgerLineInfo> Lines => Catalog;
 
@@ -155,6 +175,24 @@ namespace ScalingLaws.Simulation
         /// <summary>Total for one line on one day of the month currently being recorded.</summary>
         public long DayTotal(int day, LedgerLine line) =>
             currentMonthDays.TryGetValue(day, out var row) ? row[IndexOf(line)] : 0L;
+
+        /// <summary>
+        /// Everything the books account for, including months whose detail has been dropped. This plus
+        /// the starting balance is the bank balance, and a test holds that to the cent.
+        /// </summary>
+        public long TotalCashFlowUsd
+        {
+            get
+            {
+                var total = CarriedForwardUsd;
+                foreach (var key in months.Keys)
+                {
+                    total += MonthCashFlow(key);
+                }
+
+                return total;
+            }
+        }
 
         /// <summary>Income minus cash costs for a month. Depreciation is deliberately excluded.</summary>
         public long MonthCashFlow(int monthKey)
@@ -208,11 +246,13 @@ namespace ScalingLaws.Simulation
         /// Rebuilds from a save. A file written with a different set of lines is dropped rather than
         /// stretched, because a report whose columns have shifted by one is worse than an empty one.
         /// </summary>
-        public void Restore(IReadOnlyList<int> monthKeys, IReadOnlyList<long> amounts)
+        public void Restore(IReadOnlyList<int> monthKeys, IReadOnlyList<long> amounts,
+            long carriedForwardUsd = 0L)
         {
             months.Clear();
             currentMonthDays.Clear();
             currentMonthKey = -1;
+            CarriedForwardUsd = carriedForwardUsd;
 
             if (monthKeys == null || amounts == null)
             {
@@ -277,6 +317,9 @@ namespace ScalingLaws.Simulation
                     }
                 }
 
+                // Carried forward before it is forgotten, so the total is still explainable even when
+                // the detail is not.
+                CarriedForwardUsd += MonthCashFlow(oldest);
                 months.Remove(oldest);
             }
         }
