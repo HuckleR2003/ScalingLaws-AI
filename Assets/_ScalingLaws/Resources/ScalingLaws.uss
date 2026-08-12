@@ -3268,3 +3268,47 @@
 
 .finance-row__value--in { color: rgb(120, 214, 148); }
 .finance-row__value--out { color: rgb(226, 116, 108); }
+
+/* ---------------------------------------------------------------------------
+   Height taken back from the chrome.
+
+   The stage rail and the effect banner were spending about a hundred and sixty
+   pixels before a single decision appeared, and the panels underneath were
+   being cut off at the bottom of the window. Nothing here is removed, it is
+   all smaller: the banner is a readout that is glanced at, not read.
+   --------------------------------------------------------------------------- */
+
+.stage-rail {
+    margin-top: 2px;
+    margin-bottom: 6px;
+}
+
+.stage-pip {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.stage-pip__number {
+    width: 16px;
+    height: 16px;
+    margin-right: 7px;
+    font-size: 9px;
+}
+
+.effect-banner {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
+.effect-figure__label {
+    font-size: 8px;
+}
+
+.effect-figure__value {
+    font-size: 20px;
+}
+
+.effect-figure__track {
+    margin-top: 4px;
+}

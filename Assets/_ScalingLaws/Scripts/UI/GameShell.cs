@@ -269,8 +269,11 @@ namespace ScalingLaws.UI
             AddHudSlots();
             root.Add(hud.Root);
 
-            financeReport = new FinanceReport(simulation.State.Ledger, () => simulation.State.Date,
-                ToggleFinanceReport);
+            // Read through a function rather than captured once. Loading a save replaces the state
+            // object, and a report holding the old ledger would show the books of a game that is no
+            // longer being played while insisting they were current.
+            financeReport = new FinanceReport(() => simulation.State.Ledger,
+                () => simulation.State.Date, ToggleFinanceReport);
 
             financeHost = new VisualElement();
             financeHost.AddToClassList("finance-host");
@@ -301,14 +304,23 @@ namespace ScalingLaws.UI
             var ledger = state.Ledger;
             var thisMonth = Ledger.MonthKeyOf(state.Date);
             var flow = ledger.MonthCashFlow(thisMonth);
-            var before = ledger.MonthCashFlow(thisMonth - 1);
 
-            // Against the size of the company rather than against the previous month alone, so a tiny
-            // company does not show three arrows over a rounding error.
-            var scale = Math.Max(1.0, Math.Abs(before) + Math.Abs(flow));
-            var momentum = Math.Clamp((flow - before) / scale, -1.0, 1.0);
-            var steps = (int)(Math.Abs(momentum) / 0.12);
-            var arrows = Math.Sign(momentum) * Math.Clamp(steps, 0, 3);
+            // There has to be a previous month to compare against. Without this the first month of
+            // the game compared itself to nothing, so a single day of ordinary costs read as the
+            // largest possible collapse and the corner showed three red arrows on day one.
+            var recorded = ledger.RecordedMonths();
+            var hasHistory = recorded.Count > 1 && recorded.Contains(thisMonth - 1);
+            var before = hasHistory ? ledger.MonthCashFlow(thisMonth - 1) : 0L;
+
+            // Measured against the company's own scale, so a small firm does not show three arrows
+            // over a rounding error, and clamped so one enormous month cannot pin it forever.
+            var scale = Math.Max(Math.Abs(before), Math.Abs(state.CashUsd) * 0.02);
+            var momentum = scale <= 0.0
+                ? 0.0
+                : Math.Clamp((flow - before) / scale, -1.0, 1.0);
+
+            var steps = (int)(Math.Abs(momentum) / 0.2);
+            var arrows = hasHistory ? Math.Sign(momentum) * Math.Clamp(steps, 0, 3) : 0;
 
             cashArrows.text = arrows == 0
                 ? "="

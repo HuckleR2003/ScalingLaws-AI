@@ -211,9 +211,20 @@ namespace ScalingLaws.UI
             if (selected == ModelType.None)
             {
                 pie.Set(breakdown.OwnerUsersOverall, breakdown.UnservedShare);
-                headline.text = UiFormat.Count(breakdown.TotalUsersOverall);
-                caption.text = $"users across every model type. You hold "
-                    + $"{UiFormat.Percent(breakdown.OverallShareOf(0))}.";
+
+                // The headline is the whole market, not the part of it somebody has already won.
+                //
+                // It used to be the served total, so in January 2022, when eight hundred thousand
+                // people were in the market and nobody had shipped anything yet, every figure on this
+                // panel read zero. It was true and it looked like a broken screen: as though there
+                // were no people in the world rather than nobody serving them.
+                headline.text = UiFormat.Count(breakdown.AddressableUsers);
+
+                caption.text = breakdown.TotalUsersOverall <= 0.0
+                    ? "people who would use one of these, and nobody is serving them yet."
+                    : $"people in the market. {UiFormat.Percent(1.0 - breakdown.UnservedShare)} are "
+                        + $"using something, and you hold "
+                        + $"{UiFormat.Percent(breakdown.OverallShareOf(0))} of those.";
             }
             else if (breakdown.TryGetType(selected, out var standing))
             {
@@ -254,16 +265,22 @@ namespace ScalingLaws.UI
             name.AddToClassList("demo-row__name");
             row.Add(name);
 
-            var users = new Label(UiFormat.Count(standing.TotalUsers));
+            // A dash rather than a zero. Ten rows of "0" read as a fault; a dash reads as a category
+            // nobody is in yet, which is what it is.
+            var users = new Label(standing.TotalUsers > 0.0
+                ? UiFormat.Count(standing.TotalUsers)
+                : "-");
             users.AddToClassList("demo-row__users");
             row.Add(users);
 
-            var share = new Label(UiFormat.Percent(standing.PlayerShare));
+            var share = new Label(standing.TotalUsers > 0.0
+                ? UiFormat.Percent(standing.PlayerShare)
+                : "-");
             share.AddToClassList("demo-row__share");
             share.EnableInClassList("demo-row__share--held", standing.PlayerUsers > 0.0);
             row.Add(share);
 
-            var leader = new Label(standing.LeaderName);
+            var leader = new Label(standing.TotalUsers > 0.0 ? standing.LeaderName : "nobody");
             leader.AddToClassList("demo-row__leader");
             leader.EnableInClassList("demo-row__leader--you", standing.LeaderIndex <= 0);
             row.Add(leader);

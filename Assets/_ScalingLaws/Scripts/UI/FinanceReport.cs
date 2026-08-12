@@ -108,7 +108,7 @@ namespace ScalingLaws.UI
     /// </summary>
     public sealed class FinanceReport
     {
-        private readonly Ledger ledger;
+        private readonly Func<Ledger> books;
         private readonly Func<GameDate> today;
         private readonly FinanceChart chart = new();
         private readonly VisualElement rows = new();
@@ -120,9 +120,9 @@ namespace ScalingLaws.UI
         private bool showDays;
         private int monthKey = -1;
 
-        public FinanceReport(Ledger ledger, Func<GameDate> today, Action close)
+        public FinanceReport(Func<Ledger> books, Func<GameDate> today, Action close)
         {
-            this.ledger = ledger;
+            this.books = books;
             this.today = today;
 
             Root = new VisualElement();
@@ -183,7 +183,7 @@ namespace ScalingLaws.UI
             monthly.EnableInClassList("finance__toggle--on", !showDays);
             daily.EnableInClassList("finance__toggle--on", showDays);
 
-            var recorded = ledger.RecordedMonths();
+            var recorded = books().RecordedMonths();
             rows.Clear();
 
             if (recorded.Count == 0)
@@ -202,22 +202,22 @@ namespace ScalingLaws.UI
             var series = new List<long>(recorded.Count);
             foreach (var key in recorded)
             {
-                series.Add(ledger.MonthCashFlow(key));
+                series.Add(books().MonthCashFlow(key));
             }
 
             chart.Set(series, recorded.IndexOf(monthKey));
 
-            var flow = ledger.MonthCashFlow(monthKey);
+            var flow = books().MonthCashFlow(monthKey);
             headline.text = (flow >= 0 ? "+" : "-") + UiFormat.Money(Math.Abs(flow));
             headline.EnableInClassList("finance__headline--up", flow >= 0);
             headline.EnableInClassList("finance__headline--down", flow < 0);
 
             caption.text = showDays
                 ? $"{MonthName(monthKey)}, day by day. "
-                    + $"In {UiFormat.Money(ledger.MonthIncome(monthKey))}, "
-                    + $"out {UiFormat.Money(ledger.MonthCost(monthKey))}."
-                : $"{MonthName(monthKey)}. In {UiFormat.Money(ledger.MonthIncome(monthKey))}, "
-                    + $"out {UiFormat.Money(ledger.MonthCost(monthKey))}.";
+                    + $"In {UiFormat.Money(books().MonthIncome(monthKey))}, "
+                    + $"out {UiFormat.Money(books().MonthCost(monthKey))}."
+                : $"{MonthName(monthKey)}. In {UiFormat.Money(books().MonthIncome(monthKey))}, "
+                    + $"out {UiFormat.Money(books().MonthCost(monthKey))}.";
 
             RenderGroup("Model");
             RenderGroup("Company");
@@ -268,7 +268,7 @@ namespace ScalingLaws.UI
         {
             if (!showDays)
             {
-                return ledger.MonthTotal(monthKey, line);
+                return books().MonthTotal(monthKey, line);
             }
 
             // Day view only has the month being played, because that is the only one kept day by day.
@@ -276,7 +276,7 @@ namespace ScalingLaws.UI
             var total = 0L;
             for (var day = 1; day <= 31; day++)
             {
-                total += ledger.DayTotal(day, line);
+                total += books().DayTotal(day, line);
             }
 
             return total;
