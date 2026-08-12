@@ -118,6 +118,7 @@ namespace ScalingLaws.Persistence
                     14 => UpgradeV14ToV15(current),
                     15 => UpgradeV15ToV16(current),
                     16 => UpgradeV16ToV17(current),
+                    17 => UpgradeV17ToV18(current),
                     _ => current
                 };
             }
@@ -668,6 +669,44 @@ namespace ScalingLaws.Persistence
                 "v16 to v17: months older than five years are now carried forward as a total. An "
                 + "older save cannot say what its dropped months held, so the carried figure starts "
                 + "at zero and the report explains everything from here on.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v17 to v18: fans, and the date the newest model shipped.
+        ///
+        /// Fans start at zero rather than being back-filled from reputation. A following is earned
+        /// day by day and a v17 file has no record of the days, so handing a loaded company a fan
+        /// base it never built would be inventing history. It rebuilds from the next day played.
+        ///
+        /// The release date is set to the last model's own release date where one exists, which is
+        /// recorded and therefore not a guess. A company with no models keeps day zero, which reads
+        /// as a very stale line, and that is the honest description of a lab that has never shipped.
+        /// </summary>
+        public static SaveData UpgradeV17ToV18(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 18;
+            data.fans = 0.0;
+            data.lastReleaseDayIndex = 0;
+
+            foreach (var model in data.models)
+            {
+                if (model != null && model.releaseDayIndex > data.lastReleaseDayIndex)
+                {
+                    data.lastReleaseDayIndex = model.releaseDayIndex;
+                }
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v17 to v18: the fan base starts at zero, because a following is earned day by day "
+                + "and an older save has no record of those days. The freshness of the product line "
+                + "is read from the newest model's own release date, which was recorded.");
 
             return data;
         }

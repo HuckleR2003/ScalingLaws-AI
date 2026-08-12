@@ -3411,3 +3411,25 @@
     color: rgb(230, 140, 96);
     -unity-font-style: bold;
 }
+
+/* Standing in the top bar, beside the money. Quiet by default: these are numbers
+   a player glances at, and only the direction needs to catch the eye. */
+
+.topbar__standing {
+    margin-left: 14px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(150, 162, 182);
+}
+
+.topbar__standing--fans {
+    color: rgb(132, 146, 168);
+}
+
+.topbar__standing--up {
+    color: rgb(120, 200, 148);
+}
+
+.topbar__standing--down {
+    color: rgb(214, 116, 108);
+}

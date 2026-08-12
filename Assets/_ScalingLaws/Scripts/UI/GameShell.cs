@@ -52,6 +52,8 @@ namespace ScalingLaws.UI
         private VisualElement trainingBanner;
         private VisualElement pulseBanner;
         private Button cashButton;
+        private Label reputationLabel;
+        private Label fansLabel;
         private Label cashArrows;
         private FinanceReport financeReport;
         private VisualElement financeHost;
@@ -335,6 +337,36 @@ namespace ScalingLaws.UI
                 : $"This month is down {UiFormat.Money(Math.Abs(flow))} so far. Click for the books.";
         }
 
+        /// <summary>
+        /// Standing in the header: what the public thinks, and how many of them follow the company.
+        ///
+        /// Two numbers rather than one because they behave differently. Reputation is an opinion and
+        /// moves in days; fans are a stock and move in months. The tooltip names whichever driver is
+        /// currently doing the most, so a falling number is never a mystery.
+        /// </summary>
+        private void RefreshStanding(CompanyState state)
+        {
+            if (reputationLabel == null)
+            {
+                return;
+            }
+
+            var change = state.LastStandingChange;
+
+            reputationLabel.text = "REP " + UiFormat.Percent(state.Reputation, 0);
+            reputationLabel.EnableInClassList("topbar__standing--up", change.Total > 0.0);
+            reputationLabel.EnableInClassList("topbar__standing--down", change.Total < 0.0);
+
+            reputationLabel.tooltip = change.Total >= 0.0
+                ? $"Rising, mostly on {change.Headline}."
+                : $"Falling, mostly on {change.Headline}.";
+
+            fansLabel.text = UiFormat.Count(state.Fans) + " FANS";
+            fansLabel.tooltip =
+                "People who follow the company rather than the product. They arrive slowly, they "
+                + "leave slowly, and they are still here between releases.";
+        }
+
         /// <summary>Opens the books over whatever screen is showing, or closes them.</summary>
         private void ToggleFinanceReport()
         {
@@ -533,6 +565,16 @@ namespace ScalingLaws.UI
             valuationLabel.AddToClassList("topbar__stat--muted");
             left.Add(cashButton);
             left.Add(valuationLabel);
+
+            // Standing sits beside the money because it is the other resource the player spends.
+            reputationLabel = new Label();
+            reputationLabel.AddToClassList("topbar__standing");
+            left.Add(reputationLabel);
+
+            fansLabel = new Label();
+            fansLabel.AddToClassList("topbar__standing");
+            fansLabel.AddToClassList("topbar__standing--fans");
+            left.Add(fansLabel);
             bar.Add(left);
 
             var right = new VisualElement();
@@ -2095,6 +2137,7 @@ namespace ScalingLaws.UI
         {
             cashLabel.text = UiFormat.Money(state.CashUsd);
             RefreshCashArrows(state);
+            RefreshStanding(state);
             valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
             companyLabel.text = state.CompanyName;
             dateLabel.text = state.Date.ToString();

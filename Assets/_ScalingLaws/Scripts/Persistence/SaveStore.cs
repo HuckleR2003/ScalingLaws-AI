@@ -230,6 +230,8 @@ namespace ScalingLaws.Persistence
 
             state.Ledger.Capture(data.ledgerMonths, data.ledgerAmounts);
             data.ledgerCarriedForward = state.Ledger.CarriedForwardUsd;
+            data.fans = state.Fans;
+            data.lastReleaseDayIndex = state.LastReleaseDate.DayIndex;
 
             foreach (var shelved in state.Shelf)
             {
@@ -574,6 +576,8 @@ namespace ScalingLaws.Persistence
             }
 
             state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts, safe.ledgerCarriedForward);
+            state.Fans = Math.Max(0.0, SimUnits.Finite(safe.fans));
+            state.LastReleaseDate = new GameDate(Math.Max(0, safe.lastReleaseDayIndex));
 
             foreach (var upgrade in safe.upgrades)
             {

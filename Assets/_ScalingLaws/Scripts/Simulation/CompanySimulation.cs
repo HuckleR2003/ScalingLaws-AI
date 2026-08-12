@@ -603,6 +603,7 @@ namespace ScalingLaws.Simulation
                 ? 1.0
                 : Math.Clamp(model.EffectiveCapability(State.Date) / market.FrontierCapability, 0.0, 1.3);
             State.Reputation += ReputationReleaseGain * relativeStanding;
+            State.LastReleaseDate = State.Date;
 
             return true;
         }
@@ -1951,15 +1952,38 @@ namespace ScalingLaws.Simulation
                 $"The {FundingCatalog.Get(offer.Stage).DisplayName} term sheet lapsed unsigned."));
         }
 
+        /// <summary>
+        /// One day of public opinion, and the following that trails it.
+        ///
+        /// The drivers live in <see cref="Standing"/> so each can be tested alone and so the interface
+        /// can say which one moved. Reputation is still a single number nudged in a single place;
+        /// what changed is that the nudge is now explainable.
+        /// </summary>
         private void UpdateReputation(double share, double served)
         {
-            State.Reputation -= ReputationDailyDecay;
-            if (served > 0.0)
-            {
-                State.Reputation += ReputationServiceGain
-                    * Math.Clamp(share * 10.0, 0.0, 1.0)
-                    * State.Founder.ReputationGainMultiplier;
-            }
+            // Marketing intensity as a fraction of a spend that would be unmistakable. A company
+            // spending a hundred thousand a day is being seen everywhere; below that it scales.
+            var marketing = Math.Clamp(
+                State.Monetization.TotalMarketingDailyUsd / 100_000.0, 0.0, 1.0);
+
+            var change = Standing.Today(
+                share,
+                served,
+                State.Monetization.Generosity,
+                State.Date.DayIndex - State.LastReleaseDate.DayIndex,
+                State.Monetization.PaidPriceMultiplier,
+                marketing,
+                State.Founder.ReputationGainMultiplier);
+
+            State.LastStandingChange = change;
+            State.Reputation += change.Total;
+
+            // Fans follow the users the company actually holds, weighted by how it is regarded.
+            var breakdown = MarketByType();
+            var users = breakdown.TotalUsersOverall * breakdown.OverallShareOf(0);
+
+            State.Fans = Standing.AdvanceFans(
+                State.Fans, Standing.FanTarget(users, State.Reputation));
         }
 
         private void ReportDeliveries()

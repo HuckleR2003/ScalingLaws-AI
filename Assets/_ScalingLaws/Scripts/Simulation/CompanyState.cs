@@ -395,6 +395,22 @@ namespace ScalingLaws.Simulation
 
         public int ReleasedModelCount => deployedModels.Count;
 
+        /// <summary>
+        /// People who follow the brand rather than the product.
+        ///
+        /// A separate stock from users on purpose. Users are whoever is on the service today and they
+        /// leave the moment something better appears; fans stay attached between products, arrive
+        /// slowly and leave slowly. A scandal can halve the public's opinion overnight and still leave
+        /// most of the fans, which is why these cannot be the same number.
+        /// </summary>
+        public double Fans { get; set; }
+
+        /// <summary>The day the most recent model went on sale, for judging whether the line is stale.</summary>
+        public GameDate LastReleaseDate { get; set; } = GameDate.Start;
+
+        /// <summary>What moved the company's standing on the last day simulated.</summary>
+        public StandingChange LastStandingChange { get; set; }
+
         /// <summary>Best measured capability the company has live. Projections never count here.</summary>
         public double BestCapability
         {
