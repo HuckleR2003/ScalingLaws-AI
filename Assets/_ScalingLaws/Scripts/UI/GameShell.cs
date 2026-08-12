@@ -54,6 +54,39 @@ namespace ScalingLaws.UI
         private Button cashButton;
         private Label reputationLabel;
         private Label fansLabel;
+        private ModelBanner modelBanner;
+
+        /// <summary>
+        /// One net figure a day for the month so far, for the banner's chart.
+        ///
+        /// Read from the ledger rather than accumulated separately, so the bars and the finance
+        /// report are the same numbers at two sizes.
+        /// </summary>
+        private IReadOnlyList<long> DailyNetSeries()
+        {
+            var ledger = simulation.State.Ledger;
+            var today = simulation.State.Date.Day;
+            var series = new List<long>(today);
+
+            for (var day = 1; day <= today; day++)
+            {
+                var net = 0L;
+                foreach (var info in Ledger.Lines)
+                {
+                    if (!info.IsCash)
+                    {
+                        continue;
+                    }
+
+                    var amount = ledger.DayTotal(day, info.Line);
+                    net += info.IsIncome ? amount : -amount;
+                }
+
+                series.Add(net);
+            }
+
+            return series;
+        }
         private Label cashArrows;
         private FinanceReport financeReport;
         private VisualElement financeHost;
@@ -201,7 +234,7 @@ namespace ScalingLaws.UI
             // along the bottom edge were redrawn at exactly the moment they reset to zero. Both
             // looked frozen, and the game looked paused while it was running.
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
-            RefreshPulseBanner();
+
 
             if (days <= 0)
             {
@@ -283,7 +316,15 @@ namespace ScalingLaws.UI
             financeHost.Add(financeReport.Root);
             root.Add(financeHost);
 
-            root.Add(BuildPulseBanner());
+            // The product banner replaces the pulse counter in the corner. It answers the same
+            // question and three more, and two banners fighting for one corner is one too many.
+            modelBanner = new ModelBanner(
+                () => simulation.Product(),
+                () => simulation.State.ActiveRun,
+                DailyNetSeries,
+                () => Show(Screen.Release));
+
+            root.Add(modelBanner.Root);
             root.Add(BuildTrainingBanner());
 
             RefreshChrome();
@@ -2138,6 +2179,7 @@ namespace ScalingLaws.UI
             cashLabel.text = UiFormat.Money(state.CashUsd);
             RefreshCashArrows(state);
             RefreshStanding(state);
+            modelBanner?.Refresh();
             valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
             companyLabel.text = state.CompanyName;
             dateLabel.text = state.Date.ToString();
@@ -2146,7 +2188,7 @@ namespace ScalingLaws.UI
             rankLabel.text = position > 0 ? $"rank #{position}" : "unranked";
 
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
-            RefreshPulseBanner();
+
             RefreshTrainingBanner();
         }
     }

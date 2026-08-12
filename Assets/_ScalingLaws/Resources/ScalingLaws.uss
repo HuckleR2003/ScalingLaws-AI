@@ -3433,3 +3433,216 @@
 .topbar__standing--down {
     color: rgb(214, 116, 108);
 }
+
+/* The way out of the dead end on REVIEW. Deliberately not the primary colour:
+   it is a suggestion with a daily bill attached, not the action the stage is for. */
+
+.button--unblock {
+    background-color: rgba(92, 132, 196, 0.22);
+    border-width: 1px;
+    border-color: rgb(92, 132, 196);
+    color: rgb(212, 228, 250);
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.button--unblock:hover {
+    background-color: rgba(92, 132, 196, 0.34);
+}
+
+/* ---------------------------------------------------------------------------
+   The product banner, top right. Built to the author's mock: a maroon header
+   with the model name and a link to its management page, two meters, the
+   subscriber count over a small daily chart, and the month's money along the
+   bottom.
+
+   Sits below the top bar at 54px like the counter it replaces.
+   --------------------------------------------------------------------------- */
+
+.mb {
+    position: absolute;
+    top: 54px;
+    right: 20px;
+    width: 316px;
+    background-color: rgb(250, 250, 250);
+    border-width: 2px;
+    border-color: rgb(24, 26, 30);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.mb__head {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 10px;
+    padding-right: 8px;
+    background-color: rgb(114, 12, 46);
+}
+
+.mb__title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(252, 252, 252);
+}
+
+.mb__divider {
+    margin-left: 8px;
+    margin-right: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.mb__manage {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    color: rgb(252, 214, 58);
+}
+
+.mb__manage:hover {
+    color: rgb(255, 244, 190);
+}
+
+.mb__body {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 9px;
+    padding-right: 9px;
+}
+
+.mb__meters {
+    flex-direction: row;
+    margin-bottom: 7px;
+}
+
+.mb-meter {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+.mb-meter__label {
+    font-size: 9px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(28, 30, 36);
+    margin-right: 5px;
+}
+
+.mb-meter__track {
+    flex-grow: 1;
+    height: 13px;
+    background-color: rgb(255, 255, 255);
+    border-width: 1px;
+    border-color: rgb(28, 30, 36);
+}
+
+.mb-meter__fill {
+    height: 11px;
+}
+
+.mb-meter__fill--good { background-color: rgb(52, 176, 82); }
+.mb-meter__fill--warm { background-color: rgb(246, 146, 30); }
+.mb-meter__fill--bad { background-color: rgb(206, 48, 44); }
+
+.mb-meter__word {
+    margin-left: 5px;
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: rgb(96, 100, 110);
+}
+
+.mb__subs {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(114, 12, 46);
+    margin-bottom: 3px;
+}
+
+.mb-chart {
+    height: 54px;
+    flex-shrink: 0;
+    background-color: rgb(255, 255, 255);
+    border-width: 1px;
+    border-color: rgb(28, 30, 36);
+}
+
+.mb__footer {
+    flex-direction: row;
+    margin-top: 6px;
+}
+
+.mb-cell {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+.mb-cell__label {
+    font-size: 9px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(28, 30, 36);
+    margin-right: 5px;
+}
+
+.mb-cell__value {
+    flex-grow: 1;
+    font-size: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    background-color: rgb(232, 232, 232);
+    color: rgb(28, 30, 36);
+}
+
+.mb-cell__value--good {
+    background-color: rgb(154, 214, 62);
+    color: rgb(18, 46, 14);
+}
+
+.mb-cell__value--bad {
+    background-color: rgb(206, 48, 44);
+    color: rgb(255, 236, 234);
+}
+
+/* ---- the same strip while a run is in flight ---- */
+
+.mb__training {
+    height: 62px;
+    justify-content: center;
+    padding-left: 12px;
+    background-color: rgb(28, 30, 36);
+}
+
+.mb__training-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgb(114, 12, 46);
+}
+
+.mb__training-caption {
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    color: rgb(252, 252, 252);
+}
+
+.mb__training-days {
+    margin-top: 2px;
+    font-size: 10px;
+    color: rgb(214, 200, 206);
+}

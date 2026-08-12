@@ -1726,6 +1726,59 @@ namespace ScalingLaws.Simulation
         /// excellent and still lose people if something better is on sale, and it can be modest and
         /// keep them if it is the best thing there is.
         /// </summary>
+        /// <summary>
+        /// The product on sale, for the banner and the management page.
+        ///
+        /// The flagship is the strongest live model that is not superseded inside its own line, which
+        /// is exactly the model the market is choosing between. Reusing that rule rather than picking
+        /// the newest keeps the banner describing the thing the simulation is actually selling.
+        /// </summary>
+        public ProductStanding Product()
+        {
+            DeployedModel best = null;
+            var bestCapability = double.NegativeInfinity;
+
+            foreach (var model in State.DeployedModels)
+            {
+                if (model == null || !model.IsLiveOn(State.Date) || IsSupersededInItsLine(model))
+                {
+                    continue;
+                }
+
+                var capability = model.EffectiveCapability(State.Date);
+                if (capability > bestCapability)
+                {
+                    bestCapability = capability;
+                    best = model;
+                }
+            }
+
+            var month = Ledger.MonthKeyOf(State.Date);
+            var earnings = State.Ledger.MonthTotal(month, LedgerLine.Subscriptions);
+            var net = State.Ledger.MonthCashFlow(month);
+
+            if (best == null)
+            {
+                return new ProductStanding(null, false, 0.0, 0.0, 0.0, earnings, net, 0, 0.0,
+                    Market.FrontierCapability);
+            }
+
+            var age = State.Date.DayIndex - best.ReleaseDate.DayIndex;
+            var frontier = Market.FrontierCapability;
+
+            return new ProductStanding(
+                best.Name,
+                true,
+                Sentiment().Satisfaction,
+                ProductStanding.TopicalityOf(age, bestCapability, frontier),
+                Sentiment().Users,
+                earnings,
+                net,
+                age,
+                bestCapability,
+                frontier);
+        }
+
         public UserSentiment Sentiment()
         {
             var breakdown = MarketByType();

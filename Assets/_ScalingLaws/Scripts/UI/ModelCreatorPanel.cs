@@ -63,6 +63,8 @@ namespace ScalingLaws.UI
         private VisualElement scaleNotes;
         private VisualElement typePicker;
         private VisualElement dataReadout;
+        private Button unblockButton;
+        private double unblockCapacity;
         private DropdownField familyField;
         private Label familyHint;
         private readonly List<string> familyLines = new();
@@ -1110,6 +1112,23 @@ namespace ScalingLaws.UI
             verdict.AddToClassList("verdict");
             panel.Add(verdict);
 
+            unblockButton = new Button(() =>
+            {
+                simulation.SetRentedPetaflops(unblockCapacity);
+                rentedSlider.SetValueWithoutNotify((float)unblockCapacity);
+                Reprice();
+            });
+
+            unblockButton.AddToClassList("button");
+            unblockButton.AddToClassList("button--unblock");
+            unblockButton.style.marginTop = 10;
+            unblockButton.style.marginLeft = 0;
+            unblockButton.style.marginRight = 0;
+            unblockButton.style.marginBottom = 0;
+            unblockButton.style.width = Length.Percent(100);
+            unblockButton.style.display = DisplayStyle.None;
+            panel.Add(unblockButton);
+
             startButton.text = "START TRAINING";
             startButton.AddToClassList("button");
             startButton.AddToClassList("button--primary");
@@ -1303,6 +1322,8 @@ namespace ScalingLaws.UI
                 verdict.text = projection.BlockingReason;
             }
 
+            RefreshUnblockButton(projection);
+
             startButton.SetEnabled(projection.IsFeasible && simulation.State.ActiveRun == null);
             nextButton.SetEnabled(stage < StageNames.Length - 1
                 || (projection.IsFeasible && simulation.State.ActiveRun == null));
@@ -1444,6 +1465,85 @@ namespace ScalingLaws.UI
 
             row.Add(valueLabel);
             readouts.Add(row);
+        }
+
+        /// <summary>
+        /// The way out of the dead end.
+        ///
+        /// A new company owns no compute, so the very first run is always infeasible, START TRAINING
+        /// is disabled, and the screen explains the problem without offering anywhere to go. The
+        /// player has to know that the answer is on another stage, and that renting is the answer at
+        /// all. This finds the smallest rented capacity that makes the run possible and offers it at
+        /// its real price.
+        ///
+        /// It does not rent anything by itself. Committing to a daily bill is a decision.
+        /// </summary>
+        private void RefreshUnblockButton(TrainingProjection projection)
+        {
+            if (unblockButton == null)
+            {
+                return;
+            }
+
+            if (projection.IsFeasible || simulation.State.ActiveRun != null)
+            {
+                unblockButton.style.display = DisplayStyle.None;
+                return;
+            }
+
+            var needed = SmallestCapacityThatWorks();
+            if (needed <= 0.0)
+            {
+                // Not a compute problem, or no amount of renting fixes it. Saying "rent more" when
+                // renting is not the answer would send the player to spend money for nothing.
+                unblockButton.style.display = DisplayStyle.None;
+                return;
+            }
+
+            var market = simulation.Market;
+            var daily = Core.SimUnits.ToDollars(needed * market.RentPricePerPetaflopDayUsd);
+
+            unblockButton.style.display = DisplayStyle.Flex;
+            unblockButton.text =
+                $"RENT {UiFormat.Petaflops(needed)} TO MAKE THIS POSSIBLE  ({UiFormat.Money(daily)} A DAY)";
+
+            unblockCapacity = needed;
+        }
+
+        /// <summary>
+        /// Walks capacity upward until the planner stops refusing, then stops.
+        ///
+        /// Geometric rather than linear because the range runs from tens of petaflops to hundreds of
+        /// thousands, and the answer only has to be close: the player can move the slider afterwards.
+        /// Returns zero when no reachable capacity helps, which is the honest answer for a run that is
+        /// blocked on something other than compute.
+        /// </summary>
+        private double SmallestCapacityThatWorks()
+        {
+            var before = simulation.State.Pool.RentedPetaflops;
+            var blueprint = CurrentBlueprint();
+            var answer = 0.0;
+
+            try
+            {
+                for (var capacity = 25.0; capacity <= 400_000.0; capacity *= 1.6)
+                {
+                    simulation.SetRentedPetaflops(capacity);
+                    if (simulation.Project(blueprint).IsFeasible)
+                    {
+                        answer = capacity;
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                // Whatever happens, the company must be left exactly as it was found. This is a
+                // question, not a purchase.
+                simulation.SetRentedPetaflops(before);
+            }
+
+            return answer;
         }
 
         private void StartTraining()
