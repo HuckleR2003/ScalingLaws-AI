@@ -235,6 +235,7 @@ namespace ScalingLaws.Persistence
             data.qualityDemanded = state.LastQuality.Demanded;
             data.qualityCapacity = state.LastQuality.Capacity;
             data.qualityPackagedShare = state.LastQuality.PackagedShare;
+            state.Users.Capture(data.userHistory);
 
             data.hostingPackages.Clear();
             foreach (var definition in HostingCatalog.All)
@@ -587,6 +588,7 @@ namespace ScalingLaws.Persistence
             state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts, safe.ledgerCarriedForward);
             state.Fans = Math.Max(0.0, SimUnits.Finite(safe.fans));
             state.LastReleaseDate = new GameDate(Math.Max(0, safe.lastReleaseDayIndex));
+            state.Users.Restore(safe.userHistory);
             state.LastQuality = new ServiceQuality(
                 safe.qualityDemanded, safe.qualityCapacity, safe.qualityPackagedShare);
 

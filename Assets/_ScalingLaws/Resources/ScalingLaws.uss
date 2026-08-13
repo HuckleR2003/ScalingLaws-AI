@@ -3950,3 +3950,154 @@
     font-size: 9px;
     color: rgb(120, 200, 250);
 }
+
+/* ---------------------------------------------------------------------------
+   SERVICE in one line: the load dial, the words, the right-now card and the two
+   charts. Built to the author's reference, which is a light card on a dark page.
+   --------------------------------------------------------------------------- */
+
+/* The banner image gave back half its height; it was a mood shot taking the
+   space the readouts needed. */
+
+.page-art {
+    height: 88px;
+}
+
+.service__row {
+    align-items: stretch;
+}
+
+/* The dial grew by about a third. It is the headline reading on this screen. */
+
+.service__dial {
+    width: 168px;
+}
+
+.gauge {
+    width: 152px;
+    height: 86px;
+}
+
+.service__percent {
+    margin-top: -28px;
+    font-size: 22px;
+}
+
+.gauge-scale {
+    height: 80px;
+}
+
+.service__words {
+    width: 220px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    justify-content: center;
+    margin-right: 12px;
+}
+
+/* ---- the right-now card ---- */
+
+.rnow {
+    flex-direction: row;
+    width: 300px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    padding: 10px;
+    background-color: rgb(250, 250, 250);
+    border-radius: 4px;
+}
+
+.rnow__left {
+    width: 108px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-right-width: 1px;
+    border-right-color: rgb(228, 228, 230);
+}
+
+.rnow__caption {
+    font-size: 12px;
+    color: rgb(158, 160, 166);
+}
+
+.rnow__big {
+    font-size: 26px;
+    color: rgb(88, 92, 100);
+}
+
+.rnow__under {
+    font-size: 9px;
+    color: rgb(158, 160, 166);
+}
+
+.rnow__right {
+    flex-grow: 1;
+    padding-left: 10px;
+}
+
+.rnow__heading {
+    font-size: 12px;
+    color: rgb(120, 124, 132);
+    white-space: normal;
+}
+
+.rnow__income {
+    margin-top: 2px;
+    margin-bottom: 5px;
+    font-size: 19px;
+    color: rgb(58, 62, 70);
+}
+
+.rnow-stat {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 1px;
+}
+
+.rnow-stat__name {
+    font-size: 9px;
+    color: rgb(150, 154, 162);
+}
+
+.rnow-stat__value {
+    font-size: 9px;
+    -unity-font-style: bold;
+    color: rgb(74, 78, 86);
+}
+
+/* ---- the two charts ---- */
+
+.charts {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding: 8px;
+    background-color: rgb(250, 250, 250);
+    border-radius: 4px;
+}
+
+.chart-block {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 8px;
+}
+
+.chart-block:last-child { margin-right: 0; }
+
+.chart-block__title {
+    font-size: 11px;
+    color: rgb(120, 124, 132);
+    -unity-text-align: middle-center;
+}
+
+.lchart {
+    flex-grow: 1;
+    min-height: 74px;
+}
+
+.chart-block__foot {
+    font-size: 8px;
+    color: rgb(160, 164, 172);
+    -unity-text-align: middle-center;
+}

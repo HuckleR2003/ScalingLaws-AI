@@ -120,6 +120,7 @@ namespace ScalingLaws.Persistence
                     16 => UpgradeV16ToV17(current),
                     17 => UpgradeV17ToV18(current),
                     18 => UpgradeV18ToV19(current),
+                    19 => UpgradeV19ToV20(current),
                     _ => current
                 };
             }
@@ -737,6 +738,31 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v18 to v19: no hosting packages, which is what a v18 company had. The service load "
                 + "starts empty, so the first day after loading is measured rather than assumed.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v19 to v20: ninety days of user history for the charts.
+        ///
+        /// A v19 file recorded totals and never a day by day trace, so there is nothing to recover.
+        /// The history starts empty and the charts fill in as the game is played, which is honest.
+        /// Back-filling a flat line at today's count would draw a company that had been steady for
+        /// three months when it may have doubled last week.
+        /// </summary>
+        public static SaveData UpgradeV19ToV20(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 20;
+            data.userHistory = new List<double>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v19 to v20: the user charts start empty. An older save has no day by day record and "
+                + "drawing a flat line would invent three months of history that never happened.");
 
             return data;
         }

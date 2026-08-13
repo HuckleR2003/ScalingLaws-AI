@@ -158,17 +158,7 @@ namespace ScalingLaws.Simulation
             return 0;
         }
 
-        private static string LabDisplayName(CompetitorId competitor) => competitor switch
-        {
-            CompetitorId.OpenAi => "OpenAI",
-            CompetitorId.Anthropic => "Anthropic",
-            CompetitorId.GoogleDeepMind => "Google DeepMind",
-            CompetitorId.MetaAi => "Meta AI",
-            CompetitorId.MistralAi => "Mistral AI",
-            CompetitorId.DeepSeek => "DeepSeek",
-            CompetitorId.XAi => "xAI",
-            CompetitorId.AlibabaQwen => "Qwen",
-            _ => competitor.ToString()
-        };
+        private static string LabDisplayName(CompetitorId competitor) =>
+            CompetitorCatalog.NameOf(competitor);
     }
 }

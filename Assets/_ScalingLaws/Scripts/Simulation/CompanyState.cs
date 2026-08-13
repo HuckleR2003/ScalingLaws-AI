@@ -421,6 +421,9 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public ServiceQuality LastQuality { get; set; }
 
+        /// <summary>Registered users on each of the last ninety days, for the charts.</summary>
+        public UserHistory Users { get; } = new();
+
         /// <summary>Best measured capability the company has live. Projections never count here.</summary>
         public double BestCapability
         {

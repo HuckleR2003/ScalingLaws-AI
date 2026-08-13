@@ -27,8 +27,42 @@ namespace ScalingLaws.Data
         /// </summary>
         public const double ProjectedCapabilityGainPerYear = 5.0;
 
+        /// <summary>
+        /// What a lab is called. One lookup, in the data layer that owns the roster.
+        ///
+        /// There were two of these, one in CompetitorField and one in RankingBoard, with identical
+        /// bodies. Two copies of a name list is how a lab ends up called one thing on the ranking
+        /// screen and another in the news.
+        /// </summary>
+        public static string NameOf(CompetitorId competitor) => competitor switch
+        {
+            CompetitorId.OpenAi => "OpenAI",
+            CompetitorId.Anthropic => "Anthropic",
+            CompetitorId.GoogleDeepMind => "Google DeepMind",
+            CompetitorId.MetaAi => "Meta AI",
+            CompetitorId.MistralAi => "Mistral AI",
+            CompetitorId.DeepSeek => "DeepSeek",
+            CompetitorId.XAi => "xAI",
+            CompetitorId.AlibabaQwen => "Qwen",
+            CompetitorId.Groq => "Groq",
+            _ => competitor.ToString()
+        };
+
         private static readonly CompetitorRelease[] Entries =
         {
+            // The one lab that starts where the player starts. Weak, cheap, and it never catches up:
+            // capability climbs a few points a year while the frontier climbs ten, so by 2025 it is
+            // selling something nobody wants at a price nobody needs. Marked as projection because
+            // it is invented rather than taken from a real release.
+            new(CompetitorId.Groq, "Early assistant", GameDate.FromCalendar(2022, 4, 12),
+                capability: 12.0, brandStrength: 0.06, priceMultiplier: 0.55, isProjection: true),
+            new(CompetitorId.Groq, "Assistant 2", GameDate.FromCalendar(2023, 2, 8),
+                capability: 19.0, brandStrength: 0.10, priceMultiplier: 0.45, isProjection: true),
+            new(CompetitorId.Groq, "Assistant 3", GameDate.FromCalendar(2024, 1, 22),
+                capability: 27.0, brandStrength: 0.11, priceMultiplier: 0.35, isProjection: true),
+            new(CompetitorId.Groq, "Assistant 4", GameDate.FromCalendar(2025, 5, 6),
+                capability: 33.0, brandStrength: 0.09, priceMultiplier: 0.30, isProjection: true),
+
             new(CompetitorId.OpenAi, "Chat assistant launch", GameDate.FromCalendar(2022, 11, 30),
                 capability: 31.0, brandStrength: 0.55, priceMultiplier: 1.00, isProjection: false),
             new(CompetitorId.Anthropic, "Claude", GameDate.FromCalendar(2023, 3, 14),

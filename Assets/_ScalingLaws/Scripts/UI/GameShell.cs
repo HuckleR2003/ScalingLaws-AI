@@ -1426,9 +1426,154 @@ namespace ScalingLaws.UI
             words.Add(effect);
 
             row.Add(words);
-            panel.Add(row);
+            row.Add(BuildRightNowCard());
+            row.Add(BuildUserCharts());
 
+            panel.Add(row);
             return panel;
+        }
+
+        /// <summary>
+        /// The stat card from the reference: who is on right now, and the four numbers that put that
+        /// in context.
+        ///
+        /// Online is not a stored number. Registered is a stock the simulation records once a day;
+        /// how many of those are typing at this minute is a rhythm over that stock, so it is derived
+        /// here from the clock. Confusing the two is how a dashboard ends up claiming ten million
+        /// people are using something simultaneously.
+        /// </summary>
+        private VisualElement BuildRightNowCard()
+        {
+            var breakdown = simulation.MarketByType();
+            var registered = breakdown.TotalUsersOverall * breakdown.OverallShareOf(0);
+            var hour = clock.DayProgress * 24.0;
+            var online = Concurrency.OnlineAt(registered, hour);
+
+            var card = new VisualElement();
+            card.AddToClassList("rnow");
+
+            var left = new VisualElement();
+            left.AddToClassList("rnow__left");
+
+            var caption = new Label("Right now");
+            caption.AddToClassList("rnow__caption");
+            left.Add(caption);
+
+            var big = new Label(UiFormat.Count(online));
+            big.AddToClassList("rnow__big");
+            left.Add(big);
+
+            var under = new Label("Online users");
+            under.AddToClassList("rnow__under");
+            left.Add(under);
+
+            card.Add(left);
+
+            var right = new VisualElement();
+            right.AddToClassList("rnow__right");
+
+            var heading = new Label("Today's Estimated Income");
+            heading.AddToClassList("rnow__heading");
+            right.Add(heading);
+
+            var month = Ledger.MonthKeyOf(simulation.State.Date);
+            var earned = simulation.State.Ledger.MonthTotal(month, LedgerLine.Subscriptions);
+            var spent = simulation.State.Ledger.MonthCost(month);
+
+            var income = new Label(UiFormat.Money(earned));
+            income.AddToClassList("rnow__income");
+            right.Add(income);
+
+            right.Add(StatLine("Registered Users", UiFormat.Count(registered)));
+            right.Add(StatLine("Potential Users", UiFormat.Count(breakdown.AddressableUsers)));
+            right.Add(StatLine("Subscribers", UiFormat.Count(registered * PaidShare())));
+            right.Add(StatLine("All Expenses", "-" + UiFormat.Money(spent)));
+
+            card.Add(right);
+            return card;
+        }
+
+        /// <summary>What share of the people held are on a paid account rather than the free tier.</summary>
+        private double PaidShare() =>
+            Math.Clamp(1.0 - simulation.State.Monetization.FreeShareOfTokens, 0.0, 1.0);
+
+        private static VisualElement StatLine(string name, string value)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("rnow-stat");
+
+            var label = new Label(name);
+            label.AddToClassList("rnow-stat__name");
+            row.Add(label);
+
+            var figure = new Label(value);
+            figure.AddToClassList("rnow-stat__value");
+            row.Add(figure);
+
+            return figure.parent;
+        }
+
+        /// <summary>
+        /// The two charts side by side: the day by day account base, and today's traffic curve.
+        ///
+        /// Registered is filled because it is a stock and the area reads as accumulation. Online is a
+        /// bare line because it is a rate, and filling it would suggest a total that does not exist.
+        /// </summary>
+        private VisualElement BuildUserCharts()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("charts");
+
+            var breakdown = simulation.MarketByType();
+            var registered = breakdown.TotalUsersOverall * breakdown.OverallShareOf(0);
+
+            var history = simulation.State.Users.Recent(15);
+
+            var left = new VisualElement();
+            left.AddToClassList("chart-block");
+
+            var leftTitle = new Label("Registered Users");
+            leftTitle.AddToClassList("chart-block__title");
+            left.Add(leftTitle);
+
+            var registeredChart = new LineChart();
+            registeredChart.Set(history, new Color(0.29f, 0.68f, 0.90f), true);
+            left.Add(registeredChart);
+
+            var leftFoot = new Label(history.Count < 2
+                ? "Filling in as the days pass."
+                : $"Last {history.Count} days");
+
+            leftFoot.AddToClassList("chart-block__foot");
+            left.Add(leftFoot);
+
+            block.Add(left);
+
+            var right = new VisualElement();
+            right.AddToClassList("chart-block");
+
+            var rightTitle = new Label("Online users");
+            rightTitle.AddToClassList("chart-block__title");
+            right.Add(rightTitle);
+
+            // Every second hour of today, which is the shape the reference shows. It is a curve over
+            // a number the simulation owns rather than a second source of truth.
+            var curve = new List<double>(13);
+            for (var hour = 0.0; hour <= 24.0; hour += 2.0)
+            {
+                curve.Add(Concurrency.OnlineAt(registered, hour));
+            }
+
+            var onlineChart = new LineChart();
+            onlineChart.Set(curve, new Color(0.92f, 0.45f, 0.32f), false);
+            right.Add(onlineChart);
+
+            var rightFoot = new Label("00:00 to 23:00");
+            rightFoot.AddToClassList("chart-block__foot");
+            right.Add(rightFoot);
+
+            block.Add(right);
+            return block;
         }
 
         /// <summary>

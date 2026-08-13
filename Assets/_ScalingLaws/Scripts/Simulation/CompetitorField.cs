@@ -204,20 +204,13 @@ namespace ScalingLaws.Simulation
             { CompetitorId.MistralAi, CompetitorStrategy.OpenWeights },
             { CompetitorId.DeepSeek, CompetitorStrategy.CostLeader },
             { CompetitorId.XAi, CompetitorStrategy.FrontierRace },
-            { CompetitorId.AlibabaQwen, CompetitorStrategy.CostLeader }
+            { CompetitorId.AlibabaQwen, CompetitorStrategy.CostLeader },
+
+            // Cheap, because it has nothing else to sell.
+            { CompetitorId.Groq, CompetitorStrategy.CostLeader }
         };
 
-        private static string LabName(CompetitorId competitor) => competitor switch
-        {
-            CompetitorId.OpenAi => "OpenAI",
-            CompetitorId.Anthropic => "Anthropic",
-            CompetitorId.GoogleDeepMind => "Google DeepMind",
-            CompetitorId.MetaAi => "Meta AI",
-            CompetitorId.MistralAi => "Mistral AI",
-            CompetitorId.DeepSeek => "DeepSeek",
-            CompetitorId.XAi => "xAI",
-            CompetitorId.AlibabaQwen => "Qwen",
-            _ => competitor.ToString()
-        };
+        private static string LabName(CompetitorId competitor) =>
+            CompetitorCatalog.NameOf(competitor);
     }
 }

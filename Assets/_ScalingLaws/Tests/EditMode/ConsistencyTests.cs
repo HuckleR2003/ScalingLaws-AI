@@ -240,7 +240,17 @@ namespace ScalingLaws.Tests.EditMode
             var field = CompetitorField.CreateFromCatalog();
             var random = new DeterministicRandom(3);
 
-            Assert.That(field.Agents.Count, Is.EqualTo(8), "All eight labs exist from the start.");
+            // Counted from the catalog rather than written in. A ninth lab was added and this line
+            // failed for saying eight, which is a test asserting a number instead of a property.
+            var labsInCatalog = new HashSet<CompetitorId>();
+            foreach (var release in CompetitorCatalog.All)
+            {
+                labsInCatalog.Add(release.Competitor);
+            }
+
+            Assert.That(field.Agents.Count, Is.EqualTo(labsInCatalog.Count),
+                "Every lab with a release in the catalog has to exist in the field from day one, or "
+                + "its releases arrive with nobody to ship them.");
 
             for (var day = 0; day <= 2200; day++)
             {
@@ -270,7 +280,8 @@ namespace ScalingLaws.Tests.EditMode
                 }
             }
 
-            Assert.That(shipped, Is.EqualTo(8), "Every lab should have shipped something inside six years.");
+            Assert.That(shipped, Is.EqualTo(field.Agents.Count),
+                "Every lab in the field should have shipped something inside six years.");
         }
 
         [Test]

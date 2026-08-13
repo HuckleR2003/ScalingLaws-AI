@@ -2047,6 +2047,10 @@ namespace ScalingLaws.Simulation
 
             State.Fans = Standing.AdvanceFans(
                 State.Fans, Standing.FanTarget(users, State.Reputation));
+
+            // One number a day, written by the code that already worked it out. A chart built from a
+            // second calculation would eventually disagree with the counter beside it.
+            State.Users.Record(users);
         }
 
         private void ReportDeliveries()
