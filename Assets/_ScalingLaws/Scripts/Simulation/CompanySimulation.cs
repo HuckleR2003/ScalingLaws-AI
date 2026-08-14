@@ -139,12 +139,13 @@ namespace ScalingLaws.Simulation
             State.PostCash(LedgerLine.Salaries, salaryCost);
             State.PostCash(LedgerLine.Marketing, marketingCost);
             State.PostCash(LedgerLine.Intelligence, intelCost);
-            State.PostCash(LedgerLine.Tax, tax);
+            // Accrued, not paid. The demand arrives in January and the money has to still be
+            // there; see AdvanceMail. Posting it here as well would tax the same profit twice.
+            AccrueTax(tax);
             State.PostNonCash(LedgerLine.Depreciation, depreciation);
 
             State.LifetimeRevenueUsd += revenue;
-            State.LifetimeOperatingCostUsd += operatingCost + tax;
-            State.LifetimeTaxPaidUsd += tax;
+            State.LifetimeOperatingCostUsd += operatingCost;
             State.RecordDailyRevenue(revenue);
 
             AdvanceResearchPoints();
@@ -152,6 +153,7 @@ namespace ScalingLaws.Simulation
             RollSafetyIncident();
             ServiceDebt();
             AdvanceIntelligence();
+            AdvanceMail();
             ExpireFundingOffer();
             UpdateReputation(share, served);
             ReportNewlyUnlockedTiers(previousLadder);
@@ -1330,13 +1332,31 @@ namespace ScalingLaws.Simulation
             State.Incidents.Add(incident);
 
             State.Reputation -= incident.ReputationLoss;
-            State.PostCash(LedgerLine.Fines, incident.FineUsd);
-            State.LifetimeFinesUsd += incident.FineUsd;
-            State.LifetimeOperatingCostUsd += incident.FineUsd;
+
+            // The penalty arrives as a letter rather than vanishing from the account. A fine the
+            // player never saw was indistinguishable from the market turning against them, which is
+            // the specific reason incidents read as a bug rather than as a hard game.
+            if (incident.FineUsd > 0L)
+            {
+                var demand = State.Mail.Add(MailKind.Fine, State.Date,
+                    WorldRegionCatalog.Get(State.HomeCountry).DisplayName + " regulator",
+                    "Penalty notice: " + incident.Severity,
+                    incident.Headline
+                    + $"\n\nThe penalty is {Usd(incident.FineUsd)}, payable within "
+                    + $"{DemandGraceDays} days. Unpaid it grows at {LatePenaltyPerYear:P0} a year."
+                    + (incident.ForcedWithdrawal
+                        ? "\n\nThe model named above has been withdrawn from sale with immediate "
+                          + "effect. This is not optional and it is not reversible."
+                        : string.Empty));
+
+                demand.AmountUsd = incident.FineUsd;
+                demand.DueDayIndex = State.Date.DayIndex + DemandGraceDays;
+            }
 
             if (incident.ForcedWithdrawal)
             {
-                best.Retire();
+                // Recorded with a date, so the archive can show when it came off and why.
+                best.RetireOn(State.Date);
             }
 
             State.RaiseEvent(new CompanyEvent(
@@ -2216,6 +2236,11 @@ namespace ScalingLaws.Simulation
             if (spend > 0L)
             {
                 State.PostCash(LedgerLine.Marketing, spend);
+
+                // It was reaching the books and the bank and not the lifetime total, so every report
+                // built on that total understated what the company had spent. Found the day tax
+                // stopped being added to the same figure and stopped hiding the gap.
+                State.LifetimeOperatingCostUsd += spend;
             }
 
             // Finished bookings are cleared here rather than by the interface, so a campaign that has
@@ -2339,6 +2364,307 @@ namespace ScalingLaws.Simulation
                 marketed[index].RecordDay(slice, users);
             }
         }
+
+        // ------------------------------------------------------------------ the inbox
+
+        /// <summary>Days a demand may sit before it starts costing more.</summary>
+        public const int DemandGraceDays = 45;
+
+        /// <summary>What an ignored demand adds, per year overdue, on top of itself.</summary>
+        public const double LatePenaltyPerYear = 0.35;
+
+        /// <summary>Standing lost when a demand goes unpaid past its deadline.</summary>
+        public const double LateStandingLoss = 0.05;
+
+        /// <summary>Roughly how often somebody writes in asking for a job.</summary>
+        public const int ApplicantIntervalDays = 70;
+
+        /// <summary>Corporation tax owed so far this year, held rather than taken.</summary>
+        private void AccrueTax(long tax)
+        {
+            var year = State.Date.Year;
+            if (State.TaxYear != year)
+            {
+                State.TaxYear = year;
+            }
+
+            State.AccruedTaxUsd += Math.Max(0L, tax);
+        }
+
+        private void AdvanceMail()
+        {
+            IssueTaxDemand();
+            ChaseOverdueDemands();
+            InviteApplicant();
+        }
+
+        /// <summary>
+        /// The year's tax, billed on the second of January for the year that just ended.
+        ///
+        /// This is the one letter the player can plan for, which is the point: the liability has been
+        /// visible all year, so a company that cannot pay in January decided that in September.
+        /// </summary>
+        private void IssueTaxDemand()
+        {
+            if (State.Date.Month != 1 || State.Date.Day != 2)
+            {
+                return;
+            }
+
+            var owed = State.AccruedTaxUsd;
+            State.AccruedTaxUsd = 0L;
+
+            if (owed <= 0L)
+            {
+                return;
+            }
+
+            var year = State.Date.Year - 1;
+            var letter = State.Mail.Add(MailKind.TaxDemand, State.Date,
+                WorldRegionCatalog.Get(State.HomeCountry).DisplayName + " Revenue",
+                $"Corporation tax for {year}",
+                $"Assessed on {year} operating profit at "
+                + $"{State.Home.TaxRate:P0}. The amount was accrued across the year as it was earned; "
+                + "this is the demand for it.\n\nUnpaid after the due date it attracts "
+                + $"{LatePenaltyPerYear:P0} a year and is a matter of public record.");
+
+            letter.AmountUsd = owed;
+            letter.DueDayIndex = State.Date.DayIndex + DemandGraceDays;
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.TaxDemanded, State.Date,
+                $"Corporation tax for {year} is due: {Usd(owed)}.", owed));
+        }
+
+        /// <summary>
+        /// What ignoring a demand costs.
+        ///
+        /// It grows rather than being a one off, and it costs standing as well as money, because a
+        /// penalty that is merely a fixed fee is a price a rich company would happily pay to never
+        /// think about the letter again.
+        /// </summary>
+        private void ChaseOverdueDemands()
+        {
+            foreach (var letter in State.Mail.All)
+            {
+                if (letter.IsClosed || letter.AmountUsd <= 0L || !letter.IsOverdue(State.Date))
+                {
+                    continue;
+                }
+
+                var added = (long)Math.Round(letter.AmountUsd * LatePenaltyPerYear / 365.0);
+                if (added <= 0L)
+                {
+                    continue;
+                }
+
+                letter.AmountUsd += added;
+
+                // Once, on the day it tips over, rather than every day it stays there.
+                if (State.Date.DayIndex == letter.DueDayIndex + 1)
+                {
+                    State.Reputation -= LateStandingLoss;
+
+                    State.RaiseEvent(new CompanyEvent(CompanyEventType.DemandOverdue, State.Date,
+                        $"{letter.Subject} is overdue. It is now growing at "
+                        + $"{LatePenaltyPerYear:P0} a year.", letter.AmountUsd));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Somebody writes in asking for a job at a price.
+        ///
+        /// It is the same hire the team screen offers, reached differently: **the screen is the
+        /// company going looking, the letter is somebody arriving**, and the letter is the only one
+        /// of the two where the price is negotiable. Asking is above the going rate, because a
+        /// candidate who writes to you first thinks they are worth more than the market says.
+        /// </summary>
+        private void InviteApplicant()
+        {
+            if (State.IsBankrupt || !State.Staff.HasFreeDesk)
+            {
+                return;
+            }
+
+            State.DaysUntilNextApplicant--;
+            if (State.DaysUntilNextApplicant > 0)
+            {
+                return;
+            }
+
+            State.DaysUntilNextApplicant =
+                Math.Max(20, ApplicantIntervalDays + State.Random.NextInt(-25, 26));
+
+            var roles = StaffCatalog.All;
+            if (roles.Count == 0)
+            {
+                return;
+            }
+
+            var definition = roles[State.Random.NextInt(0, roles.Count)];
+            var skill = State.Random.NextInt(2, 9);
+            var going = definition.SalaryPerYearUsd(skill);
+            var asking = (long)Math.Round(going * State.Random.NextRange(1.05, 1.35));
+
+            var letter = State.Mail.Add(MailKind.JobOffer, State.Date,
+                ApplicantNames.Pick(State.Random),
+                $"{definition.DisplayName}, {skill} years",
+                $"I have {skill} years in {definition.DisplayName.ToLowerInvariant()} and I am "
+                + $"looking for my next thing.\n\nI am asking {Usd(asking)} a year. The going rate "
+                + $"for this is about {Usd(going)}, and I think I am worth more than that.\n\n"
+                + $"Joining costs {Usd(definition.HiringCostUsd_ForSkill(skill))} in fees either way.");
+
+            letter.Role = definition.Role;
+            letter.Skill = skill;
+            letter.AskingSalaryUsd = asking;
+            letter.DueDayIndex = State.Date.DayIndex + 30;
+        }
+
+        /// <summary>
+        /// The one way a letter can change anything.
+        ///
+        /// Everything the interface can do to the inbox comes through here, so the rules for what a
+        /// letter means live beside the rest of the rules rather than in a screen. The screen knows a
+        /// letter has a Pay button; it does not know what paying does.
+        /// </summary>
+        public bool TryActOnMail(int mailId, MailAction action, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.Mail.TryGet(mailId, out var letter))
+            {
+                failureReason = "No such letter.";
+                return false;
+            }
+
+            if (letter.IsClosed)
+            {
+                failureReason = "That has already been dealt with.";
+                return false;
+            }
+
+            switch (action)
+            {
+                case MailAction.Pay:
+                    return PayDemand(letter, out failureReason);
+
+                case MailAction.Accept:
+                    return AcceptApplicant(letter, out failureReason);
+
+                case MailAction.Haggle:
+                    return HaggleApplicant(letter, out failureReason);
+
+                case MailAction.Decline:
+                    letter.IsClosed = true;
+                    letter.Outcome = "Declined.";
+                    return true;
+
+                default:
+                    failureReason = "Nothing to do.";
+                    return false;
+            }
+        }
+
+        private bool PayDemand(MailItem letter, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (letter.AmountUsd <= 0L)
+            {
+                failureReason = "Nothing owed.";
+                return false;
+            }
+
+            if (State.CashUsd < letter.AmountUsd)
+            {
+                failureReason = $"{Usd(letter.AmountUsd)} owed and {Usd(State.CashUsd)} in the "
+                    + "account. It keeps growing while it is unpaid.";
+
+                return false;
+            }
+
+            var line = letter.Kind == MailKind.TaxDemand ? LedgerLine.Tax : LedgerLine.Fines;
+            State.PostCash(line, letter.AmountUsd);
+            State.LifetimeOperatingCostUsd += letter.AmountUsd;
+
+            if (letter.Kind == MailKind.TaxDemand)
+            {
+                State.LifetimeTaxPaidUsd += letter.AmountUsd;
+            }
+            else
+            {
+                State.LifetimeFinesUsd += letter.AmountUsd;
+            }
+
+            letter.IsClosed = true;
+            letter.Outcome = $"Paid {Usd(letter.AmountUsd)}.";
+            letter.AmountUsd = 0L;
+            return true;
+        }
+
+        private bool AcceptApplicant(MailItem letter, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (letter.Kind != MailKind.JobOffer)
+            {
+                failureReason = "Nothing to accept.";
+                return false;
+            }
+
+            if (!TryHire(letter.Role, letter.Skill, out failureReason))
+            {
+                return false;
+            }
+
+            letter.IsClosed = true;
+            letter.Outcome = $"Hired at {Usd(letter.AskingSalaryUsd)} a year.";
+            return true;
+        }
+
+        /// <summary>
+        /// Offer less, once.
+        ///
+        /// Whether they take it depends on how much less, so the decision is real: a small cut is
+        /// nearly free and saves nearly nothing, and a large one is worth having and usually loses
+        /// the candidate. Deterministic, so the same campaign replays the same way from a save.
+        /// </summary>
+        private bool HaggleApplicant(MailItem letter, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (letter.Kind != MailKind.JobOffer || letter.HasBeenHaggled)
+            {
+                failureReason = "They will not go round again.";
+                return false;
+            }
+
+            letter.HasBeenHaggled = true;
+
+            var going = StaffCatalog.Get(letter.Role).SalaryPerYearUsd(letter.Skill);
+            var offer = (long)Math.Round((letter.AskingSalaryUsd + going) / 2.0);
+
+            // How far below the ask the counter sits, as a share. Meeting in the middle of a modest
+            // ask is barely a cut; the same rule applied to a greedy one is a large one.
+            var cut = letter.AskingSalaryUsd <= 0L
+                ? 0.0
+                : 1.0 - (double)offer / letter.AskingSalaryUsd;
+
+            var takesIt = State.Random.NextChance(Math.Clamp(1.0 - cut * 3.2, 0.05, 0.95));
+
+            if (!takesIt)
+            {
+                letter.IsClosed = true;
+                letter.Outcome = $"Walked. They wanted {Usd(letter.AskingSalaryUsd)}.";
+                failureReason = $"They turned down {Usd(offer)} and took something else.";
+                return false;
+            }
+
+            letter.AskingSalaryUsd = offer;
+            return true;
+        }
+
+        private static string Usd(long amount) => "$" + amount.ToString("N0");
 
         /// <summary>Every retainer the company holds, not just the dearest one. They all invoice.</summary>
         private long DailyIntelRetainerUsd()

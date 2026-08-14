@@ -41,6 +41,7 @@ namespace ScalingLaws.UI
         private ManagementScreen management;
         private NewsScreen news;
         private NewsBanner newsBanner;
+        private MailScreen mail;
         private VisualElement bannerStack;
 
         /// <summary>
@@ -188,6 +189,9 @@ namespace ScalingLaws.UI
             /// on sale already lives.
             /// </summary>
             Management,
+
+            /// <summary>The inbox. Demands, applications and everything waiting on an answer.</summary>
+            Mail,
 
             /// <summary>The wire. Reached from its own corner banner and from the bottom bar.</summary>
             News
@@ -403,6 +407,8 @@ namespace ScalingLaws.UI
                 () => Show(Screen.Marketing),
                 () => Show(Screen.Fleet),
                 () => Show(Screen.Upgrade));
+
+            mail = new MailScreen(simulation, RefreshChrome);
 
             news = new NewsScreen(simulation, (tier, joined) =>
             {
@@ -785,6 +791,7 @@ namespace ScalingLaws.UI
             hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence");
             hud.AddSlot("MARKETING", Screen.Marketing, () => Show(Screen.Marketing));
             hud.AddSlot("NEWS", Screen.News, () => Show(Screen.News));
+            hud.AddSlot("@ MAIL", Screen.Mail, () => Show(Screen.Mail));
         }
 
         private void ToggleCompanyInfo()
@@ -902,6 +909,10 @@ namespace ScalingLaws.UI
                 case Screen.News:
                     news.Refresh();
                     contentHost.Add(news.Root);
+                    break;
+                case Screen.Mail:
+                    mail.Refresh();
+                    contentHost.Add(mail.Root);
                     break;
                 case Screen.Business:
                     contentHost.Add(BuildBusinessScreen());
@@ -1037,7 +1048,6 @@ namespace ScalingLaws.UI
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
-            panel.AddToClassList("rfund");
 
             var head = new VisualElement();
             head.AddToClassList("rfund__head");
@@ -1720,7 +1730,6 @@ namespace ScalingLaws.UI
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
-            panel.AddToClassList("service");
 
             var heading = new Label("SERVICE");
             heading.AddToClassList("panel__heading");
@@ -2881,7 +2890,128 @@ namespace ScalingLaws.UI
                 }
             }
 
+            page.Add(BuildDebtPanel());
             return page;
+        }
+
+        /// <summary>
+        /// Borrowing.
+        ///
+        /// **The whole debt system existed and had no button anywhere.** `LoanBook`, `LoanCatalog`,
+        /// `DebtTests` and four kinds of event were all written and reachable only from a test, while
+        /// the capital screen offered equity and nothing else.
+        ///
+        /// It belongs beside equity rather than on a screen of its own, because they are the same
+        /// decision seen from two sides: a round costs a share of everything the company ever earns
+        /// and never has to be repaid, and a facility costs a fixed sum on a fixed date whether or
+        /// not the quarter went well. Putting them on one screen is what makes that a choice.
+        /// </summary>
+        private VisualElement BuildDebtPanel()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var heading = new Label("BORROWING");
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            var book = state.Loans;
+            var servicing = new Label(book.OpenCount == 0
+                ? "Nothing drawn. A facility is cash now against a fixed sum on a fixed date, whether "
+                    + "or not the quarter went well."
+                : $"Servicing {book.OpenCount} of {LoanCatalog.MaximumConcurrentLoans} facilities, "
+                    + $"{UiFormat.Money(DailyDebtServiceUsd())} a day.");
+
+            servicing.AddToClassList("field__hint");
+            panel.Add(servicing);
+
+            foreach (var open in book.Loans)
+            {
+                var definition = LoanCatalog.Get(open.Product);
+
+                var row = new VisualElement();
+                row.AddToClassList("loan-open");
+
+                var name = new Label(definition.DisplayName.ToUpperInvariant());
+                name.AddToClassList("loan-open__name");
+                row.Add(name);
+
+                var left = new Label(
+                    $"{UiFormat.Money(open.OutstandingUsd)} left of "
+                    + $"{UiFormat.Money(definition.TotalRepaymentUsd)}");
+
+                left.AddToClassList("loan-open__left");
+                row.Add(left);
+
+                panel.Add(row);
+            }
+
+            var grid = new VisualElement();
+            grid.AddToClassList("grid");
+            panel.Add(grid);
+
+            foreach (var offer in simulation.LoanOffers())
+            {
+                grid.Add(BuildLoanCard(offer));
+            }
+
+            return panel;
+        }
+
+        /// <summary>What every open facility costs today, summed. The book holds them one by one.</summary>
+        private long DailyDebtServiceUsd()
+        {
+            var total = 0L;
+            foreach (var loan in state.Loans.Loans)
+            {
+                total += loan.DueToday(state.Date);
+            }
+
+            return total;
+        }
+
+        private VisualElement BuildLoanCard(LoanAvailability offer)
+        {
+            var definition = LoanCatalog.Get(offer.Product);
+
+            var card = new Button(() =>
+            {
+                simulation.TryTakeLoan(offer.Product, out _);
+                Show(Screen.Funding);
+            });
+
+            card.AddToClassList("card");
+            card.EnableInClassList("card--ahead", offer.IsAvailable);
+
+            var title = new Label(definition.DisplayName.ToUpperInvariant());
+            title.AddToClassList("card__title");
+            card.Add(title);
+
+            var principal = new Label(UiFormat.Money(definition.PrincipalUsd) + " now");
+            principal.AddToClassList("card__line");
+            card.Add(principal);
+
+            // Both halves of the price, because the multiple alone hides the schedule and the daily
+            // instalment alone hides what it adds up to.
+            var terms = new Label(
+                $"Repay {UiFormat.Money(definition.TotalRepaymentUsd)} over "
+                + $"{UiFormat.Days(definition.TermDays)}, "
+                + $"{UiFormat.Money(definition.DailyInstalmentUsd)} a day");
+
+            terms.AddToClassList("card__line");
+            card.Add(terms);
+
+            var grace = new Label(offer.IsAvailable
+                ? $"{UiFormat.Days(definition.GraceDays)} before the first instalment"
+                : offer.Reason);
+
+            grace.AddToClassList("card__line");
+            grace.EnableInClassList("card__line--blocked", !offer.IsAvailable);
+            card.Add(grace);
+
+            card.tooltip = definition.Description;
+            card.SetEnabled(offer.IsAvailable);
+            return card;
         }
 
         private VisualElement BuildRankingScreen()
@@ -3270,6 +3400,19 @@ namespace ScalingLaws.UI
             newsBanner?.Refresh();
 
             RefreshFollowerBanners();
+
+            // Letters waiting on an answer, not letters unread: an unread notice is not a task, and
+            // a badge that counts things the player cannot act on trains them to ignore the badge.
+            var waiting = 0;
+            foreach (var letter in state.Mail.All)
+            {
+                if (!letter.IsClosed && letter.Actions.Count > 0)
+                {
+                    waiting++;
+                }
+            }
+
+            hud?.SetBadge(Screen.Mail, waiting);
             modelBanner?.Refresh();
             valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
             companyLabel.text = state.CompanyName;

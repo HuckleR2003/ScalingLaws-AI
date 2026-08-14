@@ -85,6 +85,36 @@ namespace ScalingLaws.Data
     }
 
     /// <summary>The ONE company identity library.</summary>
+    /// <summary>
+    /// Names for the people who write in looking for work.
+    ///
+    /// Deliberately plain and deliberately from everywhere, because the company can be registered in
+    /// any of sixteen countries and a mailbox full of one nationality would be a claim the game is
+    /// not making. Two lists crossed rather than one list of full names, so a few dozen entries give
+    /// several hundred people without anybody noticing a repeat.
+    /// </summary>
+    public static class ApplicantNames
+    {
+        private static readonly string[] First =
+        {
+            "Aleksy", "Amara", "Anders", "Ayla", "Bea", "Caio", "Dara", "Eero", "Elif", "Fen",
+            "Gita", "Hana", "Idris", "Ines", "Jonas", "Kaia", "Lars", "Lena", "Malik", "Mira",
+            "Nadia", "Noor", "Omar", "Petra", "Rafa", "Rina", "Samir", "Sofia", "Tariq", "Vera",
+            "Wen", "Yusuf", "Zara", "Bruno", "Cato", "Ilya"
+        };
+
+        private static readonly string[] Last =
+        {
+            "Adeyemi", "Bergstrom", "Castellan", "Dlamini", "Eriksen", "Farah", "Gallo", "Haddad",
+            "Iversen", "Jansen", "Kowalczyk", "Lindqvist", "Moreau", "Nakamura", "Okafor", "Pereira",
+            "Quintana", "Rossi", "Sandoval", "Tanaka", "Ueda", "Varga", "Weiss", "Xu", "Yilmaz",
+            "Zielinski"
+        };
+
+        public static string Pick(DeterministicRandom random) =>
+            First[random.NextInt(0, First.Length)] + " " + Last[random.NextInt(0, Last.Length)];
+    }
+
     public static class CompanyIdentityCatalog
     {
         public const string CatalogVersion = "2026.08.02";

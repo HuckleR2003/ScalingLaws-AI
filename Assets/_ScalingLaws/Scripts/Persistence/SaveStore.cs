@@ -343,6 +343,34 @@ namespace ScalingLaws.Persistence
             }
 
             data.newsUnread = state.News.Unread;
+
+            data.accruedTaxUsd = state.AccruedTaxUsd;
+            data.taxYear = state.TaxYear;
+            data.daysUntilNextApplicant = state.DaysUntilNextApplicant;
+
+            data.mail.Clear();
+            foreach (var letter in state.Mail.All)
+            {
+                data.mail.Add(new MailItemData
+                {
+                    id = letter.Id,
+                    kind = (int)letter.Kind,
+                    arrivedDayIndex = letter.Arrived.DayIndex,
+                    sender = letter.Sender,
+                    subject = letter.Subject,
+                    body = letter.Body,
+                    isRead = letter.IsRead,
+                    isClosed = letter.IsClosed,
+                    outcome = letter.Outcome,
+                    amountUsd = letter.AmountUsd,
+                    dueDayIndex = letter.DueDayIndex,
+                    role = (int)letter.Role,
+                    skill = letter.Skill,
+                    askingSalaryUsd = letter.AskingSalaryUsd,
+                    hasBeenHaggled = letter.HasBeenHaggled,
+                    loan = (int)letter.Loan
+                });
+            }
             data.daysUntilNextSignal = state.DaysUntilNextSignal;
 
             var offer = state.CurrentFundingOffer;
@@ -745,6 +773,49 @@ namespace ScalingLaws.Persistence
 
                 state.News.Add(new NewsItem(new GameDate(Math.Max(0, story.dayIndex)), section,
                     story.headline, story.body, story.outlet, story.aboutPlayer, weight));
+            }
+
+            state.AccruedTaxUsd = Math.Max(0L, safe.accruedTaxUsd);
+            state.TaxYear = safe.taxYear;
+            state.DaysUntilNextApplicant = Math.Max(0, safe.daysUntilNextApplicant);
+
+            state.Mail.Clear();
+            foreach (var flat in safe.mail)
+            {
+                if (flat == null)
+                {
+                    continue;
+                }
+
+                var kind = Enum.IsDefined(typeof(MailKind), flat.kind)
+                    ? (MailKind)flat.kind
+                    : MailKind.Notice;
+
+                var letter = new MailItem(Math.Max(1, flat.id), kind,
+                    new GameDate(Math.Max(0, flat.arrivedDayIndex)),
+                    flat.sender, flat.subject, flat.body)
+                {
+                    IsRead = flat.isRead,
+                    IsClosed = flat.isClosed,
+                    Outcome = flat.outcome ?? string.Empty,
+                    AmountUsd = Math.Max(0L, flat.amountUsd),
+                    DueDayIndex = Math.Max(0, flat.dueDayIndex),
+                    Skill = Math.Clamp(flat.skill, 0, 10),
+                    AskingSalaryUsd = Math.Max(0L, flat.askingSalaryUsd),
+                    HasBeenHaggled = flat.hasBeenHaggled
+                };
+
+                if (Enum.IsDefined(typeof(StaffRole), flat.role))
+                {
+                    letter.Role = (StaffRole)flat.role;
+                }
+
+                if (Enum.IsDefined(typeof(LoanProduct), flat.loan))
+                {
+                    letter.Loan = (LoanProduct)flat.loan;
+                }
+
+                state.Mail.Restore(letter);
             }
 
             state.News.MarkRead();

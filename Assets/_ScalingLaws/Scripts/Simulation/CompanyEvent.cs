@@ -39,7 +39,13 @@ namespace ScalingLaws.Simulation
         SkillLevelled = 32,
 
         /// <summary>A booked campaign has run its term and stopped costing money.</summary>
-        MarketingFinished = 33
+        MarketingFinished = 33,
+
+        /// <summary>The year's corporation tax has been billed and is waiting in the inbox.</summary>
+        TaxDemanded = 34,
+
+        /// <summary>A demand went past its date and started growing.</summary>
+        DemandOverdue = 35
     }
 
     /// <summary>

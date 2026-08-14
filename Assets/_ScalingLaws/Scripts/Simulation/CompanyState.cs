@@ -345,6 +345,24 @@ namespace ScalingLaws.Simulation
         /// <summary>What the company has read. Filled by the news desk, never by the interface.</summary>
         public NewsFeed News { get; } = new();
 
+        /// <summary>Letters waiting on an answer. The wire reports; the inbox asks.</summary>
+        public Mailbox Mail { get; } = new();
+
+        /// <summary>
+        /// Corporation tax owed for the year so far, accrued daily and billed once.
+        ///
+        /// Tax used to leave the account every day, which is tidy and is not how a company
+        /// experiences it. Accruing it makes January a real event: the money has to still be there
+        /// when the demand lands, and a company that spent it has a problem it created months ago.
+        /// </summary>
+        public long AccruedTaxUsd { get; set; }
+
+        /// <summary>The calendar year the current accrual belongs to.</summary>
+        public int TaxYear { get; set; }
+
+        /// <summary>Days until the next speculative application lands. Keeps hiring irregular.</summary>
+        public int DaysUntilNextApplicant { get; set; } = 40;
+
         /// <summary>Days until the desk files its next note. The best membership's clock.</summary>
         public int DaysUntilNextSignal { get; set; }
 

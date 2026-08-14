@@ -57,6 +57,28 @@ namespace ScalingLaws.Persistence
         public int retiredDayIndex;
     }
 
+    /// <summary>One letter. Added in v24.</summary>
+    [Serializable]
+    public sealed class MailItemData
+    {
+        public int id;
+        public int kind;
+        public int arrivedDayIndex;
+        public string sender = string.Empty;
+        public string subject = string.Empty;
+        public string body = string.Empty;
+        public bool isRead;
+        public bool isClosed;
+        public string outcome = string.Empty;
+        public long amountUsd;
+        public int dueDayIndex;
+        public int role;
+        public int skill;
+        public long askingSalaryUsd;
+        public bool hasBeenHaggled;
+        public int loan;
+    }
+
     /// <summary>One filed story. Added in v23.</summary>
     [Serializable]
     public sealed class NewsItemData
@@ -247,7 +269,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 23;
+        public const int CurrentVersion = 24;
 
         public int version = CurrentVersion;
 
@@ -358,6 +380,15 @@ namespace ScalingLaws.Persistence
         public List<NewsItemData> news = new();
 
         public int newsUnread;
+
+        /// <summary>The inbox. Added in v24.</summary>
+        public List<MailItemData> mail = new();
+
+        /// <summary>Corporation tax owed for the year so far. Causal: January reads it. v24.</summary>
+        public long accruedTaxUsd;
+
+        public int taxYear;
+        public int daysUntilNextApplicant;
 
         public List<CompetitorAgentData> rivals = new();
 

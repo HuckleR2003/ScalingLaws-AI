@@ -57,6 +57,25 @@ namespace ScalingLaws.UI
         /// are not decided yet and a slot that already has its own element is one edit away from
         /// carrying one.
         /// </summary>
+        private readonly Dictionary<object, Label> badges = new();
+
+        /// <summary>
+        /// Puts a count on a slot, or clears it at zero.
+        ///
+        /// Zero is drawn as nothing rather than as "0", because a badge reading zero is a permanent
+        /// small distraction that says there is nothing to look at.
+        /// </summary>
+        public void SetBadge(object key, int count)
+        {
+            if (!badges.TryGetValue(key, out var badge))
+            {
+                return;
+            }
+
+            badge.text = count > 99 ? "99+" : count.ToString();
+            badge.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
         public void AddSlot(string label, object key, Action onClick, string iconName = null)
         {
             var slot = new Button(onClick) { userData = key };
@@ -83,6 +102,14 @@ namespace ScalingLaws.UI
             var underline = new VisualElement();
             underline.AddToClassList("hud-slot__underline");
             slot.Add(underline);
+
+            // A badge for the slots that carry a count. Built for every slot and shown for none of
+            // them until something asks, so adding a counter later does not mean touching this again.
+            var badge = new Label();
+            badge.AddToClassList("hud-slot__badge");
+            badge.style.display = DisplayStyle.None;
+            slot.Add(badge);
+            badges[key] = badge;
 
             slots.Add(slot);
             SlotHost.Add(slot);

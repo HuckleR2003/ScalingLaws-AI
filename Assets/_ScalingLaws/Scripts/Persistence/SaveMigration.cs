@@ -124,6 +124,7 @@ namespace ScalingLaws.Persistence
                     20 => UpgradeV20ToV21(current),
                     21 => UpgradeV21ToV22(current),
                     22 => UpgradeV22ToV23(current),
+                    23 => UpgradeV23ToV24(current),
                     _ => current
                 };
             }
@@ -882,6 +883,39 @@ namespace ScalingLaws.Persistence
                 + "announced. Per model earnings start at zero and therefore understate every model "
                 + "already on sale, which is preferred to splitting lifetime revenue by a rule nobody "
                 + "can check.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v23 to v24: the inbox, and corporation tax billed once a year rather than taken daily.
+        ///
+        /// **A v23 company had already paid its tax**, every day, as it went. So the accrual starts
+        /// at zero and the first demand covers only the days after loading. Carrying a balance
+        /// forward would bill the player a second time for a year they have already settled, and
+        /// guessing one from lifetime tax paid would be inventing which year it belonged to.
+        ///
+        /// The inbox starts empty for the same reason the news feed did: a v23 file has no record of
+        /// what was asked of the company, and a back catalogue of demands would be asking for money
+        /// against events that may never have happened.
+        /// </summary>
+        public static SaveData UpgradeV23ToV24(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 24;
+            data.mail = new List<MailItemData>();
+            data.accruedTaxUsd = 0L;
+            data.taxYear = 0;
+            data.daysUntilNextApplicant = 40;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v23 to v24: empty inbox, and the tax accrual starts at zero because a v23 company "
+                + "paid its tax daily as it went. The first annual demand therefore covers only the "
+                + "days after loading, which understates that one year and never double bills it.");
 
             return data;
         }

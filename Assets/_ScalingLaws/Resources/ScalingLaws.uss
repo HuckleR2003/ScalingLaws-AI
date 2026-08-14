@@ -5520,3 +5520,427 @@
 .mb--compact .mb__divider {
     display: none;
 }
+
+
+/* ---- the inbox ----
+
+   A list on the left, the letter on the right, the answer at the bottom of it. The wire reports and
+   the inbox asks, so everything here is built around the one line that says what a letter wants:
+   the amount, the deadline, or the salary somebody is holding out for. */
+
+.mail {
+    flex-grow: 1;
+}
+
+.mail__header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(226, 78, 62);
+}
+
+.mail__title {
+    font-size: 30px;
+    letter-spacing: 5px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+}
+
+.mail__strap {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    margin-top: 2px;
+    white-space: normal;
+}
+
+.mail__strap--owing {
+    color: rgb(232, 150, 130);
+    -unity-font-style: bold;
+}
+
+.mail__filters {
+    flex-direction: row;
+    flex-shrink: 0;
+    padding-left: 20px;
+}
+
+.mail__columns {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.mail-list {
+    width: 34%;
+    flex-shrink: 0;
+    padding-right: 16px;
+    border-right-width: 1px;
+    border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+.mail-scroll {
+    flex-grow: 1;
+    max-height: 580px;
+}
+
+.mail-empty {
+    font-size: 11px;
+    color: rgb(128, 140, 158);
+    white-space: normal;
+    padding: 14px;
+}
+
+/* one row in the list */
+
+.mail-row {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+    margin: 0;
+    margin-bottom: 2px;
+    padding: 10px;
+    border-width: 0;
+    border-left-width: 2px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.mail-row:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.mail-row--on {
+    background-color: rgba(226, 78, 62, 0.12);
+    border-left-color: rgb(226, 78, 62);
+}
+
+.mail-row--closed {
+    opacity: 0.55;
+}
+
+.mail-row__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-top: 5px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    background-color: rgb(120, 132, 152);
+}
+
+.mail-row__dot--money {
+    background-color: rgb(230, 176, 74);
+}
+
+.mail-row__dot--people {
+    background-color: rgb(92, 158, 224);
+}
+
+.mail-row__dot--late {
+    background-color: rgb(214, 66, 58);
+}
+
+.mail-row__dot--done {
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+.mail-row__dot--plain {
+    background-color: rgb(120, 132, 152);
+}
+
+.mail-row__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.mail-row__top {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.mail-row__sender {
+    font-size: 11px;
+    color: rgb(196, 208, 226);
+    flex-shrink: 1;
+}
+
+.mail-row--unread .mail-row__sender {
+    color: rgb(240, 244, 252);
+    -unity-font-style: bold;
+}
+
+.mail-row__date {
+    font-size: 9px;
+    color: rgb(118, 130, 150);
+    flex-shrink: 0;
+    padding-left: 8px;
+}
+
+.mail-row__subject {
+    font-size: 12px;
+    color: rgb(214, 224, 238);
+    margin-top: 2px;
+    white-space: normal;
+}
+
+.mail-row--unread .mail-row__subject {
+    -unity-font-style: bold;
+    color: rgb(246, 248, 253);
+}
+
+.mail-row__wants {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    margin-top: 3px;
+    white-space: normal;
+}
+
+.mail-row__wants--late {
+    color: rgb(232, 130, 112);
+    -unity-font-style: bold;
+}
+
+/* the reading pane */
+
+.mail-read {
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding-left: 22px;
+}
+
+.mail-read__subject {
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: rgb(242, 246, 253);
+    white-space: normal;
+}
+
+.mail-read__from {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.mail-read__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 17px;
+    margin-right: 12px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 15px;
+    color: rgb(16, 20, 27);
+    flex-shrink: 0;
+}
+
+.mail-read__sender {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+}
+
+.mail-read__date {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    margin-top: 2px;
+}
+
+.mail-read__body {
+    font-size: 13px;
+    color: rgb(206, 216, 232);
+    white-space: normal;
+}
+
+.mail-read__problem {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(232, 150, 130);
+    white-space: normal;
+    margin-top: 14px;
+    padding: 10px;
+    border-radius: var(--card-radius);
+    background-color: rgba(158, 38, 32, 0.22);
+}
+
+.mail-read__closed {
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(140, 152, 172);
+    margin-top: 18px;
+    padding: 10px;
+    border-radius: var(--card-radius);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* the amount block */
+
+.mail-amount {
+    flex-shrink: 0;
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: var(--card-radius);
+    background-color: rgba(6, 30, 62, 0.50);
+    border-left-width: 3px;
+    border-left-color: rgb(230, 176, 74);
+}
+
+.mail-amount--late {
+    border-left-color: rgb(214, 66, 58);
+    background-color: rgba(90, 22, 18, 0.40);
+}
+
+.mail-amount__label {
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 182);
+}
+
+.mail-amount__value {
+    font-size: 30px;
+    -unity-font-style: bold;
+    color: rgb(244, 248, 255);
+    margin-top: 2px;
+}
+
+.mail-amount__foot {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    margin-top: 2px;
+}
+
+/* the answer */
+
+.mail-actions {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-top: 18px;
+}
+
+.mail-action {
+    margin: 0;
+    margin-right: 10px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    padding-left: 18px;
+    padding-right: 18px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    border-width: 1px;
+    border-radius: 3px;
+    color: rgb(226, 236, 250);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.mail-action:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.mail-action--pay {
+    color: rgb(18, 30, 20);
+    background-color: rgb(78, 176, 106);
+    border-color: rgb(110, 200, 136);
+}
+
+.mail-action--pay:hover {
+    background-color: rgb(98, 200, 128);
+}
+
+.mail-action--yes {
+    color: rgb(18, 26, 34);
+    background-color: rgb(92, 158, 224);
+    border-color: rgb(126, 184, 240);
+}
+
+.mail-action--yes:hover {
+    background-color: rgb(116, 180, 240);
+}
+
+.mail-action--haggle {
+    color: rgb(46, 34, 8);
+    background-color: rgb(224, 176, 62);
+    border-color: rgb(240, 198, 108);
+}
+
+.mail-action--haggle:hover {
+    background-color: rgb(240, 196, 84);
+}
+
+.mail-action--no {
+    color: rgb(160, 172, 190);
+}
+
+/* the badge on the bottom bar */
+
+.hud-slot__badge {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    min-width: 16px;
+    height: 16px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 8px;
+    background-color: rgb(226, 78, 62);
+    color: rgb(255, 250, 248);
+    font-size: 9px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+/* open facilities on the capital screen */
+
+.loan-open {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-shrink: 0;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.loan-open__name {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+}
+
+.loan-open__left {
+    font-size: 11px;
+    color: rgb(168, 180, 198);
+}
+
+.card__line--blocked {
+    color: rgb(206, 138, 122);
+}
+
+/* The two ends of the hosting switch are where hosting_renting.png and hosting_datacenter.png go.
+   Until they exist the halves are told apart by tone rather than by nothing, and the owned side is
+   the duller one because it is the half that is deliberately locked. */
+.hswitch__art--left {
+    background-color: rgb(30, 38, 50);
+    border-right-width: 2px;
+    border-right-color: rgb(232, 226, 214);
+}
+
+.hswitch__art--right {
+    background-color: rgb(22, 26, 33);
+    border-left-width: 2px;
+    border-left-color: rgb(232, 226, 214);
+}
