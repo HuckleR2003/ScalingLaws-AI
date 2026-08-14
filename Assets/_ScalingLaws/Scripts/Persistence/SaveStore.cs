@@ -236,6 +236,10 @@ namespace ScalingLaws.Persistence
             data.qualityCapacity = state.LastQuality.Capacity;
             data.qualityPackagedShare = state.LastQuality.PackagedShare;
             state.Users.Capture(data.userHistory);
+            data.researchPoints = state.ResearchPoints;
+            data.researchFundingMode = (int)state.ResearchFunding;
+            data.researchMonthlyUsd = state.ResearchMonthlyUsd;
+            data.researchRevenueShare = state.ResearchRevenueShare;
 
             data.hostingPackages.Clear();
             foreach (var definition in HostingCatalog.All)
@@ -589,6 +593,13 @@ namespace ScalingLaws.Persistence
             state.Fans = Math.Max(0.0, SimUnits.Finite(safe.fans));
             state.LastReleaseDate = new GameDate(Math.Max(0, safe.lastReleaseDayIndex));
             state.Users.Restore(safe.userHistory);
+            state.ResearchPoints = Math.Max(0.0, SimUnits.Finite(safe.researchPoints));
+            state.ResearchFunding = Enum.IsDefined(typeof(ResearchFundingMode), safe.researchFundingMode)
+                ? (ResearchFundingMode)safe.researchFundingMode
+                : ResearchFundingMode.Fixed;
+            state.ResearchMonthlyUsd = Math.Clamp(safe.researchMonthlyUsd, 0L,
+                ResearchBudget.MaximumMonthlyUsd);
+            state.ResearchRevenueShare = Math.Clamp(SimUnits.Finite(safe.researchRevenueShare), 0.0, 1.0);
             state.LastQuality = new ServiceQuality(
                 safe.qualityDemanded, safe.qualityCapacity, safe.qualityPackagedShare);
 

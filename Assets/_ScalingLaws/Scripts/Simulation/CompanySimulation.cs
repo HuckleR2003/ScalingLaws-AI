@@ -145,6 +145,7 @@ namespace ScalingLaws.Simulation
             State.LifetimeTaxPaidUsd += tax;
             State.RecordDailyRevenue(revenue);
 
+            AdvanceResearchPoints();
             AdvanceMarketing();
             RollSafetyIncident();
             ServiceDebt();
@@ -756,10 +757,21 @@ namespace ScalingLaws.Simulation
                 return new ResearchStanding(node, false, false, false, "another programme is running", duration);
             }
 
-            if (State.CashUsd < node.CostUsd)
+            // Points first, because that is the real gate now. Cash is a fraction of what it was and
+            // a company that has been building will usually have it; a company that has been idle
+            // will have the money and none of the understanding, which is the whole point.
+            var points = ResearchBudget.PointCostOf(node.CostUsd);
+            if (State.ResearchPoints < points)
             {
                 return new ResearchStanding(node, false, false, false,
-                    $"needs ${node.CostUsd:N0}", duration);
+                    $"needs {points:N0} research points, you have {State.ResearchPoints:N0}", duration);
+            }
+
+            var cash = ResearchBudget.CashCostOf(node.CostUsd);
+            if (State.CashUsd < cash)
+            {
+                return new ResearchStanding(node, false, false, false,
+                    $"needs ${cash:N0}", duration);
             }
 
             return new ResearchStanding(node, false, false, true, string.Empty, duration);
@@ -783,9 +795,16 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.PostCash(LedgerLine.Research, node.CostUsd);
+            // A little cash and a lot of points, both derived from the one figure the catalog
+            // carries so the two can never drift apart.
+            var cash = ResearchBudget.CashCostOf(node.CostUsd);
+            var points = ResearchBudget.PointCostOf(node.CostUsd);
+
+            State.PostCash(LedgerLine.Research, cash);
+            State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - points);
+
             State.ActiveResearch = new ResearchProject(
-                nodeId, State.Date, standing.DurationDays, node.PetaflopDaysRequired, node.CostUsd);
+                nodeId, State.Date, standing.DurationDays, node.PetaflopDaysRequired, cash);
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchStarted,
@@ -1940,6 +1959,60 @@ namespace ScalingLaws.Simulation
                     model.PriceMultiplier = relative;
                 }
             }
+        }
+
+        /// <summary>
+        /// A day of discovery.
+        ///
+        /// Two sources, and they are deliberately different. Work earns points because a lab learns
+        /// by building, so a company that ships nothing learns nothing however much it spends. Money
+        /// buys points on a square root curve, so a rich company can hire the answer but cannot
+        /// simply purchase the tree.
+        /// </summary>
+        private void AdvanceResearchPoints()
+        {
+            var fromWork = ResearchBudget.PointsFromWork(
+                State.ActiveRun != null,
+                State.UpgradeProjects.Count > 0,
+                State.Staff.Hires.Count,
+                State.Skills.ResearchDepthMultiplier());
+
+            var budget = ResearchBudget.MonthlyBudgetUsd(
+                State.ResearchFunding,
+                State.ResearchMonthlyUsd,
+                State.ResearchRevenueShare,
+                MonthlyRevenueUsd());
+
+            // The month's budget is paid a thirtieth at a time, so the bill and the points arrive
+            // together rather than the money leaving in one lump nobody sees.
+            var dailySpend = (long)Math.Round(budget / 30.0);
+            if (dailySpend > 0L)
+            {
+                State.PostCash(LedgerLine.Research, dailySpend);
+            }
+
+            var fromMoney = ResearchBudget.PointsFromFunding(budget) / 30.0;
+
+            State.ResearchPointsToday = fromWork + fromMoney;
+            State.ResearchPoints += State.ResearchPointsToday;
+        }
+
+        /// <summary>
+        /// What came in over the last thirty recorded days, for the revenue share mode.
+        ///
+        /// Read from the ledger rather than tracked a second time, so the figure the player sets a
+        /// percentage of is the same figure the finance report shows them.
+        /// </summary>
+        public long MonthlyRevenueUsd()
+        {
+            var month = Ledger.MonthKeyOf(State.Date);
+            var thisMonth = State.Ledger.MonthTotal(month, LedgerLine.Subscriptions);
+            var previous = State.Ledger.MonthTotal(month - 1, LedgerLine.Subscriptions);
+
+            // Early in a month there is barely anything recorded yet, so the larger of this month so
+            // far and the whole of last month is the honest answer rather than a figure that collapses
+            // on the first of every month.
+            return Math.Max(thisMonth, previous);
         }
 
         /// <summary>Runs a day of marketing. Company spend compounds, model spend evaporates.</summary>

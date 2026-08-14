@@ -53,6 +53,10 @@ namespace ScalingLaws.UI
         private VisualElement pulseBanner;
         private Button cashButton;
         private Label reputationLabel;
+        private Button pointsButton;
+        private VisualElement researchCard;
+        private VisualElement shellRoot;
+        private Label pointsLabel;
         private Label fansLabel;
         private ModelBanner modelBanner;
 
@@ -62,6 +66,41 @@ namespace ScalingLaws.UI
         /// Read from the ledger rather than accumulated separately, so the bars and the finance
         /// report are the same numbers at two sizes.
         /// </summary>
+        /// <summary>
+        /// Whichever long job is running, described the one way the banner understands.
+        ///
+        /// Training first when both are somehow live, because it is the one with money burning
+        /// against it every day.
+        /// </summary>
+        private WorkInFlight WorkInFlightNow()
+        {
+            var state = simulation.State;
+
+            if (state.ActiveRun != null)
+            {
+                var run = state.ActiveRun;
+                var progress = Math.Clamp(run.Progress, 0.0, 1.0);
+                var left = run.PetaflopDaysRequired - run.PetaflopDaysCompleted;
+                var perDay = Math.Max(1.0, simulation.Profile.EffectivePetaflops);
+
+                return new WorkInFlight("TRAINING MODEL", run.Blueprint.Name, progress,
+                    (int)Math.Ceiling(Math.Max(0.0, left) / perDay));
+            }
+
+            if (state.ActiveResearch != null)
+            {
+                var project = state.ActiveResearch;
+                var node = ResearchTree.Get(project.Node);
+                var elapsed = state.Date.DayIndex - project.StartedOn.DayIndex;
+
+                return new WorkInFlight("RESEARCHING", node.DisplayName,
+                    Math.Clamp(project.Progress, 0.0, 1.0),
+                    Math.Max(0, project.DurationDays - elapsed));
+            }
+
+            return WorkInFlight.Idle;
+        }
+
         private IReadOnlyList<long> DailyNetSeries()
         {
             var ledger = simulation.State.Ledger;
@@ -287,6 +326,10 @@ namespace ScalingLaws.UI
         {
             var document = GetComponent<UIDocument>();
             var root = document.rootVisualElement;
+
+            // Kept so panels that float over everything, like the research card, have somewhere to
+            // attach that is not whichever screen happens to be open.
+            shellRoot = root;
             root.Clear();
 
             UiBootstrap.Prepare(root, theme);
@@ -323,7 +366,7 @@ namespace ScalingLaws.UI
             // question and three more, and two banners fighting for one corner is one too many.
             modelBanner = new ModelBanner(
                 () => simulation.Product(),
-                () => simulation.State.ActiveRun,
+                WorkInFlightNow,
                 DailyNetSeries,
                 () => Show(Screen.Release));
 
@@ -610,6 +653,27 @@ namespace ScalingLaws.UI
             left.Add(valuationLabel);
 
             // Standing sits beside the money because it is the other resource the player spends.
+            // Research points sit with the money because they are the other currency, and clicking
+            // them goes where they are spent.
+            pointsButton = new Button(() => Show(Screen.Research));
+            pointsButton.AddToClassList("topbar__points");
+
+            var pointsIcon = new VisualElement();
+            pointsIcon.AddToClassList("topbar__points-icon");
+
+            var pointsArt = Resources.Load<Texture2D>("Hud/research_points");
+            if (pointsArt != null)
+            {
+                pointsIcon.style.backgroundImage = new StyleBackground(pointsArt);
+            }
+
+            pointsButton.Add(pointsIcon);
+
+            pointsLabel = new Label();
+            pointsLabel.AddToClassList("topbar__points-value");
+            pointsButton.Add(pointsLabel);
+            left.Add(pointsButton);
+
             reputationLabel = new Label();
             reputationLabel.AddToClassList("topbar__standing");
             left.Add(reputationLabel);
@@ -831,6 +895,8 @@ namespace ScalingLaws.UI
                     : "Every architecture, corpus, upgrade line, model type and compute tier in the "
                       + "game sits behind a node here. The calendar cost cannot be bought out of.");
 
+            page.Add(BuildResearchFunding());
+
             var board = simulation.ResearchBoard();
 
             foreach (ResearchEra era in Enum.GetValues(typeof(ResearchEra)))
@@ -897,6 +963,226 @@ namespace ScalingLaws.UI
         /// One node on the spine. High or low, and its state is carried by the ring rather than by
         /// a word, so a whole era reads without any of it being spelled out.
         /// </summary>
+        /// <summary>
+        /// How the company pays for discovery, at the top of the research screen.
+        ///
+        /// Two ways, and they are a real choice rather than a preference. A fixed budget is paid
+        /// whatever happens, which is a promise a struggling company cannot keep. A share of revenue
+        /// costs nothing in a bad month and nothing is what it discovers, so a company that stops
+        /// earning also stops learning exactly when it most needs to catch up.
+        /// </summary>
+        private VisualElement BuildResearchFunding()
+        {
+            var state = simulation.State;
+
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+            panel.AddToClassList("rfund");
+
+            var head = new VisualElement();
+            head.AddToClassList("rfund__head");
+
+            var heading = new Label("FUNDING");
+            heading.AddToClassList("panel__heading");
+            heading.style.marginBottom = 0;
+            head.Add(heading);
+
+            var banked = new Label(
+                $"{UiFormat.Number(state.ResearchPoints, 0)} points banked, "
+                + $"{state.ResearchPointsToday:N1} a day");
+
+            banked.AddToClassList("rfund__banked");
+            head.Add(banked);
+            panel.Add(head);
+
+            var modes = new VisualElement();
+            modes.AddToClassList("rfund__modes");
+
+            modes.Add(FundingChip("A FIXED BUDGET", ResearchFundingMode.Fixed,
+                state.ResearchFunding == ResearchFundingMode.Fixed));
+
+            modes.Add(FundingChip("A SHARE OF REVENUE", ResearchFundingMode.RevenueShare,
+                state.ResearchFunding == ResearchFundingMode.RevenueShare));
+
+            panel.Add(modes);
+
+            if (state.ResearchFunding == ResearchFundingMode.Fixed)
+            {
+                var label = new Label($"{UiFormat.Money(state.ResearchMonthlyUsd)} a month");
+                label.AddToClassList("field__label");
+                panel.Add(label);
+
+                // Logarithmic, because the range runs from a thousand to five million and a linear
+                // slider would spend nine tenths of its travel on amounts that change nothing.
+                var slider = new Slider(
+                    Mathf.Log10(ResearchBudget.MinimumMonthlyUsd),
+                    Mathf.Log10(ResearchBudget.MaximumMonthlyUsd))
+                {
+                    value = Mathf.Log10(Math.Max(ResearchBudget.MinimumMonthlyUsd,
+                        state.ResearchMonthlyUsd))
+                };
+
+                slider.AddToClassList("field");
+                slider.RegisterValueChangedCallback(evt =>
+                {
+                    state.ResearchMonthlyUsd = (long)Math.Round(Math.Pow(10.0, evt.newValue));
+                    Show(Screen.Research);
+                });
+
+                panel.Add(slider);
+            }
+            else
+            {
+                var revenue = simulation.MonthlyRevenueUsd();
+
+                var label = new Label(
+                    $"{UiFormat.Percent(state.ResearchRevenueShare, 0)} of "
+                    + $"{UiFormat.Money(revenue)} a month, which is "
+                    + $"{UiFormat.Money((long)Math.Round(revenue * state.ResearchRevenueShare))}");
+
+                label.AddToClassList("field__label");
+                panel.Add(label);
+
+                var slider = new Slider(0f, 0.5f) { value = (float)state.ResearchRevenueShare };
+                slider.AddToClassList("field");
+                slider.RegisterValueChangedCallback(evt =>
+                {
+                    state.ResearchRevenueShare = evt.newValue;
+                    Show(Screen.Research);
+                });
+
+                panel.Add(slider);
+            }
+
+            var budget = ResearchBudget.MonthlyBudgetUsd(state.ResearchFunding,
+                state.ResearchMonthlyUsd, state.ResearchRevenueShare,
+                simulation.MonthlyRevenueUsd());
+
+            var hint = new Label(
+                $"Buys about {ResearchBudget.PointsFromFunding(budget):N0} points a month. "
+                + "Four times the money buys twice the points, so nobody purchases the tree outright. "
+                + "Building things earns more than paying for them.");
+
+            hint.AddToClassList("field__hint");
+            panel.Add(hint);
+
+            return panel;
+        }
+
+        private Button FundingChip(string text, ResearchFundingMode mode, bool on)
+        {
+            var chip = new Button(() =>
+            {
+                simulation.State.ResearchFunding = mode;
+                Show(Screen.Research);
+            })
+            { text = text };
+
+            chip.AddToClassList("chip");
+            chip.EnableInClassList("chip--on", on);
+            return chip;
+        }
+
+        /// <summary>
+        /// The card that opens when a node is clicked: what it is, what it costs, what it gives.
+        ///
+        /// It exists because the tree was twenty one circles with a word under each and no way to
+        /// find out what any of them did before committing. A player should be able to read a branch
+        /// before spending three months on it.
+        /// </summary>
+        private void ShowResearchCard(ResearchStanding standing, Vector2 at)
+        {
+            researchCard?.RemoveFromHierarchy();
+
+            var node = standing.Node;
+            researchCard = new VisualElement();
+            researchCard.AddToClassList("rcard");
+            researchCard.style.left = Mathf.Clamp(at.x, 8f, 1400f);
+            researchCard.style.top = Mathf.Clamp(at.y, 8f, 700f);
+
+            var head = new VisualElement();
+            head.AddToClassList("rcard__head");
+
+            var icon = new VisualElement();
+            icon.AddToClassList("rcard__icon");
+
+            var art = ResearchIcons.Get(node.Id);
+            if (art != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(art);
+            }
+
+            head.Add(icon);
+
+            var titles = new VisualElement();
+            titles.AddToClassList("rcard__titles");
+
+            var title = new Label(node.DisplayName.ToUpperInvariant());
+            title.AddToClassList("rcard__title");
+            titles.Add(title);
+
+            var state = standing.IsUnlocked ? "RESEARCHED"
+                : standing.IsInProgress ? "IN PROGRESS"
+                : standing.CanStart ? "READY" : "LOCKED";
+
+            var badge = new Label(state);
+            badge.AddToClassList("rcard__badge");
+            badge.EnableInClassList("rcard__badge--ready", standing.CanStart);
+            badge.EnableInClassList("rcard__badge--done", standing.IsUnlocked);
+            titles.Add(badge);
+
+            head.Add(titles);
+            researchCard.Add(head);
+
+            var body = new Label(node.Description);
+            body.AddToClassList("rcard__body");
+            researchCard.Add(body);
+
+            var points = ResearchBudget.PointCostOf(node.CostUsd);
+            var cash = ResearchBudget.CashCostOf(node.CostUsd);
+
+            var cost = new Label(
+                $"{points:N0} research points and {UiFormat.Money(cash)}, "
+                + $"about {standing.DurationDays} days.");
+
+            cost.AddToClassList("rcard__cost");
+            researchCard.Add(cost);
+
+            if (!standing.CanStart && !standing.IsUnlocked && !standing.IsInProgress)
+            {
+                var why = new Label(standing.BlockedReason);
+                why.AddToClassList("rcard__blocked");
+                researchCard.Add(why);
+            }
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("rcard__buttons");
+
+            if (standing.CanStart)
+            {
+                var start = new Button(() =>
+                {
+                    simulation.TryStartResearch(node.Id, out _);
+                    researchCard?.RemoveFromHierarchy();
+                    Show(Screen.Research);
+                })
+                { text = "BEGIN" };
+
+                start.AddToClassList("button");
+                start.AddToClassList("button--primary");
+                start.style.marginLeft = 0;
+                buttons.Add(start);
+            }
+
+            var close = new Button(() => researchCard?.RemoveFromHierarchy()) { text = "CLOSE" };
+            close.AddToClassList("button");
+            close.style.marginLeft = 6;
+            buttons.Add(close);
+
+            researchCard.Add(buttons);
+            shellRoot.Add(researchCard);
+        }
+
         private VisualElement BuildTreeNode(ResearchStanding standing, bool above)
         {
             var node = standing.Node;
@@ -2587,6 +2873,11 @@ namespace ScalingLaws.UI
             cashLabel.text = UiFormat.Money(state.CashUsd);
             RefreshCashArrows(state);
             RefreshStanding(state);
+
+            pointsLabel.text = UiFormat.Number(state.ResearchPoints, 0);
+            pointsButton.tooltip = state.ResearchPointsToday > 0.0
+                ? $"Earning {state.ResearchPointsToday:N1} a day. Click to spend them."
+                : "Nothing is being built and no funding is set, so nothing is being learned.";
             // Only on the site screen. It sat on top of the model creator and the research tree,
             // which is the same mistake the counter it replaced made.
             modelBanner?.SetHidden(current != Screen.Site);

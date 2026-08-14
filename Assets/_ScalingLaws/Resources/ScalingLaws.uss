@@ -4101,3 +4101,127 @@
     color: rgb(160, 164, 172);
     -unity-text-align: middle-center;
 }
+
+/* Research points in the top bar, beside the money. The other currency. */
+
+.topbar__points {
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    margin-left: 14px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 5px;
+    padding-right: 7px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.topbar__points:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.topbar__points-icon {
+    width: 17px;
+    height: 17px;
+    margin-right: 5px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.topbar__points-value {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(126, 196, 250);
+}
+
+/* Research funding at the top of the tree, and the card that opens on a node. */
+
+.rfund__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.rfund__banked {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(126, 196, 250);
+}
+
+.rfund__modes {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.rcard {
+    position: absolute;
+    width: 320px;
+    padding: 12px;
+    background-color: rgb(16, 21, 30);
+    border-width: 1px;
+    border-color: rgb(120, 176, 250);
+    border-radius: 5px;
+}
+
+.rcard__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.rcard__icon {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.rcard__titles {
+    flex-grow: 1;
+}
+
+.rcard__title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(228, 238, 252);
+    white-space: normal;
+}
+
+.rcard__badge {
+    margin-top: 3px;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgb(140, 152, 172);
+}
+
+.rcard__badge--ready { color: rgb(126, 210, 150); }
+.rcard__badge--done { color: rgb(126, 196, 250); }
+
+.rcard__body {
+    font-size: 10px;
+    color: rgb(170, 182, 200);
+    white-space: normal;
+}
+
+.rcard__cost {
+    margin-top: 8px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(210, 222, 240);
+}
+
+.rcard__blocked {
+    margin-top: 5px;
+    font-size: 10px;
+    color: rgb(226, 150, 110);
+    white-space: normal;
+}
+
+.rcard__buttons {
+    flex-direction: row;
+    margin-top: 10px;
+}

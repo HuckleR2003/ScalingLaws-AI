@@ -112,7 +112,7 @@ namespace ScalingLaws.UI
     public sealed class ModelBanner
     {
         private readonly Func<ProductStanding> product;
-        private readonly Func<TrainingRun> activeRun;
+        private readonly Func<WorkInFlight> inFlight;
         private readonly Func<IReadOnlyList<long>> dailySeries;
 
         private readonly Label title = new();
@@ -130,6 +130,7 @@ namespace ScalingLaws.UI
 
         private readonly VisualElement trainingFill = new();
         private readonly Label trainingDays = new();
+        private readonly Label trainingCaption = new("TRAINING MODEL");
         private readonly Label chevron = new();
 
         /// <summary>Folded away by the player, or folded by default because there is nothing to show.</summary>
@@ -140,11 +141,11 @@ namespace ScalingLaws.UI
         /// <summary>The player asked to see the banner even though nothing has shipped.</summary>
         private bool openedEmpty;
 
-        public ModelBanner(Func<ProductStanding> product, Func<TrainingRun> activeRun,
+        public ModelBanner(Func<ProductStanding> product, Func<WorkInFlight> inFlight,
             Func<IReadOnlyList<long>> dailySeries, Action openManagement)
         {
             this.product = product;
-            this.activeRun = activeRun;
+            this.inFlight = inFlight;
             this.dailySeries = dailySeries;
 
             Root = new VisualElement();
@@ -268,9 +269,8 @@ namespace ScalingLaws.UI
             trainingFill.AddToClassList("mb__training-fill");
             training.Add(trainingFill);
 
-            var caption = new Label("TRAINING MODEL");
-            caption.AddToClassList("mb__training-caption");
-            training.Add(caption);
+            trainingCaption.AddToClassList("mb__training-caption");
+            training.Add(trainingCaption);
 
             trainingDays.AddToClassList("mb__training-days");
             training.Add(trainingDays);
@@ -293,11 +293,11 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            var run = activeRun();
+            var work = inFlight();
 
-            if (run != null)
+            if (work.Busy)
             {
-                ShowTraining(run);
+                ShowWork(work);
                 return;
             }
 
@@ -347,21 +347,21 @@ namespace ScalingLaws.UI
                 : "Nothing has shipped yet.";
         }
 
-        private void ShowTraining(TrainingRun run)
+        private void ShowWork(WorkInFlight work)
         {
             body.style.display = DisplayStyle.None;
             manage.style.display = DisplayStyle.None;
             training.style.display = DisplayStyle.Flex;
 
-            title.text = run.Blueprint.Name.ToUpperInvariant();
+            title.text = work.Subject.ToUpperInvariant();
+            trainingCaption.text = work.Caption;
+            trainingFill.style.width = Length.Percent((float)(work.Progress * 100.0));
 
-            var progress = Math.Clamp(run.Progress, 0.0, 1.0);
-            trainingFill.style.width = Length.Percent((float)(progress * 100.0));
-
-            var done = (int)Math.Round(run.PetaflopDaysCompleted);
-            var needed = (int)Math.Round(run.PetaflopDaysRequired);
-
-            trainingDays.text = $"{progress:P0}   {done:N0} of {needed:N0} PF-days";
+            // Days left, which is the number a player actually plans around. The percentage is there
+            // to make the bar readable, not to be the answer.
+            trainingDays.text = work.DaysLeft == 1
+                ? $"1 day left   ({work.Progress:P0})"
+                : $"{work.DaysLeft:N0} days left   ({work.Progress:P0})";
         }
     }
 }

@@ -121,6 +121,7 @@ namespace ScalingLaws.Persistence
                     17 => UpgradeV17ToV18(current),
                     18 => UpgradeV18ToV19(current),
                     19 => UpgradeV19ToV20(current),
+                    20 => UpgradeV20ToV21(current),
                     _ => current
                 };
             }
@@ -763,6 +764,34 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v19 to v20: the user charts start empty. An older save has no day by day record and "
                 + "drawing a flat line would invent three months of history that never happened.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v20 to v21: research points.
+        ///
+        /// A v20 company banked none, because there was nothing to bank them in. Starting at zero is
+        /// the true reading and it is also the fair one: the points a company would have earned are a
+        /// function of days it spent building, and an older save has no record of which days those
+        /// were. Funding starts at the smallest fixed budget, which is what a new company chooses.
+        /// </summary>
+        public static SaveData UpgradeV20ToV21(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 21;
+            data.researchPoints = 0.0;
+            data.researchFundingMode = 0;
+            data.researchMonthlyUsd = 1_000;
+            data.researchRevenueShare = 0.0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v20 to v21: research points start at zero. They are earned by building, and an older "
+                + "save has no record of which days were spent building.");
 
             return data;
         }

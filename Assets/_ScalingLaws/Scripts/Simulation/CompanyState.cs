@@ -142,6 +142,25 @@ namespace ScalingLaws.Simulation
         /// <summary>The node being researched, or null. One at a time.</summary>
         public ResearchProject ActiveResearch { get; set; }
 
+        /// <summary>
+        /// Research points banked. Earned by building things and by paying for them, spent on nodes.
+        ///
+        /// A stock rather than a rate, because the decision the player makes is when to spend it: a
+        /// node held back is points kept for a more expensive one later.
+        /// </summary>
+        public double ResearchPoints { get; set; }
+
+        /// <summary>Points earned on the last day simulated, for the counter and the bubbles.</summary>
+        public double ResearchPointsToday { get; set; }
+
+        public ResearchFundingMode ResearchFunding { get; set; } = ResearchFundingMode.Fixed;
+
+        /// <summary>What a fixed budget pays each month. Starts at the smallest the slider offers.</summary>
+        public long ResearchMonthlyUsd { get; set; } = ResearchBudget.MinimumMonthlyUsd;
+
+        /// <summary>Share of revenue diverted to research when the mode is a revenue share.</summary>
+        public double ResearchRevenueShare { get; set; }
+
         public bool HasResearch(ResearchNodeId node) =>
             node == ResearchNodeId.None || UnlockedResearch.Contains(node);
 
