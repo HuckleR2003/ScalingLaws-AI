@@ -3459,11 +3459,20 @@
    Sits below the top bar at 54px like the counter it replaces.
    --------------------------------------------------------------------------- */
 
-.mb {
+/* The corner is a stack: one banner per product on sale. The stack owns the position, so the
+   banners sit in normal flow inside it and a second one lands under the first rather than on top. */
+.mb-stack {
     position: absolute;
     top: 54px;
     right: 20px;
     width: 316px;
+    align-items: stretch;
+}
+
+.mb {
+    width: 100%;
+    flex-shrink: 0;
+    margin-bottom: 8px;
     background-color: rgb(250, 250, 250);
     border-width: 2px;
     border-color: rgb(24, 26, 30);
@@ -5272,4 +5281,242 @@
     white-space: normal;
     padding-top: 6px;
     padding-bottom: 10px;
+}
+
+
+/* ---- managing one model: shutdown, upgrade, who is on it ----
+
+   Built to the same shape as the hosting switch, because it answers the same kind of question: two
+   heavy actions side by side with the state of the thing between them, rather than a menu. Red left,
+   amber middle, the live figure right. SHUTDOWN is absent rather than disabled on a withdrawn model,
+   and a spacer keeps the middle button in the same column so a list does not shuffle sideways. */
+
+.mcb {
+    flex-direction: row;
+    align-items: stretch;
+    height: 52px;
+    flex-shrink: 0;
+    margin-top: 10px;
+    background-color: rgb(16, 20, 27);
+    border-width: 2px;
+    border-color: rgb(232, 226, 214);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.mcb--armed {
+    border-color: rgb(226, 78, 62);
+}
+
+.mcb__stop {
+    width: 34%;
+    margin: 0;
+    border-width: 0;
+    border-right-width: 2px;
+    border-right-color: rgb(232, 226, 214);
+    border-radius: 0;
+    font-size: 13px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(252, 240, 238);
+    background-color: rgb(158, 38, 32);
+}
+
+.mcb__stop:hover {
+    background-color: rgb(196, 48, 40);
+}
+
+.mcb__stop--armed {
+    background-color: rgb(226, 78, 62);
+    color: rgb(255, 252, 250);
+    font-size: 12px;
+}
+
+.mcb__gone {
+    width: 34%;
+    -unity-text-align: middle-center;
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(110, 120, 138);
+    background-color: rgba(255, 255, 255, 0.03);
+    border-right-width: 2px;
+    border-right-color: rgba(232, 226, 214, 0.35);
+}
+
+.mcb__upgrade {
+    width: 33%;
+    margin: 0;
+    border-width: 0;
+    border-right-width: 2px;
+    border-right-color: rgb(232, 226, 214);
+    border-radius: 0;
+    font-size: 13px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(46, 34, 8);
+    background-color: rgb(224, 176, 62);
+}
+
+.mcb__upgrade:hover {
+    background-color: rgb(242, 196, 84);
+}
+
+.mcb__upgrade:disabled {
+    color: rgb(120, 112, 96);
+    background-color: rgb(86, 76, 52);
+}
+
+.mcb__active {
+    flex-grow: 1;
+    justify-content: center;
+    padding-left: 14px;
+    background-color: rgb(244, 240, 232);
+}
+
+.mcb__caption {
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(122, 116, 104);
+}
+
+.mcb__figure {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(28, 26, 24);
+}
+
+.mcb-problem {
+    flex-shrink: 0;
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(232, 150, 130);
+    white-space: normal;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: var(--card-radius);
+    background-color: rgba(158, 38, 32, 0.22);
+}
+
+/* ---- the archive ---- */
+
+.archive-scroll {
+    flex-grow: 1;
+}
+
+.arch {
+    flex-shrink: 0;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: var(--card-radius);
+    background-color: rgba(6, 30, 62, 0.40);
+    border-left-width: 3px;
+    border-left-color: rgba(255, 255, 255, 0.10);
+}
+
+.arch--live {
+    border-left-color: rgb(64, 176, 128);
+    background-color: rgba(6, 40, 62, 0.52);
+}
+
+.arch--gone {
+    border-left-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(6, 18, 34, 0.40);
+}
+
+.arch__head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.arch__name {
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 0.6px;
+    color: rgb(238, 242, 250);
+    white-space: normal;
+}
+
+.arch__line {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    margin-top: 3px;
+    white-space: normal;
+}
+
+.arch__state {
+    flex-shrink: 0;
+    margin-left: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border-radius: 3px;
+    font-size: 8px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+}
+
+.arch__state--live {
+    color: rgb(214, 250, 230);
+    background-color: rgba(64, 176, 128, 0.30);
+}
+
+.arch__state--shadow {
+    color: rgb(240, 220, 180);
+    background-color: rgba(224, 176, 62, 0.22);
+}
+
+.arch__state--gone {
+    color: rgb(150, 162, 182);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.arch__figures {
+    flex-direction: row;
+    margin-top: 12px;
+}
+
+.arch-figure {
+    flex-grow: 1;
+    flex-basis: 0;
+    padding-right: 12px;
+}
+
+.arch-figure__label {
+    font-size: 8px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(140, 152, 172);
+}
+
+.arch-figure__value {
+    font-size: 19px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+    margin-top: 2px;
+}
+
+.arch-figure__foot {
+    font-size: 9px;
+    color: rgb(128, 140, 158);
+    margin-top: 2px;
+    white-space: normal;
+}
+
+/* A follower is the same panel at a lower density: no chart, no training strip, and two cells that
+   answer for the model rather than for the company. */
+.mb--compact .mb__body {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.mb--compact .mb__manage {
+    display: none;
+}
+
+.mb--compact .mb__divider {
+    display: none;
 }

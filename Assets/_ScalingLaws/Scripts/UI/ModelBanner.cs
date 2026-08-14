@@ -141,15 +141,30 @@ namespace ScalingLaws.UI
         /// <summary>The player asked to see the banner even though nothing has shipped.</summary>
         private bool openedEmpty;
 
+        /// <summary>
+        /// True for the extra banners in the stack.
+        ///
+        /// A company running three lines has three products on sale, and each deserves its own
+        /// corner panel. What it does **not** deserve is three copies of the chart, three training
+        /// strips for one run, and three buttons to the same management page. The lead banner carries
+        /// those; the others carry the name, the meters and what the model has taken.
+        ///
+        /// One class with two densities rather than a second widget, because the subject is the same
+        /// and two widgets for one subject drift apart.
+        /// </summary>
+        private readonly bool compact;
+
         public ModelBanner(Func<ProductStanding> product, Func<WorkInFlight> inFlight,
-            Func<IReadOnlyList<long>> dailySeries, Action openManagement)
+            Func<IReadOnlyList<long>> dailySeries, Action openManagement, bool compact = false)
         {
             this.product = product;
             this.inFlight = inFlight;
             this.dailySeries = dailySeries;
+            this.compact = compact;
 
             Root = new VisualElement();
             Root.AddToClassList("mb");
+            Root.EnableInClassList("mb--compact", compact);
 
             var head = new VisualElement();
             head.AddToClassList("mb__head");
@@ -211,13 +226,19 @@ namespace ScalingLaws.UI
             subscribers.AddToClassList("mb__subs");
             body.Add(subscribers);
 
-            body.Add(chart);
+            if (!compact)
+            {
+                body.Add(chart);
+            }
 
             var footer = new VisualElement();
             footer.AddToClassList("mb__footer");
 
-            footer.Add(FooterCell("NET INCOME", net));
-            footer.Add(FooterCell("SUBS. EARNINGS", earnings));
+            // The lead banner reports the company: what came in and what is left of it. A follower
+            // reports the model: what this one has taken since it went on sale. Same two cells, two
+            // different questions, and the captions say which is which so neither can be misread.
+            footer.Add(FooterCell(compact ? "USERS ON IT" : "NET INCOME", net));
+            footer.Add(FooterCell(compact ? "EARNED ALL TIME" : "SUBS. EARNINGS", earnings));
             body.Add(footer);
 
             return body;
@@ -262,6 +283,14 @@ namespace ScalingLaws.UI
         {
             training.AddToClassList("mb__training");
             training.style.display = DisplayStyle.None;
+
+            // One run, one strip. Repeating it under every product on sale would say three things
+            // are training when one is.
+            if (compact)
+            {
+                training.style.display = DisplayStyle.None;
+                return training;
+            }
 
             // The fill sits behind the words rather than beside them, so the whole strip is the
             // progress bar. A run is weeks long and this is the only thing happening; it should read

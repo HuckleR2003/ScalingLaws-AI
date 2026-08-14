@@ -628,6 +628,110 @@ namespace ScalingLaws.Simulation
         /// Commissions one level of one trait. Cash goes now, compute and calendar are consumed as
         /// the programme runs, and it competes with the training run for the cluster.
         /// </summary>
+        /// <summary>
+        /// Takes a model off sale for good.
+        ///
+        /// **Until now the only thing in the game that could retire a model was a safety incident**,
+        /// so a player could put a weak line on the market and never take it off. It is a real
+        /// decision rather than tidying: a live model in its own line competes, wins share, and is
+        /// then served out of the same fleet as everything else. A tired product holding a slice of
+        /// an audience is a slice your good model is not holding, served at a latency your good
+        /// model then shares.
+        ///
+        /// It is deliberately **not reversible**. Withdrawing a product and quietly putting it back
+        /// when the quarter looks thin is not a decision, and an undo would make shutting down free.
+        /// </summary>
+        public bool TryRetireModel(DeployedModel model, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (model == null)
+            {
+                failureReason = "No model.";
+                return false;
+            }
+
+            if (model.IsRetired)
+            {
+                failureReason = $"{model.Name} is already off sale.";
+                return false;
+            }
+
+            // An upgrade in flight is work being paid for. Letting the product it improves vanish
+            // underneath it would leave the programme running against nothing.
+            var slot = -1;
+            for (var index = 0; index < State.DeployedModels.Count; index++)
+            {
+                if (ReferenceEquals(State.DeployedModels[index], model))
+                {
+                    slot = index;
+                    break;
+                }
+            }
+            foreach (var project in State.UpgradeProjects)
+            {
+                if (project.ModelIndex == slot)
+                {
+                    failureReason = $"An upgrade programme is running on {model.Name}. "
+                        + "Cancel it or let it finish first.";
+
+                    return false;
+                }
+            }
+
+            model.RetireOn(State.Date);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.ModelShelved,
+                State.Date,
+                $"{model.Name} has been withdrawn from sale after "
+                + $"{model.DaysOnSale} days and {UsdText(model.LifetimeRevenueUsd)} earned."));
+
+            return true;
+        }
+
+        private static string UsdText(long amount) => "$" + amount.ToString("N0");
+
+        /// <summary>
+        /// Every model the company ever put on sale, newest first.
+        ///
+        /// The list the archive draws. Retired models stay in <see cref="CompanyState.DeployedModels"/>
+        /// rather than being removed, which is what makes a history possible at all, so this is a
+        /// view over that list rather than a second store.
+        /// </summary>
+        public List<ModelRecord> ModelHistory()
+        {
+            var records = new List<ModelRecord>(State.DeployedModels.Count);
+
+            for (var index = 0; index < State.DeployedModels.Count; index++)
+            {
+                var model = State.DeployedModels[index];
+                if (model == null)
+                {
+                    continue;
+                }
+
+                var live = model.IsLiveOn(State.Date);
+                var marketed = live && !IsSupersededInItsLine(model);
+
+                var users = 0.0;
+                if (marketed && MarketByType().TryGetType(model.Type, out var standing))
+                {
+                    users = standing.PlayerUsers;
+                }
+
+                records.Add(new ModelRecord(index, model, live, marketed, users,
+                    model.EffectiveCapability(State.Date)));
+            }
+
+            // Newest first, because the question the archive answers is "how does the thirtieth
+            // compare to the first" and the thirtieth is the one being looked at.
+            records.Sort((left, right) =>
+                right.Model.ReleaseDate.DayIndex.CompareTo(left.Model.ReleaseDate.DayIndex));
+
+            return records;
+        }
+
         public bool TryStartUpgrade(int modelIndex, ModelTrait trait, out string failureReason)
         {
             failureReason = string.Empty;
@@ -1795,6 +1899,56 @@ namespace ScalingLaws.Simulation
             }
 
             return best;
+        }
+
+        /// <summary>
+        /// One product's standing, for its own corner banner.
+        ///
+        /// The company-wide figures are deliberately replaced by this model's own: a follower banner
+        /// carries the people on it and what it has taken since release, because "net income" three
+        /// times over would be the same number printed three times.
+        /// </summary>
+        public ProductStanding ProductFor(in ModelRecord record)
+        {
+            var model = record.Model;
+            if (model == null)
+            {
+                return new ProductStanding(null, false, 0.0, 0.0, 0.0, 0L, 0L, 0, 0.0,
+                    Market.FrontierCapability);
+            }
+
+            var capability = record.CapabilityToday;
+            var age = State.Date.DayIndex - model.ReleaseDate.DayIndex;
+
+            return new ProductStanding(
+                model.Name,
+                true,
+                Sentiment().Satisfaction,
+                ProductStanding.TopicalityOf(age, capability, Market.FrontierCapability),
+                record.Users,
+                model.LifetimeRevenueUsd,
+                (long)Math.Round(record.Users),
+                age,
+                capability,
+                Market.FrontierCapability);
+        }
+
+        /// <summary>Everything on sale right now, strongest first. One banner each.</summary>
+        public List<ModelRecord> MarketedModels()
+        {
+            var marketed = new List<ModelRecord>();
+            foreach (var record in ModelHistory())
+            {
+                if (record.IsMarketed)
+                {
+                    marketed.Add(record);
+                }
+            }
+
+            marketed.Sort((left, right) =>
+                right.CapabilityToday.CompareTo(left.CapabilityToday));
+
+            return marketed;
         }
 
         public ProductStanding Product()

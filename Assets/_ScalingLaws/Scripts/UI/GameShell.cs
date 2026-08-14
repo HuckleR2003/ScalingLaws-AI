@@ -41,6 +41,18 @@ namespace ScalingLaws.UI
         private ManagementScreen management;
         private NewsScreen news;
         private NewsBanner newsBanner;
+        private VisualElement bannerStack;
+
+        /// <summary>
+        /// One banner per product on sale, after the lead one.
+        ///
+        /// Rebuilt only when the set of marketed models changes, never per frame: they are compared
+        /// by the model each describes rather than by count, because superseding one line while
+        /// shipping in another leaves the count the same and the products different.
+        /// </summary>
+        private readonly List<ModelBanner> followerBanners = new();
+
+        private readonly List<DeployedModel> followerModels = new();
         private int daysSinceAutoSave;
         private bool gameOverShown;
 
@@ -389,7 +401,8 @@ namespace ScalingLaws.UI
             management = new ManagementScreen(simulation,
                 () => Show(Screen.Release),
                 () => Show(Screen.Marketing),
-                () => Show(Screen.Fleet));
+                () => Show(Screen.Fleet),
+                () => Show(Screen.Upgrade));
 
             news = new NewsScreen(simulation, (tier, joined) =>
             {
@@ -402,7 +415,13 @@ namespace ScalingLaws.UI
             newsBanner = new NewsBanner(() => simulation.State.News, () => Show(Screen.News));
             root.Add(newsBanner.Root);
 
-            root.Add(modelBanner.Root);
+            // The corner is a stack now. One product on sale is one banner, because a company
+            // running three lines is running three products and a single panel describing only the
+            // strongest was hiding two of them.
+            bannerStack = new VisualElement();
+            bannerStack.AddToClassList("mb-stack");
+            bannerStack.Add(modelBanner.Root);
+            root.Add(bannerStack);
 
             RefreshChrome();
         }
@@ -3145,6 +3164,80 @@ namespace ScalingLaws.UI
             return label;
         }
 
+        /// <summary>
+        /// Keeps one compact banner per product on sale behind the lead one.
+        ///
+        /// The lead banner already describes the strongest model, so the followers start at the
+        /// second. They are rebuilt only when the actual set of models changes: doing it per frame
+        /// would churn several panels of elements sixty times a second for a list that changes a
+        /// handful of times in a whole campaign, which is the mistake the creator's readouts made.
+        /// </summary>
+        private void RefreshFollowerBanners()
+        {
+            if (bannerStack == null)
+            {
+                return;
+            }
+
+            var marketed = simulation.MarketedModels();
+            var wanted = Math.Max(0, marketed.Count - 1);
+
+            var same = followerModels.Count == wanted;
+            for (var index = 0; same && index < wanted; index++)
+            {
+                same = ReferenceEquals(followerModels[index], marketed[index + 1].Model);
+            }
+
+            if (!same)
+            {
+                foreach (var banner in followerBanners)
+                {
+                    banner.Root.RemoveFromHierarchy();
+                }
+
+                followerBanners.Clear();
+                followerModels.Clear();
+
+                for (var index = 0; index < wanted; index++)
+                {
+                    var model = marketed[index + 1].Model;
+                    followerModels.Add(model);
+
+                    // Read through a function so the banner follows the model rather than a snapshot
+                    // taken at the moment it was built.
+                    var banner = new ModelBanner(
+                        () => StandingOf(model),
+                        () => default,
+                        Array.Empty<long>,
+                        () => Show(Screen.Management),
+                        true);
+
+                    followerBanners.Add(banner);
+                    bannerStack.Add(banner.Root);
+                }
+            }
+
+            foreach (var banner in followerBanners)
+            {
+                banner.SetHidden(current != Screen.Site);
+                banner.Refresh();
+            }
+        }
+
+        /// <summary>This model's own standing, or an empty one once it stops being sold.</summary>
+        private ProductStanding StandingOf(DeployedModel model)
+        {
+            foreach (var record in simulation.MarketedModels())
+            {
+                if (ReferenceEquals(record.Model, model))
+                {
+                    return simulation.ProductFor(record);
+                }
+            }
+
+            return default;
+        }
+
         private void DrainEvents()
         {
             while (state.TryDequeueEvent(out var companyEvent))
@@ -3175,6 +3268,8 @@ namespace ScalingLaws.UI
             // it would sit on top of the page rather than beside it.
             newsBanner?.SetHidden(current != Screen.Site);
             newsBanner?.Refresh();
+
+            RefreshFollowerBanners();
             modelBanner?.Refresh();
             valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
             companyLabel.text = state.CompanyName;

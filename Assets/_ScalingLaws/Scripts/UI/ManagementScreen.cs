@@ -35,16 +35,36 @@ namespace ScalingLaws.UI
         private readonly Action openRelease;
         private readonly Action openMarketing;
         private readonly Action openFleet;
+        private readonly Action openUpgrade;
 
-        private bool showingDesk;
+        private Tab showing = Tab.Page;
+
+        /// <summary>
+        /// The model waiting for a second click on SHUTDOWN, or null.
+        ///
+        /// Withdrawing a product cannot be undone, and the control sits next to UPGRADE, so a single
+        /// click would eventually be a mis-click with no way back. Held on the screen rather than in
+        /// the simulation because arming is a property of this interface, not of the company.
+        /// </summary>
+        private DeployedModel armed;
+
+        private string lastFailure = string.Empty;
+
+        private enum Tab
+        {
+            Page,
+            Desk,
+            Archive
+        }
 
         public ManagementScreen(CompanySimulation simulation, Action openRelease,
-            Action openMarketing, Action openFleet)
+            Action openMarketing, Action openFleet, Action openUpgrade)
         {
             this.simulation = simulation;
             this.openRelease = openRelease;
             this.openMarketing = openMarketing;
             this.openFleet = openFleet;
+            this.openUpgrade = openUpgrade;
 
             Root = new VisualElement();
             Root.AddToClassList("content");
@@ -57,9 +77,16 @@ namespace ScalingLaws.UI
         /// has no panel to dispatch a click into, and a screen whose only route between its two
         /// halves is a closure is a screen no test can walk.
         /// </summary>
-        public void ShowDesk(bool desk)
+        public void ShowDesk(bool desk) => Open(desk ? Tab.Desk : Tab.Page);
+
+        /// <summary>Opens the archive. Named so a test and a button reach it the same way.</summary>
+        public void ShowArchive() => Open(Tab.Archive);
+
+        private void Open(Tab tab)
         {
-            showingDesk = desk;
+            showing = tab;
+            armed = null;
+            lastFailure = string.Empty;
             Refresh();
         }
 
@@ -69,18 +96,43 @@ namespace ScalingLaws.UI
 
             var product = simulation.Product();
 
-            var title = new Label(showingDesk ? "MANAGEMENT" : "OFFICIAL PAGE");
+            var title = new Label(showing switch
+            {
+                Tab.Desk => "MANAGEMENT",
+                Tab.Archive => "ARCHIVE",
+                _ => "OFFICIAL PAGE"
+            });
+
             title.AddToClassList("page-title");
             Root.Add(title);
 
-            var subtitle = new Label(showingDesk
-                ? "What the numbers say. Held users, what they think, what it costs to keep them."
-                : "What a stranger sees when they look you up.");
+            var subtitle = new Label(showing switch
+            {
+                Tab.Desk => "What the numbers say. Held users, what they think, what it costs to keep them.",
+                Tab.Archive => "Every model the company ever put on sale, newest first. What each one "
+                    + "scored, what it earned, and whether anyone is still using it.",
+                _ => "What a stranger sees when they look you up."
+            });
 
             subtitle.AddToClassList("page-subtitle");
             Root.Add(subtitle);
 
             Root.Add(BuildTabs());
+
+            if (lastFailure.Length > 0)
+            {
+                var problem = new Label(lastFailure);
+                problem.AddToClassList("mcb-problem");
+                Root.Add(problem);
+            }
+
+            // The archive is the one tab that is worth opening with nothing on sale, because that is
+            // exactly when a player wants to see what they used to have.
+            if (showing == Tab.Archive)
+            {
+                BuildArchive();
+                return;
+            }
 
             if (!product.Exists)
             {
@@ -88,7 +140,7 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            if (showingDesk)
+            if (showing == Tab.Desk)
             {
                 BuildDesk(product);
             }
@@ -103,13 +155,14 @@ namespace ScalingLaws.UI
             var tabs = new VisualElement();
             tabs.AddToClassList("mg-tabs");
 
-            tabs.Add(Tab("OFFICIAL PAGE", !showingDesk, () => ShowDesk(false)));
-            tabs.Add(Tab("MANAGEMENT", showingDesk, () => ShowDesk(true)));
+            tabs.Add(TabButton("OFFICIAL PAGE", showing == Tab.Page, () => Open(Tab.Page)));
+            tabs.Add(TabButton("MANAGEMENT", showing == Tab.Desk, () => Open(Tab.Desk)));
+            tabs.Add(TabButton("ARCHIVE", showing == Tab.Archive, () => Open(Tab.Archive)));
 
             return tabs;
         }
 
-        private static Button Tab(string text, bool on, Action click)
+        private static Button TabButton(string text, bool on, Action click)
         {
             var tab = new Button(click) { text = text };
             tab.AddToClassList("mg-tab");
@@ -460,9 +513,189 @@ namespace ScalingLaws.UI
         private void BuildDesk(ProductStanding product)
         {
             Root.Add(BuildKpis(product));
+            Root.Add(BuildFlagshipControl());
             Root.Add(BuildStandingPanel());
             Root.Add(BuildAudienceTable());
             Root.Add(BuildRivalPanel());
+        }
+
+        // ---- the archive -----------------------------------------------------------------------
+
+        /// <summary>
+        /// Every model the company ever sold, newest first, each with its own management bar.
+        ///
+        /// The comparison is the point: the first one against the thirtieth, what each scored and
+        /// what each earned. Superseded models are drawn as plainly as retired ones, because a player
+        /// looking at a list of live models would otherwise expect all of them to be earning and be
+        /// wrong about most of them.
+        /// </summary>
+        private void BuildArchive()
+        {
+            var history = simulation.ModelHistory();
+
+            if (history.Count == 0)
+            {
+                var panel = new VisualElement();
+                panel.AddToClassList("panel");
+
+                var heading = new Label("NOTHING SHIPPED YET");
+                heading.AddToClassList("panel__heading");
+                panel.Add(heading);
+
+                var line = new Label("The archive fills the first time a model reaches the market. "
+                    + "Runs still on the shelf are not in it, because they were never on sale.");
+
+                line.AddToClassList("field__hint");
+                panel.Add(line);
+                Root.Add(panel);
+                return;
+            }
+
+            Root.Add(BuildArchiveSummary(history));
+
+            var scroll = new ScrollView();
+            scroll.AddToClassList("archive-scroll");
+
+            var ordinal = history.Count;
+            foreach (var record in history)
+            {
+                scroll.Add(BuildArchiveCard(record, ordinal));
+                ordinal--;
+            }
+
+            Root.Add(scroll);
+        }
+
+        /// <summary>The three numbers that make a list of models into a history.</summary>
+        private VisualElement BuildArchiveSummary(IReadOnlyList<ModelRecord> history)
+        {
+            var earned = 0L;
+            var best = 0.0;
+            var live = 0;
+
+            foreach (var record in history)
+            {
+                earned += record.Model.LifetimeRevenueUsd;
+                best = Math.Max(best, record.CapabilityToday);
+
+                if (record.IsLive)
+                {
+                    live++;
+                }
+            }
+
+            var row = new VisualElement();
+            row.AddToClassList("mg-kpis");
+
+            row.Add(Kpi("SHIPPED", history.Count.ToString(), live + " still on sale", null));
+            row.Add(Kpi("EARNED ALL TIME", UiFormat.Money(earned), "across every model", null));
+            row.Add(Kpi("BEST EVER", UiFormat.Number(best),
+                $"frontier is {UiFormat.Number(simulation.Market.FrontierCapability)}", null));
+
+            return row;
+        }
+
+        private VisualElement BuildArchiveCard(ModelRecord record, int ordinal)
+        {
+            var model = record.Model;
+
+            var card = new VisualElement();
+            card.AddToClassList("arch");
+            card.EnableInClassList("arch--live", record.IsMarketed);
+            card.EnableInClassList("arch--gone", !record.IsLive);
+
+            var head = new VisualElement();
+            head.AddToClassList("arch__head");
+
+            var left = new VisualElement();
+
+            var name = new Label($"#{ordinal}  {model.Name.ToUpperInvariant()}");
+            name.AddToClassList("arch__name");
+            left.Add(name);
+
+            var line = new Label(
+                $"{ModelTypeCatalog.Get(model.Type).DisplayName}  ·  {model.Family} line  ·  "
+                + $"released {model.ReleaseDate}"
+                + (record.IsLive ? string.Empty : $", withdrawn {model.RetiredOn}"));
+
+            line.AddToClassList("arch__line");
+            left.Add(line);
+
+            head.Add(left);
+
+            var state = new Label(record.StateWord);
+            state.AddToClassList("arch__state");
+            state.AddToClassList(record.IsMarketed
+                ? "arch__state--live"
+                : record.IsLive ? "arch__state--shadow" : "arch__state--gone");
+
+            head.Add(state);
+            card.Add(head);
+
+            var figures = new VisualElement();
+            figures.AddToClassList("arch__figures");
+
+            figures.Add(ArchFigure("SCORED", UiFormat.Number(record.CapabilityToday),
+                Math.Abs(record.CapabilityToday - model.Capability) > 0.05
+                    ? $"shipped at {UiFormat.Number(model.Capability)}"
+                    : "unchanged since release"));
+
+            figures.Add(ArchFigure("EARNED", UiFormat.Money(model.LifetimeRevenueUsd),
+                model.DaysOnSale > 0
+                    ? $"over {UiFormat.Days(model.DaysOnSale)} on sale"
+                    : "never sold a token"));
+
+            figures.Add(ArchFigure("PEAK", UiFormat.Count(model.PeakUsers), "most it ever held"));
+
+            card.Add(figures);
+
+            card.Add(ModelControlBar.Build(record,
+                record.CanRetire ? () => Shutdown(model) : null,
+                openUpgrade,
+                ReferenceEquals(armed, model)));
+
+            return card;
+        }
+
+        private static VisualElement ArchFigure(string label, string value, string foot)
+        {
+            var figure = new VisualElement();
+            figure.AddToClassList("arch-figure");
+
+            var caption = new Label(label);
+            caption.AddToClassList("arch-figure__label");
+            figure.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("arch-figure__value");
+            figure.Add(amount);
+
+            var under = new Label(foot);
+            under.AddToClassList("arch-figure__foot");
+            figure.Add(under);
+
+            return figure;
+        }
+
+        /// <summary>
+        /// Two clicks, because withdrawing a product cannot be undone and the control sits beside
+        /// UPGRADE. The first arms it and changes the word; the second does it.
+        /// </summary>
+        public void RequestShutdown(DeployedModel model) => Shutdown(model);
+
+        private void Shutdown(DeployedModel model)
+        {
+            if (!ReferenceEquals(armed, model))
+            {
+                armed = model;
+                lastFailure = string.Empty;
+                Refresh();
+                return;
+            }
+
+            armed = null;
+            lastFailure = simulation.TryRetireModel(model, out var reason) ? string.Empty : reason;
+            Refresh();
         }
 
         private VisualElement BuildKpis(ProductStanding product)
@@ -516,6 +749,50 @@ namespace ScalingLaws.UI
             tile.Add(under);
 
             return tile;
+        }
+
+        /// <summary>
+        /// The management bar for the thing currently on sale.
+        ///
+        /// The same control the archive draws, on the model the desk is already describing, so a
+        /// player who has just read that the fleet is at ninety five percent can act on it here
+        /// rather than going looking for the model in a list.
+        /// </summary>
+        private VisualElement BuildFlagshipControl()
+        {
+            var flagship = simulation.Flagship();
+            if (flagship == null)
+            {
+                return new VisualElement();
+            }
+
+            foreach (var record in simulation.ModelHistory())
+            {
+                if (!ReferenceEquals(record.Model, flagship))
+                {
+                    continue;
+                }
+
+                var panel = new VisualElement();
+                panel.AddToClassList("panel");
+
+                var heading = new Label("ON SALE NOW: " + flagship.Name.ToUpperInvariant());
+                heading.AddToClassList("panel__heading");
+                panel.Add(heading);
+
+                panel.Add(ModelControlBar.Build(record, () => Shutdown(flagship), openUpgrade,
+                    ReferenceEquals(armed, flagship)));
+
+                var note = new Label("Withdrawing it is permanent. The line stops competing, and "
+                    + "whatever fleet it was using goes back to everything else.");
+
+                note.AddToClassList("field__hint");
+                panel.Add(note);
+
+                return panel;
+            }
+
+            return new VisualElement();
         }
 
         private VisualElement BuildStandingPanel()

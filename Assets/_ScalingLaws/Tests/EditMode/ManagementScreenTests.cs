@@ -31,7 +31,7 @@ namespace ScalingLaws.Tests.EditMode
     public sealed class ManagementScreenTests
     {
         private static ManagementScreen Screen(CompanySimulation simulation) =>
-            new(simulation, () => { }, () => { }, () => { });
+            new(simulation, () => { }, () => { }, () => { }, () => { });
 
         private static CompanySimulation Selling(uint seed = 404, int days = 40)
         {

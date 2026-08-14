@@ -1286,7 +1286,7 @@ namespace ScalingLaws.UI
                 + $"{UiFormat.Petaflops(profile.EffectivePetaflops)} usable, "
                 + $"{UiFormat.Money(SimUnitsToDaily(profile))}/day)";
 
-            readouts.Clear();
+            BeginReadouts();
             AddReadout("Projected capability", UiFormat.Number(projection.ProjectedCapability), Tone.Neutral);
             AddReadout("Frontier today", UiFormat.Number(simulation.Market.FrontierCapability), Tone.Neutral);
             AddReadout(
@@ -1306,6 +1306,7 @@ namespace ScalingLaws.UI
                 projection.MemoryRequiredGigabytes > projection.MemoryAvailableGigabytes ? Tone.Bad : Tone.Good);
             AddReadout("Data quality", UiFormat.Number(projection.Blend.QualityMultiplier, 2),
                 projection.Blend.IsSufficient ? Tone.Good : Tone.Bad);
+            EndReadouts();
 
             verdict.RemoveFromClassList("verdict--ok");
             verdict.RemoveFromClassList("verdict--blocked");
@@ -1357,7 +1358,6 @@ namespace ScalingLaws.UI
                 : 0.0;
             previousCapability = projection.ProjectedCapability;
 
-            effectBanner.Clear();
             effectBanner.EnableInClassList("effect-banner--blocked", !projection.IsFeasible);
 
             var bill = projection.ComputeCashCostUsd;
@@ -1367,24 +1367,58 @@ namespace ScalingLaws.UI
             // Each figure carries a bar rather than a sentence. The bar is measured against the thing
             // that makes the number mean something: capability against the frontier it has to beat,
             // the bill against the money actually in the account.
-            effectBanner.Add(EffectFigure("PROJECTED CAPABILITY",
-                UiFormat.Number(projection.ProjectedCapability),
-                projection.ProjectedCapability / frontier, FigureTone.Cool, delta));
-            effectBanner.Add(EffectFigure("FRONTIER TODAY",
-                UiFormat.Number(simulation.Market.FrontierCapability),
-                simulation.Market.FrontierCapability / 100.0, FigureTone.Cool, 0.0));
-            effectBanner.Add(EffectFigure("TIME TO TRAIN",
-                UiFormat.Days(projection.TrainingDays),
-                projection.TrainingDays / 365.0, FigureTone.Warm, 0.0));
-            effectBanner.Add(EffectFigure("CASH IT BURNS", UiFormat.Money(bill),
-                bill / cash, FigureTone.Warm, 0.0));
+            SetFigure(0, "PROJECTED CAPABILITY", UiFormat.Number(projection.ProjectedCapability),
+                projection.ProjectedCapability / frontier, FigureTone.Cool, delta);
+            SetFigure(1, "FRONTIER TODAY", UiFormat.Number(simulation.Market.FrontierCapability),
+                simulation.Market.FrontierCapability / 100.0, FigureTone.Cool, 0.0);
+            SetFigure(2, "TIME TO TRAIN", UiFormat.Days(projection.TrainingDays),
+                projection.TrainingDays / 365.0, FigureTone.Warm, 0.0);
+            SetFigure(3, "CASH IT BURNS", UiFormat.Money(bill), bill / cash, FigureTone.Warm, 0.0);
 
-            if (!projection.IsFeasible)
+            if (blockedLabel.parent == null)
             {
-                var blocked = new Label(projection.BlockingReason);
-                blocked.AddToClassList("effect-banner__blocked");
-                effectBanner.Add(blocked);
+                // Added after the figures so it sits under them, and kept rather than rebuilt so an
+                // infeasible run does not churn the banner on every frame of a drag.
+                blockedLabel.AddToClassList("effect-banner__blocked");
+                effectBanner.Add(blockedLabel);
             }
+
+            blockedLabel.text = projection.IsFeasible ? string.Empty : projection.BlockingReason;
+            blockedLabel.style.display = projection.IsFeasible
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+        }
+
+        // The same pooling as the readout table, for the same reason: this banner sat under a slider
+        // and was rebuilt from nothing on every frame of every drag.
+        private readonly List<(Label Name, Label Value, VisualElement Fill)> figures = new();
+        private readonly Label blockedLabel = new();
+
+        private void SetFigure(int slot, string label, string value, double fraction, FigureTone tone,
+            double delta)
+        {
+            while (figures.Count <= slot)
+            {
+                // Built with this slot's tone, because the bar's gradient is a baked texture painted
+                // once at construction rather than a class that could be toggled later.
+                var built = EffectFigure(string.Empty, string.Empty, 0.0, tone, 0.0);
+                effectBanner.Add(built);
+
+                figures.Add((
+                    (Label)built.ElementAt(0),
+                    (Label)built.ElementAt(1),
+                    built.ElementAt(2).ElementAt(0)));
+            }
+
+            var (name, amount, fill) = figures[slot];
+
+            name.text = label;
+            amount.text = value;
+            amount.EnableInClassList("effect-figure__value--up", delta > 0.05);
+            amount.EnableInClassList("effect-figure__value--down", delta < -0.05);
+
+            fill.style.width = Length.Percent(
+                (float)(Math.Clamp(Core.SimUnits.Finite(fraction), 0.0, 1.0) * 100.0));
         }
 
         private enum FigureTone
@@ -1444,30 +1478,58 @@ namespace ScalingLaws.UI
             Bad
         }
 
+        // ---- the readout table, pooled ------------------------------------------------------
+        //
+        // Reprice runs on **every frame the player is dragging a slider**, and it used to clear this
+        // panel and rebuild it: eleven rows of three elements each, thirty three created and thrown
+        // away per frame, every one of them forcing a fresh style resolve and layout pass on the
+        // subtree. The projection behind it costs five microseconds; the elements were the stutter.
+        //
+        // Rows are built once and reused. Only the two strings and one class change afterwards, and
+        // the surplus is hidden rather than destroyed, so a shorter run costs nothing either.
+
+        private readonly List<(VisualElement Row, Label Name, Label Value)> readoutRows = new();
+        private int readoutCursor;
+
+        private void BeginReadouts() => readoutCursor = 0;
+
+        private void EndReadouts()
+        {
+            for (var index = readoutCursor; index < readoutRows.Count; index++)
+            {
+                readoutRows[index].Row.style.display = DisplayStyle.None;
+            }
+        }
+
         private void AddReadout(string label, string value, Tone tone)
         {
-            var row = new VisualElement();
-            row.AddToClassList("readout");
-
-            row.Add(new Label(label));
-
-            var valueLabel = new Label(value);
-            valueLabel.AddToClassList("readout__value");
-            switch (tone)
+            if (readoutCursor >= readoutRows.Count)
             {
-                case Tone.Good:
-                    valueLabel.AddToClassList("readout__value--good");
-                    break;
-                case Tone.Warn:
-                    valueLabel.AddToClassList("readout__value--warn");
-                    break;
-                case Tone.Bad:
-                    valueLabel.AddToClassList("readout__value--bad");
-                    break;
+                var built = new VisualElement();
+                built.AddToClassList("readout");
+
+                var builtName = new Label();
+                built.Add(builtName);
+
+                var builtValue = new Label();
+                builtValue.AddToClassList("readout__value");
+                built.Add(builtValue);
+
+                readouts.Add(built);
+                readoutRows.Add((built, builtName, builtValue));
             }
 
-            row.Add(valueLabel);
-            readouts.Add(row);
+            var (row, name, valueLabel) = readoutRows[readoutCursor++];
+
+            row.style.display = DisplayStyle.Flex;
+            name.text = label;
+            valueLabel.text = value;
+
+            // Stated in full every time. Leaving a tone class behind from the previous frame is how a
+            // green number stays green after the run it describes has become infeasible.
+            valueLabel.EnableInClassList("readout__value--good", tone == Tone.Good);
+            valueLabel.EnableInClassList("readout__value--warn", tone == Tone.Warn);
+            valueLabel.EnableInClassList("readout__value--bad", tone == Tone.Bad);
         }
 
         /// <summary>
