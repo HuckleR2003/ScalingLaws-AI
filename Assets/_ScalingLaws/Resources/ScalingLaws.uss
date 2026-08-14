@@ -4225,3 +4225,112 @@
     flex-direction: row;
     margin-top: 10px;
 }
+
+/* ---------------------------------------------------------------------------
+   Sliders.
+
+   There are nine of them and none had a style, so every one was the runtime
+   theme's default: a hairline track, a grey lozenge, and full window width
+   because nothing constrained it. A control that runs from one edge of the
+   screen to the other is also harder to use, not easier: the hand travels a
+   thousand pixels to move a number by one percent.
+   --------------------------------------------------------------------------- */
+
+.unity-base-slider {
+    max-width: 560px;
+    min-height: 22px;
+}
+
+.unity-base-slider__drag-container {
+    min-height: 22px;
+}
+
+.unity-base-slider__tracker {
+    height: 6px;
+    margin-top: -3px;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 3px;
+}
+
+.unity-base-slider__dragger {
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    background-color: rgb(226, 234, 248);
+    border-width: 2px;
+    border-color: rgb(92, 132, 196);
+    border-radius: 8px;
+}
+
+.unity-base-slider:hover > .unity-base-slider__drag-container > .unity-base-slider__dragger {
+    background-color: rgb(255, 255, 255);
+    border-color: rgb(140, 190, 255);
+    scale: 1.12 1.12;
+}
+
+.unity-base-slider:focus > .unity-base-slider__drag-container > .unity-base-slider__dragger {
+    border-color: rgb(160, 205, 255);
+}
+
+/* The two creator sliders are the exception: they are the decision on that page
+   and they earn the extra width. */
+
+.creator-column .unity-base-slider {
+    max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Research nodes, made big enough to read.
+
+   Forty eight pixels with a twenty six pixel glyph inside a circle is a dot
+   with a smudge in it. The art is the fastest way to recognise a branch and it
+   was being thrown away at that size.
+   --------------------------------------------------------------------------- */
+
+.tree-pip {
+    width: 72px;
+    height: 72px;
+    border-radius: 36px;
+    border-width: 3px;
+}
+
+.tree-pip__icon {
+    width: 46px;
+    height: 46px;
+}
+
+.tree-pip:hover {
+    scale: 1.10 1.10;
+}
+
+/* Research bubbles rising off the desk. Presentation only: they appear when the
+   simulation says points are being earned and never otherwise. */
+
+.bubbles {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.bubble {
+    position: absolute;
+    background-color: rgba(122, 196, 252, 0.85);
+    border-width: 1px;
+    border-color: rgba(198, 230, 255, 0.9);
+    border-radius: 12px;
+    opacity: 1;
+
+    /* Slow and eased, so it reads as something drifting up rather than a sprite
+       being teleported. The duration matches FlightMilliseconds in the C#. */
+    transition-property: bottom, left, opacity, scale;
+    transition-duration: 1400ms, 1400ms, 1400ms, 1400ms;
+    transition-timing-function: ease-out, ease-in-out, ease-in, ease-out;
+}
+
+.bubble--away {
+    scale: 0.55 0.55;
+}

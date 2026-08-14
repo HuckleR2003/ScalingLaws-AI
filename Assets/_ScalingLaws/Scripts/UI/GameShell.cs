@@ -56,6 +56,7 @@ namespace ScalingLaws.UI
         private Button pointsButton;
         private VisualElement researchCard;
         private VisualElement shellRoot;
+        private ResearchBubbles bubbles;
         private Label pointsLabel;
         private Label fansLabel;
         private ModelBanner modelBanner;
@@ -2765,6 +2766,13 @@ namespace ScalingLaws.UI
             // the player what kind of game it thinks it is.
             var stage = new VisualElement();
             stage.AddToClassList("site-stage");
+
+            // Bubbles lift off the desk while the lab is learning. Attached to the stage rather than
+            // the page so they travel over the office rather than over the whole window, and rebuilt
+            // with the screen because the screen is rebuilt on every tab change anyway.
+            var bubbleHost = new VisualElement();
+            stage.Add(bubbleHost);
+            bubbles = new ResearchBubbles(bubbleHost, () => simulation.State.ResearchPointsToday);
 
             var view = Resources.Load<RenderTexture>("OfficeView");
             if (view != null)

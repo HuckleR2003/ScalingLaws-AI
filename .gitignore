@@ -80,3 +80,7 @@ TestResults.xml
 PlayResults.xml
 Probe.xml
 Drift.xml
+
+# Private notes. Working material for store pages and devlogs, not for the public repo.
+# CLAUDE.md is already untracked for the same reason.
+GAME_GEMS.md
