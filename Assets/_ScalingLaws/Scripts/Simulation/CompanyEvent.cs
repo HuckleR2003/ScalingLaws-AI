@@ -36,7 +36,10 @@ namespace ScalingLaws.Simulation
         StaffLeft = 29,
         OfficeMoved = 30,
         SafetyIncident = 31,
-        SkillLevelled = 32
+        SkillLevelled = 32,
+
+        /// <summary>A booked campaign has run its term and stopped costing money.</summary>
+        MarketingFinished = 33
     }
 
     /// <summary>

@@ -55,6 +55,9 @@ namespace ScalingLaws.UI
         private Label reputationLabel;
         private Button pointsButton;
         private VisualElement researchCard;
+        private readonly List<MarketingChannel> pickedChannels = new();
+        private AudienceSegment pickedAudience = AudienceSegment.Consumer;
+        private int pickedTerm = 3;
         private VisualElement shellRoot;
         private ResearchBubbles bubbles;
         private Label pointsLabel;
@@ -2019,49 +2022,325 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// A placeholder that says so.
+        /// Marketing: pick up to three channels, an audience and a term, then book it.
         ///
-        /// The slot exists now so the bottom bar stops rearranging itself under the player every time
-        /// a system lands. What it will hold is written down in CLAUDE.md rather than guessed at here,
-        /// and nothing on this screen pretends to work.
+        /// The tiles are the screen. Each one is a picture and a name, because the decision is
+        /// "which of these feels right for what I am selling" rather than a table of coefficients,
+        /// and the numbers that back it are underneath for the player who wants them.
+        ///
+        /// Three at once is the cap, and the reason is that channels cover each other's weaknesses:
+        /// television is broad and slow, social is fast and forgets, press hardly moves the numbers
+        /// and is the only thing that reliably builds standing. Allowing all six would make the
+        /// combination meaningless.
         /// </summary>
         private VisualElement BuildMarketingScreen()
         {
+            var state = simulation.State;
+
             var page = NewPage("MARKETING",
-                "Not built yet. This screen is a reserved place in the bar, not a feature.");
+                "Advertising buys attention, never quality. A product people have not heard of loses "
+                + "to one they have, and a bad product they have heard of gets tried and dropped.");
+
+            page.Add(BuildAwarenessPanel());
+
+            var channels = new VisualElement();
+            channels.AddToClassList("panel");
+
+            var heading = new Label("CHANNELS");
+            heading.AddToClassList("panel__heading");
+            channels.Add(heading);
+
+            var grid = new VisualElement();
+            grid.AddToClassList("chan-grid");
+
+            foreach (var definition in MarketingCatalog.All)
+            {
+                grid.Add(BuildChannelTile(definition));
+            }
+
+            channels.Add(grid);
+            page.Add(channels);
+
+            page.Add(BuildBookingPanel());
+            page.Add(BuildRunningPanel());
+
+            return page;
+        }
+
+        /// <summary>How well known the company is, audience by audience.</summary>
+        private VisualElement BuildAwarenessPanel()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var head = new VisualElement();
+            head.AddToClassList("rfund__head");
+
+            var heading = new Label("WHO HAS HEARD OF YOU");
+            heading.AddToClassList("panel__heading");
+            heading.style.marginBottom = 0;
+            head.Add(heading);
+
+            var overall = new Label(UiFormat.Percent(simulation.State.Awareness.Overall, 0)
+                + " overall");
+
+            overall.AddToClassList("rfund__banked");
+            head.Add(overall);
+            panel.Add(head);
+
+            foreach (var audience in AudienceCatalog.All)
+            {
+                var known = simulation.State.Awareness.In(audience.Segment);
+                panel.Add(ThinBarRow(audience.DisplayName, UiFormat.Percent(known, 0), known));
+            }
+
+            var note = new Label(
+                "Being used counts as being known. A company people already have on the service does "
+                + "not become anonymous, so this floor rises with the audience you hold.");
+
+            note.AddToClassList("field__hint");
+            panel.Add(note);
+
+            return panel;
+        }
+
+        private static VisualElement ThinBarRow(string label, string value, double fraction)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("thin-bar");
+
+            var caption = new Label(label);
+            caption.AddToClassList("thin-bar__label");
+            row.Add(caption);
+
+            var track = new VisualElement();
+            track.AddToClassList("thin-bar__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("thin-bar__fill");
+            fill.style.width = Length.Percent((float)(Math.Clamp(fraction, 0.0, 1.0) * 100.0));
+            fill.style.backgroundColor = new Color(0.36f, 0.62f, 0.88f);
+            track.Add(fill);
+
+            row.Add(track);
+
+            var amount = new Label(value);
+            amount.AddToClassList("thin-bar__value");
+            row.Add(amount);
+
+            return row;
+        }
+
+        /// <summary>
+        /// One channel: a darkened photograph, a name across the bottom, and what it actually does.
+        /// </summary>
+        private VisualElement BuildChannelTile(MarketingChannelDefinition definition)
+        {
+            var picked = pickedChannels.Contains(definition.Id);
+
+            var tile = new Button(() =>
+            {
+                if (picked)
+                {
+                    pickedChannels.Remove(definition.Id);
+                }
+                else if (pickedChannels.Count < MarketingCatalog.MostChannelsAtOnce)
+                {
+                    pickedChannels.Add(definition.Id);
+                }
+
+                Show(Screen.Marketing);
+            });
+
+            tile.AddToClassList("chan");
+            tile.EnableInClassList("chan--on", picked);
+
+            var art = new VisualElement();
+            art.AddToClassList("chan__art");
+
+            var picture = Resources.Load<Texture2D>("Marketing/" + definition.Art);
+            if (picture != null)
+            {
+                art.style.backgroundImage = new StyleBackground(picture);
+            }
+            else
+            {
+                art.AddToClassList("chan__art--missing");
+            }
+
+            tile.Add(art);
+
+            // The scrim is what makes a realistic photograph sit inside a dark interface instead of
+            // shouting over it. Same rule as the card art everywhere else in the game.
+            var scrim = new VisualElement();
+            scrim.AddToClassList("chan__scrim");
+            tile.Add(scrim);
+
+            var name = new Label(definition.DisplayName.ToUpperInvariant());
+            name.AddToClassList("chan__name");
+            tile.Add(name);
+
+            var price = new Label(UiFormat.Money(definition.DailyCostUsd) + " a day");
+            price.AddToClassList("chan__price");
+            tile.Add(price);
+
+            tile.tooltip = definition.Pitch
+                + $"\n\nBest with: {AudienceCatalog.Get(definition.Favours).DisplayName}."
+                + $"\nReach {definition.Reach:0.00}, speed {definition.Speed:P0}, "
+                + $"sticks {definition.Persistence:P0}, swings {definition.Volatility:P0}.";
+
+            return tile;
+        }
+
+        /// <summary>Audience, term, the bill, and the button that commits to it.</summary>
+        private VisualElement BuildBookingPanel()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var heading = new Label("BOOK A CAMPAIGN");
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            var audiences = new VisualElement();
+            audiences.AddToClassList("rfund__modes");
+
+            foreach (var audience in AudienceCatalog.All)
+            {
+                var segment = audience.Segment;
+                var chip = new Button(() => { pickedAudience = segment; Show(Screen.Marketing); })
+                { text = audience.DisplayName.ToUpperInvariant() };
+
+                chip.AddToClassList("chip");
+                chip.EnableInClassList("chip--on", pickedAudience == segment);
+                audiences.Add(chip);
+            }
+
+            panel.Add(audiences);
+
+            var terms = new VisualElement();
+            terms.AddToClassList("rfund__modes");
+
+            foreach (var months in MarketingCatalog.TermsInMonths)
+            {
+                var term = months;
+                var label = months <= 0 ? "OPEN ENDED" : $"{months} MONTH" + (months > 1 ? "S" : string.Empty);
+
+                var chip = new Button(() => { pickedTerm = term; Show(Screen.Marketing); })
+                { text = label };
+
+                chip.AddToClassList("chip");
+                chip.EnableInClassList("chip--on", pickedTerm == term);
+                terms.Add(chip);
+            }
+
+            panel.Add(terms);
+
+            var draft = new MarketingCampaign(pickedChannels, pickedAudience, pickedTerm,
+                simulation.State.Date);
+
+            var daily = draft.DailyCostUsd;
+            var total = draft.IsOpenEnded ? 0L : daily * draft.DaysBooked;
+
+            var bill = new Label(pickedChannels.Count == 0
+                ? "Pick at least one channel."
+                : draft.IsOpenEnded
+                    ? $"{UiFormat.Money(daily)} a day, until you stop it. "
+                        + $"{MarketingCatalog.OpenEndedSurcharge:P0} of the committed rate, because "
+                        + "nobody sells an open contract at the price of a booked one."
+                    : $"{UiFormat.Money(daily)} a day for {draft.DaysBooked} days, "
+                        + $"{UiFormat.Money(total)} in total.");
+
+            bill.AddToClassList("field__label");
+            panel.Add(bill);
+
+            var book = new Button(() =>
+            {
+                if (pickedChannels.Count == 0)
+                {
+                    return;
+                }
+
+                simulation.State.AddCampaign(new MarketingCampaign(
+                    pickedChannels, pickedAudience, pickedTerm, simulation.State.Date));
+
+                pickedChannels.Clear();
+                Show(Screen.Marketing);
+            })
+            { text = "BOOK IT" };
+
+            book.AddToClassList("button");
+            book.AddToClassList("button--primary");
+            book.style.marginLeft = 0;
+            book.SetEnabled(pickedChannels.Count > 0);
+            panel.Add(book);
+
+            return panel;
+        }
+
+        private VisualElement BuildRunningPanel()
+        {
+            var state = simulation.State;
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("WHAT WILL GO HERE");
+            var heading = new Label("RUNNING");
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
-            foreach (var line in new[]
+            if (state.Campaigns.Count == 0)
             {
-                "Campaigns with a duration: one, two, three or six months, or open ended at a worse rate.",
-                "Up to three channels at once, out of press, radio, social, television and billboards.",
-                "Targeting by region and by audience, so a coding model can be sold to developers.",
-                "Creator contracts, humorous or professional, fast and short lived, and able to misfire.",
-                "Community and forums, cheap or free, with real reputation risk and a cooldown.",
-                "Sponsorship behind an advanced section: expensive, long, and about standing rather than users."
-            })
-            {
-                var item = new Label(line);
-                item.AddToClassList("scale-note");
-                panel.Add(item);
+                var none = new Label("Nothing booked. Only the people already using the service have "
+                    + "heard of you.");
+
+                none.AddToClassList("field__hint");
+                panel.Add(none);
+                return panel;
             }
 
-            var rule = new Label(
-                "The rule this system has to obey: marketing buys awareness, never quality. A bad "
-                + "product advertised hard gets tried and abandoned, which costs money twice.");
+            foreach (var campaign in state.Campaigns)
+            {
+                var row = new VisualElement();
+                row.AddToClassList("run-row");
 
-            rule.AddToClassList("field__hint");
-            rule.style.marginTop = 10;
-            panel.Add(rule);
+                var names = new List<string>();
+                foreach (var channel in campaign.Channels)
+                {
+                    names.Add(MarketingCatalog.Get(channel).DisplayName);
+                }
 
-            page.Add(panel);
-            return page;
+                var what = new Label(string.Join(" + ", names)
+                    + $"  to {AudienceCatalog.Get(campaign.Target).DisplayName}");
+
+                what.AddToClassList("run-row__what");
+                row.Add(what);
+
+                var left = new Label(campaign.IsOpenEnded
+                    ? "open ended"
+                    : $"{campaign.DaysLeft(state.Date)} days left");
+
+                left.AddToClassList("run-row__left");
+                row.Add(left);
+
+                var cost = new Label(UiFormat.Money(campaign.DailyCostUsd) + "/day");
+                cost.AddToClassList("run-row__cost");
+                row.Add(cost);
+
+                var stop = new Button(() =>
+                {
+                    simulation.State.RemoveCampaign(campaign);
+                    Show(Screen.Marketing);
+                })
+                { text = "STOP" };
+
+                stop.AddToClassList("chip");
+                row.Add(stop);
+
+                panel.Add(row);
+            }
+
+            return panel;
         }
 
         private VisualElement BuildFleetScreen()

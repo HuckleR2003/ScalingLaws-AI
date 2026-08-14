@@ -21,6 +21,16 @@ namespace ScalingLaws.Persistence
         public int leadTimeDays;
     }
 
+    /// <summary>One booked marketing campaign, flattened for the save.</summary>
+    [Serializable]
+    public sealed class CampaignData
+    {
+        public List<int> channels = new();
+        public int target;
+        public int termMonths;
+        public int startedDayIndex;
+    }
+
     [Serializable]
     public sealed class DeployedModelData
     {
@@ -217,7 +227,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 21;
+        public const int CurrentVersion = 22;
 
         public int version = CurrentVersion;
 
@@ -282,6 +292,12 @@ namespace ScalingLaws.Persistence
         public int researchFundingMode;
         public long researchMonthlyUsd = 1_000;
         public double researchRevenueShare;
+
+        /// <summary>How well known the company is, one per audience in catalog order. Added in v22.</summary>
+        public List<double> awareness = new();
+
+        /// <summary>Booked campaigns. Added in v22.</summary>
+        public List<CampaignData> campaigns = new();
 
         public bool hasActiveRun;
         public TrainingRunData activeRun = new();

@@ -161,6 +161,28 @@ namespace ScalingLaws.Simulation
         /// <summary>Share of revenue diverted to research when the mode is a revenue share.</summary>
         public double ResearchRevenueShare { get; set; }
 
+        /// <summary>
+        /// How well known the company is, audience by audience. Marketing buys this and nothing else.
+        /// </summary>
+        public Awareness Awareness { get; } = new();
+
+        private readonly List<MarketingCampaign> campaigns = new();
+
+        /// <summary>Campaigns currently booked, finished ones included until the tick clears them.</summary>
+        public IReadOnlyList<MarketingCampaign> Campaigns => campaigns;
+
+        public void AddCampaign(MarketingCampaign campaign)
+        {
+            if (campaign != null && campaign.Channels.Count > 0)
+            {
+                campaigns.Add(campaign);
+            }
+        }
+
+        public bool RemoveCampaign(MarketingCampaign campaign) => campaigns.Remove(campaign);
+
+        public void ClearCampaigns() => campaigns.Clear();
+
         public bool HasResearch(ResearchNodeId node) =>
             node == ResearchNodeId.None || UnlockedResearch.Contains(node);
 

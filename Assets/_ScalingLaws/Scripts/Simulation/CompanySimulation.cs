@@ -1883,7 +1883,8 @@ namespace ScalingLaws.Simulation
             var share = State.Segments.Advance(
                 BuildEntrants(brand, rivals),
                 State.Date,
-                market.TotalDemandBillionTokensPerDay);
+                market.TotalDemandBillionTokensPerDay,
+                State.Awareness);
 
             // Reach from the free tier, then capped: a giveaway widens the funnel, it does not
             // hand over the market.
@@ -2015,14 +2016,58 @@ namespace ScalingLaws.Simulation
             return Math.Max(thisMonth, previous);
         }
 
-        /// <summary>Runs a day of marketing. Company spend compounds, model spend evaporates.</summary>
+        /// <summary>
+        /// A day of campaigns.
+        ///
+        /// Marketing buys awareness and nothing else. It does not touch capability, reliability or
+        /// what an audience will pay, because those are what the product is. What it does touch is
+        /// whether anybody is considering the product at all, which is enough to matter and is the
+        /// only honest thing advertising does.
+        ///
+        /// The version this replaces added a number straight to reputation, which is the exact shape
+        /// the design note forbids. Standing still moves with marketing, through the same named
+        /// driver as everything else rather than through a second private channel.
+        /// </summary>
         private void AdvanceMarketing()
         {
-            var companyEffect = State.Monetization.AdvanceMarketing();
-            if (companyEffect > 0.0)
+            var spend = State.Awareness.Advance(
+                State.Campaigns, State.Date, State.Reputation, State.Random,
+                State.Segments.PlayerShareIn);
+
+            if (spend > 0L)
             {
-                State.Reputation += companyEffect * State.Founder.ReputationGainMultiplier;
+                State.PostCash(LedgerLine.Marketing, spend);
             }
+
+            // Finished bookings are cleared here rather than by the interface, so a campaign that has
+            // run its term stops costing money whether or not anybody is looking at the screen.
+            for (var index = State.Campaigns.Count - 1; index >= 0; index--)
+            {
+                var campaign = State.Campaigns[index];
+                if (campaign.HasFinished(State.Date))
+                {
+                    State.RemoveCampaign(campaign);
+                    State.RaiseEvent(new CompanyEvent(
+                        CompanyEventType.MarketingFinished,
+                        State.Date,
+                        $"The {campaign.TermMonths} month campaign has run its course."));
+                }
+            }
+        }
+
+        /// <summary>What the running campaigns cost today, for the standing driver and the panel.</summary>
+        public long MarketingDailyUsd()
+        {
+            var total = 0L;
+            foreach (var campaign in State.Campaigns)
+            {
+                if (!campaign.HasFinished(State.Date))
+                {
+                    total += campaign.DailyCostUsd;
+                }
+            }
+
+            return total;
         }
 
         private void RunRivals()
@@ -2098,8 +2143,7 @@ namespace ScalingLaws.Simulation
         {
             // Marketing intensity as a fraction of a spend that would be unmistakable. A company
             // spending a hundred thousand a day is being seen everywhere; below that it scales.
-            var marketing = Math.Clamp(
-                State.Monetization.TotalMarketingDailyUsd / 100_000.0, 0.0, 1.0);
+            var marketing = Math.Clamp(MarketingDailyUsd() / 100_000.0, 0.0, 1.0);
 
             var change = Standing.Today(
                 share,

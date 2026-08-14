@@ -240,6 +240,25 @@ namespace ScalingLaws.Persistence
             data.researchFundingMode = (int)state.ResearchFunding;
             data.researchMonthlyUsd = state.ResearchMonthlyUsd;
             data.researchRevenueShare = state.ResearchRevenueShare;
+            state.Awareness.Capture(data.awareness);
+
+            data.campaigns.Clear();
+            foreach (var campaign in state.Campaigns)
+            {
+                var flat = new CampaignData
+                {
+                    target = (int)campaign.Target,
+                    termMonths = campaign.TermMonths,
+                    startedDayIndex = campaign.StartedOn.DayIndex
+                };
+
+                foreach (var channel in campaign.Channels)
+                {
+                    flat.channels.Add((int)channel);
+                }
+
+                data.campaigns.Add(flat);
+            }
 
             data.hostingPackages.Clear();
             foreach (var definition in HostingCatalog.All)
@@ -600,6 +619,32 @@ namespace ScalingLaws.Persistence
             state.ResearchMonthlyUsd = Math.Clamp(safe.researchMonthlyUsd, 0L,
                 ResearchBudget.MaximumMonthlyUsd);
             state.ResearchRevenueShare = Math.Clamp(SimUnits.Finite(safe.researchRevenueShare), 0.0, 1.0);
+            state.Awareness.Restore(safe.awareness);
+
+            state.ClearCampaigns();
+            foreach (var flat in safe.campaigns)
+            {
+                if (flat == null)
+                {
+                    continue;
+                }
+
+                var channels = new List<MarketingChannel>();
+                foreach (var raw in flat.channels)
+                {
+                    if (Enum.IsDefined(typeof(MarketingChannel), raw))
+                    {
+                        channels.Add((MarketingChannel)raw);
+                    }
+                }
+
+                var target = Enum.IsDefined(typeof(AudienceSegment), flat.target)
+                    ? (AudienceSegment)flat.target
+                    : AudienceSegment.Consumer;
+
+                state.AddCampaign(new MarketingCampaign(channels, target, flat.termMonths,
+                    new GameDate(Math.Max(0, flat.startedDayIndex))));
+            }
             state.LastQuality = new ServiceQuality(
                 safe.qualityDemanded, safe.qualityCapacity, safe.qualityPackagedShare);
 

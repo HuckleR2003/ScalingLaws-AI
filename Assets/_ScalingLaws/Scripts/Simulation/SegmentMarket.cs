@@ -316,6 +316,17 @@ namespace ScalingLaws.Simulation
         /// Nothing here is a second quality formula. It is the same score, read by a buyer with
         /// opinions.
         /// </summary>
+        /// <summary>
+        /// How appealing a product is to one audience today, given how many of them have heard of it.
+        ///
+        /// Awareness is passed in rather than carried on the entrant because it is a fact about the
+        /// company **and the audience** together: a lab can be well known to developers and unheard of
+        /// by everybody else, which is the entire point of being able to target a campaign.
+        /// </summary>
+        public static double Attractiveness(in MarketEntrant entrant,
+            AudienceSegmentDefinition segment, GameDate date, double awareness) =>
+            Attractiveness(entrant, segment, date) * Awareness.Consideration(awareness);
+
         public static double Attractiveness(in MarketEntrant entrant, AudienceSegmentDefinition segment,
             GameDate date)
         {
@@ -362,7 +373,8 @@ namespace ScalingLaws.Simulation
         /// Moves every audience one day toward what its buyers would prefer today, and returns the
         /// player's share of the whole market, which is what the rest of the simulation consumes.
         /// </summary>
-        public double Advance(IReadOnlyList<MarketEntrant> entrants, GameDate date, double totalTokensPerDay)
+        public double Advance(IReadOnlyList<MarketEntrant> entrants, GameDate date,
+            double totalTokensPerDay, Awareness playerAwareness = null)
         {
             if (entrants == null || entrants.Count == 0)
             {
@@ -387,7 +399,15 @@ namespace ScalingLaws.Simulation
 
                 for (var entry = 0; entry < entrants.Count; entry++)
                 {
-                    var score = Attractiveness(entrants[entry], definition, date);
+                    // The player's reach is whatever their campaigns have bought in this audience.
+                    // A rival is an established lab, so their brand is how well known they are: it
+                    // needs no new data and it means the player starts unknown against companies
+                    // people have already heard of, which is the position marketing exists to fix.
+                    var known = entrants[entry].IsPlayer
+                        ? playerAwareness?.In(definition.Segment) ?? 1.0
+                        : entrants[entry].Brand;
+
+                    var score = Attractiveness(entrants[entry], definition, date, known);
                     if (score <= 0.0)
                     {
                         continue;

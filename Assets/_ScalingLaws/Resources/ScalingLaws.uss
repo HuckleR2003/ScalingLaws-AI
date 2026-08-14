@@ -4334,3 +4334,115 @@
 .bubble--away {
     scale: 0.55 0.55;
 }
+
+/* ---------------------------------------------------------------------------
+   Marketing channels as tall tiles: a darkened photograph, a name across the
+   bottom. The picture is the decision aid, the numbers are in the tooltip for
+   whoever wants them.
+   --------------------------------------------------------------------------- */
+
+.chan-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.chan {
+    width: 152px;
+    height: 208px;
+    margin: 0;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding: 0;
+    overflow: hidden;
+    justify-content: flex-end;
+    background-color: rgb(14, 18, 26);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    transition-property: border-color, scale;
+    transition-duration: 120ms;
+}
+
+.chan:hover {
+    border-color: rgb(150, 190, 250);
+    scale: 1.03 1.03;
+}
+
+.chan--on {
+    border-color: rgb(252, 214, 58);
+}
+
+.chan__art {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+/* Until the photographs arrive the plate is a flat panel rather than a hole. */
+
+.chan__art--missing {
+    background-color: rgb(26, 32, 44);
+}
+
+/* The scrim is what lets a realistic photograph sit inside a dark interface
+   instead of shouting over it. Same rule as every other piece of card art. */
+
+.chan__scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(8, 11, 17, 0.58);
+}
+
+.chan__name {
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(246, 248, 252);
+    padding-left: 11px;
+    padding-right: 11px;
+}
+
+.chan__price {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgb(176, 190, 212);
+    padding-left: 11px;
+    padding-bottom: 11px;
+}
+
+.run-row {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.run-row__what {
+    flex-grow: 1;
+    font-size: 11px;
+    color: rgb(206, 216, 232);
+}
+
+.run-row__left {
+    width: 110px;
+    font-size: 10px;
+    color: rgb(146, 158, 178);
+}
+
+.run-row__cost {
+    width: 96px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(226, 150, 130);
+    -unity-text-align: middle-right;
+    margin-right: 10px;
+}

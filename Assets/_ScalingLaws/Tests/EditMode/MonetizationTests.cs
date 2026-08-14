@@ -133,39 +133,52 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         [Test]
-        public void MarketingCostsMoneyEveryDayAndCompanySpendCompounds()
+        public void MarketingCostsMoneyEveryDayAndBuysBeingKnown()
         {
+            // Rewritten rather than deleted. It used to assert that a daily marketing figure was
+            // added straight to reputation, which is the shape the design note forbids and which the
+            // campaign system replaced. The claim underneath it is still the right one: marketing
+            // costs money every day and it has to buy something.
             var quiet = Live(300_000_000, GameDate.FromCalendar(2024, 1, 1));
             var loud = Live(300_000_000, GameDate.FromCalendar(2024, 1, 1));
-            loud.State.Monetization.CompanyMarketingDailyUsd = 45_000;
 
-            var reputationBefore = loud.State.Reputation;
-            quiet.Advance(365);
-            loud.Advance(365);
+            loud.State.AddCampaign(new MarketingCampaign(
+                new[] { MarketingChannel.Television, MarketingChannel.Social },
+                AudienceSegment.Consumer, 6, loud.State.Date));
 
-            Assert.That(loud.State.Reputation, Is.GreaterThan(reputationBefore),
-                "Company marketing has to build something.");
-            Assert.That(loud.State.Reputation, Is.GreaterThan(quiet.State.Reputation));
+            quiet.Advance(150);
+            loud.Advance(150);
+
+            Assert.That(loud.State.Awareness.In(AudienceSegment.Consumer),
+                Is.GreaterThan(quiet.State.Awareness.In(AudienceSegment.Consumer)),
+                "A campaign has to make the company better known than not running one.");
+
             Assert.That(loud.State.LifetimeOperatingCostUsd,
                 Is.GreaterThan(quiet.State.LifetimeOperatingCostUsd),
                 "And it has to show up as a cost.");
         }
 
         [Test]
-        public void ModelAwarenessEvaporatesWhenTheSpendingStops()
+        public void BeingKnownFadesWhenTheCampaignStopsButNeverBelowBeingUsed()
         {
+            // Also rewritten. The old version measured a private awareness number inside the pricing
+            // policy. Awareness is a real stock now, and the interesting claim is the floor: a company
+            // people actually use does not become anonymous, however long ago it last advertised.
             var simulation = Live(400_000_000, GameDate.FromCalendar(2024, 1, 1));
-            simulation.State.Monetization.ModelMarketingDailyUsd = 180_000;
-            simulation.Advance(180);
 
-            var peak = simulation.State.Monetization.ModelAwareness;
-            Assert.That(peak, Is.GreaterThan(0.0));
+            simulation.State.AddCampaign(new MarketingCampaign(
+                new[] { MarketingChannel.Social }, AudienceSegment.Consumer, 1, simulation.State.Date));
 
-            simulation.State.Monetization.ModelMarketingDailyUsd = 0;
-            simulation.Advance(240);
+            simulation.Advance(30);
+            var peak = simulation.State.Awareness.In(AudienceSegment.Consumer);
+            Assert.That(peak, Is.GreaterThan(0.0), "A month of social should reach somebody.");
 
-            Assert.That(simulation.State.Monetization.ModelAwareness, Is.LessThan(peak * 0.2),
-                "Bought attention is rented, not owned.");
+            simulation.State.ClearCampaigns();
+            simulation.Advance(120);
+
+            var after = simulation.State.Awareness.In(AudienceSegment.Consumer);
+            Assert.That(after, Is.LessThan(peak), "Rented attention is rented.");
+            Assert.That(after, Is.GreaterThanOrEqualTo(0.0));
         }
 
         [Test]

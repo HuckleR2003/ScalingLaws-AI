@@ -122,6 +122,7 @@ namespace ScalingLaws.Persistence
                     18 => UpgradeV18ToV19(current),
                     19 => UpgradeV19ToV20(current),
                     20 => UpgradeV20ToV21(current),
+                    21 => UpgradeV21ToV22(current),
                     _ => current
                 };
             }
@@ -792,6 +793,32 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v20 to v21: research points start at zero. They are earned by building, and an older "
                 + "save has no record of which days were spent building.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v21 to v22: awareness and booked campaigns.
+        ///
+        /// A v21 company ran no campaigns, because there were none to run, so an empty list is the
+        /// true reading. Awareness is left empty rather than estimated: the first tick after loading
+        /// rebuilds it from standing and from the share the company already holds, both of which are
+        /// recorded, so nothing is invented and nothing is lost.
+        /// </summary>
+        public static SaveData UpgradeV21ToV22(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 22;
+            data.awareness = new List<double>();
+            data.campaigns = new List<CampaignData>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v21 to v22: no campaigns, which is what a v21 company had. Awareness rebuilds on the "
+                + "first day from standing and from the audience already being served.");
 
             return data;
         }
