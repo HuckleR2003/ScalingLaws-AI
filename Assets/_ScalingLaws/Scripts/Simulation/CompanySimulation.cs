@@ -1405,6 +1405,12 @@ namespace ScalingLaws.Simulation
 
             State.SetMembership(tier, joined);
 
+            // Joining starts that desk's own clock at half an interval, so a new member hears
+            // something reasonably soon rather than paying a month for silence.
+            State.SetCountdownFor(tier, joined
+                ? Math.Max(1, IntelligenceService.ReportIntervalDays(tier) / 2)
+                : 0);
+
             var best = State.BestMembership;
             State.DaysUntilNextSignal = best == IntelTier.PublicNews
                 ? 0
@@ -2203,37 +2209,48 @@ namespace ScalingLaws.Simulation
             return monthly;
         }
 
+        /// <summary>
+        /// Every desk on retainer files on its own clock, at its own tier.
+        ///
+        /// **Per outfit, not per company.** Running one clock at the best membership meant a company
+        /// paying National Press and TrendSearch had every note routed to Total True News, and Event
+        /// Hunter, which needs both to open, never received anything at all. Three retainers is three
+        /// invoices and three columns; the tier still decides lead time and hit rate, so buying
+        /// everything buys more coverage rather than better coverage.
+        /// </summary>
         private void AdvanceIntelligence()
         {
             AdvanceDossiers();
 
-            var best = State.BestMembership;
-            if (best == IntelTier.PublicNews)
+            foreach (var tier in NewsCatalog.Memberships)
             {
-                return;
+                if (!State.IsMember(tier))
+                {
+                    continue;
+                }
+
+                var left = State.CountdownFor(tier) - 1;
+                if (left > 0)
+                {
+                    State.SetCountdownFor(tier, left);
+                    continue;
+                }
+
+                var interval = IntelligenceService.ReportIntervalDays(tier);
+                State.SetCountdownFor(tier, Math.Max(1, interval + State.Random.NextInt(-6, 7)));
+
+                var signal = IntelligenceService.Generate(tier, State.Date, State.Rivals, State.Random);
+                State.AddSignal(signal);
+
+                // The note goes on that desk's own page rather than into the general wire, so paying
+                // for one outfit fills one column and the player can see what their money bought.
+                State.News.Add(NewsDesk.FromSignal(signal));
+
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.IntelReceived,
+                    State.Date,
+                    $"{signal.Headline} (desk confidence {signal.Confidence:P0})."));
             }
-
-            State.DaysUntilNextSignal--;
-            if (State.DaysUntilNextSignal > 0)
-            {
-                return;
-            }
-
-            var interval = IntelligenceService.ReportIntervalDays(best);
-            State.DaysUntilNextSignal = Math.Max(1, interval + State.Random.NextInt(-6, 7));
-
-            var signal = IntelligenceService.Generate(best, State.Date, State.Rivals, State.Random);
-
-            State.AddSignal(signal);
-
-            // The note goes on the desk's own page rather than into the general wire, so paying for
-            // one outfit fills one column and the player can see what their money bought.
-            State.News.Add(NewsDesk.FromSignal(signal));
-
-            State.RaiseEvent(new CompanyEvent(
-                CompanyEventType.IntelReceived,
-                State.Date,
-                $"{signal.Headline} (desk confidence {signal.Confidence:P0})."));
         }
 
         /// <summary>

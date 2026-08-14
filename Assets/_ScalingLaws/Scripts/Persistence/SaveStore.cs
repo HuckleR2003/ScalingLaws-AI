@@ -323,6 +323,7 @@ namespace ScalingLaws.Persistence
                 data.memberships.Add((int)tier);
             }
 
+            state.CaptureCountdowns(data.signalCountdowns);
             data.daysUntilNextDossier = state.DaysUntilNextDossier;
             data.nextDossierLab = state.NextDossierLab;
 
@@ -722,6 +723,7 @@ namespace ScalingLaws.Persistence
                 }
             }
 
+            state.RestoreCountdowns(safe.signalCountdowns);
             state.DaysUntilNextDossier = Math.Max(0, safe.daysUntilNextDossier);
             state.NextDossierLab = Math.Max(0, safe.nextDossierLab);
 

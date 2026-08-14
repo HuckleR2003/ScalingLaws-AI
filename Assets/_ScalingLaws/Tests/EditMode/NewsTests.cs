@@ -330,6 +330,57 @@ namespace ScalingLaws.Tests.EditMode
                 "A member who has paid for both is still being told to pay.");
         }
 
+        /// <summary>
+        /// The bug this catches was in the first version of this system and the unlock test above
+        /// sailed straight past it.
+        ///
+        /// Signals were generated once a day at the **best** membership only, so a company holding
+        /// National Press and TrendSearch had every note routed to Total True News, and Event Hunter,
+        /// which needs both memberships to open, stayed empty for the rest of the campaign. The panel
+        /// unlocked correctly and said "the desk files when it has something", forever, at four
+        /// hundred and twenty thousand a month.
+        ///
+        /// **Asserting that a section unlocks is not asserting that it fills.**
+        /// </summary>
+        [Test]
+        public void EveryDeskOnRetainerActuallyFilesIntoItsOwnColumn()
+        {
+            var simulation = Selling(505, 5);
+            simulation.SetIntelSubscription(IntelTier.NationalPress, true);
+            simulation.SetIntelSubscription(IntelTier.KnownWords, true);
+            simulation.SetIntelSubscription(IntelTier.TrendSearch, true);
+
+            for (var day = 0; day < 420; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            foreach (var section in new[]
+                     { NewsSection.EventHunter, NewsSection.ItSpy, NewsSection.TotalTrueNews })
+            {
+                Assert.IsNotEmpty(simulation.State.News.In(section, 3),
+                    $"{section} is being paid for and has printed nothing in fourteen months. A "
+                    + "column that unlocks and never fills is worse than one that is not sold.");
+            }
+        }
+
+        [Test]
+        public void ADeskThatIsNotPaidForFilesNothingEvenWhenADearerOneIs()
+        {
+            var simulation = Selling(506, 5);
+            simulation.SetIntelSubscription(IntelTier.TrendSearch, true);
+
+            for (var day = 0; day < 300; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.IsNotEmpty(simulation.State.News.In(NewsSection.TotalTrueNews, 3));
+            Assert.IsEmpty(simulation.State.News.In(NewsSection.EventHunter, 3),
+                "Holding the dearest membership must not quietly deliver the cheap desk's column too, "
+                + "or National Press has nothing to sell.");
+        }
+
         [Test]
         public void TheScreenOffersAWayToJoinAndAWayToLeave()
         {

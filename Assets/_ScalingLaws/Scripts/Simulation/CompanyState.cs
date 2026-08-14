@@ -345,8 +345,44 @@ namespace ScalingLaws.Simulation
         /// <summary>What the company has read. Filled by the news desk, never by the interface.</summary>
         public NewsFeed News { get; } = new();
 
-        /// <summary>Days until the desk files its next note.</summary>
+        /// <summary>Days until the desk files its next note. The best membership's clock.</summary>
         public int DaysUntilNextSignal { get; set; }
+
+        /// <summary>
+        /// A countdown per outfit, because each one files on its own schedule.
+        ///
+        /// One shared clock was a bug: signals were generated at the best membership only, so a
+        /// company paying National Press and TrendSearch had everything routed to Total True News and
+        /// Event Hunter, which needs both memberships to open, stayed empty forever. Paying four
+        /// hundred and twenty thousand a month for a column that never fills is worse than not
+        /// selling the column.
+        /// </summary>
+        private readonly int[] signalCountdowns = new int[4];
+
+        public int CountdownFor(IntelTier tier) =>
+            signalCountdowns[Math.Clamp((int)tier, 0, signalCountdowns.Length - 1)];
+
+        public void SetCountdownFor(IntelTier tier, int days) =>
+            signalCountdowns[Math.Clamp((int)tier, 0, signalCountdowns.Length - 1)] = Math.Max(0, days);
+
+        public void CaptureCountdowns(List<int> into)
+        {
+            into.Clear();
+            foreach (var days in signalCountdowns)
+            {
+                into.Add(days);
+            }
+        }
+
+        public void RestoreCountdowns(IReadOnlyList<int> values)
+        {
+            for (var index = 0; index < signalCountdowns.Length; index++)
+            {
+                signalCountdowns[index] = values != null && index < values.Count
+                    ? Math.Max(0, values[index])
+                    : 0;
+            }
+        }
 
         /// <summary>Days until KnownWords files its next dossier.</summary>
         public int DaysUntilNextDossier { get; set; }

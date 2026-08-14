@@ -853,6 +853,7 @@ namespace ScalingLaws.Persistence
             data.memberships = new List<int>();
             data.news = new List<NewsItemData>();
             data.newsUnread = 0;
+            data.signalCountdowns = new List<int>();
             data.daysUntilNextDossier = 0;
             data.nextDossierLab = 0;
 

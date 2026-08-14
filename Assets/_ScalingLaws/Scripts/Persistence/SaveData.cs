@@ -348,6 +348,9 @@ namespace ScalingLaws.Persistence
         /// <summary>Every research outfit on retainer, as IntelTier values. Added in v23.</summary>
         public List<int> memberships = new();
 
+        /// <summary>One countdown per outfit, indexed by IntelTier. Added in v23.</summary>
+        public List<int> signalCountdowns = new();
+
         public int daysUntilNextDossier;
         public int nextDossierLab;
 
