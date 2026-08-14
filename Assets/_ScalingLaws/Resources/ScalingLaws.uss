@@ -4446,3 +4446,362 @@
     -unity-text-align: middle-right;
     margin-right: 10px;
 }
+
+/* ---- the official page and the desk behind it ----
+
+   Two views of one product, so they share a chrome and differ only in what they put in it. The
+   page is warm and spaced out because it is meant to read as something a stranger landed on; the
+   desk is dense because it is meant to be scanned by somebody who already knows what they are
+   looking for. */
+
+.mg-tabs {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 16px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.mg-tab {
+    margin: 0;
+    margin-right: 4px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    padding-left: 18px;
+    padding-right: 18px;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 182);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+}
+
+.mg-tab:hover {
+    color: rgb(226, 236, 250);
+}
+
+.mg-tab--on {
+    color: rgb(244, 226, 222);
+    border-bottom-color: rgb(226, 78, 62);
+    background-color: rgba(226, 78, 62, 0.10);
+}
+
+.mg-empty {
+    align-items: flex-start;
+}
+
+/* ---- the hero ---- */
+
+.mg-hero {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 22px;
+    margin-bottom: 14px;
+    border-radius: var(--card-radius);
+    background-color: rgba(78, 20, 34, 0.55);
+    border-left-width: 3px;
+    border-left-color: rgb(226, 78, 62);
+}
+
+.mg-hero__left {
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding-right: 20px;
+}
+
+.mg-hero__name {
+    font-size: 30px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(248, 240, 240);
+    margin-bottom: 6px;
+    white-space: normal;
+}
+
+.mg-hero__line {
+    font-size: 11px;
+    color: rgb(206, 178, 180);
+    margin-bottom: 3px;
+    white-space: normal;
+}
+
+.mg-hero__right {
+    flex-shrink: 0;
+    align-items: flex-end;
+}
+
+.mg-hero__score {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(248, 240, 240);
+    margin-top: 4px;
+}
+
+.mg-hero__who {
+    font-size: 10px;
+    letter-spacing: 0.6px;
+    color: rgb(206, 178, 180);
+}
+
+.mg-rate {
+    flex-direction: row;
+    align-items: center;
+}
+
+.mg-pip {
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    margin-left: 4px;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.mg-pip--on {
+    background-color: rgb(230, 176, 74);
+    border-color: rgb(240, 198, 116);
+}
+
+/* ---- the status line ---- */
+
+.mg-status {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 12px;
+    padding-left: 16px;
+    margin-bottom: 16px;
+    border-radius: var(--card-radius);
+    background-color: rgba(6, 30, 62, 0.45);
+}
+
+.mg-status__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.mg-status__text {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    margin-right: 14px;
+}
+
+.mg-status__detail {
+    flex-grow: 1;
+    font-size: 10px;
+    color: rgb(150, 162, 182);
+}
+
+/* ---- the plans ---- */
+
+.mg-plans {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.mg-plan {
+    width: 230px;
+    flex-shrink: 0;
+    margin-right: 14px;
+    padding: 16px;
+    border-radius: var(--card-radius);
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.mg-plan--on {
+    background-color: rgba(226, 78, 62, 0.08);
+    border-color: rgba(226, 78, 62, 0.55);
+}
+
+.mg-plan__name {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(160, 172, 190);
+    margin-bottom: 8px;
+}
+
+.mg-plan__price {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.mg-plan__per {
+    font-size: 10px;
+    color: rgb(150, 162, 182);
+    margin-bottom: 10px;
+}
+
+.mg-plan__line {
+    font-size: 11px;
+    color: rgb(196, 208, 226);
+    margin-bottom: 4px;
+    white-space: normal;
+}
+
+.mg-plan__tag {
+    margin-top: 10px;
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(240, 190, 182);
+}
+
+/* ---- what people say ---- */
+
+.mg-review {
+    flex-shrink: 0;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.mg-review__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.mg-review__who {
+    font-size: 10px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(160, 172, 190);
+}
+
+.mg-review__text {
+    font-size: 12px;
+    color: rgb(214, 224, 238);
+    white-space: normal;
+}
+
+/* ---- the desk ---- */
+
+.mg-kpis {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 16px;
+}
+
+.mg-kpi {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 12px;
+    padding: 16px;
+    border-radius: var(--card-radius);
+    background-color: rgba(6, 30, 62, 0.45);
+    border-top-width: 2px;
+    border-top-color: rgba(226, 78, 62, 0.45);
+}
+
+.mg-kpi__label {
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 182);
+    margin-bottom: 8px;
+    white-space: normal;
+}
+
+.mg-kpi__value {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.mg-kpi__foot {
+    font-size: 10px;
+    color: rgb(150, 162, 182);
+    margin-top: 3px;
+    white-space: normal;
+}
+
+/* ---- the audience table ---- */
+
+.mg-row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.mg-row--head {
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+    padding-bottom: 5px;
+}
+
+.mg-cell {
+    font-size: 11px;
+    color: rgb(214, 224, 238);
+}
+
+.mg-row--head .mg-cell {
+    font-size: 9px;
+    letter-spacing: 1.1px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 182);
+}
+
+.mg-cell--wide {
+    width: 34%;
+}
+
+.mg-cell--num {
+    width: 20%;
+    -unity-text-align: middle-right;
+}
+
+.mg-cell--share {
+    width: 20%;
+    padding-left: 14px;
+}
+
+.mg-cell--lead {
+    width: 26%;
+    -unity-text-align: middle-right;
+    color: rgb(160, 172, 190);
+}
+
+.mg-cell--mine {
+    color: rgb(240, 190, 182);
+    -unity-font-style: bold;
+}
+
+.mg-share__value {
+    font-size: 11px;
+    color: rgb(214, 224, 238);
+    -unity-text-align: middle-right;
+    margin-bottom: 3px;
+}
+
+.mg-share__track {
+    height: 3px;
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.mg-share__fill {
+    height: 3px;
+    border-radius: 2px;
+    background-color: rgb(92, 158, 224);
+}

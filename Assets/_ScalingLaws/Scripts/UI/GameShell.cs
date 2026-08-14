@@ -38,6 +38,7 @@ namespace ScalingLaws.UI
         private ModelCreatorPanel creator;
         private UpgradeGridPanel upgrades;
         private ArchitectureCreatorPanel families;
+        private ManagementScreen management;
         private int daysSinceAutoSave;
         private bool gameOverShown;
 
@@ -165,8 +166,14 @@ namespace ScalingLaws.UI
             Ranking,
             Feed,
 
-            /// <summary>Reserved. The slot exists so the bar stops moving under the player later.</summary>
-            Marketing
+            Marketing,
+
+            /// <summary>
+            /// The product's own page and the desk behind it. Reached from the corner banner rather
+            /// than the bar, because it is about the thing on sale and the banner is where the thing
+            /// on sale already lives.
+            /// </summary>
+            Management
         }
 
         private void OnEnable()
@@ -372,7 +379,12 @@ namespace ScalingLaws.UI
                 () => simulation.Product(),
                 WorkInFlightNow,
                 DailyNetSeries,
-                () => Show(Screen.Release));
+                () => Show(Screen.Management));
+
+            management = new ManagementScreen(simulation,
+                () => Show(Screen.Release),
+                () => Show(Screen.Marketing),
+                () => Show(Screen.Fleet));
 
             root.Add(modelBanner.Root);
 
@@ -846,6 +858,10 @@ namespace ScalingLaws.UI
 
                 case Screen.Marketing:
                     contentHost.Add(BuildMarketingScreen());
+                    break;
+                case Screen.Management:
+                    management.Refresh();
+                    contentHost.Add(management.Root);
                     break;
                 case Screen.Business:
                     contentHost.Add(BuildBusinessScreen());
@@ -1774,10 +1790,10 @@ namespace ScalingLaws.UI
             income.AddToClassList("rnow__income");
             right.Add(income);
 
-            right.Add(StatLine("Registered Users", UiFormat.Count(registered)));
-            right.Add(StatLine("Potential Users", UiFormat.Count(breakdown.AddressableUsers)));
-            right.Add(StatLine("Subscribers", UiFormat.Count(registered * PaidShare())));
-            right.Add(StatLine("All Expenses", "-" + UiFormat.Money(spent)));
+            right.Add(UiParts.StatLine("Registered Users", UiFormat.Count(registered)));
+            right.Add(UiParts.StatLine("Potential Users", UiFormat.Count(breakdown.AddressableUsers)));
+            right.Add(UiParts.StatLine("Subscribers", UiFormat.Count(registered * PaidShare())));
+            right.Add(UiParts.StatLine("All Expenses", "-" + UiFormat.Money(spent)));
 
             card.Add(right);
             return card;
@@ -1786,22 +1802,6 @@ namespace ScalingLaws.UI
         /// <summary>What share of the people held are on a paid account rather than the free tier.</summary>
         private double PaidShare() =>
             Math.Clamp(1.0 - simulation.State.Monetization.FreeShareOfTokens, 0.0, 1.0);
-
-        private static VisualElement StatLine(string name, string value)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("rnow-stat");
-
-            var label = new Label(name);
-            label.AddToClassList("rnow-stat__name");
-            row.Add(label);
-
-            var figure = new Label(value);
-            figure.AddToClassList("rnow-stat__value");
-            row.Add(figure);
-
-            return figure.parent;
-        }
 
         /// <summary>
         /// The two charts side by side: the day by day account base, and today's traffic curve.
@@ -2091,7 +2091,7 @@ namespace ScalingLaws.UI
             foreach (var audience in AudienceCatalog.All)
             {
                 var known = simulation.State.Awareness.In(audience.Segment);
-                panel.Add(ThinBarRow(audience.DisplayName, UiFormat.Percent(known, 0), known));
+                panel.Add(UiParts.ThinBarRow(audience.DisplayName, UiFormat.Percent(known, 0), known));
             }
 
             var note = new Label(
@@ -2102,33 +2102,6 @@ namespace ScalingLaws.UI
             panel.Add(note);
 
             return panel;
-        }
-
-        private static VisualElement ThinBarRow(string label, string value, double fraction)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("thin-bar");
-
-            var caption = new Label(label);
-            caption.AddToClassList("thin-bar__label");
-            row.Add(caption);
-
-            var track = new VisualElement();
-            track.AddToClassList("thin-bar__track");
-
-            var fill = new VisualElement();
-            fill.AddToClassList("thin-bar__fill");
-            fill.style.width = Length.Percent((float)(Math.Clamp(fraction, 0.0, 1.0) * 100.0));
-            fill.style.backgroundColor = new Color(0.36f, 0.62f, 0.88f);
-            track.Add(fill);
-
-            row.Add(track);
-
-            var amount = new Label(value);
-            amount.AddToClassList("thin-bar__value");
-            row.Add(amount);
-
-            return row;
         }
 
         /// <summary>

@@ -1757,7 +1757,14 @@ namespace ScalingLaws.Simulation
         /// is exactly the model the market is choosing between. Reusing that rule rather than picking
         /// the newest keeps the banner describing the thing the simulation is actually selling.
         /// </summary>
-        public ProductStanding Product()
+        /// <summary>
+        /// The model the company is actually selling, or null when nothing is on sale.
+        ///
+        /// Public because the banner, the management page and the standing all need to name the same
+        /// model, and three copies of "strongest live model not superseded inside its own line" is
+        /// three chances for them to disagree about what the company is.
+        /// </summary>
+        public DeployedModel Flagship()
         {
             DeployedModel best = null;
             var bestCapability = double.NegativeInfinity;
@@ -1776,6 +1783,14 @@ namespace ScalingLaws.Simulation
                     best = model;
                 }
             }
+
+            return best;
+        }
+
+        public ProductStanding Product()
+        {
+            var best = Flagship();
+            var bestCapability = best?.EffectiveCapability(State.Date) ?? 0.0;
 
             var month = Ledger.MonthKeyOf(State.Date);
             var earnings = State.Ledger.MonthTotal(month, LedgerLine.Subscriptions);
