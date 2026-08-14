@@ -98,7 +98,56 @@ namespace ScalingLaws.Simulation
 
         public bool IsRetired { get; private set; }
 
+        /// <summary>The day it came off sale, or the default date while it is still selling.</summary>
+        public GameDate RetiredOn { get; private set; } = new(GameDate.MinimumDayIndex);
+
         public void Retire() => IsRetired = true;
+
+        /// <summary>Retires it and records when, which is what a history page needs to draw a span.</summary>
+        public void RetireOn(GameDate date)
+        {
+            if (IsRetired)
+            {
+                return;
+            }
+
+            IsRetired = true;
+            RetiredOn = date;
+        }
+
+        // ---- what this model did while it was on sale ------------------------------------------
+        //
+        // Foundations for the model history screen. These are **records of what happened**, not
+        // derived quantities: nothing can recompute what a model earned in 2024 from the state of the
+        // company in 2031, so they are accumulated as it happens and they have to be saved. That is
+        // the same reasoning that made LastQuality persistent, and the opposite mistake to the three
+        // times something causal was dropped from a save because it looked derived.
+
+        /// <summary>Every dollar this model has been credited with since release.</summary>
+        public long LifetimeRevenueUsd { get; private set; }
+
+        /// <summary>Days it has spent on sale. Not the calendar age: a shelved model stops counting.</summary>
+        public int DaysOnSale { get; private set; }
+
+        /// <summary>The most people it ever held at once.</summary>
+        public double PeakUsers { get; private set; }
+
+        /// <summary>Books a day of trading against this model.</summary>
+        public void RecordDay(long revenueUsd, double users)
+        {
+            LifetimeRevenueUsd += Math.Max(0L, revenueUsd);
+            DaysOnSale++;
+            PeakUsers = Math.Max(PeakUsers, Math.Max(0.0, SimUnits.Finite(users)));
+        }
+
+        /// <summary>Restores the record on load. Only the save is allowed to call this.</summary>
+        public void RestoreHistory(long revenueUsd, int daysOnSale, double peakUsers, GameDate retiredOn)
+        {
+            LifetimeRevenueUsd = Math.Max(0L, revenueUsd);
+            DaysOnSale = Math.Max(0, daysOnSale);
+            PeakUsers = Math.Max(0.0, SimUnits.Finite(peakUsers));
+            RetiredOn = retiredOn;
+        }
 
         public bool IsLiveOn(GameDate date) => !IsRetired && date.IsOnOrAfter(ReleaseDate);
 

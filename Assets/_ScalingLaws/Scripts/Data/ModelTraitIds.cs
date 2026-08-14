@@ -45,19 +45,25 @@ namespace ScalingLaws.Data
         FastFollower = 5
     }
 
-    /// <summary>What the company is willing to pay for advance warning, and how often it is right.</summary>
+    /// <summary>
+    /// The research outfits a company can put on retainer.
+    ///
+    /// They are **independent memberships, not a ladder position**: a company can hold the cheap one
+    /// and not the dear one, all three, or none. The values are the old single-subscription tiers and
+    /// must not be renumbered, because a v22 save stores the one tier it was paying for as an int.
+    /// </summary>
     public enum IntelTier
     {
         /// <summary>Free. Whatever is already public. Arrives with the news, not before it.</summary>
         PublicNews = 0,
 
-        /// <summary>Cheap chatter from the supply chain. Often right, sometimes badly wrong.</summary>
-        SupplyChainRumor = 1,
+        /// <summary>National Press. Cheap, wide, and wrong often enough to hurt if trusted.</summary>
+        NationalPress = 1,
 
-        /// <summary>A bought analyst note. Decent lead time, decent accuracy.</summary>
-        AnalystReport = 2,
+        /// <summary>KnownWords. Watches the other labs and reports what they are actually doing.</summary>
+        KnownWords = 2,
 
-        /// <summary>A dedicated scouting team on retainer. Long lead time, and still not certain.</summary>
-        ScoutingTeam = 3
+        /// <summary>TrendSearch Team. The dear one. Long lead time, and still not certain.</summary>
+        TrendSearch = 3
     }
 }

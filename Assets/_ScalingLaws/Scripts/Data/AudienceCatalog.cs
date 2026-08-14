@@ -302,6 +302,25 @@ namespace ScalingLaws.Data
         /// How fast the whole market is growing relative to 2022. Segment shares say who is buying;
         /// this says how many of them there are, and the two are separate on purpose.
         /// </summary>
+        /// <summary>
+        /// What one person, averaged across the whole market, gets through in a day.
+        ///
+        /// Weighted by how large each audience is on the date, because an average that ignored the
+        /// mix would drift as the market reshapes itself even with every audience unchanged.
+        /// </summary>
+        public static double AverageTokensPerUserPerDay(GameDate date)
+        {
+            var shares = SharesOn(date);
+            var total = 0.0;
+
+            for (var index = 0; index < Entries.Length && index < shares.Length; index++)
+            {
+                total += shares[index] * Entries[index].IntensityIn(date.Year);
+            }
+
+            return Math.Max(1.0, total);
+        }
+
         public static double MarketSizeIndex(GameDate date)
         {
             var total = 0.0;

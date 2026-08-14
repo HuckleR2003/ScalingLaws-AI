@@ -224,7 +224,11 @@ namespace ScalingLaws.Persistence
                     isRetired = model.IsRetired,
                     modelType = (int)model.Type,
                     family = model.Family,
-                    traitLevels = new List<int>(model.Traits.ToArray())
+                    traitLevels = new List<int>(model.Traits.ToArray()),
+                    lifetimeRevenueUsd = model.LifetimeRevenueUsd,
+                    daysOnSale = model.DaysOnSale,
+                    peakUsers = model.PeakUsers,
+                    retiredDayIndex = model.RetiredOn.DayIndex
                 });
             }
 
@@ -312,7 +316,32 @@ namespace ScalingLaws.Persistence
 
             data.founderEquity = state.CapTable.FounderEquity;
             data.lastRoundClosedDayIndex = state.LastRoundClosedOn.DayIndex;
-            data.intelSubscription = (int)state.IntelSubscription;
+            data.intelSubscription = 0;
+            data.memberships.Clear();
+            foreach (var tier in state.Memberships)
+            {
+                data.memberships.Add((int)tier);
+            }
+
+            data.daysUntilNextDossier = state.DaysUntilNextDossier;
+            data.nextDossierLab = state.NextDossierLab;
+
+            data.news.Clear();
+            foreach (var story in state.News.All)
+            {
+                data.news.Add(new NewsItemData
+                {
+                    dayIndex = story.Date.DayIndex,
+                    section = (int)story.Section,
+                    headline = story.Headline,
+                    body = story.Body,
+                    outlet = story.Outlet,
+                    aboutPlayer = story.IsAboutPlayer,
+                    weight = (int)story.Weight
+                });
+            }
+
+            data.newsUnread = state.News.Unread;
             data.daysUntilNextSignal = state.DaysUntilNextSignal;
 
             var offer = state.CurrentFundingOffer;
@@ -587,6 +616,9 @@ namespace ScalingLaws.Persistence
                     deployed.RestoreTraits(ModelTraitSet.FromArray(model.traitLevels));
                 }
 
+                deployed.RestoreHistory(model.lifetimeRevenueUsd, model.daysOnSale, model.peakUsers,
+                    new GameDate(Math.Max(GameDate.MinimumDayIndex, model.retiredDayIndex)));
+
                 if (model.isRetired)
                 {
                     deployed.Retire();
@@ -682,7 +714,44 @@ namespace ScalingLaws.Persistence
 
             state.CapTable.Restore(history, safe.founderEquity);
             state.LastRoundClosedOn = new GameDate(safe.lastRoundClosedDayIndex);
-            state.IntelSubscription = (IntelTier)safe.intelSubscription;
+            foreach (var raw in safe.memberships)
+            {
+                if (Enum.IsDefined(typeof(IntelTier), raw))
+                {
+                    state.SetMembership((IntelTier)raw, true);
+                }
+            }
+
+            state.DaysUntilNextDossier = Math.Max(0, safe.daysUntilNextDossier);
+            state.NextDossierLab = Math.Max(0, safe.nextDossierLab);
+
+            state.News.Clear();
+            foreach (var story in safe.news)
+            {
+                if (story == null)
+                {
+                    continue;
+                }
+
+                var section = Enum.IsDefined(typeof(NewsSection), story.section)
+                    ? (NewsSection)story.section
+                    : NewsSection.Wire;
+
+                var weight = Enum.IsDefined(typeof(NewsWeight), story.weight)
+                    ? (NewsWeight)story.weight
+                    : NewsWeight.Routine;
+
+                state.News.Add(new NewsItem(new GameDate(Math.Max(0, story.dayIndex)), section,
+                    story.headline, story.body, story.outlet, story.aboutPlayer, weight));
+            }
+
+            state.News.MarkRead();
+            for (var unread = 0; unread < safe.newsUnread; unread++)
+            {
+                // Restoring the count without re-adding the stories, so a save taken with four
+                // unread stories opens with four unread stories rather than ninety.
+                state.News.NoteUnread();
+            }
             state.DaysUntilNextSignal = safe.daysUntilNextSignal;
 
             if (safe.hasFundingOffer)

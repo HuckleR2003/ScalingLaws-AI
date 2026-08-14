@@ -125,6 +125,8 @@ namespace ScalingLaws.Simulation
             var housing = (long)Math.Round(bill.HousingUsd * billScale);
             var upkeep = servingCost - rent - power - housing;
 
+            RecordModelDay(revenue);
+
             State.PostCash(LedgerLine.Subscriptions, revenue);
             State.PostCash(LedgerLine.CloudRent, rent);
             State.PostCash(LedgerLine.Electricity, power);
@@ -1394,17 +1396,19 @@ namespace ScalingLaws.Simulation
         /// <summary>
         /// Puts a research desk on retainer, or stands one down. Billed daily from the next tick.
         /// </summary>
-        public void SetIntelSubscription(IntelTier tier)
+        public void SetIntelSubscription(IntelTier tier, bool joined)
         {
-            if (State.IntelSubscription == tier)
+            if (tier == IntelTier.PublicNews || State.IsMember(tier) == joined)
             {
                 return;
             }
 
-            State.IntelSubscription = tier;
-            State.DaysUntilNextSignal = tier == IntelTier.PublicNews
+            State.SetMembership(tier, joined);
+
+            var best = State.BestMembership;
+            State.DaysUntilNextSignal = best == IntelTier.PublicNews
                 ? 0
-                : Math.Max(1, IntelligenceService.ReportIntervalDays(tier) / 2);
+                : Math.Max(1, IntelligenceService.ReportIntervalDays(best) / 2);
         }
 
         // ------------------------------------------------------------------ standings
@@ -2097,15 +2101,114 @@ namespace ScalingLaws.Simulation
             }
         }
 
+        /// <summary>
+        /// Credits the day's takings to the models that earned them.
+        ///
+        /// Foundations for the model history screen: "what did the thirtieth model earn" is a
+        /// question nothing can answer after the fact, so it is recorded as it happens.
+        ///
+        /// **The split is by the audience each model's kind actually holds**, which the segmented
+        /// market already computes, and only marketed models are credited: a superseded model in a
+        /// line is not on sale, so it earns nothing, which is exactly what the market thinks too.
+        /// Where two lines share a kind the split is by capability, because capability is what wins
+        /// the share in the first place. This can never disagree with the books: the parts are taken
+        /// as shares of one revenue figure rather than being computed a second time.
+        /// </summary>
+        private void RecordModelDay(long revenue)
+        {
+            var marketed = new List<DeployedModel>();
+            foreach (var model in State.DeployedModels)
+            {
+                if (model != null && model.IsLiveOn(State.Date) && !IsSupersededInItsLine(model))
+                {
+                    marketed.Add(model);
+                }
+            }
+
+            if (marketed.Count == 0)
+            {
+                return;
+            }
+
+            var breakdown = MarketByType();
+            var weights = new double[marketed.Count];
+            var total = 0.0;
+
+            for (var index = 0; index < marketed.Count; index++)
+            {
+                var users = breakdown.TryGetType(marketed[index].Type, out var standing)
+                    ? standing.PlayerUsers
+                    : 0.0;
+
+                // Several lines can sell the same kind. Capability breaks the tie, and it is also
+                // the tie-break the market itself used to hand out that share.
+                var weight = users * Math.Max(0.01, marketed[index].EffectiveCapability(State.Date));
+                weights[index] = weight;
+                total += weight;
+            }
+
+            if (total <= 0.0)
+            {
+                // Nobody is holding anybody yet, so nothing is earned and nothing is credited. The
+                // day still counts as a day on sale, because it was.
+                foreach (var model in marketed)
+                {
+                    model.RecordDay(0L, 0.0);
+                }
+
+                return;
+            }
+
+            var credited = 0L;
+            for (var index = 0; index < marketed.Count; index++)
+            {
+                var share = weights[index] / total;
+
+                // The last one takes the remainder so the parts add up to the whole exactly, the
+                // same rule the four fleet bills follow.
+                var slice = index == marketed.Count - 1
+                    ? revenue - credited
+                    : (long)Math.Round(revenue * share);
+
+                credited += slice;
+
+                var users = breakdown.TryGetType(marketed[index].Type, out var standing)
+                    ? standing.PlayerUsers * share
+                    : 0.0;
+
+                marketed[index].RecordDay(slice, users);
+            }
+        }
+
+        /// <summary>Every retainer the company holds, not just the dearest one. They all invoice.</summary>
         private long DailyIntelRetainerUsd()
         {
-            var monthly = IntelligenceService.MonthlyRetainerUsd(State.IntelSubscription);
+            var monthly = 0L;
+            foreach (var tier in State.Memberships)
+            {
+                monthly += IntelligenceService.MonthlyRetainerUsd(tier);
+            }
+
             return SimUnits.ToDollars(monthly / DaysPerMonth);
+        }
+
+        public long MonthlyIntelRetainerUsd()
+        {
+            var monthly = 0L;
+            foreach (var tier in State.Memberships)
+            {
+                monthly += IntelligenceService.MonthlyRetainerUsd(tier);
+            }
+
+            return monthly;
         }
 
         private void AdvanceIntelligence()
         {
-            if (State.IntelSubscription == IntelTier.PublicNews)
+            AdvanceDossiers();
+
+            var best = State.BestMembership;
+            if (best == IntelTier.PublicNews)
             {
                 return;
             }
@@ -2116,20 +2219,103 @@ namespace ScalingLaws.Simulation
                 return;
             }
 
-            var interval = IntelligenceService.ReportIntervalDays(State.IntelSubscription);
+            var interval = IntelligenceService.ReportIntervalDays(best);
             State.DaysUntilNextSignal = Math.Max(1, interval + State.Random.NextInt(-6, 7));
 
-            var signal = IntelligenceService.Generate(
-                State.IntelSubscription,
-                State.Date,
-                State.Rivals,
-                State.Random);
+            var signal = IntelligenceService.Generate(best, State.Date, State.Rivals, State.Random);
 
             State.AddSignal(signal);
+
+            // The note goes on the desk's own page rather than into the general wire, so paying for
+            // one outfit fills one column and the player can see what their money bought.
+            State.News.Add(NewsDesk.FromSignal(signal));
+
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.IntelReceived,
                 State.Date,
                 $"{signal.Headline} (desk confidence {signal.Confidence:P0})."));
+        }
+
+        /// <summary>
+        /// KnownWords filing on one rival at a time, in order, so the column fills rather than
+        /// repeating whoever is largest.
+        ///
+        /// Nothing here is rolled. The dossier reads the lab's live state and the market's own user
+        /// count, which is why it can say something the player could not already see without ever
+        /// being able to contradict the game.
+        /// </summary>
+        private void AdvanceDossiers()
+        {
+            if (!State.IsMember(IntelTier.KnownWords))
+            {
+                return;
+            }
+
+            State.DaysUntilNextDossier--;
+            if (State.DaysUntilNextDossier > 0)
+            {
+                return;
+            }
+
+            State.DaysUntilNextDossier = NewsDesk.DossierIntervalDays;
+
+            var agents = State.Rivals.Agents;
+            if (agents.Count == 0)
+            {
+                return;
+            }
+
+            var index = State.NextDossierLab % agents.Count;
+            State.NextDossierLab = (index + 1) % agents.Count;
+
+            var lab = agents[index];
+            var breakdown = MarketByType();
+            var owner = index + 1;
+
+            var users = owner < breakdown.OwnerUsersOverall.Count
+                ? breakdown.OwnerUsersOverall[owner]
+                : 0.0;
+
+            // Their revenue on the player's own arithmetic: the people they hold, each consuming and
+            // paying what this market says a person consumes and pays.
+            var market = MarketModel.Evaluate(State.Date, State.Rivals.FrontierCapability(State.Date));
+            var perUserPerDay = AudienceCatalog.AverageTokensPerUserPerDay(State.Date);
+            var revenuePerYear = users * perUserPerDay * 365.0 / 1_000_000.0
+                * market.PricePerMillionTokensUsd * lab.LivePrice;
+
+            State.News.Add(NewsDesk.Dossier(lab, State.Date, users,
+                SimUnits.Finite(revenuePerYear), ReleasesShippedBy(lab)));
+        }
+
+        /// <summary>
+        /// How many models a lab has put out by today. Counted from the reference table, which is the
+        /// only record of it, plus the one it is selling if that came after the table ran out.
+        /// </summary>
+        private int ReleasesShippedBy(CompetitorAgent lab)
+        {
+            var shipped = 0;
+            var lastCatalogued = new GameDate(GameDate.MinimumDayIndex);
+
+            foreach (var release in CompetitorCatalog.All)
+            {
+                if (release.Competitor == lab.Competitor && State.Date.IsOnOrAfter(release.ReleaseDate))
+                {
+                    shipped++;
+                    if (release.ReleaseDate.IsOnOrAfter(lastCatalogued))
+                    {
+                        lastCatalogued = release.ReleaseDate;
+                    }
+                }
+            }
+
+            // Past the end of the table a lab invents its own successors, and those are not written
+            // down anywhere. What is on sale now is evidence of one more than the table knows about.
+            if (lab.HasShipped && lab.LiveReleaseDate.IsOnOrAfter(lastCatalogued.AddDays(1)))
+            {
+                shipped++;
+            }
+
+            return shipped;
         }
 
         private void ExpireFundingOffer()

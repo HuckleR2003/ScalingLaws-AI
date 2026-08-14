@@ -39,6 +39,8 @@ namespace ScalingLaws.UI
         private UpgradeGridPanel upgrades;
         private ArchitectureCreatorPanel families;
         private ManagementScreen management;
+        private NewsScreen news;
+        private NewsBanner newsBanner;
         private int daysSinceAutoSave;
         private bool gameOverShown;
 
@@ -173,7 +175,10 @@ namespace ScalingLaws.UI
             /// than the bar, because it is about the thing on sale and the banner is where the thing
             /// on sale already lives.
             /// </summary>
-            Management
+            Management,
+
+            /// <summary>The wire. Reached from its own corner banner and from the bottom bar.</summary>
+            News
         }
 
         private void OnEnable()
@@ -385,6 +390,17 @@ namespace ScalingLaws.UI
                 () => Show(Screen.Release),
                 () => Show(Screen.Marketing),
                 () => Show(Screen.Fleet));
+
+            news = new NewsScreen(simulation, (tier, joined) =>
+            {
+                simulation.SetIntelSubscription(tier, joined);
+                Show(Screen.News);
+            });
+
+            // Read through a function rather than captured, same as the finance report: the feed
+            // object survives a load but the state around it is replaced.
+            newsBanner = new NewsBanner(() => simulation.State.News, () => Show(Screen.News));
+            root.Add(newsBanner.Root);
 
             root.Add(modelBanner.Root);
 
@@ -749,6 +765,7 @@ namespace ScalingLaws.UI
             hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking");
             hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence");
             hud.AddSlot("MARKETING", Screen.Marketing, () => Show(Screen.Marketing));
+            hud.AddSlot("NEWS", Screen.News, () => Show(Screen.News));
         }
 
         private void ToggleCompanyInfo()
@@ -862,6 +879,10 @@ namespace ScalingLaws.UI
                 case Screen.Management:
                     management.Refresh();
                     contentHost.Add(management.Root);
+                    break;
+                case Screen.News:
+                    news.Refresh();
+                    contentHost.Add(news.Root);
                     break;
                 case Screen.Business:
                     contentHost.Add(BuildBusinessScreen());
@@ -2884,23 +2905,31 @@ namespace ScalingLaws.UI
             tiers.AddToClassList("panel");
             page.Add(tiers);
 
-            foreach (IntelTier tier in Enum.GetValues(typeof(IntelTier)))
+            // Memberships are bought and cancelled here and on the news screen, and both go through
+            // the same call, because a retainer the player can start in one place and only stop in
+            // another is a subscription trap rather than a decision.
+            foreach (var tier in NewsCatalog.Memberships)
             {
                 var captured = tier;
+                var held = state.IsMember(tier);
+
                 var button = new Button(() =>
                 {
-                    simulation.SetIntelSubscription(captured);
+                    simulation.SetIntelSubscription(captured, !held);
                     Show(Screen.Feed);
                 })
                 {
-                    text = tier == IntelTier.PublicNews
-                        ? "PUBLIC NEWS (FREE)"
-                        : $"{tier.ToString().ToUpperInvariant()}  {UiFormat.Money(IntelligenceService.MonthlyRetainerUsd(tier))}/MONTH"
+                    text = (held ? "CANCEL  " : "JOIN  ")
+                        + NewsCatalog.OutletName(tier).ToUpperInvariant()
+                        + $"  {UiFormat.Money(IntelligenceService.MonthlyRetainerUsd(tier))}/MONTH"
                 };
+
                 button.AddToClassList("button");
+                button.EnableInClassList("button--primary", held);
                 button.style.marginBottom = 8;
+                button.style.marginLeft = 0;
                 button.style.width = Length.Percent(100);
-                button.SetEnabled(state.IntelSubscription != tier);
+                button.tooltip = NewsCatalog.OutletPitch(tier);
                 tiers.Add(button);
             }
 
@@ -3141,6 +3170,11 @@ namespace ScalingLaws.UI
             // Only on the site screen. It sat on top of the model creator and the research tree,
             // which is the same mistake the counter it replaced made.
             modelBanner?.SetHidden(current != Screen.Site);
+
+            // Same rule as the model banner: the corner belongs to the office. On any other screen
+            // it would sit on top of the page rather than beside it.
+            newsBanner?.SetHidden(current != Screen.Site);
+            newsBanner?.Refresh();
             modelBanner?.Refresh();
             valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
             companyLabel.text = state.CompanyName;

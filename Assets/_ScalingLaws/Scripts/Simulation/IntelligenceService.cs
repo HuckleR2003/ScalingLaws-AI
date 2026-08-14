@@ -76,39 +76,46 @@ namespace ScalingLaws.Simulation
     /// </summary>
     public static class IntelligenceService
     {
-        /// <summary>Monthly retainer per tier.</summary>
+        /// <summary>
+        /// Monthly retainer per outfit. The author's figures.
+        ///
+        /// These replaced 120k / 650k / 2.8M on 2026-08-13, which makes information roughly six times
+        /// cheaper across the board. That is a deliberate change of what the system is for: at the old
+        /// prices a desk was a late-game luxury, and at these a young company can afford National
+        /// Press in its first year, which is when advance warning about hardware is worth the most.
+        /// </summary>
         public static long MonthlyRetainerUsd(IntelTier tier) => tier switch
         {
-            IntelTier.SupplyChainRumor => 120_000,
-            IntelTier.AnalystReport => 650_000,
-            IntelTier.ScoutingTeam => 2_800_000,
+            IntelTier.NationalPress => 20_000,
+            IntelTier.KnownWords => 50_000,
+            IntelTier.TrendSearch => 400_000,
             _ => 0
         };
 
         /// <summary>Share of signals from this tier that turn out to be right.</summary>
         public static double Accuracy(IntelTier tier) => tier switch
         {
-            IntelTier.SupplyChainRumor => 0.58,
-            IntelTier.AnalystReport => 0.76,
-            IntelTier.ScoutingTeam => 0.90,
+            IntelTier.NationalPress => 0.58,
+            IntelTier.KnownWords => 0.76,
+            IntelTier.TrendSearch => 0.90,
             _ => 1.0
         };
 
         /// <summary>How far ahead this tier sees, in days.</summary>
         public static int LeadTimeDays(IntelTier tier) => tier switch
         {
-            IntelTier.SupplyChainRumor => 120,
-            IntelTier.AnalystReport => 220,
-            IntelTier.ScoutingTeam => 380,
+            IntelTier.NationalPress => 120,
+            IntelTier.KnownWords => 220,
+            IntelTier.TrendSearch => 380,
             _ => 0
         };
 
         /// <summary>Expected days between signals. A better desk also reports more often.</summary>
         public static int ReportIntervalDays(IntelTier tier) => tier switch
         {
-            IntelTier.SupplyChainRumor => 45,
-            IntelTier.AnalystReport => 32,
-            IntelTier.ScoutingTeam => 24,
+            IntelTier.NationalPress => 45,
+            IntelTier.KnownWords => 32,
+            IntelTier.TrendSearch => 24,
             _ => 0
         };
 
@@ -120,9 +127,9 @@ namespace ScalingLaws.Simulation
         {
             var overclaim = tier switch
             {
-                IntelTier.SupplyChainRumor => 0.22,
-                IntelTier.AnalystReport => 0.12,
-                IntelTier.ScoutingTeam => 0.05,
+                IntelTier.NationalPress => 0.22,
+                IntelTier.KnownWords => 0.12,
+                IntelTier.TrendSearch => 0.05,
                 _ => 0.0
             };
 

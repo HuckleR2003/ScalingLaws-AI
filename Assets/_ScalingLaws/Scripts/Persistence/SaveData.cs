@@ -48,6 +48,26 @@ namespace ScalingLaws.Persistence
 
         /// <summary>Trait levels in catalog order. Added in v3.</summary>
         public List<int> traitLevels = new();
+
+        // What this model did while it was on sale. Added in v23. Records, not derivations: nothing
+        // can recompute a model's 2024 earnings from the company's state in 2031.
+        public long lifetimeRevenueUsd;
+        public int daysOnSale;
+        public double peakUsers;
+        public int retiredDayIndex;
+    }
+
+    /// <summary>One filed story. Added in v23.</summary>
+    [Serializable]
+    public sealed class NewsItemData
+    {
+        public int dayIndex;
+        public int section;
+        public string headline = string.Empty;
+        public string body = string.Empty;
+        public string outlet = string.Empty;
+        public bool aboutPlayer;
+        public int weight;
     }
 
     /// <summary>A finished run waiting for a release decision. Added in v3.</summary>
@@ -227,7 +247,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 22;
+        public const int CurrentVersion = 23;
 
         public int version = CurrentVersion;
 
@@ -320,8 +340,21 @@ namespace ScalingLaws.Persistence
         public double offerSentiment = 1.0;
         public bool offerIsDownRound;
 
+        /// <summary>Kept so a v22 file can still be read. v23 writes <see cref="memberships"/>.</summary>
         public int intelSubscription;
+
         public int daysUntilNextSignal;
+
+        /// <summary>Every research outfit on retainer, as IntelTier values. Added in v23.</summary>
+        public List<int> memberships = new();
+
+        public int daysUntilNextDossier;
+        public int nextDossierLab;
+
+        /// <summary>The news the company has read, oldest first. Added in v23.</summary>
+        public List<NewsItemData> news = new();
+
+        public int newsUnread;
 
         public List<CompetitorAgentData> rivals = new();
 

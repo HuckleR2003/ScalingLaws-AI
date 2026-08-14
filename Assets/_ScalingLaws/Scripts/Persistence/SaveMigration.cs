@@ -123,6 +123,7 @@ namespace ScalingLaws.Persistence
                     19 => UpgradeV19ToV20(current),
                     20 => UpgradeV20ToV21(current),
                     21 => UpgradeV21ToV22(current),
+                    22 => UpgradeV22ToV23(current),
                     _ => current
                 };
             }
@@ -819,6 +820,67 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v21 to v22: no campaigns, which is what a v21 company had. Awareness rebuilds on the "
                 + "first day from standing and from the audience already being served.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v22 to v23: independent memberships, the news feed, and what each model earned.
+        ///
+        /// **The membership is the honest reading of the one tier a v22 company was paying for.** It
+        /// held exactly one subscription, so it gets exactly that one back rather than everything up
+        /// to it: granting the cheaper desks too would be handing the player two retainers they never
+        /// bought and then invoicing them for both.
+        ///
+        /// The feed starts empty. News is a record of things that were announced, and a v22 file has
+        /// no record of which days had announcements, so inventing a back catalogue would be printing
+        /// stories about events that may never have happened.
+        ///
+        /// Lifetime earnings start at zero for every model already on sale, and that **understates**
+        /// them, deliberately. The alternative is to divide the company's lifetime revenue among
+        /// models by a rule nobody can check, which would put a confident wrong number on a history
+        /// page whose entire job is to be trustworthy. A model that shipped before v23 reads zero
+        /// until it earns, and the page can say why.
+        /// </summary>
+        public static SaveData UpgradeV22ToV23(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 23;
+            data.memberships = new List<int>();
+            data.news = new List<NewsItemData>();
+            data.newsUnread = 0;
+            data.daysUntilNextDossier = 0;
+            data.nextDossierLab = 0;
+
+            if (Enum.IsDefined(typeof(IntelTier), data.intelSubscription)
+                && (IntelTier)data.intelSubscription != IntelTier.PublicNews)
+            {
+                data.memberships.Add(data.intelSubscription);
+            }
+
+            foreach (var model in data.models)
+            {
+                if (model == null)
+                {
+                    continue;
+                }
+
+                model.lifetimeRevenueUsd = 0L;
+                model.daysOnSale = 0;
+                model.peakUsers = 0.0;
+                model.retiredDayIndex = GameDate.MinimumDayIndex;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v22 to v23: the one desk on retainer became the one membership held, not the ladder "
+                + "below it. The news feed starts empty, because a v22 file has no record of what was "
+                + "announced. Per model earnings start at zero and therefore understate every model "
+                + "already on sale, which is preferred to splitting lifetime revenue by a rule nobody "
+                + "can check.");
 
             return data;
         }

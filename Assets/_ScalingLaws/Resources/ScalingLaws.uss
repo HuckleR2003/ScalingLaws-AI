@@ -4805,3 +4805,471 @@
     border-radius: 2px;
     background-color: rgb(92, 158, 224);
 }
+
+
+/* ---- the wire: corner banner and the news screen ----
+
+   Laid out as a publication, not as a log. One lead story set large with a kicker over it and the
+   rest small underneath, hairlines instead of boxes, a coloured rule over every section title. That
+   hierarchy is the whole design: four stories at equal weight is a list the eye has to read all of,
+   one large and three small is a page that tells the eye where to go. */
+
+/* ---- corner banner, top left, opposite the model banner ---- */
+
+.nb {
+    position: absolute;
+    top: 54px;
+    left: 20px;
+    width: 300px;
+    background-color: rgba(10, 12, 18, 0.93);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.nb__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 12px;
+    padding-right: 10px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    background-color: rgb(226, 78, 62);
+}
+
+.nb__masthead {
+    font-size: 11px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(252, 244, 242);
+}
+
+.nb__badge {
+    min-width: 18px;
+    height: 18px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 9px;
+    background-color: rgb(252, 244, 242);
+    color: rgb(184, 46, 34);
+    font-size: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.nb__body {
+    flex-direction: row;
+    padding: 11px;
+}
+
+.nb__rule {
+    width: 3px;
+    border-radius: 2px;
+    margin-right: 10px;
+    background-color: rgb(120, 132, 152);
+}
+
+.nb__rule--loud {
+    background-color: rgb(230, 176, 74);
+}
+
+.nb__rule--scandal {
+    background-color: rgb(214, 66, 58);
+}
+
+.nb__rule--premiere {
+    background-color: rgb(64, 176, 128);
+}
+
+.nb__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.nb__kicker {
+    font-size: 8px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(226, 120, 104);
+    margin-bottom: 3px;
+}
+
+.nb__headline {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(238, 242, 250);
+    white-space: normal;
+}
+
+.nb__dateline {
+    font-size: 9px;
+    color: rgb(128, 140, 158);
+    margin-top: 4px;
+}
+
+.nb__open {
+    margin: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 0;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.10);
+    border-radius: 0;
+}
+
+.nb__open:hover {
+    background-color: rgba(226, 78, 62, 0.30);
+    color: rgb(255, 250, 248);
+}
+
+/* ---- the screen ---- */
+
+/* The page itself needs to fill its host, or the three columns have no height to divide. */
+.news {
+    flex-grow: 1;
+}
+
+.news__masthead {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(226, 78, 62);
+}
+
+.news__title {
+    font-size: 34px;
+    letter-spacing: 6px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+}
+
+.news__strap {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    margin-top: 2px;
+    white-space: normal;
+}
+
+.news__mastright {
+    align-items: flex-end;
+    flex-shrink: 0;
+    padding-left: 20px;
+}
+
+.news__date {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(214, 224, 238);
+}
+
+.news__spend {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    margin-top: 3px;
+}
+
+.news__columns {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.news-col {
+    flex-shrink: 0;
+    padding-right: 20px;
+}
+
+.news-col--wire {
+    width: 25%;
+}
+
+.news-col--middle {
+    width: 41%;
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.08);
+    padding-left: 20px;
+}
+
+.news-col--desks {
+    width: 34%;
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.08);
+    padding-left: 20px;
+    padding-right: 0;
+}
+
+.news-scroll {
+    flex-grow: 1;
+    max-height: 560px;
+}
+
+/* Section headings: a coloured rule, then the word. */
+
+.sec {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.sec__rule {
+    height: 2px;
+    margin-bottom: 6px;
+    background-color: rgb(120, 132, 152);
+}
+
+.sec__title {
+    font-size: 12px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+}
+
+.rule--wire {
+    background-color: rgb(120, 132, 152);
+}
+
+.rule--scandal {
+    background-color: rgb(214, 66, 58);
+}
+
+.rule--premiere {
+    background-color: rgb(64, 176, 128);
+}
+
+.rule--gold {
+    background-color: rgb(230, 176, 74);
+}
+
+.rule--blue {
+    background-color: rgb(92, 158, 224);
+}
+
+.rule--violet {
+    background-color: rgb(148, 122, 220);
+}
+
+/* The wire rows. */
+
+.wire-row {
+    flex-direction: row;
+    flex-shrink: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.wire-row__rule {
+    width: 2px;
+    margin-right: 9px;
+    border-radius: 1px;
+}
+
+.wire-row__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.wire-row__headline {
+    font-size: 11px;
+    color: rgb(210, 220, 236);
+    white-space: normal;
+}
+
+.wire-row__headline--mine {
+    color: rgb(244, 206, 198);
+    -unity-font-style: bold;
+}
+
+.wire-row__meta {
+    font-size: 9px;
+    color: rgb(118, 130, 150);
+    margin-top: 2px;
+}
+
+/* The middle sections. */
+
+.news-section {
+    flex-shrink: 0;
+    margin-bottom: 22px;
+}
+
+.lead {
+    flex-shrink: 0;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.lead__kicker {
+    font-size: 8px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgb(140, 152, 172);
+    margin-bottom: 4px;
+}
+
+.lead__kicker--mine {
+    color: rgb(226, 120, 104);
+}
+
+.lead__headline {
+    font-size: 19px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+    white-space: normal;
+}
+
+.lead__body {
+    font-size: 11px;
+    color: rgb(168, 180, 198);
+    margin-top: 6px;
+    white-space: normal;
+}
+
+.lead__date {
+    font-size: 9px;
+    color: rgb(118, 130, 150);
+    margin-top: 7px;
+}
+
+.small {
+    flex-shrink: 0;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.small__headline {
+    font-size: 12px;
+    color: rgb(214, 224, 238);
+    white-space: normal;
+}
+
+.small__headline--mine {
+    color: rgb(244, 206, 198);
+    -unity-font-style: bold;
+}
+
+.small__meta {
+    font-size: 9px;
+    color: rgb(118, 130, 150);
+    margin-top: 2px;
+}
+
+/* The paid desks. */
+
+.desk {
+    flex-shrink: 0;
+    padding: 14px;
+    margin-bottom: 14px;
+    border-radius: var(--card-radius);
+    background-color: rgba(6, 30, 62, 0.45);
+    border-left-width: 3px;
+    border-left-color: rgb(120, 132, 152);
+}
+
+.desk--gold {
+    border-left-color: rgb(230, 176, 74);
+}
+
+.desk--blue {
+    border-left-color: rgb(92, 158, 224);
+}
+
+.desk--violet {
+    border-left-color: rgb(148, 122, 220);
+}
+
+.desk--shut {
+    background-color: rgba(6, 18, 34, 0.55);
+}
+
+.desk__head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.desk__title {
+    font-size: 13px;
+    letter-spacing: 2.2px;
+    -unity-font-style: bold;
+    color: rgb(238, 242, 250);
+}
+
+.desk__outlet {
+    font-size: 9px;
+    letter-spacing: 0.8px;
+    color: rgb(140, 152, 172);
+}
+
+.desk__pitch {
+    font-size: 11px;
+    color: rgb(160, 172, 190);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.desk__locked {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(226, 150, 130);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.desk__second {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    white-space: normal;
+    margin-top: 8px;
+}
+
+.desk__join {
+    margin: 0;
+    margin-top: 10px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    width: 100%;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(240, 232, 238);
+    background-color: rgba(226, 78, 62, 0.24);
+    border-width: 1px;
+    border-color: rgba(226, 78, 62, 0.65);
+    border-radius: 3px;
+}
+
+.desk__join:hover {
+    background-color: rgba(226, 78, 62, 0.42);
+}
+
+.desk__join--held {
+    color: rgb(150, 162, 182);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.news-empty {
+    font-size: 11px;
+    color: rgb(128, 140, 158);
+    white-space: normal;
+    padding-top: 6px;
+    padding-bottom: 10px;
+}

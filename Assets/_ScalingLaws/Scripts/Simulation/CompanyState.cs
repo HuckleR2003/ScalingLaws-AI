@@ -287,11 +287,79 @@ namespace ScalingLaws.Simulation
         /// <summary>Advance warning bought so far, newest last.</summary>
         public IReadOnlyList<IntelSignal> Signals => signals;
 
-        /// <summary>What the research desk is on retainer for. Billed monthly.</summary>
-        public IntelTier IntelSubscription { get; set; } = IntelTier.PublicNews;
+        /// <summary>
+        /// Which outfits are on retainer, each bought on its own. Billed monthly, all of them.
+        ///
+        /// This replaced a single tier on 2026-08-13. One tier could not express what the design
+        /// needs: Event Hunter is sold by National Press and only opens for TrendSearch members, and
+        /// with a single subscription "I hold the cheap one and the dear one" was not a state the
+        /// company could be in.
+        /// </summary>
+        private readonly HashSet<IntelTier> memberships = new();
+
+        public bool IsMember(IntelTier tier) => memberships.Contains(tier);
+
+        public void SetMembership(IntelTier tier, bool joined)
+        {
+            if (tier == IntelTier.PublicNews)
+            {
+                return;
+            }
+
+            if (joined)
+            {
+                memberships.Add(tier);
+            }
+            else
+            {
+                memberships.Remove(tier);
+            }
+        }
+
+        public IReadOnlyCollection<IntelTier> Memberships => memberships;
+
+        /// <summary>
+        /// The best desk being paid for, which is the one whose signals arrive.
+        ///
+        /// Holding three memberships does not mean three notes a month from three desks; it means the
+        /// company hears what the best of them hears, plus the sections the others unlock. Otherwise
+        /// buying everything would be strictly better than choosing, and the choice is the mechanic.
+        /// </summary>
+        public IntelTier BestMembership
+        {
+            get
+            {
+                var best = IntelTier.PublicNews;
+                foreach (var tier in memberships)
+                {
+                    if (tier > best)
+                    {
+                        best = tier;
+                    }
+                }
+
+                return best;
+            }
+        }
+
+        /// <summary>What the company has read. Filled by the news desk, never by the interface.</summary>
+        public NewsFeed News { get; } = new();
 
         /// <summary>Days until the desk files its next note.</summary>
         public int DaysUntilNextSignal { get; set; }
+
+        /// <summary>Days until KnownWords files its next dossier.</summary>
+        public int DaysUntilNextDossier { get; set; }
+
+        /// <summary>
+        /// Which rival the next dossier is about.
+        ///
+        /// A cursor rather than a roll, so the column works through the field in order and every lab
+        /// gets written up. Picking at random would report whoever came up twice and leave the lab
+        /// quietly waiting out a hardware cycle unmentioned for a year, which is the one thing this
+        /// desk exists to catch.
+        /// </summary>
+        public int NextDossierLab { get; set; }
 
         /// <summary>The term sheet currently on the table, if any.</summary>
         public FundingOffer CurrentFundingOffer { get; set; }
@@ -501,7 +569,22 @@ namespace ScalingLaws.Simulation
 
         public void ClearDeployedModels() => deployedModels.Clear();
 
-        public void RaiseEvent(CompanyEvent companyEvent) => events.Enqueue(companyEvent);
+        /// <summary>
+        /// Records something that happened, and files it as news in the same breath.
+        ///
+        /// Filing here rather than in the daily tick is what guarantees the feed cannot fall behind
+        /// the simulation: there is one way to say a thing happened, and it always reaches the
+        /// reader. The desk decides what is worth printing; most events are not.
+        /// </summary>
+        public void RaiseEvent(CompanyEvent companyEvent)
+        {
+            events.Enqueue(companyEvent);
+
+            if (NewsDesk.TryFile(companyEvent, CompanyName, out var story))
+            {
+                News.Add(story);
+            }
+        }
 
         public bool TryDequeueEvent(out CompanyEvent companyEvent)
         {

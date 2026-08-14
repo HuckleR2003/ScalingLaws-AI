@@ -304,10 +304,10 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ABetterDeskSeesFurtherAheadAndIsRightMoreOften()
         {
-            Assert.That(IntelligenceService.Accuracy(IntelTier.ScoutingTeam),
-                Is.GreaterThan(IntelligenceService.Accuracy(IntelTier.SupplyChainRumor)));
-            Assert.That(IntelligenceService.LeadTimeDays(IntelTier.ScoutingTeam),
-                Is.GreaterThan(IntelligenceService.LeadTimeDays(IntelTier.SupplyChainRumor)));
+            Assert.That(IntelligenceService.Accuracy(IntelTier.TrendSearch),
+                Is.GreaterThan(IntelligenceService.Accuracy(IntelTier.NationalPress)));
+            Assert.That(IntelligenceService.LeadTimeDays(IntelTier.TrendSearch),
+                Is.GreaterThan(IntelligenceService.LeadTimeDays(IntelTier.NationalPress)));
             Assert.That(IntelligenceService.MonthlyRetainerUsd(IntelTier.PublicNews), Is.Zero);
         }
 
@@ -315,7 +315,7 @@ namespace ScalingLaws.Tests.EditMode
         public void ADeskIsAlwaysMoreConfidentThanItIsAccurate()
         {
             var random = new DeterministicRandom(5);
-            foreach (var tier in new[] { IntelTier.SupplyChainRumor, IntelTier.AnalystReport, IntelTier.ScoutingTeam })
+            foreach (var tier in new[] { IntelTier.NationalPress, IntelTier.KnownWords, IntelTier.TrendSearch })
             {
                 var total = 0.0;
                 for (var index = 0; index < 400; index++)
@@ -338,7 +338,7 @@ namespace ScalingLaws.Tests.EditMode
             for (var index = 0; index < 400; index++)
             {
                 var signal = IntelligenceService.Generate(
-                    IntelTier.SupplyChainRumor, GameDate.FromCalendar(2023, 6, 1), field, random);
+                    IntelTier.NationalPress, GameDate.FromCalendar(2023, 6, 1), field, random);
                 if (!signal.IsCorrect)
                 {
                     wrong++;
@@ -353,7 +353,7 @@ namespace ScalingLaws.Tests.EditMode
         {
             var quiet = ShippedCompany();
             var paying = ShippedCompany();
-            paying.SetIntelSubscription(IntelTier.ScoutingTeam);
+            paying.SetIntelSubscription(IntelTier.TrendSearch, true);
 
             quiet.Advance(90);
             paying.Advance(90);
