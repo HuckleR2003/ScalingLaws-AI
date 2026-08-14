@@ -403,7 +403,7 @@ namespace ScalingLaws.UI
                 {
                     MailAction.Pay => "mail-action--pay",
                     MailAction.Accept => "mail-action--yes",
-                    MailAction.Haggle => "mail-action--haggle",
+                    MailAction.Haggle or MailAction.Defer => "mail-action--haggle",
                     _ => "mail-action--no"
                 });
 
@@ -418,6 +418,9 @@ namespace ScalingLaws.UI
             MailAction.Pay => "PAY  " + UiFormat.Money(letter.AmountUsd),
             MailAction.Accept => "HIRE AT  " + UiFormat.Money(letter.AskingSalaryUsd),
             MailAction.Haggle => "OFFER LESS",
+            MailAction.Defer =>
+                $"DEFER {CompanySimulation.DeferralStepDays} DAYS  +{CompanySimulation.DeferralInterest:P1}",
+
             _ => "DECLINE"
         };
 

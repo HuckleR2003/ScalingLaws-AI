@@ -45,7 +45,10 @@ namespace ScalingLaws.Simulation
         TaxDemanded = 34,
 
         /// <summary>A demand went past its date and started growing.</summary>
-        DemandOverdue = 35
+        DemandOverdue = 35,
+
+        /// <summary>The revenue agreed to wait, for a fee.</summary>
+        TaxDeferred = 36
     }
 
     /// <summary>

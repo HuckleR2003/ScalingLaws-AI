@@ -33,7 +33,10 @@ namespace ScalingLaws.Simulation
         Decline = 3,
 
         /// <summary>Offer less than they asked. They may take it, or they may walk.</summary>
-        Haggle = 4
+        Haggle = 4,
+
+        /// <summary>Ask the revenue to wait. Costs interest, costs no standing, has a ceiling.</summary>
+        Defer = 5
     }
 
     /// <summary>
@@ -95,6 +98,15 @@ namespace ScalingLaws.Simulation
 
         public LoanProduct Loan { get; set; }
 
+        /// <summary>
+        /// Days this demand has already been pushed back.
+        ///
+        /// Kept on the letter rather than as a company-wide counter, because two demands can be
+        /// outstanding at once when a year's bill is deferred into the next year's, and each has its
+        /// own ceiling to run into.
+        /// </summary>
+        public int DeferredDays { get; set; }
+
         public bool IsOverdue(GameDate today) =>
             !IsClosed && DueDayIndex > 0 && today.DayIndex > DueDayIndex;
 
@@ -113,7 +125,14 @@ namespace ScalingLaws.Simulation
 
                 return Kind switch
                 {
-                    MailKind.TaxDemand or MailKind.Fine => new[] { MailAction.Pay },
+                    // Only the revenue waits. A regulator's penalty offers paying and nothing
+                    // else, which is what keeps deferral from being a general answer to owing money.
+                    // At the ceiling the option is gone rather than present and refusing: a button
+                    // that exists to say no teaches the player to stop reading buttons.
+                    MailKind.TaxDemand => DeferredDays >= CompanySimulation.LongestDeferralDays
+                        ? new[] { MailAction.Pay }
+                        : new[] { MailAction.Pay, MailAction.Defer },
+                    MailKind.Fine => new[] { MailAction.Pay },
                     MailKind.JobOffer => HasBeenHaggled
                         ? new[] { MailAction.Accept, MailAction.Decline }
                         : new[] { MailAction.Accept, MailAction.Haggle, MailAction.Decline },

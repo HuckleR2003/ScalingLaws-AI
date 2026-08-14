@@ -5944,3 +5944,99 @@
     border-left-width: 2px;
     border-left-color: rgb(232, 226, 214);
 }
+
+
+/* ---- rival marks, and the board they sit on ----
+
+   Nine rows of text read as a list to be searched. Nine marks read as a field the eye can find
+   itself in, which is the only reason the logos are worth loading at all. */
+
+.lab-badge {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Contain rather than crop: these are marks, and a cropped logo is a different logo. */
+.lab-badge--art {
+    -unity-background-scale-mode: scale-to-fit;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.lab-badge--mine {
+    background-color: rgba(226, 78, 62, 0.22);
+    border-color: rgb(226, 78, 62);
+}
+
+.lab-badge__initial {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+}
+
+.rank-row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.rank-row--mine {
+    background-color: rgba(226, 78, 62, 0.08);
+    border-left-width: 2px;
+    border-left-color: rgb(226, 78, 62);
+    padding-left: 8px;
+}
+
+.rank-row__place {
+    width: 28px;
+    flex-shrink: 0;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(140, 152, 172);
+}
+
+.rank-row__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.rank-row__name {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.rank-row__model {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    margin-top: 1px;
+}
+
+.rank-row__score {
+    width: 62px;
+    flex-shrink: 0;
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+    -unity-text-align: middle-right;
+}
+
+.rank-row__detail {
+    width: 168px;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: rgb(150, 162, 182);
+    -unity-text-align: middle-right;
+}

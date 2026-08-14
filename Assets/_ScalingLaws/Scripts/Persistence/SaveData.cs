@@ -77,6 +77,7 @@ namespace ScalingLaws.Persistence
         public long askingSalaryUsd;
         public bool hasBeenHaggled;
         public int loan;
+        public int deferredDays;
     }
 
     /// <summary>One filed story. Added in v23.</summary>

@@ -2376,6 +2376,21 @@ namespace ScalingLaws.Simulation
         /// <summary>Standing lost when a demand goes unpaid past its deadline.</summary>
         public const double LateStandingLoss = 0.05;
 
+        /// <summary>
+        /// The longest a tax demand can be pushed back, in days. Two and a half years.
+        ///
+        /// It is a real arrangement rather than an excuse: the revenue will wait, at a price, and the
+        /// price is what makes it a decision. Deferring buys the company the one thing it cannot buy
+        /// with anything else, which is time to let a model it has already paid for start earning.
+        /// </summary>
+        public const int LongestDeferralDays = 913;
+
+        /// <summary>What each deferral adds to what is owed. The author's figure.</summary>
+        public const double DeferralInterest = 0.086;
+
+        /// <summary>How far one deferral pushes the date. Three of these reach the ceiling.</summary>
+        public const int DeferralStepDays = 304;
+
         /// <summary>Roughly how often somebody writes in asking for a job.</summary>
         public const int ApplicantIntervalDays = 70;
 
@@ -2554,6 +2569,9 @@ namespace ScalingLaws.Simulation
                 case MailAction.Haggle:
                     return HaggleApplicant(letter, out failureReason);
 
+                case MailAction.Defer:
+                    return DeferDemand(letter, out failureReason);
+
                 case MailAction.Decline:
                     letter.IsClosed = true;
                     letter.Outcome = "Declined.";
@@ -2599,6 +2617,51 @@ namespace ScalingLaws.Simulation
             letter.IsClosed = true;
             letter.Outcome = $"Paid {Usd(letter.AmountUsd)}.";
             letter.AmountUsd = 0L;
+            return true;
+        }
+
+        /// <summary>
+        /// Pushes a tax demand back, at a price.
+        ///
+        /// **Deferring is not the same as ignoring**, and the two must not converge. Ignoring grows
+        /// the debt faster, costs standing the day it tips over, and is a matter of public record.
+        /// Deferring costs more in total than paying now and nothing at all in standing, because the
+        /// company asked. A player who cannot tell those apart will use the wrong one, so the
+        /// deferred letter says the new figure and the new date in as many words.
+        ///
+        /// The interest compounds on what is already owed rather than on the original bill, so three
+        /// deferrals cost more than three times one. That is the whole reason there is a ceiling: at
+        /// simple interest a company could roll the debt forever for a fixed annual fee.
+        /// </summary>
+        private bool DeferDemand(MailItem letter, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (letter.Kind != MailKind.TaxDemand)
+            {
+                failureReason = "Only the revenue will wait. A penalty will not.";
+                return false;
+            }
+
+            if (letter.DeferredDays >= LongestDeferralDays)
+            {
+                failureReason = $"Already deferred {letter.DeferredDays} days, which is the limit. "
+                    + "It has to be paid.";
+
+                return false;
+            }
+
+            var step = Math.Min(DeferralStepDays, LongestDeferralDays - letter.DeferredDays);
+            var added = (long)Math.Round(letter.AmountUsd * DeferralInterest);
+
+            letter.DeferredDays += step;
+            letter.AmountUsd += added;
+            letter.DueDayIndex += step;
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.TaxDeferred, State.Date,
+                $"Tax deferred {step} days for {Usd(added)}. Now {Usd(letter.AmountUsd)}, "
+                + $"due {new GameDate(letter.DueDayIndex)}.", added));
+
             return true;
         }
 

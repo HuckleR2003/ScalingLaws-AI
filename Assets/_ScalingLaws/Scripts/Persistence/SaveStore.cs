@@ -368,7 +368,8 @@ namespace ScalingLaws.Persistence
                     skill = letter.Skill,
                     askingSalaryUsd = letter.AskingSalaryUsd,
                     hasBeenHaggled = letter.HasBeenHaggled,
-                    loan = (int)letter.Loan
+                    loan = (int)letter.Loan,
+                    deferredDays = letter.DeferredDays
                 });
             }
             data.daysUntilNextSignal = state.DaysUntilNextSignal;
@@ -802,7 +803,8 @@ namespace ScalingLaws.Persistence
                     DueDayIndex = Math.Max(0, flat.dueDayIndex),
                     Skill = Math.Clamp(flat.skill, 0, 10),
                     AskingSalaryUsd = Math.Max(0L, flat.askingSalaryUsd),
-                    HasBeenHaggled = flat.hasBeenHaggled
+                    HasBeenHaggled = flat.hasBeenHaggled,
+                    DeferredDays = Math.Max(0, flat.deferredDays)
                 };
 
                 if (Enum.IsDefined(typeof(StaffRole), flat.role))

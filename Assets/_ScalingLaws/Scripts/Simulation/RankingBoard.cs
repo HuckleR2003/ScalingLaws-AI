@@ -16,7 +16,8 @@ namespace ScalingLaws.Simulation
             double marketShare,
             double brand,
             double score,
-            string modelName)
+            string modelName,
+            CompetitorId competitor)
         {
             Position = Math.Max(1, position);
             LabName = labName ?? string.Empty;
@@ -26,6 +27,7 @@ namespace ScalingLaws.Simulation
             Brand = Math.Clamp(SimUnits.Finite(brand), 0.0, 1.0);
             Score = Math.Clamp(SimUnits.Finite(score), 0.0, 100.0);
             ModelName = modelName ?? string.Empty;
+            Competitor = competitor;
         }
 
         public int Position { get; }
@@ -39,6 +41,15 @@ namespace ScalingLaws.Simulation
         public double Score { get; }
 
         public string ModelName { get; }
+
+        /// <summary>
+        /// Which lab this is, so a board can show its mark rather than only its name.
+        ///
+        /// <see cref="CompetitorId.None"/> for the player, who has no mark of their own and gets an
+        /// initial instead. Carried here rather than looked up from the name, because two labs could
+        /// be renamed to the same string and the mark would follow the wrong one.
+        /// </summary>
+        public CompetitorId Competitor { get; }
 
         public override string ToString() =>
             $"{Position}. {LabName} {Score:0.0} (cap {Capability:0.0}, share {MarketShare:P1})";
@@ -96,7 +107,8 @@ namespace ScalingLaws.Simulation
                     playerShare,
                     playerBrand,
                     Score(capability, playerShare, playerBrand),
-                    bestPlayerModel.Name));
+                    bestPlayerModel.Name,
+                    CompetitorId.None));
             }
 
             foreach (var rival in rivals)
@@ -116,7 +128,8 @@ namespace ScalingLaws.Simulation
                     share,
                     rival.BrandStrength,
                     Score(rival.Capability, share, rival.BrandStrength),
-                    rival.DisplayName));
+                    rival.DisplayName,
+                    rival.Competitor));
             }
 
             rows.Sort(static (left, right) => right.Score.CompareTo(left.Score));
@@ -133,7 +146,8 @@ namespace ScalingLaws.Simulation
                     row.MarketShare,
                     row.Brand,
                     row.Score,
-                    row.ModelName));
+                    row.ModelName,
+                    row.Competitor));
             }
 
             return ranked;

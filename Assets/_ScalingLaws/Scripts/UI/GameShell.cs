@@ -777,19 +777,19 @@ namespace ScalingLaws.UI
 
         private void AddHudSlots()
         {
-            hud.AddSlot("SITE", Screen.Site, () => Show(Screen.Site));
+            hud.AddSlot("SITE", Screen.Site, () => Show(Screen.Site), "hud_site");
             hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create), "hud_model");
             hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research), "hud_research");
             hud.AddSlot("ARCHITECTURE", Screen.Family, () => Show(Screen.Family), "hud_architecture");
             hud.AddSlot("UPGRADE", Screen.Upgrade, () => Show(Screen.Upgrade), "hud_upgrade");
-            hud.AddSlot("TEAM", Screen.Team, () => Show(Screen.Team));
+            hud.AddSlot("TEAM", Screen.Team, () => Show(Screen.Team), "hud_team");
             hud.AddSlot("COMPUTE", Screen.Fleet, () => Show(Screen.Fleet), "hud_fleet");
             hud.AddSlot("BUSINESS", Screen.Business, () => Show(Screen.Business), "hud_business");
             hud.AddSlot("RELEASE", Screen.Release, () => Show(Screen.Release), "hud_release");
             hud.AddSlot("CAPITAL", Screen.Funding, () => Show(Screen.Funding), "hud_funding");
             hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking");
             hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence");
-            hud.AddSlot("MARKETING", Screen.Marketing, () => Show(Screen.Marketing));
+            hud.AddSlot("MARKETING", Screen.Marketing, () => Show(Screen.Marketing), "hud_marketing");
             hud.AddSlot("NEWS", Screen.News, () => Show(Screen.News));
             hud.AddSlot("@ MAIL", Screen.Mail, () => Show(Screen.Mail));
         }
@@ -3027,17 +3027,41 @@ namespace ScalingLaws.UI
             foreach (var entry in simulation.Ranking())
             {
                 var row = new VisualElement();
-                row.AddToClassList("readout");
+                row.AddToClassList("rank-row");
+                row.EnableInClassList("rank-row--mine", entry.IsPlayer);
 
-                var name = new Label($"{entry.Position}.  {entry.LabName}  -  {entry.ModelName}");
-                if (entry.IsPlayer)
-                {
-                    name.AddToClassList("readout__value");
-                }
+                var place = new Label(entry.Position.ToString());
+                place.AddToClassList("rank-row__place");
+                row.Add(place);
 
-                row.Add(name);
-                row.Add(new Label(
-                    $"{UiFormat.Number(entry.Score)}   cap {UiFormat.Number(entry.Capability)}   share {UiFormat.Percent(entry.MarketShare, 2)}"));
+                // The mark is what makes a board of nine names scannable. Nine rows of text read as
+                // a list to be searched; nine marks read as a field the eye can find itself in.
+                row.Add(LabLogos.Badge(entry.Competitor, entry.LabName, entry.IsPlayer));
+
+                var text = new VisualElement();
+                text.AddToClassList("rank-row__text");
+
+                var name = new Label(entry.LabName);
+                name.AddToClassList("rank-row__name");
+                text.Add(name);
+
+                var model = new Label(entry.ModelName);
+                model.AddToClassList("rank-row__model");
+                text.Add(model);
+
+                row.Add(text);
+
+                var score = new Label(UiFormat.Number(entry.Score));
+                score.AddToClassList("rank-row__score");
+                row.Add(score);
+
+                var detail = new Label(
+                    $"cap {UiFormat.Number(entry.Capability)}   "
+                    + $"share {UiFormat.Percent(entry.MarketShare, 2)}");
+
+                detail.AddToClassList("rank-row__detail");
+                row.Add(detail);
+
                 panel.Add(row);
             }
 

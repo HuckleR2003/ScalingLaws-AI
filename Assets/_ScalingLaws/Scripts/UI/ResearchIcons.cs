@@ -46,6 +46,15 @@ namespace ScalingLaws.UI
         private static readonly Dictionary<ResearchNodeId, Texture2D> Loaded = new();
 
         /// <summary>The icon for a node, or null when its art has not been drawn yet.</summary>
+        /// <summary>
+        /// Whether the map claims a file for this node.
+        ///
+        /// Separate from <see cref="Get"/> returning null, because those are two different facts: a
+        /// node nobody has drawn yet is fine, and a node the map names whose file is absent is a
+        /// broken promise. Only the second one is worth failing a test over.
+        /// </summary>
+        public static bool HasArtFor(ResearchNodeId node) => FileNames.ContainsKey(node);
+
         public static Texture2D Get(ResearchNodeId node)
         {
             if (Loaded.TryGetValue(node, out var cached))
