@@ -55,6 +55,9 @@ namespace ScalingLaws.Persistence
         public int daysOnSale;
         public double peakUsers;
         public int retiredDayIndex;
+
+        /// <summary>How the parameters were arranged. Read by the market daily. Added in v25.</summary>
+        public int shape;
     }
 
     /// <summary>One letter. Added in v24.</summary>
@@ -93,6 +96,21 @@ namespace ScalingLaws.Persistence
         public int weight;
     }
 
+    /// <summary>
+    /// The four Scale and Data choices, flattened. Added in v25.
+    ///
+    /// Kept as one block because they always travel together: a blueprint carries all four or the
+    /// run it describes is not the run that was started.
+    /// </summary>
+    [Serializable]
+    public sealed class ChoiceData
+    {
+        public int precision = 1;
+        public int shape = 1;
+        public int deduplication = 1;
+        public int cutoffMonthsBack;
+    }
+
     /// <summary>A finished run waiting for a release decision. Added in v3.</summary>
     [Serializable]
     public sealed class TrainedModelData
@@ -107,6 +125,9 @@ namespace ScalingLaws.Persistence
 
         /// <summary>The product line, empty for a model that starts its own. Added in v15.</summary>
         public string family = string.Empty;
+
+        /// <summary>Only the shape survives a release; the rest were spent on the run. v25.</summary>
+        public int shape = 1;
     }
 
     /// <summary>An upgrade programme in flight. Added in v3.</summary>
@@ -202,6 +223,15 @@ namespace ScalingLaws.Persistence
 
         /// <summary>The product line the run will join. Added in v15.</summary>
         public string family = string.Empty;
+
+        /// <summary>
+        /// The four Scale and Data choices this run was started with. Added in v25.
+        ///
+        /// A run in flight has to remember all of them, not only the ones that reach the finished
+        /// model: precision decides how far the outcome lands from the projection, and that roll
+        /// happens on the day it finishes. This is the same fault v15 fixed for the model type.
+        /// </summary>
+        public ChoiceData choices = new();
     }
 
     /// <summary>A family the company designed itself. Added in v4.</summary>
@@ -270,7 +300,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 24;
+        public const int CurrentVersion = 25;
 
         public int version = CurrentVersion;
 

@@ -24,8 +24,18 @@ namespace ScalingLaws.Simulation
             double trainingTokensBillions,
             DatasetSource dataSources,
             ModelType type = ModelType.General,
-            string family = null)
+            string family = null,
+            TrainingPrecision precision = TrainingPrecision.BFloat16,
+            ModelShape shape = ModelShape.Balanced,
+            DeduplicationPass deduplication = DeduplicationPass.Standard,
+            int cutoffMonthsBack = 0)
         {
+            // All four default to the neutral option, so every caller written before them describes
+            // exactly the run it always described. The middle of each catalog is 1.0 on every axis.
+            Precision = precision;
+            Shape = shape;
+            Deduplication = deduplication;
+            CutoffMonthsBack = Math.Clamp(cutoffMonthsBack, 0, 36);
             // A line the model belongs to. Empty means it starts one of its own.
             Family = string.IsNullOrWhiteSpace(family) ? string.Empty : family.Trim();
             // Optional and defaulted rather than required, because every existing caller predates
@@ -65,6 +75,23 @@ namespace ScalingLaws.Simulation
         public double TrainingTokensBillions { get; }
         public DatasetSource DataSources { get; }
 
+        /// <summary>What the numbers are kept in. Buys throughput and pays in unpredictability.</summary>
+        public TrainingPrecision Precision { get; }
+
+        /// <summary>Many thin layers or few fat ones. Capability against cost to serve.</summary>
+        public ModelShape Shape { get; }
+
+        /// <summary>How hard the corpus is scrubbed. Fewer tokens, worth more each.</summary>
+        public DeduplicationPass Deduplication { get; }
+
+        /// <summary>
+        /// How far before the run the corpus stops, in months.
+        ///
+        /// Nought is everything up to today: dearest, messiest, and right about the present. Two
+        /// years back is cheap, clean and wrong about the world, and the market scores that.
+        /// </summary>
+        public int CutoffMonthsBack { get; }
+
         public double ParameterCount => ParameterCountBillions * SimUnits.ParametersPerBillion;
         public double TrainingTokens => TrainingTokensBillions * SimUnits.TokensPerBillion;
 
@@ -73,25 +100,48 @@ namespace ScalingLaws.Simulation
             ParameterCountBillions <= 0.0 ? 0.0 : TrainingTokensBillions / ParameterCountBillions;
 
         public ModelBlueprint WithName(string name) =>
-            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family);
+            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
+                CutoffMonthsBack);
 
         public ModelBlueprint WithParameters(double parameterCountBillions) =>
-            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources, Type, Family);
+            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
+                CutoffMonthsBack);
 
         public ModelBlueprint WithTokens(double trainingTokensBillions) =>
-            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources, Type, Family);
+            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
+                CutoffMonthsBack);
 
         public ModelBlueprint WithArchitecture(ArchitectureId architecture) =>
-            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family);
+            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
+                CutoffMonthsBack);
 
         public ModelBlueprint WithType(ModelType type) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, type, Family);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, type, Family, Precision, Shape, Deduplication,
+                CutoffMonthsBack);
 
         public ModelBlueprint WithDataSources(DatasetSource dataSources) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources, Type, Family);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources, Type, Family, Precision, Shape, Deduplication,
+                CutoffMonthsBack);
+
+        public ModelBlueprint WithPrecision(TrainingPrecision precision) =>
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, precision, Shape, Deduplication, CutoffMonthsBack);
+
+        public ModelBlueprint WithShape(ModelShape shape) =>
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, Precision, shape, Deduplication, CutoffMonthsBack);
+
+        public ModelBlueprint WithDeduplication(DeduplicationPass pass) =>
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, Precision, Shape, pass, CutoffMonthsBack);
+
+        public ModelBlueprint WithCutoff(int monthsBack) =>
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, Precision, Shape, Deduplication, monthsBack);
 
         public ModelBlueprint WithFamily(string family) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, family);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, family, Precision, Shape, Deduplication,
+                CutoffMonthsBack);
 
         public override string ToString() =>
             $"{Name}: {ParameterCountBillions:N0}B params, {TrainingTokensBillions:N0}B tokens, {Architecture}";

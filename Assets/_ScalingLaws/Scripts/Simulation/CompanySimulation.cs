@@ -1660,8 +1660,13 @@ namespace ScalingLaws.Simulation
             // Where the team actually shows up. Two labs with identical blueprints and identical
             // clusters do not get identical models: the one with the better research and safety
             // people lands nearer its own plan. The ceiling is the same, the spread is not.
+            // Precision lands here rather than on the capability itself, which is the honest shape
+            // of it: training narrow does not make a worse model on average, it makes a less
+            // predictable one. The founder's Development skill multiplies in alongside, so being
+            // good at this is exactly what buys the right to gamble on FP8.
             var spread = TrainingOutcomeStandardDeviation * State.Staff.OutcomeVarianceMultiplier()
-                * State.Skills.TrainingSpreadMultiplier();
+                * State.Skills.TrainingSpreadMultiplier()
+                * TrainingChoiceCatalog.Get(run.Blueprint.Precision).Instability;
             var measured = Math.Clamp(
                 run.ProjectedCapability + State.Random.NextGaussian(0.0, spread),
                 0.0,
@@ -1676,7 +1681,8 @@ namespace ScalingLaws.Simulation
                 activeParameters,
                 run.ProjectedCapability,
                 run.Blueprint.Type,
-                run.Blueprint.Family));
+                run.Blueprint.Family,
+                run.Blueprint.Shape));
 
             State.ActiveRun = null;
 
@@ -1798,7 +1804,12 @@ namespace ScalingLaws.Simulation
                     * model.EfficiencyMultiplier(State.Date)
                     * State.Skills.ServingCostMultiplier()
                     * ModelTypeCatalog.Get(model.Type).ServingCostMultiplier
-                    * MarketShareModel.SizeBurden(model.ActiveParameterCount);
+                    * MarketShareModel.SizeBurden(model.ActiveParameterCount)
+
+                    // Depth is sequential and width is parallel, so the same parameter count costs
+                    // more per token arranged deep. This is the other half of the shape trade and
+                    // without it the deep option would be a free capability bonus.
+                    * TrainingChoiceCatalog.Get(model.Shape).ServingBurden;
 
                 entrants.Add(new MarketEntrant(
                     -1,

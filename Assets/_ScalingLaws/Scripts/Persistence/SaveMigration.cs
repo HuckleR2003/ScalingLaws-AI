@@ -125,6 +125,7 @@ namespace ScalingLaws.Persistence
                     21 => UpgradeV21ToV22(current),
                     22 => UpgradeV22ToV23(current),
                     23 => UpgradeV23ToV24(current),
+                    24 => UpgradeV24ToV25(current),
                     _ => current
                 };
             }
@@ -916,6 +917,57 @@ namespace ScalingLaws.Persistence
                 "v23 to v24: empty inbox, and the tax accrual starts at zero because a v23 company "
                 + "paid its tax daily as it went. The first annual demand therefore covers only the "
                 + "days after loading, which understates that one year and never double bills it.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v24 to v25: precision, shape, deduplication and the corpus cutoff.
+        ///
+        /// **Every one of them defaults to the neutral option and that is the true reading**, not a
+        /// convenience. A v24 company trained in BF16 at balanced proportions on a standard clean of
+        /// everything available, because those were the only behaviours the game had. The middle of
+        /// each catalog is exactly 1.0 on every axis, so a restored campaign computes the same
+        /// numbers it computed before these existed.
+        /// </summary>
+        public static SaveData UpgradeV24ToV25(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 25;
+
+            foreach (var model in data.models)
+            {
+                if (model != null)
+                {
+                    model.shape = (int)ModelShape.Balanced;
+                }
+            }
+
+            foreach (var shelved in data.shelf)
+            {
+                if (shelved != null)
+                {
+                    shelved.shape = (int)ModelShape.Balanced;
+                }
+            }
+
+            data.activeRun ??= new TrainingRunData();
+            data.activeRun.choices = new ChoiceData
+            {
+                precision = (int)TrainingPrecision.BFloat16,
+                shape = (int)ModelShape.Balanced,
+                deduplication = (int)DeduplicationPass.Standard,
+                cutoffMonthsBack = 0
+            };
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v24 to v25: every model and every run takes the neutral option on all four new "
+                + "choices, which is what a v24 company actually did, since those were the only "
+                + "behaviours available. Nothing about a restored campaign changes.");
 
             return data;
         }

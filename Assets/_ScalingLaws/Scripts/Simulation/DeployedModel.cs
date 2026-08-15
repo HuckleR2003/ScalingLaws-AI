@@ -78,6 +78,17 @@ namespace ScalingLaws.Simulation
         /// <summary>Parameters that fire per token. Sets what a served token costs to produce.</summary>
         public double ActiveParameterCount { get; }
 
+        /// <summary>
+        /// How the parameters were arranged, which is a permanent property of the model.
+        ///
+        /// Kept here rather than recomputed because the market reads it every day: a deep model is
+        /// dearer to serve at the same size, and that has to survive the run, the shelf and the save.
+        /// </summary>
+        public ModelShape Shape { get; private set; } = ModelShape.Balanced;
+
+        /// <summary>Sets the shape. Called once, by whatever built this model.</summary>
+        public void SetShape(ModelShape shape) => Shape = shape;
+
         /// <summary>Price relative to the market average. The one lever that still works on an old model.</summary>
         public double PriceMultiplier
         {

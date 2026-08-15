@@ -93,13 +93,36 @@ namespace ScalingLaws.Simulation
             var recipeBoost = Math.Sqrt(market.AlgorithmicEfficiency);
             var effectiveParameters = parameters * architecture.ParameterEfficiency * recipeBoost;
             // The data team earns its salary here: the same corpora, cleaned better.
-            var effectiveTokens = actualTokens * blend.QualityMultiplier * qualityScale * recipeBoost;
+            //
+            // The deduplication pass lands in both terms at once and that is the whole trade: it
+            // throws away a fifth of the corpus and makes what is left worth more each. Whether it
+            // pays depends on whether the run was token starved to begin with, which is a question
+            // the belt above already answers for the player.
+            var dedup = TrainingChoiceCatalog.Get(blueprint.Deduplication);
+            var keptTokens = actualTokens * dedup.TokensKept;
+            var effectiveTokens = keptTokens * blend.QualityMultiplier * qualityScale
+                                  * recipeBoost * dedup.Quality;
 
             var loss = ScalingLaw.Loss(effectiveParameters, effectiveTokens);
+
+            // Shape multiplies what the parameters are worth; the cutoff docks what a corpus that
+            // stops two years ago can say about today. Both are centred on the neutral option, so a
+            // player who touches neither sees exactly the number they saw before these existed.
+            var shape = TrainingChoiceCatalog.Get(blueprint.Shape);
+            var freshness = TrainingChoiceCatalog.CutoffCapabilityMultiplier(blueprint.CutoffMonthsBack);
+
             var capability = Math.Clamp(
-                ScalingLaw.CapabilityFromLoss(loss) + architecture.CapabilityBonus,
+                (ScalingLaw.CapabilityFromLoss(loss) + architecture.CapabilityBonus)
+                * shape.Capability * freshness,
                 0.0,
                 100.0);
+
+            if (!TrainingChoiceCatalog.IsAvailableOn(blueprint.Precision, market.Date))
+            {
+                Append(blocking,
+                    $"{TrainingChoiceCatalog.Get(blueprint.Precision).DisplayName} needs silicon that "
+                    + $"does not exist until {TrainingChoiceCatalog.Get(blueprint.Precision).Earliest}");
+            }
 
             var petaflopDays = ScalingLaw.TrainingPetaflopDays(
                 parameters,
@@ -107,7 +130,13 @@ namespace ScalingLaws.Simulation
                 architecture.ActiveParameterFraction);
 
             var share = Math.Clamp(SimUnits.Finite(trainingComputeShare, 1.0), 0.0, 1.0);
-            var throughput = profile.EffectivePetaflops * architecture.TrainingEfficiency * share;
+
+            // Precision is throughput. Narrower numbers move more of them through the same silicon,
+            // which is why FP8 nearly halves the calendar rather than making a better model. What it
+            // costs is paid later, in how far the finished run lands from this projection.
+            var precision = TrainingChoiceCatalog.Get(blueprint.Precision);
+            var throughput = profile.EffectivePetaflops * architecture.TrainingEfficiency * share
+                             * precision.Throughput;
             if (throughput <= 0.0)
             {
                 Append(blocking, "the fleet has no usable compute");

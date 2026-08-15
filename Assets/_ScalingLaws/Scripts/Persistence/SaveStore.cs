@@ -225,6 +225,7 @@ namespace ScalingLaws.Persistence
                     modelType = (int)model.Type,
                     family = model.Family,
                     traitLevels = new List<int>(model.Traits.ToArray()),
+                    shape = (int)model.Shape,
                     lifetimeRevenueUsd = model.LifetimeRevenueUsd,
                     daysOnSale = model.DaysOnSale,
                     peakUsers = model.PeakUsers,
@@ -281,7 +282,8 @@ namespace ScalingLaws.Persistence
                     activeParameterCount = shelved.ActiveParameterCount,
                     projectedCapability = shelved.ProjectedCapability,
                     modelType = (int)shelved.Type,
-                    family = shelved.Family
+                    family = shelved.Family,
+                    shape = (int)shelved.Shape
                 });
             }
 
@@ -486,7 +488,14 @@ namespace ScalingLaws.Persistence
                     computeCashSpentUsd = run.ComputeCashSpentUsd,
                     dataCostPaidUsd = run.DataCostPaidUsd,
                     modelType = (int)run.Blueprint.Type,
-                    family = run.Blueprint.Family
+                    family = run.Blueprint.Family,
+                    choices = new ChoiceData
+                    {
+                        precision = (int)run.Blueprint.Precision,
+                        shape = (int)run.Blueprint.Shape,
+                        deduplication = (int)run.Blueprint.Deduplication,
+                        cutoffMonthsBack = run.Blueprint.CutoffMonthsBack
+                    }
                 };
             }
 
@@ -646,6 +655,11 @@ namespace ScalingLaws.Persistence
                     deployed.RestoreTraits(ModelTraitSet.FromArray(model.traitLevels));
                 }
 
+                if (Enum.IsDefined(typeof(ModelShape), model.shape))
+                {
+                    deployed.SetShape((ModelShape)model.shape);
+                }
+
                 deployed.RestoreHistory(model.lifetimeRevenueUsd, model.daysOnSale, model.peakUsers,
                     new GameDate(Math.Max(GameDate.MinimumDayIndex, model.retiredDayIndex)));
 
@@ -667,7 +681,10 @@ namespace ScalingLaws.Persistence
                     shelved.activeParameterCount,
                     shelved.projectedCapability,
                     (ModelType)shelved.modelType,
-                    shelved.family));
+                    shelved.family,
+                    Enum.IsDefined(typeof(ModelShape), shelved.shape)
+                        ? (ModelShape)shelved.shape
+                        : ModelShape.Balanced));
             }
 
             state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts, safe.ledgerCarriedForward);
@@ -944,7 +961,17 @@ namespace ScalingLaws.Persistence
                     safe.activeRun.trainingTokensBillions,
                     (DatasetSource)safe.activeRun.dataSources,
                     (ModelType)safe.activeRun.modelType,
-                    safe.activeRun.family);
+                    safe.activeRun.family,
+                    Enum.IsDefined(typeof(TrainingPrecision), safe.activeRun.choices.precision)
+                        ? (TrainingPrecision)safe.activeRun.choices.precision
+                        : TrainingPrecision.BFloat16,
+                    Enum.IsDefined(typeof(ModelShape), safe.activeRun.choices.shape)
+                        ? (ModelShape)safe.activeRun.choices.shape
+                        : ModelShape.Balanced,
+                    Enum.IsDefined(typeof(DeduplicationPass), safe.activeRun.choices.deduplication)
+                        ? (DeduplicationPass)safe.activeRun.choices.deduplication
+                        : DeduplicationPass.Standard,
+                    safe.activeRun.choices.cutoffMonthsBack);
 
                 var run = new TrainingRun(
                     blueprint,
@@ -1334,6 +1361,7 @@ namespace ScalingLaws.Persistence
             }
 
             safe.activeRun ??= new TrainingRunData();
+            safe.activeRun.choices ??= new ChoiceData();
             if (safe.hasActiveRun)
             {
                 var run = safe.activeRun;
