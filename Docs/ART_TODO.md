@@ -34,7 +34,23 @@ game uses parody names for labs and the same caution applies to silicon.
 so evenly dark, low internal contrast, nothing bright near the edges. The test is to put white
 uppercase over the top-left corner and check it still reads.
 
-## 2. Done, kept here as the reference for the next set
+## 2. The lab marks, and how a supplied logo becomes a badge
+
+The author's four logos live in `Art/Logos/` and the badges the game loads are generated from them
+into `Resources/Labs/`. **Re-run `scratchpad/badges.py` if a logo is replaced**, because two things
+happen in that step and neither is optional:
+
+- **The wordmark is cropped off.** The ranking badge is 42x42 and a name under a symbol is a grey
+  smear at that size. The split is found, not assumed: the first band of empty rows that still
+  leaves most of the artwork above it. Assuming a fraction cut the S mark in half, because that one
+  has no wordmark and its widest internal gap is inside the letter itself.
+- **Dark marks are lifted.** The badge is six percent white over black, so the near-black A and the
+  navy G read as holes at their drawn values. Only value moves, toward white, which keeps the hue
+  and the orange and peach accents. A multiply drives the orange straight to yellow.
+
+A logo drawn light, as a symbol with no wordmark, needs neither step.
+
+## 3. Done, kept here as the reference for the next set
 
 `hud_news.png` and `hud_mail.png` are drawn and in. They were the only two of fifteen slots without
 art, which read as broken rather than unfinished.
@@ -49,7 +65,7 @@ transparent. They are honest placeholders. If you want to redraw them, they are 
 the parameter ceiling and they should read as: **one block of state cut into four and handed out**,
 **four stages in a chain**, and **a run that survives losing machines**.
 
-## 3. Two of the three places have no photograph
+## 4. Two of the three places have no photograph
 
 `Assets/_ScalingLaws/Resources/Offices/`
 
@@ -70,7 +86,7 @@ the parameter ceiling and they should read as: **one block of state cut into fou
 The obvious way to make these is the same way `office0.png` was made: build the room, point the
 orthographic camera at it, and render.
 
-## 4. Nice to have, not missing
+## 5. Nice to have, not missing
 
 - The world map. `UI/WorldMapElement.cs` draws coarse polygons with `Painter2D` and is deliberately
   not a texture, so there is nothing missing here. If it is ever replaced with a real map, an
