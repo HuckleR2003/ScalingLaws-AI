@@ -8,24 +8,48 @@ Sorted by how much it costs to look at.
 
 ---
 
-## 1. Two tabs on the bottom bar have no icon
+## 1. The accelerator parts, for the COMPUTE stage
 
-`Assets/_ScalingLaws/Resources/Hud/`
+**This is the one that unblocks a mechanic rather than tidying one.** The COMPUTE stage of the model
+creator is a single rented-petaflops slider today, and the design agreed for it is a visual choice of
+which silicon the run is planned around, headlined by its memory. Real parts, real photographs, a
+strong header. The code cannot be built to draw pictures that nobody has specified, so these come
+first.
 
-| File | Slot | Draws instead |
+Put them in `Assets/_ScalingLaws/Resources/Silicon/`, named after the generation:
+
+| File | Part | Memory it carries |
 |---|---|---|
-| `hud_news.png` | NEWS | an empty grey plate with the word under it |
-| `hud_mail.png` | @ MAIL | an empty grey plate with the word under it |
+| `silicon_a100.png` | data centre accelerator, 2020 generation | HBM2E, 80 GB |
+| `silicon_h100.png` | data centre accelerator, 2022 generation | HBM3, 80 GB |
+| `silicon_h200.png` | data centre accelerator, 2024 generation | HBM3E, 141 GB |
+| `silicon_b200.png` | data centre accelerator, 2024 generation | HBM3E, 192 GB |
+| `silicon_next.png` | one generic "not shipped yet" board | for projection entries |
 
-**This is the loudest one.** Thirteen of the fifteen categories have an icon and two do not, so the
-two that do not read as broken rather than as unfinished. They also happen to be the two newest
-screens, which is exactly the wrong impression to give.
+**Shoot or render them as parts, not as products.** A board on a dark surface, three quarter view,
+the heatsink and the memory stacks visible. No vendor logos and no product names in the image: the
+game uses parody names for labs and the same caution applies to silicon.
 
-Match the existing thirteen: single neon glyph, no plate, no text, transparent background, drawn to
-be legible at **44x44** because that is the size the bar draws it at. `Resources/Hud/hud_site.png` is
-the reference.
+**1024 x 640, and the art direction rule applies**: these sit under a card with white text on them,
+so evenly dark, low internal contrast, nothing bright near the edges. The test is to put white
+uppercase over the top-left corner and check it still reads.
 
-## 2. Two of the three places have no photograph
+## 2. Done, kept here as the reference for the next set
+
+`hud_news.png` and `hud_mail.png` are drawn and in. They were the only two of fifteen slots without
+art, which read as broken rather than unfinished.
+
+They are flat single colour silhouettes in `rgb(221, 231, 245)` at 128x128 on transparent, which is
+what the thirteen that already existed are. `Resources/Hud/hud_business.png` is the reference. If you
+redraw them, keep that: the bar draws them at 44x44 and detail below about three pixels disappears.
+
+`research_sharding.png`, `research_pipeline.png` and `research_ultrareadiness.png` are drawn and in
+too, matched to the twenty two existing research icons: dark ink line work in a ring, 300x300,
+transparent. They are honest placeholders. If you want to redraw them, they are the three rungs of
+the parameter ceiling and they should read as: **one block of state cut into four and handed out**,
+**four stages in a chain**, and **a run that survives losing machines**.
+
+## 3. Two of the three places have no photograph
 
 `Assets/_ScalingLaws/Resources/Offices/`
 
@@ -46,7 +70,7 @@ the reference.
 The obvious way to make these is the same way `office0.png` was made: build the room, point the
 orthographic camera at it, and render.
 
-## 3. Nice to have, not missing
+## 4. Nice to have, not missing
 
 - The world map. `UI/WorldMapElement.cs` draws coarse polygons with `Painter2D` and is deliberately
   not a texture, so there is nothing missing here. If it is ever replaced with a real map, an
