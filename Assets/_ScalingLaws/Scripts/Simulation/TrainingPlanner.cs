@@ -33,6 +33,18 @@ namespace ScalingLaws.Simulation
         /// pointed at the run: project at the share the company will really use, or the estimated
         /// duration is a number the run can never hit.
         /// </summary>
+        /// <summary>
+        /// What the corpus costs after the cutoff is taken into account.
+        ///
+        /// Recent text is dearer because nobody has cleaned it and the people who own it know what
+        /// it is for. The pipeline research takes a third off that end, and the caller passes that
+        /// as a number so this stays a pure function of the blueprint and the blend.
+        /// </summary>
+        private static long DataBill(DatasetBlend blend, ModelBlueprint blueprint, double discount) =>
+            (long)Math.Round(blend.AcquisitionCostUsd
+                             * TrainingChoiceCatalog.CutoffCostMultiplier(blueprint.CutoffMonthsBack)
+                             * Math.Clamp(SimUnits.Finite(discount, 1.0), 0.3, 1.0));
+
         public static TrainingProjection Project(
             ModelBlueprint blueprint,
             ComputeProfile profile,
@@ -41,7 +53,8 @@ namespace ScalingLaws.Simulation
             double trainingComputeShare = 1.0,
             IArchitectureSource architectures = null,
             double dataSupplyMultiplier = 1.0,
-            double dataQualityMultiplier = 1.0)
+            double dataQualityMultiplier = 1.0,
+            double dataCostMultiplier = 1.0)
         {
             var qualityScale = Math.Clamp(SimUnits.Finite(dataQualityMultiplier, 1.0), 0.5, 2.0);
             var source = architectures ?? ArchitectureCatalog.AsSource;
@@ -154,7 +167,7 @@ namespace ScalingLaws.Simulation
                     0,
                     0,
                     0,
-                    blend.AcquisitionCostUsd,
+                    DataBill(blend, blueprint, dataCostMultiplier),
                     memoryRequired,
                     memoryAvailable,
                     blend);
@@ -197,7 +210,7 @@ namespace ScalingLaws.Simulation
                 trainingDays,
                 cashCost,
                 economicCost,
-                blend.AcquisitionCostUsd,
+                DataBill(blend, blueprint, dataCostMultiplier),
                 memoryRequired,
                 memoryAvailable,
                 blend);

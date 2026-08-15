@@ -44,6 +44,14 @@ namespace ScalingLaws.UI
         private readonly VisualElement effectBanner = new();
         private readonly VisualElement stageHost = new();
 
+        // The four choices the cards set. Held here rather than on a kept blueprint because the
+        // blueprint is rebuilt from the controls on every reprice, which is what keeps one source of
+        // truth for what the run will be. Every one starts on the neutral option.
+        private TrainingPrecision blueprintPrecision = TrainingPrecision.BFloat16;
+        private ModelShape blueprintShape = ModelShape.Balanced;
+        private DeduplicationPass blueprintDedup = DeduplicationPass.Standard;
+        private int blueprintCutoffMonths;
+
         /// <summary>Raised once a run actually starts, so the shell can leave this screen.</summary>
         public event Action started;
         private readonly Button backButton = new();
@@ -785,7 +793,14 @@ namespace ScalingLaws.UI
             var column = new VisualElement();
             column.AddToClassList("creator-column");
 
-            var panel = NewPanel("SHAPE");
+            // The two sliders take the left half. The two decisions that are not slider shaped
+            // take the right, because a stage with four sliders on it is a settings dialog and this
+            // one is meant to be the interesting page in the creator.
+            var top = new VisualElement();
+            top.AddToClassList("panel-row");
+
+            var panel = NewPanel("SIZE");
+            panel.AddToClassList("scale-half");
 
             parameterLabel.AddToClassList("field__label");
             panel.Add(parameterLabel);
@@ -803,7 +818,10 @@ namespace ScalingLaws.UI
             memoryLabel.AddToClassList("scale-memory");
             panel.Add(memoryLabel);
 
-            column.Add(panel);
+            top.Add(panel);
+            top.Add(BuildPrecisionPanel());
+            column.Add(top);
+            column.Add(BuildArrangementPanel());
             column.Add(BuildBeltBlock());
 
             var bottom = new VisualElement();
@@ -992,6 +1010,108 @@ namespace ScalingLaws.UI
             };
         }
 
+        /// <summary>
+        /// What the numbers are kept in.
+        ///
+        /// The one decision on this stage that is about the run rather than about the model, and the
+        /// only one that can lose the whole thing: FP8 nearly halves the calendar and more than
+        /// doubles how far the finished model lands from this projection.
+        /// </summary>
+        private VisualElement BuildPrecisionPanel()
+        {
+            var panel = NewPanel("PRECISION");
+            panel.AddToClassList("scale-half");
+
+            var row = new VisualElement();
+            row.AddToClassList("choice-row");
+
+            foreach (var definition in TrainingChoiceCatalog.AllPrecisions)
+            {
+                var captured = definition.Precision;
+                var open = TrainingChoiceCatalog.IsAvailableOn(captured, simulation.State.Date);
+
+                var card = NewChoiceCard(
+                    definition.DisplayName,
+                    definition.Pitch,
+                    blueprintPrecision == captured,
+                    open,
+                    open ? $"{definition.Throughput:0.00}x compute, {definition.Instability:0.0}x spread"
+                         : $"needs {definition.Earliest} silicon",
+                    () => { blueprintPrecision = captured; RepriceAndRebuild(); });
+
+                row.Add(card);
+            }
+
+            panel.Add(row);
+
+            var note = new Label("Narrower numbers move more of them through the same cluster. What "
+                + "that costs is not a worse model, it is a less predictable one.");
+
+            note.AddToClassList("field__hint");
+            panel.Add(note);
+
+            return panel;
+        }
+
+        /// <summary>Many thin layers or few fat ones. Capability against what a token costs.</summary>
+        private VisualElement BuildArrangementPanel()
+        {
+            var panel = NewPanel("ARRANGEMENT");
+
+            var row = new VisualElement();
+            row.AddToClassList("choice-row");
+
+            foreach (var definition in TrainingChoiceCatalog.AllShapes)
+            {
+                var captured = definition.Shape;
+
+                row.Add(NewChoiceCard(
+                    definition.DisplayName,
+                    definition.Pitch,
+                    blueprintShape == captured,
+                    true,
+                    $"{definition.Capability:0.00}x capability, {definition.ServingBurden:0.00}x to serve",
+                    () => { blueprintShape = captured; RepriceAndRebuild(); }));
+            }
+
+            panel.Add(row);
+
+            var note = new Label("Depth is sequential and width is parallel, so the same parameters "
+                + "arranged deep think better and cost more per token, every day, forever.");
+
+            note.AddToClassList("field__hint");
+            panel.Add(note);
+
+            return panel;
+        }
+
+        /// <summary>
+        /// One card in a row of them. The shape the creator should have been using all along.
+        /// </summary>
+        private VisualElement NewChoiceCard(string title, string pitch, bool picked, bool open,
+            string figures, Action clicked)
+        {
+            var card = new Button(open ? clicked : null);
+            card.AddToClassList("choice-card");
+            card.EnableInClassList("choice-card--on", picked);
+            card.EnableInClassList("choice-card--shut", !open);
+            card.SetEnabled(open);
+
+            var name = new Label(title.ToUpperInvariant());
+            name.AddToClassList("choice-card__title");
+            card.Add(name);
+
+            var figure = new Label(figures);
+            figure.AddToClassList("choice-card__figures");
+            card.Add(figure);
+
+            var body = new Label(pitch);
+            body.AddToClassList("choice-card__body");
+            card.Add(body);
+
+            return card;
+        }
+
         private VisualElement BuildDataPanel()
         {
             var panel = NewPanel("DATA MIX");
@@ -1006,6 +1126,96 @@ namespace ScalingLaws.UI
             dataReadout = new VisualElement();
             dataReadout.AddToClassList("data-readout");
             panel.Add(dataReadout);
+
+            var column = new VisualElement();
+            column.AddToClassList("creator-column");
+            column.Add(panel);
+
+            var row = new VisualElement();
+            row.AddToClassList("panel-row");
+            row.Add(BuildCutoffPanel());
+            row.Add(BuildDedupPanel());
+            column.Add(row);
+
+            return column;
+        }
+
+        /// <summary>
+        /// Where the corpus stops.
+        ///
+        /// The one choice in the creator that is a date, which is why it is the one that ties to the
+        /// game's own clock: a corpus cut two years back is a third cheaper to license and describes
+        /// a world that has moved on. A cheap corpus and a slow release are the same mistake twice.
+        /// </summary>
+        private VisualElement BuildCutoffPanel()
+        {
+            var panel = NewPanel("KNOWLEDGE CUTOFF");
+
+            var row = new VisualElement();
+            row.AddToClassList("choice-row");
+
+            foreach (var months in TrainingChoiceCatalog.CutoffMonths)
+            {
+                var captured = months;
+                var pipeline = simulation.State.HasResearch(ResearchNodeId.ContinuousDataPipeline);
+                var title = months == 0 ? "TODAY" : $"{months} MONTHS BACK";
+
+                var pitch = months == 0
+                    ? "Everything up to the day the run starts. Dearest, messiest, and right about "
+                      + "the present."
+                    : months >= 24
+                        ? "Two years back. Cheap, clean, thoroughly studied, and wrong about "
+                          + "anything that has happened since."
+                        : "A compromise. Most of the saving, some of the staleness.";
+
+                row.Add(NewChoiceCard(
+                    title,
+                    pitch,
+                    blueprintCutoffMonths == captured,
+                    true,
+                    $"{TrainingChoiceCatalog.CutoffCapabilityMultiplier(months):0.00}x capability, "
+                    + $"{TrainingChoiceCatalog.CutoffCostMultiplier(months, pipeline):0.00}x the data bill"
+                    + (pipeline && months < 12 ? "  (pipeline)" : string.Empty),
+                    () => { blueprintCutoffMonths = captured; RepriceAndRebuild(); }));
+            }
+
+            panel.Add(row);
+            return panel;
+        }
+
+        /// <summary>How hard the corpus is scrubbed before the run sees it.</summary>
+        private VisualElement BuildDedupPanel()
+        {
+            var panel = NewPanel("DEDUPLICATION");
+
+            var row = new VisualElement();
+            row.AddToClassList("choice-row");
+
+            foreach (var definition in TrainingChoiceCatalog.AllPasses)
+            {
+                var captured = definition.Pass;
+                var gate = TrainingChoiceCatalog.GateFor(captured);
+                var open = gate == ResearchNodeId.None || simulation.State.HasResearch(gate);
+
+                row.Add(NewChoiceCard(
+                    definition.DisplayName,
+                    definition.Pitch,
+                    blueprintDedup == captured,
+                    open,
+                    open
+                        ? $"{definition.TokensKept:P0} of the tokens, {definition.Quality:0.00}x each"
+                        : $"needs {ResearchTree.Get(gate).DisplayName}",
+                    () => { blueprintDedup = captured; RepriceAndRebuild(); }));
+            }
+
+            panel.Add(row);
+
+            var note = new Label("It lands in both terms at once: fewer tokens, worth more each. "
+                + "Whether that pays depends on whether the run had tokens to spare, which the belt "
+                + "on the last stage already answered.");
+
+            note.AddToClassList("field__hint");
+            panel.Add(note);
 
             return panel;
         }
@@ -1226,6 +1436,16 @@ namespace ScalingLaws.UI
             // case that would otherwise ship a model nobody could have built.
             var type = simulation.State.CanBuildType(chosenType) ? chosenType : ModelType.General;
 
+            // The same guard the type gets, for the same reason. A save carrying FP8 loaded into a
+            // company without the research would otherwise start a run nobody could have started.
+            var precision = Allowed(TrainingChoiceCatalog.GateFor(blueprintPrecision))
+                ? blueprintPrecision
+                : TrainingPrecision.BFloat16;
+
+            var dedup = Allowed(TrainingChoiceCatalog.GateFor(blueprintDedup))
+                ? blueprintDedup
+                : DeduplicationPass.Standard;
+
             return new ModelBlueprint(
                 string.IsNullOrWhiteSpace(nameField.value) ? "Untitled model" : nameField.value,
                 architecture,
@@ -1233,8 +1453,16 @@ namespace ScalingLaws.UI
                 Math.Pow(10.0, tokenSlider.value),
                 sources,
                 type,
-                ChosenFamily());
+                ChosenFamily(),
+                precision,
+                blueprintShape,
+                dedup,
+                blueprintCutoffMonths);
         }
+
+        /// <summary>Whether the company has the node an option needs, or the option needs none.</summary>
+        private bool Allowed(ResearchNodeId gate) =>
+            gate == ResearchNodeId.None || simulation.State.HasResearch(gate);
 
         /// <summary>Sets the token count to the compute-optimal partner for the current size.</summary>
         private void BalanceShape()

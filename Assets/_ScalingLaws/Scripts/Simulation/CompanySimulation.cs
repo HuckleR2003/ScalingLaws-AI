@@ -186,6 +186,8 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public TrainingProjection Project(ModelBlueprint blueprint)
         {
+            // The pipeline only reaches the fresh end of the range; the catalog decides where
+            // that is, so this passes the fact rather than the rule.
             return TrainingPlanner.Project(
                 blueprint,
                 Profile,
@@ -194,7 +196,10 @@ namespace ScalingLaws.Simulation
                 State.TrainingComputeShare,
                 State,
                 State.Founder.DataSupplyMultiplier,
-                State.Staff.DataQualityMultiplier() * State.Skills.DataQualityMultiplier());
+                State.Staff.DataQualityMultiplier() * State.Skills.DataQualityMultiplier(),
+                State.HasResearch(ResearchNodeId.ContinuousDataPipeline)
+                    ? TrainingChoiceCatalog.PipelineDiscount
+                    : 1.0);
         }
 
         /// <summary>
@@ -210,6 +215,22 @@ namespace ScalingLaws.Simulation
         /// Commits to a run. Fails, with a reason, when the company does not own what the blueprint
         /// asks for or when the plan is not physically possible.
         /// </summary>
+        /// <summary>
+        /// Whether the company knows how to do a thing, with the reason if not.
+        /// </summary>
+        private bool HasChoiceResearch(ResearchNodeId gate, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (gate == ResearchNodeId.None || State.HasResearch(gate))
+            {
+                return true;
+            }
+
+            failureReason = $"That needs the {ResearchTree.Get(gate).DisplayName} research first.";
+            return false;
+        }
+
         public bool TryStartTraining(ModelBlueprint blueprint, out string failureReason)
         {
             if (!State.CanBuildType(blueprint.Type))
@@ -220,6 +241,17 @@ namespace ScalingLaws.Simulation
             }
 
             failureReason = string.Empty;
+
+            // The three technologies that open the Scale and Data options. Checked here rather than
+            // in the planner, which is pure and knows nothing about what this company has learned.
+            // The neutral option of every catalog is ungated, so a company that has researched
+            // nothing can still build exactly the model the game always let it build.
+            if (!HasChoiceResearch(TrainingChoiceCatalog.GateFor(blueprint.Precision), out failureReason)
+                || !HasChoiceResearch(TrainingChoiceCatalog.GateFor(blueprint.Deduplication),
+                    out failureReason))
+            {
+                return false;
+            }
 
             if (State.IsBankrupt)
             {

@@ -179,6 +179,16 @@ namespace ScalingLaws.Tests.EditMode
                         continue;
                     }
 
+                    // The baseline follows the ladder. It never touches the Scale or Data controls,
+                    // so researching a technology that only opens one of them is months and millions
+                    // spent on an option it will not use. Cheapest-first was a fair description of a
+                    // competent player while every node raised a ceiling; it stopped being one the
+                    // day the tree gained options.
+                    if (standing.Node.OptionalTechnology)
+                    {
+                        continue;
+                    }
+
                     // Leave enough behind to keep the lights on for a year.
                     if (standing.Node.CostUsd > state.CashUsd * 0.4)
                     {

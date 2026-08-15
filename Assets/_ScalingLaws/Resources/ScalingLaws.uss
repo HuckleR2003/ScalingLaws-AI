@@ -6425,3 +6425,80 @@
 .stage-slider__control:hover .unity-base-slider__dragger {
     scale: 1.18 1.18;
 }
+
+/* ---- the cards that replaced the sliders that were never going to exist ----
+
+   A row of these is the shape the creator should have been using for anything that is a choice
+   between named things rather than a number on a line. The figures line is the point: the trade is
+   stated on the card, so the decision can be made without a tooltip. */
+
+.choice-row {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.choice-card {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin: 0;
+    margin-right: 8px;
+    padding: 12px;
+    align-items: flex-start;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 4px;
+    transition-property: border-color, background-color;
+    transition-duration: 130ms;
+}
+
+.choice-card:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.choice-card--on {
+    background-color: rgba(226, 78, 62, 0.14);
+    border-color: rgb(226, 78, 62);
+}
+
+/* Shut rather than hidden. A player is allowed to see what they have not researched yet, and the
+   figures line says which node opens it. */
+.choice-card--shut {
+    opacity: 0.5;
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.choice-card__title {
+    font-size: 15px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 252);
+}
+
+.choice-card__figures {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(226, 150, 130);
+    margin-top: 3px;
+    white-space: normal;
+}
+
+.choice-card--on .choice-card__figures {
+    color: rgb(244, 196, 182);
+}
+
+.choice-card__body {
+    font-size: 11px;
+    color: rgb(160, 174, 194);
+    margin-top: 6px;
+    white-space: normal;
+}
+
+/* The size panel gives up half the row to precision. */
+.scale-half {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 14px;
+}

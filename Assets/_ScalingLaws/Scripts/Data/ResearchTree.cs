@@ -41,6 +41,13 @@ namespace ScalingLaws.Data
         ContextWindowExpansion = 203,
         LicensedArchives = 204,
 
+        // The three that open the Scale and Data choices. They are deliberately not on the
+        // capability line: none of them makes a better model on its own, each one opens an option
+        // whose whole character is that it trades one thing for another.
+        LowPrecisionTraining = 205,
+        CorpusDeduplication = 206,
+        ContinuousDataPipeline = 207,
+
         // Era 3, autonomy.
         AutonomousAgents = 301,
         SyntheticDataGeneration = 302,
@@ -82,8 +89,10 @@ namespace ScalingLaws.Data
             ComputeTier unlocksTier = ComputeTier.None,
             ModelTrait unlocksTrait = ModelTrait.Reasoning,
             bool gatesTrait = false,
-            string warning = null)
+            string warning = null,
+            bool optionalTechnology = false)
         {
+            OptionalTechnology = optionalTechnology;
             Id = id;
             Era = era;
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? id.ToString() : displayName;
@@ -103,6 +112,21 @@ namespace ScalingLaws.Data
 
         public ResearchNodeId Id { get; }
         public ResearchEra Era { get; }
+
+        /// <summary>
+        /// A node that opens an option rather than raising a ceiling.
+        ///
+        /// The tree used to be entirely ladder: every node moved capability, unlocked an
+        /// architecture, a corpus, a compute tier or a trait line, so "research the cheapest thing
+        /// available" was a reasonable description of a competent player. The Scale and Data
+        /// technologies are not that. They open a trade that a player may have no intention of
+        /// taking, and a company that researches one it will never use has spent months on nothing.
+        ///
+        /// The scripted operator in the balance suite reads this and skips them, because it is meant
+        /// to stand in for a competent baseline rather than for somebody clicking the cheapest
+        /// button. A real player sees them exactly like any other node.
+        /// </summary>
+        public bool OptionalTechnology { get; }
         public string DisplayName { get; }
         public string Description { get; }
         public GameDate EarliestDate { get; }
@@ -250,6 +274,42 @@ namespace ScalingLaws.Data
                 requires: new[] { ResearchNodeId.ScalingLaws, ResearchNodeId.EfficientAttention },
                 unlocksArchitecture: ArchitectureId.SparseMixture,
                 unlocksTrait: ModelTrait.Efficiency, gatesTrait: true),
+
+            new(ResearchNodeId.LowPrecisionTraining, ResearchEra.Scaling,
+                "Low precision training",
+                "Keep the numbers in eight bits and watch for the run coming apart. Nearly twice the "
+                + "compute out of the same cluster, and a loss curve that can diverge in the last "
+                + "third with nothing to show for the money.",
+                GameDate.FromCalendar(2023, 3, 1), costUsd: 16_000_000, durationDays: 165,
+                petaflopDaysRequired: 2_200,
+                requires: new[] { ResearchNodeId.ScalingLaws },
+                warning: "Opens FP8, which is a bet rather than a saving. The spread on the finished "
+                    + "model is more than twice what it is at BF16, and the silicon has to support "
+                    + "it as well: the node alone is not enough before 2023.",
+                optionalTechnology: true),
+
+            new(ResearchNodeId.CorpusDeduplication, ResearchEra.Foundations,
+                "Corpus deduplication",
+                "Find the near duplicates, not just the exact ones. The crawl is full of the same "
+                + "page under forty domains, and a run that reads it forty times learns it once and "
+                + "pays forty times.",
+                GameDate.FromCalendar(2022, 9, 1), costUsd: 4_500_000, durationDays: 110,
+                petaflopDaysRequired: 400,
+                requires: new[] { ResearchNodeId.CuratedCorpora },
+                warning: "Opens the aggressive pass, which costs a fifth of the corpus. That is a "
+                    + "gain when the run had tokens to spare and a straight loss when it did not.",
+                optionalTechnology: true),
+
+            new(ResearchNodeId.ContinuousDataPipeline, ResearchEra.Scaling,
+                "Continuous data pipeline",
+                "Ingest, clean and license text as it appears rather than in a batch once a year. "
+                + "What it buys is a model that knows about this month.",
+                GameDate.FromCalendar(2023, 9, 1), costUsd: 19_000_000, durationDays: 190,
+                petaflopDaysRequired: 900,
+                requires: new[] { ResearchNodeId.CuratedCorpora, ResearchNodeId.ScalingLaws },
+                warning: "Opens the freshest corpus cutoffs. Recent text is dearer to license, "
+                    + "because nobody has cleaned it and the people who own it know what it is for.",
+                optionalTechnology: true),
 
             new(ResearchNodeId.ContextWindowExpansion, ResearchEra.Scaling,
                 "Context window expansion",

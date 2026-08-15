@@ -281,6 +281,49 @@ namespace ScalingLaws.Data
             date.IsOnOrAfter(Get(precision).Earliest);
 
         /// <summary>
+        /// The node that opens an option, or None when it needs no research.
+        ///
+        /// One place where the choices and the tree meet, so a node renamed or a gate moved is a
+        /// change to this table rather than a hunt through the creator. The neutral option of every
+        /// catalog is ungated by construction: the middle is what the game did before any of this
+        /// existed and it can never be locked away.
+        /// </summary>
+        public static ResearchNodeId GateFor(TrainingPrecision precision) =>
+            precision == TrainingPrecision.Float8
+                ? ResearchNodeId.LowPrecisionTraining
+                : ResearchNodeId.None;
+
+        public static ResearchNodeId GateFor(DeduplicationPass pass) =>
+            pass == DeduplicationPass.Aggressive
+                ? ResearchNodeId.CorpusDeduplication
+                : ResearchNodeId.None;
+
+        /// <summary>
+        /// Nothing. The cutoff is never gated, and the first attempt at this was a mistake.
+        ///
+        /// Cutoff zero, everything up to the day the run starts, is what the game has always done.
+        /// Putting a node in front of it locked away the behaviour every existing company already
+        /// had, and twenty five tests said so within a minute. **The neutral option of a catalog can
+        /// never require research.**
+        ///
+        /// The pipeline earns its place by making fresh text cheaper rather than possible, which is
+        /// a real benefit that takes nothing away.
+        /// </summary>
+        public static ResearchNodeId GateForCutoff(int monthsBack) => ResearchNodeId.None;
+
+        /// <summary>
+        /// What the Continuous data pipeline takes off the bill for recent text.
+        ///
+        /// Only on the fresh end, because that is the part the pipeline actually touches: licensing
+        /// a two year old archive is the same job whether or not there is an ingest running.
+        /// </summary>
+        public const double PipelineDiscount = 0.7;
+
+        public static double CutoffCostMultiplier(int monthsBack, bool hasPipeline) =>
+            CutoffCostMultiplier(monthsBack)
+            * (hasPipeline && monthsBack < 12 ? PipelineDiscount : 1.0);
+
+        /// <summary>
         /// What a stale corpus costs, as a multiplier on the finished capability.
         ///
         /// A model that has never read anything from the last two years is not a worse model, it is
@@ -299,7 +342,16 @@ namespace ScalingLaws.Data
         /// Recent text is dearer because nobody has cleaned it yet and the people who own it know
         /// what it is for. Two years back is a third off.
         /// </summary>
+        /// <summary>
+        /// What the corpus costs, relative to taking everything up to today.
+        ///
+        /// **Today is exactly 1.0 and going back is cheaper.** The first version of this had today
+        /// at 1.35, which quietly raised the data bill by a third on every run in the game including
+        /// every one that had never touched the control, and the five year balance test caught it at
+        /// 0.055% share. It is the same rule the audience catalog and the shape catalog follow, and
+        /// writing it in a comment two files ago did not stop me breaking it here.
+        /// </summary>
         public static double CutoffCostMultiplier(int monthsBack) =>
-            Math.Clamp(1.35 - Math.Max(0, monthsBack) * 0.018, 0.65, 1.35);
+            Math.Clamp(1.0 - Math.Max(0, monthsBack) * 0.013, 0.70, 1.0);
     }
 }
