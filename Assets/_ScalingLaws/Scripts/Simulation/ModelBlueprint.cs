@@ -12,6 +12,18 @@ namespace ScalingLaws.Simulation
     /// </summary>
     public readonly struct ModelBlueprint
     {
+        /// <summary>
+        /// The parameter slider's own bounds, in log10 of billions.
+        ///
+        /// They live here rather than in the creator because the ceiling is a rule now, and a rule
+        /// enforced in `Simulation/` cannot read a constant that only exists in `UI/`. The creator
+        /// reads these; nothing else defines them.
+        /// </summary>
+        public const double LowLogParameters = -1.0;    // 0.1B
+
+        /// <inheritdoc cref="LowLogParameters"/>
+        public const double HighLogParameters = 4.0;    // 10,000B
+
         public const double MinimumParameterBillions = 0.05;
         public const double MaximumParameterBillions = 100_000.0;
         public const double MinimumTokenBillions = 1.0;

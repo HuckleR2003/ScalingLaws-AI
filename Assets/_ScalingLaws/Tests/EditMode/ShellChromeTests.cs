@@ -168,13 +168,24 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         [Test]
-        public void TheFilmIsWhereTheCodeLooksForIt()
+        public void TheFilmActuallyLoadsAsAVideoClip()
         {
-            var clip = Path.Combine(Application.dataPath, "_ScalingLaws", "Resources", "Intro",
-                "ScalingLaws_Introduction.mp4");
+            // Not a file-existence check. The file can be on disk, in the right folder, and still
+            // not load: Resources.Load returns null if Unity imported it as something other than a
+            // VideoClip, and the opening would then cut silently to the creator with a warning in a
+            // console nobody is reading.
+            var clip = UnityEngine.Resources.Load<UnityEngine.Video.VideoClip>(
+                "Intro/ScalingLaws_Introduction");
 
-            Assert.IsTrue(File.Exists(clip),
+            Assert.IsNotNull(clip,
                 "Resources.Load reads Resources/Intro. A film in Art/ is a film the build cannot see.");
+
+            Assert.Greater(clip.length, 0.5, "A clip of no length is a clip that will not play.");
+            Assert.Greater(clip.width, 0);
+
+            // The watchdog is sized from this, so a clip longer than the guard would fire the guard
+            // in the middle of the film.
+            Assert.Less(clip.length, 120.0, "An intro this long needs a different guard.");
         }
 
         // ---- the bottom bar --------------------------------------------------------------------

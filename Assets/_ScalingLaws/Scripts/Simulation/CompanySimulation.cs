@@ -203,6 +203,17 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
+        /// The largest run the company currently knows how to hold together, in billions.
+        ///
+        /// One method, read by the rule above, by the slider and by the tests, so the number on the
+        /// screen and the number that blocks the run cannot drift apart.
+        /// </summary>
+        public double ParameterCeilingBillions() => ScaleCeiling.CeilingBillions(
+            ScaleCeiling.FractionFor(State.HasResearch),
+            ModelBlueprint.LowLogParameters,
+            ModelBlueprint.HighLogParameters);
+
+        /// <summary>
         /// A day count after both the founder's pace and the research team's. Every duration in the
         /// game goes through here so the two never get applied twice or forgotten once.
         /// </summary>
@@ -250,6 +261,20 @@ namespace ScalingLaws.Simulation
                 || !HasChoiceResearch(TrainingChoiceCatalog.GateFor(blueprint.Deduplication),
                     out failureReason))
             {
+                return false;
+            }
+
+            // How large a run the company knows how to supervise. Enforced here and not only on
+            // the slider, because a cap that lives in the interface is a suggestion: the moment a
+            // second way to start a run exists, it is not there any more.
+            var ceiling = ParameterCeilingBillions();
+            if (blueprint.ParameterCountBillions > ceiling * 1.0001)
+            {
+                failureReason = ScaleCeiling.TryNextRung(State.HasResearch, out var rung, out _)
+                    ? $"The company can supervise a run up to {ceiling:N1}B parameters. "
+                      + $"{ResearchTree.Get(rung).DisplayName} raises that."
+                    : $"The company can supervise a run up to {ceiling:N1}B parameters.";
+
                 return false;
             }
 

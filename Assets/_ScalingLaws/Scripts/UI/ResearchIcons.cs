@@ -40,7 +40,14 @@ namespace ScalingLaws.UI
             { ResearchNodeId.SyntheticDataGeneration, "research_syntheticdata" },
             { ResearchNodeId.ReasoningModels, "research_reasoning" },
             { ResearchNodeId.LongContextMixtures, "research_longcontext" },
-            { ResearchNodeId.DatacenterProgramme, "research_datacenter" }
+            { ResearchNodeId.DatacenterProgramme, "research_datacenter" },
+
+            // The Model Improvement track. Named here before the files exist, so dropping the three
+            // pictures into Resources/Research is the whole job: the loader already asks for them
+            // and draws an empty badge until they arrive.
+            { ResearchNodeId.ShardedOptimizerStates, "research_sharding" },
+            { ResearchNodeId.PipelineParallelism, "research_pipeline" },
+            { ResearchNodeId.UltraReadiness, "research_ultrareadiness" }
         };
 
         private static readonly Dictionary<ResearchNodeId, Texture2D> Loaded = new();

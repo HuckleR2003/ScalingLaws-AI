@@ -684,10 +684,10 @@ namespace ScalingLaws.UI
                 "Campaigns buy attention and never quality. A bad model advertised hard gets tried "
                 + "and abandoned, which costs you twice.");
 
-            hud.AddSlot("NEWS", Screen.News, () => Show(Screen.News), null,
+            hud.AddSlot("NEWS", Screen.News, () => Show(Screen.News), "hud_news",
                 "The wire. Launches, scandals, regulators, and what is being said about you.");
 
-            hud.AddSlot("@ MAIL", Screen.Mail, () => Show(Screen.Mail), null,
+            hud.AddSlot("@ MAIL", Screen.Mail, () => Show(Screen.Mail), "hud_mail",
                 "Letters that need an answer: salary negotiations, the tax bill, and any fine the "
                 + "company has earned.");
         }
@@ -925,15 +925,26 @@ namespace ScalingLaws.UI
             foreach (ResearchEra era in Enum.GetValues(typeof(ResearchEra)))
             {
                 var nodes = new List<ResearchStanding>();
+                var deepening = new List<ResearchStanding>();
+
                 foreach (var standing in board)
                 {
-                    if (standing.Node.Era == era)
+                    if (standing.Node.Era != era)
+                    {
+                        continue;
+                    }
+
+                    if (standing.Node.Track == ResearchTrack.ModelImprovement)
+                    {
+                        deepening.Add(standing);
+                    }
+                    else
                     {
                         nodes.Add(standing);
                     }
                 }
 
-                if (nodes.Count == 0)
+                if (nodes.Count == 0 && deepening.Count == 0)
                 {
                     continue;
                 }
@@ -945,19 +956,48 @@ namespace ScalingLaws.UI
                 heading.AddToClassList("era__heading");
                 section.Add(heading);
 
-                var track = new VisualElement();
-                track.AddToClassList("tree-track");
-
-                var spine = new VisualElement();
-                spine.AddToClassList("tree-spine");
-                track.Add(spine);
-
-                for (var index = 0; index < nodes.Count; index++)
+                if (nodes.Count > 0)
                 {
-                    track.Add(BuildTreeNode(nodes[index], index % 2 == 0));
+                    var track = new VisualElement();
+                    track.AddToClassList("tree-track");
+
+                    var spine = new VisualElement();
+                    spine.AddToClassList("tree-spine");
+                    track.Add(spine);
+
+                    for (var index = 0; index < nodes.Count; index++)
+                    {
+                        track.Add(BuildTreeNode(nodes[index], index % 2 == 0));
+                    }
+
+                    section.Add(track);
                 }
 
-                section.Add(track);
+                // The second line. A capability node opens a direction the company could not go at
+                // all; these deepen something it already does, and reading them as the same kind of
+                // decision is what made the tree feel like a shopping list.
+                if (deepening.Count > 0)
+                {
+                    var band = new VisualElement();
+                    band.AddToClassList("deepening");
+
+                    var bandHeading = new Label("MODEL IMPROVEMENT");
+                    bandHeading.AddToClassList("deepening__heading");
+                    band.Add(bandHeading);
+
+                    var row = new VisualElement();
+                    row.AddToClassList("deepening__row");
+
+                    foreach (var standing in deepening)
+                    {
+                        var node = BuildTreeNode(standing, false);
+                        node.AddToClassList("tree-node--small");
+                        row.Add(node);
+                    }
+
+                    band.Add(row);
+                    section.Add(band);
+                }
 
                 // Funding rides alongside the first era rather than sitting above everything. It is
                 // a setting the player touches twice a campaign and the tree is what they came for,

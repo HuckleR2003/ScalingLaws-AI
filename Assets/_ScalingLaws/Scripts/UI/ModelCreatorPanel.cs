@@ -27,6 +27,12 @@ namespace ScalingLaws.UI
         private readonly TextField nameField = new();
         private readonly DropdownField architectureField = new();
         private readonly Slider parameterSlider = new();
+
+        // The locked end of the parameter slider, drawn over its own track. A slider that simply
+        // stops has no way of saying why, and "why" is the whole point: the cap is a research
+        // result, so the bar names the node that would move it.
+        private readonly VisualElement parameterLock = new();
+        private readonly Label parameterLockLabel = new();
         private readonly Slider tokenSlider = new();
         private readonly Slider rentedSlider = new();
         private readonly VisualElement dataToggles = new();
@@ -122,8 +128,12 @@ namespace ScalingLaws.UI
         };
 
         /// <summary>Sliders move in log space so one drag covers a billion to a hundred trillion.</summary>
-        private const float MinimumLogParameters = -1.0f;   // 0.1B
-        private const float MaximumLogParameters = 4.0f;    // 10,000B
+        //
+        // The parameter bounds are the blueprint's, because the ceiling is enforced in the
+        // simulation and a rule cannot read a constant that only exists up here. Two copies of
+        // "the slider runs to ten thousand billion" is one copy that goes stale.
+        private const float MinimumLogParameters = (float)ModelBlueprint.LowLogParameters;
+        private const float MaximumLogParameters = (float)ModelBlueprint.HighLogParameters;
         private const float MinimumLogTokens = 1.0f;        // 10B
         private const float MaximumLogTokens = 5.3f;        // 200,000B
 
@@ -804,8 +814,23 @@ namespace ScalingLaws.UI
 
             parameterLabel.AddToClassList("field__label");
             panel.Add(parameterLabel);
-            ConfigureSlider(parameterSlider, MinimumLogParameters, MaximumLogParameters, 1.3f);
-            panel.Add(parameterSlider);
+
+            // The slider and the locked overlay share a host, because the overlay is positioned
+            // against the track and has to move with it rather than against the panel.
+            var parameterTrack = new VisualElement();
+            parameterTrack.AddToClassList("scale-track");
+
+            ConfigureSlider(parameterSlider, MinimumLogParameters, MaximumLogParameters, 0.9f);
+            parameterTrack.Add(parameterSlider);
+
+            parameterLock.AddToClassList("scale-lock");
+            parameterLock.pickingMode = PickingMode.Ignore;
+
+            parameterLockLabel.AddToClassList("scale-lock__label");
+            parameterLock.Add(parameterLockLabel);
+            parameterTrack.Add(parameterLock);
+
+            panel.Add(parameterTrack);
 
             tokenLabel.AddToClassList("field__label");
             panel.Add(tokenLabel);
@@ -1348,6 +1373,43 @@ namespace ScalingLaws.UI
             return panel;
         }
 
+        /// <summary>
+        /// Holds the slider inside what the company knows how to train, and draws the rest as
+        /// locked.
+        ///
+        /// The slider keeps its full range rather than having `highValue` moved down. Shrinking the
+        /// range would rescale the whole control every time a node completes, so a drag that used
+        /// to land on thirty billion would land somewhere else, and the player would have no way of
+        /// seeing that the cap had moved at all. Clamping the value and covering the rest says the
+        /// same thing and shows the gain.
+        /// </summary>
+        private void RefreshParameterCeiling()
+        {
+            var fraction = ScaleCeiling.FractionFor(simulation.State.HasResearch);
+            var ceilingLog = (float)(MinimumLogParameters
+                + (MaximumLogParameters - MinimumLogParameters) * fraction);
+
+            if (parameterSlider.value > ceilingLog)
+            {
+                parameterSlider.SetValueWithoutNotify(ceilingLog);
+            }
+
+            var locked = 1.0 - fraction;
+            parameterLock.style.display = locked <= 0.0005 ? DisplayStyle.None : DisplayStyle.Flex;
+            parameterLock.style.width = Length.Percent((float)(locked * 100.0));
+
+            if (locked <= 0.0005)
+            {
+                return;
+            }
+
+            var ceiling = simulation.ParameterCeilingBillions();
+            parameterLockLabel.text =
+                ScaleCeiling.TryNextRung(simulation.State.HasResearch, out var rung, out _)
+                    ? $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP  ·  {ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}"
+                    : $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP";
+        }
+
         private void ConfigureSlider(Slider slider, float low, float high, float initial)
         {
             slider.lowValue = low;
@@ -1488,6 +1550,8 @@ namespace ScalingLaws.UI
             var blueprint = CurrentBlueprint();
             var projection = simulation.Project(blueprint);
             var profile = simulation.Profile;
+
+            RefreshParameterCeiling();
 
             parameterLabel.text = $"Parameters: {UiFormat.Billions(blueprint.ParameterCountBillions)}";
             tokenLabel.text = $"Training tokens: {UiFormat.Billions(blueprint.TrainingTokensBillions)}";

@@ -6796,3 +6796,77 @@
 .site-rail > .site-icon {
     margin-top: 10px;
 }
+
+/* ---- the parameter ceiling ----
+
+   The slider keeps its whole range and the part the company cannot reach is covered rather than
+   removed. Shrinking the range would rescale the control every time a node lands, so the same drag
+   would mean a different number and the gain would be invisible. */
+
+.scale-track {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.scale-lock {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-left-width: 1px;
+    border-left-color: rgba(226, 78, 62, 0.55);
+    background-color: rgba(10, 12, 18, 0.82);
+}
+
+.scale-lock__label {
+    font-size: 8px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgba(232, 150, 130, 0.92);
+    white-space: nowrap;
+}
+
+/* ---- the second research line ----
+
+   Capability nodes open a direction; these deepen something the company already does. Drawn small
+   and on their own line under the era, because reading them as the same kind of decision is what
+   made the tree feel like a shopping list. */
+
+.deepening {
+    margin-top: 4px;
+    margin-bottom: 6px;
+    padding: 10px 14px 12px 14px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.022);
+}
+
+.deepening__heading {
+    font-size: 9px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(122, 134, 156);
+    margin-bottom: 8px;
+}
+
+.deepening__row {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.tree-node--small {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.tree-node--small > .tree-pip {
+    width: 42px;
+    height: 42px;
+    border-radius: 21px;
+}

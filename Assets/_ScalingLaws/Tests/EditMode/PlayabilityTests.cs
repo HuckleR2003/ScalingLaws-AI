@@ -328,6 +328,23 @@ namespace ScalingLaws.Tests.EditMode
                 var blueprint = TrainingPlanner.OptimalBlueprintForBudget(
                     $"Muse {++modelNumber}", architecture, budget, state.OwnedDataSources);
 
+                // A compute-optimal shape can also ask for a model larger than the company knows how
+                // to hold together. A player meets that as a slider that stops; the operator meets
+                // it as a refusal from TryStartTraining, so it has to do what the player does and
+                // build the largest run it is allowed to.
+                //
+                // Without this the whole campaign dies on day one: the first compute-optimal shape
+                // is over the opening cap, every run is refused, nothing ships, and the company is
+                // insolvent by August 2024 having researched one node. That is the operator being
+                // unable to use a control, not the ceiling being wrong.
+                var ceiling = simulation.ParameterCeilingBillions();
+                if (blueprint.ParameterCountBillions > ceiling)
+                {
+                    blueprint = blueprint
+                        .WithParameters(ceiling)
+                        .WithTokens(Math.Max(ModelBlueprint.MinimumTokenBillions, ceiling * 20.0));
+                }
+
                 // A compute-optimal shape can ask for more tokens than the company owns. Cap the run
                 // at the supply and rebuild the shape around it rather than halving blindly, which
                 // stalls forever once the budget outgrows the corpora.

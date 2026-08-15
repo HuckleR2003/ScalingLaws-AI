@@ -5,6 +5,20 @@ using ScalingLaws.Core;
 namespace ScalingLaws.Data
 {
     /// <summary>Which stretch of the campaign a node belongs to.</summary>
+    /// <summary>
+    /// What kind of work a node is.
+    ///
+    /// The eras are a calendar and must stay one, so this is a second axis rather than a fifth era.
+    /// A capability node opens something the company could not do at all; a model improvement node
+    /// makes something it already does go further. They are drawn differently because they are read
+    /// differently: one is a decision about direction, the other is a decision about depth.
+    /// </summary>
+    public enum ResearchTrack
+    {
+        Capability = 0,
+        ModelImprovement = 1
+    }
+
     public enum ResearchEra
     {
         Foundations = 1,
@@ -55,6 +69,15 @@ namespace ScalingLaws.Data
         LongContextMixtures = 304,
         DatacenterProgramme = 305,
 
+        // The Model Improvement track. Numbered apart from the eras because they are a second
+        // axis: each one deepens something the company already does rather than opening a new
+        // direction, and they are spread across the calendar like everything else.
+        //
+        // 5xx raises how large a run the company can supervise. 5x1 upward is the cluster fabric.
+        ShardedOptimizerStates = 501,
+        PipelineParallelism = 502,
+        UltraReadiness = 503,
+
         // Era 4, the end game.
         HybridArchitectures = 401,
         RecursiveSelfImprovement = 402,
@@ -90,8 +113,10 @@ namespace ScalingLaws.Data
             ModelTrait unlocksTrait = ModelTrait.Reasoning,
             bool gatesTrait = false,
             string warning = null,
-            bool optionalTechnology = false)
+            bool optionalTechnology = false,
+            ResearchTrack track = ResearchTrack.Capability)
         {
+            Track = track;
             OptionalTechnology = optionalTechnology;
             Id = id;
             Era = era;
@@ -112,6 +137,9 @@ namespace ScalingLaws.Data
 
         public ResearchNodeId Id { get; }
         public ResearchEra Era { get; }
+
+        /// <summary>Capability, or one of the deepening tracks. See <see cref="ResearchTrack"/>.</summary>
+        public ResearchTrack Track { get; }
 
         /// <summary>
         /// A node that opens an option rather than raising a ceiling.
@@ -369,6 +397,45 @@ namespace ScalingLaws.Data
                 GameDate.FromCalendar(2024, 1, 1), costUsd: 45_000_000, durationDays: 240, petaflopDaysRequired: 0,
                 requires: new[] { ResearchNodeId.ScalingLaws },
                 unlocksTier: ComputeTier.OwnDatacenter),
+
+            // ------------------------------------------- model improvement: how big a run can be
+            //
+            // Three rungs on the parameter ceiling, and every one of them is the real reason a lab
+            // can train something larger than a single node holds. They are cheap next to the
+            // capability line on purpose: what they cost is the calendar, and the calendar is what
+            // the player is short of.
+
+            new(ResearchNodeId.ShardedOptimizerStates, ResearchEra.Foundations,
+                "Sharded optimizer states",
+                "Adam keeps two moments and a full precision copy of every weight, which is three "
+                + "times the model sitting on every accelerator holding an identical duplicate. "
+                + "Shard them across the cluster and each machine holds its slice.",
+                GameDate.FromCalendar(2022, 3, 1), costUsd: 2_600_000, durationDays: 70,
+                petaflopDaysRequired: 120,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.PipelineParallelism, ResearchEra.Scaling,
+                "Pipeline parallelism",
+                "Cut the model into stages and give each machine a stage rather than a copy. The "
+                + "layers no longer have to fit anywhere in particular, only the stage does.",
+                GameDate.FromCalendar(2022, 11, 1), costUsd: 8_400_000, durationDays: 120,
+                petaflopDaysRequired: 520,
+                requires: new[] { ResearchNodeId.ShardedOptimizerStates },
+                warning: "The bubble between stages is real compute the run pays for and never "
+                    + "gets back. It buys size, not speed.",
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.UltraReadiness, ResearchEra.Scaling,
+                "Ultra readiness",
+                "A run of this length will lose machines while it is running. Checkpoint often "
+                + "enough to survive it, restart without a human, and hold thousands of "
+                + "accelerators in step for months at a time.",
+                GameDate.FromCalendar(2023, 8, 1), costUsd: 27_000_000, durationDays: 200,
+                petaflopDaysRequired: 1_800,
+                requires: new[] { ResearchNodeId.PipelineParallelism, ResearchNodeId.ScalingLaws },
+                warning: "Opens almost the whole slider. What it does not do is pay for the run, "
+                    + "and a run at this size is a year of the company's income.",
+                track: ResearchTrack.ModelImprovement),
 
             // ---------------------------------------------------------- era 4
             new(ResearchNodeId.HybridArchitectures, ResearchEra.Superintelligence,
