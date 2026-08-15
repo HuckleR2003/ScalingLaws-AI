@@ -6502,3 +6502,126 @@
     flex-basis: 0;
     margin-right: 14px;
 }
+
+/* ---- research in progress, on the screen research lives on ----
+
+   The corner banner carries this too and the corner banner is hidden everywhere but the office, so
+   the one screen that is about research had no way of saying research was running. The bar is
+   behind the words rather than under them, so the whole strip is the progress. */
+
+.researching {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 62px;
+    margin-bottom: 14px;
+    padding-left: 16px;
+    padding-right: 12px;
+    border-radius: var(--card-radius);
+    background-color: rgba(6, 30, 62, 0.55);
+    border-left-width: 3px;
+    border-left-color: rgb(120, 176, 250);
+    overflow: hidden;
+}
+
+.researching__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(120, 176, 250, 0.18);
+}
+
+.researching__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.researching__title {
+    font-size: 11px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(160, 202, 255);
+}
+
+.researching__what {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+    margin-top: 2px;
+}
+
+.researching__stop {
+    margin: 0;
+    flex-shrink: 0;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    padding-left: 14px;
+    padding-right: 14px;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(206, 218, 236);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 3px;
+}
+
+.researching__stop:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.researching__stop--armed {
+    color: rgb(255, 250, 248);
+    background-color: rgb(158, 38, 32);
+    border-color: rgb(226, 78, 62);
+}
+
+/* ---- where the company is, in the room it is in ---- */
+
+.office-plate {
+    position: absolute;
+    left: 22px;
+    bottom: 22px;
+    width: 260px;
+    height: 74px;
+    margin: 0;
+    padding: 0;
+    justify-content: flex-end;
+    opacity: 0.9;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.18);
+    border-radius: 5px;
+    background-color: rgba(10, 12, 18, 0.82);
+    overflow: hidden;
+    transition-property: opacity, border-color;
+    transition-duration: 180ms;
+}
+
+.office-plate--art {
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.office-plate:hover {
+    opacity: 1;
+    border-color: rgb(226, 78, 62);
+}
+
+.office-plate__text {
+    padding: 8px;
+    background-color: rgba(8, 10, 14, 0.76);
+}
+
+.office-plate__name {
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(244, 248, 255);
+}
+
+.office-plate__figures {
+    font-size: 10px;
+    color: rgb(176, 190, 212);
+    margin-top: 2px;
+}

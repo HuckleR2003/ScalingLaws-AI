@@ -142,7 +142,12 @@ namespace ScalingLaws.UI
             var photo = new VisualElement();
             photo.AddToClassList("office-row__photo");
 
-            var art = Resources.Load<Texture2D>("Offices/" + place.Art);
+            // Offices/ first, then the hosting picture as a stand in for the two that have one.
+            // A place with no picture at all says so rather than drawing a grey rectangle.
+            var art = Resources.Load<Texture2D>("Offices/" + place.Art)
+                      ?? Resources.Load<Texture2D>(place.Level == 0
+                          ? "Ui/office_upgrade"
+                          : "Hosting/hosting_datacenter");
             if (art != null)
             {
                 photo.style.backgroundImage = new StyleBackground(art);

@@ -917,6 +917,41 @@ namespace ScalingLaws.Simulation
             return new ResearchStanding(node, false, false, true, string.Empty, duration);
         }
 
+        /// <summary>
+        /// Abandons the programme in flight.
+        ///
+        /// **Nothing comes back.** The cash was spent on the day it started, the points were spent
+        /// with it, and the days are gone. What cancelling buys is the right to start something else
+        /// today rather than in four months, which is the only reason anybody would do it: the
+        /// frontier moved and the node you picked in March stopped being the one you need.
+        ///
+        /// Refunding would make starting a programme free to reconsider, and the whole weight of the
+        /// research system is that a node costs a season you cannot get back.
+        /// </summary>
+        public bool TryCancelResearch(out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            var active = State.ActiveResearch;
+            if (active == null)
+            {
+                failureReason = "Nothing is being researched.";
+                return false;
+            }
+
+            var node = ResearchTree.Get(active.Node);
+            var days = active.DaysCompleted;
+
+            State.ActiveResearch = null;
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.ResearchCancelled,
+                State.Date,
+                $"{node.DisplayName} abandoned after {days} days. Nothing spent on it comes back."));
+
+            return true;
+        }
+
         /// <summary>Commits to a node. Cash now, calendar and compute as it runs.</summary>
         public bool TryStartResearch(ResearchNodeId nodeId, out string failureReason)
         {

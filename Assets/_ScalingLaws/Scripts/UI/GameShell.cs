@@ -66,6 +66,8 @@ namespace ScalingLaws.UI
         private Label rankLabel;
         private GameHud hud;
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
+        private string researchProblem = string.Empty;
+        private bool cancelArmed;
         private VisualElement trainingBanner;
         private VisualElement pulseBanner;
         private Button cashButton;
@@ -860,6 +862,22 @@ namespace ScalingLaws.UI
             var funding = BuildResearchFunding();
             var placedFunding = false;
 
+            if (researchProblem.Length > 0)
+            {
+                var trouble = new Label(researchProblem);
+                trouble.AddToClassList("mcb-problem");
+                page.Add(trouble);
+                researchProblem = string.Empty;
+            }
+
+            // The corner banner carries this too, and the corner banner is hidden on every screen
+            // but the office. So the one screen that is about research had no way of telling the
+            // player that research was running.
+            if (active != null)
+            {
+                page.Add(BuildResearchingStrip(active));
+            }
+
             foreach (ResearchEra era in Enum.GetValues(typeof(ResearchEra)))
             {
                 var nodes = new List<ResearchStanding>();
@@ -939,6 +957,70 @@ namespace ScalingLaws.UI
         /// costs nothing in a bad month and nothing is what it discovers, so a company that stops
         /// earning also stops learning exactly when it most needs to catch up.
         /// </summary>
+        /// <summary>
+        /// Research in progress, on the screen research lives on.
+        ///
+        /// Days left is the headline because that is the number a player plans around, and the bar
+        /// is behind the words rather than under them so the whole strip is the progress, the same
+        /// shape the training strip uses in the corner.
+        /// </summary>
+        private VisualElement BuildResearchingStrip(ResearchProject active)
+        {
+            var node = ResearchTree.Get(active.Node);
+            var left = Math.Max(0, active.DurationDays - active.DaysCompleted);
+
+            var strip = new VisualElement();
+            strip.AddToClassList("researching");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("researching__fill");
+            fill.style.width = Length.Percent(
+                (float)(Math.Clamp(active.Progress, 0.0, 1.0) * 100.0));
+
+            strip.Add(fill);
+
+            var text = new VisualElement();
+            text.AddToClassList("researching__text");
+
+            var title = new Label("RESEARCHING IN PROGRESS");
+            title.AddToClassList("researching__title");
+            text.Add(title);
+
+            var what = new Label($"{node.DisplayName}  ·  {left} days left  ·  "
+                + $"{UiFormat.Percent(active.Progress, 0)} done");
+
+            what.AddToClassList("researching__what");
+            text.Add(what);
+
+            strip.Add(text);
+
+            var stop = new Button(() =>
+            {
+                if (cancelArmed)
+                {
+                    cancelArmed = false;
+                    simulation.TryCancelResearch(out _);
+                }
+                else
+                {
+                    cancelArmed = true;
+                }
+
+                Show(Screen.Research);
+            })
+            { text = cancelArmed ? "CONFIRM, NOTHING COMES BACK" : "CANCEL" };
+
+            stop.AddToClassList("researching__stop");
+            stop.EnableInClassList("researching__stop--armed", cancelArmed);
+
+            stop.tooltip = "Abandons the programme. The cash and the points were spent on the day it "
+                + "started and none of it comes back; what you get is the right to start something "
+                + "else today rather than in four months.";
+
+            strip.Add(stop);
+            return strip;
+        }
+
         private VisualElement BuildResearchFunding()
         {
             var state = simulation.State;
@@ -1163,9 +1245,21 @@ namespace ScalingLaws.UI
             {
                 var start = new Button(() =>
                 {
-                    simulation.TryStartResearch(node.Id, out _);
+                    if (!simulation.TryStartResearch(node.Id, out var why))
+                    {
+                        // It should not be reachable, since the card only offers this when the
+                        // standing says it can start. If it ever is, say why rather than doing
+                        // nothing, which is what made this button feel broken before.
+                        researchProblem = why;
+                        Show(Screen.Research);
+                        return;
+                    }
+
                     researchCard?.RemoveFromHierarchy();
-                    Show(Screen.Research);
+
+                    // Same as starting a run. The work is months long and there is nothing further
+                    // to do on this screen, so the room is where the player belongs.
+                    Show(Screen.Site);
                 })
                 {
                     text = $"BEGIN  ·  {points:N0} POINTS AND {UiFormat.Money(cash)}"
@@ -1423,6 +1517,45 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
+        /// The office plate in the corner of the room.
+        ///
+        /// It carries the two numbers that decide whether to move, rather than only a way in: the
+        /// rent is paid whether or not the desks are full, and the desks are what caps hiring.
+        /// </summary>
+        private VisualElement BuildOfficePlate()
+        {
+            var place = state.Staff.OfficeDefinition;
+
+            var plate = new Button(() => Show(Screen.Offices));
+            plate.AddToClassList("office-plate");
+
+            var art = Resources.Load<Texture2D>("Ui/office_upgrade");
+            if (art != null)
+            {
+                plate.style.backgroundImage = new StyleBackground(art);
+                plate.AddToClassList("office-plate--art");
+            }
+
+            var text = new VisualElement();
+            text.AddToClassList("office-plate__text");
+
+            var name = new Label($"LVL {place.Level}  ·  {place.DisplayName.ToUpperInvariant()}");
+            name.AddToClassList("office-plate__name");
+            text.Add(name);
+
+            var figures = new Label(
+                $"{state.Staff.Headcount} of {place.Desks} desks  ·  "
+                + $"{UiFormat.Money(place.MonthlyRentUsd)} a month");
+
+            figures.AddToClassList("office-plate__figures");
+            text.Add(figures);
+
+            plate.Add(text);
+            plate.tooltip = "Where the company is. Click to see the other places.";
+            return plate;
+        }
+
+        /// <summary>
         /// The way into the places screen.
         ///
         /// A picture with a word on it rather than a plain button, because it opens the one screen
@@ -1519,6 +1652,13 @@ namespace ScalingLaws.UI
             var artLeft = new VisualElement();
             artLeft.AddToClassList("hswitch__art");
             artLeft.AddToClassList("hswitch__art--left");
+
+            var rentArt = Resources.Load<Texture2D>("Hosting/hosting_renting");
+            if (rentArt != null)
+            {
+                artLeft.style.backgroundImage = new StyleBackground(rentArt);
+            }
+
             strip.Add(artLeft);
 
             // It did nothing at all, which reads as broken rather than as the only option. Renting
@@ -1546,6 +1686,14 @@ namespace ScalingLaws.UI
             var artRight = new VisualElement();
             artRight.AddToClassList("hswitch__art");
             artRight.AddToClassList("hswitch__art--right");
+
+            // Deliberately dimmed by the stylesheet as well: the half it belongs to is locked, and
+            // a bright picture on a disabled control reads as a control that should work.
+            var ownArt = Resources.Load<Texture2D>("Hosting/hosting_datacenter");
+            if (ownArt != null)
+            {
+                artRight.style.backgroundImage = new StyleBackground(ownArt);
+            }
             strip.Add(artRight);
 
             return strip;
@@ -3111,6 +3259,10 @@ namespace ScalingLaws.UI
                 overlay.schedule.Execute(() => overlay.RemoveFromClassList("site-overlay--entering"))
                     .ExecuteLater(16);
             }
+
+            // Where the company is, in the room the company is in. The office chooser used to be
+            // reachable only from the team screen, which is a screen about people.
+            stage.Add(BuildOfficePlate());
 
             // Subtle on purpose. It is a way out of the room rather than a call to action, so it
             // sits in the corner of the room at half strength and comes up when the cursor finds it.

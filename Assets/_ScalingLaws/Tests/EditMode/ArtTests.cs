@@ -170,7 +170,9 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void TheOnlyMissingArtIsTheArtWeKnowIsMissing()
         {
-            var known = new[] { "Hosting/hosting_renting", "Hosting/hosting_datacenter" };
+            // Both hosting pictures arrived on 2026-08-15 and this test failed to say so, which is
+            // what it is for. Nothing is outstanding; the array stays so the next gap has a home.
+            var known = new string[0];
             var arrived = new List<string>();
 
             foreach (var key in known)

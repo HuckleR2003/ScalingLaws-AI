@@ -48,7 +48,10 @@ namespace ScalingLaws.Simulation
         DemandOverdue = 35,
 
         /// <summary>The revenue agreed to wait, for a fee.</summary>
-        TaxDeferred = 36
+        TaxDeferred = 36,
+
+        /// <summary>A research programme was abandoned before it finished.</summary>
+        ResearchCancelled = 37
     }
 
     /// <summary>
