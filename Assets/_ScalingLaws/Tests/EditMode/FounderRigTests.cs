@@ -111,7 +111,8 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ThePrefabIsAHumanoidWithTheActorOnIt()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Folder}/Founder.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_ScalingLaws/Resources/Character/Founder.prefab");
             Assert.IsNotNull(prefab, "Run Scaling Laws > Characters > Build founder rig.");
 
             var animator = prefab.GetComponent<Animator>();

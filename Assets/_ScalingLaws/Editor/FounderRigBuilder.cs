@@ -356,7 +356,13 @@ namespace ScalingLaws.EditorTools
 
             root.AddComponent<ScalingLaws.UI.OfficeActor>();
 
-            var path = $"{Folder}/Founder.prefab";
+            // Resources, because the shell spawns it rather than referencing it from a scene:
+            // Game.unity holds 107 hand-placed prefab instances and a guard refuses to regenerate
+            // it, so nothing new goes in there by hand if it can be put in by code.
+            const string prefabFolder = "Assets/_ScalingLaws/Resources/Character";
+            Directory.CreateDirectory(prefabFolder);
+
+            var path = $"{prefabFolder}/Founder.prefab";
             var saved = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
 

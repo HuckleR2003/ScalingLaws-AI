@@ -191,7 +191,8 @@ namespace ScalingLaws.EditorTools
         /// <summary>The avatar the founder prefab uses, which is what everything must retarget onto.</summary>
         private static string FounderAvatarPath()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Folder}/Founder.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_ScalingLaws/Resources/Character/Founder.prefab");
             var animator = prefab != null ? prefab.GetComponent<Animator>() : null;
 
             if (animator != null && animator.avatar != null)

@@ -66,6 +66,7 @@ namespace ScalingLaws.UI
         private Label rankLabel;
         private GameHud hud;
         private KeyboardShortcuts shortcuts;
+        private FounderPresence founder;
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
         private string researchProblem = string.Empty;
         private bool cancelArmed;
@@ -313,7 +314,20 @@ namespace ScalingLaws.UI
                 }
             }
 
-            var days = clock.Advance(Time.unscaledDeltaTime);
+            // The founder decides the clock's pace, in one direction only: the day sweeps six
+            // times faster while they are asleep upstairs. Presentation, not simulation. The same
+            // days happen and they take less of the player's evening.
+            founder?.Refresh(state.Date.DayIndex);
+
+            // They reached the car. This is where the loading screen and the world map go once the
+            // map itself exists; until then it opens the board, which is what the icon did before.
+            if (founder != null && founder.HasReachedTheCar && current == Screen.Site)
+            {
+                founder.ComeBack();
+                Show(Screen.Ranking);
+            }
+
+            var days = clock.Advance(Time.unscaledDeltaTime * (founder?.TimeScale ?? 1f));
 
             // The clock has to be pushed every frame, not once a day. It used to be refreshed only
             // inside the branch below, which runs when a day rolls over, so the dial and the line
@@ -392,6 +406,11 @@ namespace ScalingLaws.UI
 
             hud = new GameHud(SetSpeed, SkipDay, ToggleCompanyInfo);
             shortcuts = new KeyboardShortcuts(root, () => clock.Speed, SetSpeed);
+
+            // The room has had an empty Staff group since the day it was generated. Somebody lives
+            // here now.
+            founder = new FounderPresence(() => state);
+            founder.Spawn();
             AddHudSlots();
             root.Add(hud.Root);
 
@@ -3523,7 +3542,20 @@ namespace ScalingLaws.UI
 
             rail.Add(upgrade);
 
-            var map = new Button(() => Show(Screen.Ranking));
+            // Clicking the map sends the founder out through the garage to the car, and the screen
+            // follows once they are in it. Cutting straight to the map is a scene change; walking
+            // out of the room is somebody leaving.
+            //
+            // It falls straight through when there is nobody to walk, because a player whose office
+            // scene has not loaded must not be stranded on a journey that will never finish.
+            var map = new Button(() =>
+            {
+                if (founder == null || !founder.BeginLeaving())
+                {
+                    Show(Screen.Ranking);
+                }
+            });
+
             map.AddToClassList("site-icon");
             SetIcon(map, "Ui/map", "MAP");
 
