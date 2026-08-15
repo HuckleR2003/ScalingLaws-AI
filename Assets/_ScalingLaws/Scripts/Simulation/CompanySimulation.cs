@@ -2883,6 +2883,7 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private void AdvanceIntelligence()
         {
+            AdvanceLabHistory();
             AdvanceDossiers();
 
             foreach (var tier in NewsCatalog.Memberships)
@@ -2913,6 +2914,21 @@ namespace ScalingLaws.Simulation
                     CompanyEventType.IntelReceived,
                     State.Date,
                     $"{signal.Headline} (desk confidence {signal.Confidence:P0})."));
+            }
+        }
+
+        /// <summary>
+        /// The rivals' own history, filed on the day it happens.
+        ///
+        /// **Free, and deliberately so.** The paid desks sell advance warning; this is the public
+        /// record arriving at the same time it arrives for everybody. A player who buys nothing
+        /// still watches three companies come apart over four years.
+        /// </summary>
+        private void AdvanceLabHistory()
+        {
+            foreach (var (lab, chapter) in LabDossiers.ChaptersOn(State.Date))
+            {
+                State.News.Add(NewsDesk.FromLabChapter(lab, chapter));
             }
         }
 

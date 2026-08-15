@@ -138,6 +138,54 @@ namespace ScalingLaws.Simulation
         /// column. The confidence printed is the desk's own claim, never the truth, exactly as
         /// <see cref="IntelSignal"/> intends.
         /// </summary>
+        /// <summary>
+        /// A chapter from a rival's history, on the day it happens.
+        ///
+        /// **This is free news and it is the point of the whole dossier layer.** A player who never
+        /// buys a membership still watches four companies rise and three of them come apart, and
+        /// the ones that come apart do so for reasons the player is themselves exposed to: a data
+        /// question that arrives in court eighteen months late, a team that walks, a bill nobody
+        /// worked out how to pay. Reading that happen to somebody else is the cheapest possible way
+        /// to learn that safety and cost are not side quests.
+        ///
+        /// The desk still only translates. The chapter already happened, the date is authored, and
+        /// nothing here rolls a die or changes a number.
+        /// </summary>
+        public static NewsItem FromLabChapter(in LabDossier lab, in LabChapter chapter)
+        {
+            var section = chapter.Kind switch
+            {
+                LabChapterKind.Scandal => NewsSection.Scandals,
+                LabChapterKind.Setback => NewsSection.Scandals,
+                LabChapterKind.Exit => NewsSection.Scandals,
+                LabChapterKind.Milestone => NewsSection.Premieres,
+                _ => NewsSection.Wire
+            };
+
+            // An exit or a scandal at this scale is the loudest thing that happens on a given day,
+            // and the corner banner shows the loudest story rather than the most recent one.
+            var weight = chapter.Kind switch
+            {
+                LabChapterKind.Exit => NewsWeight.Loud,
+                LabChapterKind.Scandal => NewsWeight.Loud,
+                LabChapterKind.Setback => NewsWeight.Notable,
+                LabChapterKind.Funding => NewsWeight.Notable,
+                _ => NewsWeight.Notable
+            };
+
+            var body = chapter.Body;
+            if (chapter.IsProjection)
+            {
+                // The honesty flag, in the one place a player will actually read it. A dated event
+                // past what is known is the game's guess and has to say so.
+                body += "\n\nProjection. This is where the game expects this to go, not something "
+                    + "that has been announced.";
+            }
+
+            return new NewsItem(chapter.On, section, $"{lab.Name}: {chapter.Headline}", body,
+                lab.Name, isAboutPlayer: false, weight);
+        }
+
         public static NewsItem FromSignal(in IntelSignal signal)
         {
             var section = signal.Tier switch

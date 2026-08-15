@@ -201,6 +201,14 @@ namespace ScalingLaws.Simulation
             // was EnterpriseFocus at all, which is why Automation had no builder in any year.
             { CompetitorId.GoogleDeepMind, CompetitorStrategy.EnterpriseFocus },
             { CompetitorId.MetaAi, CompetitorStrategy.OpenWeights },
+
+            // The four added 2026-08-15. Two open weight labs whose whole problem is that open
+            // weights do not bill, one cost leader that never gets cheap enough to matter, and the
+            // enterprise survivor.
+            { CompetitorId.StabilityAi, CompetitorStrategy.OpenWeights },
+            { CompetitorId.InflectionAi, CompetitorStrategy.CostLeader },
+            { CompetitorId.AlephAlpha, CompetitorStrategy.EnterpriseFocus },
+            { CompetitorId.Cohere, CompetitorStrategy.EnterpriseFocus },
             { CompetitorId.MistralAi, CompetitorStrategy.OpenWeights },
             { CompetitorId.DeepSeek, CompetitorStrategy.CostLeader },
             { CompetitorId.XAi, CompetitorStrategy.FrontierRace },

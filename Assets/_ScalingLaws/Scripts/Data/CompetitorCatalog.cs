@@ -32,21 +32,11 @@ namespace ScalingLaws.Data
         ///
         /// There were two of these, one in CompetitorField and one in RankingBoard, with identical
         /// bodies. Two copies of a name list is how a lab ends up called one thing on the ranking
-        /// screen and another in the news.
+        /// screen and another in the news. It is now down to zero copies: the name lives on the
+        /// dossier beside the lab's history, which is the only place that has to be edited if the
+        /// roster is ever renamed.
         /// </summary>
-        public static string NameOf(CompetitorId competitor) => competitor switch
-        {
-            CompetitorId.OpenAi => "OpenAI",
-            CompetitorId.Anthropic => "Anthropic",
-            CompetitorId.GoogleDeepMind => "Google DeepMind",
-            CompetitorId.MetaAi => "Meta AI",
-            CompetitorId.MistralAi => "Mistral AI",
-            CompetitorId.DeepSeek => "DeepSeek",
-            CompetitorId.XAi => "xAI",
-            CompetitorId.AlibabaQwen => "Qwen",
-            CompetitorId.Groq => "Groq",
-            _ => competitor.ToString()
-        };
+        public static string NameOf(CompetitorId competitor) => LabDossiers.NameOf(competitor);
 
         private static readonly CompetitorRelease[] Entries =
         {
@@ -62,6 +52,60 @@ namespace ScalingLaws.Data
                 capability: 27.0, brandStrength: 0.11, priceMultiplier: 0.35, isProjection: true),
             new(CompetitorId.Groq, "Assistant 4", GameDate.FromCalendar(2025, 5, 6),
                 capability: 33.0, brandStrength: 0.09, priceMultiplier: 0.30, isProjection: true),
+
+            // ---------------------------------------------------- the four added 2026-08-15
+            //
+            // Read these as arcs rather than as rows. Brand is what makes them worth having: a lab
+            // whose capability keeps climbing while its brand collapses is a company in trouble,
+            // and that is a thing the player can watch happen without being told.
+
+            // Open image generation. Huge reach at almost no price, then the brand comes apart
+            // faster than the capability does, which is exactly what happened.
+            new(CompetitorId.StabilityAi, "Open image model", GameDate.FromCalendar(2022, 8, 22),
+                capability: 26.0, brandStrength: 0.38, priceMultiplier: 0.10, isProjection: false),
+            new(CompetitorId.StabilityAi, "Open image model 2", GameDate.FromCalendar(2023, 7, 26),
+                capability: 32.0, brandStrength: 0.31, priceMultiplier: 0.10, isProjection: false),
+            // The founder leaves in March 2024 and the layoffs follow in April. Capability creeps
+            // up because the models were already trained; the name stops being worth anything.
+            new(CompetitorId.StabilityAi, "Open image model 3", GameDate.FromCalendar(2024, 6, 12),
+                capability: 36.0, brandStrength: 0.13, priceMultiplier: 0.10, isProjection: false),
+            new(CompetitorId.StabilityAi, "Open image model 3.5", GameDate.FromCalendar(2025, 4, 8),
+                capability: 40.0, brandStrength: 0.09, priceMultiplier: 0.12, isProjection: true),
+
+            // The challenger. Climbs hard, reaches the frontier in March 2024, and twelve days
+            // later the people who built it work somewhere else. The next entry is the whole story
+            // in two numbers.
+            new(CompetitorId.InflectionAi, "Personal assistant", GameDate.FromCalendar(2023, 5, 2),
+                capability: 34.0, brandStrength: 0.17, priceMultiplier: 0.60, isProjection: false),
+            new(CompetitorId.InflectionAi, "Assistant 2.5", GameDate.FromCalendar(2024, 3, 7),
+                capability: 47.0, brandStrength: 0.27, priceMultiplier: 0.60, isProjection: false),
+            new(CompetitorId.InflectionAi, "Enterprise pivot", GameDate.FromCalendar(2024, 3, 19),
+                capability: 47.0, brandStrength: 0.05, priceMultiplier: 1.05, isProjection: false),
+            // Nothing after that. Capability never moves again, which is what being hollowed out
+            // looks like from the outside: the product still works and nothing new ever ships.
+
+            // The European bid. Funded properly in late 2023, then held flat while the frontier
+            // triples past it. It never collapses; it just stops being relevant, which is a
+            // different and quieter kind of failure.
+            new(CompetitorId.AlephAlpha, "Multilingual model", GameDate.FromCalendar(2022, 4, 14),
+                capability: 24.0, brandStrength: 0.06, priceMultiplier: 1.30, isProjection: false),
+            new(CompetitorId.AlephAlpha, "Multilingual model 2", GameDate.FromCalendar(2023, 11, 6),
+                capability: 31.0, brandStrength: 0.15, priceMultiplier: 1.30, isProjection: false),
+            new(CompetitorId.AlephAlpha, "Sovereign stack", GameDate.FromCalendar(2024, 9, 1),
+                capability: 35.0, brandStrength: 0.12, priceMultiplier: 1.35, isProjection: false),
+            new(CompetitorId.AlephAlpha, "Sovereign stack 2", GameDate.FromCalendar(2025, 10, 1),
+                capability: 38.0, brandStrength: 0.10, priceMultiplier: 1.35, isProjection: true),
+
+            // The survivor. Slower than the frontier at every single point on this list, and still
+            // here at the end of it, because enterprise buyers do not switch every six months.
+            new(CompetitorId.Cohere, "Enterprise model", GameDate.FromCalendar(2022, 11, 15),
+                capability: 27.0, brandStrength: 0.09, priceMultiplier: 1.15, isProjection: false),
+            new(CompetitorId.Cohere, "Enterprise model 2", GameDate.FromCalendar(2023, 6, 8),
+                capability: 36.0, brandStrength: 0.15, priceMultiplier: 1.15, isProjection: false),
+            new(CompetitorId.Cohere, "Retrieval model", GameDate.FromCalendar(2024, 4, 4),
+                capability: 46.0, brandStrength: 0.21, priceMultiplier: 1.20, isProjection: false),
+            new(CompetitorId.Cohere, "Retrieval model 2", GameDate.FromCalendar(2025, 8, 14),
+                capability: 55.0, brandStrength: 0.25, priceMultiplier: 1.20, isProjection: true),
 
             new(CompetitorId.OpenAi, "Chat assistant launch", GameDate.FromCalendar(2022, 11, 30),
                 capability: 31.0, brandStrength: 0.55, priceMultiplier: 1.00, isProjection: false),
@@ -165,7 +209,14 @@ namespace ScalingLaws.Data
                     continue;
                 }
 
-                if (!best.TryGetValue(entry.Competitor, out var current) || entry.Capability > current.Capability)
+                // Capability first, then the later release. The tie-break is not cosmetic: a lab
+                // whose next entry is the same capability at a fraction of the brand is a lab that
+                // just lost its people, and without this the market went on seeing the old,
+                // confident version of them forever.
+                if (!best.TryGetValue(entry.Competitor, out var current)
+                    || entry.Capability > current.Capability
+                    || (entry.Capability >= current.Capability
+                        && entry.ReleaseDate.IsOnOrAfter(current.ReleaseDate)))
                 {
                     best[entry.Competitor] = entry;
                 }

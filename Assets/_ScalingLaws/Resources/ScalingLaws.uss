@@ -6870,3 +6870,136 @@
     height: 42px;
     border-radius: 21px;
 }
+
+/* ---- the lab dossier ----
+
+   Who a rival is, opened from their row on the board. Centred and modal-ish rather than positioned
+   at the cursor like the research card, because it is a page to read rather than a figure to check. */
+
+.dossier {
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    top: 78px;
+    bottom: 118px;
+    padding: 22px 26px 20px 26px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(9, 11, 16, 0.985);
+}
+
+.dossier__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: 14px;
+}
+
+.dossier__titles {
+    flex-grow: 1;
+    margin-left: 12px;
+}
+
+.dossier__name {
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 1.4px;
+    color: rgb(240, 245, 253);
+}
+
+.dossier__meta {
+    font-size: 9px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(126, 138, 160);
+    margin-top: 3px;
+}
+
+.dossier__pitch {
+    font-size: 14px;
+    color: rgb(226, 235, 250);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-bottom: 10px;
+}
+
+.dossier__story {
+    font-size: 12px;
+    color: rgb(150, 162, 184);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-bottom: 12px;
+}
+
+.dossier__heading {
+    font-size: 9px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(122, 134, 156);
+    flex-shrink: 0;
+    padding-top: 6px;
+    padding-bottom: 8px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.dossier__scroll {
+    flex-grow: 1;
+}
+
+/* One chapter. The rail down the left is the whole colour language: green for a step forward, red
+   for something that cost them, violet for the end of the company as its own thing. */
+
+.chapter {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 14px;
+}
+
+.chapter__rail {
+    width: 3px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    margin-right: 12px;
+}
+
+.chapter__rail--good { background-color: rgb(96, 168, 132); }
+.chapter__rail--money { background-color: rgb(196, 172, 96); }
+.chapter__rail--bad { background-color: rgb(226, 78, 62); }
+.chapter__rail--end { background-color: rgb(158, 118, 196); }
+
+.chapter__body {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.chapter__when {
+    font-size: 9px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(112, 124, 146);
+}
+
+.chapter__when--projection {
+    color: rgb(158, 118, 196);
+}
+
+.chapter__headline {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(234, 241, 252);
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.chapter__text {
+    font-size: 12px;
+    color: rgb(148, 160, 182);
+    white-space: normal;
+    margin-top: 4px;
+}
+
+.rank-row:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+}

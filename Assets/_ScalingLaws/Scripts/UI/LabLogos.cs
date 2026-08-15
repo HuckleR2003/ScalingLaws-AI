@@ -31,7 +31,14 @@ namespace ScalingLaws.UI
             { CompetitorId.DeepSeek, "lab_deepsearch" },
             { CompetitorId.XAi, "lab_xai" },
             { CompetitorId.AlibabaQwen, "lab_swen" },
-            { CompetitorId.Groq, "lab_groq" }
+            { CompetitorId.Groq, "lab_groq" },
+
+            // Named before the art exists. Badge() draws initials when the file is missing, which
+            // is a real mark rather than a hole, so the four new labs read correctly today.
+            { CompetitorId.StabilityAi, "lab_stability" },
+            { CompetitorId.InflectionAi, "lab_inflection" },
+            { CompetitorId.AlephAlpha, "lab_alephalpha" },
+            { CompetitorId.Cohere, "lab_cohere" }
         };
 
         private static readonly Dictionary<CompetitorId, Texture2D> Loaded = new();

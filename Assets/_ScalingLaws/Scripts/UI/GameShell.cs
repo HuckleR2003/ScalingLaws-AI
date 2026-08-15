@@ -75,6 +75,7 @@ namespace ScalingLaws.UI
         private Label reputationLabel;
         private Button pointsButton;
         private VisualElement researchCard;
+        private VisualElement labCard;
         private VisualElement runFinished;
         private readonly List<MarketingChannel> pickedChannels = new();
         private AudienceSegment pickedAudience = AudienceSegment.Consumer;
@@ -3053,9 +3054,15 @@ namespace ScalingLaws.UI
 
             foreach (var entry in simulation.Ranking())
             {
-                var row = new VisualElement();
+                var captured = entry;
+
+                // A row that opens the company behind it. The board was twelve rows of arithmetic:
+                // a player could see a lab was ahead and had no way of knowing what it was for or
+                // whether it was about to fall over, which is most of what makes rivals interesting.
+                var row = new Button(() => ShowLabDossier(captured.Competitor));
                 row.AddToClassList("rank-row");
                 row.EnableInClassList("rank-row--mine", entry.IsPlayer);
+                row.SetEnabled(!entry.IsPlayer);
 
                 var place = new Label(entry.Position.ToString());
                 place.AddToClassList("rank-row__place");
@@ -3093,6 +3100,172 @@ namespace ScalingLaws.UI
             }
 
             return page;
+        }
+
+        /// <summary>
+        /// Who a rival actually is: when they started, what they are for, and everything that has
+        /// happened to them so far.
+        ///
+        /// **Only what has already happened.** A dossier that lists a collapse two years before it
+        /// lands turns the field into a spoiler, so the chapters are filtered by today's date, the
+        /// same rule the projection flag exists to protect. What the card can say is what the
+        /// player could have read in a newspaper by now.
+        /// </summary>
+        private void ShowLabDossier(CompetitorId lab)
+        {
+            labCard?.RemoveFromHierarchy();
+
+            if (!LabDossiers.TryGet(lab, out var dossier))
+            {
+                return;
+            }
+
+            labCard = new VisualElement();
+            labCard.AddToClassList("dossier");
+
+            var head = new VisualElement();
+            head.AddToClassList("dossier__head");
+            head.Add(LabLogos.Badge(lab, dossier.Name));
+
+            var titles = new VisualElement();
+            titles.AddToClassList("dossier__titles");
+
+            var name = new Label(dossier.Name.ToUpperInvariant());
+            name.AddToClassList("dossier__name");
+            titles.Add(name);
+
+            var founded = new Label(
+                $"FOUNDED {dossier.Founded.Year}  ·  {dossier.Home.ToUpperInvariant()}  ·  "
+                + FateWord(dossier, state.Date));
+
+            founded.AddToClassList("dossier__meta");
+            titles.Add(founded);
+
+            head.Add(titles);
+
+            var close = new Button(() => labCard?.RemoveFromHierarchy()) { text = "CLOSE" };
+            close.AddToClassList("chip");
+            head.Add(close);
+
+            labCard.Add(head);
+
+            var pitch = new Label(dossier.Positioning);
+            pitch.AddToClassList("dossier__pitch");
+            labCard.Add(pitch);
+
+            var story = new Label(dossier.Story);
+            story.AddToClassList("dossier__story");
+            labCard.Add(story);
+
+            var chapters = dossier.ChaptersBy(state.Date);
+            if (chapters.Count > 0)
+            {
+                var heading = new Label("WHAT HAS HAPPENED");
+                heading.AddToClassList("dossier__heading");
+                labCard.Add(heading);
+
+                var scroller = new ScrollView();
+                scroller.AddToClassList("dossier__scroll");
+                scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+                scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+
+                // Newest first. A company's most recent year is what a player is deciding against.
+                for (var index = chapters.Count - 1; index >= 0; index--)
+                {
+                    scroller.Add(BuildChapterRow(chapters[index]));
+                }
+
+                labCard.Add(scroller);
+            }
+            else
+            {
+                var nothing = new Label(
+                    "Nothing has happened to them yet that anybody outside the company would know "
+                    + "about.");
+
+                nothing.AddToClassList("dossier__story");
+                labCard.Add(nothing);
+            }
+
+            shellRoot.Add(labCard);
+        }
+
+        private static VisualElement BuildChapterRow(LabChapter chapter)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("chapter");
+
+            var rail = new VisualElement();
+            rail.AddToClassList("chapter__rail");
+            rail.AddToClassList(chapter.Kind switch
+            {
+                LabChapterKind.Scandal => "chapter__rail--bad",
+                LabChapterKind.Setback => "chapter__rail--bad",
+                LabChapterKind.Exit => "chapter__rail--end",
+                LabChapterKind.Funding => "chapter__rail--money",
+                _ => "chapter__rail--good"
+            });
+
+            row.Add(rail);
+
+            var body = new VisualElement();
+            body.AddToClassList("chapter__body");
+
+            var when = new Label(chapter.On.ToString()
+                + (chapter.IsProjection ? "   ·   PROJECTION" : string.Empty));
+
+            when.AddToClassList("chapter__when");
+            when.EnableInClassList("chapter__when--projection", chapter.IsProjection);
+            body.Add(when);
+
+            var headline = new Label(chapter.Headline);
+            headline.AddToClassList("chapter__headline");
+            body.Add(headline);
+
+            var text = new Label(chapter.Body);
+            text.AddToClassList("chapter__text");
+            body.Add(text);
+
+            row.Add(body);
+            return row;
+        }
+
+        /// <summary>
+        /// What the company is today, in one word, and only if the player could know it.
+        ///
+        /// The fate is authored for the whole arc, so printing it on day one would say that a lab
+        /// is doomed years before anything has gone wrong with it.
+        /// </summary>
+        private static string FateWord(in LabDossier dossier, GameDate today)
+        {
+            var latest = LabChapterKind.Founding;
+            var seen = false;
+
+            foreach (var chapter in dossier.Chapters)
+            {
+                if (!chapter.HasHappenedBy(today))
+                {
+                    continue;
+                }
+
+                seen = true;
+                if (chapter.Kind == LabChapterKind.Exit || chapter.Kind == LabChapterKind.Setback)
+                {
+                    latest = chapter.Kind;
+                }
+            }
+
+            if (!seen)
+            {
+                return "INDEPENDENT";
+            }
+
+            return latest switch
+            {
+                LabChapterKind.Exit => dossier.Fate == LabFate.Absorbed ? "ABSORBED" : "CONSOLIDATED",
+                LabChapterKind.Setback => "STRUGGLING",
+                _ => "INDEPENDENT"
+            };
         }
 
         private VisualElement BuildFeedScreen()
