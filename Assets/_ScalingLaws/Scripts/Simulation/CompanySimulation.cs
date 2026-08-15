@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -1036,6 +1037,43 @@ namespace ScalingLaws.Simulation
 
             var node = ResearchTree.Get(project.Node);
 
+            // **The node hands over what its own card promised.**
+            //
+            // Until 2026-08-15 it did not. The research card prints "CORPUS: Curated corpora" and
+            // "ARCHITECTURE: Mixture of experts" straight off the node, the player pays the points,
+            // the cash and four months of calendar, and received neither: the only code that ever
+            // granted a corpus was TryAcquireDataSource and the only code that adopted an
+            // architecture was TryAdoptArchitecture, and nothing in the interface called either.
+            // A campaign was locked to the web crawl and its starting family from the first day to
+            // the last, and every test passed, because the scripted operator calls those two
+            // methods directly and so never noticed they were unreachable.
+            //
+            // Granted here rather than through the Try methods on purpose. Those two check cash and
+            // charge for the purchase; this node has already been paid for, in a currency the
+            // player cannot buy it with.
+            var granted = new StringBuilder();
+
+            if (node.UnlocksData != DatasetSource.None
+                && (State.OwnedDataSources & node.UnlocksData) != node.UnlocksData)
+            {
+                State.OwnedDataSources |= node.UnlocksData;
+
+                foreach (var corpus in DatasetCatalog.All)
+                {
+                    if ((node.UnlocksData & corpus.Flag) == corpus.Flag)
+                    {
+                        granted.Append(granted.Length > 0 ? ", " : " Opens ").Append(corpus.DisplayName);
+                    }
+                }
+            }
+
+            if (node.UnlocksArchitecture != ArchitectureId.None
+                && !State.HasArchitecture(node.UnlocksArchitecture)
+                && ArchitectureCatalog.TryGet(node.UnlocksArchitecture, out var family))
+            {
+                State.AdoptedArchitectures.Add(node.UnlocksArchitecture);
+                granted.Append(granted.Length > 0 ? ", " : " Opens ").Append(family.DisplayName);
+            }
 
             State.AwardSkill(PlayerSkill.Concept, 620);
 
@@ -1044,7 +1082,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchCompleted,
                 State.Date,
-                $"{node.DisplayName} is done.",
+                $"{node.DisplayName} is done.{granted}.",
                 project.CashPaidUsd));
         }
 
