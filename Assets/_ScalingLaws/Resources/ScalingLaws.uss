@@ -68,7 +68,8 @@
 }
 
 .menu-copy {
-    width: 560px;
+    width: 620px;
+    margin-bottom: 60px;
 }
 
 .menu-eyebrow {
@@ -82,15 +83,17 @@
     margin-bottom: 18px;
 }
 
+/* Up a fifth from 74, and the whole lockup sits higher. It is the name of the game and it was
+   sharing the vertical middle with everything else. */
 .title-line {
-    font-size: 74px;
+    font-size: 92px;
     -unity-font-style: bold;
     letter-spacing: 4px;
     color: var(--ink);
 }
 
 .title-line--small {
-    font-size: 30px;
+    font-size: 37px;
     letter-spacing: 12px;
     color: var(--ink-dim);
 }
@@ -101,10 +104,10 @@
 
 .menu-subtitle {
     color: var(--ink-dim);
-    font-size: 16px;
+    font-size: 17px;
     white-space: normal;
     margin-bottom: 34px;
-    max-width: 460px;
+    max-width: 720px;
 }
 
 .menu-actions {
@@ -262,14 +265,14 @@
 }
 
 .signature-studio {
-    font-size: 13px;
+    font-size: 18px;
     -unity-font-style: bold;
     letter-spacing: 3px;
     color: var(--ink-dim);
 }
 
 .signature-author {
-    font-size: 11px;
+    font-size: 14px;
     color: var(--ink-faint);
 }
 
@@ -6624,4 +6627,45 @@
     font-size: 10px;
     color: rgb(176, 190, 212);
     margin-top: 2px;
+}
+
+/* ---- the front door types itself ----
+
+   A menu with one fixed sentence on it is a screenshot. The line types in, holds, wipes, and the
+   next one arrives behind a bright bar, which reads as a screen changing channel rather than as a
+   label being edited. */
+
+.menu-band {
+    min-height: 96px;
+    max-width: 760px;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.crt-flash {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    opacity: 0;
+    background-color: rgb(226, 236, 250);
+    transition-property: opacity, height;
+    transition-duration: 90ms;
+}
+
+.crt-flash--on {
+    opacity: 0.85;
+    height: 16px;
+}
+
+/* The cold open. Bigger than the menu line, because it is the only thing on the screen. */
+.intro-text {
+    font-size: 26px;
+    color: rgb(226, 234, 248);
+    white-space: normal;
+}
+
+.intro-continue {
+    margin-left: 0;
 }

@@ -67,6 +67,15 @@ namespace ScalingLaws.UI
         private float introTimer;
         private VisualElement introHost;
 
+        // The cold open is one label typed once; the menu line is several, cycling.
+        //
+        // Built in BuildIntro rather than here. Unity forbids creating a VisualElement in a
+        // MonoBehaviour field initializer, and it throws rather than warning: three PlayMode tests
+        // failed on it the moment this was a "= new()".
+        private Label introLabel;
+        private Typewriter introTypist;
+        private Typewriter menuTypist;
+
         private void OnEnable()
         {
             root = GetComponent<UIDocument>().rootVisualElement;
@@ -258,11 +267,28 @@ namespace ScalingLaws.UI
 
             copy.Add(lockup);
 
-            var subtitle = new Label(
-                "January 2022. Twelve million dollars, no product, and eleven months before the "
-                + "world finds out what any of this is for.");
+            // A menu with one fixed sentence on it is a screenshot. This types a line in, holds
+            // it, wipes it and moves to the next, with a bright bar between them, so somebody
+            // sitting on the front door for half a minute reads four different things about the
+            // game rather than the same one four times.
+            var band = new VisualElement();
+            band.AddToClassList("menu-band");
+
+            var flash = new VisualElement();
+            flash.AddToClassList("crt-flash");
+            band.Add(flash);
+
+            var subtitle = new Label();
             subtitle.AddToClassList("menu-subtitle");
-            copy.Add(subtitle);
+            band.Add(subtitle);
+
+            copy.Add(band);
+
+            menuTypist?.Stop();
+            menuTypist = new Typewriter(subtitle, flash, MenuLines.All,
+                typeMilliseconds: 1500, wipeMilliseconds: 380, loop: true);
+
+            menuTypist.Start();
 
             var actions = new VisualElement();
             actions.AddToClassList("menu-actions");
@@ -523,14 +549,40 @@ namespace ScalingLaws.UI
             introHost = new VisualElement();
             column.Add(introHost);
 
+            introLabel = new Label();
+            introLabel.AddToClassList("intro-text");
+            introHost.Add(introLabel);
+
+            // The button arrives with the last character rather than sitting there through the
+            // whole thing. A CONTINUE that is clickable before the sentence exists is a CONTINUE
+            // most people press without reading anything.
             var skip = new Button(() => Show(Stage.Founder)) { text = "CONTINUE" };
             skip.AddToClassList("button");
+            skip.AddToClassList("intro-continue");
             skip.style.marginTop = 34;
             skip.style.alignSelf = Align.FlexStart;
+            skip.style.display = DisplayStyle.None;
             column.Add(skip);
+
+            // Three seconds for the whole thing, which is the budget the author set. The typist
+            // divides that by the characters rather than typing at a fixed rate, so a long line and
+            // a short line both land on time.
+            //
+            // A five or six second animation goes here once it exists: hold the CONTINUE until it
+            // ends rather than until the text does.
+            introTypist?.Stop();
+            introTypist = new Typewriter(introLabel, IntroText, 3000,
+                () => skip.style.display = DisplayStyle.Flex);
+
+            introTypist.Start();
 
             return column;
         }
+
+        /// <summary>The cold open, as one piece, because it is typed as one piece.</summary>
+        private const string IntroText =
+            "January 2022.\n\nTwelve million dollars, no product, and eleven months before the "
+            + "world finds out what any of this is for.";
 
         private void AddIntroLine(string text)
         {
