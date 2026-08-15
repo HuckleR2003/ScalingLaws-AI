@@ -45,6 +45,13 @@ namespace ScalingLaws.UI
         // ends campaigns by accident.
         private readonly Button abandonButton = new();
         private bool abandonArmed;
+
+        // The SAFETY stage. Tiers are what the arrows are pointing at, which is not necessarily
+        // what the company can build: AllowedTier is the gate and these are only the display.
+        private int assaTier;
+        private int redTeamTier;
+        private int dataTier;
+        private int safetyEffort = 1;
         private readonly Label parameterLabel = new();
         private readonly Label tokenLabel = new();
         private readonly Label rentedLabel = new();
@@ -118,7 +125,7 @@ namespace ScalingLaws.UI
         /// itself, which is how Devices Tycoon and Smartphone Tycoon both handle a build.
         /// </summary>
         private static readonly string[] StageNames =
-            { "FOUNDATION", "SCALE", "DATA", "COMPUTE", "REVIEW", "AFTER THE RUN" };
+            { "FOUNDATION", "SCALE", "DATA", "COMPUTE", "SAFETY", "REVIEW", "AFTER THE RUN" };
 
         private static readonly string[] StageBlurbs =
         {
@@ -128,6 +135,8 @@ namespace ScalingLaws.UI
             "What it learns from. The run draws from the best corpus first, so one good archive "
             + "lifts the whole mix.",
             "How much throughput to rent. This buys time and never quality, which is the point.",
+            "What happens when this goes wrong, and how much of the calendar to spend making that "
+            + "less likely. None of it makes a better model.",
             "What the run is projected to produce, and what it costs to find out.",
             "What happens the day it finishes. This can be changed later, and the market will have "
             + "moved by then."
@@ -275,7 +284,8 @@ namespace ScalingLaws.UI
                 1 => WithArt("newmodel_2", BuildShapePanel()),
                 2 => BuildDataPanel(),
                 3 => BuildComputePanel(),
-                4 => BuildProjectionPanel(),
+                4 => BuildSafetyPanel(),
+                5 => BuildProjectionPanel(),
                 _ => BuildDeployStage()
             });
 
@@ -1332,6 +1342,241 @@ namespace ScalingLaws.UI
             return panel;
         }
 
+        /// <summary>
+        /// The safety stage: three modules, four tiers each, and how hard to work them.
+        ///
+        /// **Nothing here makes a better model and every line of it says so.** This is the stage
+        /// that costs calendar and buys a smaller chance of something, which is the hardest kind of
+        /// value to see and the easiest to skip. The tiles show the art, the tier, what it does in
+        /// plain percentages and what it adds to the run, because a player who cannot price it will
+        /// not take it.
+        /// </summary>
+        private VisualElement BuildSafetyPanel()
+        {
+            var column = new VisualElement();
+            column.AddToClassList("creator-column");
+
+            var top = new VisualElement();
+            top.AddToClassList("panel-row");
+
+            top.Add(BuildSafetyModule(SafetyModule.Assa, assaTier, tier =>
+            {
+                assaTier = tier;
+                Reprice();
+            }));
+
+            top.Add(BuildSafetyModule(SafetyModule.RedTeam, redTeamTier, tier =>
+            {
+                redTeamTier = tier;
+                Reprice();
+            }));
+
+            column.Add(top);
+
+            var bottom = new VisualElement();
+            bottom.AddToClassList("panel-row");
+
+            bottom.Add(BuildSafetyModule(SafetyModule.DataProtection, dataTier, tier =>
+            {
+                dataTier = tier;
+                Reprice();
+            }));
+
+            bottom.Add(BuildEffortPanel());
+            column.Add(bottom);
+
+            column.Add(BuildSafetySummary());
+            return column;
+        }
+
+        /// <summary>One module: art in the middle, arrows either side, the numbers underneath.</summary>
+        private VisualElement BuildSafetyModule(SafetyModule module, int shown, Action<int> pick)
+        {
+            var panel = NewPanel(SafetyModuleCatalog.NameOf(module));
+            panel.AddToClassList("scale-half");
+
+            var pitch = new Label(SafetyModuleCatalog.PitchOf(module));
+            pitch.AddToClassList("field__hint");
+            panel.Add(pitch);
+
+            var tier = SafetyModuleCatalog.Get(module, shown);
+            var open = Allowed(tier.Requires);
+
+            var row = new VisualElement();
+            row.AddToClassList("tier-row");
+
+            var back = new Button(() => pick(
+                (shown - 1 + SafetyModuleCatalog.TierCount) % SafetyModuleCatalog.TierCount))
+            { text = "<" };
+
+            back.AddToClassList("tier-arrow");
+            row.Add(back);
+
+            var plate = new VisualElement();
+            plate.AddToClassList("tier-plate");
+            plate.EnableInClassList("tier-plate--locked", !open);
+
+            var art = ResearchIcons.ByName(tier.Icon);
+            if (art != null)
+            {
+                plate.style.backgroundImage = new StyleBackground(art);
+            }
+
+            if (!open)
+            {
+                // Across the middle of the picture, which is where the author asked for it and also
+                // the only place a player is definitely looking.
+                var locked = new Label("LOCKED\nRESEARCH TO UNLOCK");
+                locked.AddToClassList("tier-plate__locked");
+                plate.Add(locked);
+            }
+
+            row.Add(plate);
+
+            var next = new Button(() => pick((shown + 1) % SafetyModuleCatalog.TierCount))
+            { text = ">" };
+
+            next.AddToClassList("tier-arrow");
+            row.Add(next);
+
+            panel.Add(row);
+
+            var name = new Label(tier.DisplayName);
+            name.AddToClassList("tier-name");
+            panel.Add(name);
+
+            var effect = new Label(SafetyEffectLine(module, tier));
+            effect.AddToClassList("tier-effect");
+            panel.Add(effect);
+
+            var body = new Label(tier.Description);
+            body.AddToClassList("tier-body");
+            panel.Add(body);
+
+            var bill = new Label(open
+                ? $"+{tier.ExtraDays} days   ·   {UiFormat.Money(tier.ExtraCostUsd)}"
+                : $"+{tier.ExtraDays} days   ·   {UiFormat.Money(tier.ExtraCostUsd)}   ·   NOT AVAILABLE");
+
+            bill.AddToClassList("tier-bill");
+            bill.EnableInClassList("tier-bill--locked", !open);
+            panel.Add(bill);
+
+            return panel;
+        }
+
+        /// <summary>The percentages, written the way a player reads them rather than as fractions.</summary>
+        private static string SafetyEffectLine(SafetyModule module, in SafetyTier tier)
+        {
+            var parts = new List<string>(3);
+
+            if (tier.RiskReduction > 0.0)
+            {
+                parts.Add($"-{tier.RiskReduction:P1} incident risk");
+            }
+
+            if (tier.SaveChance > 0.0)
+            {
+                parts.Add($"{tier.SaveChance:P1} to avoid a penalty");
+            }
+
+            if (tier.PerModelBonus > 0.0)
+            {
+                var what = module == SafetyModule.RedTeam ? "to avoid" : "risk";
+                parts.Add($"+{tier.PerModelBonus:P1} {what} per live model, up to {tier.PerModelCap}");
+            }
+
+            return string.Join("   ·   ", parts);
+        }
+
+        /// <summary>How much extra work to put into the stage. Only the safety days move.</summary>
+        private VisualElement BuildEffortPanel()
+        {
+            var panel = NewPanel("EFFORT");
+            panel.AddToClassList("scale-half");
+
+            var pitch = new Label(
+                "How hard the team works this stage. It lengthens the safety work and nothing else "
+                + "in the run, and what it buys is deliberately small.");
+
+            pitch.AddToClassList("field__hint");
+            panel.Add(pitch);
+
+            var row = new VisualElement();
+            row.AddToClassList("effort-row");
+
+            foreach (var effort in SafetyModuleCatalog.Efforts)
+            {
+                var captured = effort.Multiplier;
+
+                var button = new Button(() =>
+                {
+                    safetyEffort = captured;
+                    Reprice();
+                })
+                { text = $"x{captured}" };
+
+                button.AddToClassList("effort-chip");
+                button.EnableInClassList("effort-chip--on", safetyEffort == captured);
+                row.Add(button);
+            }
+
+            panel.Add(row);
+
+            var chosen = SafetyModuleCatalog.EffortOf(safetyEffort);
+            var reading = new Label(chosen.Multiplier == 1
+                ? "The stage takes exactly as long as the modules cost."
+                : $"Safety work takes {chosen.TimeMultiplier:0.0}x as long. Every safety figure "
+                  + $"gains {chosen.StatBonus:P1}.");
+
+            reading.AddToClassList("tier-effect");
+            panel.Add(reading);
+
+            return panel;
+        }
+
+        /// <summary>What all of it adds up to, which is the only number that decides anything.</summary>
+        private VisualElement BuildSafetySummary()
+        {
+            var panel = NewPanel("WHAT THIS BUYS");
+
+            var plan = new SafetyPlan(
+                AllowedTier(SafetyModule.Assa, assaTier),
+                AllowedTier(SafetyModule.RedTeam, redTeamTier),
+                AllowedTier(SafetyModule.DataProtection, dataTier),
+                safetyEffort,
+                simulation.State.DeployedModels.Count);
+
+            panel.Add(Row("Incident risk", $"-{plan.RiskReduction:P1}"));
+            panel.Add(Row("Chance a penalty is dropped", $"{plan.SaveChance:P1}"));
+            panel.Add(Row("Added to the run", $"{plan.ExtraDays} days"));
+            panel.Add(Row("Added to the bill", UiFormat.Money(plan.ExtraCostUsd)));
+
+            var note = new Label(
+                "Modules stack on what is left rather than adding up, so two at half strength are "
+                + "not one at full. Nothing here can reach certainty, and the protection travels "
+                + "with this model rather than with the company: researching a tier next year does "
+                + "not harden a model shipped today.");
+
+            note.AddToClassList("field__hint");
+            panel.Add(note);
+
+            return panel;
+        }
+
+        /// <summary>A label and a figure on one line. The summary is four of these.</summary>
+        private static VisualElement Row(string label, string value)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("readout");
+            row.Add(new Label(label));
+
+            var figure = new Label(value);
+            figure.AddToClassList("readout__value");
+            row.Add(figure);
+
+            return row;
+        }
+
         private VisualElement BuildProjectionPanel()
         {
             var panel = NewPanel("PROJECTION");
@@ -1535,12 +1780,40 @@ namespace ScalingLaws.UI
                 precision,
                 blueprintShape,
                 dedup,
-                blueprintCutoffMonths);
+                blueprintCutoffMonths,
+                AllowedTier(SafetyModule.Assa, assaTier),
+                AllowedTier(SafetyModule.RedTeam, redTeamTier),
+                AllowedTier(SafetyModule.DataProtection, dataTier),
+                safetyEffort);
         }
 
         /// <summary>Whether the company has the node an option needs, or the option needs none.</summary>
         private bool Allowed(ResearchNodeId gate) =>
             gate == ResearchNodeId.None || simulation.State.HasResearch(gate);
+
+        /// <summary>
+        /// The highest tier at or below the one shown that the company has actually researched.
+        ///
+        /// **The arrows walk past locked tiers on purpose**, because a player has to be able to see
+        /// what they are missing and what it would be worth. What must never happen is a locked tier
+        /// reaching a blueprint: a save carrying tier three loaded into a company that has not
+        /// researched it would otherwise start a run nobody could have started. Same guard the model
+        /// type and the precision already have, for the same reason.
+        ///
+        /// Data protection returns minus one when nothing is open, which is what "none" means for it.
+        /// </summary>
+        private int AllowedTier(SafetyModule module, int shown)
+        {
+            for (var tier = Math.Clamp(shown, 0, SafetyModuleCatalog.TierCount - 1); tier >= 0; tier--)
+            {
+                if (Allowed(SafetyModuleCatalog.Get(module, tier).Requires))
+                {
+                    return tier;
+                }
+            }
+
+            return module == SafetyModule.DataProtection ? -1 : 0;
+        }
 
         /// <summary>Sets the token count to the compute-optimal partner for the current size.</summary>
         private void BalanceShape()

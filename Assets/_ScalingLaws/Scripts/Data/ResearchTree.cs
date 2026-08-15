@@ -16,7 +16,17 @@ namespace ScalingLaws.Data
     public enum ResearchTrack
     {
         Capability = 0,
-        ModelImprovement = 1
+        ModelImprovement = 1,
+
+        /// <summary>
+        /// The safety modules the creator's SAFETY stage picks between.
+        ///
+        /// Its own track rather than more Model Improvement, because these are read differently: a
+        /// deepening node makes a run better and one of these decides whether the company is still
+        /// here in two years. They are also the only nodes whose whole purpose is to reduce the
+        /// chance of something rather than to raise the ceiling on anything.
+        /// </summary>
+        Safety = 2
     }
 
     public enum ResearchEra
@@ -77,6 +87,23 @@ namespace ScalingLaws.Data
         ShardedOptimizerStates = 501,
         PipelineParallelism = 502,
         UltraReadiness = 503,
+
+        // 6xx is the SAFETY stage. Three lines of three, because the first tier of the first two is
+        // something the company already knows how to do on the day it opens.
+        //
+        // 60x: the model auditing itself. 61x: somebody attacking it. 62x: where the data lives.
+        LicensedStackedAssa = 601,
+        AdvancedAssa = 602,
+        AssaEcosystem = 603,
+
+        AutomatedRedTeaming = 611,
+        AdversarialCampaigns = 612,
+        ContinuousRedTeam = 613,
+
+        BasicDataIsolation = 620,
+        EncryptedDataVaults = 621,
+        DifferentialPrivacy = 622,
+        PrivacyPreservingTraining = 623,
 
         // Era 4, the end game.
         HybridArchitectures = 401,
@@ -397,6 +424,115 @@ namespace ScalingLaws.Data
                 GameDate.FromCalendar(2024, 1, 1), costUsd: 45_000_000, durationDays: 240, petaflopDaysRequired: 0,
                 requires: new[] { ResearchNodeId.ScalingLaws },
                 unlocksTier: ComputeTier.OwnDatacenter),
+
+            // ------------------------------------------------------- safety: staying in business
+            //
+            // **These are the only nodes in the tree that buy a smaller chance of something rather
+            // than a bigger number.** That makes them hard to value and easy to skip, which is
+            // exactly the mistake they exist to punish: the ninety million dollar fine is not a
+            // slow decline, it is a Tuesday.
+            //
+            // Costs are deliberately modest against the capability line. A company that cannot
+            // afford safety is a company that will not survive needing it, and pricing these like
+            // frontier research would make skipping them the correct play.
+
+            new(ResearchNodeId.LicensedStackedAssa, ResearchEra.Foundations,
+                "Licensed Stacked-ASSA",
+                "Automatic Self Safety Auditioning is already running. This licenses a suite of "
+                + "outside algorithms to bolt onto it, and what the licence buys is that the "
+                + "automated passes stop missing the same class of hole every time.",
+                GameDate.FromCalendar(2022, 6, 1), costUsd: 3_400_000, durationDays: 80,
+                petaflopDaysRequired: 180,
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.AdvancedAssa, ResearchEra.Scaling,
+                "Advanced ASSA",
+                "Every audit the company has ever run is training data now. Enough of it stands up "
+                + "an attacking system the size of the model itself, sealed in with it.",
+                GameDate.FromCalendar(2023, 4, 1), costUsd: 12_500_000, durationDays: 150,
+                petaflopDaysRequired: 900,
+                requires: new[] { ResearchNodeId.LicensedStackedAssa },
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.AssaEcosystem, ResearchEra.Autonomy,
+                "ASSA Ecosystem",
+                "A standing population of auditors rather than a pass that runs and finishes. Each "
+                + "one specialised, each fed by what the others found, running against every model "
+                + "the company has ever shipped.",
+                GameDate.FromCalendar(2024, 6, 1), costUsd: 42_000_000, durationDays: 240,
+                petaflopDaysRequired: 3_200,
+                requires: new[] { ResearchNodeId.AdvancedAssa },
+                warning: "Adds over three months to every run that uses it. The protection is the "
+                    + "best in the game and the calendar is the price.",
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.AutomatedRedTeaming, ResearchEra.Foundations,
+                "Automated Red Teaming",
+                "The folder of hand-written attacks becomes a machine: it generates its own "
+                + "attempts, keeps the ones that got closest and mutates those.",
+                GameDate.FromCalendar(2022, 8, 1), costUsd: 2_800_000, durationDays: 70,
+                petaflopDaysRequired: 220,
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.AdversarialCampaigns, ResearchEra.Scaling,
+                "Adversarial Campaigns",
+                "Long runs with a goal, a budget and a record, aimed at one class of failure at a "
+                + "time. Every failed attempt is kept, because a failed attack is the most useful "
+                + "thing anybody has about the next one.",
+                GameDate.FromCalendar(2023, 6, 1), costUsd: 11_000_000, durationDays: 140,
+                petaflopDaysRequired: 1_100,
+                requires: new[] { ResearchNodeId.AutomatedRedTeaming },
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.ContinuousRedTeam, ResearchEra.Autonomy,
+                "Continuous Red Team",
+                "A standing team of agents that never stops and never ships. They attack every "
+                + "model on sale, all the time, and they get better every time they fail.",
+                GameDate.FromCalendar(2024, 9, 1), costUsd: 38_000_000, durationDays: 220,
+                petaflopDaysRequired: 3_000,
+                requires: new[] { ResearchNodeId.AdversarialCampaigns },
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.BasicDataIsolation, ResearchEra.Foundations,
+                "Basic Data Isolation",
+                "User data is pulled out of the model's ordinary working path and kept somewhere it "
+                + "has to ask to reach. This is the difference between leaking a log and leaking a "
+                + "customer list.",
+                GameDate.FromCalendar(2022, 2, 1), costUsd: 1_400_000, durationDays: 55,
+                petaflopDaysRequired: 60,
+                warning: "The company does not start knowing this. Until it is done there is no "
+                    + "data protection on any run at all.",
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.EncryptedDataVaults, ResearchEra.Foundations,
+                "Encrypted Data Vaults",
+                "Anything sensitive lives encrypted, in a store with its own short access list. It "
+                + "does not stop a breach. It means the breach comes out unreadable.",
+                GameDate.FromCalendar(2022, 10, 1), costUsd: 5_200_000, durationDays: 95,
+                petaflopDaysRequired: 260,
+                requires: new[] { ResearchNodeId.BasicDataIsolation },
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.DifferentialPrivacy, ResearchEra.Scaling,
+                "Differential Privacy",
+                "Training data is processed so no single person can be recovered from what the "
+                + "model learned. The first tier a regulator accepts as an argument rather than as "
+                + "a promise.",
+                GameDate.FromCalendar(2023, 7, 1), costUsd: 18_000_000, durationDays: 165,
+                petaflopDaysRequired: 1_400,
+                requires: new[] { ResearchNodeId.EncryptedDataVaults },
+                warning: "Costs a little capability on every run that uses it, because the data it "
+                    + "trains on has been blurred on purpose.",
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.PrivacyPreservingTraining, ResearchEra.Autonomy,
+                "Privacy-Preserving Training",
+                "Privacy stops being something added after the run and becomes part of how the run "
+                + "works. Half of everything that would have ended the company now does not.",
+                GameDate.FromCalendar(2025, 1, 1), costUsd: 56_000_000, durationDays: 260,
+                petaflopDaysRequired: 4_200,
+                requires: new[] { ResearchNodeId.DifferentialPrivacy },
+                track: ResearchTrack.Safety),
 
             // ------------------------------------------- model improvement: how big a run can be
             //

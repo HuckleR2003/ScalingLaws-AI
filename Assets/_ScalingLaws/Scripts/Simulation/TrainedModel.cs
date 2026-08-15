@@ -25,8 +25,18 @@ namespace ScalingLaws.Simulation
             double projectedCapability,
             ModelType type = ModelType.General,
             string family = null,
-            ModelShape shape = ModelShape.Balanced)
+            ModelShape shape = ModelShape.Balanced,
+            int assaTier = 0,
+            int redTeamTier = 0,
+            int dataProtectionTier = -1,
+            int safetyEffort = 1)
         {
+            // What the run was hardened with. Carried rather than looked up: a company that
+            // researches everything next year does not retroactively protect what it shipped today.
+            AssaTier = assaTier;
+            RedTeamTier = redTeamTier;
+            DataProtectionTier = dataProtectionTier;
+            SafetyEffort = safetyEffort;
             // The arrangement is a permanent property of what was built, so it travels the whole way
             // from the blueprint to the market rather than being re-derived anywhere.
             Shape = shape;
@@ -68,6 +78,18 @@ namespace ScalingLaws.Simulation
         /// <summary>Deep, balanced or wide. Read by the market every day it is on sale.</summary>
         public ModelShape Shape { get; }
 
+        /// <inheritdoc cref="ModelBlueprint.AssaTier"/>
+        public int AssaTier { get; }
+
+        /// <inheritdoc cref="ModelBlueprint.RedTeamTier"/>
+        public int RedTeamTier { get; }
+
+        /// <inheritdoc cref="ModelBlueprint.DataProtectionTier"/>
+        public int DataProtectionTier { get; }
+
+        /// <inheritdoc cref="ModelBlueprint.SafetyEffort"/>
+        public int SafetyEffort { get; }
+
         public int DaysOnShelf(GameDate date) => Math.Max(0, date.DayIndex - CompletedOn.DayIndex);
 
         /// <summary>
@@ -100,7 +122,11 @@ namespace ScalingLaws.Simulation
                 ActiveParameterCount,
                 priceMultiplier,
                 Type,
-                Family);
+                Family,
+                AssaTier,
+                RedTeamTier,
+                DataProtectionTier,
+                SafetyEffort);
 
             model.SetShape(Shape);
 

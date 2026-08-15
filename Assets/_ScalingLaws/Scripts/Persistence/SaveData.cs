@@ -58,6 +58,27 @@ namespace ScalingLaws.Persistence
 
         /// <summary>How the parameters were arranged. Read by the market daily. Added in v25.</summary>
         public int shape;
+
+        /// <summary>
+        /// What this model was hardened with when it was built.
+        ///
+        /// **Saved on the model rather than derived from the company**, because the protection is a
+        /// property of the run. A company that researches a tier next year does not retroactively
+        /// harden something it shipped today, and reading the company's current research on load
+        /// would do exactly that.
+        ///
+        /// Data protection is minus one for none: its first tier has to be bought.
+        /// </summary>
+        public int assaTier;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int redTeamTier;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int dataProtectionTier = -1;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int safetyEffort = 1;
     }
 
     /// <summary>One letter. Added in v24.</summary>
@@ -107,6 +128,28 @@ namespace ScalingLaws.Persistence
     {
         public int precision = 1;
         public int shape = 1;
+
+        /// <summary>
+        /// What this model was hardened with when it was built.
+        ///
+        /// **Saved on the model rather than derived from the company**, because the protection is a
+        /// property of the run. A company that researches a tier next year does not retroactively
+        /// harden something it shipped today, and reading the company's current research on load
+        /// would do exactly that.
+        ///
+        /// Data protection is minus one for none: its first tier has to be bought.
+        /// </summary>
+        public int assaTier;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int redTeamTier;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int dataProtectionTier = -1;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int safetyEffort = 1;
+
         public int deduplication = 1;
         public int cutoffMonthsBack;
     }
@@ -128,6 +171,28 @@ namespace ScalingLaws.Persistence
 
         /// <summary>Only the shape survives a release; the rest were spent on the run. v25.</summary>
         public int shape = 1;
+
+        /// <summary>
+        /// What this model was hardened with when it was built.
+        ///
+        /// **Saved on the model rather than derived from the company**, because the protection is a
+        /// property of the run. A company that researches a tier next year does not retroactively
+        /// harden something it shipped today, and reading the company's current research on load
+        /// would do exactly that.
+        ///
+        /// Data protection is minus one for none: its first tier has to be bought.
+        /// </summary>
+        public int assaTier;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int redTeamTier;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int dataProtectionTier = -1;
+
+        /// <inheritdoc cref="assaTier"/>
+        public int safetyEffort = 1;
+
     }
 
     /// <summary>An upgrade programme in flight. Added in v3.</summary>
@@ -300,7 +365,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 26;
+        public const int CurrentVersion = 27;
 
         public int version = CurrentVersion;
 

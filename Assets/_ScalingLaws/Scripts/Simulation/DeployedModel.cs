@@ -22,8 +22,20 @@ namespace ScalingLaws.Simulation
             double activeParameterCount,
             double priceMultiplier,
             ModelType type = ModelType.General,
-            string family = null)
+            string family = null,
+            int assaTier = 0,
+            int redTeamTier = 0,
+            int dataProtectionTier = -1,
+            int safetyEffort = 1)
         {
+            // **The protection travels with the model, not with the company.** A run hardened two
+            // years ago is still the run that was hardened two years ago, and a company that has
+            // since researched everything does not retroactively protect a model it shipped before
+            // it knew how. That is the whole reason these live here rather than being looked up.
+            AssaTier = assaTier;
+            RedTeamTier = redTeamTier;
+            DataProtectionTier = dataProtectionTier;
+            SafetyEffort = safetyEffort;
             Name = string.IsNullOrWhiteSpace(name) ? "Untitled model" : name.Trim();
             Family = string.IsNullOrWhiteSpace(family) ? Name : family.Trim();
             Type = type == ModelType.None ? ModelType.General : type;
@@ -138,6 +150,18 @@ namespace ScalingLaws.Simulation
         public long LifetimeRevenueUsd { get; private set; }
 
         /// <summary>Days it has spent on sale. Not the calendar age: a shelved model stops counting.</summary>
+        /// <inheritdoc cref="ModelBlueprint.AssaTier"/>
+        public int AssaTier { get; }
+
+        /// <inheritdoc cref="ModelBlueprint.RedTeamTier"/>
+        public int RedTeamTier { get; }
+
+        /// <inheritdoc cref="ModelBlueprint.DataProtectionTier"/>
+        public int DataProtectionTier { get; }
+
+        /// <inheritdoc cref="ModelBlueprint.SafetyEffort"/>
+        public int SafetyEffort { get; }
+
         public int DaysOnSale { get; private set; }
 
         /// <summary>The most people it ever held at once.</summary>

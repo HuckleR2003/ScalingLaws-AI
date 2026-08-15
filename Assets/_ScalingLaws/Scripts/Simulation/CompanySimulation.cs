@@ -200,7 +200,8 @@ namespace ScalingLaws.Simulation
                 State.Staff.DataQualityMultiplier() * State.Skills.DataQualityMultiplier(),
                 State.HasResearch(ResearchNodeId.ContinuousDataPipeline)
                     ? TrainingChoiceCatalog.PipelineDiscount
-                    : 1.0);
+                    : 1.0,
+                State.DeployedModels.Count);
         }
 
         /// <summary>
@@ -1438,10 +1439,30 @@ namespace ScalingLaws.Simulation
         // ------------------------------------------------------------------ safety incidents
 
         /// <summary>Chance of a public safety failure today, for the screen that shows it.</summary>
+        /// <summary>
+        /// The safety plan of whatever is currently on sale.
+        ///
+        /// One method, so the figure the interface shows and the figure the roll uses cannot drift.
+        /// Reads the model rather than the company on purpose: protection belongs to the run.
+        /// </summary>
+        public SafetyPlan CurrentSafety()
+        {
+            var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
+
+            return best == null
+                ? new SafetyPlan(0, 0, -1, 1, 0)
+                : new SafetyPlan(best.AssaTier, best.RedTeamTier, best.DataProtectionTier,
+                    best.SafetyEffort, State.DeployedModels.Count);
+        }
+
         public double DailyIncidentRisk()
         {
             var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
-            return IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier() * State.Skills.IncidentRiskMultiplier());
+            // The safety stage lands here as well as in the roll, because a player looking at this
+            // number is looking at what the modules bought them.
+            return IncidentModel.DailyRisk(best, State.Date,
+                       State.Staff.IncidentRiskMultiplier() * State.Skills.IncidentRiskMultiplier())
+                   * (1.0 - CurrentSafety().RiskReduction);
         }
 
         private void RollSafetyIncident()
@@ -1453,12 +1474,37 @@ namespace ScalingLaws.Simulation
             }
 
             var risk = IncidentModel.DailyRisk(best, State.Date, State.Staff.IncidentRiskMultiplier() * State.Skills.IncidentRiskMultiplier());
+
+            // What this model was hardened with when it was built, which is not what the company
+            // knows today. A run shipped before the research landed is still that run.
+            var safety = new SafetyPlan(best.AssaTier, best.RedTeamTier, best.DataProtectionTier,
+                best.SafetyEffort, State.DeployedModels.Count);
+
+            risk *= 1.0 - safety.RiskReduction;
+
             if (risk <= 0.0 || !State.Random.NextChance(risk))
             {
                 return;
             }
 
             var incident = IncidentModel.Resolve(best, State.Date, State.AnnualRevenueRunRateUsd, State.Random);
+
+            // **The appeal, after the verdict.** Red teaming and data protection do not stop the
+            // incident; they are the reason a company that has already been caught sometimes walks
+            // away. It has to be loud when it works, or the player never learns which module paid
+            // for itself.
+            if (incident.FineUsd > 0L || incident.ForcedWithdrawal)
+            {
+                var roll = State.Random.NextDouble();
+                var saviour = safety.Saviour(roll);
+
+                if (saviour.HasValue)
+                {
+                    SafetyWasSaved(saviour.Value, incident, safety);
+                    return;
+                }
+            }
+
             State.Incidents.Add(incident);
 
             State.Reputation -= incident.ReputationLoss;
@@ -1496,6 +1542,38 @@ namespace ScalingLaws.Simulation
                     ? $"{incident.Headline} Penalty ${incident.FineUsd:N0}."
                     : incident.Headline,
                 incident.FineUsd));
+        }
+
+        /// <summary>
+        /// A penalty that was coming and did not arrive.
+        ///
+        /// **Announced twice on purpose**: an event for the wire and a letter in the mail. A saving
+        /// throw the player never sees is indistinguishable from nothing having happened, and the
+        /// entire value of the safety stage is that the player finds out it worked.
+        /// </summary>
+        private void SafetyWasSaved(SafetyModule saviour, SafetyIncident incident, SafetyPlan plan)
+        {
+            var module = saviour == SafetyModule.RedTeam
+                ? SafetyModuleCatalog.Get(SafetyModule.RedTeam, plan.RedTeamTier)
+                : SafetyModuleCatalog.Get(SafetyModule.DataProtection,
+                    Math.Max(0, plan.DataProtectionTier));
+
+            var what = saviour == SafetyModule.RedTeam
+                ? "The red team had already found it."
+                : "The data they went looking for was not reachable.";
+
+            State.Mail.Add(MailKind.Notice, State.Date,
+                "Safety office",
+                "No further action: " + incident.Severity,
+                $"{incident.Headline}\n\nThe review closed without a penalty. {what} "
+                + $"{module.DisplayName} is why, and on the numbers it had about a "
+                + $"{plan.SaveChance:P0} chance of holding.\n\nThis is not a reprieve that can be "
+                + "relied on twice. It held this time.");
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.SafetyIncident,
+                State.Date,
+                $"Regulator closed a case with no penalty. {module.DisplayName} held."));
         }
 
         // ------------------------------------------------------------------ debt
@@ -1812,7 +1890,11 @@ namespace ScalingLaws.Simulation
                 run.ProjectedCapability,
                 run.Blueprint.Type,
                 run.Blueprint.Family,
-                run.Blueprint.Shape));
+                run.Blueprint.Shape,
+                run.Blueprint.AssaTier,
+                run.Blueprint.RedTeamTier,
+                run.Blueprint.DataProtectionTier,
+                run.Blueprint.SafetyEffort));
 
             State.ActiveRun = null;
 

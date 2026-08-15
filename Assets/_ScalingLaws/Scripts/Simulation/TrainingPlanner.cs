@@ -54,7 +54,8 @@ namespace ScalingLaws.Simulation
             IArchitectureSource architectures = null,
             double dataSupplyMultiplier = 1.0,
             double dataQualityMultiplier = 1.0,
-            double dataCostMultiplier = 1.0)
+            double dataCostMultiplier = 1.0,
+            int liveModels = 0)
         {
             var qualityScale = Math.Clamp(SimUnits.Finite(dataQualityMultiplier, 1.0), 0.5, 2.0);
             var source = architectures ?? ArchitectureCatalog.AsSource;
@@ -174,6 +175,13 @@ namespace ScalingLaws.Simulation
             }
 
             var trainingDays = SimUnits.WholeDays(petaflopDays / throughput);
+
+            // The safety stage is work and work takes the calendar. Added after the compute maths
+            // rather than inside it, because none of this is a physics problem: it is a decision to
+            // spend weeks the run did not otherwise need.
+            var safety = SafetyPlan.For(blueprint, liveModels);
+            trainingDays += safety.ExtraDays;
+
             if (trainingDays > MaximumTrainingDays)
             {
                 Append(blocking, $"the run would take {trainingDays} days, over the {MaximumTrainingDays} day limit");
@@ -181,9 +189,11 @@ namespace ScalingLaws.Simulation
 
             // The fleet bills for every day the run occupies the calendar, whichever slice of it the
             // run is using. Idle capacity is not a discount.
-            var cashCost = SimUnits.ToDollars(profile.DailyOperatingCostUsd * trainingDays);
+            var cashCost = SimUnits.ToDollars(profile.DailyOperatingCostUsd * trainingDays)
+                           + safety.ExtraCostUsd;
             var economicCost = SimUnits.ToDollars(
-                (profile.DailyOperatingCostUsd + profile.DailyDepreciationUsd) * trainingDays);
+                (profile.DailyOperatingCostUsd + profile.DailyDepreciationUsd) * trainingDays)
+                + safety.ExtraCostUsd;
 
             var trainingFlop = ScalingLaw.TrainingFlop(parameters, actualTokens, architecture.ActiveParameterFraction);
             var optimalRatio = ScalingLaw.OptimalTokensPerParameter(trainingFlop, architecture.ActiveParameterFraction);

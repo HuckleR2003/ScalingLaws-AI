@@ -15,6 +15,8 @@ namespace ScalingLaws.UI
     {
         private const string ResourceFolder = "Research/";
 
+        private static readonly Dictionary<string, Texture2D> ByFile = new();
+
         /// <summary>
         /// Node to file. Only the nodes that have art are listed; the rest fall through to nothing.
         /// Names match the list handed to the artist, so a new file drops in without a code change
@@ -47,7 +49,23 @@ namespace ScalingLaws.UI
             // and draws an empty badge until they arrive.
             { ResearchNodeId.ShardedOptimizerStates, "research_sharding" },
             { ResearchNodeId.PipelineParallelism, "research_pipeline" },
-            { ResearchNodeId.UltraReadiness, "research_ultrareadiness" }
+            { ResearchNodeId.UltraReadiness, "research_ultrareadiness" },
+
+            // The safety track. These are the author's own icons and the same files are used for
+            // the tier tiles in the creator's SAFETY stage, so a node and the thing it unlocks are
+            // never two different pictures.
+            { ResearchNodeId.LicensedStackedAssa, "research_assa1_licensed" },
+            { ResearchNodeId.AdvancedAssa, "research_assa2_advanced" },
+            { ResearchNodeId.AssaEcosystem, "research_assa3_ecosystem" },
+
+            { ResearchNodeId.AutomatedRedTeaming, "research_red1_automated_teaming" },
+            { ResearchNodeId.AdversarialCampaigns, "research_red2_adversarial_campaigns" },
+            { ResearchNodeId.ContinuousRedTeam, "research_red3_redteam" },
+
+            { ResearchNodeId.BasicDataIsolation, "research_data0_basic_isolation" },
+            { ResearchNodeId.EncryptedDataVaults, "research_data1_encrypted_data" },
+            { ResearchNodeId.DifferentialPrivacy, "research_data2_differential_privacy" },
+            { ResearchNodeId.PrivacyPreservingTraining, "research_data3_privacy_training" }
         };
 
         private static readonly Dictionary<ResearchNodeId, Texture2D> Loaded = new();
@@ -61,6 +79,29 @@ namespace ScalingLaws.UI
         /// broken promise. Only the second one is worth failing a test over.
         /// </summary>
         public static bool HasArtFor(ResearchNodeId node) => FileNames.ContainsKey(node);
+
+        /// <summary>
+        /// The icon for a file name rather than for a node.
+        ///
+        /// The SAFETY tiles need this: tier zero of self auditing and of red teaming has no research
+        /// node at all, because the company starts knowing them, and it still has a picture.
+        /// </summary>
+        public static Texture2D ByName(string file)
+        {
+            if (string.IsNullOrEmpty(file))
+            {
+                return null;
+            }
+
+            if (ByFile.TryGetValue(file, out var cached))
+            {
+                return cached;
+            }
+
+            var loaded = Resources.Load<Texture2D>(ResourceFolder + file);
+            ByFile[file] = loaded;
+            return loaded;
+        }
 
         public static Texture2D Get(ResearchNodeId node)
         {

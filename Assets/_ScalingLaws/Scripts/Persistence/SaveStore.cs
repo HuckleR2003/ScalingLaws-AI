@@ -228,6 +228,10 @@ namespace ScalingLaws.Persistence
                     family = model.Family,
                     traitLevels = new List<int>(model.Traits.ToArray()),
                     shape = (int)model.Shape,
+                    assaTier = model.AssaTier,
+                    redTeamTier = model.RedTeamTier,
+                    dataProtectionTier = model.DataProtectionTier,
+                    safetyEffort = model.SafetyEffort,
                     lifetimeRevenueUsd = model.LifetimeRevenueUsd,
                     daysOnSale = model.DaysOnSale,
                     peakUsers = model.PeakUsers,
@@ -285,7 +289,11 @@ namespace ScalingLaws.Persistence
                     projectedCapability = shelved.ProjectedCapability,
                     modelType = (int)shelved.Type,
                     family = shelved.Family,
-                    shape = (int)shelved.Shape
+                    shape = (int)shelved.Shape,
+                    assaTier = shelved.AssaTier,
+                    redTeamTier = shelved.RedTeamTier,
+                    dataProtectionTier = shelved.DataProtectionTier,
+                    safetyEffort = shelved.SafetyEffort
                 });
             }
 
@@ -495,6 +503,10 @@ namespace ScalingLaws.Persistence
                     {
                         precision = (int)run.Blueprint.Precision,
                         shape = (int)run.Blueprint.Shape,
+                        assaTier = run.Blueprint.AssaTier,
+                        redTeamTier = run.Blueprint.RedTeamTier,
+                        dataProtectionTier = run.Blueprint.DataProtectionTier,
+                        safetyEffort = run.Blueprint.SafetyEffort,
                         deduplication = (int)run.Blueprint.Deduplication,
                         cutoffMonthsBack = run.Blueprint.CutoffMonthsBack
                     }
@@ -652,7 +664,11 @@ namespace ScalingLaws.Persistence
                     model.activeParameterCount,
                     model.priceMultiplier,
                     (ModelType)model.modelType,
-                    model.family);
+                    model.family,
+                    Math.Clamp(model.assaTier, 0, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(model.redTeamTier, 0, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(model.dataProtectionTier, -1, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(model.safetyEffort, 1, 4));
 
                 if (model.traitLevels != null && model.traitLevels.Count > 0)
                 {
@@ -688,7 +704,11 @@ namespace ScalingLaws.Persistence
                     shelved.family,
                     Enum.IsDefined(typeof(ModelShape), shelved.shape)
                         ? (ModelShape)shelved.shape
-                        : ModelShape.Balanced));
+                        : ModelShape.Balanced,
+                    Math.Clamp(shelved.assaTier, 0, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(shelved.redTeamTier, 0, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(shelved.dataProtectionTier, -1, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(shelved.safetyEffort, 1, 4)));
             }
 
             state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts, safe.ledgerCarriedForward);
@@ -975,7 +995,12 @@ namespace ScalingLaws.Persistence
                     Enum.IsDefined(typeof(DeduplicationPass), safe.activeRun.choices.deduplication)
                         ? (DeduplicationPass)safe.activeRun.choices.deduplication
                         : DeduplicationPass.Standard,
-                    safe.activeRun.choices.cutoffMonthsBack);
+                    safe.activeRun.choices.cutoffMonthsBack,
+                    Math.Clamp(safe.activeRun.choices.assaTier, 0, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(safe.activeRun.choices.redTeamTier, 0, SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(safe.activeRun.choices.dataProtectionTier, -1,
+                        SafetyModuleCatalog.TierCount - 1),
+                    Math.Clamp(safe.activeRun.choices.safetyEffort, 1, 4));
 
                 var run = new TrainingRun(
                     blueprint,

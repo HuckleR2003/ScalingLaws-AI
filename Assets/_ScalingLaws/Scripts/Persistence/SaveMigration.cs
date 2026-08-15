@@ -127,6 +127,7 @@ namespace ScalingLaws.Persistence
                     23 => UpgradeV23ToV24(current),
                     24 => UpgradeV24ToV25(current),
                     25 => UpgradeV25ToV26(current),
+                    26 => UpgradeV26ToV27(current),
                     _ => current
                 };
             }
@@ -939,6 +940,68 @@ namespace ScalingLaws.Persistence
         /// look comes first", which is what the game already does for a founder with no preference,
         /// rather than inventing a choice the player never made and then claiming they made it.
         /// </summary>
+        /// <summary>
+        /// v26 to v27: models remember what they were hardened with.
+        ///
+        /// **Every existing model gets tier zero of the two free modules and no data protection**,
+        /// which is the least flattering reading that is still defensible. A v26 company was playing
+        /// a game with no safety stage in it, so it never chose any of this; giving it the tiers it
+        /// could afford today would hand it protection it never paid for, and giving it nothing at
+        /// all would leave it worse off than a company starting fresh.
+        /// </summary>
+        public static SaveData UpgradeV26ToV27(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 27;
+
+            // Two different record types, same four fields, so this is written twice rather than
+            // through a shared interface the save format does not have.
+            foreach (var model in data.models)
+            {
+                if (model == null)
+                {
+                    continue;
+                }
+
+                model.assaTier = 0;
+                model.redTeamTier = 0;
+                model.dataProtectionTier = -1;
+                model.safetyEffort = 1;
+            }
+
+            foreach (var shelved in data.shelf)
+            {
+                if (shelved == null)
+                {
+                    continue;
+                }
+
+                shelved.assaTier = 0;
+                shelved.redTeamTier = 0;
+                shelved.dataProtectionTier = -1;
+                shelved.safetyEffort = 1;
+            }
+
+            if (data.activeRun?.choices != null)
+            {
+                data.activeRun.choices.assaTier = 0;
+                data.activeRun.choices.redTeamTier = 0;
+                data.activeRun.choices.dataProtectionTier = -1;
+                data.activeRun.choices.safetyEffort = 1;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v26 to v27: no run recorded a safety stage before this version, so every model "
+                + "keeps the two modules a company starts with and none of the data protection it "
+                + "would have had to buy.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV25ToV26(SaveData data)
         {
             if (data == null)

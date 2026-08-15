@@ -40,8 +40,23 @@ namespace ScalingLaws.Simulation
             TrainingPrecision precision = TrainingPrecision.BFloat16,
             ModelShape shape = ModelShape.Balanced,
             DeduplicationPass deduplication = DeduplicationPass.Standard,
-            int cutoffMonthsBack = 0)
+            int cutoffMonthsBack = 0,
+            int assaTier = 0,
+            int redTeamTier = 0,
+            int dataProtectionTier = -1,
+            int safetyEffort = 1)
         {
+            // The safety stage. Tier zero on the first two is what a company already knows how to
+            // do on the day it opens, so those default to it and every caller written before this
+            // describes exactly the run it always described.
+            //
+            // **Data protection defaults to minus one, which means none.** Its tier zero has to be
+            // researched, and defaulting it to zero would have handed every existing caller a
+            // module they never bought.
+            AssaTier = Math.Clamp(assaTier, 0, SafetyModuleCatalog.TierCount - 1);
+            RedTeamTier = Math.Clamp(redTeamTier, 0, SafetyModuleCatalog.TierCount - 1);
+            DataProtectionTier = Math.Clamp(dataProtectionTier, -1, SafetyModuleCatalog.TierCount - 1);
+            SafetyEffort = Math.Clamp(safetyEffort, 1, 4);
             // All four default to the neutral option, so every caller written before them describes
             // exactly the run it always described. The middle of each catalog is 1.0 on every axis.
             Precision = precision;
@@ -103,6 +118,21 @@ namespace ScalingLaws.Simulation
         /// years back is cheap, clean and wrong about the world, and the market scores that.
         /// </summary>
         public int CutoffMonthsBack { get; }
+
+        /// <summary>Which rung of self auditing this run was hardened with.</summary>
+        public int AssaTier { get; }
+
+        /// <summary>Which rung of red teaming. Buys nothing until a penalty is already decided.</summary>
+        public int RedTeamTier { get; }
+
+        /// <summary>Data protection, or minus one for none. Its tier zero is not free.</summary>
+        public int DataProtectionTier { get; }
+
+        /// <summary>How hard the safety stage was worked, 1 to 4. Only the safety days move.</summary>
+        public int SafetyEffort { get; }
+
+        /// <summary>True when the run bought any data protection at all.</summary>
+        public bool HasDataProtection => DataProtectionTier >= 0;
 
         public double ParameterCount => ParameterCountBillions * SimUnits.ParametersPerBillion;
         public double TrainingTokens => TrainingTokensBillions * SimUnits.TokensPerBillion;

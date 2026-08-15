@@ -7095,3 +7095,149 @@
     -unity-font-style: bold;
     color: rgb(150, 162, 184);
 }
+
+/* ---- the SAFETY stage ----
+
+   Three modules, four tiers each, picked with arrows either side of the art. The picture is the
+   control: these are the only tiles in the creator whose whole job is to say "this is what stands
+   between you and the fine that ends the campaign". */
+
+.tier-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 8px;
+}
+
+.tier-arrow {
+    width: 30px;
+    height: 30px;
+    margin: 0 10px 0 10px;
+    padding: 0;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(200, 214, 236);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.13);
+    border-radius: 3px;
+}
+
+.tier-arrow:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+    color: rgb(240, 246, 255);
+}
+
+.tier-plate {
+    width: 104px;
+    height: 104px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.035);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* Dimmed rather than hidden. A player has to be able to see what they are missing and what it
+   would be worth, or the tier is not a decision, it is a surprise. */
+.tier-plate--locked {
+    opacity: 0.34;
+    border-color: rgba(226, 78, 62, 0.45);
+}
+
+.tier-plate__locked {
+    font-size: 8px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    color: rgb(255, 226, 220);
+    background-color: rgba(12, 8, 10, 0.82);
+    padding: 4px 6px;
+    border-radius: 3px;
+}
+
+.tier-name {
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 0.4px;
+    color: rgb(238, 244, 253);
+    -unity-text-align: middle-center;
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+.tier-effect {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(140, 200, 168);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.tier-body {
+    font-size: 11px;
+    color: rgb(146, 158, 180);
+    white-space: normal;
+    margin-top: 7px;
+    flex-grow: 1;
+    flex-shrink: 0;
+}
+
+.tier-bill {
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(184, 196, 218);
+    -unity-text-align: middle-center;
+    margin-top: 8px;
+    padding-top: 7px;
+    flex-shrink: 0;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.tier-bill--locked {
+    color: rgb(226, 132, 116);
+}
+
+/* Effort. Four chips, and taking one is meant to feel like a small indulgence rather than an
+   obvious upgrade. */
+
+.effort-row {
+    flex-direction: row;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 12px;
+}
+
+.effort-chip {
+    width: 52px;
+    height: 32px;
+    margin: 0 5px 0 5px;
+    padding: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(178, 190, 212);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+.effort-chip:hover {
+    background-color: rgba(255, 255, 255, 0.11);
+}
+
+.effort-chip--on {
+    color: rgb(255, 252, 250);
+    background-color: rgb(226, 78, 62);
+    border-color: rgb(226, 78, 62);
+}
