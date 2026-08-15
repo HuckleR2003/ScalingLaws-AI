@@ -43,6 +43,9 @@ namespace ScalingLaws.UI
         private readonly VisualElement stageRail = new();
         private readonly VisualElement effectBanner = new();
         private readonly VisualElement stageHost = new();
+
+        /// <summary>Raised once a run actually starts, so the shell can leave this screen.</summary>
+        public event Action started;
         private readonly Button backButton = new();
         private readonly Button nextButton = new();
 
@@ -586,7 +589,7 @@ namespace ScalingLaws.UI
             {
                 policy.Model = PricingModel.Subscription;
                 policy.FreeTierTokensPerUserPerDay = 0.0;
-                Reprice();
+                RepriceAndRebuild();
             })
             { text = "NO FREE ACCESS" };
             noFree.AddToClassList("chip");
@@ -596,7 +599,7 @@ namespace ScalingLaws.UI
             var freeOnly = new Button(() =>
             {
                 policy.Model = PricingModel.FreeOnly;
-                Reprice();
+                RepriceAndRebuild();
             })
             { text = "FREE ONLY" };
             freeOnly.AddToClassList("chip");
@@ -617,7 +620,7 @@ namespace ScalingLaws.UI
                         policy.Model = PricingModel.Subscription;
                     }
 
-                    Reprice();
+                    RepriceAndRebuild();
                 }));
 
             // What a free account costs the company, in dollars, at today's token price. This is the
@@ -1591,6 +1594,19 @@ namespace ScalingLaws.UI
             return answer;
         }
 
+        /// <summary>
+        /// Reprices and rebuilds the open stage.
+        ///
+        /// For controls whose own caption is part of what changed. Reprice alone leaves a slider
+        /// reading the value it had when the stage was built, which is why the pricing stage had to
+        /// be left and re-entered before it showed anything but zero.
+        /// </summary>
+        private void RepriceAndRebuild()
+        {
+            Reprice();
+            ShowStage();
+        }
+
         private void StartTraining()
         {
             if (!simulation.TryStartTraining(CurrentBlueprint(), out var reason))
@@ -1602,6 +1618,10 @@ namespace ScalingLaws.UI
             }
 
             Reprice();
+
+            // Back to the room. The run is weeks long and there is nothing further to do on this
+            // screen, so staying on it is staying on a form that has already been submitted.
+            started?.Invoke();
         }
     }
 }

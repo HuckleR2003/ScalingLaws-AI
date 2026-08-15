@@ -72,6 +72,7 @@ namespace ScalingLaws.UI
         private Label reputationLabel;
         private Button pointsButton;
         private VisualElement researchCard;
+        private VisualElement runFinished;
         private readonly List<MarketingChannel> pickedChannels = new();
         private AudienceSegment pickedAudience = AudienceSegment.Consumer;
         private int pickedTerm = 3;
@@ -253,6 +254,7 @@ namespace ScalingLaws.UI
             clock = new SimClock(state.Date, SimSpeed.Paused);
 
             creator = new ModelCreatorPanel(simulation);
+            creator.started += () => Show(Screen.Site);
             upgrades = new UpgradeGridPanel(simulation);
             families = new ArchitectureCreatorPanel(simulation);
 
@@ -719,6 +721,10 @@ namespace ScalingLaws.UI
             current = screen;
             contentHost.Clear();
 
+            // A floating card belongs to the screen that opened it. Leaving it up over a different
+            // tab is the same fault the corner banners had.
+            researchCard?.RemoveFromHierarchy();
+
             hud.SetActiveSlot(screen);
 
             // Hidden here rather than only in RefreshChrome, which runs when a day rolls over. While
@@ -741,66 +747,84 @@ namespace ScalingLaws.UI
                 PlayPageTransition();
             }
 
+            // Every screen scrolls, and none of them shows a bar for it.
+            //
+            // Half the tabs had grown past the window and UI Toolkit shrinks children rather than
+            // overflowing them, so the bottom of a long page was not clipped, it was squashed. One
+            // scroller here rather than one per screen, because the next screen would forget.
+            var scroller = new ScrollView();
+            scroller.AddToClassList("page-scroll");
+            scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+
+            // The office is the exception: it is a room that fills the window, not a document, and
+            // putting it in a scroller gives it a scrollbar's worth of nothing to slide.
+            var host = screen == Screen.Site ? contentHost : scroller;
+            if (screen != Screen.Site)
+            {
+                contentHost.Add(scroller);
+            }
+
             switch (screen)
             {
                 case Screen.Site:
-                    contentHost.Add(BuildSiteScreen());
+                    host.Add(BuildSiteScreen());
                     break;
                 case Screen.Create:
                     creator.Refresh();
-                    contentHost.Add(creator.Root);
+                    host.Add(creator.Root);
                     break;
                 case Screen.Research:
-                    contentHost.Add(BuildResearchScreen());
+                    host.Add(BuildResearchScreen());
                     break;
                 case Screen.Team:
-                    contentHost.Add(BuildTeamScreen());
+                    host.Add(BuildTeamScreen());
                     break;
                 case Screen.Fleet:
-                    contentHost.Add(BuildFleetScreen());
+                    host.Add(BuildFleetScreen());
                     break;
 
                 case Screen.Marketing:
-                    contentHost.Add(BuildMarketingScreen());
+                    host.Add(BuildMarketingScreen());
                     break;
                 case Screen.Management:
                     management.Refresh();
-                    contentHost.Add(management.Root);
+                    host.Add(management.Root);
                     break;
                 case Screen.News:
                     news.Refresh();
-                    contentHost.Add(news.Root);
+                    host.Add(news.Root);
                     break;
                 case Screen.Mail:
                     mail.Refresh();
-                    contentHost.Add(mail.Root);
+                    host.Add(mail.Root);
                     break;
                 case Screen.Offices:
                     offices.Refresh();
-                    contentHost.Add(offices.Root);
+                    host.Add(offices.Root);
                     break;
                 case Screen.Business:
-                    contentHost.Add(BuildBusinessScreen());
+                    host.Add(BuildBusinessScreen());
                     break;
                 case Screen.Family:
                     families.Refresh();
-                    contentHost.Add(families.Root);
+                    host.Add(families.Root);
                     break;
                 case Screen.Upgrade:
                     upgrades.Refresh();
-                    contentHost.Add(upgrades.Root);
+                    host.Add(upgrades.Root);
                     break;
                 case Screen.Release:
-                    contentHost.Add(BuildReleaseScreen());
+                    host.Add(BuildReleaseScreen());
                     break;
                 case Screen.Funding:
-                    contentHost.Add(BuildFundingScreen());
+                    host.Add(BuildFundingScreen());
                     break;
                 case Screen.Ranking:
-                    contentHost.Add(BuildRankingScreen());
+                    host.Add(BuildRankingScreen());
                     break;
                 default:
-                    contentHost.Add(BuildFeedScreen());
+                    host.Add(BuildFeedScreen());
                     break;
             }
         }
@@ -1143,7 +1167,9 @@ namespace ScalingLaws.UI
                     researchCard?.RemoveFromHierarchy();
                     Show(Screen.Research);
                 })
-                { text = "BEGIN THIS RESEARCH" };
+                {
+                    text = $"BEGIN  ·  {points:N0} POINTS AND {UiFormat.Money(cash)}"
+                };
 
                 start.AddToClassList("button");
                 start.AddToClassList("button--primary");
@@ -1495,12 +1521,18 @@ namespace ScalingLaws.UI
             artLeft.AddToClassList("hswitch__art--left");
             strip.Add(artLeft);
 
-            var renting = new Button(() => { }) { text = "RENTING HOSTING" };
+            // It did nothing at all, which reads as broken rather than as the only option. Renting
+            // is where the fleet controls already are, so the half that is live says so and scrolls
+            // to them instead of pretending to be a mode switch that has nothing to switch to.
+            var renting = new Button(() => Show(Screen.Fleet)) { text = "RENTING HOSTING" };
+            renting.tooltip = "The fleet you rent. Everything below this bar is it.";
             renting.AddToClassList("hswitch__half");
             renting.AddToClassList("hswitch__half--on");
             strip.Add(renting);
 
             var owning = new Button(() => { }) { text = "YOUR OWN DATACENTER" };
+            owning.tooltip = "Locked until the Datacenter programme research lands. Renting is the "
+                + "only way to buy compute until then.";
             owning.AddToClassList("hswitch__half");
             owning.AddToClassList("hswitch__half--locked");
             owning.SetEnabled(false);
@@ -2823,6 +2855,7 @@ namespace ScalingLaws.UI
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
+            panel.AddToClassList("rank-grid");
             page.Add(panel);
 
             foreach (var entry in simulation.Ranking())
@@ -3215,12 +3248,94 @@ namespace ScalingLaws.UI
         {
             while (state.TryDequeueEvent(out var companyEvent))
             {
+                // A finished run is the one event that has to interrupt. Everything else can wait
+                // for the player to look at the wire; this one leaves a decision sitting on a shelf
+                // and the whole point of the shelf is that waiting on it costs position.
+                if (companyEvent.Type == CompanyEventType.TrainingCompleted)
+                {
+                    ShowRunFinished(companyEvent.Message);
+                }
+
                 recentEvents.Add(companyEvent);
                 if (recentEvents.Count > 60)
                 {
                     recentEvents.RemoveAt(0);
                 }
             }
+        }
+
+        /// <summary>
+        /// The one notice that interrupts: a run has finished and is waiting on the shelf.
+        ///
+        /// It offers the two things worth doing with it rather than only an acknowledgement, because
+        /// a dialog whose only button is OK has told the player something and then made them find
+        /// the screen themselves. Clicking anywhere off it dismisses it, same as the research card.
+        /// </summary>
+        private void ShowRunFinished(string message)
+        {
+            runFinished?.RemoveFromHierarchy();
+
+            var veil = new VisualElement();
+            veil.AddToClassList("notice-veil");
+
+            // The veil is the dismiss target. Clicks inside the card stop there, so only a click on
+            // the darkened area outside it closes the thing.
+            veil.RegisterCallback<ClickEvent>(_ => runFinished?.RemoveFromHierarchy());
+
+            var card = new VisualElement();
+            card.AddToClassList("notice");
+            card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
+
+            var title = new Label("THE RUN HAS FINISHED");
+            title.AddToClassList("notice__title");
+            card.Add(title);
+
+            var body = new Label(string.IsNullOrWhiteSpace(message)
+                ? "A training run has completed and is waiting on the shelf."
+                : message);
+
+            body.AddToClassList("notice__body");
+            card.Add(body);
+
+            var note = new Label("It scores what it scores from today. Waiting costs nothing "
+                + "directly and costs position every day, because par keeps rising under it.");
+
+            note.AddToClassList("notice__note");
+            card.Add(note);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("notice__buttons");
+
+            var release = new Button(() =>
+            {
+                runFinished?.RemoveFromHierarchy();
+                Show(Screen.Release);
+            })
+            { text = "GO TO RELEASE" };
+
+            release.AddToClassList("notice__button");
+            release.AddToClassList("notice__button--go");
+            buttons.Add(release);
+
+            var upgrade = new Button(() =>
+            {
+                runFinished?.RemoveFromHierarchy();
+                Show(Screen.Upgrade);
+            })
+            { text = "GO TO UPGRADE" };
+
+            upgrade.AddToClassList("notice__button");
+            buttons.Add(upgrade);
+
+            var ok = new Button(() => runFinished?.RemoveFromHierarchy()) { text = "OK" };
+            ok.AddToClassList("notice__button");
+            buttons.Add(ok);
+
+            card.Add(buttons);
+            veil.Add(card);
+
+            runFinished = veil;
+            shellRoot.Add(veil);
         }
 
         private void RefreshChrome()

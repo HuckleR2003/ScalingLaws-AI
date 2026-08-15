@@ -408,10 +408,6 @@
 
 /* ---- content ---------------------------------------------------------- */
 
-.content {
-    flex-grow: 1;
-    padding: 26px;
-}
 
 .page-title {
     font-size: 22px;
@@ -582,9 +578,12 @@
     -unity-font-style: bold;
 }
 
-.readout__value--good { color: var(--good); }
-.readout__value--warn { color: var(--warn); }
-.readout__value--bad { color: var(--bad); }
+.readout__value--good {
+    color: var(--good); }
+.readout__value--warn {
+    color: var(--warn); }
+.readout__value--bad {
+    color: var(--bad); }
 
 .verdict {
     padding: 12px;
@@ -673,10 +672,6 @@
    bottom of the screen.
    --------------------------------------------------------------------------- */
 
-.page-scroll {
-    flex-grow: 1;
-    width: 100%;
-}
 
 .creator {
     width: 1340px;
@@ -1486,18 +1481,6 @@
     padding-bottom: 6px;
 }
 
-.hud-slot {
-    width: 84px;
-    height: 64px;
-    margin: 0;
-    margin-left: 2px;
-    padding: 0;
-    background-color: rgba(0, 0, 0, 0);
-    border-width: 0;
-    border-radius: 0;
-    align-items: center;
-    justify-content: flex-end;
-}
 
 .hud-slot:hover {
     background-color: rgba(255, 255, 255, 0.045);
@@ -1507,14 +1490,6 @@
 
 /* Thirty percent up from 26. The bar is the thing a player looks at most and the icons were
    small enough that the label was doing all the work. */
-.hud-slot__icon {
-    width: 34px;
-    height: 34px;
-    margin-bottom: 5px;
-    background-color: rgba(255, 255, 255, 0.10);
-    border-radius: 4px;
-    -unity-background-scale-mode: scale-to-fit;
-}
 
 .hud-slot:hover > .hud-slot__icon {
     background-color: rgba(255, 255, 255, 0.20);
@@ -1595,19 +1570,28 @@
    are the thing you read and the label is the caption. */
 
 .hud-slot {
-    width: 92px;
+    width: 96px;
+    height: 76px;
+    margin: 0;
     margin-left: 9px;
-    margin-right: 9px;
-    height: 60px;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
     border-radius: 4px;
+    align-items: center;
+    justify-content: flex-end;
+    margin-right: 9px;
     transition-property: background-color;
     transition-duration: 120ms;
 }
 
 .hud-slot__icon {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     margin-bottom: 5px;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-radius: 4px;
+    -unity-background-scale-mode: scale-to-fit;
     transition-property: opacity, scale;
     transition-duration: 120ms;
 }
@@ -1634,16 +1618,6 @@
 
 /* ---- the banner under a page heading ---- */
 
-.page-banner {
-    height: 84px;
-    margin-top: 2px;
-    margin-bottom: 10px;
-    flex-shrink: 0;
-    justify-content: flex-end;
-    border-radius: 4px;
-    overflow: hidden;
-    -unity-background-scale-mode: scale-and-crop;
-}
 
 .page-banner__edge {
     height: 2px;
@@ -1665,6 +1639,8 @@
 }
 
 .content {
+    flex-grow: 1;
+    padding: 26px;
     transition-property: translate, opacity;
     transition-duration: 260ms;
     transition-timing-function: ease-out-cubic;
@@ -1695,31 +1671,7 @@
    decision at a time below that. Nothing on it scrolls.
    --------------------------------------------------------------------------- */
 
-.stage-rail {
-    flex-direction: row;
-    flex-shrink: 0;
-    margin-top: 6px;
-    margin-bottom: 10px;
-}
 
-.stage-pip {
-    flex-grow: 1;
-    flex-direction: row;
-    align-items: center;
-    margin: 0;
-    margin-right: 6px;
-    padding-top: 9px;
-    padding-bottom: 9px;
-    padding-left: 12px;
-    padding-right: 12px;
-    background-color: rgba(255, 255, 255, 0.03);
-    border-width: 0;
-    border-bottom-width: 2px;
-    border-color: rgba(255, 255, 255, 0.08);
-    border-radius: 3px;
-    transition-property: background-color, border-color;
-    transition-duration: 140ms;
-}
 
 .stage-pip:hover {
     background-color: rgba(255, 255, 255, 0.07);
@@ -1734,17 +1686,6 @@
     border-color: rgb(226, 78, 62);
 }
 
-.stage-pip__number {
-    width: 20px;
-    height: 20px;
-    margin-right: 9px;
-    font-size: 11px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    color: rgb(150, 162, 180);
-    background-color: rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
-}
 
 .stage-pip--on .stage-pip__number {
     color: rgb(248, 238, 238);
@@ -1764,22 +1705,6 @@
 
 /* ---- the live figures band ---- */
 
-.effect-banner {
-    flex-direction: row;
-    flex-wrap: wrap;
-    flex-shrink: 0;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    padding-left: 16px;
-    padding-right: 16px;
-    margin-bottom: 12px;
-    background-color: rgb(20, 24, 32);
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.07);
-    border-left-width: 2px;
-    border-left-color: rgb(226, 78, 62);
-    border-radius: 4px;
-}
 
 .effect-banner--blocked {
     border-left-color: rgb(214, 106, 106);
@@ -1791,19 +1716,7 @@
     padding-right: 14px;
 }
 
-.effect-figure__label {
-    font-size: 10px;
-    letter-spacing: 1px;
-    color: rgb(126, 140, 160);
-}
 
-.effect-figure__value {
-    font-size: 24px;
-    -unity-font-style: bold;
-    color: rgb(228, 236, 248);
-    margin-top: 1px;
-    margin-bottom: 1px;
-}
 
 .effect-figure__note {
     font-size: 10px;
@@ -1888,14 +1801,6 @@
 
 /* ---- figures carry a bar instead of a sentence ---- */
 
-.effect-figure__track {
-    height: 4px;
-    margin-top: 7px;
-    margin-right: 14px;
-    background-color: rgba(255, 255, 255, 0.06);
-    border-radius: 2px;
-    overflow: hidden;
-}
 
 .effect-figure__fill {
     height: 4px;
@@ -1911,9 +1816,6 @@
 
 /* ---- taller banners ---- */
 
-.page-banner {
-    height: 126px;
-}
 
 /* ---- a creator stage with its own picture ---- */
 
@@ -1932,10 +1834,6 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
-.stage-split__body {
-    flex-grow: 1;
-    flex-shrink: 1;
-}
 
 /* ---- a decision that is designed and not yet built ---- */
 
@@ -1982,16 +1880,6 @@
 
 /* ---- the site screen ---- */
 
-.site-stage {
-    flex-grow: 1;
-    min-height: 320px;
-    align-items: center;
-    justify-content: center;
-    background-color: rgb(15, 19, 26);
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.07);
-    border-radius: 5px;
-}
 
 .site-stage__title {
     font-size: 17px;
@@ -2252,14 +2140,15 @@
     justify-content: space-between;
 }
 
+/* The smallest text on the busiest screen, and it is the text saying what the control does. */
 .stage-slider__label {
-    font-size: 10px;
+    font-size: 15px;
     letter-spacing: 1px;
     color: rgb(130, 144, 164);
 }
 
 .stage-slider__value {
-    font-size: 13px;
+    font-size: 19px;
     -unity-font-style: bold;
     color: rgb(220, 230, 244);
 }
@@ -2273,13 +2162,13 @@
 .site-stage {
     flex-grow: 1;
     min-height: 420px;
+    align-items: stretch;
     justify-content: flex-end;
     background-color: rgb(14, 17, 23);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.07);
     border-radius: 5px;
     overflow: hidden;
-    align-items: stretch;
 }
 
 .site-stage--live {
@@ -2327,6 +2216,13 @@
 
 .page-banner {
     height: 189px;
+    margin-top: 2px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    border-radius: 4px;
+    overflow: hidden;
+    -unity-background-scale-mode: scale-and-crop;
 }
 
 /* ---- the research spine ---- */
@@ -2364,41 +2260,23 @@
     background-color: rgba(255, 255, 255, 0.10);
 }
 
+
+
 .tree-node {
     width: 96px;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-}
-
-.tree-node--above {
-    padding-bottom: 54px;
-}
-
-.tree-node {
     padding-top: 54px;
 }
 
 .tree-node--above {
+    padding-bottom: 54px;
     padding-top: 0;
 }
 
 /* Twenty five percent up from 48. A node is the main control on this screen and it was smaller
    than the buttons on every other one. */
-.tree-pip {
-    width: 60px;
-    height: 60px;
-    margin: 0;
-    padding: 0;
-    background-color: rgb(18, 22, 30);
-    border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.14);
-    border-radius: 30px;
-    align-items: center;
-    justify-content: center;
-    transition-property: border-color, background-color, scale;
-    transition-duration: 140ms;
-}
 
 .tree-pip:hover {
     border-color: rgb(120, 176, 250);
@@ -2424,12 +2302,6 @@
     background-color: rgba(70, 56, 108, 0.55);
 }
 
-.tree-pip__icon {
-    width: 30px;
-    height: 30px;
-    opacity: 0.85;
-    -unity-background-scale-mode: scale-to-fit;
-}
 
 .tree-pip__icon--none {
     width: 10px;
@@ -2636,9 +2508,6 @@
     flex-shrink: 1;
 }
 
-.demographics__rows {
-    flex-shrink: 0;
-}
 
 .demo-row {
     flex-direction: row;
@@ -2695,39 +2564,14 @@
     border-radius: 3px;
 }
 
-.demo-row__name {
-    width: 40%;
-    font-size: 11px;
-    -unity-font-style: bold;
-    letter-spacing: 1px;
-    color: rgb(196, 208, 226);
-}
 
-.demo-row__users {
-    width: 22%;
-    font-size: 11px;
-    color: rgb(180, 192, 210);
-    -unity-text-align: middle-right;
-}
 
-.demo-row__share {
-    width: 16%;
-    font-size: 11px;
-    color: rgb(120, 132, 152);
-    -unity-text-align: middle-right;
-}
 
 .demo-row__share--held {
     color: rgb(120, 200, 250);
     -unity-font-style: bold;
 }
 
-.demo-row__leader {
-    width: 22%;
-    font-size: 10px;
-    color: rgb(140, 152, 172);
-    -unity-text-align: middle-right;
-}
 
 .demo-row__leader--you {
     color: rgb(112, 200, 136);
@@ -2940,17 +2784,20 @@
 
 /* ---- the four thin bars ---- */
 
+/* The captions and figures went up by half and the row got shorter, not taller. The height was
+   never the text, it was the margin under a four pixel bar. */
 .thin-bar {
     flex-direction: row;
     align-items: center;
     flex-shrink: 0;
-    margin-bottom: 5px;
+    margin-bottom: 2px;
 }
 
 .thin-bar__label {
-    width: 42%;
-    font-size: 10px;
-    color: rgb(168, 180, 198);
+    width: 34%;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(214, 224, 238);
 }
 
 .thin-bar__track {
@@ -2967,10 +2814,10 @@
 }
 
 .thin-bar__value {
-    width: 52px;
-    font-size: 10px;
+    width: 74px;
+    font-size: 15px;
     -unity-font-style: bold;
-    color: rgb(214, 224, 238);
+    color: rgb(240, 246, 254);
     -unity-text-align: middle-right;
 }
 
@@ -3111,6 +2958,8 @@
    clipping, not the layout plan: if a stage needs the scroller, it is too tall. */
 
 .stage-split__body {
+    flex-grow: 1;
+    flex-shrink: 1;
     overflow: hidden;
 }
 
@@ -3143,9 +2992,12 @@
     letter-spacing: -1px;
 }
 
-.topbar__arrows--up { color: rgb(104, 200, 132); }
-.topbar__arrows--down { color: rgb(214, 96, 88); }
-.topbar__arrows--flat { color: rgb(104, 114, 132); }
+.topbar__arrows--up {
+    color: rgb(104, 200, 132); }
+.topbar__arrows--down {
+    color: rgb(214, 96, 88); }
+.topbar__arrows--flat {
+    color: rgb(104, 114, 132); }
 
 /* ---- the books ---- */
 
@@ -3214,8 +3066,10 @@
     -unity-font-style: bold;
 }
 
-.finance__headline--up { color: rgb(120, 214, 148); }
-.finance__headline--down { color: rgb(226, 116, 108); }
+.finance__headline--up {
+    color: rgb(120, 214, 148); }
+.finance__headline--down {
+    color: rgb(226, 116, 108); }
 
 .finance__caption {
     font-size: 10px;
@@ -3270,8 +3124,10 @@
     -unity-text-align: middle-right;
 }
 
-.finance-row__value--in { color: rgb(120, 214, 148); }
-.finance-row__value--out { color: rgb(226, 116, 108); }
+.finance-row__value--in {
+    color: rgb(120, 214, 148); }
+.finance-row__value--out {
+    color: rgb(226, 116, 108); }
 
 /* ---------------------------------------------------------------------------
    Height taken back from the chrome.
@@ -3283,13 +3139,29 @@
    --------------------------------------------------------------------------- */
 
 .stage-rail {
+    flex-direction: row;
+    flex-shrink: 0;
     margin-top: 2px;
     margin-bottom: 6px;
 }
 
 .stage-pip {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    margin: 0;
+    margin-right: 6px;
     padding-top: 5px;
     padding-bottom: 5px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 0;
+    border-bottom-width: 2px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    transition-property: background-color, border-color;
+    transition-duration: 140ms;
 }
 
 .stage-pip__number {
@@ -3297,24 +3169,51 @@
     height: 16px;
     margin-right: 7px;
     font-size: 9px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(150, 162, 180);
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
 }
 
 .effect-banner {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
     padding-top: 8px;
     padding-bottom: 8px;
+    padding-left: 16px;
+    padding-right: 16px;
     margin-bottom: 8px;
+    background-color: rgb(20, 24, 32);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-left-width: 2px;
+    border-left-color: rgb(226, 78, 62);
+    border-radius: 4px;
 }
 
 .effect-figure__label {
     font-size: 8px;
+    letter-spacing: 1px;
+    color: rgb(126, 140, 160);
 }
 
 .effect-figure__value {
     font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(228, 236, 248);
+    margin-top: 1px;
+    margin-bottom: 1px;
 }
 
 .effect-figure__track {
+    height: 4px;
     margin-top: 4px;
+    margin-right: 14px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
 }
 
 /* ---------------------------------------------------------------------------
@@ -3327,6 +3226,10 @@
 
 .demo-row__name {
     width: 20%;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(196, 208, 226);
 }
 
 .demo-row--header > .demo-row__name {
@@ -3335,17 +3238,27 @@
 
 .demo-row__users {
     width: 24%;
+    font-size: 11px;
+    color: rgb(180, 192, 210);
+    -unity-text-align: middle-right;
 }
 
 .demo-row__share {
     width: 18%;
+    font-size: 11px;
+    color: rgb(120, 132, 152);
+    -unity-text-align: middle-right;
 }
 
 .demo-row__leader {
     width: 24%;
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    -unity-text-align: middle-right;
 }
 
 .demographics__rows {
+    flex-shrink: 0;
     max-height: 118px;
     overflow: scroll;
 }
@@ -3563,9 +3476,12 @@
     height: 11px;
 }
 
-.mb-meter__fill--good { background-color: rgb(52, 176, 82); }
-.mb-meter__fill--warm { background-color: rgb(246, 146, 30); }
-.mb-meter__fill--bad { background-color: rgb(206, 48, 44); }
+.mb-meter__fill--good {
+    background-color: rgb(52, 176, 82); }
+.mb-meter__fill--warm {
+    background-color: rgb(246, 146, 30); }
+.mb-meter__fill--bad {
+    background-color: rgb(206, 48, 44); }
 
 .mb-meter__word {
     margin-left: 5px;
@@ -3581,13 +3497,6 @@
     margin-bottom: 3px;
 }
 
-.mb-chart {
-    height: 54px;
-    flex-shrink: 0;
-    background-color: rgb(255, 255, 255);
-    border-width: 1px;
-    border-color: rgb(28, 30, 36);
-}
 
 .mb__footer {
     flex-direction: row;
@@ -3632,33 +3541,9 @@
 
 /* ---- the same strip while a run is in flight ---- */
 
-.mb__training {
-    height: 62px;
-    justify-content: center;
-    padding-left: 12px;
-    background-color: rgb(28, 30, 36);
-}
 
-.mb__training-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgb(114, 12, 46);
-}
 
-.mb__training-caption {
-    font-size: 13px;
-    -unity-font-style: bold;
-    letter-spacing: 3px;
-    color: rgb(252, 252, 252);
-}
 
-.mb__training-days {
-    margin-top: 2px;
-    font-size: 10px;
-    color: rgb(214, 200, 206);
-}
 
 /* The header doubles as the fold control, and the chart is clipped so a losing
    month cannot draw over the money underneath it. */
@@ -3684,6 +3569,11 @@
 }
 
 .mb-chart {
+    height: 54px;
+    flex-shrink: 0;
+    background-color: rgb(255, 255, 255);
+    border-width: 1px;
+    border-color: rgb(28, 30, 36);
     overflow: hidden;
 }
 
@@ -3694,13 +3584,17 @@
     height: 58px;
     justify-content: center;
     padding-left: 14px;
-    padding-right: 14px;
     background-color: rgb(22, 12, 18);
+    padding-right: 14px;
     border-top-width: 1px;
     border-top-color: rgb(252, 214, 58);
 }
 
 .mb__training-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
     background-color: rgb(126, 16, 52);
 }
 
@@ -3714,8 +3608,8 @@
 .mb__training-days {
     margin-top: 3px;
     font-size: 10px;
-    letter-spacing: 1px;
     color: rgb(226, 208, 214);
+    letter-spacing: 1px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -3776,26 +3670,14 @@
 
 /* ---- the service readout ---- */
 
-.service__row {
-    flex-direction: row;
-    align-items: center;
-}
 
-.service__dial {
-    width: 128px;
-    flex-shrink: 0;
-    align-items: center;
-}
 
-.gauge {
-    width: 116px;
-    height: 66px;
-    flex-shrink: 0;
-}
 
+/* One rule. There were two of these and the later one quietly won, which is why editing the
+   first one appeared to do nothing. Half again on the size, with the gauge. */
 .service__percent {
-    margin-top: -22px;
-    font-size: 17px;
+    margin-top: -34px;
+    font-size: 33px;
     -unity-font-style: bold;
     color: rgb(58, 62, 70);
 }
@@ -3806,15 +3688,6 @@
     color: rgb(140, 148, 164);
 }
 
-.gauge-scale {
-    width: 92px;
-    flex-shrink: 0;
-    flex-direction: row;
-    align-items: stretch;
-    height: 62px;
-    margin-left: 10px;
-    margin-right: 14px;
-}
 
 .gauge-scale__words {
     flex-grow: 1;
@@ -3826,9 +3699,12 @@
     color: rgb(150, 156, 170);
 }
 
-.gauge-scale__word--critical { color: rgb(196, 62, 44); }
-.gauge-scale__word--unstable { color: rgb(176, 152, 30); }
-.gauge-scale__word--stable { color: rgb(58, 158, 60); }
+.gauge-scale__word--critical {
+    color: rgb(196, 62, 44); }
+.gauge-scale__word--unstable {
+    color: rgb(176, 152, 30); }
+.gauge-scale__word--stable {
+    color: rgb(58, 158, 60); }
 
 .gauge-scale__word--on {
     -unity-font-style: bold;
@@ -3851,19 +3727,15 @@
     color: rgb(28, 30, 36);
 }
 
-.service__words {
-    flex-grow: 1;
-    flex-shrink: 1;
-}
 
 .service__response {
-    font-size: 12px;
+    font-size: 18px;
     -unity-font-style: bold;
 }
 
 .service__headline {
     margin-top: 3px;
-    font-size: 10px;
+    font-size: 15px;
     color: rgb(168, 178, 196);
     white-space: normal;
 }
@@ -3977,6 +3849,7 @@
 }
 
 .service__row {
+    flex-direction: row;
     align-items: stretch;
 }
 
@@ -3984,26 +3857,30 @@
 
 .service__dial {
     width: 168px;
+    flex-shrink: 0;
+    align-items: center;
 }
 
 .gauge {
     width: 152px;
     height: 86px;
-}
-
-.service__percent {
-    margin-top: -28px;
-    font-size: 22px;
+    flex-shrink: 0;
 }
 
 .gauge-scale {
-    height: 80px;
+    width: 92px;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: stretch;
+    height: 120px;
+    margin-left: 10px;
+    margin-right: 14px;
 }
 
 .service__words {
-    width: 220px;
     flex-grow: 0;
     flex-shrink: 0;
+    width: 220px;
     justify-content: center;
     margin-right: 12px;
 }
@@ -4211,8 +4088,10 @@
     color: rgb(140, 152, 172);
 }
 
-.rcard__badge--ready { color: rgb(126, 210, 150); }
-.rcard__badge--done { color: rgb(126, 196, 250); }
+.rcard__badge--ready {
+    color: rgb(126, 210, 150); }
+.rcard__badge--done {
+    color: rgb(126, 196, 250); }
 
 .rcard__body {
     font-size: 10px;
@@ -4303,18 +4182,25 @@
    --------------------------------------------------------------------------- */
 
 .tree-pip {
-    width: 72px;
-    height: 72px;
-    border-radius: 36px;
+    width: 90px;
+    height: 90px;
+    margin: 0;
+    padding: 0;
+    background-color: rgb(18, 22, 30);
     border-width: 3px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 45px;
+    align-items: center;
+    justify-content: center;
+    transition-property: border-color, background-color, scale;
+    transition-duration: 140ms;
 }
 
 .tree-pip__icon {
-    width: 46px;
-    height: 46px;
-}
-
-.tree-pip:hover {
+    width: 58px;
+    height: 30px;
+    opacity: 0.85;
+    -unity-background-scale-mode: scale-to-fit;
     scale: 1.10 1.10;
 }
 
@@ -4361,8 +4247,8 @@
 }
 
 .chan {
-    width: 152px;
-    height: 208px;
+    width: 228px;
+    height: 312px;
     margin: 0;
     margin-right: 10px;
     margin-bottom: 10px;
@@ -4414,7 +4300,7 @@
 }
 
 .chan__name {
-    font-size: 15px;
+    font-size: 20px;
     -unity-font-style: bold;
     letter-spacing: 2px;
     color: rgb(246, 248, 252);
@@ -4423,7 +4309,7 @@
 }
 
 .chan__price {
-    font-size: 9px;
+    font-size: 15px;
     letter-spacing: 1px;
     color: rgb(176, 190, 212);
     padding-left: 11px;
@@ -5973,11 +5859,11 @@
    itself in, which is the only reason the logos are worth loading at all. */
 
 .lab-badge {
-    width: 30px;
-    height: 30px;
+    width: 42px;
+    height: 42px;
     flex-shrink: 0;
     margin-right: 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.06);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.10);
@@ -6003,14 +5889,24 @@
     color: rgb(226, 236, 250);
 }
 
+/* Two labs to a row. Nine of them stacked one per line was a column of small text down the
+   middle of a wide screen, which is the least readable shape a list can take. */
+.rank-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
 .rank-row {
     flex-direction: row;
     align-items: center;
     flex-shrink: 0;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgba(255, 255, 255, 0.05);
+    width: 48%;
+    margin-right: 2%;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: var(--card-radius);
+    background-color: rgba(255, 255, 255, 0.03);
+    border-bottom-width: 0;
 }
 
 .rank-row--mine {
@@ -6034,7 +5930,7 @@
 }
 
 .rank-row__name {
-    font-size: 13px;
+    font-size: 15px;
     -unity-font-style: bold;
     color: rgb(232, 240, 252);
 }
@@ -6054,12 +5950,16 @@
     -unity-text-align: middle-right;
 }
 
+/* Was ten pixels in mid grey against a dark panel, which is invisible at a glance and is the
+   only place the share is stated. */
 .rank-row__detail {
-    width: 168px;
+    width: 150px;
     flex-shrink: 0;
-    font-size: 10px;
-    color: rgb(150, 162, 182);
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(206, 218, 236);
     -unity-text-align: middle-right;
+    white-space: normal;
 }
 
 
@@ -6393,4 +6293,135 @@
 .map-button:hover {
     opacity: 1;
     border-color: rgb(226, 78, 62);
+}
+
+
+/* ---- the one notice that interrupts ----
+
+   A finished run leaves a decision sitting on a shelf, and waiting there costs position every day.
+   It offers the two things worth doing rather than only an acknowledgement, because a dialog whose
+   only button is OK tells the player something and then makes them find the screen themselves. */
+
+.notice-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.62);
+}
+
+.notice {
+    width: 480px;
+    padding: 24px;
+    border-radius: 8px;
+    background-color: rgb(16, 21, 30);
+    border-width: 2px;
+    border-color: rgb(226, 78, 62);
+}
+
+.notice__title {
+    font-size: 20px;
+    letter-spacing: 2.5px;
+    -unity-font-style: bold;
+    color: rgb(244, 248, 255);
+    margin-bottom: 10px;
+}
+
+.notice__body {
+    font-size: 14px;
+    color: rgb(214, 224, 238);
+    white-space: normal;
+}
+
+.notice__note {
+    font-size: 11px;
+    color: rgb(150, 162, 182);
+    white-space: normal;
+    margin-top: 10px;
+}
+
+.notice__buttons {
+    flex-direction: row;
+    margin-top: 20px;
+}
+
+.notice__button {
+    margin: 0;
+    margin-right: 8px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-size: 11px;
+    letter-spacing: 1.3px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+
+.notice__button:hover {
+    background-color: rgba(255, 255, 255, 0.11);
+}
+
+.notice__button--go {
+    color: rgb(255, 250, 248);
+    background-color: rgb(226, 78, 62);
+    border-color: rgb(240, 110, 94);
+}
+
+.notice__button--go:hover {
+    background-color: rgb(240, 96, 80);
+}
+
+/* ---- one scroller for every screen, with no bar ----
+
+   UI Toolkit shrinks children rather than overflowing them, so a page past the window height was
+   not clipped, it was squashed. Every tab goes through this now. */
+
+.page-scroll {
+    flex-grow: 1;
+    width: 100%;
+}
+
+/* The slider inside a creator stage.
+
+   Named from C# since the creator was written and never present here, so it took the runtime
+   theme's default: a thick grey groove with a square grip, which is the exact look the brief called
+   out as dated. A hairline track with a round grip that grows on hover instead. */
+
+.stage-slider__control {
+    height: 22px;
+    margin: 0;
+    margin-top: 4px;
+    flex-grow: 1;
+}
+
+.stage-slider__control .unity-base-slider__tracker {
+    height: 3px;
+    margin-top: 9px;
+    border-width: 0;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.stage-slider__control .unity-base-slider__dragger {
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+    border-width: 2px;
+    border-color: rgb(244, 240, 232);
+    border-radius: 8px;
+    background-color: rgb(226, 78, 62);
+    transition-property: scale;
+    transition-duration: 120ms;
+}
+
+.stage-slider__control:hover .unity-base-slider__dragger {
+    scale: 1.18 1.18;
 }
