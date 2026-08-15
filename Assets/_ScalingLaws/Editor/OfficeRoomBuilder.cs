@@ -298,6 +298,11 @@ namespace ScalingLaws.Editor
             Marker(parent, "StairHead", new Vector3(1.0f, GroundHeight + SlabThickness, 5.8f));
             Marker(parent, "Bed", new Vector3(6.4f, GroundHeight + SlabThickness, 6.2f));
             Marker(parent, "UpstairsDesk", new Vector3(3.4f, GroundHeight + SlabThickness, 7.7f));
+
+            // The way out. FounderRoutine sends the walk through these when the player opens the
+            // map, and a test holds that every name it asks for is one this method writes.
+            Marker(parent, "Garage", new Vector3(12.4f, 0f, -1.4f));
+            Marker(parent, "Car", new Vector3(13.8f, 0f, -3.2f));
         }
 
         // ------------------------------------------------------------------ scene

@@ -127,11 +127,13 @@ namespace ScalingLaws.Data
     /// was about to fall over. That is most of what makes a field of competitors interesting, and
     /// none of it was anywhere in the game.
     ///
-    /// **The names are parodies and the histories are real.** That is the whole trick, and it is
-    /// the same one Game Dev Tycoon plays: a player who was there recognises every beat, and no
-    /// actual company has its name attached to the word scandal. The four labs added in August 2026
-    /// are parody-named; the nine older ones still carry real names and should not, which is a job
-    /// waiting rather than a decision.
+    /// **Every name is a parody and every history is real.** That is the whole trick, and it is the
+    /// same one Game Dev Tycoon plays: a player who was there recognises every beat, and no actual
+    /// company has its name attached to the word scandal.
+    ///
+    /// The nine older labs were renamed on 2026-08-15 and the names were not invented that day. They
+    /// had been sitting in the logo file names since the marks were drawn in August, because whoever
+    /// drew them had already made this decision. `NameOf` was the only thing that never caught up.
     ///
     /// Every chapter is a documented public event unless it carries `IsProjection`. That boundary is
     /// not decoration: these arcs are drawn from things that actually happened, and the difference
@@ -193,7 +195,7 @@ namespace ScalingLaws.Data
             {
                 // ---------------------------------------------------------------- the frontier
 
-                new LabDossier(CompetitorId.OpenAi, "OpenAI", On(2015, 12, 11), "San Francisco",
+                new LabDossier(CompetitorId.OpenAi, "OpenSI", On(2015, 12, 11), "San Francisco",
                     "Consumer reach first, frontier capability second, and the two feed each other.",
                     "Started as a non-profit research lab and restructured around a capped-profit arm "
                     + "in 2019 to pay for compute. The chat product in late 2022 is the moment this "
@@ -214,7 +216,7 @@ namespace ScalingLaws.Data
                             + "frontier."),
                     }),
 
-                new LabDossier(CompetitorId.Anthropic, "Anthropic", On(2021, 1, 1), "San Francisco",
+                new LabDossier(CompetitorId.Anthropic, "Antropic", On(2021, 1, 1), "San Francisco",
                     "Safety as a product feature, sold to companies that have to answer for what "
                     + "their software does.",
                     "Founded by people who left the frontier lab they helped build, over how fast it "
@@ -229,7 +231,7 @@ namespace ScalingLaws.Data
                             + "The quiet part was the strategy."),
                     }),
 
-                new LabDossier(CompetitorId.GoogleDeepMind, "Google DeepMind", On(2010, 9, 23),
+                new LabDossier(CompetitorId.GoogleDeepMind, "DeepThink", On(2010, 9, 23),
                     "London",
                     "A research institution attached to the largest distribution channel on earth.",
                     "Bought in 2014 and merged with its parent's own AI division in 2023. It has the "
@@ -245,7 +247,7 @@ namespace ScalingLaws.Data
                             + "two years possible."),
                     }),
 
-                new LabDossier(CompetitorId.MetaAi, "Meta AI", On(2013, 12, 9), "Menlo Park",
+                new LabDossier(CompetitorId.MetaAi, "Infinity", On(2013, 12, 9), "Menlo Park",
                     "Give the weights away and make everyone else's moat worthless.",
                     "The only lab at this scale whose strategy is to destroy the price of the thing "
                     + "everybody else sells. It does not need the model to earn; it needs the model "
@@ -260,7 +262,7 @@ namespace ScalingLaws.Data
                             + "for."),
                     }),
 
-                new LabDossier(CompetitorId.MistralAi, "Mistral AI", On(2023, 4, 28), "Paris",
+                new LabDossier(CompetitorId.MistralAi, "Astral", On(2023, 4, 28), "Paris",
                     "Small, fast, open, European. Efficiency as the whole argument.",
                     "Founded by researchers out of the big labs, and it shipped a model people "
                     + "actually used within six months of existing. Proof that the frontier is not "
@@ -274,7 +276,7 @@ namespace ScalingLaws.Data
                             + "enough to run on one machine."),
                     }),
 
-                new LabDossier(CompetitorId.DeepSeek, "DeepSeek", On(2023, 7, 17), "Hangzhou",
+                new LabDossier(CompetitorId.DeepSeek, "DeepSearch", On(2023, 7, 17), "Hangzhou",
                     "Frontier capability at a cost that makes the incumbents' pricing look absurd.",
                     "Grew out of a quantitative trading firm, which shows: the whole company is an "
                     + "argument about cost per unit of capability. Its releases repeatedly moved "
@@ -289,7 +291,7 @@ namespace ScalingLaws.Data
                             + "fall worldwide on the news."),
                     }),
 
-                new LabDossier(CompetitorId.XAi, "xAI", On(2023, 3, 9), "Bay Area",
+                new LabDossier(CompetitorId.XAi, "zAI", On(2023, 3, 9), "Bay Area",
                     "Attention as a distribution strategy, and a very large cluster very quickly.",
                     "Started late and bought its way to the frontier with capital and speed of "
                     + "buildout rather than a research lead. What it has that nobody else does is a "
@@ -304,7 +306,7 @@ namespace ScalingLaws.Data
                             + "be a strategy."),
                     }),
 
-                new LabDossier(CompetitorId.AlibabaQwen, "Qwen", On(2023, 4, 7), "Hangzhou",
+                new LabDossier(CompetitorId.AlibabaQwen, "Swen", On(2023, 4, 7), "Hangzhou",
                     "Open weights across every size, backed by a cloud business that wants the "
                     + "workloads.",
                     "A cloud vendor's model family rather than a startup, which is why it ships in "
@@ -319,7 +321,7 @@ namespace ScalingLaws.Data
                             + "worth more to them than being the best."),
                     }),
 
-                new LabDossier(CompetitorId.Groq, "Nine Volt Labs", On(2022, 1, 3), "Austin",
+                new LabDossier(CompetitorId.Groq, "Grob", On(2022, 1, 3), "Austin",
                     "Nothing in particular, which is the problem.",
                     "A small lab that started the same month you did, with roughly the same money "
                     + "and the same idea. It ships steadily and falls further behind every year, "
