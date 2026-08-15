@@ -1366,8 +1366,8 @@
 .hud__bar {
     flex-direction: row;
     align-items: flex-end;
-    height: 74px;
-    padding-left: 18px;
+    height: 82px;
+    padding-left: 6px;
     padding-right: 22px;
     background-color: rgba(9, 10, 13, 0.90);
     border-top-width: 1px;
@@ -1488,7 +1488,7 @@
 
 .hud-slot {
     width: 84px;
-    height: 56px;
+    height: 64px;
     margin: 0;
     margin-left: 2px;
     padding: 0;
@@ -1505,9 +1505,11 @@
 
 /* The plate a real icon drops into later. Sized now so adding art moves nothing. */
 
+/* Thirty percent up from 26. The bar is the thing a player looks at most and the icons were
+   small enough that the label was doing all the work. */
 .hud-slot__icon {
-    width: 26px;
-    height: 26px;
+    width: 34px;
+    height: 34px;
     margin-bottom: 5px;
     background-color: rgba(255, 255, 255, 0.10);
     border-radius: 4px;
@@ -2381,15 +2383,17 @@
     padding-top: 0;
 }
 
+/* Twenty five percent up from 48. A node is the main control on this screen and it was smaller
+   than the buttons on every other one. */
 .tree-pip {
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     margin: 0;
     padding: 0;
     background-color: rgb(18, 22, 30);
     border-width: 2px;
     border-color: rgba(255, 255, 255, 0.14);
-    border-radius: 24px;
+    border-radius: 30px;
     align-items: center;
     justify-content: center;
     transition-property: border-color, background-color, scale;
@@ -2421,8 +2425,8 @@
 }
 
 .tree-pip__icon {
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
     opacity: 0.85;
     -unity-background-scale-mode: scale-to-fit;
 }
@@ -2436,7 +2440,7 @@
 
 .tree-node__label {
     margin-top: 6px;
-    font-size: 9px;
+    font-size: 10.5px;
     letter-spacing: 1px;
     color: rgb(126, 140, 160);
     white-space: normal;
@@ -4825,16 +4829,33 @@
 
 /* ---- corner banner, top left, opposite the model banner ---- */
 
+/* Seventy percent transparent at rest. It sits over the office and is meant to be glanceable
+   rather than read, so it comes up to full strength only on hover or when something lands. */
 .nb {
     position: absolute;
     top: 54px;
     left: 20px;
     width: 300px;
+    opacity: 0.3;
     background-color: rgba(10, 12, 18, 0.93);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.14);
     border-radius: 6px;
     overflow: hidden;
+    transition-property: opacity, border-color;
+    transition-duration: 220ms;
+}
+
+.nb:hover {
+    opacity: 1;
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Two seconds after a story lands, then back down. A banner that stays bright until it is clicked
+   is a banner that is bright permanently by the second year. */
+.nb--new {
+    opacity: 1;
+    border-color: rgb(226, 78, 62);
 }
 
 .nb__head {
@@ -6039,4 +6060,89 @@
     font-size: 10px;
     color: rgb(150, 162, 182);
     -unity-text-align: middle-right;
+}
+
+
+/* ---- research: the first era and the funding panel share a line ----
+
+   Funding is a setting a player touches twice a campaign and the tree is what they came for, so the
+   tree starts at the top of the screen and the setting fills the space beside the first era, whose
+   track is short enough to leave it empty anyway. */
+
+.era-row {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+.era--beside {
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding-right: 20px;
+}
+
+.era-row .rfund-half {
+    width: 34%;
+    flex-shrink: 0;
+}
+
+/* ---- the card that opens under the cursor ----
+
+   This is where a node is read and started. It was written months ago and never called from
+   anywhere, so clicking a node moved a ring and told the player nothing. */
+
+.rcard__opens {
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(140, 154, 176);
+    margin-top: 12px;
+    margin-bottom: 4px;
+}
+
+.rcard__unlock {
+    font-size: 11px;
+    color: rgb(196, 208, 226);
+    white-space: normal;
+    margin-bottom: 2px;
+    padding-left: 8px;
+}
+
+.rcard__costs {
+    flex-direction: row;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+.rcard-figure {
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+.rcard-figure__label {
+    font-size: 8px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(140, 154, 176);
+}
+
+.rcard-figure__value {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 252);
+    margin-top: 1px;
+}
+
+/* Red rather than hidden. The player is allowed to look at a node they cannot afford yet and see
+   exactly which of the two things they are short of. */
+.rcard-figure--short .rcard-figure__value {
+    color: rgb(232, 130, 112);
+}
+
+.rcard__have {
+    font-size: 10px;
+    color: rgb(140, 152, 172);
+    margin-top: 8px;
 }

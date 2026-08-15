@@ -19,6 +19,15 @@ namespace ScalingLaws.UI
     public sealed class NewsBanner
     {
         private readonly Func<NewsFeed> feed;
+
+        /// <summary>
+        /// What the unread count was last time, so a rise can be noticed.
+        ///
+        /// The banner sits at seventy percent transparent and is meant to be ignorable. That only
+        /// works if it has a way to ask for attention when something actually arrives, otherwise
+        /// quiet and important look identical.
+        /// </summary>
+        private int lastUnread = -1;
         private readonly Label kicker;
         private readonly Label headline;
         private readonly Label dateline;
@@ -83,6 +92,18 @@ namespace ScalingLaws.UI
         public void SetHidden(bool hidden) =>
             Root.style.display = hidden ? DisplayStyle.None : DisplayStyle.Flex;
 
+        /// <summary>
+        /// Comes up to full strength for a moment, then fades back.
+        ///
+        /// Two seconds rather than a permanent change, because a banner that stays bright until it
+        /// is clicked is a banner that is always bright by the second year.
+        /// </summary>
+        private void Flash()
+        {
+            Root.AddToClassList("nb--new");
+            Root.schedule.Execute(() => Root.RemoveFromClassList("nb--new")).ExecuteLater(2000);
+        }
+
         public void Refresh()
         {
             var news = feed();
@@ -104,6 +125,13 @@ namespace ScalingLaws.UI
 
             badge.text = news.Unread > 0 ? news.Unread.ToString() : string.Empty;
             badge.style.display = news.Unread > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (lastUnread >= 0 && news.Unread > lastUnread)
+            {
+                Flash();
+            }
+
+            lastUnread = news.Unread;
 
             rule.EnableInClassList("nb__rule--loud", story.Weight == NewsWeight.Loud);
             rule.EnableInClassList("nb__rule--scandal", story.Section == NewsSection.Scandals);

@@ -532,26 +532,6 @@ namespace ScalingLaws.UI
             return tile;
         }
 
-        private static VisualElement ComingRow(string label, string value)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("coming-row");
-
-            var name = new Label(label);
-            name.AddToClassList("coming-row__label");
-            row.Add(name);
-
-            var amount = new Label(value);
-            amount.AddToClassList("coming-row__value");
-            row.Add(amount);
-
-            var tag = new Label("INCOMING");
-            tag.AddToClassList("coming-row__tag");
-            row.Add(tag);
-
-            return row;
-        }
-
         /// <summary>
         /// The last stage: what happens the day the run finishes.
         ///

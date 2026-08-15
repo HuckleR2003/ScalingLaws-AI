@@ -526,165 +526,6 @@ namespace ScalingLaws.UI
                 financeReport.Open();
             }
         }
-
-        /// <summary>
-        /// The people counter, top right, above the training strip.
-        ///
-        /// Three facts and nothing else: how many people use something the company built, whether
-        /// they would rather be somewhere else, and which way the number is going. The arrows are a
-        /// forecast rather than a history, because by the time a decline shows up in a history the
-        /// decision that caused it is months old.
-        /// </summary>
-        private VisualElement BuildPulseBanner()
-        {
-            pulseBanner = new VisualElement();
-            pulseBanner.AddToClassList("pulse");
-            pulseBanner.pickingMode = PickingMode.Ignore;
-
-            var left = new VisualElement();
-            left.AddToClassList("pulse__block");
-
-            pulseUsers = new Label("0");
-            pulseUsers.AddToClassList("pulse__users");
-            left.Add(pulseUsers);
-
-            var caption = new Label("USERS");
-            caption.AddToClassList("pulse__caption");
-            left.Add(caption);
-
-            pulseBanner.Add(left);
-
-            pulseArrows = new Label();
-            pulseArrows.AddToClassList("pulse__arrows");
-            pulseBanner.Add(pulseArrows);
-
-            var right = new VisualElement();
-            right.AddToClassList("pulse__block");
-            right.AddToClassList("pulse__block--right");
-
-            pulseMood = new Label("-");
-            pulseMood.AddToClassList("pulse__mood");
-            right.Add(pulseMood);
-
-            pulseSatisfaction = new Label();
-            pulseSatisfaction.AddToClassList("pulse__caption");
-            right.Add(pulseSatisfaction);
-
-            pulseBanner.Add(right);
-            return pulseBanner;
-        }
-
-        /// <summary>
-        /// Pushed every frame alongside the clock, so a market that moves while the player watches
-        /// actually looks like it is moving.
-        /// </summary>
-        private void RefreshPulseBanner()
-        {
-            if (pulseBanner == null || simulation == null)
-            {
-                return;
-            }
-
-            // Only on the site screen. It is a glance at the company, not a permanent overlay, and on
-            // every other tab it sat on top of that tab's own header.
-            var onSite = current == Screen.Site;
-            pulseBanner.style.display = onSite ? DisplayStyle.Flex : DisplayStyle.None;
-
-            if (!onSite)
-            {
-                return;
-            }
-
-            var sentiment = simulation.Sentiment();
-
-            pulseUsers.text = UiFormat.Count(sentiment.Users);
-            pulseMood.text = sentiment.Mood;
-            pulseSatisfaction.text = sentiment.HasAudience
-                ? UiFormat.Percent(sentiment.Satisfaction)
-                : "NOTHING SHIPPED";
-
-            var arrows = sentiment.Arrows;
-            pulseArrows.text = arrows == 0
-                ? "="
-                : new string(arrows > 0 ? '\u25B2' : '\u25BC', Math.Abs(arrows));
-
-            pulseArrows.EnableInClassList("pulse__arrows--up", arrows > 0);
-            pulseArrows.EnableInClassList("pulse__arrows--down", arrows < 0);
-            pulseArrows.EnableInClassList("pulse__arrows--flat", arrows == 0);
-
-            // Only alarming when there are actually people to lose.
-            pulseBanner.EnableInClassList("pulse--alarm",
-                sentiment.HasAudience && sentiment.Satisfaction < 0.25);
-            pulseArrows.tooltip =
-                $"Forecast {sentiment.Momentum:+0.0%;-0.0%;0.0%} against today. Largest rival holds "
-                + $"{UiFormat.Count(sentiment.BestRivalUsers)}.";
-        }
-
-        /// <summary>
-        /// The strip that says a run is in flight.
-        ///
-        /// It lives on the root rather than inside a screen, because the run keeps going whatever
-        /// the player is looking at and the one thing they must never have to hunt for is whether
-        /// the company is currently spending money on compute.
-        /// </summary>
-        private VisualElement BuildTrainingBanner()
-        {
-            trainingBanner = new VisualElement();
-            trainingBanner.AddToClassList("training-banner");
-            trainingBanner.pickingMode = PickingMode.Ignore;
-            trainingBanner.style.display = DisplayStyle.None;
-
-            var row = new VisualElement();
-            row.AddToClassList("training-banner__row");
-
-            trainingLabel = new Label("MODEL IS CURRENTLY TRAINING");
-            trainingLabel.AddToClassList("training-banner__label");
-            row.Add(trainingLabel);
-
-            trainingDays = new Label();
-            trainingDays.AddToClassList("training-banner__days");
-            row.Add(trainingDays);
-
-            trainingBanner.Add(row);
-
-            var track = new VisualElement();
-            track.AddToClassList("training-banner__track");
-
-            trainingFill = new VisualElement();
-            trainingFill.AddToClassList("training-banner__fill");
-            track.Add(trainingFill);
-
-            trainingBanner.Add(track);
-            return trainingBanner;
-        }
-
-        /// <summary>
-        /// Days left is derived from how much compute is still owed at the throughput actually
-        /// running, not from a number stored when the run started. If the player rents more capacity
-        /// halfway through, the estimate has to move, because the run really does finish sooner.
-        /// </summary>
-        private void RefreshTrainingBanner()
-        {
-            var run = state.ActiveRun;
-            if (run == null)
-            {
-                trainingBanner.style.display = DisplayStyle.None;
-                return;
-            }
-
-            trainingBanner.style.display = DisplayStyle.Flex;
-
-            var progress = run.Progress;
-            trainingFill.style.width = Length.Percent((float)(progress * 100.0));
-
-            var remaining = Math.Max(0.0, run.PetaflopDaysRequired - run.PetaflopDaysCompleted);
-            var perDay = Math.Max(1e-6, simulation.Profile.EffectivePetaflops * state.TrainingComputeShare);
-            var days = (int)Math.Ceiling(remaining / perDay);
-
-            trainingLabel.text = $"{run.Blueprint.Name.ToUpperInvariant()} IS TRAINING";
-            trainingDays.text = days <= 0 ? "FINISHING" : $"{days} DAYS LEFT";
-        }
-
         private VisualElement BuildTopBar()
         {
             var bar = new VisualElement();
@@ -871,6 +712,17 @@ namespace ScalingLaws.UI
 
             hud.SetActiveSlot(screen);
 
+            // Hidden here rather than only in RefreshChrome, which runs when a day rolls over. While
+            // the game is paused, which is most of the time a player spends reading a screen, no day
+            // rolls over, so both corner banners stayed on top of whatever tab had just been opened.
+            modelBanner?.SetHidden(screen != Screen.Site);
+            newsBanner?.SetHidden(screen != Screen.Site);
+
+            foreach (var follower in followerBanners)
+            {
+                follower.SetHidden(screen != Screen.Site);
+            }
+
             // Borrowed from Baka Bake Bakery, where the opening changes screens on a diagonal rather
             // than by cutting. It costs nothing and it is the difference between a screen appearing
             // and a screen arriving. Only on a real change: the clock rebuilds the open page every
@@ -959,16 +811,17 @@ namespace ScalingLaws.UI
         private VisualElement BuildResearchScreen()
         {
             var active = state.ActiveResearch;
+            // No standing blurb. The tree is the explanation, and a paragraph above it pushed the
+            // first era half a screen down for something nobody reads twice.
             var page = NewPage("RESEARCH",
                 active != null
                     ? $"{ResearchTree.Get(active.Node).DisplayName} in progress: {UiFormat.Percent(active.Progress, 0)}, "
                       + $"{active.DaysCompleted} of {active.DurationDays} days."
-                    : "Every architecture, corpus, upgrade line, model type and compute tier in the "
-                      + "game sits behind a node here. The calendar cost cannot be bought out of.");
-
-            page.Add(BuildResearchFunding());
+                    : string.Empty);
 
             var board = simulation.ResearchBoard();
+            var funding = BuildResearchFunding();
+            var placedFunding = false;
 
             foreach (ResearchEra era in Enum.GetValues(typeof(ResearchEra)))
             {
@@ -1006,25 +859,32 @@ namespace ScalingLaws.UI
                 }
 
                 section.Add(track);
-                page.Add(section);
-            }
 
-            if (selectedResearch != ResearchNodeId.None)
-            {
-                foreach (var standing in board)
+                // Funding rides alongside the first era rather than sitting above everything. It is
+                // a setting the player touches twice a campaign and the tree is what they came for,
+                // so the tree starts at the top of the screen and the setting fills the gap beside
+                // it that the first era's short track leaves empty anyway.
+                if (!placedFunding)
                 {
-                    if (standing.Node.Id == selectedResearch)
-                    {
-                        page.Add(BuildResearchCard(standing));
-                        break;
-                    }
+                    placedFunding = true;
+
+                    var row = new VisualElement();
+                    row.AddToClassList("era-row");
+
+                    section.AddToClassList("era--beside");
+                    row.Add(section);
+                    row.Add(funding);
+                    page.Add(row);
+                }
+                else
+                {
+                    page.Add(section);
                 }
             }
-            else
+
+            if (!placedFunding)
             {
-                var hint = new Label("Pick a node to see what it opens.");
-                hint.AddToClassList("field__hint");
-                page.Add(hint);
+                page.Add(funding);
             }
 
             return page;
@@ -1048,6 +908,7 @@ namespace ScalingLaws.UI
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
+            panel.AddToClassList("rfund-half");
 
             var head = new VisualElement();
             head.AddToClassList("rfund__head");
@@ -1208,15 +1069,48 @@ namespace ScalingLaws.UI
             body.AddToClassList("rcard__body");
             researchCard.Add(body);
 
+            // What it opens. This is the half of a node that decides whether it is worth doing, and
+            // it was only ever drawn on the card at the bottom of the page that nobody scrolled to.
+            // Built into a list first, because the heading above them should not print when the
+            // node opens nothing, and the source is a lazy sequence that cannot be counted twice.
+            var effects = new List<VisualElement>(UnlockLines(node));
+            if (effects.Count > 0)
+            {
+                var opens = new Label("WHAT IT OPENS");
+                opens.AddToClassList("rcard__opens");
+                researchCard.Add(opens);
+
+                foreach (var line in effects)
+                {
+                    line.AddToClassList("rcard__unlock");
+                    researchCard.Add(line);
+                }
+            }
+
             var points = ResearchBudget.PointCostOf(node.CostUsd);
             var cash = ResearchBudget.CashCostOf(node.CostUsd);
 
-            var cost = new Label(
-                $"{points:N0} research points and {UiFormat.Money(cash)}, "
-                + $"about {standing.DurationDays} days.");
+            // Three figures rather than a sentence, because these are the three the player is
+            // comparing against what they have, and a sentence makes them read it to find them.
+            var cost = new VisualElement();
+            cost.AddToClassList("rcard__costs");
 
-            cost.AddToClassList("rcard__cost");
+            cost.Add(RCardFigure("POINTS", $"{points:N0}",
+                simulation.State.ResearchPoints >= points));
+
+            cost.Add(RCardFigure("CASH", UiFormat.Money(cash),
+                simulation.State.CashUsd >= cash));
+
+            cost.Add(RCardFigure("TAKES", UiFormat.Days(standing.DurationDays), true));
+
             researchCard.Add(cost);
+
+            var have = new Label(
+                $"You have {simulation.State.ResearchPoints:N0} points and "
+                + $"{UiFormat.Money(simulation.State.CashUsd)}.");
+
+            have.AddToClassList("rcard__have");
+            researchCard.Add(have);
 
             if (!standing.CanStart && !standing.IsUnlocked && !standing.IsInProgress)
             {
@@ -1236,7 +1130,7 @@ namespace ScalingLaws.UI
                     researchCard?.RemoveFromHierarchy();
                     Show(Screen.Research);
                 })
-                { text = "BEGIN" };
+                { text = "BEGIN THIS RESEARCH" };
 
                 start.AddToClassList("button");
                 start.AddToClassList("button--primary");
@@ -1253,6 +1147,24 @@ namespace ScalingLaws.UI
             shellRoot.Add(researchCard);
         }
 
+        /// <summary>One figure on the card, greyed when the company cannot cover it.</summary>
+        private static VisualElement RCardFigure(string label, string value, bool affordable)
+        {
+            var figure = new VisualElement();
+            figure.AddToClassList("rcard-figure");
+            figure.EnableInClassList("rcard-figure--short", !affordable);
+
+            var caption = new Label(label);
+            caption.AddToClassList("rcard-figure__label");
+            figure.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("rcard-figure__value");
+            figure.Add(amount);
+
+            return figure;
+        }
+
         private VisualElement BuildTreeNode(ResearchStanding standing, bool above)
         {
             var node = standing.Node;
@@ -1261,10 +1173,15 @@ namespace ScalingLaws.UI
             column.AddToClassList("tree-node");
             column.EnableInClassList("tree-node--above", above);
 
-            var button = new Button(() =>
+            // ShowResearchCard was written in full and never called from anywhere, so clicking a
+            // node only moved a ring and the player was left to guess what the node did. The click
+            // carries its own position, which is why this is a ClickEvent rather than the Button
+            // action: the card opens where the finger is rather than in a fixed corner.
+            var button = new Button();
+            button.RegisterCallback<ClickEvent>(click =>
             {
-                selectedResearch = selectedResearch == node.Id ? ResearchNodeId.None : node.Id;
-                Show(Screen.Research);
+                selectedResearch = node.Id;
+                ShowResearchCard(standing, click.position);
             });
 
             button.AddToClassList("tree-pip");
@@ -1276,9 +1193,9 @@ namespace ScalingLaws.UI
             var icon = new VisualElement();
             icon.AddToClassList("tree-pip__icon");
 
-            // One icon lookup, not two. ResearchIconFor guessed at names like research_code and
-            // research_chat that were never drawn, so every node fell through to the empty badge
-            // while the real files sat in Resources/Research under their catalogued names.
+            // One icon lookup, and it reads the catalogued names. The lookup this replaced
+            // guessed at names like research_code and research_chat that were never drawn, so every
+            // node fell through to the empty badge while the real files sat in Resources/Research.
             var art = ResearchIcons.Get(node.Id);
             if (art != null)
             {
@@ -1299,118 +1216,6 @@ namespace ScalingLaws.UI
             return column;
         }
 
-        /// <summary>
-        /// Which icon a node uses. Several nodes share one, because the icon says what kind of thing
-        /// is being unlocked rather than naming the node, and that is what makes a tree scannable.
-        /// </summary>
-        private static string ResearchIconFor(ResearchNodeId id) => id switch
-        {
-            ResearchNodeId.CodingModels => "research_code",
-            ResearchNodeId.ConversationalModels => "research_chat",
-            ResearchNodeId.AutomationModels => "research_process",
-            ResearchNodeId.AgenticWorkstation => "research_agent",
-            ResearchNodeId.ModelSeries => "research_series",
-            ResearchNodeId.CuratedCorpora => "research_data",
-            ResearchNodeId.LicensedArchives => "research_data",
-            ResearchNodeId.SyntheticDataGeneration => "research_data",
-            ResearchNodeId.EfficientAttention => "research_speed",
-            ResearchNodeId.MixtureOfExperts => "research_architecture",
-            ResearchNodeId.HybridArchitectures => "research_architecture",
-            ResearchNodeId.LongContextMixtures => "research_architecture",
-            ResearchNodeId.ContextWindowExpansion => "research_context",
-            ResearchNodeId.DatacenterProgramme => "research_datacenter",
-            ResearchNodeId.HumanFeedback => "research_safety",
-            ResearchNodeId.ReasoningModels => "research_reasoning",
-            ResearchNodeId.MultimodalGeneration => "research_multimodal",
-            ResearchNodeId.AutonomousAgents => "research_agent",
-            ResearchNodeId.RecursiveSelfImprovement => "research_recursive",
-            ResearchNodeId.ArtificialSuperintelligence => "research_asi",
-            _ => "research_foundation"
-        };
-
-        /// <summary>
-        /// The card under the spine. Everything a node does, spelled out: what it opens, what it
-        /// costs in money, calendar and compute, and what it needs first.
-        /// </summary>
-        private VisualElement BuildResearchCard(ResearchStanding standing)
-        {
-            var node = standing.Node;
-
-            var card = new VisualElement();
-            card.AddToClassList("research-card");
-
-            var header = new VisualElement();
-            header.AddToClassList("research-card__header");
-
-            var title = new Label(node.DisplayName.ToUpperInvariant());
-            title.AddToClassList("research-card__title");
-            header.Add(title);
-
-            var status = new Label(standing.IsUnlocked
-                ? "DONE"
-                : standing.IsInProgress ? "IN PROGRESS" : standing.CanStart ? "AVAILABLE" : "LOCKED");
-            status.AddToClassList("research-card__status");
-            status.EnableInClassList("research-card__status--done", standing.IsUnlocked);
-            status.EnableInClassList("research-card__status--ready", !standing.IsUnlocked && standing.CanStart);
-            header.Add(status);
-            card.Add(header);
-
-            var body = new Label(node.Description);
-            body.AddToClassList("research-card__body");
-            card.Add(body);
-
-            var unlocks = new VisualElement();
-            unlocks.AddToClassList("research-card__unlocks");
-
-            foreach (var line in UnlockLines(node))
-            {
-                unlocks.Add(line);
-            }
-
-            card.Add(unlocks);
-
-            var costs = new VisualElement();
-            costs.AddToClassList("research-card__costs");
-            costs.Add(CostFigure("COST", UiFormat.Money(node.CostUsd)));
-            costs.Add(CostFigure("CALENDAR", UiFormat.Days(standing.DurationDays)));
-            costs.Add(CostFigure("COMPUTE", $"{UiFormat.Number(node.PetaflopDaysRequired)} PF-days"));
-            costs.Add(CostFigure("NOT BEFORE", node.EarliestDate.ToString()));
-            card.Add(costs);
-
-            if (!string.IsNullOrEmpty(node.Warning))
-            {
-                var warning = new Label(node.Warning);
-                warning.AddToClassList("research-card__warning");
-                card.Add(warning);
-            }
-
-            if (!standing.IsUnlocked)
-            {
-                var start = new Button(() =>
-                {
-                    simulation.TryStartResearch(node.Id, out _);
-                    Show(Screen.Research);
-                })
-                { text = standing.IsInProgress ? "ALREADY RUNNING" : "START THIS" };
-
-                start.AddToClassList("menu-button");
-                start.AddToClassList("menu-button--primary");
-                start.style.marginTop = 12;
-                start.SetEnabled(standing.CanStart);
-                card.Add(start);
-
-                if (!standing.CanStart && !string.IsNullOrEmpty(standing.BlockedReason))
-                {
-                    var blocked = new Label(standing.BlockedReason);
-                    blocked.AddToClassList("research-card__blocked");
-                    card.Add(blocked);
-                }
-            }
-
-            return card;
-        }
-
-        /// <summary>Everything this node opens, read off the node rather than written out twice.</summary>
         private static IEnumerable<VisualElement> UnlockLines(ResearchNode node)
         {
             if (node.UnlocksArchitecture != ArchitectureId.None)
@@ -1471,22 +1276,6 @@ namespace ScalingLaws.UI
             row.Add(name);
 
             return row;
-        }
-
-        private static VisualElement CostFigure(string label, string value)
-        {
-            var figure = new VisualElement();
-            figure.AddToClassList("cost-figure");
-
-            var caption = new Label(label);
-            caption.AddToClassList("cost-figure__label");
-            figure.Add(caption);
-
-            var amount = new Label(value);
-            amount.AddToClassList("cost-figure__value");
-            figure.Add(amount);
-
-            return figure;
         }
 
         private static string EraTitle(ResearchEra era) => era switch

@@ -189,21 +189,6 @@ namespace ScalingLaws.UI
             return footer;
         }
 
-        private static VisualElement Panel(int width)
-        {
-            var panel = new VisualElement();
-            panel.AddToClassList("panel");
-            panel.style.width = width;
-            return panel;
-        }
-
-        private static Label Heading(string text)
-        {
-            var label = new Label(text);
-            label.AddToClassList("page-title");
-            return label;
-        }
-
         private static Label Hint(string text)
         {
             var label = new Label(text);
