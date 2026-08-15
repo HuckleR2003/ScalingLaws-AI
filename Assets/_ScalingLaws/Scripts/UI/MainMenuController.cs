@@ -6,6 +6,7 @@ using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.Video;
 
 namespace ScalingLaws.UI
 {
@@ -22,14 +23,16 @@ namespace ScalingLaws.UI
     [RequireComponent(typeof(UIDocument))]
     public sealed class MainMenuController : MonoBehaviour
     {
-        /// <summary>Seconds each line of the cold open holds before the next appears.</summary>
-        public const float IntroLineSeconds = 2.4f;
-
         /// <summary>Traits shown before the SHOW MORE banner. One row, and the row is four wide.</summary>
         public const int TraitsPerRow = 4;
 
         private static readonly string[] IntroLines =
         {
+            // The one line above the header, then the header, then the rest. The typewriter was
+            // added on top of this list rather than replacing it, so the screen printed the opening
+            // twice: once typed and once revealed a line at a time underneath.
+            "Twelve million dollars, no product, and eleven months before the world finds out what "
+            + "any of this is for.",
             "JANUARY 2022",
             "Language models are a research curiosity with a following of maybe ten thousand people.",
             "Nobody outside the field can name one. Nothing has been productised. Nothing has been priced.",
@@ -64,17 +67,15 @@ namespace ScalingLaws.UI
         private Country chosenCountry = Country.UnitedStates;
 
         private int introLine;
-        private float introTimer;
         private VisualElement introHost;
 
-        // The cold open is one label typed once; the menu line is several, cycling.
-        //
-        // Built in BuildIntro rather than here. Unity forbids creating a VisualElement in a
-        // MonoBehaviour field initializer, and it throws rather than warning: three PlayMode tests
-        // failed on it the moment this was a "= new()".
-        private Label introLabel;
+        // Nothing here may construct a VisualElement. Unity forbids that in a MonoBehaviour field
+        // initializer and it throws rather than warning; three PlayMode boot tests went red on it.
         private Typewriter introTypist;
         private Typewriter menuTypist;
+        private Button introContinue;
+        private VideoPlayer introFilm;
+        private bool introFilmPlayed;
 
         private void OnEnable()
         {
@@ -89,24 +90,6 @@ namespace ScalingLaws.UI
             {
                 UiBootstrap.ShowFailure(root, "The menu", exception);
             }
-        }
-
-        private void Update()
-        {
-            if (stage != Stage.Intro)
-            {
-                return;
-            }
-
-            introTimer += Time.unscaledDeltaTime;
-            if (introTimer < IntroLineSeconds || introLine >= IntroLines.Length)
-            {
-                return;
-            }
-
-            introTimer = 0f;
-            AddIntroLine(IntroLines[introLine]);
-            introLine++;
         }
 
         // ------------------------------------------------------------------ shell
@@ -531,7 +514,7 @@ namespace ScalingLaws.UI
 
             SaveStore.Clear();
             introLine = 0;
-            introTimer = 0f;
+            introFilmPlayed = false;
             chosenTraits.Clear();
             Show(Stage.Intro);
         }
@@ -549,48 +532,140 @@ namespace ScalingLaws.UI
             introHost = new VisualElement();
             column.Add(introHost);
 
-            introLabel = new Label();
-            introLabel.AddToClassList("intro-text");
-            introHost.Add(introLabel);
-
             // The button arrives with the last character rather than sitting there through the
             // whole thing. A CONTINUE that is clickable before the sentence exists is a CONTINUE
             // most people press without reading anything.
-            var skip = new Button(() => Show(Stage.Founder)) { text = "CONTINUE" };
-            skip.AddToClassList("button");
-            skip.AddToClassList("intro-continue");
-            skip.style.marginTop = 34;
-            skip.style.alignSelf = Align.FlexStart;
-            skip.style.display = DisplayStyle.None;
-            column.Add(skip);
+            introContinue = new Button(PlayIntroFilm) { text = "CONTINUE" };
+            introContinue.AddToClassList("button");
+            introContinue.AddToClassList("intro-continue");
+            introContinue.style.marginTop = 34;
+            introContinue.style.alignSelf = Align.FlexStart;
+            introContinue.style.display = DisplayStyle.None;
+            column.Add(introContinue);
 
-            // Three seconds for the whole thing, which is the budget the author set. The typist
-            // divides that by the characters rather than typing at a fixed rate, so a long line and
-            // a short line both land on time.
-            //
-            // A five or six second animation goes here once it exists: hold the CONTINUE until it
-            // ends rather than until the text does.
-            introTypist?.Stop();
-            introTypist = new Typewriter(introLabel, IntroText, 3000,
-                () => skip.style.display = DisplayStyle.Flex);
+            PrepareIntroFilm();
 
-            introTypist.Start();
+            introLine = 0;
+            TypeNextIntroLine();
 
             return column;
         }
 
-        /// <summary>The cold open, as one piece, because it is typed as one piece.</summary>
-        private const string IntroText =
-            "January 2022.\n\nTwelve million dollars, no product, and eleven months before the "
-            + "world finds out what any of this is for.";
-
-        private void AddIntroLine(string text)
+        /// <summary>
+        /// Types one line, then the next, then shows the button.
+        ///
+        /// Each line gets a budget proportional to its length rather than a fixed rate, so the whole
+        /// opening lands in about the same time however the copy is edited later.
+        /// </summary>
+        private void TypeNextIntroLine()
         {
-            var label = new Label(text);
+            if (introLine >= IntroLines.Length)
+            {
+                introContinue.style.display = DisplayStyle.Flex;
+                return;
+            }
+
+            var text = IntroLines[introLine];
+            var label = AddIntroLabel();
+
+            var budget = Math.Clamp(text.Length * 9, 260, 900);
+
+            introTypist?.Stop();
+            introTypist = new Typewriter(label, text, budget, () =>
+            {
+                introLine++;
+                label.schedule.Execute(TypeNextIntroLine).ExecuteLater(160);
+            });
+
+            introTypist.Start();
+        }
+
+        /// <summary>
+        /// The film, then out of black into the creator.
+        ///
+        /// The fade matters more than it sounds. The film ends on black and the creator is a bright
+        /// screen, so cutting between them is a flash in a dark room. Coming up out of the black the
+        /// film already ended on is the difference between one continuous opening and two things
+        /// that happened to be next to each other.
+        /// </summary>
+        private void PlayIntroFilm()
+        {
+            if (introFilmPlayed || introFilm == null)
+            {
+                Show(Stage.Founder);
+                return;
+            }
+
+            introFilmPlayed = true;
+
+            // The film draws on the camera's near plane, which is *behind* the UI Toolkit panel, so
+            // the interface has to leave rather than be covered. The page background alone is opaque
+            // black and would hide the whole thing.
+            root.Clear();
+            root.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+
+            var skip = new Button(FinishIntroFilm) { text = "SKIP" };
+            skip.AddToClassList("button");
+            skip.AddToClassList("intro-skip");
+            root.Add(skip);
+
+            introFilm.loopPointReached += _ => FinishIntroFilm();
+            introFilm.errorReceived += (_, message) =>
+            {
+                // A file that will not decode must not strand the player on a black screen with no
+                // way forward. Straight into the creator, and the reason goes to the console.
+                Debug.LogWarning($"Intro film could not play: {message}");
+                FinishIntroFilm();
+            };
+
+            // And if it neither plays nor raises an error, which is what a missing platform codec
+            // looks like, the watchdog moves the game on anyway.
+            var watchdog = (long)(introFilm.clip.length * 1000d) + 2000L;
+            root.schedule.Execute(FinishIntroFilm).ExecuteLater(watchdog);
+
+            introFilm.Play();
+        }
+
+        /// <summary>
+        /// Ends the film and comes up out of the black into the creator.
+        ///
+        /// Safe to call more than once, which it will be: the end of the clip, the skip button and
+        /// the watchdog all arrive here and any two of them can happen close together.
+        /// </summary>
+        private void FinishIntroFilm()
+        {
+            if (stage != Stage.Intro)
+            {
+                return;
+            }
+
+            introFilm?.Stop();
+
+            Show(Stage.Founder);
+
+            // The fade matters more than it sounds. The film ends on black and the creator is a
+            // bright screen, so cutting between them is a flash in a dark room. Born black, then
+            // released a frame later so the transition has somewhere to come from.
+            var fade = new VisualElement();
+            fade.AddToClassList("intro-fade");
+
+            // It covers the whole window for well over a second. Left pickable it would swallow the
+            // player's first click on the creator, which reads as the game having hung.
+            fade.pickingMode = PickingMode.Ignore;
+            root.Add(fade);
+
+            fade.schedule.Execute(() => fade.AddToClassList("intro-fade--clear")).ExecuteLater(16);
+            fade.schedule.Execute(fade.RemoveFromHierarchy).ExecuteLater(1400);
+        }
+
+        /// <summary>An empty line, styled for where it sits, ready to be typed into.</summary>
+        private Label AddIntroLabel()
+        {
+            var label = new Label();
             label.style.whiteSpace = WhiteSpace.Normal;
             label.style.marginBottom = 16;
 
-            if (introLine == 0)
+            if (introLine == 1)
             {
                 label.style.fontSize = 46;
                 label.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -603,6 +678,39 @@ namespace ScalingLaws.UI
             }
 
             introHost.Add(label);
+            return label;
+        }
+
+        /// <summary>
+        /// Finds the film and gets it ready, without playing it.
+        ///
+        /// A `VideoPlayer` on the camera's near plane sits in front of everything with no canvas to
+        /// fight, which is what a full screen cut scene wants. It is built when the cold open opens
+        /// rather than when the film starts, because preparing one costs a hitch and the cut from
+        /// the last line into the film is the worst place in the game to spend it.
+        /// </summary>
+        private void PrepareIntroFilm()
+        {
+            if (introFilm != null)
+            {
+                return;
+            }
+
+            var clip = Resources.Load<VideoClip>("Intro/ScalingLaws_Introduction");
+            if (clip == null)
+            {
+                // Not an error, and not a reason to stop. The opening still reads without it.
+                return;
+            }
+
+            introFilm = gameObject.AddComponent<VideoPlayer>();
+            introFilm.clip = clip;
+            introFilm.playOnAwake = false;
+            introFilm.isLooping = false;
+            introFilm.renderMode = VideoRenderMode.CameraNearPlane;
+            introFilm.targetCamera = Camera.main;
+            introFilm.audioOutputMode = VideoAudioOutputMode.Direct;
+            introFilm.Prepare();
         }
 
         // ------------------------------------------------------------------ founder

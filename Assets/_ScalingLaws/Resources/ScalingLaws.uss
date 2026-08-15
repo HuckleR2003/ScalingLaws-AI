@@ -1417,8 +1417,9 @@
 .hud-time__controls {
     flex-direction: row;
     align-items: center;
-    margin-left: 200px;
+    margin-left: 0;
     padding-bottom: 14px;
+    flex-shrink: 0;
 }
 
 .hud-speed {
@@ -1455,12 +1456,12 @@
 .hud-skip {
     height: 30px;
     margin: 0;
-    margin-left: 8px;
-    padding-left: 16px;
-    padding-right: 16px;
-    font-size: 12px;
+    margin-left: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 9px;
     -unity-font-style: bold;
-    letter-spacing: 2px;
+    letter-spacing: 0.5px;
     color: rgb(246, 234, 236);
     background-color: rgba(94, 22, 40, 0.85);
     border-width: 1px;
@@ -1478,10 +1479,12 @@
 .hud__slots {
     flex-direction: row;
     flex-grow: 1;
+    flex-shrink: 1;
     justify-content: flex-end;
     align-items: flex-end;
     height: 100%;
     padding-bottom: 6px;
+    overflow: hidden;
 }
 
 
@@ -1504,7 +1507,7 @@
 
 .hud-slot__label {
     font-size: 9px;
-    letter-spacing: 1px;
+    letter-spacing: 0.6px;
     color: rgb(118, 130, 150);
     margin-bottom: 7px;
 }
@@ -1573,17 +1576,18 @@
    are the thing you read and the label is the caption. */
 
 .hud-slot {
-    width: 96px;
+    width: 88px;
     height: 76px;
     margin: 0;
-    margin-left: 9px;
+    overflow: hidden;
+    margin-left: 3px;
     padding: 0;
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     border-radius: 4px;
     align-items: center;
     justify-content: flex-end;
-    margin-right: 9px;
+    margin-right: 3px;
     transition-property: background-color;
     transition-duration: 120ms;
 }
@@ -2199,7 +2203,7 @@
 }
 
 .hud-info {
-    margin-left: 8px;
+    margin-left: 6px;
     background-color: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.14);
     color: rgb(198, 210, 228);
@@ -6104,14 +6108,34 @@
     justify-content: space-between;
     flex-shrink: 0;
     padding-bottom: 12px;
-    margin-bottom: 16px;
-    border-bottom-width: 2px;
-    border-bottom-color: rgb(226, 78, 62);
+}
+
+.offices__rule {
+    height: 1px;
+    flex-shrink: 0;
+    margin-bottom: 18px;
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.offices__rule-accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 132px;
+    height: 1px;
+}
+
+.offices__kicker {
+    font-size: 10px;
+    letter-spacing: 3.4px;
+    -unity-font-style: bold;
+    color: rgb(128, 140, 162);
+    margin-bottom: 4px;
 }
 
 .offices__title {
-    font-size: 26px;
-    letter-spacing: 4px;
+    font-size: 30px;
+    letter-spacing: 0.5px;
     -unity-font-style: bold;
     color: rgb(240, 244, 252);
 }
@@ -6137,109 +6161,147 @@
 .office-row {
     flex-direction: row;
     flex-shrink: 0;
-    height: 190px;
-    margin-bottom: 14px;
-    background-color: rgb(18, 22, 30);
-    border-width: 2px;
-    border-color: rgb(232, 226, 214);
-    border-radius: 4px;
+    height: 202px;
+    margin-bottom: 12px;
+    background-color: rgb(15, 18, 25);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 7px;
     overflow: hidden;
+    transition-property: background-color, border-color;
+    transition-duration: 160ms;
+}
+
+.office-row:hover {
+    background-color: rgb(19, 23, 31);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* The lit edge that says which one you are in. Three pixels down the left of the card, rather than
+   a coral outline round the whole of it. */
+.office-row__edge {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: rgba(255, 255, 255, 0);
+}
+
+.office-row--here > .office-row__edge {
+    background-color: rgb(226, 78, 62);
 }
 
 .office-row--here {
-    border-color: rgb(226, 78, 62);
+    background-color: rgb(20, 20, 27);
+    border-color: rgba(226, 78, 62, 0.34);
 }
 
 .office-row__body {
     flex-grow: 1;
     flex-shrink: 1;
-    padding: 0;
+    padding: 18px 20px 16px 22px;
+}
+
+.office-row__kicker {
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(122, 134, 156);
+}
+
+.office-row__kicker--here {
+    color: rgb(232, 128, 112);
+}
+
+.office-row__name {
+    font-size: 25px;
+    -unity-font-style: bold;
+    letter-spacing: 0.2px;
+    color: rgb(238, 243, 252);
+    margin-top: 3px;
 }
 
 /* The bar across the top, with the diagonal cut at its end. USS has no skew, so the cut is a
    square turned forty five degrees and clipped by the bar's own overflow. */
-.office-bar {
+/* ---- the three numbers, as a strip ----
+
+   Small grey caption over a bright value, the same shape the room's own figures use. The screen had
+   these as two bold sentences in mixed languages, which is a paragraph pretending to be a table. */
+
+.office-row__figures {
     flex-direction: row;
-    align-items: center;
-    height: 46px;
+    margin-top: 12px;
     flex-shrink: 0;
-    padding-left: 14px;
-    background-color: rgb(244, 240, 232);
-    overflow: hidden;
 }
 
-.office-bar__name {
-    font-size: 24px;
+.office-figure {
+    margin-right: 30px;
+}
+
+.office-figure__label {
+    font-size: 9px;
+    letter-spacing: 2.2px;
     -unity-font-style: bold;
-    letter-spacing: 1px;
-    color: rgb(16, 18, 22);
-    flex-shrink: 1;
+    color: rgb(112, 124, 146);
 }
 
-.office-bar__wedge {
-    width: 64px;
-    height: 64px;
-    margin-left: 14px;
-    flex-shrink: 0;
-    rotate: 45deg;
-    background-color: rgb(18, 22, 30);
-}
-
-.office-row__figure {
-    font-size: 13px;
+.office-figure__value {
+    font-size: 15px;
     -unity-font-style: bold;
-    color: rgb(226, 236, 250);
-    margin-left: 14px;
-    margin-top: 6px;
+    color: rgb(226, 235, 250);
+    margin-top: 2px;
 }
+
+
+
+
+
+
 
 .office-row__blurb {
-    font-size: 11px;
-    color: rgb(150, 162, 182);
+    font-size: 12px;
+    color: rgb(146, 158, 180);
     white-space: normal;
-    margin-left: 14px;
     margin-top: 8px;
-    margin-right: 14px;
+    margin-right: 12px;
     flex-grow: 1;
 }
 
 .office-row__here {
     font-size: 11px;
-    letter-spacing: 2px;
-    -unity-font-style: bold;
-    color: rgb(240, 190, 182);
-    margin-left: 14px;
-    margin-bottom: 14px;
+    color: rgb(196, 154, 148);
+    margin-top: 14px;
 }
 
 .office-row__blocked {
     font-size: 11px;
-    color: rgb(206, 138, 122);
-    margin-left: 14px;
-    margin-bottom: 14px;
+    color: rgb(186, 132, 120);
+    margin-top: 14px;
 }
 
 .office-row__move {
-    margin: 14px;
-    margin-top: 0;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    font-size: 11px;
-    letter-spacing: 1.4px;
+    align-self: flex-start;
+    margin: 14px 0 0 0;
+    padding: 9px 20px;
+    font-size: 10px;
+    letter-spacing: 2px;
     -unity-font-style: bold;
-    color: rgb(240, 232, 238);
-    background-color: rgba(226, 78, 62, 0.24);
+    color: rgb(232, 238, 250);
+    background-color: rgba(255, 255, 255, 0.05);
     border-width: 1px;
-    border-color: rgba(226, 78, 62, 0.65);
-    border-radius: 3px;
+    border-color: rgba(255, 255, 255, 0.16);
+    border-radius: 4px;
 }
 
 .office-row__move:hover {
-    background-color: rgba(226, 78, 62, 0.42);
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.30);
 }
 
 .office-row__move--armed {
     background-color: rgb(226, 78, 62);
+    border-color: rgb(226, 78, 62);
     color: rgb(255, 252, 250);
 }
 
@@ -6250,21 +6312,30 @@
 }
 
 .office-row__photo {
-    width: 32%;
+    width: 40%;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
     background-color: rgb(12, 15, 20);
-    border-left-width: 2px;
-    border-left-color: rgb(232, 226, 214);
     -unity-background-scale-mode: scale-and-crop;
 }
 
+/* A soft edge into the card. USS has no gradients, so this is a narrow strip of the card colour at
+   two thirds strength, which is enough to stop the photograph ending on a hard vertical line. */
+.office-row__seam {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 22px;
+    background-color: rgba(15, 18, 25, 0.62);
+}
+
 .office-row__pending {
-    font-size: 10px;
-    letter-spacing: 1.4px;
+    font-size: 9px;
+    letter-spacing: 2.4px;
     -unity-font-style: bold;
-    color: rgb(120, 132, 152);
+    color: rgb(84, 94, 112);
     white-space: normal;
     -unity-text-align: middle-center;
     padding: 16px;
@@ -6272,30 +6343,29 @@
 
 /* ---- the way out of the room ---- */
 
-.map-button {
-    position: absolute;
-    right: 22px;
-    bottom: 22px;
-    width: 62px;
-    height: 62px;
+.site-icon {
+    width: 81px;
+    height: 81px;
     margin: 0;
     padding: 0;
     opacity: 0.45;
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.16);
-    border-radius: 31px;
+    border-radius: 41px;
     background-color: rgba(10, 12, 18, 0.75);
     -unity-background-scale-mode: scale-to-fit;
     font-size: 10px;
     -unity-font-style: bold;
+    letter-spacing: 1px;
     color: rgb(226, 236, 250);
-    transition-property: opacity, border-color;
+    transition-property: opacity, border-color, scale;
     transition-duration: 200ms;
 }
 
-.map-button:hover {
+.site-icon:hover {
     opacity: 1;
     border-color: rgb(226, 78, 62);
+    scale: 1.05 1.05;
 }
 
 
@@ -6583,52 +6653,6 @@
 
 /* ---- where the company is, in the room it is in ---- */
 
-.office-plate {
-    position: absolute;
-    left: 22px;
-    bottom: 22px;
-    width: 260px;
-    height: 74px;
-    margin: 0;
-    padding: 0;
-    justify-content: flex-end;
-    opacity: 0.9;
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.18);
-    border-radius: 5px;
-    background-color: rgba(10, 12, 18, 0.82);
-    overflow: hidden;
-    transition-property: opacity, border-color;
-    transition-duration: 180ms;
-}
-
-.office-plate--art {
-    -unity-background-scale-mode: scale-and-crop;
-}
-
-.office-plate:hover {
-    opacity: 1;
-    border-color: rgb(226, 78, 62);
-}
-
-.office-plate__text {
-    padding: 8px;
-    background-color: rgba(8, 10, 14, 0.76);
-}
-
-.office-plate__name {
-    font-size: 12px;
-    letter-spacing: 1.2px;
-    -unity-font-style: bold;
-    color: rgb(244, 248, 255);
-}
-
-.office-plate__figures {
-    font-size: 10px;
-    color: rgb(176, 190, 212);
-    margin-top: 2px;
-}
-
 /* ---- the front door types itself ----
 
    A menu with one fixed sentence on it is a screenshot. The line types in, holds, wipes, and the
@@ -6659,13 +6683,116 @@
     height: 16px;
 }
 
-/* The cold open. Bigger than the menu line, because it is the only thing on the screen. */
-.intro-text {
-    font-size: 26px;
-    color: rgb(226, 234, 248);
-    white-space: normal;
-}
-
 .intro-continue {
     margin-left: 0;
+}
+
+/* ---- the film, and coming out of it ----
+
+   The clip renders on the camera's near plane, behind this panel, so during playback the panel is
+   empty apart from the skip. The fade is a black sheet that starts opaque and is released a frame
+   later: the film ends on black and the creator is a bright screen, and cutting between those is a
+   flash in a dark room. */
+
+.intro-skip {
+    position: absolute;
+    right: 26px;
+    bottom: 24px;
+    margin: 0;
+    padding: 7px 18px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: rgba(226, 234, 248, 0.62);
+    background-color: rgba(8, 10, 16, 0.42);
+    border-width: 1px;
+    border-color: rgba(226, 234, 248, 0.22);
+    border-radius: 3px;
+}
+
+.intro-skip:hover {
+    color: rgb(238, 244, 255);
+    border-color: rgba(226, 234, 248, 0.55);
+}
+
+.intro-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgb(0, 0, 0);
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 1100ms;
+}
+
+.intro-fade--clear {
+    opacity: 0;
+}
+
+/* ---- insight cards ----
+
+   What a control is for, in a card that appears where the cursor is resting. Mounted on the panel
+   root, so nothing that clips its own contents can clip one of these.
+
+   The left edge is a slice of the same accent the bottom bar and the day line use, positioned to
+   read as part of that one line crossing the interface rather than as a fifth red thing. */
+
+.insight {
+    position: absolute;
+    width: 268px;
+    padding: 11px 14px 12px 16px;
+    background-color: rgba(11, 13, 18, 0.96);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 5px;
+    overflow: hidden;
+    opacity: 0;
+    translate: 0 6px;
+    transition-property: opacity, translate;
+    transition-duration: 140ms;
+}
+
+.insight--in {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.insight__accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+}
+
+.insight__title {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1.6px;
+    color: rgb(242, 247, 255);
+}
+
+.insight__body {
+    font-size: 12px;
+    color: rgb(158, 172, 194);
+    white-space: normal;
+    margin-top: 5px;
+}
+
+/* ---- the way out of the room ----
+
+   Two controls in the bottom right corner, one above the other, the same size as each other. The
+   office plate that used to sit across the bottom left of the room is gone: it was a wide slab of
+   text over a picture of a room the player is already looking at. */
+
+.site-rail {
+    position: absolute;
+    right: 22px;
+    bottom: 22px;
+    align-items: center;
+}
+
+.site-rail > .site-icon {
+    margin-top: 10px;
 }

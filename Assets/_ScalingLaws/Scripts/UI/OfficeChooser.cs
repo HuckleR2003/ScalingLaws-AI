@@ -52,7 +52,11 @@ namespace ScalingLaws.UI
 
             var left = new VisualElement();
 
-            var title = new Label("WHERE THE COMPANY IS");
+            var kicker = new Label("PREMISES");
+            kicker.AddToClassList("offices__kicker");
+            left.Add(kicker);
+
+            var title = new Label("Where the company is");
             title.AddToClassList("offices__title");
             left.Add(title);
 
@@ -69,6 +73,19 @@ namespace ScalingLaws.UI
             head.Add(close);
 
             Root.Add(head);
+
+            // One hairline with a slice of the interface accent sitting on it, rather than a two
+            // pixel coral rule the whole width of the page. The old header shouted at the row of
+            // cream title bars underneath it and the screen had nowhere quiet to look.
+            var rule = new VisualElement();
+            rule.AddToClassList("offices__rule");
+
+            var slice = new VisualElement();
+            slice.AddToClassList("offices__rule-accent");
+            HudAccent.PaintSlice(slice, 0.30f, 0.62f);
+            rule.Add(slice);
+
+            Root.Add(rule);
 
             if (problem.Length > 0)
             {
@@ -101,63 +118,64 @@ namespace ScalingLaws.UI
             row.AddToClassList("office-row");
             row.EnableInClassList("office-row--here", here);
 
-            // ---- the left three thirds: the bar, then the figures ---------------------------
+            // Where you are is marked by a lit edge rather than by a coral outline round the whole
+            // card. One row in three with a full border on it made the page read as a warning.
+            var edge = new VisualElement();
+            edge.AddToClassList("office-row__edge");
+            row.Add(edge);
+
+            // ---- the left: what the place is, then what it costs -----------------------------
 
             var body = new VisualElement();
             body.AddToClassList("office-row__body");
 
-            var bar = new VisualElement();
-            bar.AddToClassList("office-bar");
+            var kicker = new Label(here ? $"LVL {place.Level}   ·   YOU ARE HERE" : $"LVL {place.Level}");
+            kicker.AddToClassList("office-row__kicker");
+            kicker.EnableInClassList("office-row__kicker--here", here);
+            body.Add(kicker);
 
-            var name = new Label($"LVL {place.Level}   -   {place.DisplayName.ToUpperInvariant()}");
-            name.AddToClassList("office-bar__name");
-            bar.Add(name);
-
-            // The diagonal at the end of the title bar. USS has no skew, so it is a square turned
-            // forty five degrees and clipped by the bar's own overflow, which is the same trick the
-            // hosting switch uses for its slant.
-            var wedge = new VisualElement();
-            wedge.AddToClassList("office-bar__wedge");
-            bar.Add(wedge);
-
-            body.Add(bar);
-
-            var rent = new Label($"KOSZT WYNAJMU: {UiFormat.Money(place.MonthlyRentUsd)} / MIESIĄC");
-            rent.AddToClassList("office-row__figure");
-            body.Add(rent);
-
-            var desks = new Label($"ILOŚĆ STANOWISK: {place.Desks}");
-            desks.AddToClassList("office-row__figure");
-            body.Add(desks);
+            var name = new Label(place.DisplayName);
+            name.AddToClassList("office-row__name");
+            body.Add(name);
 
             var blurb = new Label(place.Description);
             blurb.AddToClassList("office-row__blurb");
             body.Add(blurb);
 
+            var figures = new VisualElement();
+            figures.AddToClassList("office-row__figures");
+            figures.Add(Figure("RENT", $"{UiFormat.Money(place.MonthlyRentUsd)} / mo"));
+            figures.Add(Figure("DESKS", place.Desks == 0 ? "none" : place.Desks.ToString()));
+            figures.Add(Figure("FIT-OUT", place.FitOutCostUsd == 0
+                ? "nothing"
+                : UiFormat.Money(place.FitOutCostUsd)));
+
+            body.Add(figures);
+
             body.Add(BuildAction(place, company, here, affordable, openYet));
             row.Add(body);
 
-            // ---- the right third: the place itself -------------------------------------------
+            // ---- the right: the place itself --------------------------------------------------
 
             var photo = new VisualElement();
             photo.AddToClassList("office-row__photo");
 
-            // Offices/ first, then the hosting picture as a stand in for the two that have one.
-            // A place with no picture at all says so rather than drawing a grey rectangle.
-            var art = Resources.Load<Texture2D>("Offices/" + place.Art)
-                      ?? Resources.Load<Texture2D>(place.Level == 0
-                          ? "Ui/office_upgrade"
-                          : "Hosting/hosting_datacenter");
+            // A place with no picture says so. It used to fall back to the office icon from the
+            // bottom bar, which put a 64px interface glyph where a photograph of the house belongs
+            // and made the first row of the screen look like a missing asset.
+            var art = Resources.Load<Texture2D>("Offices/" + place.Art);
             if (art != null)
             {
                 photo.style.backgroundImage = new StyleBackground(art);
+
+                // A soft edge into the card rather than a two pixel cream rule between them.
+                var seam = new VisualElement();
+                seam.AddToClassList("office-row__seam");
+                photo.Add(seam);
             }
             else
             {
-                var pending = new Label(place.Level == 0
-                    ? "PHOTOGRAPH OF THE GARAGE GOES HERE"
-                    : "PHOTOGRAPH OF THIS PLACE GOES HERE");
-
+                var pending = new Label("PHOTOGRAPH\nOF THIS PLACE\nGOES HERE");
                 pending.AddToClassList("office-row__pending");
                 photo.Add(pending);
             }
@@ -166,12 +184,32 @@ namespace ScalingLaws.UI
             return row;
         }
 
+        private static VisualElement Figure(string label, string value)
+        {
+            var figure = new VisualElement();
+            figure.AddToClassList("office-figure");
+
+            var caption = new Label(label);
+            caption.AddToClassList("office-figure__label");
+            figure.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("office-figure__value");
+            figure.Add(amount);
+
+            return figure;
+        }
+
         private VisualElement BuildAction(OfficeDefinition place, CompanyState company, bool here,
             bool affordable, bool openYet)
         {
             if (here)
             {
-                var label = new Label("YOU ARE HERE");
+                // The kicker already says it. This line says what it costs to stay, which is the
+                // number the other rows are being compared against.
+                var label = new Label(
+                    $"{UiFormat.Money(place.DailyRentUsd)} a day, whatever happens.");
+
                 label.AddToClassList("office-row__here");
                 return label;
             }

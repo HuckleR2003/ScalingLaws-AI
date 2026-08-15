@@ -110,6 +110,11 @@ namespace ScalingLaws.UI
 
             root.style.fontSize = BaseFontSize;
             root.style.color = new Color(0.96f, 0.98f, 1f, 1f);
+
+            // Insight cards mount here rather than beside the control they describe, so they are
+            // above everything and cannot be clipped by a panel that clips its own contents. Set
+            // once, here, because this is the one function every document already calls.
+            InsightTip.Host = root;
         }
 
         /// <summary>

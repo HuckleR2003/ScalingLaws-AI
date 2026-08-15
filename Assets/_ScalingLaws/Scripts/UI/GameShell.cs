@@ -65,6 +65,7 @@ namespace ScalingLaws.UI
         private Label dateLabel;
         private Label rankLabel;
         private GameHud hud;
+        private KeyboardShortcuts shortcuts;
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
         private string researchProblem = string.Empty;
         private bool cancelArmed;
@@ -279,6 +280,8 @@ namespace ScalingLaws.UI
 
         private void Update()
         {
+            shortcuts?.Poll();
+
             if (state.IsBankrupt)
             {
                 clock.Speed = SimSpeed.Paused;
@@ -387,6 +390,7 @@ namespace ScalingLaws.UI
             shell.Add(contentHost);
 
             hud = new GameHud(SetSpeed, SkipDay, ToggleCompanyInfo);
+            shortcuts = new KeyboardShortcuts(root, () => clock.Speed, SetSpeed);
             AddHudSlots();
             root.Add(hud.Root);
 
@@ -631,21 +635,61 @@ namespace ScalingLaws.UI
 
         private void AddHudSlots()
         {
-            hud.AddSlot("SITE", Screen.Site, () => Show(Screen.Site), "hud_site");
-            hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create), "hud_model");
-            hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research), "hud_research");
-            hud.AddSlot("ARCHITECTURE", Screen.Family, () => Show(Screen.Family), "hud_architecture");
-            hud.AddSlot("UPGRADE", Screen.Upgrade, () => Show(Screen.Upgrade), "hud_upgrade");
-            hud.AddSlot("TEAM", Screen.Team, () => Show(Screen.Team), "hud_team");
-            hud.AddSlot("COMPUTE", Screen.Fleet, () => Show(Screen.Fleet), "hud_fleet");
-            hud.AddSlot("BUSINESS", Screen.Business, () => Show(Screen.Business), "hud_business");
-            hud.AddSlot("RELEASE", Screen.Release, () => Show(Screen.Release), "hud_release");
-            hud.AddSlot("CAPITAL", Screen.Funding, () => Show(Screen.Funding), "hud_funding");
-            hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking");
-            hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence");
-            hud.AddSlot("MARKETING", Screen.Marketing, () => Show(Screen.Marketing), "hud_marketing");
-            hud.AddSlot("NEWS", Screen.News, () => Show(Screen.News));
-            hud.AddSlot("@ MAIL", Screen.Mail, () => Show(Screen.Mail));
+            // The third argument on each of these is what the card over the bar says. Written to
+            // answer "why would I go there", never to repeat the word already printed on the slot.
+            hud.AddSlot("SITE", Screen.Site, () => Show(Screen.Site), "hud_site",
+                "The room, and everything the company owns in it. Where the day is watched from.");
+
+            hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create), "hud_model",
+                "Design a training run and start it. Five decisions: what it is, how big, what it "
+                + "reads, what it runs on, and whether the bill is worth it.");
+
+            hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research), "hud_research",
+                "Buy the understanding that unlocks everything else. Points come from work you are "
+                + "already doing, and money alone will not keep pace.");
+
+            hud.AddSlot("ARCHITECTURE", Screen.Family, () => Show(Screen.Family), "hud_architecture",
+                "Which family of model you build. A sparse mixture is cheap to serve for its size; "
+                + "that is the whole reason to own one.");
+
+            hud.AddSlot("UPGRADE", Screen.Upgrade, () => Show(Screen.Upgrade), "hud_upgrade",
+                "Programmes that improve a model already on sale, without training it again.");
+
+            hud.AddSlot("TEAM", Screen.Team, () => Show(Screen.Team), "hud_team",
+                "Hire, and see what the payroll costs. Desks cap the headcount, so this is also "
+                + "where the office starts to matter.");
+
+            hud.AddSlot("COMPUTE", Screen.Fleet, () => Show(Screen.Fleet), "hud_fleet",
+                "Rent it or buy it. Buy too early and you own a depreciating asset; buy too late "
+                + "and somebody else already has the customers.");
+
+            hud.AddSlot("BUSINESS", Screen.Business, () => Show(Screen.Business), "hud_business",
+                "The books. Revenue, burn, tax accruing, and what the company is actually worth.");
+
+            hud.AddSlot("RELEASE", Screen.Release, () => Show(Screen.Release), "hud_release",
+                "Put a finished model on sale, set its price, or take one off the market.");
+
+            hud.AddSlot("CAPITAL", Screen.Funding, () => Show(Screen.Funding), "hud_funding",
+                "Raise money and service what you owe. Debt is cheaper than equity right up to the "
+                + "month you cannot pay it.");
+
+            hud.AddSlot("RANKING", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking",
+                "Every rival on the same capability scale as you, and what they have shipped.");
+
+            hud.AddSlot("INTEL", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence",
+                "Advance warning, bought. The cheap desk is wrong about one thing in three and "
+                + "sounds exactly as confident as the expensive one.");
+
+            hud.AddSlot("MARKETING", Screen.Marketing, () => Show(Screen.Marketing), "hud_marketing",
+                "Campaigns buy attention and never quality. A bad model advertised hard gets tried "
+                + "and abandoned, which costs you twice.");
+
+            hud.AddSlot("NEWS", Screen.News, () => Show(Screen.News), null,
+                "The wire. Launches, scandals, regulators, and what is being said about you.");
+
+            hud.AddSlot("@ MAIL", Screen.Mail, () => Show(Screen.Mail), null,
+                "Letters that need an answer: salary negotiations, the tax bill, and any fine the "
+                + "company has earned.");
         }
 
         private void ToggleCompanyInfo()
@@ -1514,45 +1558,6 @@ namespace ScalingLaws.UI
             offices.Add(BuildUpgradeButton());
             page.Add(offices);
             return page;
-        }
-
-        /// <summary>
-        /// The office plate in the corner of the room.
-        ///
-        /// It carries the two numbers that decide whether to move, rather than only a way in: the
-        /// rent is paid whether or not the desks are full, and the desks are what caps hiring.
-        /// </summary>
-        private VisualElement BuildOfficePlate()
-        {
-            var place = state.Staff.OfficeDefinition;
-
-            var plate = new Button(() => Show(Screen.Offices));
-            plate.AddToClassList("office-plate");
-
-            var art = Resources.Load<Texture2D>("Ui/office_upgrade");
-            if (art != null)
-            {
-                plate.style.backgroundImage = new StyleBackground(art);
-                plate.AddToClassList("office-plate--art");
-            }
-
-            var text = new VisualElement();
-            text.AddToClassList("office-plate__text");
-
-            var name = new Label($"LVL {place.Level}  ·  {place.DisplayName.ToUpperInvariant()}");
-            name.AddToClassList("office-plate__name");
-            text.Add(name);
-
-            var figures = new Label(
-                $"{state.Staff.Headcount} of {place.Desks} desks  ·  "
-                + $"{UiFormat.Money(place.MonthlyRentUsd)} a month");
-
-            figures.AddToClassList("office-plate__figures");
-            text.Add(figures);
-
-            plate.Add(text);
-            plate.tooltip = "Where the company is. Click to see the other places.";
-            return plate;
         }
 
         /// <summary>
@@ -3260,30 +3265,61 @@ namespace ScalingLaws.UI
                     .ExecuteLater(16);
             }
 
-            // Where the company is, in the room the company is in. The office chooser used to be
-            // reachable only from the team screen, which is a screen about people.
-            stage.Add(BuildOfficePlate());
+            // The two ways out of the room, one above the other in the corner.
+            //
+            // The office used to be a 260px plate across the bottom left: a slab of text laid over a
+            // photograph of a room the player is already looking at. It is the same decision either
+            // way, so it is the same size and shape as the map now, and the numbers that used to be
+            // printed on it are in the card that opens under the cursor.
+            var rail = new VisualElement();
+            rail.AddToClassList("site-rail");
 
-            // Subtle on purpose. It is a way out of the room rather than a call to action, so it
-            // sits in the corner of the room at half strength and comes up when the cursor finds it.
+            var place = state.Staff.OfficeDefinition;
+
+            var upgrade = new Button(() => Show(Screen.Offices));
+            upgrade.AddToClassList("site-icon");
+            SetIcon(upgrade, "Ui/office_upgrade", "OFFICE");
+
+            InsightTip.Attach(upgrade, "THE OFFICE",
+                $"Upgrade the office, rent or buy. You are in {place.DisplayName.ToLowerInvariant()}: "
+                + $"{state.Staff.Headcount} of {place.Desks} desks at "
+                + $"{UiFormat.Money(place.MonthlyRentUsd)} a month, and desks are what caps hiring.",
+                InsightTip.Placement.LeftOf);
+
+            rail.Add(upgrade);
+
             var map = new Button(() => Show(Screen.Ranking));
-            map.AddToClassList("map-button");
+            map.AddToClassList("site-icon");
+            SetIcon(map, "Ui/map", "MAP");
 
-            var mapArt = Resources.Load<Texture2D>("Ui/map");
-            if (mapArt != null)
-            {
-                map.style.backgroundImage = new StyleBackground(mapArt);
-            }
-            else
-            {
-                map.text = "MAP";
-            }
+            InsightTip.Attach(map, "THE WORLD MAP",
+                "Travel. Who is building what, and where. Today it opens the board; the drive out to "
+                + "it is being built.",
+                InsightTip.Placement.LeftOf);
 
-            map.tooltip = "The world. Today it opens the board; the drive out to it is being built.";
-            stage.Add(map);
+            rail.Add(map);
+            stage.Add(rail);
 
             page.Add(stage);
             return page;
+        }
+
+        /// <summary>
+        /// Puts art on a control, or the word on it if the art is not there.
+        ///
+        /// A round button with nothing in it is indistinguishable from a rendering fault, and both
+        /// of these open a screen the player needs.
+        /// </summary>
+        private static void SetIcon(Button button, string resourcePath, string fallback)
+        {
+            var art = Resources.Load<Texture2D>(resourcePath);
+            if (art != null)
+            {
+                button.style.backgroundImage = new StyleBackground(art);
+                return;
+            }
+
+            button.text = fallback;
         }
 
         private static VisualElement SiteFigure(string label, string value)

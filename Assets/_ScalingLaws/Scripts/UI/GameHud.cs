@@ -28,6 +28,14 @@ namespace ScalingLaws.UI
             ("X3", SimSpeed.Fast)
         };
 
+        /// <summary>What each speed is for, in the order the buttons are built.</summary>
+        private static readonly string[] SpeedWords =
+        {
+            "A day at a time, for a week that matters.",
+            "The pace the game is balanced around.",
+            "For the months between decisions."
+        };
+
         private readonly Action<SimSpeed> onSpeed;
         private readonly Action onSkipDay;
         private readonly Action onCompanyInfo;
@@ -76,7 +84,8 @@ namespace ScalingLaws.UI
             badge.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        public void AddSlot(string label, object key, Action onClick, string iconName = null)
+        public void AddSlot(string label, object key, Action onClick, string iconName = null,
+            string insight = null)
         {
             var slot = new Button(onClick) { userData = key };
             slot.AddToClassList("hud-slot");
@@ -110,6 +119,10 @@ namespace ScalingLaws.UI
             badge.style.display = DisplayStyle.None;
             slot.Add(badge);
             badges[key] = badge;
+
+            // What the tab is for, above the bar, on the line where the screen meets it. Fourteen
+            // nouns along the bottom of a window is a lot to learn from nouns alone.
+            InsightTip.Attach(slot, label, insight);
 
             slots.Add(slot);
             SlotHost.Add(slot);
@@ -214,23 +227,36 @@ namespace ScalingLaws.UI
             pauseButton = new Button(() => onSpeed?.Invoke(SimSpeed.Paused)) { text = "II" };
             pauseButton.AddToClassList("hud-speed");
             pauseButton.AddToClassList("hud-speed--pause");
+            InsightTip.Attach(pauseButton, "PAUSE", "Stops the clock. Space does the same thing.");
             controls.Add(pauseButton);
 
-            foreach (var (label, speed) in Speeds)
+            // The key is named on the card rather than printed on the button, because the buttons
+            // are 42px wide and the shortcut is worth a sentence rather than a superscript.
+            for (var index = 0; index < Speeds.Length; index++)
             {
+                var (label, speed) = Speeds[index];
+
                 var button = new Button(() => onSpeed?.Invoke(speed)) { text = label };
                 button.AddToClassList("hud-speed");
+
+                InsightTip.Attach(button, label,
+                    $"{SpeedWords[index]} Press {index + 1}.");
+
                 speedButtons.Add(button);
                 controls.Add(button);
             }
 
             var skip = new Button(() => onSkipDay?.Invoke()) { text = "SKIP DAY" };
             skip.AddToClassList("hud-skip");
+            InsightTip.Attach(skip, "SKIP DAY",
+                "Runs exactly one day and stops, which is what makes it useful while paused.");
             controls.Add(skip);
 
             infoButton = new Button(() => onCompanyInfo?.Invoke()) { text = "COMPANY INFO" };
             infoButton.AddToClassList("hud-skip");
             infoButton.AddToClassList("hud-info");
+            InsightTip.Attach(infoButton, "COMPANY INFO",
+                "Who you are, what you own and what the day has cost, over the room.");
             controls.Add(infoButton);
 
             module.Add(controls);
