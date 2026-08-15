@@ -7241,3 +7241,70 @@
     background-color: rgb(226, 78, 62);
     border-color: rgb(226, 78, 62);
 }
+
+/* ---- the regulator's open file ----
+
+   Across the top of every screen, because it is the only thing in the game that is happening *to*
+   the player rather than waiting for them. White to red and back, slowly: a fast flash is a smoke
+   alarm and this is a letter that has already been sent. */
+
+.regulatory {
+    position: absolute;
+    left: 28%;
+    right: 28%;
+    top: 74px;
+    padding: 14px 22px 16px 22px;
+    align-items: center;
+    border-radius: 7px;
+    border-width: 1px;
+    border-color: rgba(226, 78, 62, 0.75);
+    background-color: rgba(26, 8, 10, 0.94);
+}
+
+.regulatory__headline {
+    font-size: 19px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: rgb(255, 244, 242);
+    transition-property: color;
+    transition-duration: 850ms;
+    animation-name: alarm;
+    animation-duration: 1700ms;
+    animation-iteration-count: infinite;
+}
+
+@keyframes alarm {
+    0% { color: rgb(255, 248, 246); }
+    50% { color: rgb(238, 62, 46); }
+    100% { color: rgb(255, 248, 246); }
+}
+
+.regulatory__what {
+    font-size: 12px;
+    color: rgb(228, 186, 180);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-top: 5px;
+}
+
+.regulatory__status {
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgb(196, 156, 150);
+    margin-top: 12px;
+}
+
+.regulatory__track {
+    width: 100%;
+    height: 3px;
+    margin-top: 5px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.10);
+    overflow: hidden;
+}
+
+.regulatory__fill {
+    height: 3px;
+    background-color: rgb(226, 78, 62);
+}

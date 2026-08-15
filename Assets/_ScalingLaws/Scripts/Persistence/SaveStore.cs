@@ -127,6 +127,23 @@ namespace ScalingLaws.Persistence
             }
 
             data.founderName = state.FounderName;
+            // The open file, written whole. Everything the verdict needs is here, because the
+            // verdict has not been rolled yet and the incident it will apply cannot be rebuilt from
+            // anywhere else.
+            var action = state.PendingAction;
+            data.actionOpen = action != null;
+
+            if (action != null)
+            {
+                data.actionDaysElapsed = action.DaysElapsed;
+                data.actionModel = action.ModelName;
+                data.actionFineUsd = action.Incident.FineUsd;
+                data.actionWithdrawal = action.Incident.ForcedWithdrawal;
+                data.actionReputationLoss = action.Incident.ReputationLoss;
+                data.actionHeadline = action.Incident.Headline;
+                data.actionSeverity = action.Incident.Severity.ToString();
+            }
+
             data.founderLook = state.FounderLook ?? string.Empty;
             data.founderGlasses = state.FounderGlasses;
 
@@ -555,6 +572,24 @@ namespace ScalingLaws.Persistence
             }
 
             state.FounderName = safe.founderName;
+            if (safe.actionOpen)
+            {
+                var severity = Enum.TryParse<IncidentSeverity>(safe.actionSeverity, out var parsed)
+                    ? parsed
+                    : IncidentSeverity.Minor;
+
+                var incident = new SafetyIncident(
+                    severity,
+                    state.Date,
+                    safe.actionHeadline ?? string.Empty,
+                    safe.actionReputationLoss,
+                    safe.actionFineUsd,
+                    safe.actionWithdrawal);
+
+                state.PendingAction = new RegulatoryAction(incident, state.Date, safe.actionModel);
+                state.PendingAction.Restore(safe.actionDaysElapsed);
+            }
+
             state.FounderLook = safe.founderLook ?? string.Empty;
             state.FounderGlasses = Math.Max(0, safe.founderGlasses);
 

@@ -286,6 +286,14 @@ namespace ScalingLaws.Simulation
         /// <summary>Public safety incidents, newest last. History, not a counter.</summary>
         public List<SafetyIncident> Incidents { get; } = new();
 
+        /// <summary>
+        /// The regulator's open file, or null when nobody is looking.
+        ///
+        /// One at a time. A second inspection while one is running would be two headlines fighting
+        /// for the same strip and two verdicts landing on the same model.
+        /// </summary>
+        public RegulatoryAction PendingAction { get; set; }
+
         /// <summary>Total paid in regulatory penalties. Investors ask about this.</summary>
         public long LifetimeFinesUsd { get; set; }
 

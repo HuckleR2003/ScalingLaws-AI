@@ -365,7 +365,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 27;
+        public const int CurrentVersion = 28;
 
         public int version = CurrentVersion;
 
@@ -551,6 +551,37 @@ namespace ScalingLaws.Persistence
         /// every look, and an index would quietly turn an existing founder into a stranger the next
         /// time their campaign was loaded.
         /// </summary>
+        /// <summary>
+        /// An inspection that was open when the game was saved.
+        ///
+        /// **Causal, not cosmetic.** The verdict is rolled when the inspection closes, so a save
+        /// made on day three of five carries an undecided outcome. Dropping it would hand the player
+        /// a free escape from a penalty by saving and reloading, which is the one thing that would
+        /// turn the whole system into a slot machine.
+        /// </summary>
+        public bool actionOpen;
+
+        /// <inheritdoc cref="actionOpen"/>
+        public int actionDaysElapsed;
+
+        /// <inheritdoc cref="actionOpen"/>
+        public string actionModel = string.Empty;
+
+        /// <inheritdoc cref="actionOpen"/>
+        public long actionFineUsd;
+
+        /// <inheritdoc cref="actionOpen"/>
+        public bool actionWithdrawal;
+
+        /// <inheritdoc cref="actionOpen"/>
+        public double actionReputationLoss;
+
+        /// <inheritdoc cref="actionOpen"/>
+        public string actionHeadline = string.Empty;
+
+        /// <inheritdoc cref="actionOpen"/>
+        public string actionSeverity = string.Empty;
+
         public string founderLook = string.Empty;
 
         /// <inheritdoc cref="founderLook"/>

@@ -151,6 +151,7 @@ namespace ScalingLaws.Simulation
 
             AdvanceResearchPoints();
             AdvanceMarketing();
+            AdvanceRegulatoryAction();
             RollSafetyIncident();
             ServiceDebt();
             AdvanceIntelligence();
@@ -1489,22 +1490,28 @@ namespace ScalingLaws.Simulation
 
             var incident = IncidentModel.Resolve(best, State.Date, State.AnnualRevenueRunRateUsd, State.Random);
 
-            // **The appeal, after the verdict.** Red teaming and data protection do not stop the
-            // incident; they are the reason a company that has already been caught sometimes walks
-            // away. It has to be loud when it works, or the player never learns which module paid
-            // for itself.
+            // **Anything with a penalty behind it opens an inspection rather than landing.** The
+            // outcome is already decided by what follows; the five days are what turn a number
+            // changing into something happening to you. Everything smaller lands as it always did,
+            // because a regulator does not open a file over a bad week.
             if (incident.FineUsd > 0L || incident.ForcedWithdrawal)
             {
-                var roll = State.Random.NextDouble();
-                var saviour = safety.Saviour(roll);
-
-                if (saviour.HasValue)
-                {
-                    SafetyWasSaved(saviour.Value, incident, safety);
-                    return;
-                }
+                OpenRegulatoryAction(incident, best.Name);
+                return;
             }
 
+            LandPenalty(incident, best);
+        }
+
+        /// <summary>
+        /// The verdict, applied.
+        ///
+        /// Reached two ways: straight from a small incident nobody opens a file over, and from an
+        /// inspection that ran its five days and found something. One body, so the two paths cannot
+        /// disagree about what a penalty does.
+        /// </summary>
+        private void LandPenalty(SafetyIncident incident, DeployedModel best)
+        {
             State.Incidents.Add(incident);
 
             State.Reputation -= incident.ReputationLoss;
@@ -1529,7 +1536,7 @@ namespace ScalingLaws.Simulation
                 demand.DueDayIndex = State.Date.DayIndex + DemandGraceDays;
             }
 
-            if (incident.ForcedWithdrawal)
+            if (incident.ForcedWithdrawal && best != null)
             {
                 // Recorded with a date, so the archive can show when it came off and why.
                 best.RetireOn(State.Date);
@@ -1542,6 +1549,71 @@ namespace ScalingLaws.Simulation
                     ? $"{incident.Headline} Penalty ${incident.FineUsd:N0}."
                     : incident.Headline,
                 incident.FineUsd));
+        }
+
+        /// <summary>
+        /// Opens the file, and tells the player twice.
+        ///
+        /// The banner is the moment; the letter is the record. A player who tabs away during the
+        /// five days still finds out what happened when they come back.
+        /// </summary>
+        private void OpenRegulatoryAction(SafetyIncident incident, string modelName)
+        {
+            State.PendingAction = new RegulatoryAction(incident, State.Date, modelName);
+
+            State.Mail.Add(MailKind.Notice, State.Date,
+                WorldRegionCatalog.Get(State.HomeCountry).DisplayName + " regulator",
+                "Inspection opened: " + incident.Severity,
+                incident.Headline
+                + $"\n\nAn inspection has been opened into {modelName}. No penalty has been "
+                + $"decided. Findings are expected within {RegulatoryAction.InspectionDays} days, "
+                + "and the company will be notified either way."
+                + "\n\nCooperation is not optional and the file is already open.");
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.SafetyIncident,
+                State.Date,
+                $"A regulator opened an inspection into {modelName}."));
+        }
+
+        /// <summary>
+        /// Runs the clock on an open inspection and delivers the verdict when it stops.
+        ///
+        /// **The roll happens here rather than when the file opened.** Not because the odds change,
+        /// but because a save made mid-inspection would otherwise carry a decided outcome the player
+        /// could reload away from, which is the one thing that would make the whole system a slot
+        /// machine.
+        /// </summary>
+        private void AdvanceRegulatoryAction()
+        {
+            var action = State.PendingAction;
+            if (action == null)
+            {
+                return;
+            }
+
+            action.Advance();
+            if (!action.IsClosed)
+            {
+                return;
+            }
+
+            State.PendingAction = null;
+
+            var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
+            var safety = best == null
+                ? new SafetyPlan(0, 0, -1, 1, 0)
+                : new SafetyPlan(best.AssaTier, best.RedTeamTier, best.DataProtectionTier,
+                    best.SafetyEffort, State.DeployedModels.Count);
+
+            var saviour = safety.Saviour(State.Random.NextDouble());
+            if (saviour.HasValue)
+            {
+                SafetyWasSaved(saviour.Value, action.Incident, safety);
+                return;
+            }
+
+            LandPenalty(action.Incident, best);
         }
 
         /// <summary>

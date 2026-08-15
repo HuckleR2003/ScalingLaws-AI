@@ -128,6 +128,7 @@ namespace ScalingLaws.Persistence
                     24 => UpgradeV24ToV25(current),
                     25 => UpgradeV25ToV26(current),
                     26 => UpgradeV26ToV27(current),
+                    27 => UpgradeV27ToV28(current),
                     _ => current
                 };
             }
@@ -949,6 +950,30 @@ namespace ScalingLaws.Persistence
         /// could afford today would hand it protection it never paid for, and giving it nothing at
         /// all would leave it worse off than a company starting fresh.
         /// </summary>
+        /// <summary>
+        /// v27 to v28: regulators take five days now.
+        ///
+        /// Nothing to reconstruct. A v27 campaign had no such thing as an open inspection, because
+        /// penalties landed the same day they were decided, so there is no file to reopen and
+        /// inventing one would fine somebody for a run that already finished.
+        /// </summary>
+        public static SaveData UpgradeV27ToV28(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 28;
+            data.actionOpen = false;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v27 to v28: penalties used to land the day they were decided, so there was no open "
+                + "inspection to carry over and none was invented.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV26ToV27(SaveData data)
         {
             if (data == null)

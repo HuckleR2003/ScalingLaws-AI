@@ -77,6 +77,11 @@ namespace ScalingLaws.UI
         private Button pointsButton;
         private VisualElement researchCard;
         private VisualElement labCard;
+
+        // Rebuilt on the day count rather than every frame: the flash is a CSS animation and
+        // rebuilding restarts it, which at sixty frames a second is a solid colour.
+        private VisualElement regulatoryBanner;
+        private int regulatoryDay = -1;
         private VisualElement runFinished;
         private readonly List<MarketingChannel> pickedChannels = new();
         private AudienceSegment pickedAudience = AudienceSegment.Consumer;
@@ -320,6 +325,7 @@ namespace ScalingLaws.UI
             // times faster while they are asleep upstairs. Presentation, not simulation. The same
             // days happen and they take less of the player's evening.
             founder?.Refresh(state.Date.DayIndex);
+            RefreshRegulatoryBanner();
 
             // They reached the car. This is where the loading screen and the world map go once the
             // map itself exists; until then it opens the board, which is what the icon did before.
@@ -3309,6 +3315,70 @@ namespace ScalingLaws.UI
                 LabChapterKind.Setback => "STRUGGLING",
                 _ => "INDEPENDENT"
             };
+        }
+
+        /// <summary>
+        /// The regulator's open file, across the top of whatever the player is looking at.
+        ///
+        /// **Not a screen and not a mail item, because neither of those is happening to you.** A
+        /// penalty used to arrive the same tick the incident did: one moment the company was fine,
+        /// the next there was a nine figure demand in the inbox. The outcome is decided either way;
+        /// this is the five days of not knowing, and it is the only thing in the game that
+        /// interrupts every screen at once.
+        ///
+        /// Rebuilt only when the day count changes. It carries a CSS animation and rebuilding it
+        /// every frame would restart the flash sixty times a second, which is a solid colour.
+        /// </summary>
+        private void RefreshRegulatoryBanner()
+        {
+            var action = state.PendingAction;
+
+            if (action == null)
+            {
+                regulatoryBanner?.RemoveFromHierarchy();
+                regulatoryBanner = null;
+                regulatoryDay = -1;
+                return;
+            }
+
+            if (regulatoryBanner != null && regulatoryDay == action.DaysElapsed)
+            {
+                return;
+            }
+
+            regulatoryDay = action.DaysElapsed;
+            regulatoryBanner?.RemoveFromHierarchy();
+
+            regulatoryBanner = new VisualElement();
+            regulatoryBanner.AddToClassList("regulatory");
+            regulatoryBanner.pickingMode = PickingMode.Ignore;
+
+            var headline = new Label("REGULATORY ACTION");
+            headline.AddToClassList("regulatory__headline");
+            regulatoryBanner.Add(headline);
+
+            var what = new Label(action.Subtitle);
+            what.AddToClassList("regulatory__what");
+            regulatoryBanner.Add(what);
+
+            // The caption sits on the bar rather than above it, because they are one object: the
+            // sentence is what the bar is measuring.
+            var status = new Label($"Inspection and clarification underway...   {action.DaysLeft} "
+                + (action.DaysLeft == 1 ? "day left" : "days left"));
+
+            status.AddToClassList("regulatory__status");
+            regulatoryBanner.Add(status);
+
+            var track = new VisualElement();
+            track.AddToClassList("regulatory__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("regulatory__fill");
+            fill.style.width = Length.Percent((float)(action.Progress * 100.0));
+            track.Add(fill);
+
+            regulatoryBanner.Add(track);
+            shellRoot.Add(regulatoryBanner);
         }
 
         private VisualElement BuildFeedScreen()
