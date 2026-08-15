@@ -44,6 +44,27 @@ namespace ScalingLaws.Simulation
             DaysCompleted >= DurationDays
             && (PetaflopDaysRequired <= 0.0 || PetaflopDaysCompleted >= PetaflopDaysRequired);
 
+        /// <summary>
+        /// The calendar is done and the cluster is not.
+        ///
+        /// **A node needs both days and compute, and only the days pass on their own.** A company
+        /// that put every accelerator on a training run, or that has no fleet at all, sits here: the
+        /// day count runs past the duration, the bar stops moving, and the screen used to say
+        /// "0 days left, 30% done" for the rest of the campaign. The work is not lost and nothing is
+        /// broken, but a player has no way of telling that from a hang.
+        ///
+        /// Naming it is the whole fix. The strip can then say what is actually missing.
+        /// </summary>
+        public bool IsWaitingForCompute =>
+            !IsComplete
+            && DaysCompleted >= DurationDays
+            && PetaflopDaysRequired > 0.0
+            && PetaflopDaysCompleted < PetaflopDaysRequired;
+
+        /// <summary>Compute still owed, in petaflop-days. Zero once the cluster has paid it.</summary>
+        public double PetaflopDaysRemaining =>
+            Math.Max(0.0, PetaflopDaysRequired - PetaflopDaysCompleted);
+
         public void Advance(double petaflopDays)
         {
             DaysCompleted++;

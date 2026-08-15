@@ -898,10 +898,15 @@ namespace ScalingLaws.UI
             // No standing blurb. The tree is the explanation, and a paragraph above it pushed the
             // first era half a screen down for something nobody reads twice.
             var page = NewPage("RESEARCH",
-                active != null
-                    ? $"{ResearchTree.Get(active.Node).DisplayName} in progress: {UiFormat.Percent(active.Progress, 0)}, "
-                      + $"{active.DaysCompleted} of {active.DurationDays} days."
-                    : string.Empty);
+                active == null
+                    ? string.Empty
+                    : active.IsWaitingForCompute
+                        ? $"{ResearchTree.Get(active.Node).DisplayName} has run its calendar and is "
+                          + "waiting on the cluster."
+                        : $"{ResearchTree.Get(active.Node).DisplayName} in progress: "
+                          + $"{UiFormat.Percent(active.Progress, 0)}, "
+                          + $"{Math.Min(active.DaysCompleted, active.DurationDays)} of "
+                          + $"{active.DurationDays} days.");
 
             var board = simulation.ResearchBoard();
             var funding = BuildResearchFunding();
@@ -1071,11 +1076,28 @@ namespace ScalingLaws.UI
             title.AddToClassList("researching__title");
             text.Add(title);
 
-            var what = new Label($"{node.DisplayName}  ·  {left} days left  ·  "
-                + $"{UiFormat.Percent(active.Progress, 0)} done");
+            // A node needs days *and* compute, and only the days pass on their own. A company with
+            // its whole fleet on a training run reaches the end of the calendar and stops, and this
+            // used to read "0 days left, 30% done" for the rest of the campaign.
+            var what = new Label(active.IsWaitingForCompute
+                ? $"{node.DisplayName}  ·  the calendar is done, the cluster is not  ·  "
+                  + $"{UiFormat.Number(active.PetaflopDaysRemaining, 0)} PF-days still owed"
+                : $"{node.DisplayName}  ·  {left} days left  ·  "
+                  + $"{UiFormat.Percent(active.Progress, 0)} done");
 
             what.AddToClassList("researching__what");
+            what.EnableInClassList("researching__what--waiting", active.IsWaitingForCompute);
             text.Add(what);
+
+            if (active.IsWaitingForCompute)
+            {
+                var why = new Label(
+                    "Research shares the fleet with training, upgrades and family programmes. Free "
+                    + "some capacity or rent more and this finishes on its own.");
+
+                why.AddToClassList("researching__why");
+                text.Add(why);
+            }
 
             strip.Add(text);
 

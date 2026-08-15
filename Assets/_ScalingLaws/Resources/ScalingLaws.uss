@@ -7003,3 +7003,16 @@
 .rank-row:hover {
     background-color: rgba(255, 255, 255, 0.07);
 }
+
+/* A node that has run its calendar and is waiting on the cluster. Not an error: the work is not
+   lost and nothing is broken. It just has to say so, or it reads as a hang. */
+.researching__what--waiting {
+    color: rgb(232, 186, 130);
+}
+
+.researching__why {
+    font-size: 10px;
+    color: rgb(150, 162, 182);
+    white-space: normal;
+    margin-top: 3px;
+}
