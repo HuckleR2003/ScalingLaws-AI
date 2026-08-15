@@ -120,8 +120,27 @@ namespace ScalingLaws.Simulation
             _ => new[] { "Desk" }
         };
 
-        /// <summary>What the model should be playing once it arrives.</summary>
+        /// <summary>
+        /// What the model plays on arrival.
+        ///
+        /// **The entry, not the rest.** Sitting down hands over to typing and lying down hands over
+        /// to sleeping, both on exit time in the controller, so asking for the resting clip directly
+        /// would snap the founder into a chair they never sat down in.
+        /// </summary>
         public static string ClipFor(FounderTask task) => task switch
+        {
+            FounderTask.Resting => "LieDown",
+            FounderTask.Leaving => "Idle",
+            FounderTask.Away => "Idle",
+            _ => "SitDown"
+        };
+
+        /// <summary>
+        /// What the model settles into after <see cref="ClipFor"/> has played out.
+        ///
+        /// Only here so a test can assert the pair exists. The controller does the handover.
+        /// </summary>
+        public static string RestingClipFor(FounderTask task) => task switch
         {
             FounderTask.Resting => "Sleep",
             FounderTask.Leaving => "Idle",

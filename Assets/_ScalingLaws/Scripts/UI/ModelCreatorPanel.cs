@@ -39,6 +39,12 @@ namespace ScalingLaws.UI
         private readonly VisualElement readouts = new();
         private readonly Label verdict = new();
         private readonly Button startButton = new();
+
+        // Stopping a run. Two clicks, because nothing comes back: the compute is spent, the days are
+        // gone and the model does not exist. One click on a button this destructive is a button that
+        // ends campaigns by accident.
+        private readonly Button abandonButton = new();
+        private bool abandonArmed;
         private readonly Label parameterLabel = new();
         private readonly Label tokenLabel = new();
         private readonly Label rentedLabel = new();
@@ -200,6 +206,7 @@ namespace ScalingLaws.UI
             // Subscribed once. The panels are rebuilt whenever the stage changes, so a subscription
             // made inside one of them would fire as many times as the player had visited it.
             startButton.clicked += StartTraining;
+            abandonButton.clicked += AbandonTraining;
 
             ShowStage();
         }
@@ -1356,7 +1363,16 @@ namespace ScalingLaws.UI
             startButton.style.marginTop = 14;
             startButton.style.width = Length.Percent(100);
             startButton.style.display = DisplayStyle.None;
+
+            abandonButton.AddToClassList("button");
+            abandonButton.AddToClassList("button--abandon");
+            abandonButton.style.marginTop = 10;
+            abandonButton.style.marginLeft = 0;
+            abandonButton.style.marginRight = 0;
+            abandonButton.style.width = Length.Percent(100);
+            abandonButton.style.display = DisplayStyle.None;
             panel.Add(startButton);
+            panel.Add(abandonButton);
 
             return panel;
         }
@@ -1607,9 +1623,29 @@ namespace ScalingLaws.UI
             nextButton.SetEnabled(stage < StageNames.Length - 1
                 || (projection.IsFeasible && simulation.State.ActiveRun == null));
 
-            if (simulation.State.ActiveRun != null)
+            // A run in flight used to be a dead end: the creator said "one at a time" and there
+            // was no way to stop the one that was running, so a blueprint the player regretted cost
+            // the whole two hundred days. CancelTraining existed the entire time and nothing called
+            // it.
+            var running = simulation.State.ActiveRun;
+            abandonButton.style.display = running != null ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (running != null)
             {
-                verdict.text = "A run is already in flight. One at a time.";
+                var elapsed = running.DaysElapsed(simulation.State.Date);
+                verdict.text = $"{running.Blueprint.Name} is in flight: "
+                    + $"{UiFormat.Percent(running.Progress, 0)} done after {elapsed} days. "
+                    + "One at a time.";
+
+                abandonButton.text = abandonArmed
+                    ? "CONFIRM, THE RUN IS LOST"
+                    : "ABANDON THIS RUN";
+
+                abandonButton.EnableInClassList("button--armed", abandonArmed);
+            }
+            else
+            {
+                abandonArmed = false;
             }
 
             RenderEffectBanner(projection);
@@ -1897,6 +1933,23 @@ namespace ScalingLaws.UI
         {
             Reprice();
             ShowStage();
+        }
+
+        /// <summary>
+        /// Stops the run. Armed first, because the compute is spent and the model never existed.
+        /// </summary>
+        private void AbandonTraining()
+        {
+            if (!abandonArmed)
+            {
+                abandonArmed = true;
+                Reprice();
+                return;
+            }
+
+            abandonArmed = false;
+            simulation.CancelTraining();
+            Reprice();
         }
 
         private void StartTraining()

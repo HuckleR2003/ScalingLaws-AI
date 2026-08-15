@@ -128,20 +128,101 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         [Test]
+        public void EveryStateInTheControllerHasSomethingToPlay()
+        {
+            // **A state with no motion plays nothing and looks exactly like a state whose clip is
+            // simply still.** Three of them shipped empty the first time this was built, because
+            // the Mixamo files were imported with CopyFromOther and produced no clip at all: the
+            // FBX imported cleanly, showed 133 sub-assets, and not one was an animation.
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(
+                $"{Folder}/Founder.controller");
+
+            Assert.IsNotNull(controller, "Run Scaling Laws > Characters > Build founder rig.");
+
+            var empty = new List<string>();
+            foreach (var state in controller.layers[0].stateMachine.states)
+            {
+                if (state.state.motion == null)
+                {
+                    empty.Add(state.state.name);
+                }
+            }
+
+            CollectionAssert.IsEmpty(empty,
+                "These states freeze the founder: " + string.Join(", ", empty));
+
+            Assert.GreaterOrEqual(controller.layers[0].stateMachine.states.Length, 7,
+                "Seven states: idle, the two halves of walking, sitting down into typing, and lying "
+                + "down into sleeping.");
+        }
+
+        [Test]
+        public void TheDownloadedClipsAreTheOnesActuallyUsed()
+        {
+            // The generated placeholders are a fallback and must stay one. If a real clip exists for
+            // a state and the controller is still on the placeholder, the import silently failed.
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(
+                $"{Folder}/Founder.controller");
+
+            Assert.IsNotNull(controller);
+
+            var placeholders = new List<string>();
+            foreach (var state in controller.layers[0].stateMachine.states)
+            {
+                var name = state.state.name;
+                var motion = state.state.motion;
+                if (motion == null)
+                {
+                    continue;
+                }
+
+                var onPlaceholder = AssetDatabase.GetAssetPath(motion).EndsWith($"/Clips/{name}.anim");
+
+                // Idle is expected to be a placeholder: no standing idle was downloaded.
+                if (onPlaceholder && name != "Idle")
+                {
+                    placeholders.Add(name);
+                }
+            }
+
+            CollectionAssert.IsEmpty(placeholders,
+                "Still on generated stand-ins, so the Mixamo import did not take: "
+                + string.Join(", ", placeholders));
+        }
+
+        [Test]
         public void TheControllerHasTheOneParameterTheActorSets()
         {
-            var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(
                 $"{Folder}/Founder.controller");
 
             Assert.IsNotNull(controller);
 
             var found = false;
-            foreach (var clip in controller.animationClips)
+            foreach (var parameter in controller.parameters)
             {
-                found |= clip != null && clip.name == "Walk";
+                found |= parameter.name == "Walking"
+                         && parameter.type == AnimatorControllerParameterType.Bool;
             }
 
-            Assert.IsTrue(found, "The controller does not reference the walk.");
+            Assert.IsTrue(found, "OfficeActor sets a Walking bool and the controller has no such "
+                + "parameter, so nothing it does reaches the model.");
+        }
+
+        [Test]
+        public void TheEntryClipsHandOverToTheOnesThatRepeat()
+        {
+            // Sitting down is over when it is over, and typing takes it from there. Without the
+            // handover the founder sits down and then stands frozen in the last frame of it.
+            foreach (var task in new[] { ScalingLaws.Simulation.FounderTask.Working,
+                                         ScalingLaws.Simulation.FounderTask.Resting })
+            {
+                var entry = ScalingLaws.Simulation.FounderRoutine.ClipFor(task);
+                var rest = ScalingLaws.Simulation.FounderRoutine.RestingClipFor(task);
+
+                Assert.AreNotEqual(entry, rest,
+                    $"{task} plays the same clip on arrival and at rest, so there is no handover.");
+            }
         }
     }
 }

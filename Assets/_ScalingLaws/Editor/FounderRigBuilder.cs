@@ -250,30 +250,74 @@ namespace ScalingLaws.EditorTools
             var machine = controller.layers[0].stateMachine;
             var states = new Dictionary<string, AnimatorState>();
 
-            foreach (var (name, clip) in clips)
+            // Seven states. The downloaded clips are preferred and the generated ones are the
+            // fallback, which is why Idle is still a placeholder: nobody downloaded a standing idle
+            // and the room needs one for the moment between arriving and sitting down.
+            foreach (var name in new[] { "Idle", "StartWalk", "Walk", "SitDown", "Type", "LieDown", "Sleep" })
             {
-                var loaded = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{ClipFolder}/{name}.anim");
                 var state = machine.AddState(name);
-                state.motion = loaded != null ? loaded : clip;
+
+                var downloaded = FounderClipImporter.Find(name);
+                state.motion = downloaded
+                               ?? (clips.TryGetValue(name, out var generated) ? generated : null);
+
+                // Said out loud, because a state with a null motion plays nothing and looks
+                // identical to a state whose clip is simply still. Silence here is how three empty
+                // states shipped the first time this ran.
+                if (state.motion == null)
+                {
+                    Debug.LogWarning($"[Scaling Laws] {name} has no clip. The founder will freeze "
+                        + "in that state.");
+                }
+                else
+                {
+                    Debug.Log($"[Scaling Laws]   {name}: {AssetDatabase.GetAssetPath(state.motion)}");
+                }
+
                 states[name] = state;
             }
 
             machine.defaultState = states["Idle"];
 
-            // Walking is a bool the actor sets. Everything else is entered by name with CrossFade,
-            // which is why the other three need no transitions of their own.
-            var toWalk = states["Idle"].AddTransition(states["Walk"]);
-            toWalk.AddCondition(AnimatorConditionMode.If, 0f, "Walking");
-            toWalk.duration = 0.15f;
-            toWalk.hasExitTime = false;
+            // Walking is the one parameter. Every resting state can be interrupted by it, and each
+            // transition is written out rather than using AnyState: an AnyState transition on a bool
+            // re-fires the moment the walk cycle starts, so the founder restarts the first step
+            // forever and never actually walks.
+            foreach (var from in new[] { "Idle", "Type", "Sleep", "SitDown", "LieDown" })
+            {
+                var out_ = states[from].AddTransition(states["StartWalk"]);
+                out_.AddCondition(AnimatorConditionMode.If, 0f, "Walking");
+                out_.hasExitTime = false;
+                out_.duration = 0.18f;
+            }
 
-            var toIdle = states["Walk"].AddTransition(states["Idle"]);
-            toIdle.AddCondition(AnimatorConditionMode.IfNot, 0f, "Walking");
-            toIdle.duration = 0.2f;
-            toIdle.hasExitTime = false;
+            // The three that run themselves out and hand over. Pushing off into the walk cycle,
+            // settling into typing, settling into sleep.
+            Handover(states["StartWalk"], states["Walk"]);
+            Handover(states["SitDown"], states["Type"]);
+            Handover(states["LieDown"], states["Sleep"]);
+
+            var stop = states["Walk"].AddTransition(states["Idle"]);
+            stop.AddCondition(AnimatorConditionMode.IfNot, 0f, "Walking");
+            stop.hasExitTime = false;
+            stop.duration = 0.2f;
 
             EditorUtility.SetDirty(controller);
             return controller;
+        }
+
+        /// <summary>
+        /// One state playing itself out and handing over to the one that repeats.
+        ///
+        /// Exit time rather than a condition, because these are the entries: sitting down is over
+        /// when the sitting down is over, and nothing else decides that.
+        /// </summary>
+        private static void Handover(AnimatorState from, AnimatorState to)
+        {
+            var transition = from.AddTransition(to);
+            transition.hasExitTime = true;
+            transition.exitTime = 0.85f;
+            transition.duration = 0.15f;
         }
 
         // ---- the prefab ---------------------------------------------------------------------------

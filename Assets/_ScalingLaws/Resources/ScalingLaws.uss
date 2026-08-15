@@ -7016,3 +7016,24 @@
     white-space: normal;
     margin-top: 3px;
 }
+
+/* Abandoning work in flight. Quiet until it is armed, because nothing comes back from it. */
+.button--abandon {
+    color: rgb(226, 186, 178);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 1px;
+    border-color: rgba(226, 78, 62, 0.35);
+    font-size: 11px;
+    letter-spacing: 1.6px;
+}
+
+.button--abandon:hover {
+    background-color: rgba(226, 78, 62, 0.16);
+    border-color: rgba(226, 78, 62, 0.65);
+}
+
+.button--armed {
+    background-color: rgb(226, 78, 62);
+    border-color: rgb(226, 78, 62);
+    color: rgb(255, 252, 250);
+}

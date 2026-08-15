@@ -276,6 +276,9 @@ namespace ScalingLaws.UI
             }
         }
 
+        // Armed before it fires. Months of compute do not come back.
+        private bool abandonArmed;
+
         private void RebuildOwned()
         {
             ownedList.Clear();
@@ -288,6 +291,34 @@ namespace ScalingLaws.UI
                     + $"({project.DaysCompleted} of {project.DurationDays} days)");
                 running.AddToClassList("readout__value");
                 ownedList.Add(running);
+
+                // The same dead end the training run had. A family programme is months long and
+                // blocks the next one, and CancelArchitectureProgramme was never called from
+                // anywhere.
+                var stop = new Button(() =>
+                {
+                    if (abandonArmed)
+                    {
+                        abandonArmed = false;
+                        simulation.CancelArchitectureProgramme();
+                    }
+                    else
+                    {
+                        abandonArmed = true;
+                    }
+
+                    Refresh();
+                })
+                {
+                    text = abandonArmed ? "CONFIRM, NOTHING COMES BACK" : "ABANDON THIS PROGRAMME"
+                };
+
+                stop.AddToClassList("button");
+                stop.AddToClassList("button--abandon");
+                stop.EnableInClassList("button--armed", abandonArmed);
+                stop.style.marginLeft = 0;
+                stop.style.marginTop = 8;
+                ownedList.Add(stop);
             }
 
             if (simulation.State.CustomArchitectures.Count == 0)
