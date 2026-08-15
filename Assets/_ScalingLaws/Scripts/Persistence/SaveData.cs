@@ -365,7 +365,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 28;
+        public const int CurrentVersion = 29;
 
         public int version = CurrentVersion;
 
@@ -559,6 +559,14 @@ namespace ScalingLaws.Persistence
         /// a free escape from a penalty by saving and reloading, which is the one thing that would
         /// turn the whole system into a slot machine.
         /// </summary>
+        /// <summary>
+        /// Places the company owns outright, as tier values.
+        ///
+        /// **Owning is per place, not a flag on the current office.** A company that buys the small
+        /// hub and later moves up still owns the small hub, and moving back has to be free.
+        /// </summary>
+        public List<int> ownedOffices = new();
+
         public bool actionOpen;
 
         /// <inheritdoc cref="actionOpen"/>

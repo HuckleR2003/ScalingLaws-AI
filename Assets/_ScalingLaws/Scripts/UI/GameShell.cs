@@ -453,7 +453,8 @@ namespace ScalingLaws.UI
             offices = new OfficeChooser(
                 () => simulation.State,
                 tier => simulation.TryMoveOffice(tier, out var why) ? string.Empty : why,
-                () => Show(Screen.Team));
+                () => Show(Screen.Team),
+                tier => simulation.TryBuyOffice(tier, out var why) ? string.Empty : why);
 
             news = new NewsScreen(simulation, (tier, joined) =>
             {

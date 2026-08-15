@@ -33,6 +33,7 @@ namespace ScalingLaws.Data
             long fitOutCostUsd,
             double effectivenessMultiplier,
             long requiredCashUsd,
+            long purchasePriceUsd,
             GameDate earliestDate,
             int level = 0,
             string art = "")
@@ -50,6 +51,7 @@ namespace ScalingLaws.Data
             FitOutCostUsd = Math.Clamp(fitOutCostUsd, 0L, 5_000_000_000L);
             EffectivenessMultiplier = Math.Clamp(SimUnits.Finite(effectivenessMultiplier, 1.0), 0.5, 1.6);
             RequiredCashUsd = Math.Max(0L, requiredCashUsd);
+            PurchasePriceUsd = Math.Max(0L, purchasePriceUsd);
             EarliestDate = earliestDate;
         }
 
@@ -94,6 +96,18 @@ namespace ScalingLaws.Data
         public double EffectivenessMultiplier { get; }
 
         public long RequiredCashUsd { get; }
+
+        /// <summary>
+        /// What it costs to own the place outright, or zero where nobody will sell.
+        ///
+        /// **Roughly ten years of rent**, which is the number that makes it a real decision rather
+        /// than an obvious one: a company that will still be here in a decade should buy, and a
+        /// company that is not sure should not tie up the capital. Owning ends the rent entirely and
+        /// the money never comes back, which is the trade.
+        /// </summary>
+        public long PurchasePriceUsd { get; }
+
+        public bool CanBeBought => PurchasePriceUsd > 0L;
         public GameDate EarliestDate { get; }
 
         public long DailyRentUsd => SimUnits.ToDollars(MonthlyRentUsd / 30.4375);
@@ -120,18 +134,20 @@ namespace ScalingLaws.Data
                 fitOutCostUsd: 0,
                 effectivenessMultiplier: 0.85,
                 requiredCashUsd: 0,
+                purchasePriceUsd: 0,
                 earliestDate: GameDate.Start,
                 level: 0,
                 art: "office_house"),
 
             new(OfficeTier.Loft, "Small office hub",
-                "Eight desks and a lease. The first month the company is somewhere rather than "
+                "Ten desks and a lease. The first month the company is somewhere rather than "
                 + "somebody.",
-                desks: 8,
+                desks: 10,
                 monthlyRentUsd: 210_000,
                 fitOutCostUsd: 350_000,
                 effectivenessMultiplier: 1.0,
                 requiredCashUsd: 3_000_000,
+                purchasePriceUsd: 24_500_000,
                 earliestDate: GameDate.Start,
                 level: 1,
                 art: "office_smallhub"),
@@ -144,6 +160,7 @@ namespace ScalingLaws.Data
                 fitOutCostUsd: 2_400_000,
                 effectivenessMultiplier: 1.08,
                 requiredCashUsd: 25_000_000,
+                purchasePriceUsd: 35_000_000,
                 earliestDate: GameDate.Start,
                 level: 2,
                 art: "office_bighub"),
@@ -158,6 +175,7 @@ namespace ScalingLaws.Data
                 fitOutCostUsd: 18_000_000,
                 effectivenessMultiplier: 1.18,
                 requiredCashUsd: 150_000_000,
+                purchasePriceUsd: 0,
                 earliestDate: GameDate.FromCalendar(2023, 6, 1),
                 level: 3),
 
@@ -169,6 +187,7 @@ namespace ScalingLaws.Data
                 fitOutCostUsd: 70_000_000,
                 effectivenessMultiplier: 1.12,
                 requiredCashUsd: 800_000_000,
+                purchasePriceUsd: 0,
                 earliestDate: GameDate.FromCalendar(2024, 6, 1),
                 level: 4)
         };

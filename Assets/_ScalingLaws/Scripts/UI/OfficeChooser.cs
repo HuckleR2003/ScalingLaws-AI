@@ -23,17 +23,21 @@ namespace ScalingLaws.UI
     {
         private readonly Func<CompanyState> state;
         private readonly Func<OfficeTier, string> tryMove;
+        private readonly Func<OfficeTier, string> tryBuy;
         private readonly Action closed;
 
         // Nullable rather than a None member, because OfficeTier values live in saves
         // and Garage is legitimately zero.
         private OfficeTier? armed;
+        private OfficeTier? armedPurchase;
         private string problem = string.Empty;
 
-        public OfficeChooser(Func<CompanyState> state, Func<OfficeTier, string> tryMove, Action closed)
+        public OfficeChooser(Func<CompanyState> state, Func<OfficeTier, string> tryMove, Action closed,
+            Func<OfficeTier, string> tryBuy = null)
         {
             this.state = state;
             this.tryMove = tryMove;
+            this.tryBuy = tryBuy ?? (_ => "Buying is not wired up.");
             this.closed = closed;
 
             Root = new VisualElement();
@@ -144,7 +148,18 @@ namespace ScalingLaws.UI
 
             var figures = new VisualElement();
             figures.AddToClassList("office-row__figures");
-            figures.Add(Figure("RENT", $"{UiFormat.Money(place.MonthlyRentUsd)} / mo"));
+            var owned = company.Staff.Owns(place.Tier);
+
+            figures.Add(Figure("RENT", owned
+                ? "owned outright"
+                : $"{UiFormat.Money(place.MonthlyRentUsd)} / mo"));
+
+            if (place.CanBeBought)
+            {
+                figures.Add(Figure("TO BUY", owned
+                    ? "yours"
+                    : UiFormat.Money(place.PurchasePriceUsd)));
+            }
             figures.Add(Figure("DESKS", place.Desks == 0 ? "none" : place.Desks.ToString()));
             figures.Add(Figure("FIT-OUT", place.FitOutCostUsd == 0
                 ? "nothing"
@@ -152,7 +167,7 @@ namespace ScalingLaws.UI
 
             body.Add(figures);
 
-            body.Add(BuildAction(place, company, here, affordable, openYet));
+            body.Add(BuildActions(place, company, here, affordable, openYet));
             row.Add(body);
 
             // ---- the right: the place itself --------------------------------------------------
@@ -198,6 +213,103 @@ namespace ScalingLaws.UI
             figure.Add(amount);
 
             return figure;
+        }
+
+        /// <summary>
+        /// The two ways in, side by side.
+        ///
+        /// **Renting and buying are different decisions and the screen has to say so.** A monthly
+        /// bill is something a struggling company walks away from; a purchase is capital that never
+        /// comes back and ends the rent forever. Putting them in one button with a toggle would hide
+        /// exactly the comparison the player is here to make.
+        /// </summary>
+        private VisualElement BuildActions(OfficeDefinition place, CompanyState company, bool here,
+            bool affordable, bool openYet)
+        {
+            var owned = company.Staff.Owns(place.Tier);
+
+            if (!openYet)
+            {
+                var blocked = new Label($"Not available until {place.EarliestDate}.");
+                blocked.AddToClassList("office-row__blocked");
+                return blocked;
+            }
+
+            var row = new VisualElement();
+            row.AddToClassList("office-actions");
+
+            if (here && owned)
+            {
+                var settled = new Label("Yours. No rent, ever.");
+                settled.AddToClassList("office-row__here");
+                return settled;
+            }
+
+            if (!here)
+            {
+                row.Add(BuildAction(place, company, false, affordable, true));
+            }
+            else
+            {
+                var staying = new Label(
+                    $"{UiFormat.Money(place.DailyRentUsd)} a day, whatever happens.");
+
+                staying.AddToClassList("office-row__here");
+                row.Add(staying);
+            }
+
+            if (place.CanBeBought && !owned)
+            {
+                row.Add(BuildBuy(place, company, here));
+            }
+
+            return row;
+        }
+
+        /// <summary>
+        /// The purchase button. Two clicks like the move, because the money never comes back.
+        /// </summary>
+        private VisualElement BuildBuy(OfficeDefinition place, CompanyState company, bool here)
+        {
+            var owed = place.PurchasePriceUsd + (here ? 0L : place.FitOutCostUsd);
+            var canAfford = company.CashUsd >= owed;
+            var isArmed = armedPurchase == place.Tier;
+
+            var buy = new Button(() => Buy(place.Tier))
+            {
+                text = isArmed
+                    ? "CONFIRM THE PURCHASE"
+                    : (here ? "BUY THIS PLACE   " : "BUY OUTRIGHT   ") + UiFormat.Money(owed)
+            };
+
+            buy.AddToClassList("office-row__move");
+            buy.AddToClassList("office-row__buy");
+            buy.EnableInClassList("office-row__move--armed", isArmed);
+            buy.SetEnabled(canAfford);
+
+            if (!canAfford)
+            {
+                buy.text = $"NEEDS {UiFormat.Money(owed)} TO BUY";
+            }
+
+            return buy;
+        }
+
+        /// <summary>Two clicks, because a purchase is capital that never comes back.</summary>
+        public void Buy(OfficeTier tier)
+        {
+            if (armedPurchase != tier)
+            {
+                armedPurchase = tier;
+                armed = null;
+                problem = string.Empty;
+                Refresh();
+                return;
+            }
+
+            armedPurchase = null;
+            problem = tryBuy(tier) ?? string.Empty;
+            Refresh();
         }
 
         private VisualElement BuildAction(OfficeDefinition place, CompanyState company, bool here,

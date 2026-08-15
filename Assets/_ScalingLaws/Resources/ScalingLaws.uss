@@ -7308,3 +7308,24 @@
     height: 3px;
     background-color: rgb(226, 78, 62);
 }
+
+/* Renting and buying, side by side. They are different decisions and one button with a toggle on it
+   would hide the comparison the player came here to make. */
+.office-actions {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.office-row__buy {
+    margin-left: 10px;
+    color: rgb(236, 226, 196);
+    background-color: rgba(196, 172, 96, 0.14);
+    border-color: rgba(196, 172, 96, 0.55);
+}
+
+.office-row__buy:hover {
+    background-color: rgba(196, 172, 96, 0.28);
+    border-color: rgba(196, 172, 96, 0.85);
+}

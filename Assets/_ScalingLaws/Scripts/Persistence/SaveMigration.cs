@@ -129,6 +129,7 @@ namespace ScalingLaws.Persistence
                     25 => UpgradeV25ToV26(current),
                     26 => UpgradeV26ToV27(current),
                     27 => UpgradeV27ToV28(current),
+                    28 => UpgradeV28ToV29(current),
                     _ => current
                 };
             }
@@ -957,6 +958,30 @@ namespace ScalingLaws.Persistence
         /// penalties landed the same day they were decided, so there is no file to reopen and
         /// inventing one would fine somebody for a run that already finished.
         /// </summary>
+        /// <summary>
+        /// v28 to v29: offices can be bought.
+        ///
+        /// Nothing owned. A v28 company could only ever rent, so it paid rent every month it was
+        /// open and crediting it with a building now would hand it a purchase it never made and
+        /// wipe a bill it has already been paying.
+        /// </summary>
+        public static SaveData UpgradeV28ToV29(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 29;
+            data.ownedOffices = new List<int>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v28 to v29: offices could only be rented before this version, so the company owns "
+                + "nothing and keeps paying the rent it has been paying all along.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV27ToV28(SaveData data)
         {
             if (data == null)

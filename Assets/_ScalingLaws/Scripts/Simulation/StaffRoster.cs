@@ -68,6 +68,16 @@ namespace ScalingLaws.Simulation
 
         public void SetOffice(OfficeTier tier) => Office = tier;
 
+        /// <summary>
+        /// Places the company owns outright. Owning one means never paying rent on it again.
+        ///
+        /// A set rather than a flag on the current office, because a company that buys the small hub
+        /// and later moves up still owns the small hub, and moving back has to be free.
+        /// </summary>
+        public HashSet<OfficeTier> Owned { get; } = new();
+
+        public bool Owns(OfficeTier tier) => Owned.Contains(tier);
+
         public bool Add(Hire hire)
         {
             if (!HasFreeDesk || hire.Role == StaffRole.None)
@@ -121,7 +131,12 @@ namespace ScalingLaws.Simulation
             }
         }
 
-        public long DailyRentUsd => OfficeCatalog.Get(Office).DailyRentUsd;
+        /// <summary>
+        /// Rent on where the company is sitting, or nothing when it owns the place.
+        ///
+        /// This is the whole return on a purchase and it is why the price is ten years of it.
+        /// </summary>
+        public long DailyRentUsd => Owns(Office) ? 0L : OfficeCatalog.Get(Office).DailyRentUsd;
 
         public long DailyCostUsd => DailyPayrollUsd + DailyRentUsd;
 

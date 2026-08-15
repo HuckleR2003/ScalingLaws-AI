@@ -131,6 +131,12 @@ namespace ScalingLaws.Persistence
             // verdict has not been rolled yet and the incident it will apply cannot be rebuilt from
             // anywhere else.
             var action = state.PendingAction;
+            data.ownedOffices.Clear();
+            foreach (var owned in state.Staff.Owned)
+            {
+                data.ownedOffices.Add((int)owned);
+            }
+
             data.actionOpen = action != null;
 
             if (action != null)
@@ -572,6 +578,18 @@ namespace ScalingLaws.Persistence
             }
 
             state.FounderName = safe.founderName;
+            state.Staff.Owned.Clear();
+            if (safe.ownedOffices != null)
+            {
+                foreach (var owned in safe.ownedOffices)
+                {
+                    if (Enum.IsDefined(typeof(OfficeTier), owned))
+                    {
+                        state.Staff.Owned.Add((OfficeTier)owned);
+                    }
+                }
+            }
+
             if (safe.actionOpen)
             {
                 var severity = Enum.TryParse<IncidentSeverity>(safe.actionSeverity, out var parsed)

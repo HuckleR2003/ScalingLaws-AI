@@ -1388,6 +1388,83 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>Signs a new lease. The fit-out is paid today and the rent starts tomorrow.</summary>
+        /// <summary>
+        /// Buys the place outright, and moves in if the company is not already there.
+        ///
+        /// **Separate from moving because they are separate decisions.** Renting is a monthly bill a
+        /// struggling company can walk away from; buying is capital that never comes back and ends
+        /// the rent forever. The price is about ten years of it, so a company that will still be
+        /// here in a decade should buy and one that is not sure should not tie up the money.
+        ///
+        /// Owning is remembered per place. A company that buys the small hub and later moves up
+        /// still owns the small hub, and moving back into it costs nothing.
+        /// </summary>
+        public bool TryBuyOffice(OfficeTier tier, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!OfficeCatalog.TryGet(tier, out var definition))
+            {
+                failureReason = "Unknown office.";
+                return false;
+            }
+
+            if (!definition.CanBeBought)
+            {
+                failureReason = $"{definition.DisplayName} is not for sale.";
+                return false;
+            }
+
+            if (State.Staff.Owns(tier))
+            {
+                failureReason = "The company already owns it.";
+                return false;
+            }
+
+            if (State.Date.IsBefore(definition.EarliestDate))
+            {
+                failureReason = $"Not available before {definition.EarliestDate}.";
+                return false;
+            }
+
+            // The fit-out is only owed when the company is actually moving in. Buying a place it is
+            // already sitting in is a purchase, not a move.
+            var moving = State.Staff.Office != tier;
+            var owed = definition.PurchasePriceUsd + (moving ? definition.FitOutCostUsd : 0L);
+
+            if (State.CashUsd < owed)
+            {
+                failureReason = $"Needs ${owed:N0}, has ${State.CashUsd:N0}.";
+                return false;
+            }
+
+            if (moving && definition.Desks < State.Staff.Headcount)
+            {
+                failureReason =
+                    $"{definition.DisplayName} holds {definition.Desks}, the company has "
+                    + $"{State.Staff.Headcount} people.";
+
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Facilities, owed);
+            State.Staff.Owned.Add(tier);
+
+            if (moving)
+            {
+                State.Staff.SetOffice(tier);
+            }
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.OfficeMoved,
+                State.Date,
+                $"Bought {definition.DisplayName} outright for {Usd(definition.PurchasePriceUsd)}. "
+                + "No rent on it again.",
+                owed));
+
+            return true;
+        }
+
         public bool TryMoveOffice(OfficeTier tier, out string failureReason)
         {
             failureReason = string.Empty;
