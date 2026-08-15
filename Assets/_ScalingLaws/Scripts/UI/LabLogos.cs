@@ -35,10 +35,10 @@ namespace ScalingLaws.UI
 
             // Named before the art exists. Badge() draws initials when the file is missing, which
             // is a real mark rather than a hole, so the four new labs read correctly today.
-            { CompetitorId.StabilityAi, "lab_stability" },
-            { CompetitorId.InflectionAi, "lab_inflection" },
-            { CompetitorId.AlephAlpha, "lab_alephalpha" },
-            { CompetitorId.Cohere, "lab_cohere" }
+            { CompetitorId.StabilityAi, "lab_stableai" },
+            { CompetitorId.InflectionAi, "lab_introduceai" },
+            { CompetitorId.AlephAlpha, "lab_alghoalpha" },
+            { CompetitorId.Cohere, "lab_gohere" }
         };
 
         private static readonly Dictionary<CompetitorId, Texture2D> Loaded = new();

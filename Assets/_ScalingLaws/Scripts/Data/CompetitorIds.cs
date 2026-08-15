@@ -30,6 +30,11 @@ namespace ScalingLaws.Data
         // of how they end: the field needed companies the player can watch fall over, and watch
         // *why*.
         //
+        // **These names are the real companies the arcs are drawn from, and they are deliberately
+        // not what the player sees.** The displayed names are parodies and live on the dossier;
+        // keeping the real one here is what documents where an arc came from, so somebody reading
+        // this file in a year can check the history rather than guess at it.
+        //
         // Their histories are in LabDossiers.
 
         /// <summary>Open image generation. Enormous reach, no way to charge for it, and lawsuits.</summary>

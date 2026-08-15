@@ -127,19 +127,23 @@ namespace ScalingLaws.Data
     /// was about to fall over. That is most of what makes a field of competitors interesting, and
     /// none of it was anywhere in the game.
     ///
-    /// Every chapter here is a documented public event unless it carries `IsProjection`. That
-    /// boundary is not decoration: the whole roster is real companies, and the difference between
-    /// "this was announced" and "this is where the game thinks it goes" has to survive contact with
-    /// a player who was there for it.
+    /// **The names are parodies and the histories are real.** That is the whole trick, and it is
+    /// the same one Game Dev Tycoon plays: a player who was there recognises every beat, and no
+    /// actual company has its name attached to the word scandal. The four labs added in August 2026
+    /// are parody-named; the nine older ones still carry real names and should not, which is a job
+    /// waiting rather than a decision.
     ///
-    /// **No individual is named anywhere in this file.** Companies are matters of public record and
-    /// a resignation reported by the company itself is a fact about the company. Putting a real
-    /// person's name next to the word scandal in a game is a different thing entirely, and the
-    /// stories lose nothing by saying "the chief executive" instead.
+    /// Every chapter is a documented public event unless it carries `IsProjection`. That boundary is
+    /// not decoration: these arcs are drawn from things that actually happened, and the difference
+    /// between what was announced and where the game thinks it goes has to survive contact with a
+    /// player who followed it at the time.
     ///
-    /// **This is also the one place a lab's name is written.** `CompetitorCatalog.NameOf` reads it,
-    /// so the roster can be renamed in one column if the parody rule in the working notes is applied
-    /// to the labs the way it was applied to their logos.
+    /// **No individual is named anywhere in this file.** A resignation the company itself announced
+    /// is a fact about the company. Putting a real person's name next to the word scandal in a game
+    /// is a different thing entirely, and the stories lose nothing by saying "the chief executive".
+    ///
+    /// **This is the one place a lab's name is written.** `CompetitorCatalog.NameOf` reads it, so
+    /// renaming the rest of the roster is editing one column in this file and nothing else.
     /// </summary>
     public static class LabDossiers
     {
@@ -332,13 +336,17 @@ namespace ScalingLaws.Data
 
                 // ------------------------------------------------- the open source rocket, falling
 
-                new LabDossier(CompetitorId.StabilityAi, "Stability AI", On(2020, 1, 1), "London",
+                new LabDossier(CompetitorId.StabilityAi, "StableAI", On(2020, 1, 1), "London",
                     "Open image generation, given away, funded by a community that does not pay.",
-                    "For about eight months this was the most exciting company in the field. Its "
-                    + "image model was released openly in August 2022 and became one of the two "
-                    + "things that made ordinary people care about generative AI at all. Then the "
-                    + "bill arrived: enormous compute costs, no working way to charge for something "
-                    + "already free, and copyright suits over the training data.",
+                    "For about eight months this was the most exciting company in the field. It put "
+                    + "an image model out in the open in August 2022, and within weeks it was "
+                    + "running on home machines and inside a hundred products the lab did not own "
+                    + "and could not bill. A hundred million dollars followed, at a billion dollar "
+                    + "valuation. Then the bill arrived, and it was the same bill three times over: "
+                    + "compute that costs the same whether or not anybody pays, no way to charge "
+                    + "for something already free, and a question about the training data that "
+                    + "nobody had answered before it became a court's problem. The models never got "
+                    + "worse. The company did.",
                     LabFate.Struggling,
                     new[]
                     {
@@ -375,13 +383,16 @@ namespace ScalingLaws.Data
 
                 // ------------------------------------------- the challenger that was bought in place
 
-                new LabDossier(CompetitorId.InflectionAi, "Inflection AI", On(2022, 3, 1),
+                new LabDossier(CompetitorId.InflectionAi, "IntroduceAI", On(2022, 3, 1),
                     "Palo Alto",
                     "One personal assistant, tuned for how it talks rather than what it scores.",
-                    "Founded in 2022 by a co-founder of a famous London research lab together with a "
-                    + "well known technology investor, and funded at a scale that made it a serious "
-                    + "challenger immediately. Its assistant was not trying to win benchmarks; it "
-                    + "was trying to be pleasant, which for a while looked like a real strategy.",
+                    "Founded in 2022 by a co-founder of a famous London research lab alongside a "
+                    + "well known technology investor, and funded on day one at a scale that made "
+                    + "it a serious challenger. Its assistant was deliberately worse at tasks and "
+                    + "deliberately better at conversation, and a million people a day preferred it "
+                    + "that way. It never lost to anybody. It was hired. The company was taken "
+                    + "apart by an announcement rather than by a competitor, twelve days after "
+                    + "reaching the frontier, and none of that is visible in a benchmark.",
                     LabFate.Absorbed,
                     new[]
                     {
@@ -414,13 +425,16 @@ namespace ScalingLaws.Data
 
                 // ------------------------------------------------ the European bid, out-scaled
 
-                new LabDossier(CompetitorId.AlephAlpha, "Aleph Alpha", On(2019, 1, 1), "Heidelberg",
+                new LabDossier(CompetitorId.AlephAlpha, "Algho Alpha", On(2019, 1, 1), "Heidelberg",
                     "Sovereign AI. A model a European government or bank can run without asking "
                     + "anybody's permission.",
-                    "Built its own large model years before it was fashionable, and argued that "
-                    + "Europe could not depend on American labs for infrastructure this important. "
-                    + "The argument was right and the arithmetic was brutal: the frontier was "
-                    + "tripling its training compute every year and it was funded like a startup.",
+                    "Built its own large multilingual model years before it was fashionable, and "
+                    + "argued that Europe could not depend on American labs for infrastructure this "
+                    + "important. European industry agreed hard enough to put half a billion in: a "
+                    + "retail group, an engineering conglomerate, an enterprise software house and "
+                    + "a hardware vendor, rather than venture capital. The argument was right and "
+                    + "the arithmetic was brutal. Half a billion is a rounding error against a "
+                    + "frontier that triples its training compute every year.",
                     LabFate.Struggling,
                     new[]
                     {
@@ -454,13 +468,15 @@ namespace ScalingLaws.Data
 
                 // ------------------------------------------------------------- the survivor
 
-                new LabDossier(CompetitorId.Cohere, "Cohere", On(2019, 1, 1), "Toronto",
+                new LabDossier(CompetitorId.Cohere, "Gohere", On(2019, 1, 1), "Toronto",
                     "Sell to companies, run inside their walls, never chase the consumer.",
                     "Founded in 2019 by, among others, one of the authors of the 2017 attention "
                     + "paper that every model in this game descends from. It made one decision "
-                    + "early and never moved off it: it is not trying to be the frontier lab, and "
-                    + "it is not trying to be famous. Private deployment, enterprise retention, and "
-                    + "a valuation that kept climbing while louder companies fell over.",
+                    + "early and never moved off it: not the frontier lab, and not famous. Models "
+                    + "deployed inside a customer's own infrastructure, sold on auditability rather "
+                    + "than on intelligence, to buyers who do not change vendor every six months. "
+                    + "You can ignore this company for four years. It was worth close to seven "
+                    + "billion dollars by the time the loud ones started falling over.",
                     LabFate.Independent,
                     new[]
                     {
