@@ -179,8 +179,9 @@ namespace ScalingLaws.Tests.EditMode
 
                 var onPlaceholder = AssetDatabase.GetAssetPath(motion).EndsWith($"/Clips/{name}.anim");
 
-                // Idle is expected to be a placeholder: no standing idle was downloaded.
-                if (onPlaceholder && name != "Idle")
+                // No exceptions any more. The standing idle arrived, so every one of the seven
+                // states is on a real clip and a placeholder anywhere means an import failed.
+                if (onPlaceholder)
                 {
                     placeholders.Add(name);
                 }

@@ -7037,3 +7037,61 @@
     border-color: rgb(226, 78, 62);
     color: rgb(255, 252, 250);
 }
+
+/* ---- the portrait ----
+
+   The founder, rendered live rather than photographed, with the two choosers under it. */
+
+.portrait__view {
+    flex-grow: 1;
+    width: 100%;
+    -unity-background-scale-mode: scale-and-crop;
+    border-radius: 3px;
+}
+
+.portrait__why {
+    font-size: 10px;
+    color: rgb(120, 132, 152);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-top: 6px;
+    padding: 0 12px;
+}
+
+.portrait-pick {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    width: 100%;
+    padding: 4px 6px;
+    margin-top: 4px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+.portrait-pick__arrow {
+    width: 30px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(196, 210, 232);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+
+.portrait-pick__arrow:hover {
+    background-color: rgba(255, 255, 255, 0.13);
+    color: rgb(240, 246, 255);
+}
+
+.portrait-pick__label {
+    font-size: 10px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 184);
+}

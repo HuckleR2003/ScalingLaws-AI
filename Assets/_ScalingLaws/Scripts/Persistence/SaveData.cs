@@ -300,7 +300,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 25;
+        public const int CurrentVersion = 26;
 
         public int version = CurrentVersion;
 
@@ -478,6 +478,18 @@ namespace ScalingLaws.Persistence
         // ---- added in v10 ----
 
         public string founderName = "Anonymous";
+
+        /// <summary>
+        /// Which model the founder is, by prefab name, and whether they wear glasses.
+        ///
+        /// A name rather than an index. Dropping another character pack into the project renumbers
+        /// every look, and an index would quietly turn an existing founder into a stranger the next
+        /// time their campaign was loaded.
+        /// </summary>
+        public string founderLook = string.Empty;
+
+        /// <inheritdoc cref="founderLook"/>
+        public int founderGlasses;
 
         public List<int> skillLevels = new();
 

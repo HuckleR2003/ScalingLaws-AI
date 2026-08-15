@@ -127,6 +127,8 @@ namespace ScalingLaws.Persistence
             }
 
             data.founderName = state.FounderName;
+            data.founderLook = state.FounderLook ?? string.Empty;
+            data.founderGlasses = state.FounderGlasses;
 
             data.skillLevels = new List<int>(state.Skills.LevelsToArray());
 
@@ -541,6 +543,8 @@ namespace ScalingLaws.Persistence
             }
 
             state.FounderName = safe.founderName;
+            state.FounderLook = safe.founderLook ?? string.Empty;
+            state.FounderGlasses = Math.Max(0, safe.founderGlasses);
 
             state.Skills.Restore(safe.skillLevels, safe.skillExperience);
             state.Region = (WorldRegion)safe.worldRegion;
@@ -1135,6 +1139,8 @@ namespace ScalingLaws.Persistence
             // ---- v10 fields ----
 
             safe.founderName = string.IsNullOrWhiteSpace(safe.founderName) ? "Anonymous" : safe.founderName.Trim();
+            safe.founderLook = safe.founderLook?.Trim() ?? string.Empty;
+            safe.founderGlasses = Math.Max(0, safe.founderGlasses);
             safe.skillLevels ??= new List<int>();
             safe.skillExperience ??= new List<long>();
 

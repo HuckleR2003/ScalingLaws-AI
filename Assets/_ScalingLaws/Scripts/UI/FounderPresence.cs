@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ScalingLaws.Simulation;
 using UnityEngine;
 
@@ -75,7 +76,11 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            var prefab = Resources.Load<GameObject>(PrefabPath);
+            // The face the player picked in the creator, and the generic founder only when they
+            // picked nothing. The portrait promised this person; the room has to deliver them.
+            var company = state?.Invoke();
+            var prefab = Look(company?.FounderLook) ?? Resources.Load<GameObject>(PrefabPath);
+
             if (prefab == null)
             {
                 Debug.LogWarning($"[Scaling Laws] No founder at Resources/{PrefabPath}. Run "
@@ -87,6 +92,14 @@ namespace ScalingLaws.UI
             spawned.name = "Founder";
 
             actor = spawned.GetComponent<OfficeActor>();
+            if (actor == null)
+            {
+                // The look prefabs carry an Animator and no actor, because they are built for the
+                // portrait first. The room needs the walking half as well.
+                actor = spawned.AddComponent<OfficeActor>();
+            }
+
+            WearGlasses(spawned, company?.FounderGlasses ?? 0);
         }
 
         /// <summary>
@@ -136,6 +149,52 @@ namespace ScalingLaws.UI
             {
                 IsAway = true;
             }
+        }
+
+        /// <summary>The chosen look, or null when there is no such prefab.</summary>
+        private static GameObject Look(string name) =>
+            string.IsNullOrEmpty(name)
+                ? null
+                : Resources.Load<GameObject>($"{PortraitStudio.LookFolder}/{name}");
+
+        /// <summary>
+        /// Puts the chosen glasses on the head bone.
+        ///
+        /// Same offset the portrait uses, because the player chose them by looking at the portrait
+        /// and the two must not disagree about where a face is.
+        /// </summary>
+        private static void WearGlasses(GameObject person, int choice)
+        {
+            if (choice <= 0)
+            {
+                return;
+            }
+
+            var pairs = new List<GameObject>();
+            foreach (var loaded in Resources.LoadAll<GameObject>(PortraitStudio.LookFolder))
+            {
+                if (loaded.name.StartsWith("glasses_"))
+                {
+                    pairs.Add(loaded);
+                }
+            }
+
+            pairs.Sort((left, right) => string.CompareOrdinal(left.name, right.name));
+            if (choice > pairs.Count)
+            {
+                return;
+            }
+
+            var animator = person.GetComponent<Animator>();
+            var head = animator != null ? animator.GetBoneTransform(HumanBodyBones.Head) : null;
+            if (head == null)
+            {
+                return;
+            }
+
+            var worn = UnityEngine.Object.Instantiate(pairs[choice - 1], head);
+            worn.transform.localPosition = PortraitStudio.GlassesOffset;
+            worn.transform.localRotation = Quaternion.identity;
         }
 
         /// <summary>True when a departure has finished and the map can open.</summary>

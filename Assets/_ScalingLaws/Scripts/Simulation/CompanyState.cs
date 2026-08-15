@@ -93,6 +93,17 @@ namespace ScalingLaws.Simulation
         /// <summary>The founder's name. Shown wherever the company is not the subject.</summary>
         public string FounderName { get; set; } = "Anonymous";
 
+        /// <summary>
+        /// Which model walks around the office, by prefab name, and whether they wear glasses.
+        ///
+        /// Presentation, and saved anyway. A founder who changes face when a campaign is reloaded is
+        /// a different person, and the player picked this one.
+        /// </summary>
+        public string FounderLook { get; set; } = string.Empty;
+
+        /// <inheritdoc cref="FounderLook"/>
+        public int FounderGlasses { get; set; }
+
         /// <summary>Where the company is registered. Chosen once at creation and never moved.</summary>
         public WorldRegion Region { get; set; } = WorldRegion.America;
 

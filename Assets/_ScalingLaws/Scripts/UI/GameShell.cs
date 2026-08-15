@@ -238,6 +238,8 @@ namespace ScalingLaws.UI
             if (!SceneFlow.ResumeSavedCampaign)
             {
                 state.FounderName = SceneFlow.RequestedFounderName;
+                state.FounderLook = SceneFlow.RequestedFounderLook ?? string.Empty;
+                state.FounderGlasses = Math.Max(0, SceneFlow.RequestedFounderGlasses);
                 state.Skills.Restore(SceneFlow.RequestedSkillLevels, Array.Empty<long>());
 
                 var region = Enum.IsDefined(typeof(WorldRegion), SceneFlow.RequestedRegion)

@@ -126,6 +126,7 @@ namespace ScalingLaws.Persistence
                     22 => UpgradeV22ToV23(current),
                     23 => UpgradeV23ToV24(current),
                     24 => UpgradeV24ToV25(current),
+                    25 => UpgradeV25ToV26(current),
                     _ => current
                 };
             }
@@ -930,6 +931,34 @@ namespace ScalingLaws.Persistence
         /// each catalog is exactly 1.0 on every axis, so a restored campaign computes the same
         /// numbers it computed before these existed.
         /// </summary>
+        /// <summary>
+        /// v25 to v26: the founder gets a face.
+        ///
+        /// **Left empty on purpose, and that is the honest reconstruction.** A v25 campaign was
+        /// started before the portrait existed, so nobody chose anything. Empty means "whichever
+        /// look comes first", which is what the game already does for a founder with no preference,
+        /// rather than inventing a choice the player never made and then claiming they made it.
+        /// </summary>
+        public static SaveData UpgradeV25ToV26(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 26;
+            data.founderLook = string.Empty;
+            data.founderGlasses = 0;
+
+            // Appended, never assigned. The notes are the whole chain's record and a test walks them
+            // looking for every step: overwriting here erased everything v7 onward had said.
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v25 to v26: no face was recorded before this version, so the founder keeps the "
+                + "default look rather than being assigned one at random.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV24ToV25(SaveData data)
         {
             if (data == null)

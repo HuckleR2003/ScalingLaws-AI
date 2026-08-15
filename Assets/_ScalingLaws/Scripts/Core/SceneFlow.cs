@@ -37,6 +37,19 @@ namespace ScalingLaws.Core
         /// <summary>Skill levels chosen at creation, in catalog order. Empty means every default.</summary>
         public static int[] RequestedSkillLevels { get; set; } = Array.Empty<int>();
 
+        /// <summary>
+        /// Which model the founder is, by prefab name.
+        ///
+        /// A name rather than an index, because dropping another character pack into the project
+        /// renumbers everybody and an index would quietly turn an existing founder into a stranger.
+        /// Empty means whichever comes first, which is what a campaign started before this existed
+        /// gets.
+        /// </summary>
+        public static string RequestedFounderLook { get; set; } = string.Empty;
+
+        /// <summary>Zero is bare-faced. One upward are the pairs of glasses that were found.</summary>
+        public static int RequestedFounderGlasses { get; set; }
+
         /// <summary>Where the company registers. Zero means the default, America.</summary>
         public static int RequestedRegion { get; set; }
 

@@ -42,6 +42,10 @@ namespace ScalingLaws.EditorTools
         /// </summary>
         public static readonly (string File, string Clip, bool Loops)[] Wanted =
         {
+            // Matched on "standing" rather than "idle", because "Sleeping Idle" contains the word
+            // idle too and the shorter-name rule would not save us: both are the same length in the
+            // part that matters.
+            ("standing", "Idle", true),
             ("walking", "Walk", true),
             ("start walking", "StartWalk", false),
             ("sitting", "SitDown", false),

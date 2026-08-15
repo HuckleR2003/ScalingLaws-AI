@@ -63,6 +63,12 @@ namespace ScalingLaws.UI
         private string companyName = "Prometheus AI";
         private string founderName = "Anonymous";
         private bool showAllTraits;
+
+        // Which face and which glasses. The look is stored by name rather than by index, so adding
+        // another character pack cannot silently turn an existing founder into somebody else.
+        private PortraitStudio studio;
+        private string founderLook = string.Empty;
+        private int founderGlasses;
         private WorldRegion chosenRegion = WorldRegion.America;
         private Country chosenCountry = Country.UnitedStates;
 
@@ -93,6 +99,17 @@ namespace ScalingLaws.UI
         }
 
         // ------------------------------------------------------------------ shell
+
+        /// <summary>
+        /// The studio owns a camera and a render texture and the creator lives in the menu scene.
+        /// Both have to go when the campaign starts, or they carry on rendering a face nobody is
+        /// looking at for the rest of the session.
+        /// </summary>
+        private void OnDisable()
+        {
+            studio?.Close();
+            studio = null;
+        }
 
         private void Show(Stage next)
         {
@@ -809,14 +826,82 @@ namespace ScalingLaws.UI
             nameField.RegisterValueChangedCallback(evt => founderName = evt.newValue);
             column.Add(nameField);
 
-            var portrait = new VisualElement();
-            portrait.AddToClassList("portrait");
-            var portraitHint = new Label("PORTRAIT");
-            portraitHint.AddToClassList("portrait__label");
-            portrait.Add(portraitHint);
-            column.Add(portrait);
+            column.Add(BuildPortrait());
 
             return column;
+        }
+
+        /// <summary>
+        /// The portrait: the actual model the game will spawn, rendered live.
+        ///
+        /// **Not a photograph.** The player is choosing somebody who then walks around the office
+        /// for fifteen years of game time, and a still image cannot promise that the person in the
+        /// frame is the person who turns up. This is the prefab, on the controller, animating.
+        ///
+        /// A fresh clone has no character packs, because they are gitignored, so the plate falls
+        /// back to the word it used to show rather than to an empty black rectangle.
+        /// </summary>
+        private VisualElement BuildPortrait()
+        {
+            var portrait = new VisualElement();
+            portrait.AddToClassList("portrait");
+
+            studio ??= new PortraitStudio();
+
+            if (!studio.Open(founderLook, founderGlasses))
+            {
+                var hint = new Label("PORTRAIT");
+                hint.AddToClassList("portrait__label");
+                portrait.Add(hint);
+
+                var why = new Label("No character pack in this copy of the project.");
+                why.AddToClassList("portrait__why");
+                portrait.Add(why);
+
+                return portrait;
+            }
+
+            founderLook = studio.LookName;
+
+            var view = new VisualElement();
+            view.AddToClassList("portrait__view");
+            view.style.backgroundImage = Background.FromRenderTexture(studio.Texture);
+            portrait.Add(view);
+
+            portrait.Add(PortraitChooser("CHARACTER", by =>
+            {
+                studio.StepLook(by);
+                founderLook = studio.LookName;
+            }));
+
+            portrait.Add(PortraitChooser("GLASSES", by =>
+            {
+                studio.StepGlasses(by);
+                founderGlasses = studio.GlassesIndex;
+            }));
+
+            return portrait;
+        }
+
+        /// <summary>One row of `&lt;   LABEL   &gt;`, the shape the author drew.</summary>
+        private static VisualElement PortraitChooser(string label, Action<int> step)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("portrait-pick");
+
+            var back = new Button(() => step(-1)) { text = "<" };
+            back.AddToClassList("portrait-pick__arrow");
+            row.Add(back);
+
+            var name = new Label(label);
+            name.AddToClassList("portrait-pick__label");
+            row.Add(name);
+
+            var next = new Button(() => step(1)) { text = ">" };
+            next.AddToClassList("portrait-pick__arrow");
+            row.Add(next);
+
+            return row;
         }
 
         private VisualElement BuildSkillsColumn()
@@ -1325,6 +1410,8 @@ namespace ScalingLaws.UI
             SceneFlow.RequestedSkillLevels = skills.LevelsToArray();
             SceneFlow.RequestedRegion = (int)chosenRegion;
             SceneFlow.RequestedCountry = (int)chosenCountry;
+            SceneFlow.RequestedFounderLook = founderLook ?? string.Empty;
+            SceneFlow.RequestedFounderGlasses = founderGlasses;
 
             SceneFlow.StartNewCampaign(
                 companyName,
