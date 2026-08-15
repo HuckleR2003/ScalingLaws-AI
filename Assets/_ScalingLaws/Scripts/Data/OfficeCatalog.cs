@@ -33,12 +33,19 @@ namespace ScalingLaws.Data
             long fitOutCostUsd,
             double effectivenessMultiplier,
             long requiredCashUsd,
-            GameDate earliestDate)
+            GameDate earliestDate,
+            int level = 0,
+            string art = "")
         {
             Tier = tier;
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? tier.ToString() : displayName;
             Description = description ?? string.Empty;
-            Desks = Math.Clamp(desks, 1, 5000);
+            Level = Math.Max(0, level);
+            Art = art ?? string.Empty;
+
+            // Zero is legal now and it means something: at home there is nowhere for anybody else to
+            // sit, so the first hire is not a purchase, it is a move.
+            Desks = Math.Clamp(desks, 0, 5000);
             MonthlyRentUsd = Math.Clamp(monthlyRentUsd, 0L, 500_000_000L);
             FitOutCostUsd = Math.Clamp(fitOutCostUsd, 0L, 5_000_000_000L);
             EffectivenessMultiplier = Math.Clamp(SimUnits.Finite(effectivenessMultiplier, 1.0), 0.5, 1.6);
@@ -48,6 +55,28 @@ namespace ScalingLaws.Data
 
         public OfficeTier Tier { get; }
         public string DisplayName { get; }
+
+        /// <summary>
+        /// Where it sits on the ladder, shown as LVL 0, LVL 1 and so on.
+        ///
+        /// An explicit number rather than the position in the array, because the chooser only shows
+        /// the tiers that have a place built for them and the numbering has to stay put when the
+        /// rest arrive.
+        /// </summary>
+        public int Level { get; }
+
+        /// <summary>
+        /// The picture of the place, under Resources/Offices, or empty while it is not drawn.
+        ///
+        /// **This is what the ladder is becoming.** An office used to be a desk count with a rent on
+        /// it. Each one is turning into somewhere the company physically is, which is why the
+        /// chooser is a row of photographs rather than a table, and why a tier with no picture is
+        /// not offered yet rather than being offered with a grey square.
+        /// </summary>
+        public string Art { get; }
+
+        /// <summary>True once there is a place to move into. Tiers without one stay off the screen.</summary>
+        public bool HasPlace => Art.Length > 0;
         public string Description { get; }
 
         /// <summary>Hard cap on headcount. No desk, no hire.</summary>
@@ -79,35 +108,48 @@ namespace ScalingLaws.Data
 
         private static readonly OfficeDefinition[] Entries =
         {
-            new(OfficeTier.Garage, "Garage",
-                "Four desks, one whiteboard and a router that everyone has learned not to touch.",
-                desks: 4,
+            // The three that have a place built for them. Desks, rent and level are the author's
+            // figures from the chooser mock, not derived: a house with nowhere to sit, then two
+            // hubs that cost real money for a modest number of desks. Rent per desk is deliberately
+            // steep, because what the move buys is the right to have anybody at all.
+            new(OfficeTier.Garage, "House",
+                "The room you started in. There is nowhere for a second person to sit, so everything "
+                + "that gets built here gets built by you.",
+                desks: 0,
                 monthlyRentUsd: 4_000,
                 fitOutCostUsd: 0,
                 effectivenessMultiplier: 0.85,
                 requiredCashUsd: 0,
-                earliestDate: GameDate.Start),
+                earliestDate: GameDate.Start,
+                level: 0,
+                art: "office_house"),
 
-            new(OfficeTier.Loft, "Loft",
-                "Enough room to argue in without booking anything. The last office where everyone knows "
-                + "what everyone else is working on.",
-                desks: 14,
-                monthlyRentUsd: 42_000,
+            new(OfficeTier.Loft, "Small office hub",
+                "Eight desks and a lease. The first month the company is somewhere rather than "
+                + "somebody.",
+                desks: 8,
+                monthlyRentUsd: 210_000,
                 fitOutCostUsd: 350_000,
                 effectivenessMultiplier: 1.0,
                 requiredCashUsd: 3_000_000,
-                earliestDate: GameDate.Start),
+                earliestDate: GameDate.Start,
+                level: 1,
+                art: "office_smallhub"),
 
-            new(OfficeTier.Floor, "Office floor",
-                "A proper lease with a proper server closet. Also the first month anybody has to ask "
-                + "who owns something.",
-                desks: 40,
-                monthlyRentUsd: 190_000,
+            new(OfficeTier.Floor, "Big company hub",
+                "Twenty desks, a proper server closet, and the first month anybody has to ask who "
+                + "owns something.",
+                desks: 20,
+                monthlyRentUsd: 300_000,
                 fitOutCostUsd: 2_400_000,
                 effectivenessMultiplier: 1.08,
                 requiredCashUsd: 25_000_000,
-                earliestDate: GameDate.Start),
+                earliestDate: GameDate.Start,
+                level: 2,
+                art: "office_bighub"),
 
+            // Still in the catalog and not yet on the chooser: no place has been built for either,
+            // and offering a move to somewhere with no picture is offering a move to nowhere.
             new(OfficeTier.Campus, "Campus",
                 "Purpose built, well equipped, and expensive enough that the rent shows up in the "
                 + "monthly numbers whether or not the desks are full.",
@@ -116,7 +158,8 @@ namespace ScalingLaws.Data
                 fitOutCostUsd: 18_000_000,
                 effectivenessMultiplier: 1.18,
                 requiredCashUsd: 150_000_000,
-                earliestDate: GameDate.FromCalendar(2023, 6, 1)),
+                earliestDate: GameDate.FromCalendar(2023, 6, 1),
+                level: 3),
 
             new(OfficeTier.MultiSite, "Multiple sites",
                 "Three time zones and a travel budget. More people than any one room can hold, at the "
@@ -126,12 +169,34 @@ namespace ScalingLaws.Data
                 fitOutCostUsd: 70_000_000,
                 effectivenessMultiplier: 1.12,
                 requiredCashUsd: 800_000_000,
-                earliestDate: GameDate.FromCalendar(2024, 6, 1))
+                earliestDate: GameDate.FromCalendar(2024, 6, 1),
+                level: 4)
         };
 
         private static readonly Dictionary<OfficeTier, OfficeDefinition> ByTier = BuildIndex();
 
         public static IReadOnlyList<OfficeDefinition> All => Entries;
+
+        /// <summary>
+        /// The tiers the chooser offers, which is the ones with somewhere to move into.
+        ///
+        /// Separate from <see cref="All"/> on purpose. A saved company can be sitting in a tier that
+        /// has no picture yet, and it has to keep working; what it must not do is appear as an
+        /// option to a company that is not already there.
+        /// </summary>
+        public static List<OfficeDefinition> Places()
+        {
+            var places = new List<OfficeDefinition>(Entries.Length);
+            foreach (var entry in Entries)
+            {
+                if (entry.HasPlace)
+                {
+                    places.Add(entry);
+                }
+            }
+
+            return places;
+        }
 
         public static OfficeDefinition Get(OfficeTier tier) =>
             ByTier.TryGetValue(tier, out var definition) ? definition : ByTier[OfficeTier.Garage];

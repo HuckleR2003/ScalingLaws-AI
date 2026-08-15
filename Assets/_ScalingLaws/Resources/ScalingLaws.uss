@@ -6146,3 +6146,251 @@
     color: rgb(140, 152, 172);
     margin-top: 8px;
 }
+
+
+/* ---- where the company is ----
+
+   An office used to be a card in a grid the size of a hardware card. Each tier is turning into
+   somewhere the company physically is, so it gets a wide row and a photograph, and the title bar
+   carries the diagonal from the author's mock. */
+
+.office-now {
+    font-size: 12px;
+    color: rgb(206, 216, 232);
+    margin-bottom: 10px;
+}
+
+.office-upgrade {
+    height: 92px;
+    margin: 0;
+    padding: 0;
+    justify-content: flex-end;
+    border-width: 2px;
+    border-color: rgb(232, 226, 214);
+    border-radius: 4px;
+    background-color: rgb(20, 25, 34);
+    overflow: hidden;
+}
+
+.office-upgrade--art {
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.office-upgrade:hover {
+    border-color: rgb(226, 78, 62);
+}
+
+.office-upgrade__caption {
+    font-size: 15px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(250, 246, 244);
+    padding: 10px;
+    background-color: rgba(8, 10, 14, 0.72);
+}
+
+/* ---- the chooser ---- */
+
+.offices {
+    flex-grow: 1;
+}
+
+.offices__head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(226, 78, 62);
+}
+
+.offices__title {
+    font-size: 26px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+}
+
+.offices__strap {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    margin-top: 2px;
+    white-space: normal;
+}
+
+.offices__problem {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(232, 150, 130);
+    white-space: normal;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: var(--card-radius);
+    background-color: rgba(158, 38, 32, 0.22);
+}
+
+.office-row {
+    flex-direction: row;
+    flex-shrink: 0;
+    height: 190px;
+    margin-bottom: 14px;
+    background-color: rgb(18, 22, 30);
+    border-width: 2px;
+    border-color: rgb(232, 226, 214);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.office-row--here {
+    border-color: rgb(226, 78, 62);
+}
+
+.office-row__body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding: 0;
+}
+
+/* The bar across the top, with the diagonal cut at its end. USS has no skew, so the cut is a
+   square turned forty five degrees and clipped by the bar's own overflow. */
+.office-bar {
+    flex-direction: row;
+    align-items: center;
+    height: 46px;
+    flex-shrink: 0;
+    padding-left: 14px;
+    background-color: rgb(244, 240, 232);
+    overflow: hidden;
+}
+
+.office-bar__name {
+    font-size: 24px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(16, 18, 22);
+    flex-shrink: 1;
+}
+
+.office-bar__wedge {
+    width: 64px;
+    height: 64px;
+    margin-left: 14px;
+    flex-shrink: 0;
+    rotate: 45deg;
+    background-color: rgb(18, 22, 30);
+}
+
+.office-row__figure {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+    margin-left: 14px;
+    margin-top: 6px;
+}
+
+.office-row__blurb {
+    font-size: 11px;
+    color: rgb(150, 162, 182);
+    white-space: normal;
+    margin-left: 14px;
+    margin-top: 8px;
+    margin-right: 14px;
+    flex-grow: 1;
+}
+
+.office-row__here {
+    font-size: 11px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(240, 190, 182);
+    margin-left: 14px;
+    margin-bottom: 14px;
+}
+
+.office-row__blocked {
+    font-size: 11px;
+    color: rgb(206, 138, 122);
+    margin-left: 14px;
+    margin-bottom: 14px;
+}
+
+.office-row__move {
+    margin: 14px;
+    margin-top: 0;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(240, 232, 238);
+    background-color: rgba(226, 78, 62, 0.24);
+    border-width: 1px;
+    border-color: rgba(226, 78, 62, 0.65);
+    border-radius: 3px;
+}
+
+.office-row__move:hover {
+    background-color: rgba(226, 78, 62, 0.42);
+}
+
+.office-row__move--armed {
+    background-color: rgb(226, 78, 62);
+    color: rgb(255, 252, 250);
+}
+
+.office-row__move:disabled {
+    color: rgb(130, 122, 118);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+.office-row__photo {
+    width: 32%;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(12, 15, 20);
+    border-left-width: 2px;
+    border-left-color: rgb(232, 226, 214);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.office-row__pending {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(120, 132, 152);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    padding: 16px;
+}
+
+/* ---- the way out of the room ---- */
+
+.map-button {
+    position: absolute;
+    right: 22px;
+    bottom: 22px;
+    width: 62px;
+    height: 62px;
+    margin: 0;
+    padding: 0;
+    opacity: 0.45;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.16);
+    border-radius: 31px;
+    background-color: rgba(10, 12, 18, 0.75);
+    -unity-background-scale-mode: scale-to-fit;
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+    transition-property: opacity, border-color;
+    transition-duration: 200ms;
+}
+
+.map-button:hover {
+    opacity: 1;
+    border-color: rgb(226, 78, 62);
+}

@@ -39,7 +39,10 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.That(state.Staff.Office, Is.EqualTo(OfficeTier.Garage));
             Assert.That(state.Staff.Headcount, Is.Zero);
-            Assert.That(state.Staff.Desks, Is.EqualTo(4));
+            // Zero, and it is the point. The house has nowhere for a second person to sit, so the
+            // first hire is not a purchase, it is a move. Changed with the office ladder on
+            // 2026-08-15; this used to be the garage's four desks.
+            Assert.That(state.Staff.Desks, Is.EqualTo(0));
             Assert.That(state.Staff.DailyPayrollUsd, Is.Zero);
             Assert.That(state.Staff.DailyRentUsd, Is.GreaterThan(0L), "Even a garage costs something.");
         }
@@ -49,16 +52,27 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Company(50_000_000, GameDate.Start);
 
-            for (var index = 0; index < 4; index++)
+            // The house has no desks at all, so the first hire is a move rather than a purchase.
+            Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out var atHome), Is.False,
+                "Nobody can be seated at home, so nobody can be hired there.");
+
+            Assert.That(atHome, Does.Contain("desk"));
+
+            Assert.That(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), Is.True, moveReason);
+
+            var desks = simulation.State.Staff.Desks;
+            for (var index = 0; index < desks; index++)
             {
                 Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out var reason), Is.True, reason);
             }
 
-            Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out var blocked), Is.False);
-            Assert.That(blocked, Does.Contain("desk"));
-            Assert.That(simulation.State.Staff.Headcount, Is.EqualTo(4));
+            Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out var blocked), Is.False,
+                "The desk count is a hard cap, whatever the office.");
 
-            Assert.That(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), Is.True, moveReason);
+            Assert.That(blocked, Does.Contain("desk"));
+            Assert.That(simulation.State.Staff.Headcount, Is.EqualTo(desks));
+
+            Assert.That(simulation.TryMoveOffice(OfficeTier.Floor, out var bigger), Is.True, bigger);
             Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out _), Is.True,
                 "A bigger lease has to actually free the constraint.");
         }
@@ -202,7 +216,7 @@ namespace ScalingLaws.Tests.EditMode
             }
 
             Assert.That(simulation.TryMoveOffice(OfficeTier.Garage, out var reason), Is.False);
-            Assert.That(reason, Does.Contain("holds 4"));
+            Assert.That(reason, Does.Contain("holds 0"));
         }
 
         // ------------------------------------------------------------------ incidents

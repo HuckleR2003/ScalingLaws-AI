@@ -42,6 +42,7 @@ namespace ScalingLaws.UI
         private NewsScreen news;
         private NewsBanner newsBanner;
         private MailScreen mail;
+        private OfficeChooser offices;
         private VisualElement bannerStack;
 
         /// <summary>
@@ -192,6 +193,9 @@ namespace ScalingLaws.UI
 
             /// <summary>The inbox. Demands, applications and everything waiting on an answer.</summary>
             Mail,
+
+            /// <summary>The places the company can be. First piece of the second map.</summary>
+            Offices,
 
             /// <summary>The wire. Reached from its own corner banner and from the bottom bar.</summary>
             News
@@ -409,6 +413,11 @@ namespace ScalingLaws.UI
                 () => Show(Screen.Upgrade));
 
             mail = new MailScreen(simulation, RefreshChrome);
+
+            offices = new OfficeChooser(
+                () => simulation.State,
+                tier => simulation.TryMoveOffice(tier, out var why) ? string.Empty : why,
+                () => Show(Screen.Team));
 
             news = new NewsScreen(simulation, (tier, joined) =>
             {
@@ -765,6 +774,10 @@ namespace ScalingLaws.UI
                 case Screen.Mail:
                     mail.Refresh();
                     contentHost.Add(mail.Root);
+                    break;
+                case Screen.Offices:
+                    offices.Refresh();
+                    contentHost.Add(offices.Root);
                     break;
                 case Screen.Business:
                     contentHost.Add(BuildBusinessScreen());
@@ -1362,21 +1375,50 @@ namespace ScalingLaws.UI
 
             var offices = new VisualElement();
             offices.AddToClassList("panel");
-            var officeHeading = new Label("OFFICE");
+            var officeHeading = new Label("WHERE YOU WORK");
             officeHeading.AddToClassList("panel__heading");
             offices.Add(officeHeading);
 
-            var officeGrid = new VisualElement();
-            officeGrid.AddToClassList("grid");
-            offices.Add(officeGrid);
+            // One button rather than a grid of five cards. The places have photographs now and
+            // deserve a screen; a card the size of a hardware card cannot show a room.
+            var current = state.Staff.OfficeDefinition;
 
-            foreach (var definition in OfficeCatalog.All)
-            {
-                officeGrid.Add(BuildOfficeCard(definition));
-            }
+            var where = new Label(
+                $"LVL {current.Level}  ·  {current.DisplayName}  ·  "
+                + $"{state.Staff.Headcount} of {current.Desks} desks  ·  "
+                + $"{UiFormat.Money(current.MonthlyRentUsd)} a month");
 
+            where.AddToClassList("office-now");
+            offices.Add(where);
+
+            offices.Add(BuildUpgradeButton());
             page.Add(offices);
             return page;
+        }
+
+        /// <summary>
+        /// The way into the places screen.
+        ///
+        /// A picture with a word on it rather than a plain button, because it opens the one screen
+        /// that is about somewhere rather than about a number, and because the author drew it.
+        /// </summary>
+        private VisualElement BuildUpgradeButton()
+        {
+            var button = new Button(() => Show(Screen.Offices));
+            button.AddToClassList("office-upgrade");
+
+            var art = Resources.Load<Texture2D>("Ui/office_upgrade");
+            if (art != null)
+            {
+                button.style.backgroundImage = new StyleBackground(art);
+                button.AddToClassList("office-upgrade--art");
+            }
+
+            var caption = new Label("UPGRADE THE OFFICE");
+            caption.AddToClassList("office-upgrade__caption");
+            button.Add(caption);
+
+            return button;
         }
 
         private VisualElement BuildHireCard(StaffRoleDefinition definition)
@@ -1421,36 +1463,6 @@ namespace ScalingLaws.UI
 
             card.Add(row);
             card.tooltip = definition.Description;
-            return card;
-        }
-
-        private VisualElement BuildOfficeCard(OfficeDefinition definition)
-        {
-            var current = state.Staff.Office == definition.Tier;
-            var card = new Button(() =>
-            {
-                simulation.TryMoveOffice(definition.Tier, out _);
-                Show(Screen.Team);
-            });
-            card.AddToClassList("card");
-            card.EnableInClassList("card--ahead", current);
-
-            var title = new Label(definition.DisplayName.ToUpperInvariant());
-            title.AddToClassList("card__title");
-            card.Add(title);
-
-            var desks = new Label($"{definition.Desks} DESKS   x{UiFormat.Number(definition.EffectivenessMultiplier, 2)}");
-            desks.AddToClassList("card__line");
-            card.Add(desks);
-
-            var cost = new Label(current
-                ? "CURRENT"
-                : $"{UiFormat.Money(definition.MonthlyRentUsd)}/month   {UiFormat.Money(definition.FitOutCostUsd)} to move");
-            cost.AddToClassList("card__line");
-            card.Add(cost);
-
-            card.tooltip = definition.Description;
-            card.SetEnabled(!current);
             return card;
         }
 
@@ -3066,6 +3078,24 @@ namespace ScalingLaws.UI
                 overlay.schedule.Execute(() => overlay.RemoveFromClassList("site-overlay--entering"))
                     .ExecuteLater(16);
             }
+
+            // Subtle on purpose. It is a way out of the room rather than a call to action, so it
+            // sits in the corner of the room at half strength and comes up when the cursor finds it.
+            var map = new Button(() => Show(Screen.Ranking));
+            map.AddToClassList("map-button");
+
+            var mapArt = Resources.Load<Texture2D>("Ui/map");
+            if (mapArt != null)
+            {
+                map.style.backgroundImage = new StyleBackground(mapArt);
+            }
+            else
+            {
+                map.text = "MAP";
+            }
+
+            map.tooltip = "The world. Today it opens the board; the drive out to it is being built.";
+            stage.Add(map);
 
             page.Add(stage);
             return page;

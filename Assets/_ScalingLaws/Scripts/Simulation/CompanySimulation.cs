@@ -2496,11 +2496,15 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private void InviteApplicant()
         {
-            if (State.IsBankrupt || !State.Staff.HasFreeDesk)
+            if (State.IsBankrupt)
             {
                 return;
             }
 
+            // Deliberately not gated on having a free desk. People apply to companies that are full,
+            // and a letter arriving when there is nowhere to seat anybody is the clearest thing the
+            // game can say about why the next office is worth its rent. Accepting is what refuses,
+            // and it refuses with the reason.
             State.DaysUntilNextApplicant--;
             if (State.DaysUntilNextApplicant > 0)
             {
@@ -2527,7 +2531,8 @@ namespace ScalingLaws.Simulation
                 $"I have {skill} years in {definition.DisplayName.ToLowerInvariant()} and I am "
                 + $"looking for my next thing.\n\nI am asking {Usd(asking)} a year. The going rate "
                 + $"for this is about {Usd(going)}, and I think I am worth more than that.\n\n"
-                + $"Joining costs {Usd(definition.HiringCostUsd_ForSkill(skill))} in fees either way.");
+                + $"Joining costs {Usd(definition.HiringCostUsd_ForSkill(skill))} in fees either way."
+                + NoRoomNote());
 
             letter.Role = definition.Role;
             letter.Skill = skill;
@@ -2542,6 +2547,18 @@ namespace ScalingLaws.Simulation
         /// letter means live beside the rest of the rules rather than in a screen. The screen knows a
         /// letter has a Pay button; it does not know what paying does.
         /// </summary>
+        /// <summary>
+        /// Appended to an application when there is nowhere to seat the person.
+        ///
+        /// The letter still arrives, because people apply to companies that are full and that is
+        /// the clearest thing the game can say about why the next office is worth its rent. What
+        /// it must not do is let the player find out only when the button refuses.
+        /// </summary>
+        private string NoRoomNote() => State.Staff.HasFreeDesk
+            ? string.Empty
+            : $"\n\n[There is nowhere for them to sit. {State.Staff.OfficeDefinition.DisplayName} "
+              + $"holds {State.Staff.Desks} and {State.Staff.Headcount} are taken.]";
+
         public bool TryActOnMail(int mailId, MailAction action, out string failureReason)
         {
             failureReason = string.Empty;

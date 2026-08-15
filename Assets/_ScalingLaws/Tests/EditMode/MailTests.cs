@@ -234,6 +234,11 @@ namespace ScalingLaws.Tests.EditMode
         public void AcceptingAnApplicantHiresThem()
         {
             var simulation = Earning(1010, 400);
+
+            // Somewhere to put them. Applications arrive at the house too, deliberately, but
+            // accepting one there is refused and that is a different test.
+            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
+
             var offer = FirstOfKind(simulation, MailKind.JobOffer);
             Assert.IsNotNull(offer);
 
@@ -246,6 +251,30 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.AreEqual(before + 1, simulation.State.Staff.Headcount);
             Assert.IsTrue(offer.IsClosed);
+        }
+
+        /// <summary>
+        /// People apply to companies that are full, and the letter says so.
+        ///
+        /// The application used to be suppressed when there was no free desk, which removed the one
+        /// signal that makes the move to an office worth its rent: somebody wants to work here and
+        /// there is nowhere to put them.
+        /// </summary>
+        [Test]
+        public void SomebodyStillAppliesWhenThereIsNowhereToSeatThem()
+        {
+            var simulation = Earning(1019, 400);
+            Assert.AreEqual(0, simulation.State.Staff.Desks, "This test needs the house.");
+
+            var offer = FirstOfKind(simulation, MailKind.JobOffer);
+            Assert.IsNotNull(offer, "Nobody applied, so the player is never told they need room.");
+
+            Assert.IsTrue(offer.Body.Contains("nowhere for them to sit"),
+                "The letter has to say there is no room, rather than letting the player find out "
+                + "when the button refuses.");
+
+            Assert.IsFalse(simulation.TryActOnMail(offer.Id, MailAction.Accept, out var reason));
+            Assert.IsTrue(reason.Contains("desk"), reason);
         }
 
         [Test]
