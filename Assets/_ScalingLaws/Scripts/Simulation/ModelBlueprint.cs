@@ -37,7 +37,7 @@ namespace ScalingLaws.Simulation
             DatasetSource dataSources,
             ModelType type = ModelType.General,
             string family = null,
-            TrainingPrecision precision = TrainingPrecision.BFloat16,
+            TrainingPrecision precision = TrainingPrecision.Float32,
             ModelShape shape = ModelShape.Balanced,
             DeduplicationPass deduplication = DeduplicationPass.Standard,
             int cutoffMonthsBack = 0,

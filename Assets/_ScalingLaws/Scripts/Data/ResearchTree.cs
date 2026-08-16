@@ -70,6 +70,9 @@ namespace ScalingLaws.Data
         // whose whole character is that it trades one thing for another.
         LowPrecisionTraining = 205,
         CorpusDeduplication = 206,
+
+        /// <summary>Opens BF16. The first rung of the precision ladder, and an era one node.</summary>
+        MixedPrecisionTraining = 208,
         ContinuousDataPipeline = 207,
 
         // Era 3, autonomy.
@@ -351,11 +354,21 @@ namespace ScalingLaws.Data
                 + "third with nothing to show for the money.",
                 GameDate.FromCalendar(2023, 3, 1), costUsd: 16_000_000, durationDays: 165,
                 petaflopDaysRequired: 2_200,
-                requires: new[] { ResearchNodeId.ScalingLaws },
+                requires: new[] { ResearchNodeId.ScalingLaws, ResearchNodeId.MixedPrecisionTraining },
                 warning: "Opens FP8, which is a bet rather than a saving. The spread on the finished "
                     + "model is more than twice what it is at BF16, and the silicon has to support "
                     + "it as well: the node alone is not enough before 2023.",
                 optionalTechnology: true),
+
+            // The first rung of the precision ladder. Era one, cheap, and early: a company
+            // should reach it inside its first year, because until it does every run is being
+            // trained at full width and paying for it.
+            new(ResearchNodeId.MixedPrecisionTraining, ResearchEra.Foundations,
+                "Mixed precision training",
+                "Keep the master weights wide and do the arithmetic narrow. Half the memory and "
+                + "close to twice the throughput, for none of the risk that eight bits carries.",
+                GameDate.Start, costUsd: 1_800_000, durationDays: 45, petaflopDaysRequired: 40,
+                requires: new[] { ResearchNodeId.FineTuningAndPrompting }),
 
             new(ResearchNodeId.CorpusDeduplication, ResearchEra.Foundations,
                 "Corpus deduplication",

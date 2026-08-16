@@ -132,6 +132,7 @@ namespace ScalingLaws.Persistence
                     28 => UpgradeV28ToV29(current),
                     29 => UpgradeV29ToV30(current),
                     30 => UpgradeV30ToV31(current),
+                    31 => UpgradeV31ToV32(current),
                     _ => current
                 };
             }
@@ -988,6 +989,42 @@ namespace ScalingLaws.Persistence
         /// disciplines share a role and picking one would put people on a tile they never applied
         /// to. They show on the payroll list under their old job title instead.
         /// </summary>
+        /// <summary>
+        /// v31 to v32: BF16 has to be researched now.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// **Every existing company is granted the node.** BF16 was the default width for the whole
+        /// life of every save written before this version — their models were trained at it, their
+        /// costs were priced against it, and their next run would silently drop to full width and
+        /// cost half as much again. Granting the node is not generosity, it is the only reading
+        /// that leaves those companies where they already were. A company that has never trained
+        /// anything gets it too, because there is no way to tell the difference and refusing would
+        /// punish a save for being young.
+        /// </remarks>
+        public static SaveData UpgradeV31ToV32(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 32;
+            data.unlockedResearch ??= new List<int>();
+
+            if (!data.unlockedResearch.Contains((int)ResearchNodeId.MixedPrecisionTraining))
+            {
+                data.unlockedResearch.Add((int)ResearchNodeId.MixedPrecisionTraining);
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v31 to v32: BF16 became a researched technology, so every company that predates "
+                + "the change keeps it. Their runs were already priced at that width and dropping "
+                + "them to full width would raise the bill on a decision they never made.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV30ToV31(SaveData data)
         {
             if (data == null)

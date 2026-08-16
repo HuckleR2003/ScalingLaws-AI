@@ -25,11 +25,16 @@ namespace ScalingLaws.UI
         /// <summary>How often the little opening flourish plays. Every third visit, not every one.</summary>
         public const int FlourishEveryNthVisit = 3;
 
-        /// <summary>Milliseconds the first line holds before it swaps.</summary>
-        public const int ThinkMilliseconds = 700;
+        /// <summary>
+        /// Milliseconds the first line holds before it swaps.
+        ///
+        /// Halved after the first play session. The whole thing is a flourish, and a flourish that
+        /// makes the player wait is just a door that sticks.
+        /// </summary>
+        public const int ThinkMilliseconds = 350;
 
         /// <summary>And the second, before the screen arrives underneath it.</summary>
-        public const int CreateMilliseconds = 650;
+        public const int CreateMilliseconds = 325;
 
         private readonly Func<CompanySimulation> simulation;
         private readonly Action newModel;

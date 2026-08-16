@@ -66,7 +66,10 @@ namespace ScalingLaws.UI
         // The four choices the cards set. Held here rather than on a kept blueprint because the
         // blueprint is rebuilt from the controls on every reprice, which is what keeps one source of
         // truth for what the run will be. Every one starts on the neutral option.
-        private TrainingPrecision blueprintPrecision = TrainingPrecision.BFloat16;
+        /// <summary>
+        /// Full width until the company researches its way down. See TrainingChoices.GateFor.
+        /// </summary>
+        private TrainingPrecision blueprintPrecision = TrainingPrecision.Float32;
         private ModelShape blueprintShape = ModelShape.Balanced;
         private DeduplicationPass blueprintDedup = DeduplicationPass.Standard;
         private int blueprintCutoffMonths;
@@ -1359,16 +1362,22 @@ namespace ScalingLaws.UI
             var top = new VisualElement();
             top.AddToClassList("panel-row");
 
+            // **RepriceAndRebuild, not Reprice.** Reprice refreshes the numbers and nothing else,
+            // so the arrows moved the tier, changed the price, and left the plate showing the
+            // previous tier's art, name and description. Every one of the three modules looked
+            // broken, and a player who had just finished researching a tier had no way to tell
+            // that the research had landed. The stage has to be rebuilt because the thing that
+            // changed is the picture, not a caption.
             top.Add(BuildSafetyModule(SafetyModule.Assa, assaTier, tier =>
             {
                 assaTier = tier;
-                Reprice();
+                RepriceAndRebuild();
             }));
 
             top.Add(BuildSafetyModule(SafetyModule.RedTeam, redTeamTier, tier =>
             {
                 redTeamTier = tier;
-                Reprice();
+                RepriceAndRebuild();
             }));
 
             column.Add(top);
@@ -1379,7 +1388,7 @@ namespace ScalingLaws.UI
             bottom.Add(BuildSafetyModule(SafetyModule.DataProtection, dataTier, tier =>
             {
                 dataTier = tier;
-                Reprice();
+                RepriceAndRebuild();
             }));
 
             bottom.Add(BuildEffortPanel());
@@ -1763,7 +1772,7 @@ namespace ScalingLaws.UI
             // company without the research would otherwise start a run nobody could have started.
             var precision = Allowed(TrainingChoiceCatalog.GateFor(blueprintPrecision))
                 ? blueprintPrecision
-                : TrainingPrecision.BFloat16;
+                : TrainingPrecision.Float32;
 
             var dedup = Allowed(TrainingChoiceCatalog.GateFor(blueprintDedup))
                 ? blueprintDedup

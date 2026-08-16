@@ -60,7 +60,7 @@ namespace ScalingLaws.Tests.EditMode
 
             var silent = simulation.Project(Basic());
             var explicitly = simulation.Project(Basic()
-                .WithPrecision(TrainingPrecision.BFloat16)
+                .WithPrecision(TrainingPrecision.Float32)
                 .WithShape(ModelShape.Balanced)
                 .WithDeduplication(DeduplicationPass.Standard)
                 .WithCutoff(0));
@@ -183,8 +183,16 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void TheNeutralOptionsNeedNoResearchAtAll()
         {
+            // **Full width is the neutral option, not BF16.** Precision is a ladder now: a company
+            // with no research trains at FP32, buys BF16, then buys FP8. What has not changed is
+            // the rule this test exists for — the bottom of the ladder is never gated, because a
+            // company with nothing researched still has to be able to train something.
             Assert.AreEqual(ResearchNodeId.None,
-                TrainingChoiceCatalog.GateFor(TrainingPrecision.BFloat16));
+                TrainingChoiceCatalog.GateFor(TrainingPrecision.Float32));
+
+            Assert.AreNotEqual(ResearchNodeId.None,
+                TrainingChoiceCatalog.GateFor(TrainingPrecision.BFloat16),
+                "BF16 is a rung on the ladder and has to be bought.");
 
             Assert.AreEqual(ResearchNodeId.None,
                 TrainingChoiceCatalog.GateFor(DeduplicationPass.Standard));

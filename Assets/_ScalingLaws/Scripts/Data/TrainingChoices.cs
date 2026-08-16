@@ -288,10 +288,27 @@ namespace ScalingLaws.Data
         /// catalog is ungated by construction: the middle is what the game did before any of this
         /// existed and it can never be locked away.
         /// </summary>
-        public static ResearchNodeId GateFor(TrainingPrecision precision) =>
-            precision == TrainingPrecision.Float8
-                ? ResearchNodeId.LowPrecisionTraining
-                : ResearchNodeId.None;
+        /// <summary>
+        /// What has to be researched before a run may be trained at this width.
+        ///
+        /// **A ladder now, not a single gate.** Only FP8 used to be locked, so every company
+        /// started with the modern default and the choice was "the good one, or the deliberately
+        /// worse one". Now the company starts at full width — slow, expensive, and it never
+        /// surprises you — and buys its way down: mixed precision opens BF16, low precision opens
+        /// FP8. That makes the early game genuinely more expensive and makes two research nodes
+        /// worth something the player can feel on the next run.
+        ///
+        /// **FP32 is ungated and always will be.** It is the neutral option, and this catalog has
+        /// already learned once what happens when a neutral option is put behind a node: every
+        /// existing company loses behaviour it always had, and twenty five tests say so within a
+        /// minute. A company with no research must still be able to train something.
+        /// </summary>
+        public static ResearchNodeId GateFor(TrainingPrecision precision) => precision switch
+        {
+            TrainingPrecision.Float8 => ResearchNodeId.LowPrecisionTraining,
+            TrainingPrecision.BFloat16 => ResearchNodeId.MixedPrecisionTraining,
+            _ => ResearchNodeId.None
+        };
 
         public static ResearchNodeId GateFor(DeduplicationPass pass) =>
             pass == DeduplicationPass.Aggressive
