@@ -8,11 +8,29 @@ namespace ScalingLaws.Simulation
     /// <summary>One person on the payroll.</summary>
     public readonly struct Hire
     {
+        /// <summary>
+        /// The old shape: a role and a band, nobody in particular.
+        ///
+        /// Kept because the simulation's own tests and the save migration both build people this
+        /// way, and because a company that existed before anybody had a name should not have its
+        /// payroll rewritten. Anyone made this way is an agency hire with no negotiated rate, so
+        /// the salary still comes from the catalog.
+        /// </summary>
         public Hire(StaffRole role, int skill, GameDate startedOn)
+            : this(role, skill, startedOn, string.Empty, PlayerSkill.None, HireSource.Agency, 0.0)
+        {
+        }
+
+        public Hire(StaffRole role, int skill, GameDate startedOn, string name,
+            PlayerSkill position, HireSource source, double hourlyWageUsd)
         {
             Role = role;
             Skill = Math.Clamp(skill, 1, StaffLimits.MaximumSkill);
             StartedOn = startedOn;
+            Name = string.IsNullOrWhiteSpace(name) ? string.Empty : name;
+            Position = position;
+            Source = source;
+            HourlyWageUsd = Math.Max(0.0, hourlyWageUsd);
         }
 
         public StaffRole Role { get; }
@@ -22,9 +40,34 @@ namespace ScalingLaws.Simulation
 
         public GameDate StartedOn { get; }
 
-        public long SalaryPerYearUsd => StaffCatalog.Get(Role).SalaryPerYearUsd(Skill);
+        /// <summary>Who they are. Empty for anybody hired before people had names.</summary>
+        public string Name { get; }
 
-        public override string ToString() => $"{Role} skill {Skill}";
+        /// <summary>The discipline they were hired into. None for a legacy hire.</summary>
+        public PlayerSkill Position { get; }
+
+        /// <summary>Where they were found. Shown on the team list and nowhere else.</summary>
+        public HireSource Source { get; }
+
+        /// <summary>
+        /// What was actually agreed, an hour. Zero when nothing was negotiated.
+        ///
+        /// **The negotiated number is the one that gets paid.** Falling back to the catalog for a
+        /// person the player haggled with would quietly discard the haggling, which is the one
+        /// thing the new hiring flow exists to make matter.
+        /// </summary>
+        public double HourlyWageUsd { get; }
+
+        public long SalaryPerYearUsd => HourlyWageUsd > 0.0
+            ? (long)Math.Round(HourlyWageUsd * PositionCatalog.PaidHoursPerYear)
+            : StaffCatalog.Get(Role).SalaryPerYearUsd(Skill);
+
+        /// <summary>What to call them in a list. Their name, or the job if they never had one.</summary>
+        public string Label => string.IsNullOrEmpty(Name)
+            ? StaffCatalog.Get(Role).DisplayName
+            : Name;
+
+        public override string ToString() => $"{Label} ({Role} skill {Skill})";
     }
 
     /// <summary>
@@ -81,6 +124,56 @@ namespace ScalingLaws.Simulation
 
         public int Desks => OfficeCatalog.Get(Office).Desks + ExtraDesks;
 
+        /// <summary>
+        /// People in one discipline.
+        ///
+        /// By position rather than by role, because two positions share a role and a tile that
+        /// counted roles would show the same number on the Research Scientist and ML Engineer
+        /// tiles. What the player sees counted is what they clicked to hire.
+        /// </summary>
+        public int CountOfPosition(PlayerSkill position)
+        {
+            var count = 0;
+
+            foreach (var hire in hires)
+            {
+                if (hire.Position == position)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>People found through one channel. Remote is capped, so this is a real limit.</summary>
+        public int CountFrom(HireSource source)
+        {
+            var count = 0;
+
+            foreach (var hire in hires)
+            {
+                if (hire.Source == source)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Desks taken by people who need one.
+        ///
+        /// **Remote people do not sit anywhere**, which is the whole reason the channel exists: a
+        /// company with no office at all can still carry five of them. Counting them against the
+        /// lease would make the feature unreachable exactly when it is needed.
+        /// </summary>
+        public int SeatedHeadcount => Headcount - CountFrom(HireSource.Remote);
+
+        /// <summary>True when somebody who needs a desk could still be seated.</summary>
+        public bool HasFreeSeat => SeatedHeadcount < Desks;
+
         public bool HasFreeDesk => Headcount < Desks;
 
         public OfficeDefinition OfficeDefinition => OfficeCatalog.Get(Office);
@@ -99,7 +192,11 @@ namespace ScalingLaws.Simulation
 
         public bool Add(Hire hire)
         {
-            if (!HasFreeDesk || hire.Role == StaffRole.None)
+            // Seats rather than heads: a remote hire needs no desk, so a company with no office
+            // can still take one. Everybody else is checked against the lease as before.
+            var needsADesk = hire.Source != HireSource.Remote;
+
+            if ((needsADesk && !HasFreeSeat) || hire.Role == StaffRole.None)
             {
                 return false;
             }

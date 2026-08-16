@@ -47,33 +47,41 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(state.Staff.DailyRentUsd, Is.GreaterThan(0L), "Even a garage costs something.");
         }
 
+        /// <summary>
+        /// Desks still cap headcount, checked through the door the player actually uses.
+        ///
+        /// **This used to drive a TryHire method that no longer exists.** Hiring goes through an
+        /// approach now, so the cap has to be enforced at the point where the company writes to
+        /// somebody; a test still pointed at the old call would have kept passing while the screen
+        /// in front of the player let them overfill the floor.
+        /// </summary>
         [Test]
         public void DesksAreAHardCapOnHeadcount()
         {
             var simulation = Company(50_000_000, GameDate.Start);
 
-            // The house has no desks at all, so the first hire is a move rather than a purchase.
-            Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out var atHome), Is.False,
-                "Nobody can be seated at home, so nobody can be hired there.");
+            Candidate Somebody() =>
+                simulation.Shortlist(PlayerSkill.Development, HireSource.Agency, 40, 1)[0];
 
-            Assert.That(atHome, Does.Contain("desk"));
+            // The house has no desks at all, so the first hire is a move rather than a purchase.
+            Assert.That(simulation.TryApproach(Somebody()), Does.Contain("desk"),
+                "Nobody can be seated at home, so nobody can be approached for a seat there.");
 
             Assert.That(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), Is.True, moveReason);
 
             var desks = simulation.State.Staff.Desks;
             for (var index = 0; index < desks; index++)
             {
-                Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out var reason), Is.True, reason);
+                simulation.State.Staff.Add(new Hire(StaffRole.ResearchScientist, 2, GameDate.Start));
             }
 
-            Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out var blocked), Is.False,
+            Assert.That(simulation.TryApproach(Somebody()), Does.Contain("desk"),
                 "The desk count is a hard cap, whatever the office.");
 
-            Assert.That(blocked, Does.Contain("desk"));
             Assert.That(simulation.State.Staff.Headcount, Is.EqualTo(desks));
 
             Assert.That(simulation.TryMoveOffice(OfficeTier.Floor, out var bigger), Is.True, bigger);
-            Assert.That(simulation.TryHire(StaffRole.ResearchScientist, 2, out _), Is.True,
+            Assert.That(simulation.TryApproach(Somebody()), Is.Empty,
                 "A bigger lease has to actually free the constraint.");
         }
 
@@ -118,7 +126,7 @@ namespace ScalingLaws.Tests.EditMode
             staffed.TryMoveOffice(OfficeTier.Loft, out _);
             for (var index = 0; index < 6; index++)
             {
-                staffed.TryHire(StaffRole.ResearchScientist, 4, out _);
+                staffed.State.Staff.Add(new Hire(StaffRole.ResearchScientist, 4, GameDate.Start));
             }
 
             var empty = Company(60_000_000, GameDate.Start);
@@ -212,7 +220,7 @@ namespace ScalingLaws.Tests.EditMode
             simulation.TryMoveOffice(OfficeTier.Floor, out _);
             for (var index = 0; index < 10; index++)
             {
-                simulation.TryHire(StaffRole.GoToMarket, 1, out _);
+                simulation.State.Staff.Add(new Hire(StaffRole.GoToMarket, 1, GameDate.Start));
             }
 
             Assert.That(simulation.TryMoveOffice(OfficeTier.Garage, out var reason), Is.False);
@@ -397,9 +405,9 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Company(300_000_000, GameDate.FromCalendar(2024, 6, 1), capability: 60.0);
             simulation.TryMoveOffice(OfficeTier.Floor, out _);
-            simulation.TryHire(StaffRole.ResearchScientist, 5, out _);
-            simulation.TryHire(StaffRole.SafetyEngineer, 3, out _);
-            simulation.TryHire(StaffRole.GoToMarket, 2, out _);
+            simulation.State.Staff.Add(new Hire(StaffRole.ResearchScientist, 5, GameDate.Start));
+            simulation.State.Staff.Add(new Hire(StaffRole.SafetyEngineer, 3, GameDate.Start));
+            simulation.State.Staff.Add(new Hire(StaffRole.GoToMarket, 2, GameDate.Start));
             simulation.Advance(120);
 
             var original = simulation.State;

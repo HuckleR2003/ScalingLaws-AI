@@ -51,7 +51,10 @@ namespace ScalingLaws.Simulation
         TaxDeferred = 36,
 
         /// <summary>A research programme was abandoned before it finished.</summary>
-        ResearchCancelled = 37
+        ResearchCancelled = 37,
+
+        /// <summary>A candidate answered, withdrew, or the company signed a partnership.</summary>
+        HiringNotice = 38
     }
 
     /// <summary>

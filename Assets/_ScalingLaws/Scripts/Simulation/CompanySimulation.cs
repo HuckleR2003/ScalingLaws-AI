@@ -86,6 +86,9 @@ namespace ScalingLaws.Simulation
             State.Staff.ExtraDesks = State.Decor?.ExtraDesks ?? 0;
             State.Staff.ComfortBonus = State.Decor?.MoraleBonus ?? 0.0;
 
+            // Anybody who has finished thinking about it writes back today.
+            AdvanceHiring();
+
 
             ReportDeliveries();
             SyncPricing(market);
@@ -1325,51 +1328,6 @@ namespace ScalingLaws.Simulation
 
         // ------------------------------------------------------------------ staff and offices
 
-        /// <summary>Hires one person. Fails when there is no desk, no money, or no such role.</summary>
-        public bool TryHire(StaffRole role, int skill, out string failureReason)
-        {
-            failureReason = string.Empty;
-
-            if (State.IsBankrupt)
-            {
-                failureReason = "The company is insolvent.";
-                return false;
-            }
-
-            if (!StaffCatalog.TryGet(role, out var definition))
-            {
-                failureReason = "Unknown role.";
-                return false;
-            }
-
-            if (!State.Staff.HasFreeDesk)
-            {
-                failureReason =
-                    $"No free desk. {State.Staff.OfficeDefinition.DisplayName} holds {State.Staff.Desks}.";
-                return false;
-            }
-
-            var safeSkill = Math.Clamp(skill, 1, StaffLimits.MaximumSkill);
-            var cost = definition.HiringCostUsd_ForSkill(safeSkill);
-            if (State.CashUsd < cost)
-            {
-                failureReason = $"Hiring costs ${cost:N0}, has ${State.CashUsd:N0}.";
-                return false;
-            }
-
-            State.PostCash(LedgerLine.Salaries, cost);
-            State.Staff.Add(new Hire(role, safeSkill, State.Date));
-
-            State.RaiseEvent(new CompanyEvent(
-                CompanyEventType.StaffHired,
-                State.Date,
-                $"{definition.DisplayName} at skill {safeSkill} joined. "
-                + $"Payroll is now ${State.Staff.DailyPayrollUsd:N0} a day across {State.Staff.Headcount} people.",
-                cost));
-
-            return true;
-        }
-
         /// <summary>Lets somebody go. No severance, and the desk frees up immediately.</summary>
         public bool TryLetGo(int index, out string failureReason)
         {
@@ -1517,6 +1475,261 @@ namespace ScalingLaws.Simulation
                 definition.FitOutCostUsd));
 
             return true;
+        }
+
+        // ------------------------------------------------------------------ hiring
+
+        /// <summary>
+        /// Generates a shortlist for one discipline through one channel.
+        ///
+        /// **The list is rolled from the company's own random stream**, so two players who open the
+        /// agency on the same day of the same seed see the same people. It advances that stream,
+        /// which is what stops the player rerolling a bad list by closing the tab: looking costs a
+        /// draw, and the next look is a different list.
+        /// </summary>
+        public IReadOnlyList<Candidate> Shortlist(PlayerSkill position, HireSource source,
+            int centreLevel, int howMany)
+        {
+            var list = new List<Candidate>();
+            var count = Math.Clamp(howMany, 1, 12);
+
+            for (var index = 0; index < count; index++)
+            {
+                list.Add(Candidate.Roll(State.Hiring.NextCandidateId++, position, source,
+                    centreLevel, State.Hiring.Random));
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// What a specialist search of this shape costs to commission.
+        ///
+        /// A real fee, paid whether or not the person signs, because that is what makes the
+        /// minimum-level slider a decision. Without it the player would always ask for a hundred.
+        /// </summary>
+        public static long SpecialistFeeUsd(PlayerSkill position, int minimumLevel)
+        {
+            var definition = PositionCatalog.Get(position);
+            var reach = Math.Clamp(minimumLevel, 1, PlayerSkillLimits.MaximumLevel) / 100.0;
+
+            return (long)Math.Round(definition.BaseHourlyWageUsd * 40.0 * (0.5 + 2.5 * reach * reach));
+        }
+
+        /// <summary>
+        /// Starts talking to somebody. Returns the reason it could not happen, or empty.
+        ///
+        /// Nobody is hired here. This opens a conversation that answers in two to four days, and
+        /// the letter it produces is where the money is agreed.
+        /// </summary>
+        public string TryApproach(Candidate candidate)
+        {
+            if (candidate == null)
+            {
+                return "Nobody selected.";
+            }
+
+            if (State.IsBankrupt)
+            {
+                return "The company is insolvent.";
+            }
+
+            if (!State.Hiring.CanApproach)
+            {
+                return $"Already talking to {State.Hiring.OpenCount} people. "
+                    + "Close one of those first.";
+            }
+
+            if (candidate.Source == HireSource.Remote)
+            {
+                var seats = State.Hiring.RemoteSeats;
+
+                if (State.Staff.CountFrom(HireSource.Remote) >= seats)
+                {
+                    return State.Hiring.HasRemotePartnership
+                        ? $"All {seats} remote contracts are taken."
+                        : $"Remote is capped at {seats} without an IThand partnership.";
+                }
+            }
+            else if (!State.Staff.HasFreeSeat)
+            {
+                return $"No free desk. {State.Staff.OfficeDefinition.DisplayName} holds "
+                    + $"{State.Staff.Desks} and {State.Staff.SeatedHeadcount} are taken.";
+            }
+
+            State.Hiring.Begin(candidate, State.Date);
+            return string.Empty;
+        }
+
+        /// <summary>Buys the IThand partnership, which is the only way past five remote people.</summary>
+        public string TryBuyRemotePartnership()
+        {
+            if (State.Hiring.HasRemotePartnership)
+            {
+                return "Already a partner.";
+            }
+
+            if (State.CashUsd < HiringChannels.PartnershipCostUsd)
+            {
+                return $"Needs ${HiringChannels.PartnershipCostUsd:N0}, has ${State.CashUsd:N0}.";
+            }
+
+            State.PostCash(LedgerLine.Facilities, HiringChannels.PartnershipCostUsd);
+            State.Hiring.HasRemotePartnership = true;
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.HiringNotice, State.Date,
+                $"IThand.hck partnership signed. Remote contracts now capped at "
+                + $"{HiringChannels.PartneredRemoteSeats}.",
+                HiringChannels.PartnershipCostUsd));
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Moves every open approach on a day and posts a letter from anybody who answered.
+        ///
+        /// Called from the daily tick. The letter carries the whole candidate, because the
+        /// negotiation happens in the inbox and the inbox has to be able to price an offer without
+        /// asking the desk who this person was.
+        /// </summary>
+        private void AdvanceHiring()
+        {
+            foreach (var approach in State.Hiring.Advance())
+            {
+                var candidate = approach.Candidate;
+                var definition = candidate.Definition;
+                var channel = HiringChannels.Get(candidate.Source);
+
+                var letter = State.Mail.Add(MailKind.JobOffer, State.Date, candidate.Name,
+                    $"Re: {definition.Title} position",
+                    $"Thank you for considering me for the open position. I have {candidate.TrueLevel} "
+                    + $"in {PlayerSkillCatalog.Get(candidate.Position).DisplayName} and I am "
+                    + $"available from next week. Let us discuss the wage for this job.\n\n"
+                    + $"Found through {channel.SiteName}. Advertised at {candidate.AdvertisedLevel}, "
+                    + $"assessed at {candidate.TrueLevel} after the {channel.DisplayName.ToLowerInvariant()} "
+                    + "adjustment.");
+
+                letter.Role = definition.Role;
+                letter.Skill = candidate.RoleSkill;
+                letter.AskingSalaryUsd = candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd);
+                letter.Candidate = candidate;
+                letter.OfferedHourlyUsd = candidate.AskingHourlyUsd;
+                letter.DueDayIndex = State.Date.DayIndex + 14;
+
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.HiringNotice, State.Date,
+                    $"{candidate.Name} replied about the {definition.Title} position.", 0L));
+            }
+        }
+
+        /// <summary>
+        /// Puts an offer in front of a candidate and does whatever they decide.
+        ///
+        /// Returns what happened in the player's words. **Every outcome closes something**: signing
+        /// closes the letter and adds a person, holding firm burns a round, and walking away closes
+        /// the letter for good. A negotiation that could be retried forever would have no stakes.
+        /// </summary>
+        public OfferVerdict Negotiate(MailItem letter, double hourlyUsd, long signingBonusUsd,
+            out string note)
+        {
+            note = string.Empty;
+
+            if (letter == null || letter.Candidate == null || letter.IsClosed)
+            {
+                note = "That conversation is over.";
+                return OfferVerdict.WalkedAway;
+            }
+
+            var candidate = letter.Candidate;
+            var offered = Math.Max(0.0, hourlyUsd);
+            var bonus = Math.Max(0L, signingBonusUsd);
+
+            var verdict = Negotiation.Judge(candidate, offered, bonus, letter.NegotiationRounds);
+            letter.NegotiationRounds++;
+            letter.OfferedHourlyUsd = offered;
+
+            switch (verdict)
+            {
+                case OfferVerdict.Accepted:
+                    return Sign(letter, candidate, offered, bonus, out note);
+
+                case OfferVerdict.HeldFirm:
+                    note = $"{candidate.Name} holds firm at ${candidate.AskingHourlyUsd:N2} per hour.";
+                    return OfferVerdict.HeldFirm;
+
+                default:
+                    letter.IsClosed = true;
+                    letter.Outcome = "Walked away to another offer.";
+                    note = $"{candidate.Name} has withdrawn.";
+
+                    State.RaiseEvent(new CompanyEvent(
+                        CompanyEventType.HiringNotice, State.Date,
+                        $"{candidate.Name} withdrew from the {candidate.Definition.Title} process.",
+                        0L));
+
+                    return OfferVerdict.WalkedAway;
+            }
+        }
+
+        /// <summary>Accepts whatever they asked for, with no haggling at all.</summary>
+        public OfferVerdict AcceptAsking(MailItem letter, out string note)
+        {
+            note = string.Empty;
+
+            if (letter?.Candidate == null || letter.IsClosed)
+            {
+                note = "That conversation is over.";
+                return OfferVerdict.WalkedAway;
+            }
+
+            return Sign(letter, letter.Candidate, letter.Candidate.AskingHourlyUsd, 0L, out note);
+        }
+
+        private OfferVerdict Sign(MailItem letter, Candidate candidate, double hourlyUsd,
+            long signingBonusUsd, out string note)
+        {
+            var definition = candidate.Definition;
+
+            if (State.CashUsd < signingBonusUsd)
+            {
+                note = $"The signing bonus needs ${signingBonusUsd:N0} and the company has "
+                    + $"${State.CashUsd:N0}.";
+                return OfferVerdict.HeldFirm;
+            }
+
+            var hire = new Hire(definition.Role, candidate.RoleSkill, State.Date, candidate.Name,
+                candidate.Position, candidate.Source, hourlyUsd);
+
+            if (!State.Staff.Add(hire))
+            {
+                note = candidate.Source == HireSource.Remote
+                    ? "There is no remote contract left to put them on."
+                    : $"There is nowhere for them to sit. "
+                      + $"{State.Staff.OfficeDefinition.DisplayName} holds "
+                      + $"{State.Staff.Desks} desks.";
+
+                return OfferVerdict.HeldFirm;
+            }
+
+            if (signingBonusUsd > 0L)
+            {
+                State.PostCash(LedgerLine.Salaries, signingBonusUsd);
+            }
+
+            letter.IsClosed = true;
+            letter.Outcome = $"Signed at ${hourlyUsd:N2} an hour.";
+
+            note = $"{candidate.Name} starts as {definition.Title} at ${hourlyUsd:N2} an hour.";
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.StaffHired, State.Date,
+                $"{candidate.Name} joined as {definition.Title} "
+                + $"({HiringChannels.Get(candidate.Source).DisplayName.ToLowerInvariant()}), "
+                + $"${hourlyUsd:N2} an hour.",
+                signingBonusUsd));
+
+            return OfferVerdict.Accepted;
         }
 
         // ------------------------------------------------------------------ the furniture shop
@@ -3013,23 +3226,35 @@ namespace ScalingLaws.Simulation
                 return;
             }
 
-            var definition = roles[State.Random.NextInt(0, roles.Count)];
-            var skill = State.Random.NextInt(2, 9);
-            var going = definition.SalaryPerYearUsd(skill);
-            var asking = (long)Math.Round(going * State.Random.NextRange(1.05, 1.35));
+            // **Unsolicited applicants go through the same machinery as searched-for ones.**
+            // They used to be their own kind of letter with their own accept-or-haggle-once rules,
+            // which meant the game had two hiring models and the nicer one was the one the player
+            // had to go looking for. Somebody writing in out of the blue is now simply a candidate
+            // the company did not have to pay to find.
+            // Rolled from hiring's own stream for the same reason the shortlists are: an
+            // applicant writing in must not shift the sequence the market runs on.
+            var positions = PositionCatalog.All;
+            var position = positions[State.Hiring.Random.NextInt(0, positions.Count)];
 
-            var letter = State.Mail.Add(MailKind.JobOffer, State.Date,
-                ApplicantNames.Pick(State.Random),
-                $"{definition.DisplayName}, {skill} years",
-                $"I have {skill} years in {definition.DisplayName.ToLowerInvariant()} and I am "
-                + $"looking for my next thing.\n\nI am asking {Usd(asking)} a year. The going rate "
-                + $"for this is about {Usd(going)}, and I think I am worth more than that.\n\n"
-                + $"Joining costs {Usd(definition.HiringCostUsd_ForSkill(skill))} in fees either way."
+            var candidate = Candidate.Roll(State.Hiring.NextCandidateId++, position.Skill,
+                HireSource.Agency, State.Hiring.Random.NextInt(18, 62), State.Hiring.Random);
+
+            var letter = State.Mail.Add(MailKind.JobOffer, State.Date, candidate.Name,
+                $"Speculative application: {position.Title}",
+                $"You have not advertised, but I wanted to write anyway. I have "
+                + $"{candidate.TrueLevel} in "
+                + $"{PlayerSkillCatalog.Get(candidate.Position).DisplayName.ToLowerInvariant()} "
+                + $"and I am looking for my next thing.\n\nI am asking "
+                + $"${candidate.AskingHourlyUsd:N2} an hour, which is "
+                + $"{Usd(candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd))} a year. I know that "
+                + "is above the going rate and I think I am worth it."
                 + NoRoomNote());
 
-            letter.Role = definition.Role;
-            letter.Skill = skill;
-            letter.AskingSalaryUsd = asking;
+            letter.Role = position.Role;
+            letter.Skill = candidate.RoleSkill;
+            letter.AskingSalaryUsd = candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd);
+            letter.Candidate = candidate;
+            letter.OfferedHourlyUsd = candidate.AskingHourlyUsd;
             letter.DueDayIndex = State.Date.DayIndex + 30;
         }
 
@@ -3185,10 +3410,55 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (!TryHire(letter.Role, letter.Skill, out failureReason))
+            // Anything written since v31 carries the person, and goes through the negotiation
+            // path so the agreed rate is what gets paid.
+            if (letter.Candidate != null)
             {
+                var verdict = AcceptAsking(letter, out failureReason);
+                return verdict == OfferVerdict.Accepted;
+            }
+
+            // A letter restored from an older save has only a role and a band. It is hired at the
+            // catalog rate, which is exactly what that save was already paying for that person.
+            if (State.IsBankrupt)
+            {
+                failureReason = "The company is insolvent.";
                 return false;
             }
+
+            if (!State.Staff.HasFreeSeat)
+            {
+                failureReason =
+                    $"No free desk. {State.Staff.OfficeDefinition.DisplayName} holds "
+                    + $"{State.Staff.Desks}.";
+                return false;
+            }
+
+            if (!StaffCatalog.TryGet(letter.Role, out var legacy))
+            {
+                failureReason = "Unknown role.";
+                return false;
+            }
+
+            var fee = legacy.HiringCostUsd_ForSkill(letter.Skill);
+
+            if (State.CashUsd < fee)
+            {
+                failureReason = $"Hiring costs ${fee:N0}, has ${State.CashUsd:N0}.";
+                return false;
+            }
+
+            if (!State.Staff.Add(new Hire(letter.Role, letter.Skill, State.Date)))
+            {
+                failureReason = "There is nowhere for them to sit.";
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Salaries, fee);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.StaffHired, State.Date,
+                $"Hired a {legacy.DisplayName.ToLowerInvariant()} at band {letter.Skill}.", fee));
 
             letter.IsClosed = true;
             letter.Outcome = $"Hired at {Usd(letter.AskingSalaryUsd)} a year.";
@@ -3196,46 +3466,45 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Offer less, once.
+        /// The standing counter-offer, for callers that do not have a wage panel.
         ///
-        /// Whether they take it depends on how much less, so the decision is real: a small cut is
-        /// nearly free and saves nearly nothing, and a large one is worth having and usually loses
-        /// the candidate. Deterministic, so the same campaign replays the same way from a save.
+        /// The screen lets the player name their own number; this is what HAGGLE means to anything
+        /// that just wants to push back once — a counter at
+        /// <see cref="StandardCounterFraction"/> of what was asked, judged by the same rules as any
+        /// other offer. **All three outcomes are possible**, which is the difference from the old
+        /// model: a counter can now succeed outright and hire them, rather than only ever lowering
+        /// a price the player then had to accept separately.
         /// </summary>
         private bool HaggleApplicant(MailItem letter, out string failureReason)
         {
             failureReason = string.Empty;
 
-            if (letter.Kind != MailKind.JobOffer || letter.HasBeenHaggled)
+            if (letter.Kind != MailKind.JobOffer || letter.IsClosed)
             {
-                failureReason = "They will not go round again.";
+                failureReason = "Nothing to negotiate.";
                 return false;
             }
 
-            letter.HasBeenHaggled = true;
-
-            var going = StaffCatalog.Get(letter.Role).SalaryPerYearUsd(letter.Skill);
-            var offer = (long)Math.Round((letter.AskingSalaryUsd + going) / 2.0);
-
-            // How far below the ask the counter sits, as a share. Meeting in the middle of a modest
-            // ask is barely a cut; the same rule applied to a greedy one is a large one.
-            var cut = letter.AskingSalaryUsd <= 0L
-                ? 0.0
-                : 1.0 - (double)offer / letter.AskingSalaryUsd;
-
-            var takesIt = State.Random.NextChance(Math.Clamp(1.0 - cut * 3.2, 0.05, 0.95));
-
-            if (!takesIt)
+            if (letter.Candidate == null)
             {
-                letter.IsClosed = true;
-                letter.Outcome = $"Walked. They wanted {Usd(letter.AskingSalaryUsd)}.";
-                failureReason = $"They turned down {Usd(offer)} and took something else.";
+                failureReason = "That letter has no candidate behind it.";
                 return false;
             }
 
-            letter.AskingSalaryUsd = offer;
-            return true;
+            var counter = letter.Candidate.AskingHourlyUsd * StandardCounterFraction;
+            var verdict = Negotiate(letter, counter, 0L, out failureReason);
+
+            return verdict != OfferVerdict.WalkedAway;
         }
+
+        /// <summary>
+        /// What a one-click counter offers, against what they asked.
+        ///
+        /// Eight per cent under. Inside the four-to-eighteen band candidates are willing to move,
+        /// so it works often enough to be worth pressing and fails often enough to be a decision.
+        /// </summary>
+        public const double StandardCounterFraction = 0.92;
+
 
         private static string Usd(long amount) => "$" + amount.ToString("N0");
 

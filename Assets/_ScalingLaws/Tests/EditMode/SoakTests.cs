@@ -207,6 +207,31 @@ namespace ScalingLaws.Tests.EditMode
                         var banner = new NewsBanner(() => simulation.State.News, () => { });
                         banner.Refresh();
                     }, $"{when}: the news banner threw.");
+
+                    // All three hiring sites, with a shortlist on each so the candidate rows and
+                    // the portrait frames are actually built rather than just the empty page.
+                    // A screen the player cannot open without an exception is not a feature, and
+                    // this is the only guard that opens them.
+                    Assert.DoesNotThrow(() =>
+                    {
+                        var portals = new HiringPortals(() => simulation.State, simulation,
+                            () => { }, () => { });
+
+                        foreach (HiringPortal which in Enum.GetValues(typeof(HiringPortal)))
+                        {
+                            portals.Open = which;
+                            portals.Build();
+                        }
+
+                        foreach (HireSource source in Enum.GetValues(typeof(HireSource)))
+                        {
+                            simulation.Shortlist(PlayerSkill.Development, source, 45, 4);
+                        }
+
+                        portals.Open = HiringPortal.Specialist;
+                        portals.Build();
+                        portals.InboxLink();
+                    }, $"{when}: a hiring portal threw.");
                 }
 
                 if (day < FullCampaignDays)

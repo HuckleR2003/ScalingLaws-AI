@@ -283,6 +283,14 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public DecorPlan Decor { get; set; } = new();
 
+        /// <summary>
+        /// Who the company is talking to about a job, and the IThand partnership.
+        ///
+        /// On the state rather than on the roster because an approach is not a member of staff: it
+        /// is a conversation that may never become one, and half of them do not.
+        /// </summary>
+        public HiringDesk Hiring { get; } = new();
+
         /// <summary>How the company charges, how generous it is, and what it spends being noticed.</summary>
         public MonetizationPolicy Monetization { get; } = new();
 

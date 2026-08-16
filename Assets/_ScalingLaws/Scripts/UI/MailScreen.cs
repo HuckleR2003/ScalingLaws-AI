@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -46,6 +47,18 @@ namespace ScalingLaws.UI
         }
 
         public VisualElement Root { get; }
+
+        /// <summary>Letter whose wage panel is open, or zero. One at a time.</summary>
+        private int openOffer;
+
+        /// <summary>What the player is currently proposing, an hour.</summary>
+        private double offerHourly;
+
+        /// <summary>And as a lump sum on signing.</summary>
+        private double offerBonus;
+
+        /// <summary>What the candidate said about the last offer. Cleared when a new one opens.</summary>
+        private string negotiationNote = string.Empty;
 
         /// <summary>Opens one letter. Public so a notification can deep link into it later.</summary>
         public void Select(int mailId)
@@ -357,7 +370,25 @@ namespace ScalingLaws.UI
                 return pane;
             }
 
+            // The candidate card sits above the buttons, and the wage panel below them, so the
+            // order down the page is who they are, what you can do, and what you are proposing.
+            if (letter.Candidate != null)
+            {
+                pane.Add(BuildCandidateCard(letter));
+            }
+
             pane.Add(BuildActions(letter));
+
+            if (letter.Candidate != null && !letter.IsClosed && openOffer == letter.Id)
+            {
+                pane.Add(BuildNegotiator(letter));
+            }
+            else if (!string.IsNullOrEmpty(negotiationNote) && letter.Candidate != null)
+            {
+                var note = new Label(negotiationNote);
+                note.AddToClassList("haggle__note");
+                pane.Add(note);
+            }
             return pane;
         }
 
@@ -384,6 +415,203 @@ namespace ScalingLaws.UI
             return block;
         }
 
+        /// <summary>
+        /// The face and the papers of somebody who wants a job.
+        ///
+        /// **A letter about a person should show the person.** The inbox is where hiring is
+        /// actually decided and the difference between "Data Engineer, band 3" and a name with a
+        /// face and a number attached is the difference between a spreadsheet and a decision.
+        /// </summary>
+        private VisualElement BuildCandidateCard(MailItem letter)
+        {
+            var candidate = letter.Candidate;
+            var channel = HiringChannels.Get(candidate.Source);
+            var definition = candidate.Definition;
+
+            var card = new VisualElement();
+            card.AddToClassList("applicant");
+
+            card.Add(CandidateFaces.Frame(candidate, 118, channel.AccentHex));
+
+            var facts = new VisualElement();
+            facts.AddToClassList("applicant__facts");
+
+            var name = new Label(candidate.Name);
+            name.AddToClassList("applicant__name");
+            facts.Add(name);
+
+            var job = new Label(definition.Title.ToUpperInvariant());
+            job.AddToClassList("applicant__job");
+            facts.Add(job);
+
+            var source = new Label($"{channel.DisplayName.ToUpperInvariant()}  ·  {channel.SiteName}");
+            source.AddToClassList("applicant__source");
+
+            if (ColorUtility.TryParseHtmlString(channel.AccentHex, out var accent))
+            {
+                source.style.color = accent;
+            }
+
+            facts.Add(source);
+
+            var grid = new VisualElement();
+            grid.AddToClassList("applicant__grid");
+            grid.Add(Fact("PROFILE SAYS", candidate.AdvertisedLevel.ToString()));
+            grid.Add(Fact("ASSESSED AT", candidate.TrueLevel.ToString()));
+            grid.Add(Fact("ASKING", $"${candidate.AskingHourlyUsd:N2}/h"));
+            grid.Add(Fact("A YEAR",
+                UiFormat.Money(candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd))));
+
+            facts.Add(grid);
+
+            var rounds = Negotiation.Patience - letter.NegotiationRounds;
+            var patience = new Label(rounds <= 1
+                ? "They are close to walking away."
+                : $"{rounds} offers before they lose patience.");
+
+            patience.AddToClassList("applicant__patience");
+            patience.EnableInClassList("applicant__patience--thin", rounds <= 1);
+            facts.Add(patience);
+
+            card.Add(facts);
+            return card;
+        }
+
+        private static VisualElement Fact(string caption, string value)
+        {
+            var cell = new VisualElement();
+            cell.AddToClassList("applicant__cell");
+
+            var label = new Label(caption);
+            label.AddToClassList("applicant__cellcaption");
+            cell.Add(label);
+
+            var reading = new Label(value);
+            reading.AddToClassList("applicant__cellvalue");
+            cell.Add(reading);
+
+            return cell;
+        }
+
+        /// <summary>
+        /// Wage and signing bonus, and the button that puts them in front of the candidate.
+        ///
+        /// Two numbers rather than one because they are not the same decision: the wage is a bill
+        /// the company pays for years and the bonus is cash it pays once. A candidate two per cent
+        /// short can be closed with a bonus without moving the payroll, which is a real trick and
+        /// the reason the second field exists.
+        /// </summary>
+        private VisualElement BuildNegotiator(MailItem letter)
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("haggle");
+
+            var heading = new Label("YOUR OFFER");
+            heading.AddToClassList("haggle__heading");
+            panel.Add(heading);
+
+            panel.Add(Field("Hourly wage", offerHourly, value =>
+            {
+                offerHourly = Math.Max(0.0, value);
+                Refresh();
+            }, 5.0, "$"));
+
+            panel.Add(Field("Signing bonus", offerBonus, value =>
+            {
+                offerBonus = Math.Max(0.0, value);
+                Refresh();
+            }, 2500.0, "$"));
+
+            var worth = new Label(
+                $"Worth ${offerHourly + Negotiation.HourlyValueOfBonus((long)offerBonus):N2} an hour "
+                + $"to them, or {UiFormat.Money((long)Math.Round(offerHourly * PositionCatalog.PaidHoursPerYear))} "
+                + "a year plus the bonus.");
+
+            worth.AddToClassList("haggle__worth");
+            panel.Add(worth);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("haggle__buttons");
+
+            var decline = new Button(() => Act(letter.Id, MailAction.Decline)) { text = "DECLINE" };
+            decline.AddToClassList("haggle__decline");
+            buttons.Add(decline);
+
+            var send = new Button(() => SendOffer(letter)) { text = "SEND OFFER" };
+            send.AddToClassList("haggle__send");
+            buttons.Add(send);
+
+            panel.Add(buttons);
+
+            if (!string.IsNullOrEmpty(negotiationNote))
+            {
+                var note = new Label(negotiationNote);
+                note.AddToClassList("haggle__note");
+                panel.Add(note);
+            }
+
+            return panel;
+        }
+
+        private VisualElement Field(string caption, double value, Action<double> set, double step,
+            string prefix)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("haggle__field");
+
+            var label = new Label(caption);
+            label.AddToClassList("haggle__label");
+            row.Add(label);
+
+            var down = new Button(() => set(value - step)) { text = "-" };
+            down.AddToClassList("haggle__step");
+            row.Add(down);
+
+            var reading = new Label($"{prefix}{value:N2}");
+            reading.AddToClassList("haggle__value");
+            row.Add(reading);
+
+            var up = new Button(() => set(value + step)) { text = "+" };
+            up.AddToClassList("haggle__step");
+            row.Add(up);
+
+            return row;
+        }
+
+        /// <summary>Public so a test can negotiate without a panel to dispatch clicks into.</summary>
+        public OfferVerdict SendOffer(MailItem letter)
+        {
+            var verdict = simulation.Negotiate(letter, offerHourly, (long)Math.Round(offerBonus),
+                out var note);
+
+            negotiationNote = note;
+
+            if (verdict == OfferVerdict.Accepted || verdict == OfferVerdict.WalkedAway)
+            {
+                openOffer = 0;
+            }
+
+            Refresh();
+            repaint?.Invoke();
+            return verdict;
+        }
+
+        /// <summary>Opens the wage panel for a letter, seeded with what they asked for.</summary>
+        public void BeginNegotiation(MailItem letter)
+        {
+            if (letter?.Candidate == null)
+            {
+                return;
+            }
+
+            openOffer = letter.Id;
+            offerHourly = Math.Round(letter.Candidate.AskingHourlyUsd, 2);
+            offerBonus = 0.0;
+            negotiationNote = string.Empty;
+
+            Refresh();
+        }
+
         private VisualElement BuildActions(MailItem letter)
         {
             var bar = new VisualElement();
@@ -393,7 +621,29 @@ namespace ScalingLaws.UI
             {
                 var captured = action;
 
-                var button = new Button(() => Act(letter.Id, captured))
+                // A letter with a person behind it does not use the old one-shot haggle. Accepting
+                // signs at their asking rate; haggling opens the wage panel instead of firing a
+                // fixed counter, because the whole point is that the player picks the number.
+                var button = new Button(() =>
+                {
+                    if (letter.Candidate != null && captured == MailAction.Accept)
+                    {
+                        simulation.AcceptAsking(letter, out var note);
+                        negotiationNote = note;
+                        openOffer = 0;
+                        Refresh();
+                        repaint?.Invoke();
+                        return;
+                    }
+
+                    if (letter.Candidate != null && captured == MailAction.Haggle)
+                    {
+                        BeginNegotiation(letter);
+                        return;
+                    }
+
+                    Act(letter.Id, captured);
+                })
                 {
                     text = Caption(action, letter)
                 };
@@ -416,8 +666,11 @@ namespace ScalingLaws.UI
         private static string Caption(MailAction action, MailItem letter) => action switch
         {
             MailAction.Pay => "PAY  " + UiFormat.Money(letter.AmountUsd),
-            MailAction.Accept => "HIRE AT  " + UiFormat.Money(letter.AskingSalaryUsd),
-            MailAction.Haggle => "OFFER LESS",
+            MailAction.Accept => letter.Candidate != null
+                ? $"ACCEPT  ${letter.Candidate.AskingHourlyUsd:N2}/H"
+                : "HIRE AT  " + UiFormat.Money(letter.AskingSalaryUsd),
+
+            MailAction.Haggle => letter.Candidate != null ? "NEGOTIATE" : "OFFER LESS",
             MailAction.Defer =>
                 $"DEFER {CompanySimulation.DeferralStepDays} DAYS  +{CompanySimulation.DeferralInterest:P1}",
 

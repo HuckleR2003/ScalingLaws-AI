@@ -1,4 +1,5 @@
 ﻿using System;
+using ScalingLaws.Data;
 using System.Collections.Generic;
 
 namespace ScalingLaws.Persistence
@@ -365,7 +366,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 30;
+        public const int CurrentVersion = 31;
 
         public int version = CurrentVersion;
 
@@ -585,6 +586,20 @@ namespace ScalingLaws.Persistence
         /// <inheritdoc cref="decorKinds"/>
         public List<bool> decorPlaced = new();
 
+        // ---- hiring, added in v31 ---------------------------------------------------------
+
+        /// <summary>Conversations in flight. Empty for a company that is not hiring.</summary>
+        public List<ApproachData> approaches = new();
+
+        /// <summary>Bought from IThand.hck. Raises the remote ceiling and never lapses.</summary>
+        public bool remotePartnership;
+
+        /// <summary>So a reloaded campaign does not hand two people the same id.</summary>
+        public int nextCandidateId = 1;
+
+        /// <summary>Hiring's own random stream, kept apart from the company's.</summary>
+        public uint hiringRandomState;
+
         public bool actionOpen;
 
         /// <inheritdoc cref="actionOpen"/>
@@ -656,6 +671,37 @@ namespace ScalingLaws.Persistence
         public int role;
         public int skill = 1;
         public int startedDayIndex;
+
+        // ---- added in v31, when people got names --------------------------------------------
+
+        /// <summary>Empty on anybody hired before the new hiring flow existed.</summary>
+        public string name = string.Empty;
+
+        /// <summary>PlayerSkill. Zero (None) for a legacy hire, which has no discipline.</summary>
+        public int position;
+
+        /// <summary>HireSource. Defaults to Agency, which is what the old system effectively was.</summary>
+        public int source = (int)HireSource.Agency;
+
+        /// <summary>What was agreed. Zero means fall back to the catalog salary.</summary>
+        public double hourlyWageUsd;
+    }
+
+    /// <summary>An approach still waiting for an answer. Added in v31.</summary>
+    [Serializable]
+    public sealed class ApproachData
+    {
+        public int candidateId;
+        public string name = string.Empty;
+        public int position;
+        public int advertisedLevel = 20;
+        public int source;
+        public double askingHourlyUsd;
+        public double reservationHourlyUsd;
+        public int portraitSeed;
+        public int startedDayIndex;
+        public int daysNeeded = 3;
+        public int daysElapsed;
     }
 
     /// <summary>A public safety failure that already happened. Added in v8.</summary>

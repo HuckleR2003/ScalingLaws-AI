@@ -216,18 +216,31 @@ namespace ScalingLaws.Tests.EditMode
                 "Over a year nobody applied, so the inbox has nothing in it but bills.");
         }
 
+        /// <summary>
+        /// An applicant always leaves room to be haggled down.
+        ///
+        /// **This used to compare the ask against the staff catalog's salary table.** People are
+        /// priced per hour by position now and the two scales are not comparable, so the assertion
+        /// was rewritten against the thing it was actually defending: that opening the letter and
+        /// pressing back is always worth doing. A candidate who opened at their own floor would
+        /// make the whole negotiation panel decoration.
+        /// </summary>
         [Test]
         public void AnApplicantAsksAboveTheGoingRate()
         {
             var simulation = Earning(1009, 400);
             var offer = FirstOfKind(simulation, MailKind.JobOffer);
             Assert.IsNotNull(offer);
+            Assert.IsNotNull(offer.Candidate, "An application has to carry the person applying.");
 
-            var going = StaffCatalog.Get(offer.Role).SalaryPerYearUsd(offer.Skill);
+            var candidate = offer.Candidate;
 
-            Assert.Greater(offer.AskingSalaryUsd, going,
-                "Somebody who writes to you first thinks they are worth more than the market says. "
-                + "If they asked the going rate there would be nothing to negotiate.");
+            Assert.Greater(candidate.AskingHourlyUsd, candidate.ReservationHourlyUsd,
+                "Somebody who writes to you first thinks they are worth more than they will take. "
+                + "If they asked their floor there would be nothing to negotiate.");
+
+            Assert.Less(candidate.ReservationHourlyUsd, candidate.AskingHourlyUsd * 0.97,
+                "The gap has to be wide enough that pressing back is worth the risk.");
         }
 
         [Test]
@@ -277,41 +290,82 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsTrue(reason.Contains("desk"), reason);
         }
 
+        /// <summary>
+        /// A counter either lands, is refused, or loses them, and each closes something.
+        ///
+        /// The old model could only lower a price the player then had to accept in a second step.
+        /// A counter can now succeed outright, which is why the successful branch checks that
+        /// somebody was actually hired at less than they asked rather than that a number moved.
+        /// </summary>
         [Test]
-        public void HagglingEitherLowersTheAskOrLosesThemAndNeverBoth()
+        public void HagglingEitherLandsRefusesOrLosesThem()
         {
             var simulation = Earning(1011, 400);
+            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
+
             var offer = FirstOfKind(simulation, MailKind.JobOffer);
             Assert.IsNotNull(offer);
+            Assert.IsNotNull(offer.Candidate);
 
-            var asked = offer.AskingSalaryUsd;
-            var took = simulation.TryActOnMail(offer.Id, MailAction.Haggle, out _);
+            var asked = offer.Candidate.AskingHourlyUsd;
+            var before = simulation.State.Staff.Headcount;
 
-            if (took)
+            var stillThere = simulation.TryActOnMail(offer.Id, MailAction.Haggle, out _);
+
+            if (offer.IsClosed && stillThere)
             {
-                Assert.Less(offer.AskingSalaryUsd, asked, "A successful counter has to be cheaper.");
-                Assert.IsFalse(offer.IsClosed, "They are still available at the new price.");
+                Assert.AreEqual(before + 1, simulation.State.Staff.Headcount,
+                    "A counter that closed the letter without losing them must have hired them.");
+
+                Assert.Less(simulation.State.Staff.Hires[^1].HourlyWageUsd, asked,
+                    "A successful counter has to be cheaper than the ask.");
+            }
+            else if (stillThere)
+            {
+                Assert.IsFalse(offer.IsClosed, "Holding firm leaves them at the table.");
+                Assert.AreEqual(before, simulation.State.Staff.Headcount);
             }
             else
             {
                 Assert.IsTrue(offer.IsClosed, "Losing them closes the letter.");
-                Assert.IsTrue(offer.Outcome.Contains("Walked"));
+                Assert.IsTrue(offer.Outcome.Contains("Walked"), offer.Outcome);
+                Assert.AreEqual(before, simulation.State.Staff.Headcount);
             }
         }
 
+        /// <summary>
+        /// Haggling runs out.
+        ///
+        /// **The rule used to be one counter and no more.** It is now three, because the player
+        /// names their own number and one guess at a hidden floor is not a negotiation. What has
+        /// not changed is why the limit exists: pressing back has to be able to lose them, or the
+        /// optimal play is to counter until they crack and haggling stops being a decision.
+        /// </summary>
         [Test]
-        public void NobodyHagglesTwice()
+        public void HagglingRunsOutOfRope()
         {
             var simulation = Earning(1012, 400);
+            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
+
             var offer = FirstOfKind(simulation, MailKind.JobOffer);
             Assert.IsNotNull(offer);
 
-            simulation.TryActOnMail(offer.Id, MailAction.Haggle, out _);
+            // Counter until something ends it, which must happen inside the patience limit.
+            for (var attempt = 0; attempt < Negotiation.Patience; attempt++)
+            {
+                if (!simulation.TryActOnMail(offer.Id, MailAction.Haggle, out _) || offer.IsClosed)
+                {
+                    Assert.IsTrue(offer.IsClosed,
+                        "A refused counter has to have closed the letter one way or the other.");
 
-            Assert.IsFalse(simulation.TryActOnMail(offer.Id, MailAction.Haggle, out var reason),
-                "A second counter would make haggling free and therefore automatic.");
+                    Assert.IsTrue(offer.Outcome.Length > 0);
+                    return;
+                }
+            }
 
-            Assert.IsTrue(reason.Length > 0);
+            Assert.Fail(
+                $"The letter survived {Negotiation.Patience} counters, so haggling is free and "
+                + "therefore automatic.");
         }
 
         [Test]

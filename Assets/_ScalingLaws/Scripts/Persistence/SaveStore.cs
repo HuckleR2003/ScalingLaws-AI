@@ -201,7 +201,35 @@ namespace ScalingLaws.Persistence
                 {
                     role = (int)hire.Role,
                     skill = hire.Skill,
-                    startedDayIndex = hire.StartedOn.DayIndex
+                    startedDayIndex = hire.StartedOn.DayIndex,
+                    name = hire.Name,
+                    position = (int)hire.Position,
+                    source = (int)hire.Source,
+                    hourlyWageUsd = hire.HourlyWageUsd
+                });
+            }
+
+            data.remotePartnership = state.Hiring.HasRemotePartnership;
+            data.nextCandidateId = state.Hiring.NextCandidateId;
+            data.hiringRandomState = state.Hiring.Random.State;
+
+            foreach (var approach in state.Hiring.Approaches)
+            {
+                var candidate = approach.Candidate;
+
+                data.approaches.Add(new ApproachData
+                {
+                    candidateId = candidate.Id,
+                    name = candidate.Name,
+                    position = (int)candidate.Position,
+                    advertisedLevel = candidate.AdvertisedLevel,
+                    source = (int)candidate.Source,
+                    askingHourlyUsd = candidate.AskingHourlyUsd,
+                    reservationHourlyUsd = candidate.ReservationHourlyUsd,
+                    portraitSeed = candidate.PortraitSeed,
+                    startedDayIndex = approach.StartedDayIndex,
+                    daysNeeded = approach.DaysNeeded,
+                    daysElapsed = approach.DaysElapsed
                 });
             }
 
@@ -680,11 +708,48 @@ namespace ScalingLaws.Persistence
             var restoredHires = new List<Hire>(safe.staff.Count);
             foreach (var hire in safe.staff)
             {
+                // Enum values are checked rather than cast blind: a file edited by hand, or
+                // written by a build that had one more source than this one, must not put a person
+                // on the payroll with a channel nobody can price.
+                var source = Enum.IsDefined(typeof(HireSource), hire.source)
+                    ? (HireSource)hire.source
+                    : HireSource.Agency;
+
+                var position = Enum.IsDefined(typeof(PlayerSkill), hire.position)
+                    ? (PlayerSkill)hire.position
+                    : PlayerSkill.None;
+
                 restoredHires.Add(new Hire(
-                    (StaffRole)hire.role, hire.skill, new GameDate(hire.startedDayIndex)));
+                    (StaffRole)hire.role, hire.skill, new GameDate(hire.startedDayIndex),
+                    hire.name, position, source, hire.hourlyWageUsd));
             }
 
             state.Staff.Restore((OfficeTier)safe.officeTier, restoredHires);
+
+            // The approaches, rebuilt with the people inside them. A conversation whose candidate
+            // cannot be reconstructed is dropped rather than restored half empty: the player would
+            // get a banner counting down to a letter that could never be written.
+            var approaches = new List<Approach>();
+
+            foreach (var saved in safe.approaches ?? new List<ApproachData>())
+            {
+                if (saved == null || !Enum.IsDefined(typeof(PlayerSkill), saved.position)
+                    || !Enum.IsDefined(typeof(HireSource), saved.source))
+                {
+                    continue;
+                }
+
+                var candidate = new Candidate(saved.candidateId, saved.name,
+                    (PlayerSkill)saved.position, saved.advertisedLevel, (HireSource)saved.source,
+                    saved.askingHourlyUsd, saved.reservationHourlyUsd, saved.portraitSeed);
+
+                var approach = new Approach(candidate, saved.startedDayIndex, saved.daysNeeded);
+                approach.Restore(saved.daysElapsed);
+                approaches.Add(approach);
+            }
+
+            state.Hiring.Restore(approaches, safe.remotePartnership, safe.nextCandidateId,
+                safe.hiringRandomState);
 
             foreach (var incident in safe.incidents)
             {

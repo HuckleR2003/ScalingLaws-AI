@@ -7578,3 +7578,899 @@
     border-width: 2px;
     border-color: rgb(214, 158, 62);
 }
+
+/* ============================================================================================
+   HIRING
+
+   Three sites that have to look like three different companies made them, one grid of positions,
+   one green corner, and a negotiation panel in the inbox. The rule throughout: the channel's
+   colour is the only decoration, so a screen can be read by its accent before a word of it is.
+   ============================================================================================ */
+
+/* ---- the position grid ------------------------------------------------------------------- */
+
+.posgrid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+/* Seven tiles across two rows on a normal window. The basis rather than a width, so the last
+   row does not stretch its tiles to fill the gap left by the missing eighth. */
+.postile {
+    width: 23%;
+    min-width: 190px;
+    height: 152px;
+    margin: 0 8px 10px 0;
+    padding: 14px 14px 12px 14px;
+    border-radius: 5px;
+    border-left-width: 3px;
+    border-left-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.035);
+    flex-shrink: 0;
+}
+
+.postile--staffed {
+    background-color: rgba(255, 255, 255, 0.065);
+}
+
+.postile__icon {
+    margin-bottom: 8px;
+}
+
+.postile__title {
+    font-size: 13px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(234, 239, 248);
+    white-space: normal;
+}
+
+.postile__blurb {
+    font-size: 11px;
+    color: rgb(136, 148, 168);
+    white-space: normal;
+    margin-top: 5px;
+}
+
+/* Out of flow, so a long title cannot push it off the tile. */
+.postile__ring {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
+    border-width: 2px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(8, 11, 18, 0.85);
+}
+
+.postile__count {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(238, 242, 250);
+}
+
+/* ---- the two hire buttons ----------------------------------------------------------------- */
+
+.hirebar {
+    flex-direction: row;
+    margin-top: 4px;
+    margin-bottom: 14px;
+}
+
+.hirebar__button {
+    height: 52px;
+    padding: 0 26px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.hirebar__button--main {
+    flex-grow: 1;
+    color: rgb(16, 20, 28);
+    background-color: rgb(214, 158, 62);
+}
+
+.hirebar__button--main:hover {
+    background-color: rgb(238, 182, 84);
+}
+
+.hirebar__button--remote {
+    min-width: 260px;
+    color: rgb(206, 232, 244);
+    background-color: rgba(79, 163, 199, 0.26);
+    border-width: 1px;
+    border-color: rgba(79, 163, 199, 0.6);
+}
+
+.hirebar__button--remote:hover {
+    background-color: rgba(79, 163, 199, 0.42);
+}
+
+.hirebar__button:disabled {
+    color: rgb(120, 130, 148);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- who is on the payroll ---------------------------------------------------------------- */
+
+.crew {
+    margin-top: 4px;
+}
+
+.crew__row {
+    flex-direction: row;
+    align-items: center;
+    height: 42px;
+    padding: 0 10px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.crew__icon {
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+/* The one thing worth seeing at a glance: how much of the company is the cheap kind. */
+.crew__tag {
+    width: 84px;
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    padding: 3px 0;
+    margin-right: 12px;
+    border-width: 1px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.crew__name {
+    width: 30%;
+    font-size: 13px;
+    color: rgb(230, 236, 246);
+}
+
+.crew__job {
+    flex-grow: 1;
+    font-size: 12px;
+    color: rgb(140, 152, 172);
+}
+
+.crew__pay {
+    width: 118px;
+    font-size: 12px;
+    -unity-text-align: middle-right;
+    color: rgb(200, 210, 228);
+    margin-right: 12px;
+}
+
+.crew__release {
+    width: 80px;
+    height: 26px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(198, 150, 150);
+    background-color: rgba(150, 70, 70, 0.22);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+/* ---- the agency-or-specialist card -------------------------------------------------------- */
+
+.notice--hiring {
+    width: 720px;
+    max-width: 92%;
+}
+
+.hirechoice {
+    flex-direction: row;
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+.hirechoice__tile {
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 210px;
+    margin: 0 8px;
+    padding: 18px 18px 16px 18px;
+    align-items: flex-start;
+    border-width: 0;
+    border-left-width: 3px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.045);
+}
+
+.hirechoice__tile:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.hirechoice__url {
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    color: rgb(130, 142, 162);
+}
+
+.hirechoice__title {
+    font-size: 16px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(238, 242, 250);
+    margin-top: 8px;
+    white-space: normal;
+}
+
+.hirechoice__blurb {
+    font-size: 12px;
+    color: rgb(146, 158, 178);
+    white-space: normal;
+    margin-top: 8px;
+    flex-grow: 1;
+}
+
+.hirechoice__numbers {
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    -unity-font-style: bold;
+}
+
+/* ---- the sites ---------------------------------------------------------------------------- */
+
+.portal {
+    flex-grow: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.portal__urlbar {
+    height: 38px;
+    justify-content: center;
+    padding: 0 16px;
+    border-radius: 4px 4px 0 0;
+}
+
+.portal__url {
+    font-size: 13px;
+    letter-spacing: 0.6px;
+}
+
+.portal__tagline {
+    font-size: 12px;
+    padding: 10px 16px 0 16px;
+    white-space: normal;
+}
+
+.portal__problem {
+    margin: 10px 16px 0 16px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: rgb(240, 190, 130);
+    background-color: rgba(214, 158, 62, 0.16);
+    white-space: normal;
+}
+
+.portal__warning {
+    margin: 12px 16px 0 16px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: rgb(150, 200, 220);
+    background-color: rgba(79, 163, 199, 0.12);
+    border-left-width: 2px;
+    border-left-color: rgb(79, 163, 199);
+    white-space: normal;
+}
+
+.portal__skills {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 14px 12px 4px 12px;
+}
+
+.skillchip {
+    flex-direction: row;
+    align-items: center;
+    height: 40px;
+    padding: 0 14px 0 8px;
+    margin: 0 6px 8px 0;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.skillchip--on {
+    border-color: rgb(214, 158, 62);
+    background-color: rgba(214, 158, 62, 0.18);
+}
+
+.skillchip__icon {
+    margin-right: 8px;
+}
+
+.skillchip__name {
+    font-size: 12px;
+    color: rgb(224, 232, 244);
+}
+
+.portal__search {
+    height: 44px;
+    margin: 8px 16px 0 16px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 4px;
+    color: rgb(16, 20, 28);
+    background-color: rgb(214, 158, 62);
+}
+
+.portal__results {
+    padding: 12px 16px 4px 16px;
+}
+
+.portal__inbox,
+.portal__back {
+    height: 40px;
+    margin-top: 12px;
+    align-self: flex-start;
+    padding: 0 24px;
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    border-width: 0;
+    border-radius: 4px;
+    color: rgb(228, 234, 246);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.portal__inbox {
+    color: rgb(140, 220, 170);
+    background-color: rgba(74, 168, 110, 0.22);
+}
+
+/* IThand.hck: a contract board. Cyan, flat, a little cheap looking. */
+.portal--ithand .portal__urlbar {
+    background-color: rgb(23, 62, 78);
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(79, 163, 199);
+}
+
+.portal--ithand .portal__url {
+    color: rgb(154, 214, 238);
+    -unity-font-style: bold;
+}
+
+.portal--ithand .portal__tagline {
+    color: rgb(140, 168, 184);
+}
+
+.ithand__bar {
+    flex-direction: row;
+    align-items: center;
+    margin: 12px 16px 0 16px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    background-color: rgba(79, 163, 199, 0.10);
+}
+
+.ithand__count {
+    flex-grow: 1;
+    font-size: 13px;
+    color: rgb(190, 220, 236);
+}
+
+.ithand__partner {
+    height: 36px;
+    padding: 0 18px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(12, 26, 32);
+    background-color: rgb(79, 163, 199);
+}
+
+.ithand__badge {
+    font-size: 10px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    padding: 6px 14px;
+    border-radius: 3px;
+    color: rgb(12, 26, 32);
+    background-color: rgb(120, 210, 170);
+}
+
+.ithand__why {
+    margin: 8px 16px 0 16px;
+    font-size: 11px;
+    color: rgb(126, 142, 158);
+    white-space: normal;
+}
+
+/* The register: beige, monospaced in spirit, last touched in 2009. The point of it is that it
+   looks like somewhere you would be sent rather than somewhere you would go. */
+.portal--register .portal__urlbar {
+    background-color: rgb(206, 202, 184);
+    border-bottom-width: 3px;
+    border-bottom-color: rgb(122, 116, 96);
+}
+
+.portal--register .portal__url {
+    color: rgb(38, 36, 28);
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+}
+
+.portal--register {
+    background-color: rgb(232, 229, 216);
+    border-radius: 4px;
+}
+
+.portal--register .portal__tagline {
+    color: rgb(74, 70, 58);
+}
+
+.register__masthead {
+    margin: 12px 16px 0 16px;
+    padding: 10px 12px;
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    -unity-font-style: bold;
+    color: rgb(46, 44, 34);
+    background-color: rgb(214, 210, 192);
+    border-left-width: 4px;
+    border-left-color: rgb(122, 116, 96);
+    white-space: normal;
+}
+
+.register__notice {
+    margin: 10px 16px 0 16px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: rgb(92, 62, 40);
+    background-color: rgb(240, 228, 196);
+    border-width: 1px;
+    border-color: rgb(180, 154, 96);
+    white-space: normal;
+}
+
+.portal--register .skillchip {
+    border-radius: 0;
+    border-color: rgb(160, 154, 134);
+    background-color: rgb(220, 217, 202);
+}
+
+.portal--register .skillchip--on {
+    border-color: rgb(60, 56, 44);
+    background-color: rgb(190, 186, 164);
+}
+
+.portal--register .skillchip__name {
+    color: rgb(40, 38, 30);
+}
+
+.portal--register .portal__search {
+    border-radius: 0;
+    border-width: 2px;
+    border-color: rgb(122, 116, 96);
+    color: rgb(38, 36, 28);
+    background-color: rgb(198, 194, 172);
+}
+
+.portal--register .candidate {
+    border-radius: 0;
+    border-width: 1px;
+    border-color: rgb(174, 168, 148);
+    background-color: rgb(220, 217, 202);
+}
+
+.portal--register .candidate__name {
+    color: rgb(30, 28, 22);
+}
+
+.portal--register .candidate__line,
+.portal--register .candidate__asking {
+    color: rgb(88, 84, 68);
+}
+
+.portal--register .candidate__contact {
+    border-radius: 0;
+    color: rgb(38, 36, 28);
+    background-color: rgb(190, 186, 164);
+    border-width: 1px;
+    border-color: rgb(122, 116, 96);
+}
+
+.register__footer {
+    margin: 14px 16px 12px 16px;
+    font-size: 10px;
+    color: rgb(120, 114, 96);
+    white-space: normal;
+}
+
+/* get-admin.hck: the expensive one. Near black, gold, and almost nothing on it. */
+.portal--getadmin .portal__urlbar {
+    background-color: rgb(14, 14, 16);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(201, 162, 39);
+}
+
+.portal--getadmin .portal__url {
+    color: rgb(216, 182, 88);
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+}
+
+.portal--getadmin {
+    background-color: rgba(10, 10, 12, 0.55);
+    border-radius: 4px;
+}
+
+.portal--getadmin .portal__tagline {
+    color: rgb(150, 146, 132);
+    letter-spacing: 1.4px;
+}
+
+.getadmin__band {
+    margin: 16px 16px 0 16px;
+    padding: 18px 20px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(201, 162, 39, 0.28);
+    background-color: rgba(201, 162, 39, 0.06);
+}
+
+.getadmin__label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(184, 156, 84);
+}
+
+.getadmin__slider {
+    margin-top: 12px;
+}
+
+.getadmin__reading {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgb(212, 206, 188);
+    white-space: normal;
+}
+
+.getadmin__go {
+    height: 48px;
+    margin: 14px 16px 0 16px;
+    font-size: 12px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    border-width: 1px;
+    border-color: rgb(201, 162, 39);
+    border-radius: 3px;
+    color: rgb(224, 194, 108);
+    background-color: rgba(201, 162, 39, 0.14);
+}
+
+.getadmin__go:hover {
+    color: rgb(18, 16, 10);
+    background-color: rgb(201, 162, 39);
+}
+
+.getadmin__go:disabled {
+    color: rgb(110, 104, 88);
+    border-color: rgba(201, 162, 39, 0.2);
+    background-color: transparent;
+}
+
+/* ---- one candidate, in a list --------------------------------------------------------------- */
+
+.candidate {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.candidate__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 14px;
+    margin-right: 12px;
+}
+
+.candidate__name {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(234, 240, 250);
+}
+
+.candidate__line {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    margin-top: 3px;
+}
+
+.candidate__asking {
+    font-size: 11px;
+    color: rgb(190, 200, 218);
+    margin-top: 3px;
+}
+
+.candidate__contact {
+    width: 150px;
+    height: 36px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(228, 234, 246);
+    background-color: rgba(255, 255, 255, 0.10);
+    flex-shrink: 0;
+}
+
+.candidate__contact:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+/* ---- faces ----------------------------------------------------------------------------------- */
+
+.face {
+    border-width: 2px;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.face__initials {
+    font-size: 18px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(180, 190, 208);
+}
+
+/* ---- the applicant card in the inbox ---------------------------------------------------------- */
+
+.applicant {
+    flex-direction: row;
+    margin-top: 14px;
+    padding: 16px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.045);
+}
+
+.applicant__facts {
+    flex-grow: 1;
+    margin-left: 18px;
+}
+
+.applicant__name {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(238, 243, 252);
+}
+
+.applicant__job {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgb(150, 162, 182);
+    margin-top: 2px;
+}
+
+.applicant__source {
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    margin-top: 8px;
+}
+
+.applicant__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.applicant__cell {
+    min-width: 118px;
+    margin-right: 18px;
+    margin-bottom: 8px;
+}
+
+.applicant__cellcaption {
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    color: rgb(126, 138, 158);
+}
+
+.applicant__cellvalue {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(226, 234, 248);
+    margin-top: 2px;
+}
+
+.applicant__patience {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    margin-top: 4px;
+}
+
+.applicant__patience--thin {
+    color: rgb(224, 138, 108);
+    -unity-font-style: bold;
+}
+
+/* ---- the wage panel ---------------------------------------------------------------------------- */
+
+.haggle {
+    margin-top: 12px;
+    padding: 16px 18px;
+    border-radius: 5px;
+    border-left-width: 3px;
+    border-left-color: rgb(214, 158, 62);
+    background-color: rgba(10, 14, 22, 0.92);
+}
+
+.haggle__heading {
+    font-size: 10px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(196, 168, 108);
+    margin-bottom: 10px;
+}
+
+.haggle__field {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.haggle__label {
+    width: 130px;
+    font-size: 13px;
+    color: rgb(216, 224, 240);
+}
+
+.haggle__step {
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(226, 232, 244);
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.haggle__value {
+    width: 130px;
+    height: 30px;
+    -unity-text-align: middle-center;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(238, 242, 250);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    margin: 0 6px;
+}
+
+.haggle__worth {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    margin-top: 4px;
+    white-space: normal;
+}
+
+.haggle__buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.haggle__decline {
+    height: 36px;
+    padding: 0 22px;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(198, 150, 150);
+    background-color: rgba(150, 70, 70, 0.22);
+    margin-right: 8px;
+}
+
+.haggle__send {
+    height: 36px;
+    padding: 0 26px;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(16, 20, 28);
+    background-color: rgb(214, 158, 62);
+}
+
+.haggle__note {
+    margin-top: 10px;
+    padding: 9px 12px;
+    font-size: 12px;
+    color: rgb(150, 210, 172);
+    background-color: rgba(74, 168, 110, 0.14);
+    border-radius: 3px;
+    white-space: normal;
+}
+
+/* ---- hiring in its own corner ---------------------------------------------------------------
+
+   Green, under research. Gold is the product, blue is research, green is a person on their way in;
+   a third colour is cheaper for the player to learn than a third place to look. */
+
+.hb {
+    position: absolute;
+    right: 22px;
+    top: 336px;
+    width: 268px;
+    margin: 0;
+    padding: 11px 14px 12px 14px;
+    align-items: flex-start;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(74, 168, 110, 0.45);
+    background-color: rgba(10, 20, 16, 0.90);
+}
+
+.hb:hover {
+    border-color: rgba(110, 214, 148, 0.85);
+    background-color: rgba(14, 28, 22, 0.96);
+}
+
+.hb__kicker {
+    font-size: 9px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(110, 200, 142);
+}
+
+.hb__name {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(234, 244, 238);
+    white-space: normal;
+    margin-top: 3px;
+}
+
+.hb__track {
+    width: 100%;
+    height: 3px;
+    margin-top: 9px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.10);
+    overflow: hidden;
+}
+
+.hb__fill {
+    height: 3px;
+    background-color: rgb(74, 168, 110);
+}
+
+.hb__days {
+    font-size: 10px;
+    letter-spacing: 0.6px;
+    color: rgb(146, 178, 158);
+    margin-top: 5px;
+}

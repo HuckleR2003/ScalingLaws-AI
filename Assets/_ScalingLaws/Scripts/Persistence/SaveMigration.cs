@@ -131,6 +131,7 @@ namespace ScalingLaws.Persistence
                     27 => UpgradeV27ToV28(current),
                     28 => UpgradeV28ToV29(current),
                     29 => UpgradeV29ToV30(current),
+                    30 => UpgradeV30ToV31(current),
                     _ => current
                 };
             }
@@ -974,6 +975,53 @@ namespace ScalingLaws.Persistence
         /// playing under for the whole campaign, and handing it the bill retroactively would take
         /// cash it has already spent on something else.
         /// </summary>
+        /// <summary>
+        /// v30 to v31: people have names, disciplines and a channel they came from.
+        ///
+        /// **Everybody already on the payroll becomes an agency hire with no name.** That is not a
+        /// guess dressed up as data: the old system had exactly one way of getting somebody, it
+        /// paid the catalog salary, and it never asked who they were. Agency is the channel whose
+        /// wage multiplier is 1.00, so nobody's pay changes by a cent, and leaving the negotiated
+        /// rate at zero keeps the catalog as the source of their salary.
+        ///
+        /// The discipline is left as None rather than reverse-engineered from the role, because two
+        /// disciplines share a role and picking one would put people on a tile they never applied
+        /// to. They show on the payroll list under their old job title instead.
+        /// </summary>
+        public static SaveData UpgradeV30ToV31(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 31;
+            data.approaches = new List<ApproachData>();
+            data.remotePartnership = false;
+            data.nextCandidateId = 1;
+            data.hiringRandomState = 0u;
+
+            foreach (var hire in data.staff ?? new List<HireData>())
+            {
+                if (hire == null)
+                {
+                    continue;
+                }
+
+                hire.name = string.Empty;
+                hire.position = (int)PlayerSkill.None;
+                hire.source = (int)HireSource.Agency;
+                hire.hourlyWageUsd = 0.0;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v30 to v31: the old hiring system had one channel and no names, so everybody on "
+                + "the payroll is recorded as an unnamed agency hire and keeps the exact salary "
+                + "the catalog was already paying them.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV29ToV30(SaveData data)
         {
             if (data == null)

@@ -74,6 +74,18 @@ namespace ScalingLaws.UI
 
         /// <summary>The room on screen. Null in tests, where there is no scene to find it in.</summary>
         private OfficeStage officeStage;
+
+        /// <summary>The three hiring sites. Owns its own shortlists so they survive a redraw.</summary>
+        private HiringPortals portals;
+
+        /// <summary>The Agency-or-Specialist card, while it is up.</summary>
+        private VisualElement hiringChoice;
+
+        /// <summary>The green corner strip while somebody is being contacted.</summary>
+        private VisualElement approachBanner;
+
+        /// <summary>Days left on the approach the banner is drawn for. Stops it rebuilding per frame.</summary>
+        private int approachBannerDays = -1;
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
         private string researchProblem = string.Empty;
         private bool cancelArmed;
@@ -218,6 +230,9 @@ namespace ScalingLaws.UI
             /// <summary>The places the company can be. First piece of the second map.</summary>
             Offices,
 
+            /// <summary>One of the three hiring sites. Which one is on <c>portals.Open</c>.</summary>
+            Hiring,
+
             /// <summary>The wire. Reached from its own corner banner and from the bottom bar.</summary>
             News
         }
@@ -337,6 +352,7 @@ namespace ScalingLaws.UI
             founder?.Refresh(state.Date.DayIndex);
             RefreshRegulatoryBanner();
             RefreshResearchBanner();
+            RefreshApproachBanner();
 
             // They reached the car. This is where the loading screen and the world map go once the
             // map itself exists; until then it opens the board, which is what the icon did before.
@@ -461,6 +477,9 @@ namespace ScalingLaws.UI
             // The room the office camera points at, which changes with the lease. Built before the
             // founder spawns so they walk into the floor the company is actually renting rather
             // than into the garage it left three years ago.
+            portals = new HiringPortals(() => state, simulation, () => Show(Screen.Hiring),
+                () => Show(Screen.Mail));
+
             officeStage = new OfficeStage(GameObject.Find(OfficeStageRoot));
             officeStage.Show(state.Staff.Office, state.Decor);
 
@@ -924,6 +943,10 @@ namespace ScalingLaws.UI
                 case Screen.Offices:
                     offices.Refresh();
                     host.Add(offices.Root);
+                    break;
+
+                case Screen.Hiring:
+                    host.Add(BuildHiringScreen());
                     break;
                 case Screen.Business:
                     host.Add(BuildBusinessScreen());
@@ -1605,17 +1628,41 @@ namespace ScalingLaws.UI
         /// Team and office on one screen, because they are one decision: desks cap headcount, so a
         /// lease signed months ago is what decides whether the person you need today can start.
         /// </summary>
+        /// <summary>
+        /// Team and office on one screen, because they are one decision: desks cap headcount, so a
+        /// lease signed months ago is what decides whether the person you need today can start.
+        ///
+        /// **The hiring grid is one tile per founder skill.** The player already learned those seven
+        /// words when they spent two hundred points at character creation; making them learn a
+        /// second vocabulary to hire would be asking twice for the same thing.
+        /// </summary>
         private VisualElement BuildTeamScreen()
         {
             var roster = state.Staff;
+
             var page = NewPage("TEAM",
-                $"{roster.Headcount} of {roster.Desks} desks in {roster.OfficeDefinition.DisplayName}. "
-                + $"Payroll {UiFormat.Money(roster.DailyPayrollUsd)} a day, rent "
-                + $"{UiFormat.Money(roster.DailyRentUsd)} a day. Every role saturates, so a seventh "
-                + "person in one discipline adds a fraction of what the second one did.");
+                $"{roster.SeatedHeadcount} of {roster.Desks} desks in {roster.OfficeDefinition.DisplayName}"
+                + (roster.CountFrom(HireSource.Remote) > 0
+                    ? $", plus {roster.CountFrom(HireSource.Remote)} working remotely"
+                    : string.Empty)
+                + $". Payroll {UiFormat.Money(roster.DailyPayrollUsd)} a day. Every discipline "
+                + "saturates, so a seventh person in one adds a fraction of what the second did.");
+
+            page.Add(BuildPositionGrid());
+            page.Add(BuildHireButtons());
+
+            if (roster.Headcount > 0)
+            {
+                page.Add(BuildPayrollList());
+            }
 
             var effects = new VisualElement();
             effects.AddToClassList("panel");
+
+            var effectsHeading = new Label("WHAT THE TEAM IS WORTH");
+            effectsHeading.AddToClassList("panel__heading");
+            effects.Add(effectsHeading);
+
             effects.Add(Row("Training outcome spread",
                 $"{UiFormat.Percent(roster.OutcomeVarianceMultiplier())} of baseline"));
             effects.Add(Row("Cluster utilization", $"+{UiFormat.Percent(roster.UtilizationBonus())}"));
@@ -1625,69 +1672,18 @@ namespace ScalingLaws.UI
             effects.Add(Row("Research pace", $"x{UiFormat.Number(roster.ResearchSpeedMultiplier(), 3)}"));
             page.Add(effects);
 
-            var hiring = new VisualElement();
-            hiring.AddToClassList("panel");
-            var hiringHeading = new Label("HIRE");
-            hiringHeading.AddToClassList("panel__heading");
-            hiring.Add(hiringHeading);
-
-            var hireGrid = new VisualElement();
-            hireGrid.AddToClassList("grid");
-            hiring.Add(hireGrid);
-
-            foreach (var definition in StaffCatalog.All)
-            {
-                hireGrid.Add(BuildHireCard(definition));
-            }
-
-            page.Add(hiring);
-
-            if (roster.Headcount > 0)
-            {
-                var team = new VisualElement();
-                team.AddToClassList("panel");
-                var teamHeading = new Label("ON THE PAYROLL");
-                teamHeading.AddToClassList("panel__heading");
-                team.Add(teamHeading);
-
-                for (var index = 0; index < roster.Headcount; index++)
-                {
-                    var slot = index;
-                    var hire = roster.Hires[index];
-                    var row = new VisualElement();
-                    row.AddToClassList("readout");
-                    row.Add(new Label(
-                        $"{StaffCatalog.Get(hire.Role).DisplayName}, skill {hire.Skill}, since {hire.StartedOn}"));
-
-                    var release = new Button(() =>
-                    {
-                        simulation.TryLetGo(slot, out _);
-                        Show(Screen.Team);
-                    })
-                    { text = $"{UiFormat.Money(hire.SalaryPerYearUsd)}/yr   LET GO" };
-                    release.AddToClassList("button");
-                    release.style.height = 28;
-                    release.style.minWidth = 210;
-                    row.Add(release);
-                    team.Add(row);
-                }
-
-                page.Add(team);
-            }
-
             var offices = new VisualElement();
             offices.AddToClassList("panel");
+
             var officeHeading = new Label("WHERE YOU WORK");
             officeHeading.AddToClassList("panel__heading");
             offices.Add(officeHeading);
 
-            // One button rather than a grid of five cards. The places have photographs now and
-            // deserve a screen; a card the size of a hardware card cannot show a room.
             var current = state.Staff.OfficeDefinition;
 
             var where = new Label(
                 $"LVL {current.Level}  ·  {current.DisplayName}  ·  "
-                + $"{state.Staff.Headcount} of {current.Desks} desks  ·  "
+                + $"{state.Staff.SeatedHeadcount} of {current.Desks} desks  ·  "
                 + $"{UiFormat.Money(current.MonthlyRentUsd)} a month");
 
             where.AddToClassList("office-now");
@@ -1696,6 +1692,413 @@ namespace ScalingLaws.UI
             offices.Add(BuildUpgradeButton());
             page.Add(offices);
             return page;
+        }
+
+        /// <summary>
+        /// Seven tiles, one per discipline, in two rows.
+        ///
+        /// The count sits in a ring in the corner in the position's own colour, so the shape of the
+        /// company is readable without reading a single word: four blue and nothing else is a lab
+        /// that has never hired anybody to sell anything.
+        /// </summary>
+        private VisualElement BuildPositionGrid()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var heading = new Label("POSITIONS");
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            var grid = new VisualElement();
+            grid.AddToClassList("posgrid");
+
+            foreach (var position in PositionCatalog.All)
+            {
+                grid.Add(BuildPositionTile(position));
+            }
+
+            panel.Add(grid);
+            return panel;
+        }
+
+        private VisualElement BuildPositionTile(PositionDefinition position)
+        {
+            var count = state.Staff.CountOfPosition(position.Skill);
+
+            var tile = new VisualElement();
+            tile.AddToClassList("postile");
+            tile.EnableInClassList("postile--staffed", count > 0);
+
+            if (ColorUtility.TryParseHtmlString(position.AccentHex, out var accent))
+            {
+                tile.style.borderLeftColor = accent;
+            }
+
+            var icon = SkillIcons.Badge(position.Skill, 52);
+            icon.AddToClassList("postile__icon");
+            tile.Add(icon);
+
+            var title = new Label(position.Title.ToUpperInvariant());
+            title.AddToClassList("postile__title");
+            tile.Add(title);
+
+            var blurb = new Label(position.Blurb);
+            blurb.AddToClassList("postile__blurb");
+            tile.Add(blurb);
+
+            // The ring is out of flow so it sits in the corner rather than pushing the title down.
+            var ring = new VisualElement();
+            ring.AddToClassList("postile__ring");
+
+            if (ColorUtility.TryParseHtmlString(position.AccentHex, out var ringColour))
+            {
+                ring.style.borderTopColor = ringColour;
+                ring.style.borderBottomColor = ringColour;
+                ring.style.borderLeftColor = ringColour;
+                ring.style.borderRightColor = ringColour;
+                ring.style.color = ringColour;
+            }
+
+            var number = new Label(count.ToString());
+            number.AddToClassList("postile__count");
+            ring.Add(number);
+
+            tile.Add(ring);
+
+            InsightTip.Attach(tile, position.Title.ToUpperInvariant(),
+                $"{position.Blurb} An ordinary one asks about ${position.BaseHourlyWageUsd:N0} an "
+                + $"hour. {count} on the team.");
+
+            return tile;
+        }
+
+        /// <summary>
+        /// The two ways to start hiring, under the grid.
+        ///
+        /// Both say what they cost the player before they are pressed: how many desks are free, and
+        /// how many remote contracts are left. A hire button that opens a screen only to say no
+        /// wastes the click that was the whole point of the screen.
+        /// </summary>
+        private VisualElement BuildHireButtons()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("hirebar");
+
+            var free = Math.Max(0, state.Staff.Desks - state.Staff.SeatedHeadcount);
+
+            var onSite = new Button(ShowHiringChoice)
+            {
+                text = $"HIRE NOW     -     ({free} workplace{(free == 1 ? string.Empty : "s")} available)"
+            };
+
+            onSite.AddToClassList("hirebar__button");
+            onSite.AddToClassList("hirebar__button--main");
+            onSite.SetEnabled(free > 0);
+
+            InsightTip.Attach(onSite, "HIRE INTO THE OFFICE",
+                "Two routes: the employment register, which is free and sends ordinary people, or "
+                + "a specialist search, which costs a fee and finds exactly what you asked for.");
+
+            row.Add(onSite);
+
+            var seats = state.Hiring.RemoteSeats;
+            var usedRemote = state.Staff.CountFrom(HireSource.Remote);
+
+            var remote = new Button(() =>
+            {
+                portals.Open = HiringPortal.Remote;
+                Show(Screen.Hiring);
+            })
+            { text = $"HIRE NOW - REMOTE ({seats - usedRemote})" };
+
+            remote.AddToClassList("hirebar__button");
+            remote.AddToClassList("hirebar__button--remote");
+            remote.SetEnabled(usedRemote < seats);
+
+            InsightTip.Attach(remote, "HIRE REMOTELY",
+                $"IThand.hck. No desk needed, {HiringChannels.Get(HireSource.Remote).WageMultiplier:P0} "
+                + "of the usual wage, and the people are much weaker than their profiles claim. "
+                + "This is how a company with no office starts.");
+
+            row.Add(remote);
+            return row;
+        }
+
+        /// <summary>
+        /// Who is on the payroll, and where each of them came from.
+        ///
+        /// The source is a coloured tag rather than a word in a sentence, because the one thing a
+        /// player wants from this list at a glance is how much of their company is the cheap kind.
+        /// </summary>
+        private VisualElement BuildPayrollList()
+        {
+            var roster = state.Staff;
+
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var heading = new Label("ON THE PAYROLL");
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            var list = new VisualElement();
+            list.AddToClassList("crew");
+
+            for (var index = 0; index < roster.Headcount; index++)
+            {
+                var slot = index;
+                var hire = roster.Hires[index];
+
+                var row = new VisualElement();
+                row.AddToClassList("crew__row");
+
+                if (hire.Position != PlayerSkill.None)
+                {
+                    var icon = SkillIcons.Badge(hire.Position, 24);
+                    icon.AddToClassList("crew__icon");
+                    row.Add(icon);
+                }
+
+                var channel = HiringChannels.Get(hire.Source);
+
+                var tag = new Label(channel.DisplayName.ToUpperInvariant());
+                tag.AddToClassList("crew__tag");
+
+                if (ColorUtility.TryParseHtmlString(channel.AccentHex, out var accent))
+                {
+                    tag.style.color = accent;
+                    tag.style.borderTopColor = accent;
+                    tag.style.borderBottomColor = accent;
+                    tag.style.borderLeftColor = accent;
+                    tag.style.borderRightColor = accent;
+                }
+
+                row.Add(tag);
+
+                var name = new Label(hire.Label);
+                name.AddToClassList("crew__name");
+                row.Add(name);
+
+                var job = new Label(hire.Position != PlayerSkill.None
+                    ? PositionCatalog.Get(hire.Position).Title
+                    : StaffCatalog.Get(hire.Role).DisplayName);
+
+                job.AddToClassList("crew__job");
+                row.Add(job);
+
+                var pay = new Label(hire.HourlyWageUsd > 0.0
+                    ? $"${hire.HourlyWageUsd:N2}/h"
+                    : UiFormat.Money(hire.SalaryPerYearUsd) + "/yr");
+
+                pay.AddToClassList("crew__pay");
+                row.Add(pay);
+
+                var release = new Button(() =>
+                {
+                    simulation.TryLetGo(slot, out _);
+                    Show(Screen.Team);
+                })
+                { text = "LET GO" };
+
+                release.AddToClassList("crew__release");
+                row.Add(release);
+
+                list.Add(row);
+            }
+
+            panel.Add(list);
+            return panel;
+        }
+
+        /// <summary>
+        /// Agency or specialist, on a card over the screen.
+        ///
+        /// The same shape as the card that appears when a training run finishes, because it is the
+        /// same moment: the player has committed to something and the game is asking which of two
+        /// roads they want. Two very different prices, stated on the buttons.
+        /// </summary>
+        private void ShowHiringChoice()
+        {
+            hiringChoice?.RemoveFromHierarchy();
+
+            var veil = new VisualElement();
+            veil.AddToClassList("notice-veil");
+            veil.RegisterCallback<ClickEvent>(_ => hiringChoice?.RemoveFromHierarchy());
+
+            var card = new VisualElement();
+            card.AddToClassList("notice");
+            card.AddToClassList("notice--hiring");
+            card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
+
+            var title = new Label("WHERE ARE YOU LOOKING?");
+            title.AddToClassList("notice__title");
+            card.Add(title);
+
+            var body = new Label(
+                "Both routes take two to four days to come back, and both end in the inbox with a "
+                + "wage to agree. What differs is who answers.");
+
+            body.AddToClassList("notice__body");
+            card.Add(body);
+
+            var choices = new VisualElement();
+            choices.AddToClassList("hirechoice");
+
+            choices.Add(BuildChoiceTile(HireSource.Agency, "EMPLOYMENT AGENCY",
+                "Free to use. Sends whoever is on the register, and they are worse than their "
+                + "paperwork says. Standard wages.",
+                () =>
+                {
+                    hiringChoice?.RemoveFromHierarchy();
+                    portals.Open = HiringPortal.Agency;
+                    Show(Screen.Hiring);
+                }));
+
+            choices.Add(BuildChoiceTile(HireSource.Specialist, "FIND A SPECIALIST",
+                "Costs a search fee whether or not they sign. You set the discipline and the "
+                + "minimum level, and what arrives beats the advert. Wages a fifth higher.",
+                () =>
+                {
+                    hiringChoice?.RemoveFromHierarchy();
+                    portals.Open = HiringPortal.Specialist;
+                    Show(Screen.Hiring);
+                }));
+
+            card.Add(choices);
+
+            var cancel = new Button(() => hiringChoice?.RemoveFromHierarchy()) { text = "NOT NOW" };
+            cancel.AddToClassList("notice__button");
+            card.Add(cancel);
+
+            veil.Add(card);
+            hiringChoice = veil;
+            shellRoot.Add(veil);
+        }
+
+        private VisualElement BuildChoiceTile(HireSource source, string title, string blurb,
+            Action go)
+        {
+            var channel = HiringChannels.Get(source);
+
+            var tile = new Button(go);
+            tile.AddToClassList("hirechoice__tile");
+
+            if (ColorUtility.TryParseHtmlString(channel.AccentHex, out var accent))
+            {
+                tile.style.borderLeftColor = accent;
+            }
+
+            var address = new Label(channel.SiteName);
+            address.AddToClassList("hirechoice__url");
+            tile.Add(address);
+
+            var name = new Label(title);
+            name.AddToClassList("hirechoice__title");
+            tile.Add(name);
+
+            var text = new Label(blurb);
+            text.AddToClassList("hirechoice__blurb");
+            tile.Add(text);
+
+            var numbers = new Label(
+                $"wage x{channel.WageMultiplier:0.00}   ·   quality x{channel.QualityMultiplier:0.00}");
+
+            numbers.AddToClassList("hirechoice__numbers");
+
+            if (ColorUtility.TryParseHtmlString(channel.AccentHex, out var tint))
+            {
+                numbers.style.color = tint;
+            }
+
+            tile.Add(numbers);
+            return tile;
+        }
+
+        /// <summary>Whichever site the player walked into.</summary>
+        private VisualElement BuildHiringScreen()
+        {
+            var page = new VisualElement();
+            page.AddToClassList("content");
+
+            page.Add(portals.Build());
+
+            if (state.Hiring.OpenCount > 0)
+            {
+                page.Add(portals.InboxLink());
+            }
+
+            var back = new Button(() => Show(Screen.Team)) { text = "BACK TO THE TEAM" };
+            back.AddToClassList("portal__back");
+            page.Add(back);
+
+            return page;
+        }
+
+        /// <summary>
+        /// The green strip while somebody is being contacted.
+        ///
+        /// Green because the other two corners are already taken and mean other things: gold is the
+        /// product, blue is research. A third colour is cheaper to learn than a third position.
+        ///
+        /// It shows the soonest answer rather than all of them, for the same reason the research
+        /// banner shows one node: a corner that grows a row per approach would cover the office.
+        /// </summary>
+        private void RefreshApproachBanner()
+        {
+            var soonest = state.Hiring.Soonest;
+            var showing = soonest != null && current == Screen.Site;
+
+            if (!showing)
+            {
+                approachBanner?.RemoveFromHierarchy();
+                approachBanner = null;
+                approachBannerDays = -1;
+                return;
+            }
+
+            if (approachBanner != null && approachBannerDays == soonest.DaysElapsed)
+            {
+                return;
+            }
+
+            approachBannerDays = soonest.DaysElapsed;
+            approachBanner?.RemoveFromHierarchy();
+
+            var banner = new Button(() => Show(Screen.Mail));
+            banner.AddToClassList("hb");
+
+            var kicker = new Label(state.Hiring.OpenCount > 1
+                ? $"ARRANGING  ({state.Hiring.OpenCount})"
+                : "ARRANGING");
+
+            kicker.AddToClassList("hb__kicker");
+            banner.Add(kicker);
+
+            var name = new Label(soonest.Candidate.Name);
+            name.AddToClassList("hb__name");
+            banner.Add(name);
+
+            var track = new VisualElement();
+            track.AddToClassList("hb__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("hb__fill");
+            fill.style.width = Length.Percent((float)(soonest.Progress * 100.0));
+            track.Add(fill);
+
+            banner.Add(track);
+
+            var left = soonest.DaysLeft;
+            var days = new Label(left <= 0
+                ? "answering today"
+                : left == 1 ? "1 day until they answer" : $"{left} days until they answer");
+
+            days.AddToClassList("hb__days");
+            banner.Add(days);
+
+            approachBanner = banner;
+            shellRoot.Add(banner);
         }
 
         /// <summary>
@@ -1721,51 +2124,6 @@ namespace ScalingLaws.UI
             button.Add(caption);
 
             return button;
-        }
-
-        private VisualElement BuildHireCard(StaffRoleDefinition definition)
-        {
-            var card = new VisualElement();
-            card.AddToClassList("card");
-            card.style.height = 176;
-
-            var title = new Label(definition.DisplayName.ToUpperInvariant());
-            title.AddToClassList("card__title");
-            card.Add(title);
-
-            var count = new Label($"{state.Staff.CountOf(definition.Role)} on the team");
-            count.AddToClassList("card__line");
-            card.Add(count);
-
-            var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.marginTop = 6;
-
-            // One button per skill level, so the salary curve is visible at the point of decision.
-            for (var skill = 1; skill <= StaffLimits.MaximumSkill; skill++)
-            {
-                var level = skill;
-                var button = new Button(() =>
-                {
-                    simulation.TryHire(definition.Role, level, out _);
-                    Show(Screen.Team);
-                })
-                { text = level.ToString() };
-                button.AddToClassList("button");
-                button.style.height = 30;
-                button.style.minWidth = 40;
-                button.style.marginRight = 4;
-                button.tooltip =
-                    $"Skill {level}: {UiFormat.Money(definition.SalaryPerYearUsd(level))} a year, "
-                    + $"{UiFormat.Money(definition.HiringCostUsd_ForSkill(level))} to hire.";
-                button.SetEnabled(state.Staff.HasFreeDesk
-                    && state.CashUsd >= definition.HiringCostUsd_ForSkill(level));
-                row.Add(button);
-            }
-
-            card.Add(row);
-            card.tooltip = definition.Description;
-            return card;
         }
 
         /// <summary>
