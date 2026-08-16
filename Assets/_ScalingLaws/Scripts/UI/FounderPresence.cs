@@ -192,9 +192,23 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            var worn = UnityEngine.Object.Instantiate(pairs[choice - 1], head);
-            worn.transform.localPosition = PortraitStudio.GlassesOffset;
-            worn.transform.localRotation = Quaternion.identity;
+            // Spawned at the character's own origin, where the prefab already lines up with the
+            // face, then reparented to the head keeping the world position. Parenting straight to
+            // the head bone adds head height a second time and lands them on the chest.
+            // Same placement the portrait uses, because the player chose these by looking at the
+            // portrait and the two must not disagree about where a face is.
+            var worn = UnityEngine.Object.Instantiate(pairs[choice - 1]);
+
+            var headHeight = head.position.y - person.transform.position.y;
+            var scale = headHeight > 0.1f ? headHeight / PortraitStudio.FallbackHeadHeight : 1f;
+
+            worn.transform.localScale *= scale;
+            worn.transform.rotation = person.transform.rotation;
+            worn.transform.position = head.position
+                                      + person.transform.up * (PortraitStudio.EyeRise * scale)
+                                      + person.transform.forward * (PortraitStudio.EyeReach * scale);
+
+            worn.transform.SetParent(head, worldPositionStays: true);
         }
 
         /// <summary>True when a departure has finished and the map can open.</summary>

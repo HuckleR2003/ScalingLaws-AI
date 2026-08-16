@@ -2239,12 +2239,14 @@
     margin-bottom: 14px;
 }
 
+/* The era headings were 12px grey on a dark page, which is a caption rather than a heading: the
+   tree read as one undivided run of circles. White and half again as large. */
 .era__heading {
-    font-size: 12px;
-    letter-spacing: 3px;
+    font-size: 18px;
+    letter-spacing: 3.4px;
     -unity-font-style: bold;
-    color: rgb(140, 154, 176);
-    margin-bottom: 4px;
+    color: rgb(242, 247, 255);
+    margin-bottom: 7px;
 }
 
 .tree-track {
@@ -7328,4 +7330,82 @@
 .office-row__buy:hover {
     background-color: rgba(196, 172, 96, 0.28);
     border-color: rgba(196, 172, 96, 0.85);
+}
+
+/* ---- research in its own corner ----
+
+   Blue, under the model banner, because the two are different things and sharing one corner meant a
+   four month node hid the product completely. */
+
+.rb {
+    position: absolute;
+    right: 22px;
+    top: 214px;
+    width: 268px;
+    margin: 0;
+    padding: 11px 14px 12px 14px;
+    align-items: flex-start;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(96, 150, 226, 0.45);
+    background-color: rgba(10, 16, 28, 0.90);
+}
+
+.rb:hover {
+    border-color: rgba(120, 176, 255, 0.85);
+    background-color: rgba(14, 22, 38, 0.96);
+}
+
+.rb__kicker {
+    font-size: 9px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(120, 168, 232);
+}
+
+.rb__name {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+    white-space: normal;
+    margin-top: 3px;
+}
+
+.rb__track {
+    width: 100%;
+    height: 3px;
+    margin-top: 9px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.10);
+    overflow: hidden;
+}
+
+.rb__fill {
+    height: 3px;
+    background-color: rgb(96, 150, 226);
+}
+
+.rb__days {
+    font-size: 10px;
+    letter-spacing: 0.6px;
+    color: rgb(150, 174, 208);
+    margin-top: 5px;
+}
+
+/* The two panels at the top of FLEET carry the decision the whole screen is about and were the
+   smallest things on it. Forty percent more room, and the type inside grows with the box rather
+   than rattling around in it. */
+.fleet-panel {
+    min-height: 252px;
+    padding: 20px 22px 20px 22px;
+}
+
+.fleet-panel > .panel__heading {
+    font-size: 15px;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+}
+
+.fleet-panel .field__label {
+    font-size: 14px;
 }

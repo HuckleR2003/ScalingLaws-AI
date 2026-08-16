@@ -727,6 +727,12 @@ namespace ScalingLaws.UI
             introFilm.renderMode = VideoRenderMode.CameraNearPlane;
             introFilm.targetCamera = Camera.main;
             introFilm.audioOutputMode = VideoAudioOutputMode.Direct;
+
+            // **Fit the whole frame in, do not fill the screen with it.** The default crops to the
+            // window's aspect, so a 16:9 film in a taller window loses its sides and a wider one
+            // loses its top and bottom. Letterboxing on black nobody can see is free; cutting the
+            // edges off somebody's animation is not.
+            introFilm.aspectRatio = VideoAspectRatio.FitInside;
             introFilm.Prepare();
         }
 

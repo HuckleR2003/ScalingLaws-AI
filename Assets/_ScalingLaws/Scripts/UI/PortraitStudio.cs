@@ -41,10 +41,10 @@ namespace ScalingLaws.UI
         ///
         /// Slightly below the head bone, because the brief is head *and shoulders*.
         /// </summary>
-        public const float EyeFraction = 0.90f;
+        public const float EyeFraction = 1.02f;
 
         /// <summary>How far in front of the face, again as a fraction of head height.</summary>
-        public const float DistanceFraction = 0.72f;
+        public const float DistanceFraction = 0.62f;
 
         /// <summary>Used when a model has no head bone to measure. A 1.8m human.</summary>
         public const float FallbackHeadHeight = 1.6f;
@@ -57,14 +57,11 @@ namespace ScalingLaws.UI
         /// </summary>
         public static readonly Vector3 Somewhere = new(0f, -4000f, 0f);
 
-        /// <summary>
-        /// Where glasses sit on a head bone.
-        ///
-        /// One number per axis, and it is a guess that looks right rather than a measurement: the
-        /// packs put their heads in slightly different places and there is no rig standard for where
-        /// a face is. Shared with the room so the portrait cannot promise a fit the office breaks.
-        /// </summary>
-        public static readonly Vector3 GlassesOffset = new(0f, 0.055f, 0.085f);
+        /// <summary>How far above the head bone the eyes are, at a 1.6m head height.</summary>
+        public const float EyeRise = 0.145f;
+
+        /// <summary>And how far in front of it. Scaled with the model, because the packs differ.</summary>
+        public const float EyeReach = 0.115f;
 
         private GameObject rig;
         private Camera camera;
@@ -317,17 +314,26 @@ namespace ScalingLaws.UI
             // Parented to the head bone so they move with it. The offset is one number per axis and
             // it is a guess that looks right rather than a measurement: the packs put their heads in
             // slightly different places and there is no rig standard for where a face is.
-            glasses = Object.Instantiate(spectacles[GlassesIndex - 1], head);
-            glasses.transform.localPosition = GlassesOffset;
-            glasses.transform.localRotation = Quaternion.identity;
+            // **Measured, not guessed, and the first two guesses were both wrong.** The prefab does
+            // not sit at face height inside itself and it does not sit on its own pivot either: its
+            // mesh is centred on the model's origin, at the floor. So neither parenting it to the
+            // head nor dropping it at the body root puts it anywhere near a face.
+            //
+            // Placed in world space from the head bone instead, along the character's own up and
+            // forward, so it does not depend on which way a particular rig happens to point its head
+            // bone. Then parented keeping that position, which is what makes it follow the head.
+            glasses = Object.Instantiate(spectacles[GlassesIndex - 1]);
 
-            // The offset is in the head bone's own space and the packs differ in scale by nearly
-            // half, so a fixed offset that sits on the nose of one model floats in front of another.
             var headHeight = head.position.y - rig.transform.position.y;
-            if (headHeight > 0.1f)
-            {
-                glasses.transform.localScale *= headHeight / FallbackHeadHeight;
-            }
+            var scale = headHeight > 0.1f ? headHeight / FallbackHeadHeight : 1f;
+
+            glasses.transform.localScale *= scale;
+            glasses.transform.rotation = body.transform.rotation;
+            glasses.transform.position = head.position
+                                         + body.transform.up * (EyeRise * scale)
+                                         + body.transform.forward * (EyeReach * scale);
+
+            glasses.transform.SetParent(head, worldPositionStays: true);
         }
     }
 }

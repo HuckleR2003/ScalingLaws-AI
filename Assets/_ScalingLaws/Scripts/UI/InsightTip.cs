@@ -44,6 +44,9 @@ namespace ScalingLaws.UI
         public static VisualElement Host { get; set; }
 
         private static VisualElement card;
+
+        /// <summary>Which control the open card belongs to. Null when nothing is open.</summary>
+        private static VisualElement owner;
         private static Label cardTitle;
         private static Label cardBody;
 
@@ -65,14 +68,32 @@ namespace ScalingLaws.UI
             target.tooltip = string.Empty;
 
             target.RegisterCallback<MouseEnterEvent>(_ => Show(target, title, body, placement));
-            target.RegisterCallback<MouseLeaveEvent>(_ => Hide());
-            target.RegisterCallback<DetachFromPanelEvent>(_ => Hide());
+            target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
+            target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
         }
 
         public static void Hide()
         {
+            owner = null;
             card?.RemoveFromClassList("insight--in");
             card?.RemoveFromHierarchy();
+        }
+
+        /// <summary>
+        /// Hides only a card this control actually opened.
+        ///
+        /// **`Hide` is static and every attached control used to call it on detach.** A day rolling
+        /// over rebuilds the open page, so every element on it detaches at once, and every one of
+        /// them closed whatever card was open, including a card belonging to a bottom bar slot the
+        /// cursor was still resting on. The tooltip vanished once a day for no reason the player
+        /// could see.
+        /// </summary>
+        private static void HideFor(VisualElement source)
+        {
+            if (owner == source)
+            {
+                Hide();
+            }
         }
 
         private static void Show(VisualElement target, string title, string body, Placement placement)
@@ -89,6 +110,7 @@ namespace ScalingLaws.UI
             cardBody.text = body ?? string.Empty;
             cardBody.style.display = string.IsNullOrEmpty(body) ? DisplayStyle.None : DisplayStyle.Flex;
 
+            owner = target;
             host.Add(card);
             Place(host, target, placement);
 

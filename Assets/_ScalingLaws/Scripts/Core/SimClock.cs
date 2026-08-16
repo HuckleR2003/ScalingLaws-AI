@@ -82,7 +82,15 @@ namespace ScalingLaws.Core
         /// whole days, so this is presentation: it is what the day bar and the clock face read from,
         /// and nothing in the rules is allowed to depend on it.
         /// </summary>
-        public double DayProgress => Speed == SimSpeed.Paused ? 0.0 : Math.Clamp(accumulator, 0.0, 1.0);
+        /// <summary>
+        /// How far into the day the clock has run, 0 to 1.
+        ///
+        /// **Pausing does not rewind it.** It used to return zero while paused, so stopping the game
+        /// snapped the dial and the wall clock to midnight and the day line to empty. Pausing at half
+        /// past four should read half past four; the accumulator is where the day actually is and
+        /// hiding it was a lie about the state of the simulation.
+        /// </summary>
+        public double DayProgress => Math.Clamp(accumulator, 0.0, 1.0);
 
         /// <summary>Jumps the calendar without consuming real time. Used by save loading and tests.</summary>
         public void SetDate(GameDate date)

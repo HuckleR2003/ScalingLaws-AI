@@ -82,6 +82,10 @@ namespace ScalingLaws.UI
         // rebuilding restarts it, which at sixty frames a second is a solid colour.
         private VisualElement regulatoryBanner;
         private int regulatoryDay = -1;
+
+        // Research has its own corner now. Same day-count rebuild rule as the regulatory banner.
+        private VisualElement researchBanner;
+        private int researchBannerDay = -1;
         private VisualElement runFinished;
         private readonly List<MarketingChannel> pickedChannels = new();
         private AudienceSegment pickedAudience = AudienceSegment.Consumer;
@@ -119,17 +123,10 @@ namespace ScalingLaws.UI
                     (int)Math.Ceiling(Math.Max(0.0, left) / perDay));
             }
 
-            if (state.ActiveResearch != null)
-            {
-                var project = state.ActiveResearch;
-                var node = ResearchTree.Get(project.Node);
-                var elapsed = state.Date.DayIndex - project.StartedOn.DayIndex;
-
-                return new WorkInFlight("RESEARCHING", node.DisplayName,
-                    Math.Clamp(project.Progress, 0.0, 1.0),
-                    Math.Max(0, project.DurationDays - elapsed));
-            }
-
+            // **Research is deliberately not here any more.** This banner is the product, and it
+            // swaps itself out for whatever it is told is in flight. With a model on sale and a node
+            // running, the research took the banner and the product disappeared: no users, no mood,
+            // no way in to the management desk, for four months. Research has its own strip below.
             return WorkInFlight.Idle;
         }
 
@@ -326,6 +323,7 @@ namespace ScalingLaws.UI
             // days happen and they take less of the player's evening.
             founder?.Refresh(state.Date.DayIndex);
             RefreshRegulatoryBanner();
+            RefreshResearchBanner();
 
             // They reached the car. This is where the loading screen and the world map go once the
             // map itself exists; until then it opens the board, which is what the icon did before.
@@ -384,8 +382,38 @@ namespace ScalingLaws.UI
             }
             else
             {
+                // **Keep the reading position.** A day rolls over every second and a half at normal
+                // speed, and the page is rebuilt each time, so a player half way down the research
+                // tree was thrown back to the top before they could finish a sentence.
+                var wasAt = OpenScrollOffset();
                 Show(current);
+                RestoreScrollOffset(wasAt);
             }
+        }
+
+        /// <summary>Where the open page is scrolled to, or zero when it does not scroll.</summary>
+        private Vector2 OpenScrollOffset()
+        {
+            var scroller = contentHost?.Q<ScrollView>();
+            return scroller != null ? scroller.scrollOffset : Vector2.zero;
+        }
+
+        /// <summary>
+        /// Puts the reading position back after a rebuild.
+        ///
+        /// Deferred a frame on purpose: the new page has not been laid out yet when this is called,
+        /// so its scroller has no range and setting an offset against a zero-height content does
+        /// nothing at all.
+        /// </summary>
+        private void RestoreScrollOffset(Vector2 offset)
+        {
+            if (offset == Vector2.zero)
+            {
+                return;
+            }
+
+            var scroller = contentHost?.Q<ScrollView>();
+            scroller?.schedule.Execute(() => scroller.scrollOffset = offset).ExecuteLater(1);
         }
 
         private void BuildTree()
@@ -2463,6 +2491,10 @@ namespace ScalingLaws.UI
 
             var rental = new VisualElement();
             rental.AddToClassList("panel");
+
+            // The two panels at the top of FLEET are the ones a player reads while deciding what to
+            // spend, and they were the smallest things on the screen. Forty percent taller.
+            rental.AddToClassList("fleet-panel");
             var rentalHeading = new Label("RENTED CAPACITY");
             rentalHeading.AddToClassList("panel__heading");
             rental.Add(rentalHeading);
@@ -2492,6 +2524,7 @@ namespace ScalingLaws.UI
 
             var ladder = new VisualElement();
             ladder.AddToClassList("panel");
+            ladder.AddToClassList("fleet-panel");
             var ladderHeading = new Label("COMPUTE TIERS");
             ladderHeading.AddToClassList("panel__heading");
             ladder.Add(ladderHeading);
@@ -3382,6 +3415,72 @@ namespace ScalingLaws.UI
             shellRoot.Add(regulatoryBanner);
         }
 
+        /// <summary>
+        /// A node in flight, in its own strip under the model banner.
+        ///
+        /// **Blue, and beside the product rather than instead of it.** The model banner swaps itself
+        /// for whatever work is running, so starting a four month research programme while a model
+        /// was on sale hid the product completely: no users, no mood, no way through to the
+        /// management desk until the node finished. Two different things were sharing one corner.
+        ///
+        /// Rebuilt on the day, like the regulatory banner and for the same reason.
+        /// </summary>
+        private void RefreshResearchBanner()
+        {
+            var project = state.ActiveResearch;
+            var showing = project != null && current == Screen.Site;
+
+            if (!showing)
+            {
+                researchBanner?.RemoveFromHierarchy();
+                researchBanner = null;
+                researchBannerDay = -1;
+                return;
+            }
+
+            if (researchBanner != null && researchBannerDay == project.DaysCompleted)
+            {
+                return;
+            }
+
+            researchBannerDay = project.DaysCompleted;
+            researchBanner?.RemoveFromHierarchy();
+
+            var node = ResearchTree.Get(project.Node);
+
+            researchBanner = new Button(() => Show(Screen.Research));
+            researchBanner.AddToClassList("rb");
+
+            var kicker = new Label(project.IsWaitingForCompute ? "RESEARCH WAITING" : "RESEARCHING");
+            kicker.AddToClassList("rb__kicker");
+            researchBanner.Add(kicker);
+
+            var name = new Label(node.DisplayName);
+            name.AddToClassList("rb__name");
+            researchBanner.Add(name);
+
+            var track = new VisualElement();
+            track.AddToClassList("rb__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("rb__fill");
+            fill.style.width = Length.Percent((float)(project.Progress * 100.0));
+            track.Add(fill);
+
+            researchBanner.Add(track);
+
+            var left = Math.Max(0, project.DurationDays - project.DaysCompleted);
+            var days = new Label(project.IsWaitingForCompute
+                ? $"{UiFormat.Number(project.PetaflopDaysRemaining, 0)} PF-days owed"
+                : (left == 1 ? "1 day left" : $"{left:N0} days left")
+                  + $"   ({project.Progress:P0})");
+
+            days.AddToClassList("rb__days");
+            researchBanner.Add(days);
+
+            shellRoot.Add(researchBanner);
+        }
+
         private VisualElement BuildFeedScreen()
         {
             var page = NewPage("INTELLIGENCE",
@@ -3540,7 +3639,11 @@ namespace ScalingLaws.UI
             // with the screen because the screen is rebuilt on every tab change anyway.
             var bubbleHost = new VisualElement();
             stage.Add(bubbleHost);
-            bubbles = new ResearchBubbles(bubbleHost, () => simulation.State.ResearchPointsToday);
+            // Zero while paused. The points figure is yesterday's and does not change, so the
+            // bubbles went on rising out of a desk nobody was sitting at, which reads as the game
+            // still running.
+            bubbles = new ResearchBubbles(bubbleHost,
+                () => clock.Speed == SimSpeed.Paused ? 0.0 : simulation.State.ResearchPointsToday);
 
             var view = Resources.Load<RenderTexture>("OfficeView");
             if (view != null)
