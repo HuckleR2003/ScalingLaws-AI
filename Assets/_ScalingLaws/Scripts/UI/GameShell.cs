@@ -93,6 +93,18 @@ namespace ScalingLaws.UI
         /// <summary>The who-works-here card, while it is up.</summary>
         private VisualElement rosterCard;
 
+        /// <summary>The phone. Rings once on a new company and comes back for story beats.</summary>
+        private PhonePanel phone;
+
+        /// <summary>Emil talking over the game while the tour runs.</summary>
+        private GuideOverlay guide;
+
+        /// <summary>The quiet strip under the corner banners with the next task on it.</summary>
+        private TaskBanner tasks;
+
+        /// <summary>The opening drive-in, while it is running. Null afterwards.</summary>
+        private ArrivalSequence arrival;
+
         /// <summary>Days done on the programme the banner is drawn for. Stops it rebuilding per frame.</summary>
         private int upgradeBannerDays = -1;
 
@@ -375,6 +387,8 @@ namespace ScalingLaws.UI
             RefreshResearchBanner();
             RefreshApproachBanner();
             RefreshUpgradeBanner();
+            tasks.Refresh();
+            RingTheCousinIfThisIsDayOne();
 
             // They reached the car. This is where the loading screen and the world map go once the
             // map itself exists; until then it opens the board, which is what the icon did before.
@@ -501,6 +515,31 @@ namespace ScalingLaws.UI
             // than into the garage it left three years ago.
             portals = new HiringPortals(() => state, simulation, () => Show(Screen.Hiring),
                 () => Show(Screen.Mail));
+
+            phone = new PhonePanel(root, AnswerTheCousin);
+
+            // The opening: dark room, headlights, the car reversing in, then the lamps one by one.
+            // Only on a company that has never been played, and only when the office scene is
+            // actually there — a missing prefab means a lit room and no sequence, never a hang.
+            if (state.Guide.Stage == GuideStage.Unseen)
+            {
+                var room = GameObject.Find(OfficeStageRoot);
+
+                if (room != null)
+                {
+                    arrival = gameObject.AddComponent<ArrivalSequence>();
+
+                    if (!arrival.Prepare(room.transform, founder?.Model))
+                    {
+                        Destroy(arrival);
+                        arrival = null;
+                    }
+                }
+            }
+
+            guide = new GuideOverlay(root, () => state.Guide, GoToGuideTarget, RefreshChrome);
+
+            tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
 
             modelHub = new ModelDashboard(() => simulation, () => Show(Screen.Create),
                 () => Show(Screen.Upgrade), () => Show(Screen.Release));
@@ -1001,6 +1040,11 @@ namespace ScalingLaws.UI
                     host.Add(BuildFeedScreen());
                     break;
             }
+
+            // The tour is drawn last, over whatever the new screen turned out to be. Its highlight
+            // is a query against the live tree, so it has to run after the page exists — refreshing
+            // it before the rebuild rings elements that are about to be thrown away.
+            guide?.Refresh();
         }
 
         /// <summary>
@@ -2336,6 +2380,67 @@ namespace ScalingLaws.UI
             1 => "ub--pink",
             _ => "ub--violet"
         };
+
+        /// <summary>
+        /// The phone rings once, on the first frame a brand new company is looked at.
+        ///
+        /// **Only on a company that has done nothing.** A save loaded mid-campaign must never be
+        /// interrupted by a tutorial it already answered, and the stage on the guide is what says
+        /// so — not a flag on the session, which would forget across a reload.
+        /// </summary>
+        private void RingTheCousinIfThisIsDayOne()
+        {
+            if (state.Guide.Stage != GuideStage.Unseen || phone.IsOpen)
+            {
+                return;
+            }
+
+            // The phone waits for the car. Ringing over a dark garage would throw away the one
+            // piece of theatre the opening has.
+            if (arrival != null && arrival.IsPlaying)
+            {
+                return;
+            }
+
+            state.Guide.Stage = GuideStage.Talking;
+            state.Guide.StartingCashUsd = state.CashUsd;
+
+            phone.Ring();
+        }
+
+        /// <summary>
+        /// What happens when the player answers him.
+        ///
+        /// Either way the task strip takes over from the phone, because the three opening tasks are
+        /// the shape of the first hour whether or not somebody wanted the tour.
+        /// </summary>
+        private void AnswerTheCousin(bool accepted)
+        {
+            state.Guide.Stage = accepted ? GuideStage.Touring : GuideStage.Finished;
+            state.Guide.Step = 0;
+
+            RefreshChrome();
+
+            if (accepted)
+            {
+                guide.Refresh();
+            }
+        }
+
+        /// <summary>Opens the screen a guide step is about.</summary>
+        private void GoToGuideTarget(GuideTarget target)
+        {
+            switch (target)
+            {
+                case GuideTarget.Site: Show(Screen.Site); break;
+                case GuideTarget.Compute: Show(Screen.Fleet); break;
+                case GuideTarget.Model: Show(Screen.Model); break;
+                case GuideTarget.Create: Show(Screen.Create); break;
+                case GuideTarget.Research: Show(Screen.Research); break;
+                case GuideTarget.Team: Show(Screen.Team); break;
+                case GuideTarget.Release: Show(Screen.Release); break;
+            }
+        }
 
         /// <summary>
         /// The green strip while somebody is being contacted.

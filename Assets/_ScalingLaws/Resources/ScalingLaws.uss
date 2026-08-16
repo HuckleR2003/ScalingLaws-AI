@@ -9746,3 +9746,524 @@
     background-color: rgba(150, 70, 70, 0.22);
     flex-shrink: 0;
 }
+
+/* ============================================================================================
+   THE PHONE
+
+   Bottom right, large, and the only thing on screen for the seven seconds it takes to wake up.
+   Everything here transitions rather than snapping, because the whole point of the sequence is
+   that the player is watching somebody else's phone unlock.
+   ============================================================================================ */
+
+.phone {
+    position: absolute;
+    right: 46px;
+    bottom: 40px;
+    width: 330px;
+    height: 660px;
+    border-radius: 38px;
+    border-width: 2px;
+    border-color: rgb(38, 40, 46);
+    background-color: rgb(16, 17, 20);
+    padding: 18px 14px;
+    transition-property: opacity, translate, scale;
+    transition-duration: 0.55s;
+    opacity: 1;
+    translate: 0 0;
+    scale: 1 1;
+}
+
+/* When the art is present it draws the body and the flat colour is only a backstop. */
+.phone--art {
+    -unity-background-scale-mode: scale-to-fit;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.phone--arriving {
+    opacity: 0;
+    translate: 0 70px;
+    scale: 0.9 0.9;
+}
+
+/* Rolling up into the corner. It shrinks towards the top right and hands over at the end of the
+   move, so the strip that appears reads as the phone rather than as a replacement for it. */
+.phone--collapsing {
+    opacity: 0;
+    translate: 210px -540px;
+    scale: 0.14 0.06;
+    transition-duration: 0.52s;
+}
+
+.phone__screen {
+    flex-grow: 1;
+    margin: 26px 8px;
+    border-radius: 22px;
+    background-color: rgb(8, 9, 11);
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition-property: opacity, background-color;
+    transition-duration: 0.7s;
+}
+
+.phone__screen--on {
+    opacity: 1;
+    background-color: rgb(14, 16, 22);
+}
+
+/* ---- the app opening itself ------------------------------------------------------------------ */
+
+.dinapp {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.dinapp__mark {
+    width: 92px;
+    height: 92px;
+    border-radius: 20px;
+    background-color: rgb(38, 104, 224);
+    align-items: center;
+    justify-content: center;
+    transition-property: border-radius, scale, background-color;
+    transition-duration: 0.8s;
+}
+
+/* The square opening out. A radius and a scale is the cheapest convincing morph UI Toolkit has,
+   and it needs no art nobody has drawn. */
+.dinapp__mark--morphing {
+    border-radius: 46px;
+    scale: 0.42 0.42;
+    background-color: rgb(96, 158, 255);
+}
+
+.dinapp__name {
+    font-size: 30px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(240, 246, 255);
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+
+.dinapp__name--gone {
+    opacity: 0;
+}
+
+.dinapp__dots {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.dinapp__dot {
+    width: 16px;
+    height: 16px;
+    margin: 0 7px;
+    border-radius: 8px;
+    background-color: rgb(46, 74, 128);
+    transition-property: background-color, scale;
+    transition-duration: 0.26s;
+}
+
+.dinapp__dot--lit {
+    background-color: rgb(120, 176, 255);
+    scale: 1.35 1.35;
+}
+
+.dinapp__welcome {
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 255);
+    margin-bottom: 22px;
+}
+
+.dinapp__menu {
+    width: 88%;
+}
+
+.dinapp__row {
+    flex-direction: row;
+    align-items: center;
+    height: 46px;
+    padding: 0 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition-property: background-color, scale;
+    transition-duration: 0.25s;
+}
+
+/* Messages lights up on its own a second in, as if somebody picked it. */
+.dinapp__row--picked {
+    background-color: rgb(38, 104, 224);
+    scale: 1.04 1.04;
+}
+
+.dinapp__rownumber {
+    width: 22px;
+    font-size: 13px;
+    color: rgb(126, 142, 170);
+}
+
+.dinapp__rowlabel {
+    font-size: 15px;
+    color: rgb(226, 234, 248);
+}
+
+.dinapp__row--picked .dinapp__rowlabel,
+.dinapp__row--picked .dinapp__rownumber {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+}
+
+/* ---- the conversation --------------------------------------------------------------------------- */
+
+.chat__header {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    padding: 12px 14px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.chat__who {
+    margin-left: 11px;
+}
+
+.chat__handle {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 255);
+}
+
+.chat__status {
+    font-size: 10px;
+    color: rgb(110, 200, 140);
+    margin-top: 1px;
+}
+
+.chat__list {
+    flex-grow: 1;
+    width: 100%;
+    padding: 10px 12px;
+}
+
+.chat__bubble {
+    max-width: 82%;
+    padding: 9px 13px;
+    margin-bottom: 8px;
+    border-radius: 16px;
+    transition-property: opacity, translate;
+    transition-duration: 0.28s;
+    opacity: 1;
+    translate: 0 0;
+}
+
+.chat__bubble--arriving {
+    opacity: 0;
+    translate: 0 12px;
+}
+
+.chat__bubble--them {
+    align-self: flex-start;
+    background-color: rgb(38, 42, 52);
+    border-bottom-left-radius: 5px;
+}
+
+.chat__bubble--me {
+    align-self: flex-end;
+    background-color: rgb(38, 104, 224);
+    border-bottom-right-radius: 5px;
+}
+
+.chat__text {
+    font-size: 13px;
+    color: rgb(236, 241, 250);
+    white-space: normal;
+}
+
+.chat__typing {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+}
+
+.chat__typingdot {
+    width: 7px;
+    height: 7px;
+    margin: 0 3px;
+    border-radius: 4px;
+    background-color: rgb(140, 152, 176);
+    transition-property: translate, background-color;
+    transition-duration: 0.28s;
+}
+
+.chat__typingdot--up {
+    translate: 0 -5px;
+    background-color: rgb(200, 214, 240);
+}
+
+.chat__choices {
+    width: 100%;
+    padding: 10px 12px 14px 12px;
+    flex-shrink: 0;
+}
+
+.chat__choice {
+    width: 100%;
+    min-height: 46px;
+    margin-bottom: 8px;
+    padding: 9px 14px;
+    font-size: 12px;
+    white-space: normal;
+    border-width: 1px;
+    border-color: rgba(120, 176, 255, 0.5);
+    border-radius: 14px;
+    color: rgb(214, 230, 255);
+    background-color: rgba(38, 104, 224, 0.16);
+}
+
+.chat__choice:hover {
+    background-color: rgba(38, 104, 224, 0.4);
+}
+
+.chat__choice--yes {
+    border-color: rgb(120, 176, 255);
+}
+
+/* ---- avatars ------------------------------------------------------------------------------------- */
+
+.avatar {
+    border-radius: 999px;
+    border-width: 2px;
+    border-color: rgb(96, 158, 255);
+    background-color: rgb(34, 44, 66);
+    align-items: center;
+    justify-content: center;
+    -unity-background-scale-mode: scale-and-crop;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.avatar__initial {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(190, 214, 255);
+}
+
+/* ============================================================================================
+   THE GUIDE
+
+   A strip along the bottom with his face on it. The screens behind stay live and clickable,
+   because a tutorial that shows its own mock-ups teaches the mock-ups.
+   ============================================================================================ */
+
+.guide {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 96px;
+    align-items: center;
+    transition-property: opacity, translate;
+    transition-duration: 0.32s;
+    opacity: 1;
+    translate: 0 0;
+}
+
+.guide--arriving {
+    opacity: 0;
+    translate: 0 26px;
+}
+
+.guide__speaker {
+    flex-direction: row;
+    align-items: flex-end;
+    margin-bottom: -14px;
+    margin-left: -420px;
+}
+
+.guide__portrait {
+    width: 96px;
+    height: 96px;
+    border-width: 3px;
+    border-color: rgb(120, 176, 255);
+}
+
+.guide__names {
+    flex-direction: row;
+    align-items: baseline;
+    margin-left: 12px;
+    margin-bottom: 20px;
+}
+
+.guide__name {
+    font-size: 30px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    letter-spacing: 1px;
+}
+
+.guide__relation {
+    font-size: 13px;
+    color: rgb(168, 196, 236);
+    margin-left: 8px;
+}
+
+/* The line he is saying. Twenty-five per cent black behind it, as asked, and fully opaque text —
+   which is the combination that stays readable over both the office and a white panel. */
+.guide__bar {
+    width: 62%;
+    min-width: 620px;
+    padding: 18px 24px;
+    border-radius: 10px;
+    border-left-width: 4px;
+    border-left-color: rgb(120, 176, 255);
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+.guide__line {
+    font-size: 16px;
+    color: rgb(255, 255, 255);
+    white-space: normal;
+}
+
+.guide__buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.guide__next {
+    height: 38px;
+    padding: 0 26px;
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 4px;
+    color: rgb(14, 20, 30);
+    background-color: rgb(120, 176, 255);
+}
+
+.guide__next--go {
+    background-color: rgb(226, 190, 44);
+}
+
+.guide__skip {
+    height: 38px;
+    padding: 0 18px;
+    margin-left: 8px;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    border-width: 0;
+    border-radius: 4px;
+    color: rgb(170, 180, 198);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* What the current step is pointing at. Deliberately loud: it is on screen for one step and it
+   has to be findable without reading the sentence twice. */
+.guide-lit {
+    border-width: 2px;
+    border-color: rgb(226, 190, 44);
+    background-color: rgba(226, 190, 44, 0.14);
+}
+
+/* ============================================================================================
+   THE TASK STRIP
+
+   What the phone rolls up into. Under the four corner banners, and the quietest thing there.
+   ============================================================================================ */
+
+.taskbar {
+    position: absolute;
+    right: 22px;
+    top: 580px;
+    width: 268px;
+    padding: 10px 12px 11px 12px;
+    border-radius: 6px;
+    border-left-width: 3px;
+    border-left-color: rgba(226, 190, 44, 0.75);
+    background-color: rgba(10, 12, 18, 0.25);
+    transition-property: opacity, scale;
+    transition-duration: 0.34s;
+    opacity: 1;
+    scale: 1 1;
+}
+
+.taskbar--arriving {
+    opacity: 0;
+    scale: 0.7 0.5;
+}
+
+.taskbar__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+}
+
+.taskbar__kicker {
+    font-size: 9px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+}
+
+.taskbar__close {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    font-size: 11px;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(160, 170, 190);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.taskbar__row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.taskbar__box {
+    width: 15px;
+    height: 15px;
+    margin-right: 9px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.taskbar__box--ticked {
+    border-color: rgb(110, 210, 140);
+    background-color: rgb(110, 210, 140);
+}
+
+.taskbar__tick {
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(12, 26, 16);
+}
+
+/* Fully opaque against a body that is not, which is what keeps it readable over the office. */
+.taskbar__text {
+    font-size: 12px;
+    color: rgb(255, 255, 255);
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+.taskbar__row--done .taskbar__text {
+    color: rgb(140, 170, 150);
+}

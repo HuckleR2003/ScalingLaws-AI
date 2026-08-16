@@ -377,7 +377,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 34;
+        public const int CurrentVersion = 35;
 
         public int version = CurrentVersion;
 
@@ -610,6 +610,20 @@ namespace ScalingLaws.Persistence
 
         /// <summary>Hiring's own random stream, kept apart from the company's.</summary>
         public uint hiringRandomState;
+
+        // ---- the guide, added in v35 --------------------------------------------------------
+
+        /// <summary>GuideStage. Zero means the phone has never rung for this company.</summary>
+        public int guideStage;
+
+        /// <summary>How far through Emil's tour they got.</summary>
+        public int guideStep;
+
+        /// <summary>What the company was worth when the tutorial started.</summary>
+        public long guideStartingCashUsd;
+
+        /// <summary>True once the task strip was closed for good.</summary>
+        public bool guideBannerDismissed;
 
         public bool actionOpen;
 

@@ -291,6 +291,14 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public HiringDesk Hiring { get; } = new();
 
+        /// <summary>
+        /// How far the player got with Emil, and whether the opening tasks are done.
+        ///
+        /// On the state because it has to survive a save: a tutorial that restarts every time the
+        /// game is loaded is worse than one that never ran.
+        /// </summary>
+        public GuideProgress Guide { get; } = new();
+
         /// <summary>How the company charges, how generous it is, and what it spends being noticed.</summary>
         public MonetizationPolicy Monetization { get; } = new();
 

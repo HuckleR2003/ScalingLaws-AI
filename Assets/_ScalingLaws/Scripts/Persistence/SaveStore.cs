@@ -213,6 +213,11 @@ namespace ScalingLaws.Persistence
             data.nextCandidateId = state.Hiring.NextCandidateId;
             data.hiringRandomState = state.Hiring.Random.State;
 
+            data.guideStage = (int)state.Guide.Stage;
+            data.guideStep = state.Guide.Step;
+            data.guideStartingCashUsd = state.Guide.StartingCashUsd;
+            data.guideBannerDismissed = state.Guide.BannerDismissed;
+
             foreach (var approach in state.Hiring.Approaches)
             {
                 var candidate = approach.Candidate;
@@ -752,6 +757,17 @@ namespace ScalingLaws.Persistence
 
             state.Hiring.Restore(approaches, safe.remotePartnership, safe.nextCandidateId,
                 safe.hiringRandomState);
+
+            // An unknown stage is treated as never seen rather than thrown away, so a file from a
+            // build with one more stage in the enum still opens — and the worst case is that the
+            // phone rings once more, which is recoverable in a way an exception is not.
+            state.Guide.Restore(
+                Enum.IsDefined(typeof(GuideStage), safe.guideStage)
+                    ? (GuideStage)safe.guideStage
+                    : GuideStage.Unseen,
+                safe.guideStep,
+                safe.guideStartingCashUsd,
+                safe.guideBannerDismissed);
 
             foreach (var incident in safe.incidents)
             {

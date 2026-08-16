@@ -135,6 +135,7 @@ namespace ScalingLaws.Persistence
                     31 => UpgradeV31ToV32(current),
                     32 => UpgradeV32ToV33(current),
                     33 => UpgradeV33ToV34(current),
+                    34 => UpgradeV34ToV35(current),
                     _ => current
                 };
             }
@@ -1027,6 +1028,37 @@ namespace ScalingLaws.Persistence
         /// rung what it is meant to be: where a brand new company starts, not where an old one is
         /// sent back to.
         /// </remarks>
+        /// <summary>
+        /// v34 to v35: the phone, and the three opening tasks.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// **Every existing company is marked as having finished the tutorial.** They have been
+        /// playing for however long without one, and having a cousin ring up to explain what a HUD
+        /// is to somebody with four models on sale would be worse than useless. The task strip is
+        /// left dismissed for the same reason: "create your first model" over a company that has
+        /// shipped three is the game not paying attention.
+        /// </remarks>
+        public static SaveData UpgradeV34ToV35(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 35;
+            data.guideStage = (int)GuideStage.Finished;
+            data.guideStep = 0;
+            data.guideStartingCashUsd = 0L;
+            data.guideBannerDismissed = true;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v34 to v35: the guide did not exist in this version, so the company is recorded "
+                + "as having already been through it and the task strip starts closed.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV33ToV34(SaveData data)
         {
             if (data == null)

@@ -36,6 +36,14 @@ namespace ScalingLaws.UI
             this.state = state;
         }
 
+        /// <summary>
+        /// The spawned figure, or null before Spawn has run.
+        ///
+        /// Exposed so the opening sequence can hide them until they get out of the car. Nothing
+        /// else should be moving this: the routine owns where they walk.
+        /// </summary>
+        public Transform Model { get; private set; }
+
         /// <summary>What the founder is doing right now. Idle before anything has spawned.</summary>
         public FounderTask Task { get; private set; } = FounderTask.Working;
 
@@ -90,6 +98,7 @@ namespace ScalingLaws.UI
 
             var spawned = UnityEngine.Object.Instantiate(prefab, group.transform);
             spawned.name = "Founder";
+            Model = spawned.transform;
 
             actor = spawned.GetComponent<OfficeActor>();
             if (actor == null)
