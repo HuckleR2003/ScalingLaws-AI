@@ -8863,7 +8863,10 @@
    opens in. */
 
 .rmap {
-    height: 400px;
+    /* 400 to 200. Four eras at 400px each is sixteen hundred pixels of tree before the funding
+       panel, and the player scrolled past three eras they cannot touch yet to reach the one they
+       can. Half the height, and the zoom is there for anyone who wants a closer look. */
+    height: 200px;
     margin-bottom: 8px;
     border-radius: 5px;
     border-width: 1px;
