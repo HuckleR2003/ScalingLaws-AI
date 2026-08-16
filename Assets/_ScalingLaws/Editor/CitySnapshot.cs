@@ -44,12 +44,12 @@ namespace ScalingLaws.Editor
             // Straight down, orthographic, framed on the whole terrain. This is the frame that
             // shows whether the districts are where the catalog says they are.
             camera.orthographic = true;
-            camera.orthographicSize = DistrictCatalog.TerrainSize / 2f;
+            camera.orthographicSize = CityLayout.Size / 2f;
             camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             camera.transform.position = new Vector3(
-                DistrictCatalog.TerrainSize / 2f,
-                DistrictCatalog.TerrainHeight * 3f,
-                DistrictCatalog.TerrainSize / 2f);
+                CityLayout.Size / 2f,
+                CityLayout.Height * 3f,
+                CityLayout.Size / 2f);
 
             Shoot(camera, "city_plan.png");
         }

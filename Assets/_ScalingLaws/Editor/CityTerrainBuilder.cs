@@ -1,61 +1,72 @@
-using System;
+using System.Collections.Generic;
 using System.IO;
 using ScalingLaws.Data;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace ScalingLaws.Editor
 {
     /// <summary>
-    /// The land Bayview sits on. Stage one of Docs/CITY_MAP_PLAN.md.
+    /// The land Bayview sits on: hills, coast, bay, river, and a levelled pad under every district.
     ///
-    /// **Terrain before buildings, and districts flattened before either.** Every building generator
-    /// in this project is a box builder that assumes a flat floor, so ground that slopes under a
-    /// district is ground that will float or sink a building later. The hills are scenery between
-    /// the districts; the districts themselves are levelled pads.
+    /// **Second version, drawn against the author's reference rather than invented.** The first was
+    /// eight circles and two straight channels, and the render said so. What changed:
     ///
-    /// Generated rather than sculpted for the same reason the rooms are: the layout lives in
-    /// <see cref="DistrictCatalog"/>, one description of the city that the terrain, the map screen
-    /// and the tests all read. Moving a district is editing one line, not redrawing a heightmap.
+    /// Water is a spline carrying a half-width and a depth at every control point, so the bay opens
+    /// into a basin at its mouth and narrows where the bridges cross it, and the river thins as it
+    /// climbs into the hills. Straight segments of constant width are what made the first pass read
+    /// as two canals.
     ///
-    /// Deterministic from a fixed seed, so two runs of this produce the same coastline and a
-    /// screenshot from last week still matches what is on disk.
+    /// The coast is pushed about by three octaves of noise before anything is measured against it,
+    /// so the shoreline has inlets and headlands rather than being an offset curve.
+    ///
+    /// Roads are cut into the heightmap as shallow shelves rather than laid on top, which is what
+    /// stops a highway floating over a valley.
+    ///
+    /// Deterministic from a fixed seed: two runs produce the same coastline.
     /// </summary>
     public static class CityTerrainBuilder
     {
         private const string ScenesFolder = "Assets/_ScalingLaws/Scenes";
         private const string DataFolder = "Assets/_ScalingLaws/Terrain";
 
-        private const string ScenePath = ScenesFolder + "/City.unity";
+        public const string ScenePath = ScenesFolder + "/City.unity";
         private const string TerrainDataPath = DataFolder + "/BayviewTerrain.asset";
 
-        /// <summary>Fixed, so the coastline is the same coastline every time this is run.</summary>
         private const int Seed = 20260816;
 
-        /// <summary>Metres of flat ground kept around a district before the land starts to rise.</summary>
-        private const float PadMargin = 60f;
+        /// <summary>Flat ground kept past a district's radius before the land starts to move.</summary>
+        private const float PadMargin = 55f;
 
-        /// <summary>How far past the pad the ground blends back to its natural height.</summary>
-        private const float BlendWidth = 220f;
+        /// <summary>How far past the pad the ground eases back to whatever it would have been.</summary>
+        private const float BlendWidth = 190f;
 
-        [MenuItem("Scaling Laws/Build the city terrain")]
+        /// <summary>Metres of shoulder either side of a road that is levelled with it.</summary>
+        private const float RoadShoulder = 9f;
+
+        /// <summary>How far past the shoulder a road's cutting blends out.</summary>
+        private const float RoadBlend = 34f;
+
+        [MenuItem("Scaling Laws/Build the city")]
         public static void Build()
         {
             EnsureFolder(ScenesFolder);
             EnsureFolder(DataFolder);
 
+            centrelines = null;
+
             var data = BuildTerrainData();
             AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
 
-            BuildScene(data);
+            Debug.Log($"[Scaling Laws] Bayview terrain: {CityLayout.Size}m square, "
+                + $"{CityLayout.Districts.Count} districts, {CityLayout.Roads.Count} roads, "
+                + $"{CityLayout.Bridges.Count} bridges.");
 
-            Debug.Log($"[Scaling Laws] Bayview built: {DistrictCatalog.TerrainSize}m square, "
-                + $"{DistrictCatalog.HeightmapResolution} heightmap, "
-                + $"{DistrictCatalog.All.Count} districts. Scene at {ScenePath}.");
+            CityDressingBuilder.BuildScene(data, ScenePath, HeightAt);
         }
 
-        // ---- the land ---------------------------------------------------------------------------
+        // ---- the heightmap -------------------------------------------------------------------------
 
         private static TerrainData BuildTerrainData()
         {
@@ -67,139 +78,95 @@ namespace ScalingLaws.Editor
                 AssetDatabase.CreateAsset(data, TerrainDataPath);
             }
 
-            data.heightmapResolution = DistrictCatalog.HeightmapResolution;
-
-            data.size = new Vector3(
-                DistrictCatalog.TerrainSize,
-                DistrictCatalog.TerrainHeight,
-                DistrictCatalog.TerrainSize);
-
-            // 512 rather than the default 1024: grass belongs in the parks, and a detail map that
-            // covers the whole city is a detail map mostly describing rooftops.
+            data.heightmapResolution = CityLayout.HeightmapResolution;
+            data.size = new Vector3(CityLayout.Size, CityLayout.Height, CityLayout.Size);
             data.SetDetailResolution(512, 16);
 
             var resolution = data.heightmapResolution;
             var heights = new float[resolution, resolution];
 
+            // Sampled once and reused by the splatmap: the height is the expensive part, and the two
+            // passes have to agree about where the water is or the sand lands in the sea.
+            var metres = new float[resolution, resolution];
+
             for (var y = 0; y < resolution; y++)
             {
                 for (var x = 0; x < resolution; x++)
                 {
-                    // Heightmap is indexed [z, x], which is the one thing about Unity terrain that
-                    // catches everybody once.
-                    var worldX = x / (float)(resolution - 1) * DistrictCatalog.TerrainSize;
-                    var worldZ = y / (float)(resolution - 1) * DistrictCatalog.TerrainSize;
+                    var worldX = x / (float)(resolution - 1) * CityLayout.Size;
+                    var worldZ = y / (float)(resolution - 1) * CityLayout.Size;
 
-                    heights[y, x] = HeightAt(worldX, worldZ) / DistrictCatalog.TerrainHeight;
+                    var height = HeightAt(worldX, worldZ);
+                    metres[y, x] = height;
+
+                    // Heightmap is indexed [z, x]. The one thing about Unity terrain that catches
+                    // everybody exactly once.
+                    heights[y, x] = Mathf.Clamp01(height / CityLayout.Height);
                 }
             }
 
             data.SetHeights(0, 0, heights);
-
-            // Without a layer the terrain renders pure white and the plan shot is unreadable. One
-            // flat ground colour is enough for stage one; the real texturing belongs with the roads
-            // in stage three, when there is something to texture around.
-            data.terrainLayers = new[] { GroundLayer() };
+            data.terrainLayers = Layers();
+            PaintSplat(data, metres);
 
             EditorUtility.SetDirty(data);
             return data;
         }
 
         /// <summary>
-        /// The natural land, the districts flattened on it, and the water cut through last.
+        /// The land, in the order the ground was actually made.
         ///
-        /// **The order was the other way round and the first render showed why it was wrong.** With
-        /// flattening last, a pad always won — including over the bay — so Greendale and Downtown
-        /// filled in the channel that is supposed to separate them and the map had a puddle in the
-        /// corner instead of a harbour.
-        ///
-        /// Water wins now. A district that ends up wet is a layout mistake to be fixed by moving
-        /// the district, not by quietly filling the sea in underneath it, and the plan render is
-        /// where that shows up.
+        /// Hills, then the pads levelled into them, then the roads cut across, and the water carved
+        /// through everything last. **Water wins**, because a district that ends up wet is a layout
+        /// mistake to fix by moving the district, not by quietly filling in the sea underneath it.
         /// </summary>
-        private static float HeightAt(float x, float z)
+        public static float HeightAt(float x, float z)
         {
             var height = NaturalHeight(x, z);
             height = FlattenDistricts(x, z, height);
+            height = CutRoads(x, z, height);
             return CarveWater(x, z, height);
         }
 
         /// <summary>
-        /// Hills to the east and north, a shallow shelf in the middle where the city goes.
+        /// Hills around the north and east, a coastal shelf falling away south and west.
         ///
-        /// Three octaves of value noise rather than Perlin, because Mathf.PerlinNoise is not
-        /// guaranteed identical across Unity versions and this has to regenerate the same land in
-        /// two years' time.
+        /// The ridge is a bent radial rather than a plane, so the high ground curls around the city
+        /// the way it does on the reference instead of running off one corner. Value noise from a
+        /// fixed hash rather than Mathf.PerlinNoise, which is not promised identical across Unity
+        /// versions — terrain that changes shape on an upgrade is terrain whose districts no longer
+        /// sit on their pads.
         /// </summary>
         private static float NaturalHeight(float x, float z)
         {
-            var u = x / DistrictCatalog.TerrainSize;
-            var v = z / DistrictCatalog.TerrainSize;
+            var u = x / CityLayout.Size;
+            var v = z / CityLayout.Size;
 
-            // The ridge: high in the north east, falling away towards the south west where the sea
-            // and the flat land are. This is what gives the map the shape of the reference.
-            var ridge = Mathf.Clamp01((u * 0.62f + v * 0.55f) - 0.42f);
-            var basement = DistrictCatalog.SeaLevel + 8f + ridge * ridge * 300f;
+            var arc = Mathf.Sqrt((u - 0.06f) * (u - 0.06f) * 0.72f + (v - 0.10f) * (v - 0.10f));
+            var ridge = Mathf.Clamp01((arc - 0.46f) / 0.58f);
 
-            var detail =
-                Noise(u * 3.1f, v * 3.1f) * 34f
-                + Noise(u * 7.7f, v * 7.7f) * 14f
-                + Noise(u * 17.3f, v * 17.3f) * 5f;
+            var basement = CityLayout.SeaLevel + 10f + ridge * ridge * 330f;
 
-            return basement + detail;
+            var rolling =
+                Noise(u * 2.3f + 11.7f, v * 2.3f + 4.1f) * 42f
+                + Noise(u * 5.9f, v * 5.9f) * 17f
+                + Noise(u * 13.1f, v * 13.1f) * 6f;
+
+            // Foothills only bite where the ridge already is, so the coastal shelf stays flat.
+            return basement + rolling * (0.35f + 0.65f * ridge);
         }
 
         /// <summary>
-        /// The bay from the north west and the river down from the eastern hills.
+        /// Levels each district and eases the ground back into the hills around it.
         ///
-        /// Both are cut as a distance to a line rather than painted, so the banks are smooth and the
-        /// depth falls away from the shore instead of stepping down a cliff.
-        /// </summary>
-        private static float CarveWater(float x, float z, float height)
-        {
-            // The bay: a broad channel running from the north-west corner into the middle of the
-            // map, which is what separates Greendale from Downtown and is why there are bridges.
-            // A channel with banks rather than a basin: the whole point of it is that bridges
-            // cross it, and nothing bridges four hundred metres of open water.
-            var bay = DistanceToSegment(x, z, 60f, 2048f, 1020f, 1130f);
-            var bayDepth = Mathf.SmoothStep(1f, 0f, Mathf.Clamp01((bay - 60f) / 110f));
-
-            // The river: narrower, from the eastern hills down past the energy belt to the sea.
-            var river = DistanceToSegment(x, z, 1900f, 1500f, 520f, 180f);
-            var riverDepth = Mathf.SmoothStep(1f, 0f, Mathf.Clamp01((river - 14f) / 46f));
-
-            var water = Mathf.Max(bayDepth, riverDepth);
-
-            if (water <= 0f)
-            {
-                return height;
-            }
-
-            // Down to a bed below the sea, so the water plane has something to sit in rather than
-            // meeting the land exactly at its own level.
-            // Shallow banks and a deeper middle. The first pass cut a bed twenty metres down and
-            // then lerped towards it across the whole falloff, which put a wide skirt of land under
-            // sea level and drew both waterways as motorways rather than as a channel and a river.
-            var bed = DistrictCatalog.SeaLevel - 4f - water * 26f;
-            return Mathf.Lerp(height, bed, water);
-        }
-
-        /// <summary>
-        /// Levels the ground under each district and blends it back into the hills.
-        ///
-        /// The pad is the district radius plus a margin, so a building on the edge still has flat
-        /// ground under its car park. Beyond the pad the height eases back over
-        /// <see cref="BlendWidth"/> rather than stepping, because a district on a plateau with
-        /// vertical sides looks like a bug and not like a valley.
+        /// Smoothstep rather than a straight ramp: a plateau with a conical skirt reads as a mesa,
+        /// and one that eases out reads as a valley floor.
         /// </summary>
         private static float FlattenDistricts(float x, float z, float height)
         {
-            foreach (var district in DistrictCatalog.All)
+            foreach (var district in CityLayout.Districts)
             {
-                var dx = x - district.CentreX;
-                var dz = z - district.CentreZ;
-                var distance = Mathf.Sqrt(dx * dx + dz * dz);
-
+                var distance = Distance(x, z, district.CentreX, district.CentreZ);
                 var pad = district.Radius + PadMargin;
 
                 if (distance <= pad)
@@ -217,175 +184,490 @@ namespace ScalingLaws.Editor
             return height;
         }
 
-        // ---- the scene ------------------------------------------------------------------------
-
-        private static void BuildScene(TerrainData data)
+        /// <summary>
+        /// Cuts every road into the ground as a shallow shelf.
+        ///
+        /// The shelf takes the height of its own smoothed centreline, so a highway between districts
+        /// at different heights climbs rather than stepping. Without this the roads are painted
+        /// stripes floating over hills, which is the fastest way to make a generated city look it.
+        /// </summary>
+        private static float CutRoads(float x, float z, float height)
         {
-            if (!ScalingLawsSceneBuilder.MayOverwriteScene(ScenePath))
+            foreach (var road in RoadCentrelines())
             {
-                Debug.LogWarning($"Kept {ScenePath} as it is. The terrain asset was still rebuilt.");
-                return;
+                var half = road.Width * 0.5f + RoadShoulder;
+                var along = NearestOnPolyline(x, z, road.Points, out var distance);
+
+                if (distance > half + RoadBlend)
+                {
+                    continue;
+                }
+
+                var surface = road.HeightAt(along);
+
+                if (distance <= half)
+                {
+                    height = surface;
+                    continue;
+                }
+
+                var t = Mathf.SmoothStep(1f, 0f, (distance - half) / RoadBlend);
+                height = Mathf.Lerp(height, surface, t);
             }
 
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-            var terrainObject = Terrain.CreateTerrainGameObject(data);
-            terrainObject.name = "Bayview";
-
-            var terrain = terrainObject.GetComponent<Terrain>();
-
-            // The camera looks at the whole city, so the basemap has to reach further than the
-            // default thousand metres or the far half of the map renders as flat colour.
-            terrain.basemapDistance = 2000f;
-            terrain.heightmapPixelError = 3f;
-
-            var sea = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            sea.name = "Sea";
-
-            // A Unity plane is ten metres across, so the scale is the map size over ten, and a
-            // little over so the edge is never visible from a corner.
-            sea.transform.localScale = new Vector3(
-                DistrictCatalog.TerrainSize / 10f * 1.2f, 1f,
-                DistrictCatalog.TerrainSize / 10f * 1.2f);
-
-            sea.transform.position = new Vector3(
-                DistrictCatalog.TerrainSize / 2f,
-                DistrictCatalog.SeaLevel,
-                DistrictCatalog.TerrainSize / 2f);
-
-            UnityEngine.Object.DestroyImmediate(sea.GetComponent<MeshCollider>());
-            sea.GetComponent<MeshRenderer>().sharedMaterial = SeaMaterial();
-
-            var markers = new GameObject("Districts");
-
-            foreach (var district in DistrictCatalog.All)
-            {
-                var marker = new GameObject(district.DisplayName);
-                marker.transform.SetParent(markers.transform, false);
-                marker.transform.position =
-                    new Vector3(district.CentreX, district.GroundHeight, district.CentreZ);
-            }
-
-            var sunObject = new GameObject("Sun");
-            var sun = sunObject.AddComponent<Light>();
-            sun.type = LightType.Directional;
-            sun.intensity = 1.15f;
-            sun.color = new Color(1f, 0.96f, 0.90f);
-            sunObject.transform.rotation = Quaternion.Euler(48f, -35f, 0f);
-
-            var cameraObject = new GameObject("Camera");
-            var camera = cameraObject.AddComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.035f, 0.045f, 0.07f, 1f);
-            camera.farClipPlane = 6000f;
-
-            // The reference's angle, from the south west, high enough to hold the whole city.
-            cameraObject.transform.rotation = Quaternion.Euler(42f, 35f, 0f);
-            cameraObject.transform.position = new Vector3(-420f, 1500f, -520f);
-
-            EditorSceneManager.SaveScene(scene, ScenePath);
+            return height;
         }
 
-        /// <summary>A single flat ground layer, created once and reused on later runs.</summary>
-        private static TerrainLayer GroundLayer()
+        /// <summary>
+        /// The bay and the river, cut through everything else.
+        ///
+        /// Half-width and depth are carried per control point and interpolated along the run, so the
+        /// bay is a basin at the mouth and a channel at the bridges. The banks are noised before the
+        /// distance is measured, which gives the coast inlets and headlands rather than a clean
+        /// offset curve.
+        /// </summary>
+        private static float CarveWater(float x, float z, float height)
         {
-            const string path = DataFolder + "/Ground.terrainlayer";
-            var layer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(path);
+            var deepest = 0f;
+            var bed = height;
 
-            if (layer != null)
+            foreach (var run in CityLayout.Water)
             {
-                return layer;
+                if (!NearestOnWater(x, z, run, out var distance, out var halfWidth, out var depth))
+                {
+                    continue;
+                }
+
+                var wobble =
+                    (Noise(x * 0.0042f + 31.7f, z * 0.0042f + 12.3f) - 0.5f) * 96f
+                    + (Noise(x * 0.0115f, z * 0.0115f) - 0.5f) * 42f
+                    + (Noise(x * 0.031f + 7.1f, z * 0.031f + 3.3f) - 0.5f) * 14f;
+
+                var edge = Mathf.Max(12f, halfWidth + wobble);
+
+                if (distance > edge)
+                {
+                    continue;
+                }
+
+                // One at the centreline, zero at the bank, smoothed so the bed is a dish rather
+                // than a trough with vertical sides.
+                var across = Mathf.Clamp01(1f - distance / edge);
+                var strength = across * across * (3f - 2f * across);
+
+                if (strength <= deepest)
+                {
+                    continue;
+                }
+
+                deepest = strength;
+                bed = CityLayout.SeaLevel - depth * strength;
             }
 
-            var texture = new Texture2D(8, 8);
-            var ground = new Color(0.34f, 0.38f, 0.31f);
+            return deepest <= 0f ? height : Mathf.Min(height, bed);
+        }
 
-            for (var y = 0; y < 8; y++)
+        // ---- the splatmap -----------------------------------------------------------------------
+
+        /// <summary>
+        /// Six surfaces, chosen by what the ground is doing rather than by where it is.
+        ///
+        /// Steep is rock, near the waterline is sand, high and gentle is forest, a road is asphalt,
+        /// a district is concrete. That way the painting cannot disagree with the shape, which is
+        /// what happens the moment anybody paints to a hand-drawn mask.
+        /// </summary>
+        private static void PaintSplat(TerrainData data, float[,] metres)
+        {
+            var resolution = CityLayout.SplatResolution;
+            data.alphamapResolution = resolution;
+
+            var layers = data.terrainLayers.Length;
+            var map = new float[resolution, resolution, layers];
+
+            var step = CityLayout.Size / (resolution - 1);
+            var heightStep = CityLayout.Size / (CityLayout.HeightmapResolution - 1);
+
+            for (var y = 0; y < resolution; y++)
             {
-                for (var x = 0; x < 8; x++)
+                for (var x = 0; x < resolution; x++)
                 {
-                    texture.SetPixel(x, y, ground);
+                    var worldX = x * step;
+                    var worldZ = y * step;
+
+                    var height = SampleMetres(metres, worldX, worldZ);
+                    var slope = SlopeAt(metres, worldX, worldZ, heightStep);
+
+                    var weights = new float[layers];
+                    weights[1] = 1f;
+
+                    var aboveSea = height - CityLayout.SeaLevel;
+                    if (aboveSea > -6f && aboveSea < 9f)
+                    {
+                        weights[0] = Mathf.SmoothStep(1.4f, 0f, Mathf.Abs(aboveSea) / 9f);
+                    }
+
+                    if (slope > 0.18f)
+                    {
+                        weights[2] = Mathf.Clamp01((slope - 0.18f) / 0.38f) * 1.8f;
+                    }
+
+                    if (height > 140f && slope < 0.34f)
+                    {
+                        weights[3] = Mathf.Clamp01((height - 140f) / 120f) * 1.2f;
+                    }
+
+                    // **No concrete disc under a district.**
+                    //
+                    // The first render painted every district as a grey circle and that is exactly
+                    // what it looked like: eight coasters on a lawn. A real district is read from
+                    // its roads and its buildings, not from a stain on the ground. What is left is
+                    // a faint dusting that only bites inside the pad, broken up by noise so its
+                    // edge is never a circle.
+                    foreach (var district in CityLayout.Districts)
+                    {
+                        var distance = Distance(worldX, worldZ, district.CentreX, district.CentreZ);
+                        var pad = district.Radius + PadMargin;
+
+                        if (distance >= pad)
+                        {
+                            continue;
+                        }
+
+                        var grain = Noise(worldX * 0.017f + 5.3f, worldZ * 0.017f + 9.1f);
+                        var inward = Mathf.SmoothStep(0f, 1f, 1f - distance / pad);
+
+                        weights[5] = Mathf.Max(weights[5], inward * (0.25f + grain * 0.55f));
+                    }
+
+                    // Asphalt last and heaviest, so nothing else shows through a road.
+                    foreach (var road in RoadCentrelines())
+                    {
+                        NearestOnPolyline(worldX, worldZ, road.Points, out var distance);
+                        var half = road.Width * 0.5f;
+
+                        if (distance < half + 6f)
+                        {
+                            weights[4] = Mathf.Max(weights[4],
+                                Mathf.SmoothStep(3f, 0f, Mathf.Max(0f, distance - half) / 6f));
+                        }
+                    }
+
+                    var total = 0f;
+                    for (var layer = 0; layer < layers; layer++)
+                    {
+                        total += weights[layer];
+                    }
+
+                    for (var layer = 0; layer < layers; layer++)
+                    {
+                        map[y, x, layer] = weights[layer] / total;
+                    }
+                }
+            }
+
+            data.SetAlphamaps(0, 0, map);
+        }
+
+        private static float SampleMetres(float[,] metres, float worldX, float worldZ)
+        {
+            var last = CityLayout.HeightmapResolution - 1;
+            var x = Mathf.Clamp(Mathf.RoundToInt(worldX / CityLayout.Size * last), 0, last);
+            var y = Mathf.Clamp(Mathf.RoundToInt(worldZ / CityLayout.Size * last), 0, last);
+            return metres[y, x];
+        }
+
+        /// <summary>Metres of rise per metre travelled, from the four neighbouring samples.</summary>
+        private static float SlopeAt(float[,] metres, float worldX, float worldZ, float step)
+        {
+            var east = SampleMetres(metres, worldX + step, worldZ);
+            var west = SampleMetres(metres, worldX - step, worldZ);
+            var north = SampleMetres(metres, worldX, worldZ + step);
+            var south = SampleMetres(metres, worldX, worldZ - step);
+
+            var dx = (east - west) / (2f * step);
+            var dz = (north - south) / (2f * step);
+
+            return Mathf.Sqrt(dx * dx + dz * dz);
+        }
+
+        private static TerrainLayer[] Layers() => new[]
+        {
+            Layer("Sand", new Color(0.76f, 0.70f, 0.55f), 14f),
+            Layer("Grass", new Color(0.29f, 0.38f, 0.24f), 22f),
+            Layer("Rock", new Color(0.40f, 0.39f, 0.37f), 30f),
+            Layer("Forest", new Color(0.17f, 0.26f, 0.16f), 26f),
+            Layer("Asphalt", new Color(0.16f, 0.16f, 0.18f), 12f),
+            Layer("Concrete", new Color(0.44f, 0.44f, 0.43f), 18f)
+        };
+
+        /// <summary>
+        /// One flat-colour layer, created once and reused.
+        ///
+        /// Flat colour because the project has no ground photographs, and a missing texture renders
+        /// white — worse than a colour that is at least the right colour. In Docs/NeededGraphics.md.
+        /// </summary>
+        private static TerrainLayer Layer(string name, Color colour, float tile)
+        {
+            var path = $"{DataFolder}/{name}.terrainlayer";
+            var existing = AssetDatabase.LoadAssetAtPath<TerrainLayer>(path);
+
+            if (existing != null)
+            {
+                existing.tileSize = new Vector2(tile, tile);
+                EditorUtility.SetDirty(existing);
+                return existing;
+            }
+
+            var texture = new Texture2D(16, 16) { name = name + "Texture" };
+
+            for (var y = 0; y < 16; y++)
+            {
+                for (var x = 0; x < 16; x++)
+                {
+                    // Per-pixel jitter, so a flat colour does not read as plastic up close.
+                    var jitter = (Hash(x, y) - 0.5f) * 0.06f;
+                    texture.SetPixel(x, y, new Color(
+                        Mathf.Clamp01(colour.r + jitter),
+                        Mathf.Clamp01(colour.g + jitter),
+                        Mathf.Clamp01(colour.b + jitter)));
                 }
             }
 
             texture.Apply();
+            AssetDatabase.CreateAsset(texture, $"{DataFolder}/{name}Texture.asset");
 
-            AssetDatabase.CreateAsset(texture, DataFolder + "/GroundTexture.asset");
-
-            layer = new TerrainLayer
+            var layer = new TerrainLayer
             {
                 diffuseTexture = texture,
-                tileSize = new Vector2(32f, 32f)
+                tileSize = new Vector2(tile, tile)
             };
 
             AssetDatabase.CreateAsset(layer, path);
             return layer;
         }
 
-        private static Material SeaMaterial()
-        {
-            var pipeline = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline;
-            var shader = pipeline != null ? Shader.Find("Universal Render Pipeline/Lit") : null;
-            shader = shader != null ? shader : Shader.Find("Standard");
-
-            var material = new Material(shader) { name = "Sea" };
-            var colour = new Color(0.08f, 0.22f, 0.34f);
-
-            if (material.HasProperty("_BaseColor"))
-            {
-                material.SetColor("_BaseColor", colour);
-            }
-
-            if (material.HasProperty("_Color"))
-            {
-                material.SetColor("_Color", colour);
-            }
-
-            if (material.HasProperty("_Glossiness"))
-            {
-                material.SetFloat("_Glossiness", 0.85f);
-            }
-
-            if (material.HasProperty("_Smoothness"))
-            {
-                material.SetFloat("_Smoothness", 0.85f);
-            }
-
-            return material;
-        }
-
-        // ---- helpers ------------------------------------------------------------------------------
+        // ---- road centrelines ----------------------------------------------------------------------
 
         /// <summary>
-        /// Distance from a point to a line segment, in metres.
+        /// A road, smoothed, with its surface height sampled and averaged along it.
         ///
-        /// The bay and the river are both cut from one of these, which is what keeps their banks
-        /// smooth and their depth falling away from the shore.
+        /// Built once per terrain build and cached: both passes walk every road for every sample,
+        /// and re-smoothing a polyline a million times is the difference between a build that takes
+        /// seconds and one that takes minutes.
         /// </summary>
-        private static float DistanceToSegment(float px, float pz,
-            float ax, float az, float bx, float bz)
+        public sealed class Centreline
         {
-            var abx = bx - ax;
-            var abz = bz - az;
-            var apx = px - ax;
-            var apz = pz - az;
+            public Centreline(RoadRun run)
+            {
+                Width = run.Width;
+                Class = run.Class;
+                Points = Smooth(run.Points);
 
-            var lengthSquared = abx * abx + abz * abz;
-            var t = lengthSquared <= 0f ? 0f : Mathf.Clamp01((apx * abx + apz * abz) / lengthSquared);
+                heights = new float[Points.Count];
 
-            var cx = ax + abx * t;
-            var cz = az + abz * t;
+                for (var index = 0; index < Points.Count; index++)
+                {
+                    heights[index] = FlattenDistricts(Points[index].x, Points[index].y,
+                        NaturalHeight(Points[index].x, Points[index].y));
+                }
 
-            return Mathf.Sqrt((px - cx) * (px - cx) + (pz - cz) * (pz - cz));
+                // Six passes of neighbour averaging, so a road does not inherit every bump the land
+                // under it happens to have.
+                for (var pass = 0; pass < 6; pass++)
+                {
+                    var smoothed = (float[])heights.Clone();
+
+                    for (var index = 1; index < heights.Length - 1; index++)
+                    {
+                        smoothed[index] =
+                            (heights[index - 1] + heights[index] * 2f + heights[index + 1]) * 0.25f;
+                    }
+
+                    heights = smoothed;
+                }
+            }
+
+            private float[] heights;
+
+            public float Width { get; }
+            public RoadClass Class { get; }
+            public IReadOnlyList<Vector2> Points { get; }
+
+            /// <summary>The road surface at a position along the line, in metres.</summary>
+            public float HeightAt(float t)
+            {
+                if (heights.Length == 0)
+                {
+                    return CityLayout.SeaLevel;
+                }
+
+                var scaled = Mathf.Clamp(t * (heights.Length - 1), 0f, heights.Length - 1);
+                var index = Mathf.FloorToInt(scaled);
+                var next = Mathf.Min(index + 1, heights.Length - 1);
+
+                return Mathf.Lerp(heights[index], heights[next], scaled - index);
+            }
         }
 
+        private static List<Centreline> centrelines;
+
+        public static IReadOnlyList<Centreline> RoadCentrelines()
+        {
+            if (centrelines != null)
+            {
+                return centrelines;
+            }
+
+            centrelines = new List<Centreline>();
+
+            foreach (var run in CityLayout.Roads)
+            {
+                centrelines.Add(new Centreline(run));
+            }
+
+            return centrelines;
+        }
+
+        // ---- geometry ------------------------------------------------------------------------------
+
         /// <summary>
-        /// Smoothed value noise from a fixed integer hash.
+        /// Catmull-Rom through the control points, about one sample every eight metres.
         ///
-        /// Not Mathf.PerlinNoise: that is not promised to be identical across Unity versions, and a
-        /// terrain that quietly changes shape on an upgrade is a terrain whose districts no longer
-        /// sit on their pads.
+        /// Catmull-Rom rather than Chaikin because it passes through every point it is given, and
+        /// those points are where the bridges land.
         /// </summary>
+        public static List<Vector2> Smooth(IReadOnlyList<MapPoint> points)
+        {
+            var raw = new List<Vector2>(points.Count);
+
+            foreach (var point in points)
+            {
+                raw.Add(new Vector2(point.X, point.Z));
+            }
+
+            if (raw.Count < 3)
+            {
+                return raw;
+            }
+
+            var output = new List<Vector2>();
+
+            for (var index = 0; index < raw.Count - 1; index++)
+            {
+                var p0 = raw[Mathf.Max(index - 1, 0)];
+                var p1 = raw[index];
+                var p2 = raw[index + 1];
+                var p3 = raw[Mathf.Min(index + 2, raw.Count - 1)];
+
+                var steps = Mathf.Max(2, Mathf.RoundToInt(Vector2.Distance(p1, p2) / 8f));
+
+                for (var step = 0; step < steps; step++)
+                {
+                    output.Add(CatmullRom(p0, p1, p2, p3, step / (float)steps));
+                }
+            }
+
+            output.Add(raw[^1]);
+            return output;
+        }
+
+        private static Vector2 CatmullRom(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
+        {
+            var t2 = t * t;
+            var t3 = t2 * t;
+
+            return 0.5f * (
+                2f * p1
+                + (p2 - p0) * t
+                + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2
+                + (-p0 + 3f * p1 - 3f * p2 + p3) * t3);
+        }
+
+        /// <summary>Distance to a polyline, and how far along it the nearest point is, 0 to 1.</summary>
+        public static float NearestOnPolyline(float x, float z, IReadOnlyList<Vector2> points,
+            out float distance)
+        {
+            distance = float.MaxValue;
+            var best = 0f;
+
+            if (points.Count < 2)
+            {
+                return 0f;
+            }
+
+            for (var index = 0; index < points.Count - 1; index++)
+            {
+                var a = points[index];
+                var b = points[index + 1];
+
+                var t = SegmentT(x, z, a, b);
+                var closest = Vector2.Lerp(a, b, t);
+                var d = Vector2.Distance(new Vector2(x, z), closest);
+
+                if (d < distance)
+                {
+                    distance = d;
+                    best = (index + t) / (points.Count - 1);
+                }
+            }
+
+            return best;
+        }
+
+        private static bool NearestOnWater(float x, float z, WaterRun run,
+            out float distance, out float halfWidth, out float depth)
+        {
+            distance = float.MaxValue;
+            halfWidth = 0f;
+            depth = 0f;
+
+            var points = run.Points;
+
+            for (var index = 0; index < points.Count - 1; index++)
+            {
+                var a = new Vector2(points[index].At.X, points[index].At.Z);
+                var b = new Vector2(points[index + 1].At.X, points[index + 1].At.Z);
+
+                var t = SegmentT(x, z, a, b);
+                var closest = Vector2.Lerp(a, b, t);
+                var d = Vector2.Distance(new Vector2(x, z), closest);
+
+                if (d >= distance)
+                {
+                    continue;
+                }
+
+                distance = d;
+                halfWidth = Mathf.Lerp(points[index].HalfWidth, points[index + 1].HalfWidth, t);
+                depth = Mathf.Lerp(points[index].Depth, points[index + 1].Depth, t);
+            }
+
+            return distance < float.MaxValue;
+        }
+
+        private static float SegmentT(float x, float z, Vector2 a, Vector2 b)
+        {
+            var ab = b - a;
+            var lengthSquared = ab.sqrMagnitude;
+
+            if (lengthSquared <= 0f)
+            {
+                return 0f;
+            }
+
+            var ap = new Vector2(x - a.x, z - a.y);
+            return Mathf.Clamp01(Vector2.Dot(ap, ab) / lengthSquared);
+        }
+
+        private static float Distance(float x, float z, float toX, float toZ)
+        {
+            var dx = x - toX;
+            var dz = z - toZ;
+            return Mathf.Sqrt(dx * dx + dz * dz);
+        }
+
+        // ---- noise ----------------------------------------------------------------------------------
+
         private static float Noise(float x, float y)
         {
             var xi = Mathf.FloorToInt(x);
