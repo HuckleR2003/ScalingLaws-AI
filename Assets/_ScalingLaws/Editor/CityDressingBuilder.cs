@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
+using ScalingLaws.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -8,25 +9,47 @@ using UnityEngine;
 namespace ScalingLaws.Editor
 {
     /// <summary>
-    /// Everything standing on the land: bridges, houses, towers, the park and the sea.
+    /// Everything standing on the land: streets, pavements, plots, houses, towers, the gallery,
+    /// the parks and the bridges.
     ///
-    /// **Split from the terrain builder because they fail differently.** The heightmap is arithmetic
-    /// that either produces the right shape or does not; this is placement, and placement is where a
-    /// city stops looking like a heightmap. Keeping them apart means the land can be re-cut without
-    /// disturbing anything standing on it.
+    /// **The suburbs are surveyed rather than sprinkled.** The first version dropped houses at
+    /// random points along a curving lane and it read as a village. An American suburb is a
+    /// subdivision: parallel streets at a fixed spacing, a collector along one edge, cul-de-sacs
+    /// off it, and every plot the same width with every house the same distance back from the kerb.
+    /// So this walks each block from <see cref="CityBlocks"/>, lays the streets, subdivides the
+    /// frontage into lots and puts one house on each — which is the only way to get the regularity
+    /// that makes a map look like somewhere real.
     ///
-    /// Everything here is a box, and that is deliberate for now. The author's next step is dropping
-    /// real house assets in and comparing them against these, so what matters is that the footprints,
-    /// heights and spacings are right — a wrong-sized real house is harder to spot than a wrong-sized
-    /// grey box.
+    /// Everything placed carries a <see cref="CityProp"/>: what it is, how big the space is, which
+    /// district it is in. That is what makes a real asset a transform copy later rather than a
+    /// redesign.
     /// </summary>
     public static class CityDressingBuilder
     {
-        /// <summary>Fixed, so the same houses land on the same driveways every run.</summary>
+        /// <summary>Fixed, so the same houses land on the same plots every run.</summary>
         private const int Seed = 77712;
+
+        /// <summary>Metres of pavement either side of a residential street.</summary>
+        /// <summary>
+        /// Metres of pavement either side of a street.
+        ///
+        /// Narrowed from 2.2 after the plan render: at this map scale a wide pale strip either side
+        /// of every road turned the whole city into a chalk drawing, and the pavements were reading
+        /// louder than the roads they edge.
+        /// </summary>
+        private const float SidewalkWidth = 1.6f;
+
+        /// <summary>Metres between street lamps. Real spacing is about this.</summary>
+        private const float LampSpacing = 44f;
+
+        /// <summary>How far a cul-de-sac runs off its collector, and how wide its bulb is.</summary>
+        private const float CulDeSacLength = 90f;
+
+        private const float CulDeSacRadius = 17f;
 
         private static System.Random random;
         private static Func<float, float, float> ground;
+        private static Transform root;
 
         public static void BuildScene(TerrainData data, string scenePath,
             Func<float, float, float> heightAt)
@@ -46,41 +69,58 @@ namespace ScalingLaws.Editor
             terrainObject.name = "Bayview";
 
             var terrain = terrainObject.GetComponent<Terrain>();
-
-            // The camera sees the whole city, so the basemap has to reach further than the default
-            // thousand metres or the far half renders as flat colour.
             terrain.basemapDistance = 2400f;
             terrain.heightmapPixelError = 2f;
 
+            root = new GameObject("City").transform;
+
             BuildSea();
+            BuildArterialSidewalks();
             BuildBridges();
-            BuildSuburb("greendale", 44, 0.34f, true);
-            BuildSuburb("riverdale", 52, 0.26f, false);
+
+            var houses = 0;
+            foreach (var block in CityBlocks.Residential)
+            {
+                houses += BuildSubdivision(block);
+            }
+
             BuildFounderHome();
-            BuildDowntown();
-            BuildMidRise("media", 26, 14f, 34f);
-            BuildMidRise("innovation", 22, 16f, 40f);
-            BuildMidRise("civic", 12, 12f, 26f);
-            BuildMidRise("port", 18, 8f, 16f);
-            BuildPark();
+
+            var buildings = 0;
+            foreach (var grid in CityBlocks.Grids)
+            {
+                buildings += BuildGrid(grid);
+            }
+
+            foreach (var mall in CityBlocks.Malls)
+            {
+                BuildMall(mall);
+            }
+
+            foreach (var park in CityBlocks.Parks)
+            {
+                BuildPark(park);
+            }
+
             BuildMarkers();
             BuildLighting();
             BuildCamera();
 
             EditorSceneManager.SaveScene(scene, scenePath);
 
-            Debug.Log($"[Scaling Laws] City scene written to {scenePath}.");
+            Debug.Log($"[Scaling Laws] City dressed: {houses} houses on surveyed plots, "
+                + $"{buildings} blocks and towers, {CityBlocks.Malls.Count} gallery, "
+                + $"{CityBlocks.Parks.Count} parks, {CityLayout.Bridges.Count} bridges.");
         }
 
-        // ---- water ------------------------------------------------------------------------------
+        // ---- water --------------------------------------------------------------------------------
 
         private static void BuildSea()
         {
             var sea = GameObject.CreatePrimitive(PrimitiveType.Plane);
             sea.name = "Sea";
+            sea.transform.SetParent(root, true);
 
-            // A Unity plane is ten metres across. A fifth over the map, so the edge is never in
-            // frame from a corner.
             sea.transform.localScale =
                 new Vector3(CityLayout.Size / 10f * 1.2f, 1f, CityLayout.Size / 10f * 1.2f);
 
@@ -93,450 +133,882 @@ namespace ScalingLaws.Editor
                 Paint("Sea", new Color(0.07f, 0.20f, 0.32f), 0.92f, 0.1f);
         }
 
-        // ---- bridges ------------------------------------------------------------------------------
+        // ---- the streets in the data -------------------------------------------------------------
 
         /// <summary>
-        /// A deck, two abutments and a row of piers, per span.
+        /// Pavements and lamps down the arterial roads.
         ///
-        /// The deck is lifted clear of the water rather than laid at road height, because a crossing
-        /// at water level is a causeway and the author asked for bridges. The approaches ramp from
-        /// the land up to the deck so nothing has a step in it.
+        /// The road surface itself is painted into the terrain by the terrain builder, so what is
+        /// missing is everything that stands beside it. A road with no kerb, no pavement and no
+        /// lighting reads as a track through a field however well it is surfaced.
         /// </summary>
-        private static void BuildBridges()
+        private static void BuildArterialSidewalks()
         {
-            var group = new GameObject("Bridges").transform;
-
-            foreach (var span in CityLayout.Bridges)
-            {
-                var bridge = new GameObject(span.Id).transform;
-                bridge.SetParent(group, false);
-
-                var from = new Vector3(span.From.X, span.DeckHeight, span.From.Z);
-                var to = new Vector3(span.To.X, span.DeckHeight, span.To.Z);
-
-                var middle = (from + to) * 0.5f;
-                var length = Vector3.Distance(from, to);
-                var facing = Quaternion.LookRotation((to - from).normalized, Vector3.up);
-
-                var deck = Box(bridge, "Deck", middle, new Vector3(span.Width, 2.4f, length),
-                    Paint("BridgeDeck", new Color(0.18f, 0.18f, 0.20f)));
-
-                deck.transform.rotation = facing;
-
-                // Parapets, which is most of what makes a slab read as a bridge.
-                foreach (var side in new[] { -1f, 1f })
-                {
-                    var rail = Box(bridge, "Parapet",
-                        middle + facing * new Vector3(side * (span.Width * 0.5f - 0.6f), 2.0f, 0f),
-                        new Vector3(1.2f, 2.0f, length),
-                        Paint("BridgeRail", new Color(0.40f, 0.40f, 0.42f)));
-
-                    rail.transform.rotation = facing;
-                }
-
-                for (var pier = 1; pier <= span.Piers; pier++)
-                {
-                    var t = pier / (float)(span.Piers + 1);
-                    var at = Vector3.Lerp(from, to, t);
-                    var bed = ground(at.x, at.z);
-                    var height = Mathf.Max(6f, span.DeckHeight - bed);
-
-                    Box(bridge, $"Pier{pier}",
-                        new Vector3(at.x, bed + height * 0.5f, at.z),
-                        new Vector3(7f, height, 9f),
-                        Paint("BridgePier", new Color(0.30f, 0.30f, 0.31f)));
-                }
-
-                // Approach ramps: from the deck down to whatever the land is doing at each end.
-                foreach (var end in new[] { from, to })
-                {
-                    var outward = (end - middle).normalized;
-                    var landing = end + outward * 26f;
-                    var landHeight = ground(landing.x, landing.z);
-
-                    var ramp = Box(bridge, "Approach",
-                        new Vector3((end.x + landing.x) * 0.5f,
-                            (span.DeckHeight + landHeight) * 0.5f,
-                            (end.z + landing.z) * 0.5f),
-                        new Vector3(span.Width, 2.4f, 54f),
-                        Paint("BridgeDeck", new Color(0.18f, 0.18f, 0.20f)));
-
-                    ramp.transform.rotation =
-                        Quaternion.LookRotation(new Vector3(outward.x, 0f, outward.z), Vector3.up);
-                }
-            }
-        }
-
-        // ---- housing --------------------------------------------------------------------------------
-
-        /// <summary>
-        /// American suburb: houses set back from a lane, each with a driveway to it.
-        ///
-        /// **Placed along the roads rather than on a grid**, because that is what makes a suburb read
-        /// as a suburb: the plots follow the curve of the lane, every driveway points at the road,
-        /// and the gaps between them are uneven. A grid of houses is a housing estate in a strategy
-        /// game; this is where somebody lives.
-        /// </summary>
-        private static void BuildSuburb(string districtId, int count, float lawnChance, bool grand)
-        {
-            var district = FindDistrict(districtId);
-            if (district == null)
-            {
-                return;
-            }
-
-            var group = new GameObject($"Houses_{districtId}").transform;
-
-            var lanes = new List<CityTerrainBuilder.Centreline>();
+            var group = new GameObject("Streets").transform;
+            group.SetParent(root, true);
 
             foreach (var road in CityTerrainBuilder.RoadCentrelines())
             {
-                if (road.Class != RoadClass.Lane)
+                if (road.Class == RoadClass.Lane)
+                {
+                    // Suburban lanes get theirs from the subdivision that owns them, so the kerb
+                    // and the plots are surveyed together and cannot disagree.
+                    continue;
+                }
+
+                Pavements(group, road.Points, road.Width, road.Class == RoadClass.Highway);
+            }
+        }
+
+        /// <summary>Lays a pavement strip and a run of lamps down both sides of a centreline.</summary>
+        private static void Pavements(Transform parent, IReadOnlyList<Vector2> points, float width,
+            bool lampsBothSides)
+        {
+            var travelled = 0f;
+            var nextLamp = LampSpacing * 0.5f;
+
+            for (var index = 0; index < points.Count - 1; index++)
+            {
+                var a = points[index];
+                var b = points[index + 1];
+
+                var along = b - a;
+                var length = along.magnitude;
+
+                if (length < 0.1f)
                 {
                     continue;
                 }
 
-                // Only the lanes inside this district.
-                var inside = 0;
-                foreach (var point in road.Points)
+                var direction = along / length;
+                var across = new Vector2(-direction.y, direction.x);
+                var middle = (a + b) * 0.5f;
+
+                foreach (var side in new[] { -1f, 1f })
                 {
-                    if (Vector2.Distance(point, new Vector2(district.CentreX, district.CentreZ))
-                        < district.Radius + 90f)
+                    var at = middle + across * side * (width * 0.5f + SidewalkWidth * 0.5f);
+                    var height = ground(at.x, at.y);
+
+                    if (height < CityLayout.SeaLevel + 1.5f)
                     {
-                        inside++;
+                        continue;
+                    }
+
+                    var slab = Box(parent, "Sidewalk",
+                        new Vector3(at.x, height + 0.14f, at.y),
+                        new Vector3(SidewalkWidth, 0.28f, length + 0.4f),
+                        Paint("Sidewalk", new Color(0.38f, 0.38f, 0.37f)));
+
+                    slab.transform.rotation =
+                        Quaternion.LookRotation(new Vector3(direction.x, 0f, direction.y), Vector3.up);
+
+                    Describe(slab, CityPropKind.Sidewalk,
+                        new Vector3(SidewalkWidth, 0.28f, length), string.Empty, 0);
+                }
+
+                travelled += length;
+
+                while (travelled >= nextLamp)
+                {
+                    nextLamp += LampSpacing;
+
+                    var sides = lampsBothSides ? new[] { -1f, 1f } : new[] { 1f };
+
+                    foreach (var side in sides)
+                    {
+                        var at = middle + across * side * (width * 0.5f + SidewalkWidth + 0.4f);
+                        Lamp(parent, at);
                     }
                 }
-
-                if (inside > road.Points.Count / 3)
-                {
-                    lanes.Add(road);
-                }
             }
+        }
 
-            if (lanes.Count == 0)
+        private static void Lamp(Transform parent, Vector2 at)
+        {
+            var height = ground(at.x, at.y);
+
+            if (height < CityLayout.SeaLevel + 1.5f)
             {
                 return;
             }
 
-            var placed = 0;
-            var attempts = 0;
+            var post = Box(parent, "StreetLamp",
+                new Vector3(at.x, height + 4.2f, at.y),
+                new Vector3(0.34f, 8.4f, 0.34f),
+                Paint("LampPost", new Color(0.24f, 0.25f, 0.27f)));
 
-            while (placed < count && attempts < count * 12)
-            {
-                attempts++;
+            Describe(post, CityPropKind.StreetLamp, new Vector3(0.34f, 8.4f, 0.34f), string.Empty, 0);
 
-                var lane = lanes[random.Next(lanes.Count)];
-                var index = random.Next(1, Mathf.Max(2, lane.Points.Count - 1));
-
-                var here = lane.Points[index];
-                var next = lane.Points[Mathf.Min(index + 1, lane.Points.Count - 1)];
-
-                var along = (next - here).normalized;
-                if (along.sqrMagnitude < 0.01f)
-                {
-                    continue;
-                }
-
-                var side = random.Next(2) == 0 ? 1f : -1f;
-                var out2 = new Vector2(-along.y, along.x) * side;
-
-                // The setback is what makes the long driveway the author asked for.
-                var setback = grand ? Range(34f, 46f) : Range(22f, 30f);
-                var plot = here + out2 * setback;
-
-                if (Vector2.Distance(plot, new Vector2(district.CentreX, district.CentreZ))
-                    > district.Radius)
-                {
-                    continue;
-                }
-
-                var groundHeight = ground(plot.x, plot.y);
-
-                if (groundHeight < CityLayout.SeaLevel + 3f)
-                {
-                    continue;
-                }
-
-                var facing = Quaternion.LookRotation(new Vector3(-out2.x, 0f, -out2.y), Vector3.up);
-
-                BuildHouse(group, new Vector3(plot.x, groundHeight, plot.y), facing, grand,
-                    lawnChance);
-
-                // The driveway: a strip of asphalt from the kerb to the garage door.
-                var kerb = here + out2 * 6f;
-                var driveMiddle = (kerb + plot) / 2f;
-
-                var drive = Box(group, "Driveway",
-                    new Vector3(driveMiddle.x, groundHeight + 0.08f, driveMiddle.y),
-                    new Vector3(4.2f, 0.16f, Vector2.Distance(kerb, plot)),
-                    Paint("Driveway", new Color(0.20f, 0.20f, 0.21f)));
-
-                drive.transform.rotation = facing;
-
-                placed++;
-            }
+            Box(parent, "LampHead",
+                new Vector3(at.x, height + 8.5f, at.y),
+                new Vector3(1.5f, 0.4f, 0.6f),
+                Paint("LampHead", new Color(0.72f, 0.70f, 0.60f)));
         }
 
-        /// <summary>One house: body, roof, garage, and usually a lawn and a tree.</summary>
-        private static void BuildHouse(Transform parent, Vector3 at, Quaternion facing, bool grand,
-            float lawnChance)
-        {
-            var house = new GameObject(grand ? "Villa" : "House").transform;
-            house.SetParent(parent, false);
-            house.position = at;
-            house.rotation = facing;
+        // ---- subdivisions ---------------------------------------------------------------------------
 
-            var width = grand ? Range(13f, 17f) : Range(9f, 12f);
-            var depth = grand ? Range(11f, 14f) : Range(8f, 10f);
-            var storeys = grand ? (random.Next(10) > 5 ? 2 : 1) : 1;
-            var height = 3.2f * storeys;
+        /// <summary>
+        /// Surveys one subdivision: collector, streets, cul-de-sacs, then a house on every plot.
+        ///
+        /// The order is the order a developer would do it in, and it matters. The streets decide
+        /// where the frontage is; the frontage decides where the plots are; the plots decide where
+        /// the houses go. Placing houses first and drawing roads afterwards is what produced the
+        /// village that this replaced.
+        /// </summary>
+        private static int BuildSubdivision(ResidentialBlock block)
+        {
+            var group = new GameObject($"Subdivision_{block.Id}").transform;
+            group.SetParent(root, true);
+
+            var centre = new Vector2(block.CentreX, block.CentreZ);
+            var angle = block.RotationDegrees * Mathf.Deg2Rad;
+
+            // Local axes: "along" runs down a street, "across" steps from one street to the next.
+            var along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            var across = new Vector2(-along.y, along.x);
+
+            var halfWidth = block.Width * 0.5f;
+            var halfDepth = block.Depth * 0.5f;
+
+            const float streetWidth = 10f;
+            var placed = 0;
+
+            // The collector, along the western edge of the block. Every street hangs off it.
+            var collectorAt = centre - across * (halfWidth + 14f);
+            var collectorFrom = collectorAt - along * halfDepth;
+            var collectorTo = collectorAt + along * halfDepth;
+
+            StreetStrip(group, collectorFrom, collectorTo, 13f, true);
+
+            var lanes = Mathf.Max(1, Mathf.FloorToInt(block.Width / block.StreetSpacing));
+
+            for (var lane = 0; lane < lanes; lane++)
+            {
+                var offset = -halfWidth + block.StreetSpacing * (lane + 0.5f);
+                var lineAt = centre + across * offset;
+
+                var from = lineAt - along * halfDepth;
+                var to = lineAt + along * halfDepth;
+
+                StreetStrip(group, from, to, streetWidth, true);
+
+                // Plots down both sides. Backs meet in the middle of the block, which is why the
+                // spacing is two lot depths plus the road.
+                foreach (var side in new[] { -1f, 1f })
+                {
+                    placed += Plots(group, block, from, to, along, across * side, streetWidth);
+                }
+            }
+
+            for (var index = 0; index < block.CulDeSacs; index++)
+            {
+                var t = (index + 1f) / (block.CulDeSacs + 1f);
+                var mouth = Vector2.Lerp(collectorFrom, collectorTo, t);
+                var head = mouth - across * CulDeSacLength;
+
+                StreetStrip(group, mouth, head, 9f, true);
+
+                // The bulb: a disc of asphalt with plots facing into it.
+                if (ground(head.x, head.y) < CityLayout.SeaLevel + 2.5f)
+                {
+                    continue;
+                }
+
+                var bulb = Cylinder(group, "CulDeSac", head, CulDeSacRadius * 2f, 0.24f,
+                    Paint("Asphalt", new Color(0.17f, 0.17f, 0.19f)));
+
+                Describe(bulb, CityPropKind.RoadSegment,
+                    new Vector3(CulDeSacRadius * 2f, 0.24f, CulDeSacRadius * 2f), block.DistrictId, 0);
+
+                for (var slot = 0; slot < 5; slot++)
+                {
+                    var spoke = Mathf.PI * (0.2f + 0.6f * slot / 4f) - Mathf.PI * 0.5f;
+                    var facing = new Vector2(
+                        Mathf.Cos(spoke) * -across.x + Mathf.Sin(spoke) * along.x,
+                        Mathf.Cos(spoke) * -across.y + Mathf.Sin(spoke) * along.y);
+
+                    var kerb = head + facing * (CulDeSacRadius + 1f);
+                    var plot = head + facing * (CulDeSacRadius + block.Setback + 7f);
+
+                    if (PlaceHouse(group, block, plot, kerb, -facing))
+                    {
+                        placed++;
+                    }
+                }
+            }
+
+            return placed;
+        }
+
+        /// <summary>
+        /// Subdivides one side of one street into lots and puts a house on each.
+        ///
+        /// The lots are laid from one end at a fixed width, which is what gives a street its rhythm.
+        /// A plot is skipped when the ground under it is water or too steep, and skipping leaves a
+        /// gap rather than shuffling everything along — real subdivisions have gaps too, and
+        /// shuffling would break the rhythm that is the entire point.
+        /// </summary>
+        private static int Plots(Transform parent, ResidentialBlock block, Vector2 from, Vector2 to,
+            Vector2 along, Vector2 outward, float streetWidth)
+        {
+            var length = Vector2.Distance(from, to);
+            var count = Mathf.FloorToInt(length / block.LotWidth);
+            var placed = 0;
+
+            for (var index = 0; index < count; index++)
+            {
+                var t = (index + 0.5f) * block.LotWidth / length;
+                var frontage = Vector2.Lerp(from, to, t);
+
+                var kerb = frontage + outward * (streetWidth * 0.5f + SidewalkWidth);
+                var plot = kerb + outward * block.Setback;
+
+                if (PlaceHouse(parent, block, plot, kerb, -outward))
+                {
+                    placed++;
+                }
+            }
+
+            return placed;
+        }
+
+        /// <summary>
+        /// One house, its garage, its driveway and usually a tree, on a surveyed plot.
+        ///
+        /// Returns false when the plot is unbuildable, which is how the coastline and the hills get
+        /// their ragged edges without anybody drawing them.
+        /// </summary>
+        private static bool PlaceHouse(Transform parent, ResidentialBlock block, Vector2 plot,
+            Vector2 kerb, Vector2 facing)
+        {
+            var height = ground(plot.x, plot.y);
+
+            if (height < CityLayout.SeaLevel + 3f)
+            {
+                return false;
+            }
+
+            // Refuse a plot the land is falling away under. Cheaper than terracing and it is what
+            // gives the subdivision its irregular outer edge.
+            var slope = Mathf.Abs(height - ground(plot.x + 12f, plot.y))
+                + Mathf.Abs(height - ground(plot.x, plot.y + 12f));
+
+            if (slope > 7f)
+            {
+                return false;
+            }
+
+            var rotation = Quaternion.LookRotation(new Vector3(facing.x, 0f, facing.y), Vector3.up);
+            var variant = random.Next(6);
+
+            var house = new GameObject(block.Grand ? "Villa" : "House").transform;
+            house.SetParent(parent, false);
+            house.position = new Vector3(plot.x, height, plot.y);
+            house.rotation = rotation;
+
+            var width = block.Grand ? Range(14f, 17f) : Range(10f, 13f);
+            var depth = block.Grand ? Range(12f, 15f) : Range(9f, 11f);
+            var storeys = block.Grand ? (random.Next(10) > 4 ? 2 : 1) : (random.Next(10) > 7 ? 2 : 1);
+            var wallHeight = 3.2f * storeys;
 
             var walls = new[]
             {
                 new Color(0.86f, 0.84f, 0.78f), new Color(0.78f, 0.74f, 0.68f),
                 new Color(0.70f, 0.72f, 0.74f), new Color(0.82f, 0.76f, 0.70f),
-                new Color(0.62f, 0.66f, 0.62f)
+                new Color(0.62f, 0.66f, 0.62f), new Color(0.74f, 0.68f, 0.62f)
             };
 
-            Local(house, "Body", new Vector3(0f, height * 0.5f, 0f),
-                new Vector3(width, height, depth),
-                Paint($"Wall{random.Next(walls.Length)}", walls[random.Next(walls.Length)]));
+            var body = Local(house, "Body", new Vector3(0f, wallHeight * 0.5f, 0f),
+                new Vector3(width, wallHeight, depth),
+                Paint($"Wall{variant}", walls[variant]));
 
-            // The roof is a flattened, slightly oversized box. A real pitched roof is a mesh, and a
-            // box that overhangs reads as a roof from the only distance this is ever seen at.
-            Local(house, "Roof", new Vector3(0f, height + 0.9f, 0f),
+            Describe(body, block.Grand ? CityPropKind.Villa : CityPropKind.House,
+                new Vector3(width, wallHeight, depth), block.DistrictId, variant);
+
+            Local(house, "Roof", new Vector3(0f, wallHeight + 0.9f, 0f),
                 new Vector3(width + 1.6f, 1.8f, depth + 1.6f),
                 Paint("Roof", new Color(0.32f, 0.26f, 0.24f)));
 
-            // The garage, offset to one side and facing the road, which is where the driveway ends.
-            Local(house, "Garage", new Vector3(width * 0.5f + 2.6f, 1.6f, depth * 0.28f),
-                new Vector3(5.4f, 3.2f, 6.2f),
+            // The garage sits on the side the driveway comes up, which is what makes the driveway
+            // lead somewhere rather than stop at a wall.
+            var garageSide = random.Next(2) == 0 ? -1f : 1f;
+
+            var garage = Local(house, "Garage",
+                new Vector3(garageSide * (width * 0.5f + 2.8f), 1.6f, depth * 0.22f),
+                new Vector3(5.6f, 3.2f, 6.4f),
                 Paint("Garage", new Color(0.74f, 0.72f, 0.68f)));
 
-            if (random.NextDouble() < lawnChance)
+            Describe(garage, CityPropKind.Garage, new Vector3(5.6f, 3.2f, 6.4f),
+                block.DistrictId, variant);
+
+            // The driveway: kerb to garage door, offset to the garage side.
+            var doorLocal = new Vector3(garageSide * (width * 0.5f + 2.8f), 0f, -depth * 0.5f - 1f);
+            var door = house.TransformPoint(doorLocal);
+            var start = new Vector3(kerb.x, height, kerb.y)
+                + (door - new Vector3(plot.x, height, plot.y)).normalized * 0.5f;
+
+            var driveMiddle = (door + start) * 0.5f;
+            var driveLength = Vector3.Distance(door, start);
+
+            var drive = Box(parent, "Driveway",
+                new Vector3(driveMiddle.x, height + 0.1f, driveMiddle.z),
+                new Vector3(4.4f, 0.2f, Mathf.Max(3f, driveLength)),
+                Paint("Driveway", new Color(0.21f, 0.21f, 0.22f)));
+
+            drive.transform.rotation = Quaternion.LookRotation(
+                new Vector3(door.x - start.x, 0f, door.z - start.z).normalized, Vector3.up);
+
+            Describe(drive, CityPropKind.Driveway, new Vector3(4.4f, 0.2f, driveLength),
+                block.DistrictId, 0);
+
+            // Front lawn furniture. A hedge or a tree, never both, so the street has variety.
+            if (random.NextDouble() < 0.45)
             {
-                Local(house, "Hedge", new Vector3(0f, 0.7f, -depth * 0.5f - 4.5f),
-                    new Vector3(width + 6f, 1.4f, 1.2f),
+                Local(house, "Hedge", new Vector3(0f, 0.6f, -depth * 0.5f - block.Setback * 0.55f),
+                    new Vector3(width * 0.8f, 1.2f, 0.9f),
                     Paint("Hedge", new Color(0.20f, 0.34f, 0.19f)));
             }
-
-            if (random.NextDouble() < 0.55)
+            else if (random.NextDouble() < 0.6)
             {
-                var treeX = (random.Next(2) == 0 ? -1f : 1f) * (width * 0.5f + Range(3f, 6f));
-
-                Local(house, "TreeTrunk", new Vector3(treeX, 1.6f, -depth * 0.3f),
-                    new Vector3(0.6f, 3.2f, 0.6f),
-                    Paint("Trunk", new Color(0.28f, 0.21f, 0.15f)));
-
-                Local(house, "TreeCanopy", new Vector3(treeX, 4.6f, -depth * 0.3f),
-                    new Vector3(4.4f, 4.0f, 4.4f),
+                var treeX = -garageSide * (width * 0.5f + Range(2.5f, 4.5f));
+                var tree = Local(house, "Tree", new Vector3(treeX, 4.4f, -depth * 0.25f),
+                    new Vector3(4.6f, 4.2f, 4.6f),
                     Paint("Canopy", new Color(0.18f, 0.33f, 0.17f)));
+
+                Describe(tree, CityPropKind.Tree, new Vector3(4.6f, 7f, 4.6f), block.DistrictId, 0);
+
+                Local(house, "Trunk", new Vector3(treeX, 1.5f, -depth * 0.25f),
+                    new Vector3(0.6f, 3f, 0.6f),
+                    Paint("Trunk", new Color(0.28f, 0.21f, 0.15f)));
+            }
+
+            return true;
+        }
+
+        /// <summary>Asphalt, kerbs, pavements and lamps for one straight run of residential street.</summary>
+        private static void StreetStrip(Transform parent, Vector2 from, Vector2 to, float width,
+            bool pavements)
+        {
+            var along = to - from;
+            var length = along.magnitude;
+
+            if (length < 1f)
+            {
+                return;
+            }
+
+            var direction = along / length;
+            var facing = Quaternion.LookRotation(new Vector3(direction.x, 0f, direction.y), Vector3.up);
+
+            // Cut into pieces so the surface follows the ground rather than spanning a hill.
+            var pieces = Mathf.Max(1, Mathf.CeilToInt(length / 28f));
+
+            for (var piece = 0; piece < pieces; piece++)
+            {
+                var t0 = piece / (float)pieces;
+                var t1 = (piece + 1f) / pieces;
+
+                var a = Vector2.Lerp(from, to, t0);
+                var b = Vector2.Lerp(from, to, t1);
+                var middle = (a + b) * 0.5f;
+
+                var height = ground(middle.x, middle.y);
+
+                // **Nothing is laid below the waterline.** A subdivision reaching the coast has
+                // streets that stop at the beach, and skipping the wet pieces is what gives the
+                // built-up area its ragged outer edge without anybody drawing one.
+                if (height < CityLayout.SeaLevel + 1.5f)
+                {
+                    continue;
+                }
+
+                var slab = Box(parent, "Street",
+                    new Vector3(middle.x, height + 0.12f, middle.y),
+                    new Vector3(width, 0.24f, length / pieces + 0.3f),
+                    Paint("Asphalt", new Color(0.17f, 0.17f, 0.19f)));
+
+                slab.transform.rotation = facing;
+
+                Describe(slab, CityPropKind.RoadSegment,
+                    new Vector3(width, 0.24f, length / pieces), string.Empty, 0);
+            }
+
+            if (pavements)
+            {
+                Pavements(parent, new List<Vector2> { from, to }, width, false);
             }
         }
 
-        /// <summary>The founder's house, placed by hand so the author can find it every time.</summary>
+        // ---- the founder ------------------------------------------------------------------------------
+
+        /// <summary>
+        /// The founder's house, on a plot of its own with a pin over it.
+        ///
+        /// Placed by hand rather than picked out of the subdivision, because the author needs to find
+        /// it every time to stand a real asset next to it.
+        /// </summary>
         private static void BuildFounderHome()
         {
             var at = CityLayout.FounderHome;
             var height = ground(at.X, at.Z);
 
             var group = new GameObject("FounderHome").transform;
+            group.SetParent(root, true);
             group.position = new Vector3(at.X, height, at.Z);
 
-            BuildHouse(group, new Vector3(at.X, height, at.Z),
-                Quaternion.Euler(0f, 205f, 0f), false, 1f);
+            var house = new GameObject("FounderHouse").transform;
+            house.SetParent(group, false);
+            house.rotation = Quaternion.Euler(0f, 205f, 0f);
 
-            // A marker above it, so it is findable in the hierarchy and in the scene view without
-            // hunting through fifty identical boxes.
-            var pin = Box(group, "FounderPin",
-                new Vector3(at.X, height + 16f, at.Z), new Vector3(2f, 14f, 2f),
-                Paint("FounderPin", new Color(0.90f, 0.72f, 0.24f)));
+            var body = Local(house, "Body", new Vector3(0f, 1.7f, 0f), new Vector3(12f, 3.4f, 10f),
+                Paint("FounderWall", new Color(0.84f, 0.80f, 0.72f)));
 
-            pin.name = "FounderPin";
+            Describe(body, CityPropKind.FounderHome, new Vector3(12f, 3.4f, 10f), "riverdale", 0);
+
+            Local(house, "Roof", new Vector3(0f, 4.3f, 0f), new Vector3(13.6f, 1.8f, 11.6f),
+                Paint("Roof", new Color(0.32f, 0.26f, 0.24f)));
+
+            var garage = Local(house, "Garage", new Vector3(8.4f, 1.6f, 2.2f),
+                new Vector3(5.6f, 3.2f, 6.4f), Paint("Garage", new Color(0.74f, 0.72f, 0.68f)));
+
+            Describe(garage, CityPropKind.Garage, new Vector3(5.6f, 3.2f, 6.4f), "riverdale", 0);
+
+            var pin = Box(group, "FounderPin", new Vector3(at.X, height + 20f, at.Z),
+                new Vector3(2f, 18f, 2f), Paint("FounderPin", new Color(0.92f, 0.74f, 0.24f)));
+
+            Describe(pin, CityPropKind.StreetFurniture, new Vector3(2f, 18f, 2f), "riverdale", 0);
         }
 
-        // ---- downtown --------------------------------------------------------------------------------
+        // ---- grids -------------------------------------------------------------------------------------
 
         /// <summary>
-        /// The financial district: towers on the blocks between the grid streets.
+        /// Streets on a grid, and a building filling each block between them.
         ///
-        /// Heights fall off from the middle, which is what every real skyline does and what makes a
-        /// cluster of boxes read as a downtown rather than as a bar chart.
+        /// Heights fall off from the middle when the block is a skyline, which is what every real
+        /// downtown does and what stops a cluster of boxes reading as a bar chart.
         /// </summary>
-        private static void BuildDowntown()
+        private static int BuildGrid(GridBlock grid)
         {
-            var district = FindDistrict("downtown");
-            if (district == null)
-            {
-                return;
-            }
+            var group = new GameObject($"Grid_{grid.Id}").transform;
+            group.SetParent(root, true);
 
-            var group = new GameObject("Downtown").transform;
+            var centre = new Vector2(grid.CentreX, grid.CentreZ);
+            var angle = grid.RotationDegrees * Mathf.Deg2Rad;
 
-            var centre = new Vector2(district.CentreX, district.CentreZ);
+            var along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            var across = new Vector2(-along.y, along.x);
+
+            var columns = Mathf.Max(1, Mathf.FloorToInt(grid.Width / grid.BlockSize));
+            var rows = Mathf.Max(1, Mathf.FloorToInt(grid.Depth / grid.BlockSize));
+
+            const float streetWidth = 17f;
             var placed = 0;
-            var attempts = 0;
 
-            while (placed < 46 && attempts < 900)
+            // The streets, both ways, before anything is put between them.
+            for (var column = 0; column <= columns; column++)
             {
-                attempts++;
+                var offset = -grid.Width * 0.5f + grid.BlockSize * column;
+                var line = centre + across * offset;
 
-                var angle = random.NextDouble() * Math.PI * 2.0;
-                var radius = (float)Math.Sqrt(random.NextDouble()) * district.Radius * 0.92f;
-
-                var at = centre + new Vector2(
-                    (float)Math.Cos(angle) * radius,
-                    (float)Math.Sin(angle) * radius);
-
-                // Off the roads. A tower in the middle of a street is the one placement error that
-                // is obvious from any distance.
-                if (TooCloseToRoad(at, 24f))
-                {
-                    continue;
-                }
-
-                var groundHeight = ground(at.x, at.y);
-                var falloff = 1f - radius / (district.Radius * 0.92f);
-
-                var height = Mathf.Lerp(24f, 165f, falloff * falloff) * Range(0.72f, 1.28f);
-                var footprint = Mathf.Clamp(height * 0.26f, 14f, 42f);
-
-                var tint = 0.30f + (float)random.NextDouble() * 0.22f;
-
-                Box(group, "Tower",
-                    new Vector3(at.x, groundHeight + height * 0.5f, at.y),
-                    new Vector3(footprint, height, footprint * Range(0.8f, 1.2f)),
-                    Paint($"Tower{placed % 6}", new Color(tint, tint + 0.02f, tint + 0.06f), 0.35f));
-
-                placed++;
+                StreetStrip(group, line - along * grid.Depth * 0.5f,
+                    line + along * grid.Depth * 0.5f, streetWidth, true);
             }
+
+            for (var row = 0; row <= rows; row++)
+            {
+                var offset = -grid.Depth * 0.5f + grid.BlockSize * row;
+                var line = centre + along * offset;
+
+                StreetStrip(group, line - across * grid.Width * 0.5f,
+                    line + across * grid.Width * 0.5f, streetWidth, true);
+            }
+
+            var maximumReach = Mathf.Max(grid.Width, grid.Depth) * 0.5f;
+
+            for (var column = 0; column < columns; column++)
+            {
+                for (var row = 0; row < rows; row++)
+                {
+                    var offsetAcross = -grid.Width * 0.5f + grid.BlockSize * (column + 0.5f);
+                    var offsetAlong = -grid.Depth * 0.5f + grid.BlockSize * (row + 0.5f);
+
+                    var blockCentre = centre + across * offsetAcross + along * offsetAlong;
+
+                    // The gallery has its own block. Nothing else goes on top of it.
+                    if (InsideAMall(blockCentre))
+                    {
+                        continue;
+                    }
+
+                    // One to three buildings per block, so the skyline is not a chessboard.
+                    var perBlock = grid.Skyline ? random.Next(2, 4) : random.Next(1, 3);
+
+                    for (var slot = 0; slot < perBlock; slot++)
+                    {
+                        var jitter = new Vector2(Range(-1f, 1f), Range(-1f, 1f))
+                            * (grid.BlockSize * 0.22f);
+
+                        var at = blockCentre + across * jitter.x + along * jitter.y;
+                        var height = ground(at.x, at.y);
+
+                        if (height < CityLayout.SeaLevel + 2f)
+                        {
+                            continue;
+                        }
+
+                        var reach = Vector2.Distance(at, centre) / Mathf.Max(1f, maximumReach);
+                        var falloff = Mathf.Clamp01(1f - reach);
+
+                        var tall = grid.Skyline
+                            ? Mathf.Lerp(grid.LowBuilding, grid.HighBuilding, falloff * falloff)
+                              * Range(0.72f, 1.24f)
+                            : Range(grid.LowBuilding, grid.HighBuilding);
+
+                        var footprint = grid.Skyline
+                            ? Mathf.Clamp(tall * 0.24f, 15f, 40f)
+                            : Range(18f, 32f);
+
+                        var depth = footprint * Range(0.8f, 1.25f);
+                        var tint = 0.30f + (float)random.NextDouble() * 0.22f;
+
+                        var tower = Box(group, grid.Skyline ? "Tower" : "Block",
+                            new Vector3(at.x, height + tall * 0.5f, at.y),
+                            new Vector3(footprint, tall, depth),
+                            Paint($"Build{placed % 7}",
+                                new Color(tint, tint + 0.02f, tint + 0.06f), 0.35f));
+
+                        tower.transform.rotation =
+                            Quaternion.Euler(0f, grid.RotationDegrees + Range(-4f, 4f), 0f);
+
+                        Describe(tower, grid.Skyline ? CityPropKind.Tower : CityPropKind.Block,
+                            new Vector3(footprint, tall, depth), grid.DistrictId, placed % 7);
+
+                        placed++;
+                    }
+                }
+            }
+
+            return placed;
         }
 
-        /// <summary>Lower buildings for the districts that are not the skyline.</summary>
-        private static void BuildMidRise(string districtId, int count, float low, float high)
+        private static bool InsideAMall(Vector2 at)
         {
-            var district = FindDistrict(districtId);
-            if (district == null)
+            foreach (var mall in CityBlocks.Malls)
             {
-                return;
+                var span = Mathf.Max(mall.LotWidth, mall.BuildingWidth) * 0.6f;
+
+                if (Vector2.Distance(at, new Vector2(mall.CentreX, mall.CentreZ)) < span)
+                {
+                    return true;
+                }
             }
 
-            var group = new GameObject($"Blocks_{districtId}").transform;
-            var centre = new Vector2(district.CentreX, district.CentreZ);
-
-            var placed = 0;
-            var attempts = 0;
-
-            while (placed < count && attempts < count * 20)
-            {
-                attempts++;
-
-                var angle = random.NextDouble() * Math.PI * 2.0;
-                var radius = (float)Math.Sqrt(random.NextDouble()) * district.Radius * 0.88f;
-
-                var at = centre + new Vector2(
-                    (float)Math.Cos(angle) * radius,
-                    (float)Math.Sin(angle) * radius);
-
-                if (TooCloseToRoad(at, 20f))
-                {
-                    continue;
-                }
-
-                var groundHeight = ground(at.x, at.y);
-
-                if (groundHeight < CityLayout.SeaLevel + 2f)
-                {
-                    continue;
-                }
-
-                var height = Range(low, high);
-                var tint = 0.34f + (float)random.NextDouble() * 0.18f;
-
-                Box(group, "Block",
-                    new Vector3(at.x, groundHeight + height * 0.5f, at.y),
-                    new Vector3(Range(16f, 32f), height, Range(14f, 28f)),
-                    Paint($"Block{placed % 5}", new Color(tint, tint, tint + 0.03f)));
-
-                placed++;
-            }
+            return false;
         }
+
+        // ---- the gallery ---------------------------------------------------------------------------------
 
         /// <summary>
-        /// The park: a lake, trees around it and the open ground events are held on.
+        /// The shopping gallery, its car park and the bays in it.
         ///
-        /// It is the one district with no buildings on purpose — the author's note calls it the
-        /// cheapest place in Bayview to be seen, and an empty lawn is what that means.
+        /// **The car park is drawn bay by bay rather than as one grey rectangle**, because a lot with
+        /// aisles and rows is instantly readable as a car park and a plain slab is a helipad. It is
+        /// also the surface an expo actually uses: the marquees go on the lot, not in the shop.
         /// </summary>
-        private static void BuildPark()
+        private static void BuildMall(MallSite mall)
         {
-            var district = FindDistrict("park");
-            if (district == null)
+            var group = new GameObject($"Mall_{mall.Id}").transform;
+            group.SetParent(root, true);
+
+            var centre = new Vector2(mall.CentreX, mall.CentreZ);
+            var angle = mall.RotationDegrees * Mathf.Deg2Rad;
+
+            var along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            var across = new Vector2(-along.y, along.x);
+
+            var height = ground(centre.x, centre.y);
+            var facing = Quaternion.Euler(0f, mall.RotationDegrees, 0f);
+
+            // The lot first, so the building sits on it rather than beside it.
+            var lotCentre = centre - along * (mall.BuildingDepth * 0.5f + mall.LotDepth * 0.5f + 8f);
+
+            var apron = Box(group, "ParkingApron",
+                new Vector3(lotCentre.x, height + 0.1f, lotCentre.y),
+                new Vector3(mall.LotWidth, 0.2f, mall.LotDepth),
+                Paint("Asphalt", new Color(0.17f, 0.17f, 0.19f)));
+
+            apron.transform.rotation = facing;
+
+            Describe(apron, CityPropKind.ParkingRow,
+                new Vector3(mall.LotWidth, 0.2f, mall.LotDepth), "downtown", 0);
+
+            // Rows of bays, in pairs back to back with an aisle between each pair.
+            const float bayDepth = 5.2f;
+            const float aisle = 6.4f;
+            var pitch = bayDepth * 2f + aisle;
+            var rows = Mathf.Max(1, Mathf.FloorToInt(mall.LotDepth / pitch));
+
+            for (var row = 0; row < rows; row++)
             {
-                return;
+                var offset = -mall.LotDepth * 0.5f + pitch * (row + 0.5f);
+
+                foreach (var side in new[] { -1f, 1f })
+                {
+                    var at = lotCentre + along * (offset + side * bayDepth * 0.5f);
+                    var stripe = Box(group, "ParkingRow",
+                        new Vector3(at.x, height + 0.22f, at.y),
+                        new Vector3(mall.LotWidth - 14f, 0.12f, bayDepth),
+                        Paint("ParkingLine", new Color(0.46f, 0.46f, 0.44f)));
+
+                    stripe.transform.rotation = facing;
+
+                    Describe(stripe, CityPropKind.ParkingRow,
+                        new Vector3(mall.LotWidth - 14f, 0.12f, bayDepth), "downtown", row);
+                }
             }
 
-            var group = new GameObject("BayviewPark").transform;
-            var centre = new Vector2(district.CentreX, district.CentreZ);
-
-            var lake = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            lake.name = "Lake";
-            lake.transform.SetParent(group, false);
-            lake.transform.position =
-                new Vector3(centre.x - 40f, district.GroundHeight + 0.3f, centre.y + 20f);
-
-            lake.transform.localScale = new Vector3(150f, 0.4f, 110f);
-            UnityEngine.Object.DestroyImmediate(lake.GetComponent<CapsuleCollider>());
-
-            lake.GetComponent<MeshRenderer>().sharedMaterial =
-                Paint("Lake", new Color(0.10f, 0.26f, 0.34f), 0.9f, 0.05f);
-
-            // The open event ground, marked out so it reads as a place rather than as grass.
-            Box(group, "EventGround",
-                new Vector3(centre.x + 90f, district.GroundHeight + 0.1f, centre.y - 60f),
-                new Vector3(120f, 0.2f, 90f),
-                Paint("EventGround", new Color(0.42f, 0.40f, 0.33f)));
-
-            for (var index = 0; index < 90; index++)
+            // Lamps down the middle aisle, which is what a real lot has.
+            for (var lamp = 0; lamp < 6; lamp++)
             {
-                var angle = random.NextDouble() * Math.PI * 2.0;
-                var radius = (float)Math.Sqrt(random.NextDouble()) * district.Radius * 0.95f;
+                var t = (lamp + 0.5f) / 6f;
+                var at = lotCentre + along * (-mall.LotDepth * 0.5f + mall.LotDepth * t);
+                Lamp(group, at);
+            }
+
+            // The gallery itself: a long low hall with a taller entrance block.
+            var hall = Box(group, "Gallery",
+                new Vector3(centre.x, height + mall.BuildingHeight * 0.5f, centre.y),
+                new Vector3(mall.BuildingWidth, mall.BuildingHeight, mall.BuildingDepth),
+                Paint("MallWall", new Color(0.56f, 0.56f, 0.58f), 0.4f));
+
+            hall.transform.rotation = facing;
+
+            Describe(hall, CityPropKind.Mall,
+                new Vector3(mall.BuildingWidth, mall.BuildingHeight, mall.BuildingDepth),
+                "downtown", 0);
+
+            var entrance = Box(group, "GalleryEntrance",
+                new Vector3(
+                    centre.x - along.x * (mall.BuildingDepth * 0.5f),
+                    height + mall.BuildingHeight * 0.72f,
+                    centre.y - along.y * (mall.BuildingDepth * 0.5f)),
+                new Vector3(mall.BuildingWidth * 0.32f, mall.BuildingHeight * 1.45f, 18f),
+                Paint("MallGlass", new Color(0.36f, 0.52f, 0.62f), 0.75f, 0.2f));
+
+            entrance.transform.rotation = facing;
+
+            // A roof line, so a long box reads as a building rather than as a wall.
+            var roof = Box(group, "GalleryRoof",
+                new Vector3(centre.x, height + mall.BuildingHeight + 1.2f, centre.y),
+                new Vector3(mall.BuildingWidth + 4f, 2.4f, mall.BuildingDepth + 4f),
+                Paint("MallRoof", new Color(0.38f, 0.38f, 0.40f)));
+
+            roof.transform.rotation = facing;
+        }
+
+        // ---- parks ------------------------------------------------------------------------------------------
+
+        private static void BuildPark(ParkSite park)
+        {
+            var group = new GameObject($"Park_{park.Id}").transform;
+            group.SetParent(root, true);
+
+            var centre = new Vector2(park.CentreX, park.CentreZ);
+            var height = ground(centre.x, centre.y);
+
+            if (park.HasLake)
+            {
+                var lake = Cylinder(group, "Lake",
+                    centre + new Vector2(-park.Radius * 0.28f, park.Radius * 0.16f),
+                    park.Radius * 0.72f, 0.5f,
+                    Paint("Lake", new Color(0.10f, 0.26f, 0.34f), 0.9f, 0.05f));
+
+                lake.transform.position = new Vector3(
+                    lake.transform.position.x, height + 0.25f, lake.transform.position.z);
+            }
+
+            if (park.HasEventGround)
+            {
+                var lawn = Box(group, "EventGround",
+                    new Vector3(centre.x + park.Radius * 0.42f, height + 0.12f,
+                        centre.y - park.Radius * 0.3f),
+                    new Vector3(park.Radius * 0.8f, 0.24f, park.Radius * 0.62f),
+                    Paint("EventGround", new Color(0.40f, 0.42f, 0.30f)));
+
+                Describe(lawn, CityPropKind.StreetFurniture,
+                    new Vector3(park.Radius * 0.8f, 0.24f, park.Radius * 0.62f), park.Id, 0);
+            }
+
+            // Two crossing paths, which is what turns a lawn into a park.
+            foreach (var turn in new[] { 20f, 110f })
+            {
+                var radians = turn * Mathf.Deg2Rad;
+                var direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+
+                StreetStrip(group, centre - direction * park.Radius * 0.92f,
+                    centre + direction * park.Radius * 0.92f, 4.2f, false);
+            }
+
+            for (var index = 0; index < park.Trees; index++)
+            {
+                var spin = random.NextDouble() * Math.PI * 2.0;
+                var reach = (float)Math.Sqrt(random.NextDouble()) * park.Radius * 0.96f;
 
                 var at = centre + new Vector2(
-                    (float)Math.Cos(angle) * radius,
-                    (float)Math.Sin(angle) * radius);
+                    (float)Math.Cos(spin) * reach, (float)Math.Sin(spin) * reach);
 
-                // Not in the lake and not on the event ground.
-                if (Vector2.Distance(at, new Vector2(centre.x - 40f, centre.y + 20f)) < 90f)
+                if (park.HasLake &&
+                    Vector2.Distance(at, centre + new Vector2(-park.Radius * 0.28f,
+                        park.Radius * 0.16f)) < park.Radius * 0.42f)
                 {
                     continue;
                 }
 
-                if (TooCloseToRoad(at, 14f))
+                var treeHeight = ground(at.x, at.y);
+
+                if (treeHeight < CityLayout.SeaLevel + 2f)
                 {
                     continue;
                 }
 
-                var groundHeight = ground(at.x, at.y);
-                var scale = Range(0.8f, 1.5f);
+                var scale = Range(0.85f, 1.55f);
 
-                Box(group, "Trunk",
-                    new Vector3(at.x, groundHeight + 2f * scale, at.y),
+                Box(group, "Trunk", new Vector3(at.x, treeHeight + 2f * scale, at.y),
                     new Vector3(0.8f, 4f * scale, 0.8f),
                     Paint("Trunk", new Color(0.28f, 0.21f, 0.15f)));
 
-                Box(group, "Canopy",
-                    new Vector3(at.x, groundHeight + 5.6f * scale, at.y),
-                    new Vector3(6f * scale, 5f * scale, 6f * scale),
+                var canopy = Box(group, "Canopy",
+                    new Vector3(at.x, treeHeight + 5.8f * scale, at.y),
+                    new Vector3(6.2f * scale, 5.2f * scale, 6.2f * scale),
                     Paint("Canopy", new Color(0.18f, 0.33f, 0.17f)));
+
+                Describe(canopy, CityPropKind.Tree,
+                    new Vector3(6.2f * scale, 9f * scale, 6.2f * scale), park.Id, 0);
             }
         }
 
-        // ---- scene furniture --------------------------------------------------------------------------
+        // ---- bridges ----------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// A finished crossing: deck in segments, parapets, piers to the river bed, and ramps that
+        /// meet the land at whatever height it happens to be.
+        ///
+        /// **The deck is segmented and the ramps are pitched.** A single slab from bank to bank was
+        /// the thing that read as a plank laid over a stream: a real bridge has a rise in the middle
+        /// and its approaches slope, and both are what make it look like it carries a road.
+        /// </summary>
+        private static void BuildBridges()
+        {
+            var group = new GameObject("Bridges").transform;
+            group.SetParent(root, true);
+
+            foreach (var span in CityLayout.Bridges)
+            {
+                var bridge = new GameObject(span.Id).transform;
+                bridge.SetParent(group, false);
+
+                var from = new Vector2(span.From.X, span.From.Z);
+                var to = new Vector2(span.To.X, span.To.Z);
+
+                var along = (to - from).normalized;
+                var length = Vector2.Distance(from, to);
+                var facing = Quaternion.LookRotation(new Vector3(along.x, 0f, along.y), Vector3.up);
+
+                // The deck, in segments, with a slight camber so it rises to the middle.
+                const int segments = 10;
+
+                for (var segment = 0; segment < segments; segment++)
+                {
+                    var t = (segment + 0.5f) / segments;
+                    var at = Vector2.Lerp(from, to, t);
+
+                    var camber = Mathf.Sin(t * Mathf.PI) * 3.5f;
+                    var deckHeight = span.DeckHeight + camber;
+
+                    var slab = Box(bridge, "Deck",
+                        new Vector3(at.x, deckHeight, at.y),
+                        new Vector3(span.Width, 2.2f, length / segments + 0.6f),
+                        Paint("BridgeDeck", new Color(0.19f, 0.19f, 0.21f)));
+
+                    slab.transform.rotation = facing;
+
+                    Describe(slab, CityPropKind.BridgeDeck,
+                        new Vector3(span.Width, 2.2f, length / segments), string.Empty, 0);
+
+                    foreach (var side in new[] { -1f, 1f })
+                    {
+                        var offset = new Vector3(-along.y, 0f, along.x)
+                            * (side * (span.Width * 0.5f - 0.7f));
+
+                        var rail = Box(bridge, "Parapet",
+                            new Vector3(at.x, deckHeight + 1.7f, at.y) + offset,
+                            new Vector3(1.1f, 1.9f, length / segments + 0.6f),
+                            Paint("BridgeRail", new Color(0.44f, 0.44f, 0.46f)));
+
+                        rail.transform.rotation = facing;
+                    }
+                }
+
+                for (var pier = 1; pier <= span.Piers; pier++)
+                {
+                    var t = pier / (float)(span.Piers + 1);
+                    var at = Vector2.Lerp(from, to, t);
+                    var bed = ground(at.x, at.y);
+                    var camber = Mathf.Sin(t * Mathf.PI) * 3.5f;
+                    var tall = Mathf.Max(6f, span.DeckHeight + camber - bed);
+
+                    var column = Box(bridge, $"Pier{pier}",
+                        new Vector3(at.x, bed + tall * 0.5f, at.y),
+                        new Vector3(6.5f, tall, 9f),
+                        Paint("BridgePier", new Color(0.31f, 0.31f, 0.32f)));
+
+                    column.transform.rotation = facing;
+
+                    Describe(column, CityPropKind.BridgePier, new Vector3(6.5f, tall, 9f),
+                        string.Empty, 0);
+                }
+
+                // Ramps: from the deck ends down to the land, pitched rather than stepped.
+                foreach (var end in new[] { (Point: from, Direction: -along),
+                                            (Point: to, Direction: along) })
+                {
+                    const int rampSegments = 5;
+                    const float rampLength = 70f;
+
+                    for (var segment = 0; segment < rampSegments; segment++)
+                    {
+                        var t0 = segment / (float)rampSegments;
+                        var t1 = (segment + 1f) / rampSegments;
+
+                        var a = end.Point + end.Direction * (rampLength * t0);
+                        var b = end.Point + end.Direction * (rampLength * t1);
+                        var middle = (a + b) * 0.5f;
+
+                        var landHeight = ground(b.x, b.y);
+                        var deckHeight = Mathf.Lerp(span.DeckHeight, landHeight, t1);
+
+                        var slab = Box(bridge, "Approach",
+                            new Vector3(middle.x, deckHeight, middle.y),
+                            new Vector3(span.Width, 2.2f, rampLength / rampSegments + 0.6f),
+                            Paint("BridgeDeck", new Color(0.19f, 0.19f, 0.21f)));
+
+                        slab.transform.rotation = Quaternion.LookRotation(
+                            new Vector3(end.Direction.x, 0f, end.Direction.y), Vector3.up);
+
+                        Describe(slab, CityPropKind.BridgeDeck,
+                            new Vector3(span.Width, 2.2f, rampLength / rampSegments),
+                            string.Empty, 0);
+                    }
+                }
+            }
+        }
+
+        // ---- scene furniture ----------------------------------------------------------------------------------
 
         private static void BuildMarkers()
         {
             var group = new GameObject("Districts").transform;
+            group.SetParent(root, true);
 
             foreach (var district in CityLayout.Districts)
             {
@@ -571,44 +1043,21 @@ namespace ScalingLaws.Editor
             camera.farClipPlane = 7000f;
             camera.fieldOfView = 38f;
 
-            // The reference's angle: from the south west, high enough to hold the whole city.
-            // Pulled back and raised after the first render cut Riverdale off the bottom right.
             cameraObject.transform.rotation = Quaternion.Euler(36f, 36f, 0f);
             cameraObject.transform.position = new Vector3(-1150f, 2050f, -1250f);
         }
 
-        // ---- helpers ------------------------------------------------------------------------------------
-
-        private static DistrictDefinition FindDistrict(string id)
-        {
-            foreach (var district in CityLayout.Districts)
-            {
-                if (district.Id == id)
-                {
-                    return district;
-                }
-            }
-
-            return null;
-        }
-
-        private static bool TooCloseToRoad(Vector2 at, float clearance)
-        {
-            foreach (var road in CityTerrainBuilder.RoadCentrelines())
-            {
-                CityTerrainBuilder.NearestOnPolyline(at.x, at.y, road.Points, out var distance);
-
-                if (distance < road.Width * 0.5f + clearance)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        // ---- helpers -------------------------------------------------------------------------------------------
 
         private static float Range(float low, float high) =>
             low + (float)random.NextDouble() * (high - low);
+
+        private static void Describe(GameObject box, CityPropKind kind, Vector3 footprint,
+            string district, int variant)
+        {
+            var prop = box.AddComponent<CityProp>();
+            prop.Describe(kind, footprint, district, variant);
+        }
 
         private static GameObject Box(Transform parent, string name, Vector3 centre, Vector3 size,
             Material material)
@@ -624,8 +1073,7 @@ namespace ScalingLaws.Editor
             return box;
         }
 
-        /// <summary>A box positioned in its parent's frame, so it turns with the house it is part of.</summary>
-        private static void Local(Transform parent, string name, Vector3 centre, Vector3 size,
+        private static GameObject Local(Transform parent, string name, Vector3 centre, Vector3 size,
             Material material)
         {
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -636,6 +1084,21 @@ namespace ScalingLaws.Editor
             box.GetComponent<MeshRenderer>().sharedMaterial = material;
 
             UnityEngine.Object.DestroyImmediate(box.GetComponent<BoxCollider>());
+            return box;
+        }
+
+        private static GameObject Cylinder(Transform parent, string name, Vector2 at,
+            float diameter, float thickness, Material material)
+        {
+            var cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            cylinder.name = name;
+            cylinder.transform.SetParent(parent, true);
+            cylinder.transform.position = new Vector3(at.x, ground(at.x, at.y) + 0.2f, at.y);
+            cylinder.transform.localScale = new Vector3(diameter, thickness, diameter);
+            cylinder.GetComponent<MeshRenderer>().sharedMaterial = material;
+
+            UnityEngine.Object.DestroyImmediate(cylinder.GetComponent<CapsuleCollider>());
+            return cylinder;
         }
 
         private static readonly Dictionary<string, Material> Paints = new();
