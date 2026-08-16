@@ -78,6 +78,9 @@ namespace ScalingLaws.UI
         /// <summary>The three hiring sites. Owns its own shortlists so they survive a redraw.</summary>
         private HiringPortals portals;
 
+        /// <summary>The product landing page. Counts its own visits, for the opening flourish.</summary>
+        private ModelDashboard modelHub;
+
         /// <summary>The Agency-or-Specialist card, while it is up.</summary>
         private VisualElement hiringChoice;
 
@@ -232,6 +235,12 @@ namespace ScalingLaws.UI
 
             /// <summary>One of the three hiring sites. Which one is on <c>portals.Open</c>.</summary>
             Hiring,
+
+            /// <summary>
+            /// What MODEL opens on: the product, what it earns, and the two ways to change it.
+            /// The training designer is one click further in, behind NEW MODEL.
+            /// </summary>
+            Model,
 
             /// <summary>The wire. Reached from its own corner banner and from the bottom bar.</summary>
             News
@@ -479,6 +488,9 @@ namespace ScalingLaws.UI
             // than into the garage it left three years ago.
             portals = new HiringPortals(() => state, simulation, () => Show(Screen.Hiring),
                 () => Show(Screen.Mail));
+
+            modelHub = new ModelDashboard(() => simulation, () => Show(Screen.Create),
+                () => Show(Screen.Upgrade), () => Show(Screen.Release));
 
             officeStage = new OfficeStage(GameObject.Find(OfficeStageRoot));
             officeStage.Show(state.Staff.Office, state.Decor);
@@ -735,9 +747,9 @@ namespace ScalingLaws.UI
             hud.AddSlot("SITE", Screen.Site, () => Show(Screen.Site), "hud_site",
                 "The room, and everything the company owns in it. Where the day is watched from.");
 
-            hud.AddSlot("MODEL", Screen.Create, () => Show(Screen.Create), "hud_model",
-                "Design a training run and start it. Five decisions: what it is, how big, what it "
-                + "reads, what it runs on, and whether the bill is worth it.");
+            hud.AddSlot("MODEL", Screen.Model, () => Show(Screen.Model), "hud_model",
+                "What the company sells, what it earns, and the two ways to change it: build a new "
+                + "one, or improve one already out there.");
 
             hud.AddSlot("RESEARCH", Screen.Research, () => Show(Screen.Research), "hud_research",
                 "Buy the understanding that unlocks everything else. Points come from work you are "
@@ -947,6 +959,10 @@ namespace ScalingLaws.UI
 
                 case Screen.Hiring:
                     host.Add(BuildHiringScreen());
+                    break;
+
+                case Screen.Model:
+                    host.Add(modelHub.Build());
                     break;
                 case Screen.Business:
                     host.Add(BuildBusinessScreen());
@@ -1656,8 +1672,14 @@ namespace ScalingLaws.UI
                 page.Add(BuildPayrollList());
             }
 
+            // The two bottom panels share a line. What the team is worth is a table of six
+            // readings and wants the width; where you work is one line and a picture and does not.
+            var bottom = new VisualElement();
+            bottom.AddToClassList("team__bottom");
+
             var effects = new VisualElement();
             effects.AddToClassList("panel");
+            effects.AddToClassList("team__worth");
 
             var effectsHeading = new Label("WHAT THE TEAM IS WORTH");
             effectsHeading.AddToClassList("panel__heading");
@@ -1670,10 +1692,11 @@ namespace ScalingLaws.UI
             effects.Add(Row("Incident risk", $"x{UiFormat.Number(roster.IncidentRiskMultiplier(), 2)}"));
             effects.Add(Row("Brand from the team", $"+{UiFormat.Number(roster.BrandBonus(), 3)}"));
             effects.Add(Row("Research pace", $"x{UiFormat.Number(roster.ResearchSpeedMultiplier(), 3)}"));
-            page.Add(effects);
+            bottom.Add(effects);
 
             var offices = new VisualElement();
             offices.AddToClassList("panel");
+            offices.AddToClassList("team__where");
 
             var officeHeading = new Label("WHERE YOU WORK");
             officeHeading.AddToClassList("panel__heading");
@@ -1690,7 +1713,9 @@ namespace ScalingLaws.UI
             offices.Add(where);
 
             offices.Add(BuildUpgradeButton());
-            page.Add(offices);
+            bottom.Add(offices);
+
+            page.Add(bottom);
             return page;
         }
 
@@ -1735,7 +1760,9 @@ namespace ScalingLaws.UI
                 tile.style.borderLeftColor = accent;
             }
 
-            var icon = SkillIcons.Badge(position.Skill, 52);
+            // 52 to 62: the tiles got narrower so all seven fit on one line, and the icon was
+            // the one thing that must not shrink with them.
+            var icon = SkillIcons.Badge(position.Skill, 62);
             icon.AddToClassList("postile__icon");
             tile.Add(icon);
 
@@ -2263,10 +2290,19 @@ namespace ScalingLaws.UI
             words.Add(effect);
 
             row.Add(words);
-            row.Add(BuildRightNowCard());
-            row.Add(BuildUserCharts());
-
             panel.Add(row);
+
+            // **The two stat cards used to sit on the same line as the dial**, which gave five
+            // things one row and left every one of them too narrow to read. They are the money and
+            // the audience; they deserve the width of the panel rather than a quarter of it. The
+            // reserved-capacity control moves up into the space they left, next to the dial, which
+            // is also where it belongs: it is the lever the dial is measuring.
+            var below = new VisualElement();
+            below.AddToClassList("service__below");
+            below.Add(BuildRightNowCard());
+            below.Add(BuildUserCharts());
+
+            panel.Add(below);
             return panel;
         }
 

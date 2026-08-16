@@ -728,11 +728,13 @@ namespace ScalingLaws.UI
             introFilm.targetCamera = Camera.main;
             introFilm.audioOutputMode = VideoAudioOutputMode.Direct;
 
-            // **Fit the whole frame in, do not fill the screen with it.** The default crops to the
-            // window's aspect, so a 16:9 film in a taller window loses its sides and a wider one
-            // loses its top and bottom. Letterboxing on black nobody can see is free; cutting the
-            // edges off somebody's animation is not.
-            introFilm.aspectRatio = VideoAspectRatio.FitInside;
+            // **Fill the width, letterbox only what has to be.** FitInside was safe and looked it:
+            // on a wide window it left black down both sides and the film read as a video playing
+            // in a menu rather than as the opening of the game. FitHorizontally scales to the
+            // window width instead, so the sides go and at most a sliver of top and bottom is lost
+            // on an unusually tall window. Cropping a few pixels of sky beats framing the film in
+            // black.
+            introFilm.aspectRatio = VideoAspectRatio.FitHorizontally;
             introFilm.Prepare();
         }
 
@@ -1226,6 +1228,26 @@ namespace ScalingLaws.UI
         /// The map, the country list it opens, and the four numbers that come with the choice.
         /// The three parts are one block with no gaps, because they are one decision.
         /// </summary>
+        /// <summary>
+        /// The rival whose mark this archetype borrows, or None.
+        ///
+        /// HuggyFace and the custom option have no counterpart on the board and keep their letters,
+        /// which is correct: there is no logo to show, and inventing one would be claiming a company
+        /// exists that does not.
+        /// </summary>
+        private static Texture2D LogoFor(CompanyArchetype archetype)
+        {
+            var lab = archetype switch
+            {
+                CompanyArchetype.OpenSi => CompetitorId.OpenAi,
+                CompanyArchetype.Antropic => CompetitorId.Anthropic,
+                CompanyArchetype.DeepSearch => CompetitorId.DeepSeek,
+                _ => CompetitorId.None
+            };
+
+            return lab == CompetitorId.None ? null : LabLogos.Get(lab);
+        }
+
         private VisualElement BuildRegionSection()
         {
             var section = new VisualElement();
@@ -1380,10 +1402,26 @@ namespace ScalingLaws.UI
 
             // The logo is the mark drawn in the house colour. No texture to import, and it still
             // reads as four different companies at a glance.
-            var mark = new Label(identity.Mark);
-            mark.AddToClassList("lab-mark");
-            mark.style.color = HexColor(identity.AccentHex);
-            card.Add(mark);
+            // **The real mark, when there is one.** Three of these four labs are the same
+            // companies the player will spend ten years racing, and their logos have been sitting
+            // in Resources/Labs since the rivals were named. Drawing "OI" next to them on the
+            // ranking board made the founding screen look like the placeholder it no longer is.
+            var logo = LogoFor(identity.Archetype);
+
+            if (logo != null)
+            {
+                var art = new VisualElement();
+                art.AddToClassList("lab-logo");
+                art.style.backgroundImage = new StyleBackground(logo);
+                card.Add(art);
+            }
+            else
+            {
+                var mark = new Label(identity.Mark);
+                mark.AddToClassList("lab-mark");
+                mark.style.color = HexColor(identity.AccentHex);
+                card.Add(mark);
+            }
 
             var title = new Label(identity.DisplayName.ToUpperInvariant());
             title.AddToClassList("lab-card__name");

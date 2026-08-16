@@ -132,6 +132,41 @@ namespace ScalingLaws.Simulation
                     rival.Competitor));
             }
 
+            // Labs that exist but have not shipped.
+            //
+            // **The board used to be a list of products, and it read as a list of companies.** Four
+            // rivals were added specifically so the player could watch them get fined and fold, and
+            // three of them were invisible until the day they released something — so the collapse
+            // had no build-up and the market looked empty for the first two years. A lab that has
+            // been founded is on the board from the day it is founded, at the bottom, with nothing
+            // to its name. That is exactly what it deserves and exactly what makes the fall legible.
+            var shipped = new HashSet<CompetitorId>();
+
+            foreach (var rival in rivals)
+            {
+                shipped.Add(rival.Competitor);
+            }
+
+            foreach (var dossier in LabDossiers.All)
+            {
+                if (shipped.Contains(dossier.Competitor)
+                    || !market.Date.IsOnOrAfter(dossier.Founded))
+                {
+                    continue;
+                }
+
+                rows.Add(new RankingEntry(
+                    1,
+                    dossier.Name,
+                    false,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    string.Empty,
+                    dossier.Competitor));
+            }
+
             rows.Sort(static (left, right) => right.Score.CompareTo(left.Score));
 
             var ranked = new List<RankingEntry>(rows.Count);

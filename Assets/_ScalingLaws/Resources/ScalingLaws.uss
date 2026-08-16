@@ -3684,9 +3684,11 @@
 
 /* One rule. There were two of these and the later one quietly won, which is why editing the
    first one appeared to do nothing. Half again on the size, with the gauge. */
+/* Grown with the dial it sits inside. */
+
 .service__percent {
     margin-top: -34px;
-    font-size: 33px;
+    font-size: 30px;
     -unity-font-style: bold;
     color: rgb(58, 62, 70);
 }
@@ -3864,15 +3866,19 @@
 
 /* The dial grew by about a third. It is the headline reading on this screen. */
 
+/* A third wider. Its own row has the space now the two stat cards moved below it. */
+
 .service__dial {
-    width: 168px;
+    width: 218px;
     flex-shrink: 0;
     align-items: center;
 }
 
+/* The arc grown with the block around it. Painter2D redraws to whatever size this is. */
+
 .gauge {
-    width: 152px;
-    height: 86px;
+    width: 198px;
+    height: 112px;
     flex-shrink: 0;
 }
 
@@ -7597,12 +7603,16 @@
 
 /* Seven tiles across two rows on a normal window. The basis rather than a width, so the last
    row does not stretch its tiles to fill the gap left by the missing eighth. */
+/* Seven across one line, not two.
+   The section was the tallest thing on the screen for the least information on it. Percentage
+   width with no minimum, so they narrow together rather than wrapping; taller, so the bigger icon
+   and the title still have room; and the blurb is gone from the tile because at this width it was
+   three words a line. It lives in the tooltip, which is where it was always more useful. */
 .postile {
-    width: 23%;
-    min-width: 190px;
-    height: 152px;
-    margin: 0 8px 10px 0;
-    padding: 14px 14px 12px 14px;
+    width: 13.6%;
+    height: 186px;
+    margin: 0 0.5% 0 0.5%;
+    padding: 14px 10px 12px 10px;
     border-radius: 5px;
     border-left-width: 3px;
     border-left-color: rgba(255, 255, 255, 0.2);
@@ -7619,28 +7629,27 @@
 }
 
 .postile__title {
-    font-size: 13px;
-    letter-spacing: 1.2px;
+    font-size: 12px;
+    letter-spacing: 0.6px;
     -unity-font-style: bold;
     color: rgb(234, 239, 248);
     white-space: normal;
 }
 
+/* Hidden rather than deleted: the element still carries the text for anything that reads the
+   tree, and the tooltip says the same thing with room to say it. */
 .postile__blurb {
-    font-size: 11px;
-    color: rgb(136, 148, 168);
-    white-space: normal;
-    margin-top: 5px;
+    display: none;
 }
 
 /* Out of flow, so a long title cannot push it off the tile. */
 .postile__ring {
     position: absolute;
-    right: 12px;
-    top: 12px;
-    width: 38px;
-    height: 38px;
-    border-radius: 19px;
+    right: 8px;
+    top: 8px;
+    width: 34px;
+    height: 34px;
+    border-radius: 17px;
     border-width: 2px;
     align-items: center;
     justify-content: center;
@@ -7661,8 +7670,10 @@
     margin-bottom: 14px;
 }
 
+/* 52 to 68: a third taller, because this is the button the whole tab exists for and it was the
+   same size as a row control. */
 .hirebar__button {
-    height: 52px;
+    height: 68px;
     padding: 0 26px;
     font-size: 13px;
     letter-spacing: 2px;
@@ -7682,8 +7693,9 @@
     background-color: rgb(238, 182, 84);
 }
 
+/* 260 to 338. The caption carries a live count and was the first thing to get clipped. */
 .hirebar__button--remote {
-    min-width: 260px;
+    min-width: 338px;
     color: rgb(206, 232, 244);
     background-color: rgba(79, 163, 199, 0.26);
     border-width: 1px;
@@ -8473,4 +8485,373 @@
     letter-spacing: 0.6px;
     color: rgb(146, 178, 158);
     margin-top: 5px;
+}
+
+/* ---- TEAM: the two bottom panels share a line ------------------------------------------------
+
+   What the team is worth is six readings and wants the width. Where you work is one line and a
+   picture, and stacked full width it pushed the readings off the bottom of the screen. */
+
+.team__bottom {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.team__worth {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 14px;
+}
+
+.team__where {
+    width: 330px;
+    flex-shrink: 0;
+}
+
+/* Square and sharp. The upgrade art was being stretched into a wide strip, which is what made it
+   look blurred: it was a 1:1 image drawn at about 3:1. */
+.team__where .office-upgrade {
+    width: 100%;
+    height: 250px;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+/* ---- COMPUTE: the two stat cards get their own row ------------------------------------------- */
+
+.service__below {
+    flex-direction: row;
+    margin-top: 14px;
+}
+
+.service__below .rnow {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 190px;
+    margin-right: 14px;
+}
+
+.service__below .charts {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 190px;
+}
+
+/* ---- the lab tiles on the founding screen ----------------------------------------------------- */
+
+.lab-logo {
+    width: 66px;
+    height: 66px;
+    -unity-background-scale-mode: scale-to-fit;
+    margin-bottom: 6px;
+}
+
+/* ---- MODEL: the landing page ------------------------------------------------------------------
+
+   Three columns over a table. The doors are the largest things on it because they are the only two
+   things on the screen that change anything; everything else is there to tell you which to press. */
+
+/* The page. It grows past the window on a company with a lot on sale, so it must not be allowed
+   to shrink: UI Toolkit shrinks children by default and the table is the first thing to go. */
+.modelhub {
+    flex-shrink: 0;
+}
+
+.modelhub__top {
+    flex-direction: row;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+
+.modelhub__doors {
+    width: 30%;
+    min-width: 280px;
+    flex-shrink: 0;
+    margin-right: 14px;
+}
+
+.door {
+    height: 132px;
+    width: 100%;
+    margin: 0 0 12px 0;
+    padding: 18px 20px;
+    align-items: flex-start;
+    justify-content: center;
+    border-width: 0;
+    border-radius: 5px;
+    white-space: normal;
+}
+
+.door--new {
+    color: rgb(18, 20, 26);
+    background-color: rgb(238, 240, 246);
+}
+
+.door--new:hover {
+    background-color: rgb(255, 255, 255);
+}
+
+.door--upgrade {
+    color: rgb(28, 24, 8);
+    background-color: rgb(226, 190, 44);
+}
+
+.door--upgrade:hover {
+    background-color: rgb(248, 212, 62);
+}
+
+.door:disabled {
+    color: rgb(120, 130, 148);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.door__title {
+    font-size: 30px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(18, 20, 26);
+}
+
+.door--upgrade .door__title {
+    color: rgb(28, 24, 8);
+}
+
+.door:disabled .door__title {
+    color: rgb(120, 130, 148);
+}
+
+.door__note {
+    font-size: 11px;
+    margin-top: 6px;
+    white-space: normal;
+    color: rgba(20, 24, 32, 0.72);
+}
+
+.door--upgrade .door__note {
+    color: rgba(28, 24, 8, 0.75);
+}
+
+.door:disabled .door__note {
+    color: rgb(110, 120, 138);
+}
+
+.modelhub__service {
+    flex-grow: 1;
+    flex-basis: 0;
+    padding: 16px 18px;
+    margin-right: 14px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.04);
+    align-items: center;
+}
+
+/* Spelled out rather than sharing a selector with the panel beside it: the two differ in two
+   properties, and a grouped rule plus an override is the same thing written twice. */
+.modelhub__money {
+    flex-grow: 1;
+    flex-basis: 0;
+    padding: 16px 18px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.04);
+    align-items: stretch;
+}
+
+.modelhub__heading {
+    align-self: flex-start;
+    font-size: 10px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 182);
+    margin-bottom: 10px;
+}
+
+.modelhub__dial {
+    width: 200px;
+    height: 156px;
+    align-items: center;
+}
+
+.modelhub__latency {
+    font-size: 12px;
+    color: rgb(150, 200, 174);
+    margin-top: 6px;
+}
+
+.modelhub__empty {
+    font-size: 12px;
+    color: rgb(126, 138, 158);
+    white-space: normal;
+}
+
+.loadbar {
+    margin-bottom: 10px;
+}
+
+.loadbar__head {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.loadbar__caption {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    color: rgb(130, 142, 162);
+}
+
+.loadbar__value {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(230, 236, 248);
+}
+
+.loadbar__track {
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.loadbar__fill {
+    height: 6px;
+    border-radius: 3px;
+}
+
+.modelhub__net {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(140, 210, 160);
+    margin-top: 4px;
+}
+
+.modelhub__net--bad {
+    color: rgb(224, 122, 122);
+}
+
+.modelhub__table {
+    padding: 16px 18px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.03);
+    flex-shrink: 0;
+}
+
+.mrow {
+    flex-direction: row;
+    align-items: center;
+    height: 52px;
+    padding: 0 10px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.mrow--head {
+    height: 30px;
+    background-color: transparent;
+    margin-bottom: 2px;
+}
+
+.mrow--head .mrow__users,
+.mrow--head .mrow__subs,
+.mrow--head .mrow__income,
+.mrow--head .mrow__name {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgb(130, 142, 162);
+}
+
+.mrow__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+    margin-right: 12px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mrow__initial {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(12, 14, 20);
+}
+
+.mrow__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.mrow__title {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.mrow__under {
+    font-size: 10px;
+    color: rgb(134, 146, 166);
+    margin-top: 2px;
+}
+
+.mrow__users,
+.mrow__subs {
+    width: 110px;
+    font-size: 13px;
+    -unity-text-align: middle-right;
+    color: rgb(206, 216, 232);
+}
+
+.mrow__income {
+    width: 170px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    color: rgb(150, 210, 172);
+}
+
+.modelhub__manage {
+    align-self: flex-start;
+    height: 36px;
+    margin-top: 10px;
+    padding: 0 22px;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(228, 234, 246);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* The two lines that open the tab, every third visit. Ignores the mouse, so it can never sit on
+   top of a button the player is already reaching for. */
+.flourish {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(6, 8, 14, 0.92);
+    transition-property: opacity;
+    transition-duration: 0.35s;
+    opacity: 1;
+}
+
+.flourish--out {
+    opacity: 0;
+}
+
+.flourish__line {
+    font-size: 40px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 182);
+    transition-property: color, scale;
+    transition-duration: 0.3s;
+}
+
+.flourish__line--go {
+    color: rgb(226, 190, 44);
+    scale: 1.12 1.12;
 }

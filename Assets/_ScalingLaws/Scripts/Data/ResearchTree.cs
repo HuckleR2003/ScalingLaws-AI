@@ -204,7 +204,21 @@ namespace ScalingLaws.Data
 
         public bool HasWarning => !string.IsNullOrEmpty(Warning);
 
-        public bool IsAvailableOn(GameDate date) => date.IsOnOrAfter(EarliestDate);
+        /// <summary>
+        /// Whether the player may start this today.
+        ///
+        /// **Era one ignores its own dates.** Every Foundations node carries the month the real
+        /// technique actually landed, which reads well in a tooltip and played terribly: a new
+        /// company could see fourteen nodes and start two of them, and the rest grew a START button
+        /// weeks later with no explanation. Players reasonably concluded the feature was broken.
+        ///
+        /// The prerequisite chain still holds, so nothing can be skipped — era one is simply open
+        /// from the first day, which is the only era a new player is looking at. Later eras keep
+        /// their dates, because by then the player knows what a locked node means and the dates are
+        /// carrying the actual shape of the timeline.
+        /// </summary>
+        public bool IsAvailableOn(GameDate date) =>
+            Era == ResearchEra.Foundations || date.IsOnOrAfter(EarliestDate);
 
         public override string ToString() => $"{DisplayName} (era {(int)Era})";
     }

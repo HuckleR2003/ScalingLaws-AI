@@ -2703,6 +2703,82 @@ namespace ScalingLaws.Simulation
                 frontier);
         }
 
+        /// <summary>
+        /// One row per live model: who is using it and what it earns.
+        ///
+        /// **Split by the same utility weight the market itself uses**, rather than tracked
+        /// separately. A second set of per-model counters would be a second source of truth that
+        /// could disagree with the revenue the company actually banks, and the first time it did
+        /// the player would be reading a table that contradicts their own bank balance.
+        ///
+        /// Live models only. A retired model has no users, and a table that listed it would be
+        /// showing the player a product they cannot do anything about.
+        /// </summary>
+        public List<ModelRow> ModelBoard()
+        {
+            var rows = new List<ModelRow>();
+            var live = new List<DeployedModel>();
+
+            foreach (var model in State.DeployedModels)
+            {
+                if (model.IsLiveOn(State.Date))
+                {
+                    live.Add(model);
+                }
+            }
+
+            if (live.Count == 0)
+            {
+                return rows;
+            }
+
+            var month = Ledger.MonthKeyOf(State.Date);
+            var earnings = State.Ledger.MonthTotal(month, LedgerLine.Subscriptions);
+            var users = Sentiment().Users;
+
+            var weights = new double[live.Count];
+            var total = 0.0;
+
+            for (var index = 0; index < live.Count; index++)
+            {
+                var model = live[index];
+
+                weights[index] = Math.Exp(MarketShareModel.Utility(
+                    model.EffectiveCapability(State.Date),
+                    Math.Clamp(State.Reputation + model.BrandBonus(State.Date), 0.0, 1.0),
+                    model.PriceMultiplier,
+                    model.AgeYears(State.Date)));
+
+                total += weights[index];
+            }
+
+            for (var index = 0; index < live.Count; index++)
+            {
+                var model = live[index];
+                var share = total <= 0.0 ? 0.0 : weights[index] / total;
+
+                rows.Add(new ModelRow(
+                    model.Name,
+                    model.Type,
+                    model.EffectiveCapability(State.Date),
+                    users * share,
+                    users * share * SubscriberFraction,
+                    (long)Math.Round(earnings * share),
+                    model.DaysOnSale));
+            }
+
+            rows.Sort(static (left, right) => right.MonthEarningsUsd.CompareTo(left.MonthEarningsUsd));
+            return rows;
+        }
+
+        /// <summary>
+        /// How many users pay.
+        ///
+        /// One number for the whole company because the pricing model does not vary it per model,
+        /// and inventing a per-model conversion rate here would be a figure with nothing behind it.
+        /// </summary>
+        public const double SubscriberFraction = 0.043;
+
         public UserSentiment Sentiment()
         {
             var breakdown = MarketByType();
