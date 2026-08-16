@@ -55,7 +55,8 @@ namespace ScalingLaws.Simulation
             double dataSupplyMultiplier = 1.0,
             double dataQualityMultiplier = 1.0,
             double dataCostMultiplier = 1.0,
-            int liveModels = 0)
+            int liveModels = 0,
+            double throughputMultiplier = 1.0)
         {
             var qualityScale = Math.Clamp(SimUnits.Finite(dataQualityMultiplier, 1.0), 0.5, 2.0);
             var source = architectures ?? ArchitectureCatalog.AsSource;
@@ -148,9 +149,21 @@ namespace ScalingLaws.Simulation
             // Precision is throughput. Narrower numbers move more of them through the same silicon,
             // which is why FP8 nearly halves the calendar rather than making a better model. What it
             // costs is paid later, in how far the finished run lands from this projection.
+            // **This has to be the same product the day applies, factor for factor.**
+            //
+            // It was not, and the gap was large and always in the same direction. The projection
+            // divided by precision throughput while the daily advance never multiplied by it, and
+            // the daily advance applied the founder's throughput skill and the team's utilization
+            // bonus while the projection knew about neither. A run the creator priced at eleven
+            // weeks finished in four days, and every number on the design screen was a guess the
+            // game had no intention of honouring.
+            //
+            // The multipliers arrive as one argument rather than as three, because the caller is
+            // the only thing that can read them and this file must not learn what a founder is.
             var precision = TrainingChoiceCatalog.Get(blueprint.Precision);
             var throughput = profile.EffectivePetaflops * architecture.TrainingEfficiency * share
-                             * precision.Throughput;
+                             * precision.Throughput
+                             * Math.Max(0.01, SimUnits.Finite(throughputMultiplier, 1.0));
             if (throughput <= 0.0)
             {
                 Append(blocking, "the fleet has no usable compute");

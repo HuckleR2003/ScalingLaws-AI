@@ -163,27 +163,34 @@ namespace ScalingLaws.Data
 
         private static readonly PrecisionDefinition[] Precisions =
         {
+            // **The rungs are stated against FP32, because FP32 is now the neutral option.**
+            //
+            // The ratios below are exactly the ones this catalog has always had — 0.55 : 1.0 : 1.85
+            // divided through by 0.55 — but the numbers are anchored to the rung a company with no
+            // research actually trains at. Leaving the neutral rung at 0.55 would have meant every
+            // new company trained at a permanent 45% penalty against an economy balanced for 1.0,
+            // which is the neutral option rule this file already has a comment about breaking once.
             new(TrainingPrecision.Float32, "FP32",
-                "Full width. Half the throughput of the default and the run lands where the "
-                + "projection said it would.",
-                throughput: 0.55,
-                instability: 0.75,
+                "Full width. What you train at before you have bought anything better, and the run "
+                + "lands where the projection said it would.",
+                throughput: 1.0,
+                instability: 1.0,
                 earliest: GameDate.Start,
                 warning: string.Empty),
 
             new(TrainingPrecision.BFloat16, "BF16",
-                "What everybody trains in. Neither the cheap option nor the safe one, which is why "
-                + "it is the one to beat.",
-                throughput: 1.0,
-                instability: 1.0,
+                "What everybody trains in. Close to twice the throughput of full width, for none "
+                + "of the risk that eight bits carries.",
+                throughput: 1.82,
+                instability: 1.33,
                 earliest: GameDate.Start,
                 warning: string.Empty),
 
             new(TrainingPrecision.Float8, "FP8",
                 "Eight bits. Nearly twice the compute out of the same cluster, and a run that can "
                 + "come apart in the last third with nothing to show for the money.",
-                throughput: 1.85,
-                instability: 2.4,
+                throughput: 3.36,
+                instability: 3.2,
                 earliest: GameDate.FromCalendar(2023, 3, 1),
                 warning: "Needs 2023 silicon. The spread on the finished model is more than twice "
                     + "what it would be at BF16, so this is a bet, not a saving.")

@@ -34,8 +34,13 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void TheMiddleOfEveryCatalogIsExactlyNeutral()
         {
-            var precision = TrainingChoiceCatalog.Get(TrainingPrecision.BFloat16);
-            Assert.AreEqual(1.0, precision.Throughput, 1e-9, "BF16 has to be the reference width.");
+            // **FP32 is the reference width now, not BF16.** The neutral option of a catalog is the
+            // one a company with no research gets, and since precision became a ladder that is full
+            // width. Anchoring the 1.0 anywhere else means every new company trains at a permanent
+            // penalty against an economy balanced for 1.0.
+            var precision = TrainingChoiceCatalog.Get(TrainingPrecision.Float32);
+            Assert.AreEqual(1.0, precision.Throughput, 1e-9,
+                "The ungated rung has to be the reference width.");
             Assert.AreEqual(1.0, precision.Instability, 1e-9);
 
             var shape = TrainingChoiceCatalog.Get(ModelShape.Balanced);
@@ -77,11 +82,22 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Ready(1201);
 
-            var wide = simulation.Project(Basic().WithPrecision(TrainingPrecision.Float32));
-            var normal = simulation.Project(Basic().WithPrecision(TrainingPrecision.BFloat16));
+            // BF16 is a rung on the ladder now, so a company that has not bought it cannot be
+            // projected at it and the comparison would be against a blocked projection.
+            simulation.State.UnlockedResearch.Add(ResearchNodeId.MixedPrecisionTraining);
+
+            // A run big enough that the difference survives rounding to whole days. The small
+            // blueprint the rest of the file uses finishes inside a day at either width, so the
+            // comparison was between two numbers that had both been rounded to the same one.
+            var big = new ModelBlueprint("Subject", ArchitectureId.DenseTransformer, 70.0, 1_400.0,
+                DatasetSource.WebCrawl);
+
+            var wide = simulation.Project(big.WithPrecision(TrainingPrecision.Float32));
+            var normal = simulation.Project(big.WithPrecision(TrainingPrecision.BFloat16));
 
             Assert.Greater(wide.TrainingDays, normal.TrainingDays,
-                "FP32 moves half as much through the same cluster, so it has to take longer.");
+                "BF16 moves nearly twice as much through the same cluster, so full width has to "
+                + "take longer. This is the whole reason the research is worth buying.");
         }
 
         [Test]

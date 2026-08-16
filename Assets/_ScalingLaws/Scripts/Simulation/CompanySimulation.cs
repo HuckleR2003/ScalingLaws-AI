@@ -210,8 +210,18 @@ namespace ScalingLaws.Simulation
                 State.HasResearch(ResearchNodeId.ContinuousDataPipeline)
                     ? TrainingChoiceCatalog.PipelineDiscount
                     : 1.0,
-                State.DeployedModels.Count);
+                State.DeployedModels.Count,
+                TrainingThroughputMultiplier());
         }
+
+        /// <summary>
+        /// Everything outside the fleet that makes a run go faster or slower.
+        ///
+        /// One function, called by the projection and by the day, so the two can never drift. That
+        /// they had drifted is the whole reason it exists.
+        /// </summary>
+        public double TrainingThroughputMultiplier() =>
+            State.Founder.TrainingThroughputMultiplier * (1.0 + State.Staff.UtilizationBonus());
 
         /// <summary>
         /// The largest run the company currently knows how to hold together, in billions.
@@ -2243,8 +2253,7 @@ namespace ScalingLaws.Simulation
         {
             var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
             var researchPetaflops =
-                profile.EffectivePetaflops * share * State.Founder.TrainingThroughputMultiplier
-                * (1.0 + State.Staff.UtilizationBonus());
+                profile.EffectivePetaflops * share * TrainingThroughputMultiplier();
             var researchCash = profile.DailyOperatingCostUsd * share;
 
             var run = State.ActiveRun;
@@ -2279,9 +2288,14 @@ namespace ScalingLaws.Simulation
                 return 0.0;
             }
 
+            // Precision belongs here as well as in the projection. Narrow numbers move more of
+            // them through the same silicon; leaving the factor out of the advance meant FP8 was
+            // priced as a saving on the design screen and delivered nothing on the calendar.
             var architecture = State.ResolveArchitecture(run.Blueprint.Architecture);
+            var precision = TrainingChoiceCatalog.Get(run.Blueprint.Precision);
+
             run.Contribute(
-                researchPetaflops * runSlice * architecture.TrainingEfficiency,
+                researchPetaflops * runSlice * architecture.TrainingEfficiency * precision.Throughput,
                 SimUnits.ToDollars(researchCash * runSlice));
 
             if (!run.IsComplete)
