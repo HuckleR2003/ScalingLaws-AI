@@ -23,6 +23,52 @@ Zasada: **wszystko poniżej ma działający fallback** — gra nie wywala się b
 | 11 | `Resources/Models/type_*.png` (5 szt.) | Tabela modeli w zakładce MODEL | kolorowy kafelek z literą | 96×96, po jednej na `ModelType` |
 | 12 | `Resources/Labs/lab_huggyface.png` | Kafelek HuggyFace w YOUR LAB | litery „HF" | pozostałe 3 kafelki mają już prawdziwe logo |
 
+---
+
+## 1a. Ikony RESEARCH — brakujące węzły
+
+Węzły dodane w ostatnich sesjach nie mają własnej grafiki i dziedziczą tło ery.
+
+| Plik | Węzeł | Co przedstawia |
+|---|---|---|
+| `Resources/Research/node_single_precision.png` | Single precision training | liczba 32-bitowa / rejestr, chłodne niebieskie |
+| `Resources/Research/node_mixed_precision.png` | Mixed precision training | dwa formaty obok siebie, jeden wąski |
+| `Resources/Research/node_low_precision.png` | Low precision training | 8 bitów, ostrzegawcza czerwień |
+
+Reszta drzewa (35 węzłów) korzysta z 4 grafik er — to było świadome i działa.
+
+## 1b. Ikony UPGRADE — 11 cech modelu
+
+Kafelki są teraz **poziome ze zdjęciem po lewej**, więc format się zmienił: `480×260`, kadr poziomy, ciemny, żeby liczby po prawej były czytelne.
+
+| Plik | Cecha | Propozycja ujęcia |
+|---|---|---|
+| `trait_reasoning.png` | Reasoning | łańcuch kroków / graf rozumowania |
+| `trait_knowledge.png` | Knowledge | serwerownia z archiwum, regały danych |
+| `trait_coding.png` | Coding | edytor kodu na dwóch monitorach |
+| `trait_multilingual.png` | Multilingual | ten sam napis w kilku alfabetach |
+| `trait_multimodal.png` | Multimodal | obraz + dźwięk + tekst w jednym kadrze |
+| `trait_context.png` | Context length | bardzo długi dokument / zwój |
+| `trait_safety.png` | Safety | red team przy monitorach, czerwone światło |
+| `trait_speed.png` | Latency | wykres opóźnień, stoper |
+| `trait_efficiency.png` | Efficiency | radiatory, chłodzenie |
+| `trait_tools.png` | Tool use | model wywołujący API, terminal |
+| `trait_ecosystem.png` | Ecosystem | integracje, wtyczki, partnerzy |
+
+**Te pliki już istnieją** i są wpięte (`CardArt.ForTrait`) — ale były robione pod kwadratowe karty. Poziomy kadr `480×260` wykorzysta nowy układ znacznie lepiej.
+
+## 1c. Mapa miasta — etap 1
+
+Teren jest **blokoutem**, nie finalną grafiką. Do wyglądu z Twoich renderów brakuje:
+
+| Co | Uwaga |
+|---|---|
+| Warstwy terenu (5–6) | trawa, skała, piasek/plaża, asfalt, beton, las — dziś jest **jedna** płaska barwa |
+| Materiał wody | dziś płaski niebieski plane; potrzebny shader z falą i przezroczystością |
+| Drzewa i krzewy | Terrain Tree prototypy, ~4 gatunki |
+| Drogi i mosty | etap 3 planu, geometria a nie tekstura |
+| Budynki dzielnic | etap 4 |
+
 ### Uwaga do #7 i #8
 
 Kandydaci losują twarz z `PortraitSeed % LookCount`. Przy 9 wyglądach i 6 kandydatach na liście **powtórki są widoczne od razu**. Do 14 wyglądów problem praktycznie znika. Brak kobiet w obu paczkach to nie jest kwestia estetyki — to firma AI złożona wyłącznie z mężczyzn, czego nikt świadomie nie zaprojektował.
