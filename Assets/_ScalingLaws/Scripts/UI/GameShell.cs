@@ -1078,6 +1078,11 @@ namespace ScalingLaws.UI
 
                 if (nodes.Count > 0)
                 {
+                    // The capability line, on a board you can lean into. It opens showing the whole
+                    // era, because a map that starts zoomed in hides the thing the player came for;
+                    // the wheel and the drag are for leaning closer, not for finding your way back.
+                    var map = new ResearchMap();
+
                     var track = new VisualElement();
                     track.AddToClassList("tree-track");
 
@@ -1090,7 +1095,8 @@ namespace ScalingLaws.UI
                         track.Add(BuildTreeNode(nodes[index], index % 2 == 0));
                     }
 
-                    section.Add(track);
+                    map.Surface.Add(track);
+                    section.Add(map);
                 }
 
                 // The second line. A capability node opens a direction the company could not go at

@@ -8855,3 +8855,77 @@
     color: rgb(226, 190, 44);
     scale: 1.12 1.12;
 }
+
+/* ---- the research map -------------------------------------------------------------------------
+
+   One viewport per era. It clips, so a panned tree stops at the frame instead of drawing over the
+   era below it, and it is tall enough to hold the whole track at 100% because that is the state it
+   opens in. */
+
+.rmap {
+    height: 400px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.018);
+}
+
+.rmap--dragging {
+    border-color: rgba(214, 158, 62, 0.45);
+}
+
+.rmap__content {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Out of flow in the corner, so it never moves with the thing it is controlling. */
+.rmap__bar {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background-color: rgba(8, 11, 18, 0.86);
+}
+
+.rmap__reading {
+    width: 44px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(150, 162, 182);
+}
+
+.rmap__step {
+    width: 24px;
+    height: 24px;
+    margin-left: 4px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(226, 232, 244);
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.rmap__step:hover {
+    background-color: rgba(255, 255, 255, 0.20);
+}
+
+.rmap__fit {
+    height: 24px;
+    margin-left: 6px;
+    padding: 0 12px;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 3px;
+    color: rgb(18, 20, 26);
+    background-color: rgb(214, 158, 62);
+}

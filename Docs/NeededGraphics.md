@@ -20,6 +20,8 @@ Zasada: **wszystko poniżej ma działający fallback** — gra nie wywala się b
 | 8 | **Kobiece postacie** | Portrety, biuro | żadna z dwóch paczek ich nie ma | najpilniejsze z całej listy |
 | 9 | `Resources/Furniture/*.png` (10 szt.) | Sklep z meblami | kolorowy kwadrat (swatch) | 96×96, po jednej na `FurnitureKind` |
 | 10 | Zdjęcia podzespołów | COMPUTE (wybór krzemu) | — | patrz `ART_TODO.md`, wciąż otwarte |
+| 11 | `Resources/Models/type_*.png` (5 szt.) | Tabela modeli w zakładce MODEL | kolorowy kafelek z literą | 96×96, po jednej na `ModelType` |
+| 12 | `Resources/Labs/lab_huggyface.png` | Kafelek HuggyFace w YOUR LAB | litery „HF" | pozostałe 3 kafelki mają już prawdziwe logo |
 
 ### Uwaga do #7 i #8
 
