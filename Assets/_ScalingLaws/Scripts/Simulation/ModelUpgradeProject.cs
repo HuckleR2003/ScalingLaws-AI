@@ -55,6 +55,14 @@ namespace ScalingLaws.Simulation
             0.0,
             1.0);
 
+        /// <summary>
+        /// Calendar days still to run.
+        ///
+        /// The calendar only. Compute can be the binding clock — the banner shows this because it
+        /// is the number a player can act on: they can add compute, they cannot add days.
+        /// </summary>
+        public int DaysRemaining => Math.Max(0, DurationDays - DaysCompleted);
+
         public bool IsComplete =>
             DaysCompleted >= DurationDays
             && (PetaflopDaysRequired <= 0.0 || PetaflopDaysCompleted >= PetaflopDaysRequired);

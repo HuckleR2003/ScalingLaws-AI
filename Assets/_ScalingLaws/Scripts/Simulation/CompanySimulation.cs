@@ -1665,7 +1665,24 @@ namespace ScalingLaws.Simulation
                     return Sign(letter, candidate, offered, bonus, out note);
 
                 case OfferVerdict.HeldFirm:
-                    note = $"{candidate.Name} holds firm at ${candidate.AskingHourlyUsd:N2} per hour.";
+                    // Sometimes the wait costs the company. Rolled from the hiring stream so it
+                    // cannot shift the sequence the market runs on.
+                    if (State.Hiring.Random.NextChance(Negotiation.ImpatienceChance))
+                    {
+                        var now = candidate.RaiseTheAsk(Negotiation.ImpatienceRaise);
+
+                        note = $"{candidate.Name} has had another offer and now wants "
+                            + $"${now:N2} per hour.";
+                    }
+                    else
+                    {
+                        note = $"{candidate.Name} holds firm at "
+                            + $"${candidate.AskingHourlyUsd:N2} per hour.";
+                    }
+
+                    letter.AskingSalaryUsd =
+                        candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd);
+
                     return OfferVerdict.HeldFirm;
 
                 default:

@@ -522,6 +522,25 @@ namespace ScalingLaws.UI
                 Refresh();
             }, 2500.0, "$"));
 
+            // The face. It reads the same numbers the verdict does, so it can never promise an
+            // answer the send button then refuses.
+            var mood = Negotiation.MoodFor(letter.Candidate, offerHourly, (long)offerBonus);
+            var (face, says) = Negotiation.Portrait(mood);
+
+            var read = new VisualElement();
+            read.AddToClassList("haggle__mood");
+            read.AddToClassList($"haggle__mood--{mood.ToString().ToLowerInvariant()}");
+
+            var glyph = new Label(face);
+            glyph.AddToClassList("haggle__face");
+            read.Add(glyph);
+
+            var saying = new Label(says);
+            saying.AddToClassList("haggle__says");
+            read.Add(saying);
+
+            panel.Add(read);
+
             var worth = new Label(
                 $"Worth ${offerHourly + Negotiation.HourlyValueOfBonus((long)offerBonus):N2} an hour "
                 + $"to them, or {UiFormat.Money((long)Math.Round(offerHourly * PositionCatalog.PaidHoursPerYear))} "

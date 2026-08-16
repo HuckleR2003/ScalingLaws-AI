@@ -1,33 +1,54 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
 {
     /// <summary>
-    /// The upgrade grid, laid out like the OS upgrade screen in the tycoon games this borrows from:
-    /// a card per trait with a title, a level and a price.
+    /// Post-training work on a model that is already out there.
     ///
-    /// One difference, and it is the important one. Each card also shows what the market expects
-    /// today. A card at level 4 when par is 6 is not merely missing a bonus, it is actively costing
-    /// brand, capability and margin, and the card says so in red. That is what turns the grid from a
-    /// shopping list into a maintenance schedule.
+    /// **Rebuilt around a basket rather than a button per card.** Every tile used to commission a
+    /// programme the instant it was clicked, which made the screen a row of landmines: there was no
+    /// way to compare two upgrades, no way to see what three of them together would cost, and no
+    /// way back from a misclick. Now tiles are picked, the panel on the right shows exactly what
+    /// the selection would do to the model, and nothing is commissioned until the player says so.
+    ///
+    /// The tiles are landscape rather than square because each one carries a photograph and a row
+    /// of numbers, and a square card forced the numbers into three lines of two words.
     /// </summary>
     public sealed class UpgradeGridPanel
     {
+        /// <summary>Milliseconds the difference panel takes to draw itself in.</summary>
+        public const int RevealMilliseconds = 24;
+
+        /// <summary>Widest a difference bar goes, as a share of its track.</summary>
+        public const double BarCeiling = 0.92;
+
         private readonly CompanySimulation simulation;
         private readonly VisualElement root;
         private readonly VisualElement grid = new();
+        private readonly VisualElement diff = new();
         private readonly DropdownField modelField = new();
-        private readonly Label summary = new();
         private readonly Label status = new();
         private readonly List<int> modelIndices = new();
 
+        /// <summary>
+        /// What the player has picked, for the model they are looking at.
+        ///
+        /// Cleared when the model changes, because a basket built for one model means nothing
+        /// against another: the levels differ, so the prices and the gains do too.
+        /// </summary>
+        private readonly HashSet<ModelTrait> chosen = new();
+
+        private int basketModelIndex = -1;
+
         public UpgradeGridPanel(CompanySimulation simulation)
         {
-            this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
+            this.simulation = simulation;
             root = new VisualElement();
             root.AddToClassList("content");
             Build();
@@ -35,28 +56,42 @@ namespace ScalingLaws.UI
 
         public VisualElement Root => root;
 
+        /// <summary>What is in the basket. Public so a test can drive it without a panel.</summary>
+        public IReadOnlyCollection<ModelTrait> Chosen => chosen;
+
         private void Build()
         {
             var title = new Label("UPGRADE MODEL");
             title.AddToClassList("page-title");
             root.Add(title);
 
-            var subtitle = new Label(
-                "Post-training work on a model that is already live. Every card shows its level against "
-                + "what the market now treats as normal. Falling behind is not neutral.");
-            subtitle.AddToClassList("page-subtitle");
-            root.Add(subtitle);
+            var blurb = new Label(
+                "Post-training work on a model that is already live. Pick everything you want done, "
+                + "see what it costs together, then commission it.");
+
+            blurb.AddToClassList("page-subtitle");
+            root.Add(blurb);
 
             modelField.label = "Model";
             modelField.AddToClassList("field");
-            modelField.RegisterValueChangedCallback(_ => Refresh());
+            modelField.RegisterValueChangedCallback(_ =>
+            {
+                chosen.Clear();
+                Refresh();
+            });
+
             root.Add(modelField);
 
-            summary.AddToClassList("page-subtitle");
-            root.Add(summary);
+            var columns = new VisualElement();
+            columns.AddToClassList("upg__columns");
 
-            grid.AddToClassList("grid");
-            root.Add(grid);
+            grid.AddToClassList("upg__grid");
+            columns.Add(grid);
+
+            diff.AddToClassList("upg__diff");
+            columns.Add(diff);
+
+            root.Add(columns);
 
             status.AddToClassList("verdict");
             root.Add(status);
@@ -65,100 +100,418 @@ namespace ScalingLaws.UI
         public void Refresh()
         {
             RebuildModelChoices();
-            grid.Clear();
 
             var modelIndex = SelectedModelIndex();
+
+            if (modelIndex != basketModelIndex)
+            {
+                chosen.Clear();
+                basketModelIndex = modelIndex;
+            }
+
+            grid.Clear();
+            diff.Clear();
+
             if (modelIndex < 0)
             {
-                summary.text = "Nothing is live yet. Ship a model before there is anything to upgrade.";
+                var none = new Label("Nothing is live yet. Release a model and this fills up.");
+                none.AddToClassList("upg__empty");
+                grid.Add(none);
                 return;
             }
 
             var model = simulation.State.DeployedModels[modelIndex];
-            var date = simulation.State.Date;
-            var shortfall = model.Traits.TotalShortfall(date);
+            var standings = model.Traits.Standings(simulation.State.Date).ToList();
 
-            summary.text =
-                $"Measured on release {UiFormat.Number(model.Capability)}, scoring {UiFormat.Number(model.EffectiveCapability(date))} today. "
-                + $"Serving cost multiplier {UiFormat.Number(model.EfficiencyMultiplier(date), 2)}. "
-                + (shortfall > 0
-                    ? $"{shortfall} level(s) behind the market across the grid."
-                    : "Level with or ahead of the market on every trait.");
-
-            foreach (var standing in simulation.UpgradeGrid(modelIndex))
+            foreach (var standing in standings)
             {
-                grid.Add(BuildCard(modelIndex, standing));
+                grid.Add(BuildTile(modelIndex, standing));
             }
+
+            diff.Add(BuildDiff(modelIndex, model, standings));
         }
 
-        private VisualElement BuildCard(int modelIndex, TraitStanding standing)
+        // ---- one tile ---------------------------------------------------------------------------
+
+        private VisualElement BuildTile(int modelIndex, TraitStanding standing)
         {
             var definition = ModelTraitCatalog.Get(standing.Trait);
-            var card = new Button();
-            card.AddToClassList("card");
-            CardArt.Apply(card, CardArt.ForTrait(standing.Trait));
+            var inFlight = simulation.State.IsUpgradeInFlight(modelIndex, standing.Trait);
+            var picked = chosen.Contains(standing.Trait);
+            var pickable = standing.IsAvailable && !standing.IsMaxed && !inFlight;
 
-            if (!standing.IsAvailable)
+            var tile = new Button(() =>
             {
-                card.AddToClassList("card--locked");
+                if (!pickable)
+                {
+                    return;
+                }
+
+                if (!chosen.Remove(standing.Trait))
+                {
+                    chosen.Add(standing.Trait);
+                }
+
+                Refresh();
+            });
+
+            tile.AddToClassList("utile");
+            tile.EnableInClassList("utile--picked", picked);
+            tile.EnableInClassList("utile--locked", !standing.IsAvailable);
+            tile.EnableInClassList("utile--busy", inFlight);
+            tile.EnableInClassList("utile--behind", standing.IsBehindMarket && pickable);
+
+            // The photograph is its own strip on the left rather than the tile's background, so the
+            // numbers sit on flat colour and stay legible whatever the image is doing.
+            var art = new VisualElement();
+            art.AddToClassList("utile__art");
+            CardArt.Apply(art, CardArt.ForTrait(standing.Trait));
+            tile.Add(art);
+
+            var body = new VisualElement();
+            body.AddToClassList("utile__body");
+
+            var head = new VisualElement();
+            head.AddToClassList("utile__head");
+
+            var name = new Label(definition.DisplayName.ToUpperInvariant());
+            name.AddToClassList("utile__name");
+            head.Add(name);
+
+            if (inFlight)
+            {
+                head.Add(Tag("IN PROGRESS", "utile__tag--busy"));
+            }
+            else if (!standing.IsAvailable)
+            {
+                head.Add(Tag($"FROM {definition.AvailableFrom}", "utile__tag--locked"));
+            }
+            else if (standing.IsMaxed)
+            {
+                head.Add(Tag("AT THE CEILING", "utile__tag--max"));
             }
             else if (standing.IsBehindMarket)
             {
-                card.AddToClassList("card--behind");
-            }
-            else if (standing.Level > standing.ExpectedLevel)
-            {
-                card.AddToClassList("card--ahead");
+                head.Add(Tag($"{standing.Shortfall} BEHIND", "utile__tag--behind"));
             }
 
-            var title = new Label(definition.DisplayName.ToUpperInvariant());
-            title.AddToClassList("card__title");
-            card.Add(title);
+            body.Add(head);
 
-            var levelLine = new Label(standing.IsAvailable
-                ? $"LEVEL {standing.Level}   (market {standing.ExpectedLevel})"
-                : $"UNSOLVED UNTIL {definition.AvailableFrom}");
-            levelLine.AddToClassList("card__line");
-            card.Add(levelLine);
+            // The level against what the market treats as normal, drawn rather than written: the
+            // gap is the entire reason to press this tile and a pair of numbers hid it.
+            body.Add(BuildLevelBar(standing));
 
-            var costLine = new Label(standing.IsMaxed
-                ? "AT THE CEILING"
-                : $"{UiFormat.Money(standing.UpgradeCostUsd)}   {UiFormat.Days(standing.UpgradeDays)}   {UiFormat.PetaflopDays(standing.UpgradePetaflopDays)}");
-            costLine.AddToClassList("card__line");
-            card.Add(costLine);
+            var line = new Label(standing.IsMaxed || !standing.IsAvailable
+                ? definition.Description
+                : $"{UiFormat.Money(standing.UpgradeCostUsd)}   ·   {UiFormat.Days(standing.UpgradeDays)}"
+                  + $"   ·   {UiFormat.PetaflopDays(standing.UpgradePetaflopDays)}");
 
-            if (simulation.State.IsUpgradeInFlight(modelIndex, standing.Trait))
-            {
-                var badge = new Label("IN PROGRESS");
-                badge.AddToClassList("card__badge");
-                card.Add(badge);
-            }
-            else if (standing.IsBehindMarket)
-            {
-                var badge = new Label($"{standing.Shortfall} BEHIND");
-                badge.AddToClassList("card__badge");
-                card.Add(badge);
-            }
+            line.AddToClassList("utile__line");
+            body.Add(line);
 
-            card.SetEnabled(standing.IsAvailable && !standing.IsMaxed);
-            card.clicked += () => StartUpgrade(modelIndex, standing.Trait);
-            return card;
+            tile.Add(body);
+
+            var mark = new VisualElement();
+            mark.AddToClassList("utile__check");
+            mark.EnableInClassList("utile__check--on", picked);
+            tile.Add(mark);
+
+            tile.SetEnabled(pickable);
+            return tile;
         }
 
-        private void StartUpgrade(int modelIndex, ModelTrait trait)
+        private static VisualElement BuildLevelBar(TraitStanding standing)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("ulevel");
+
+            var track = new VisualElement();
+            track.AddToClassList("ulevel__track");
+
+            var ceiling = Math.Max(1, ModelTraitSetLimits.MaximumLevel);
+
+            var mine = new VisualElement();
+            mine.AddToClassList("ulevel__mine");
+            mine.style.width = Length.Percent(standing.Level / (float)ceiling * 100f);
+            track.Add(mine);
+
+            // The market's line sits on top of the bar rather than beside it, so "behind" is a
+            // picture instead of a subtraction the player has to do.
+            var market = new VisualElement();
+            market.AddToClassList("ulevel__market");
+            market.style.left = Length.Percent(standing.ExpectedLevel / (float)ceiling * 100f);
+            track.Add(market);
+
+            block.Add(track);
+
+            var reading = new Label($"LEVEL {standing.Level}   ·   MARKET {standing.ExpectedLevel}");
+            reading.AddToClassList("ulevel__reading");
+            block.Add(reading);
+
+            return block;
+        }
+
+        private static VisualElement Tag(string text, string style)
+        {
+            var tag = new Label(text);
+            tag.AddToClassList("utile__tag");
+            tag.AddToClassList(style);
+            return tag;
+        }
+
+        // ---- the difference panel ------------------------------------------------------------------
+
+        /// <summary>
+        /// What the basket would do to this model, before against after.
+        ///
+        /// **Everything here is the catalog's own arithmetic, not a mock-up.** Capability, brand and
+        /// serving efficiency each move by a stated amount per level, so the after column is the
+        /// before column plus the levels being bought. The bars animate in because the difference is
+        /// the point of the panel and a static number does not read as a change.
+        /// </summary>
+        private VisualElement BuildDiff(int modelIndex, DeployedModel model,
+            IReadOnlyList<TraitStanding> standings)
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("udiff");
+
+            var heading = new Label("WHAT IT WOULD DO");
+            heading.AddToClassList("udiff__heading");
+            panel.Add(heading);
+
+            var subject = new Label(model.Name);
+            subject.AddToClassList("udiff__subject");
+            panel.Add(subject);
+
+            if (chosen.Count == 0)
+            {
+                var hint = new Label(
+                    "Pick one or more upgrades on the left. They can be commissioned together, and "
+                    + "the cluster splits its time between them.");
+
+                hint.AddToClassList("udiff__hint");
+                panel.Add(hint);
+                return panel;
+            }
+
+            var picked = standings.Where(entry => chosen.Contains(entry.Trait)).ToList();
+
+            double capability = 0.0;
+            double brand = 0.0;
+            double efficiency = 0.0;
+            long cash = 0L;
+            var days = 0;
+            var petaflopDays = 0.0;
+
+            foreach (var standing in picked)
+            {
+                var definition = ModelTraitCatalog.Get(standing.Trait);
+
+                capability += definition.CapabilityPerLevel;
+                brand += definition.BrandPerLevel;
+                efficiency += definition.EfficiencyPerLevel;
+
+                cash += standing.UpgradeCostUsd;
+                petaflopDays += standing.UpgradePetaflopDays;
+
+                // The cluster runs the programmes side by side, so the calendar is the longest of
+                // them rather than the sum. The compute is the sum, which is what actually slows
+                // them all down, and that is already in the petaflop-day total.
+                days = Math.Max(days, standing.UpgradeDays);
+            }
+
+            var today = simulation.State.Date;
+
+            panel.Add(BuildDiffRow("CAPABILITY", model.EffectiveCapability(today),
+                model.EffectiveCapability(today) + capability, 1));
+
+            panel.Add(BuildDiffRow("BRAND", model.BrandBonus(today) * 100.0,
+                (model.BrandBonus(today) + brand) * 100.0, 1, "%"));
+
+            panel.Add(BuildDiffRow("SERVING EFFICIENCY", model.EfficiencyMultiplier(today) * 100.0,
+                (model.EfficiencyMultiplier(today) + efficiency) * 100.0, 1, "%"));
+
+            var list = new VisualElement();
+            list.AddToClassList("udiff__list");
+
+            foreach (var standing in picked)
+            {
+                var row = new Label($"{ModelTraitCatalog.Get(standing.Trait).DisplayName}  "
+                    + $"{standing.Level} → {standing.Level + 1}");
+
+                row.AddToClassList("udiff__item");
+                list.Add(row);
+            }
+
+            panel.Add(list);
+
+            var bill = new VisualElement();
+            bill.AddToClassList("udiff__bill");
+            bill.Add(BillCell("COST", UiFormat.Money(cash)));
+            bill.Add(BillCell("CALENDAR", UiFormat.Days(days)));
+            bill.Add(BillCell("COMPUTE", UiFormat.PetaflopDays(petaflopDays)));
+            panel.Add(bill);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("udiff__buttons");
+
+            var cancel = new Button(() =>
+            {
+                chosen.Clear();
+                Refresh();
+            })
+            { text = "CANCEL" };
+
+            cancel.AddToClassList("udiff__cancel");
+            buttons.Add(cancel);
+
+            var start = new Button(() => StartAll(modelIndex))
+            {
+                text = picked.Count == 1 ? "START UPGRADE" : $"START {picked.Count} UPGRADES"
+            };
+
+            start.AddToClassList("udiff__start");
+            start.SetEnabled(simulation.State.CashUsd >= cash);
+            buttons.Add(start);
+
+            panel.Add(buttons);
+
+            if (simulation.State.CashUsd < cash)
+            {
+                var short_ = new Label(
+                    $"Needs {UiFormat.Money(cash)} and the company has "
+                    + $"{UiFormat.Money(simulation.State.CashUsd)}.");
+
+                short_.AddToClassList("udiff__short");
+                panel.Add(short_);
+            }
+
+            return panel;
+        }
+
+        /// <summary>
+        /// One before-and-after line, with the gain drawn on top of the current value.
+        ///
+        /// Born at zero width and released a frame later so the transition has somewhere to move
+        /// from. Same trick the page arrival and the tooltips use.
+        /// </summary>
+        private static VisualElement BuildDiffRow(string caption, double before, double after,
+            int decimals, string suffix = "")
+        {
+            var row = new VisualElement();
+            row.AddToClassList("udrow");
+
+            var head = new VisualElement();
+            head.AddToClassList("udrow__head");
+
+            var label = new Label(caption);
+            label.AddToClassList("udrow__caption");
+            head.Add(label);
+
+            var numbers = new VisualElement();
+            numbers.AddToClassList("udrow__numbers");
+
+            var from = new Label(UiFormat.Number(before, decimals) + suffix);
+            from.AddToClassList("udrow__before");
+            numbers.Add(from);
+
+            var arrow = new Label("→");
+            arrow.AddToClassList("udrow__arrow");
+            numbers.Add(arrow);
+
+            var to = new Label(UiFormat.Number(after, decimals) + suffix);
+            to.AddToClassList("udrow__after");
+            numbers.Add(to);
+
+            head.Add(numbers);
+            row.Add(head);
+
+            var track = new VisualElement();
+            track.AddToClassList("udrow__track");
+
+            var scale = Math.Max(after, 1e-6);
+
+            var held = new VisualElement();
+            held.AddToClassList("udrow__held");
+            held.style.width = Length.Percent((float)(Math.Clamp(before / scale, 0.0, 1.0)
+                * BarCeiling * 100.0));
+
+            track.Add(held);
+
+            var gained = new VisualElement();
+            gained.AddToClassList("udrow__gained");
+            gained.style.width = 0;
+            track.Add(gained);
+
+            row.Add(track);
+
+            var target = (float)(Math.Clamp((after - before) / scale, 0.0, 1.0) * BarCeiling * 100.0);
+
+            gained.schedule.Execute(() => gained.style.width = Length.Percent(target))
+                .ExecuteLater(RevealMilliseconds);
+
+            return row;
+        }
+
+        private static VisualElement BillCell(string caption, string value)
+        {
+            var cell = new VisualElement();
+            cell.AddToClassList("udiff__cell");
+
+            var label = new Label(caption);
+            label.AddToClassList("udiff__cellcaption");
+            cell.Add(label);
+
+            var reading = new Label(value);
+            reading.AddToClassList("udiff__cellvalue");
+            cell.Add(reading);
+
+            return cell;
+        }
+
+        // ---- commissioning -------------------------------------------------------------------------
+
+        /// <summary>
+        /// Commissions everything in the basket.
+        ///
+        /// Public so a test can drive it without a panel to dispatch clicks into. Whatever could not
+        /// be started is reported by name rather than swallowed: a basket that half worked and said
+        /// nothing is worse than one that failed.
+        /// </summary>
+        public void StartAll(int modelIndex)
         {
             status.RemoveFromClassList("verdict--ok");
             status.RemoveFromClassList("verdict--blocked");
 
-            if (simulation.TryStartUpgrade(modelIndex, trait, out var reason))
+            var started = 0;
+            var refused = new List<string>();
+
+            foreach (var trait in chosen.ToList())
+            {
+                if (simulation.TryStartUpgrade(modelIndex, trait, out var reason))
+                {
+                    started++;
+                    chosen.Remove(trait);
+                }
+                else
+                {
+                    refused.Add($"{ModelTraitCatalog.Get(trait).DisplayName}: {reason}");
+                }
+            }
+
+            if (refused.Count == 0)
             {
                 status.AddToClassList("verdict--ok");
-                status.text = $"{ModelTraitCatalog.Get(trait).DisplayName} programme commissioned.";
+                status.text = started == 1
+                    ? "Programme commissioned."
+                    : $"{started} programmes commissioned. They share the cluster.";
             }
             else
             {
                 status.AddToClassList("verdict--blocked");
-                status.text = reason;
+                status.text = started > 0
+                    ? $"{started} started. {string.Join("  ", refused)}"
+                    : string.Join("  ", refused);
             }
 
             Refresh();

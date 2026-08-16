@@ -38,8 +38,13 @@ namespace ScalingLaws.Simulation
 
         public HireSource Source { get; }
 
-        /// <summary>What they open with. Always above what they would actually take.</summary>
-        public double AskingHourlyUsd { get; }
+        /// <summary>
+        /// What they are asking now. Always above what they would actually take.
+        ///
+        /// Not readonly, because a candidate who has been haggled with and refused sometimes comes
+        /// back wanting more. See <see cref="Negotiation.ImpatienceRaise"/>.
+        /// </summary>
+        public double AskingHourlyUsd { get; private set; }
 
         /// <summary>
         /// The lowest hourly they will sign for. Never shown.
@@ -47,10 +52,27 @@ namespace ScalingLaws.Simulation
         /// This is the whole reason haggling is a decision rather than a button: the player is
         /// guessing at a hidden number, and guessing too low costs them the candidate.
         /// </summary>
-        public double ReservationHourlyUsd { get; }
+        public double ReservationHourlyUsd { get; private set; }
 
         /// <summary>Picks the face. Stable, so the same person looks the same in every screen.</summary>
         public int PortraitSeed { get; }
+
+        /// <summary>
+        /// They got another offer while the company was thinking about it.
+        ///
+        /// Raises what they ask and, with it, the floor they will take — a candidate who talks
+        /// themselves up does not then sign for the old number. Returns what they now want, so the
+        /// caller can tell the player rather than letting the figure change silently.
+        /// </summary>
+        public double RaiseTheAsk(double fraction)
+        {
+            var step = 1.0 + Math.Max(0.0, fraction);
+
+            AskingHourlyUsd = Math.Round(AskingHourlyUsd * step, 2);
+            ReservationHourlyUsd = Math.Round(ReservationHourlyUsd * step, 2);
+
+            return AskingHourlyUsd;
+        }
 
         public PositionDefinition Definition => PositionCatalog.Get(Position);
 
@@ -105,6 +127,32 @@ namespace ScalingLaws.Simulation
     }
 
     /// <summary>
+    /// How an offer is landing, before it is made.
+    ///
+    /// **This is the one piece of the hidden number the player is allowed to see.** The candidate's
+    /// floor stays secret — that is what makes haggling a decision — but negotiating blind against
+    /// an invisible threshold is not a decision, it is a coin toss. The face tells the player warm
+    /// or cold without telling them the number, which is exactly what a real negotiation gives you.
+    /// </summary>
+    public enum OfferMood
+    {
+        /// <summary>Comfortably above what they would take. They will sign.</summary>
+        Delighted = 0,
+
+        /// <summary>Above the floor, but not by much.</summary>
+        Pleased = 1,
+
+        /// <summary>Within a whisker either way. Could go either way.</summary>
+        Neutral = 2,
+
+        /// <summary>Under the floor. They will push back rather than walk.</summary>
+        Cool = 3,
+
+        /// <summary>Far enough under that they will leave.</summary>
+        Insulted = 4
+    }
+
+    /// <summary>
     /// The result of putting an offer in front of somebody.
     ///
     /// Three outcomes rather than two, because "no" and "no, and I am leaving" are different
@@ -151,6 +199,57 @@ namespace ScalingLaws.Simulation
         /// cost something. Above it they hold firm and the player gets another go.
         /// </summary>
         public const double InsultFraction = 0.72;
+
+        /// <summary>
+        /// What their face would say about this offer.
+        ///
+        /// Reads the same numbers <see cref="Judge"/> does, so the face can never disagree with the
+        /// answer: anything Delighted or Pleased is accepted, anything Insulted walks. The bands
+        /// between are the honest ambiguity.
+        /// </summary>
+        public static OfferMood MoodFor(Candidate candidate, double offeredHourlyUsd,
+            long signingBonusUsd)
+        {
+            if (candidate == null)
+            {
+                return OfferMood.Neutral;
+            }
+
+            var effective = offeredHourlyUsd + HourlyValueOfBonus(signingBonusUsd);
+            var ratio = effective / Math.Max(0.01, candidate.ReservationHourlyUsd);
+
+            return ratio switch
+            {
+                >= 1.12 => OfferMood.Delighted,
+                >= 1.0 => OfferMood.Pleased,
+                >= 0.94 => OfferMood.Neutral,
+                >= InsultFraction => OfferMood.Cool,
+                _ => OfferMood.Insulted
+            };
+        }
+
+        /// <summary>The face, and what it is thinking. Both come from here so they cannot drift.</summary>
+        public static (string Face, string Says) Portrait(OfferMood mood) => mood switch
+        {
+            OfferMood.Delighted => (":D", "They would take this happily."),
+            OfferMood.Pleased => (":)", "This is enough. They would sign."),
+            OfferMood.Neutral => (":|", "Borderline. It could go either way."),
+            OfferMood.Cool => (":/", "Short. They will push back rather than leave."),
+            _ => (">:(", "Insulting. Send this and they are gone.")
+        };
+
+        /// <summary>
+        /// How much a candidate who has been made to wait raises their price.
+        ///
+        /// **Somebody who is worth hiring is being talked to by somebody else.** A negotiation the
+        /// player could drag out for free is one where the optimal play is always another round;
+        /// this is what makes holding firm cost the company something rather than only costing the
+        /// candidate patience.
+        /// </summary>
+        public const double ImpatienceRaise = 0.06;
+
+        /// <summary>How often a refused round produces one. Not every time, or it is just a tax.</summary>
+        public const double ImpatienceChance = 0.45;
 
         public static OfferVerdict Judge(Candidate candidate, double offeredHourlyUsd,
             long signingBonusUsd, int roundsAlreadyUsed)

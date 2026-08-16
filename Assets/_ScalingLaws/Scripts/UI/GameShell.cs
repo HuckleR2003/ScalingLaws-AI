@@ -87,6 +87,18 @@ namespace ScalingLaws.UI
         /// <summary>The green corner strip while somebody is being contacted.</summary>
         private VisualElement approachBanner;
 
+        /// <summary>The colour-cycling strip while post-training work is running.</summary>
+        private VisualElement upgradeBanner;
+
+        /// <summary>The who-works-here card, while it is up.</summary>
+        private VisualElement rosterCard;
+
+        /// <summary>Days done on the programme the banner is drawn for. Stops it rebuilding per frame.</summary>
+        private int upgradeBannerDays = -1;
+
+        /// <summary>Which of the three colours the strip is wearing. Cycles on its own schedule.</summary>
+        private int upgradeBannerTint;
+
         /// <summary>Days left on the approach the banner is drawn for. Stops it rebuilding per frame.</summary>
         private int approachBannerDays = -1;
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
@@ -362,6 +374,7 @@ namespace ScalingLaws.UI
             RefreshRegulatoryBanner();
             RefreshResearchBanner();
             RefreshApproachBanner();
+            RefreshUpgradeBanner();
 
             // They reached the car. This is where the loading screen and the world map go once the
             // map itself exists; until then it opens the board, which is what the icon did before.
@@ -1757,9 +1770,13 @@ namespace ScalingLaws.UI
         {
             var count = state.Staff.CountOfPosition(position.Skill);
 
-            var tile = new VisualElement();
+            // A button rather than a plate. The count was already the most useful thing on the
+            // tile and it was the one thing you could not act on: seeing "3" and having no way to
+            // find out who the three are is a dead end on the screen that is about people.
+            var tile = new Button(() => ShowRoster(position.Skill));
             tile.AddToClassList("postile");
             tile.EnableInClassList("postile--staffed", count > 0);
+            tile.SetEnabled(count > 0);
 
             if (ColorUtility.TryParseHtmlString(position.AccentHex, out var accent))
             {
@@ -1804,6 +1821,147 @@ namespace ScalingLaws.UI
                 + $"hour. {count} on the team.");
 
             return tile;
+        }
+
+        /// <summary>
+        /// Everybody in one discipline, over the screen.
+        ///
+        /// Built on the same card the finished-run notice uses, because it is the same kind of
+        /// moment: something the player asked to look at, over the top of what they were doing,
+        /// dismissed by clicking away from it. Reusing that shape means one veil, one card, one set
+        /// of manners, rather than a second modal that behaves almost the same.
+        /// </summary>
+        private void ShowRoster(PlayerSkill position)
+        {
+            rosterCard?.RemoveFromHierarchy();
+
+            var definition = PositionCatalog.Get(position);
+            var people = new List<int>();
+
+            for (var index = 0; index < state.Staff.Headcount; index++)
+            {
+                if (state.Staff.Hires[index].Position == position)
+                {
+                    people.Add(index);
+                }
+            }
+
+            var veil = new VisualElement();
+            veil.AddToClassList("notice-veil");
+            veil.RegisterCallback<ClickEvent>(_ => rosterCard?.RemoveFromHierarchy());
+
+            var card = new VisualElement();
+            card.AddToClassList("notice");
+            card.AddToClassList("roster");
+            card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
+
+            var head = new VisualElement();
+            head.AddToClassList("roster__head");
+
+            var icon = SkillIcons.Badge(position, 54);
+            icon.AddToClassList("roster__icon");
+            head.Add(icon);
+
+            var words = new VisualElement();
+            words.AddToClassList("roster__words");
+
+            var title = new Label(definition.Title.ToUpperInvariant());
+            title.AddToClassList("roster__title");
+            words.Add(title);
+
+            var under = new Label(people.Count == 1
+                ? "One person, and what they cost."
+                : $"{people.Count} people, and what they cost.");
+
+            under.AddToClassList("roster__under");
+            words.Add(under);
+            head.Add(words);
+
+            if (ColorUtility.TryParseHtmlString(definition.AccentHex, out var accent))
+            {
+                card.style.borderLeftColor = accent;
+                title.style.color = accent;
+            }
+
+            card.Add(head);
+
+            var list = new ScrollView();
+            list.AddToClassList("roster__list");
+
+            foreach (var slot in people)
+            {
+                list.Add(BuildRosterRow(slot));
+            }
+
+            card.Add(list);
+
+            var close = new Button(() => rosterCard?.RemoveFromHierarchy()) { text = "CLOSE" };
+            close.AddToClassList("notice__button");
+            card.Add(close);
+
+            veil.Add(card);
+            rosterCard = veil;
+            shellRoot.Add(veil);
+        }
+
+        private VisualElement BuildRosterRow(int slot)
+        {
+            var hire = state.Staff.Hires[slot];
+            var channel = HiringChannels.Get(hire.Source);
+
+            var row = new VisualElement();
+            row.AddToClassList("rperson");
+
+            var tag = new Label(channel.DisplayName.ToUpperInvariant());
+            tag.AddToClassList("rperson__tag");
+
+            if (ColorUtility.TryParseHtmlString(channel.AccentHex, out var tint))
+            {
+                tag.style.color = tint;
+                tag.style.borderTopColor = tint;
+                tag.style.borderBottomColor = tint;
+                tag.style.borderLeftColor = tint;
+                tag.style.borderRightColor = tint;
+            }
+
+            row.Add(tag);
+
+            var words = new VisualElement();
+            words.AddToClassList("rperson__words");
+
+            var name = new Label(hire.Label);
+            name.AddToClassList("rperson__name");
+            words.Add(name);
+
+            var since = new Label(hire.HourlyWageUsd > 0.0
+                ? $"${hire.HourlyWageUsd:N2} an hour  ·  since {hire.StartedOn}"
+                : $"{UiFormat.Money(hire.SalaryPerYearUsd)} a year  ·  since {hire.StartedOn}");
+
+            since.AddToClassList("rperson__since");
+            words.Add(since);
+            row.Add(words);
+
+            // The way into their own page, which does not exist yet. It is here rather than absent
+            // because the row is the only place it will ever belong, and a disabled control that
+            // says what it is for is a promise; a missing one is a redesign later.
+            var open = new Button { text = "DETAILS" };
+            open.AddToClassList("rperson__open");
+            open.SetEnabled(false);
+            open.tooltip = "Their own page is not built yet.";
+            row.Add(open);
+
+            var release = new Button(() =>
+            {
+                simulation.TryLetGo(slot, out _);
+                rosterCard?.RemoveFromHierarchy();
+                Show(Screen.Team);
+            })
+            { text = "LET GO" };
+
+            release.AddToClassList("rperson__release");
+            row.Add(release);
+
+            return row;
         }
 
         /// <summary>
@@ -2067,6 +2225,117 @@ namespace ScalingLaws.UI
 
             return page;
         }
+
+        /// <summary>
+        /// The strip while post-training work is running, and the one thing on screen that moves.
+        ///
+        /// **It cycles through three colours rather than sitting on one.** The other two corners are
+        /// a state — there is a product, there is research — and they are still. This one is a job
+        /// in flight on a model the player already sells, and the shift from green through pink to
+        /// violet is what makes it read as something happening rather than something true.
+        ///
+        /// UI Toolkit has transitions but no keyframes, so the cycle is a scheduled class swap and
+        /// the transition on the border does the blending. It shows the longest-running programme,
+        /// because that is the one that decides when the player gets their model back.
+        /// </summary>
+        private void RefreshUpgradeBanner()
+        {
+            var projects = state.UpgradeProjects;
+            var showing = projects.Count > 0 && current == Screen.Site;
+
+            if (!showing)
+            {
+                upgradeBanner?.RemoveFromHierarchy();
+                upgradeBanner = null;
+                upgradeBannerDays = -1;
+                return;
+            }
+
+            // Whichever finishes last. Two programmes on one model finish when the slower does, and
+            // a banner counting down the quicker one would promise the model back too early.
+            ModelUpgradeProject slowest = null;
+
+            foreach (var project in projects)
+            {
+                if (slowest == null || project.DaysRemaining > slowest.DaysRemaining)
+                {
+                    slowest = project;
+                }
+            }
+
+            if (slowest == null)
+            {
+                return;
+            }
+
+            if (upgradeBanner != null && upgradeBannerDays == slowest.DaysCompleted)
+            {
+                return;
+            }
+
+            upgradeBannerDays = slowest.DaysCompleted;
+            upgradeBanner?.RemoveFromHierarchy();
+
+            var banner = new Button(() => Show(Screen.Upgrade));
+            banner.AddToClassList("ub");
+            banner.AddToClassList(UpgradeTintClass(upgradeBannerTint));
+
+            var kicker = new Label(projects.Count > 1
+                ? $"WORKING ON UPGRADE  ({projects.Count})"
+                : "WORKING ON UPGRADE");
+
+            kicker.AddToClassList("ub__kicker");
+            banner.Add(kicker);
+
+            var subject = slowest.ModelIndex >= 0 && slowest.ModelIndex < state.DeployedModels.Count
+                ? state.DeployedModels[slowest.ModelIndex].Name
+                : "a model";
+
+            var name = new Label(subject);
+            name.AddToClassList("ub__name");
+            banner.Add(name);
+
+            var what = new Label(ModelTraitCatalog.Get(slowest.Trait).DisplayName);
+            what.AddToClassList("ub__what");
+            banner.Add(what);
+
+            var track = new VisualElement();
+            track.AddToClassList("ub__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("ub__fill");
+            fill.style.width = Length.Percent((float)(slowest.Progress * 100.0));
+            track.Add(fill);
+
+            banner.Add(track);
+
+            var left = slowest.DaysRemaining;
+            var days = new Label(left <= 0
+                ? "finishing today"
+                : left == 1 ? "1 day left" : $"{left} days left");
+
+            days.AddToClassList("ub__days");
+            banner.Add(days);
+
+            // The cycle. Scheduled on the banner itself, so it dies with it and never leaves a
+            // callback pointing at an element that has left the tree.
+            banner.schedule.Execute(() =>
+            {
+                banner.RemoveFromClassList(UpgradeTintClass(upgradeBannerTint));
+                upgradeBannerTint = (upgradeBannerTint + 1) % 3;
+                banner.AddToClassList(UpgradeTintClass(upgradeBannerTint));
+            }).Every(1400);
+
+            upgradeBanner = banner;
+            shellRoot.Add(banner);
+        }
+
+        private static string UpgradeTintClass(int step) => step switch
+        {
+            0 => "ub--green",
+            1 => "ub--pink",
+            _ => "ub--violet"
+        };
 
         /// <summary>
         /// The green strip while somebody is being contacted.
@@ -2633,9 +2902,13 @@ namespace ScalingLaws.UI
 
             channels.Add(grid);
             page.Add(channels);
-
-            page.Add(BuildBookingPanel());
             page.Add(BuildRunningPanel());
+
+            // **Out of the flow, pinned to the bottom right.** Booking used to be a panel stacked
+            // under the channels, which meant picking a channel scrolled the thing you pick it
+            // into off the screen. It is a control surface, not a section, so it behaves like one:
+            // it stays where it is while the page moves behind it.
+            page.Add(BuildBookingPanel());
 
             return page;
         }
@@ -2742,14 +3015,14 @@ namespace ScalingLaws.UI
         private VisualElement BuildBookingPanel()
         {
             var panel = new VisualElement();
-            panel.AddToClassList("panel");
+            panel.AddToClassList("mkbook");
 
-            var heading = new Label("BOOK A CAMPAIGN");
-            heading.AddToClassList("panel__heading");
+            var heading = new Label("START A NEW CAMPAIGN");
+            heading.AddToClassList("mkbook__heading");
             panel.Add(heading);
 
             var audiences = new VisualElement();
-            audiences.AddToClassList("rfund__modes");
+            audiences.AddToClassList("mkbook__chips");
 
             foreach (var audience in AudienceCatalog.All)
             {
@@ -2758,6 +3031,7 @@ namespace ScalingLaws.UI
                 { text = audience.DisplayName.ToUpperInvariant() };
 
                 chip.AddToClassList("chip");
+                chip.AddToClassList("mkchip");
                 chip.EnableInClassList("chip--on", pickedAudience == segment);
                 audiences.Add(chip);
             }
@@ -2765,7 +3039,7 @@ namespace ScalingLaws.UI
             panel.Add(audiences);
 
             var terms = new VisualElement();
-            terms.AddToClassList("rfund__modes");
+            terms.AddToClassList("mkbook__chips");
 
             foreach (var months in MarketingCatalog.TermsInMonths)
             {
@@ -2776,6 +3050,7 @@ namespace ScalingLaws.UI
                 { text = label };
 
                 chip.AddToClassList("chip");
+                chip.AddToClassList("mkchip");
                 chip.EnableInClassList("chip--on", pickedTerm == term);
                 terms.Add(chip);
             }
@@ -2788,17 +3063,47 @@ namespace ScalingLaws.UI
             var daily = draft.DailyCostUsd;
             var total = draft.IsOpenEnded ? 0L : daily * draft.DaysBooked;
 
-            var bill = new Label(pickedChannels.Count == 0
-                ? "Pick at least one channel."
-                : draft.IsOpenEnded
-                    ? $"{UiFormat.Money(daily)} a day, until you stop it. "
-                        + $"{MarketingCatalog.OpenEndedSurcharge:P0} of the committed rate, because "
-                        + "nobody sells an open contract at the price of a booked one."
-                    : $"{UiFormat.Money(daily)} a day for {draft.DaysBooked} days, "
-                        + $"{UiFormat.Money(total)} in total.");
+            if (pickedChannels.Count == 0)
+            {
+                var pick = new Label("Pick at least one channel above.");
+                pick.AddToClassList("mkbook__pick");
+                panel.Add(pick);
+            }
+            else
+            {
+                // Two blocks, because the player is answering two questions: what am I buying, and
+                // what does it cost. The old single sentence made them read a paragraph to find a
+                // number they were going to compare against another number.
+                panel.Add(BookRow("AUDIENCE",
+                    AudienceCatalog.Get(pickedAudience).DisplayName));
 
-            bill.AddToClassList("field__label");
-            panel.Add(bill);
+                panel.Add(BookRow("CHANNELS", string.Join(" + ", pickedChannels
+                    .Select(channel => MarketingCatalog.Get(channel).DisplayName))));
+
+                panel.Add(BookRow("RUNS FOR", draft.IsOpenEnded
+                    ? "until you stop it"
+                    : $"{draft.DaysBooked} days"));
+
+                var split = new VisualElement();
+                split.AddToClassList("mkbook__split");
+                panel.Add(split);
+
+                panel.Add(BookRow("PER DAY", UiFormat.Money(daily), true));
+
+                panel.Add(BookRow("TOTAL", draft.IsOpenEnded
+                    ? "open ended"
+                    : UiFormat.Money(total), true));
+
+                if (draft.IsOpenEnded)
+                {
+                    var why = new Label(
+                        $"An open contract costs {MarketingCatalog.OpenEndedSurcharge:P0} of the "
+                        + "committed rate. Nobody sells one at the price of a booked one.");
+
+                    why.AddToClassList("mkbook__why");
+                    panel.Add(why);
+                }
+            }
 
             var book = new Button(() =>
             {
@@ -2815,13 +3120,29 @@ namespace ScalingLaws.UI
             })
             { text = "BOOK IT" };
 
-            book.AddToClassList("button");
-            book.AddToClassList("button--primary");
-            book.style.marginLeft = 0;
+            book.AddToClassList("mkbook__go");
             book.SetEnabled(pickedChannels.Count > 0);
             panel.Add(book);
 
             return panel;
+        }
+
+        /// <summary>One caption and one reading, on a line. The whole booker is made of these.</summary>
+        private static VisualElement BookRow(string caption, string value, bool loud = false)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("mkrow");
+
+            var label = new Label(caption);
+            label.AddToClassList("mkrow__caption");
+            row.Add(label);
+
+            var reading = new Label(value);
+            reading.AddToClassList("mkrow__value");
+            reading.EnableInClassList("mkrow__value--loud", loud);
+            row.Add(reading);
+
+            return row;
         }
 
         private VisualElement BuildRunningPanel()
@@ -2856,15 +3177,40 @@ namespace ScalingLaws.UI
                     names.Add(MarketingCatalog.Get(channel).DisplayName);
                 }
 
-                var what = new Label(string.Join(" + ", names)
-                    + $"  to {AudienceCatalog.Get(campaign.Target).DisplayName}");
+                var words = new VisualElement();
+                words.AddToClassList("run-row__words");
 
+                var what = new Label(string.Join(" + ", names));
                 what.AddToClassList("run-row__what");
-                row.Add(what);
+                words.Add(what);
+
+                var who = new Label($"to {AudienceCatalog.Get(campaign.Target).DisplayName}");
+                who.AddToClassList("run-row__who");
+                words.Add(who);
+
+                row.Add(words);
+
+                // The term as a bar rather than a sentence: a campaign three days from ending and
+                // one three months from it read identically as text.
+                if (!campaign.IsOpenEnded)
+                {
+                    var track = new VisualElement();
+                    track.AddToClassList("run-row__track");
+
+                    var fill = new VisualElement();
+                    fill.AddToClassList("run-row__fill");
+
+                    var run = Math.Max(1, campaign.DaysBooked);
+                    var gone = Math.Clamp(1.0 - campaign.DaysLeft(state.Date) / (double)run, 0.0, 1.0);
+                    fill.style.width = Length.Percent((float)(gone * 100.0));
+
+                    track.Add(fill);
+                    row.Add(track);
+                }
 
                 var left = new Label(campaign.IsOpenEnded
-                    ? "open ended"
-                    : $"{campaign.DaysLeft(state.Date)} days left");
+                    ? "OPEN ENDED"
+                    : $"{campaign.DaysLeft(state.Date)} DAYS LEFT");
 
                 left.AddToClassList("run-row__left");
                 row.Add(left);
@@ -2880,7 +3226,7 @@ namespace ScalingLaws.UI
                 })
                 { text = "STOP" };
 
-                stop.AddToClassList("chip");
+                stop.AddToClassList("run-row__stop");
                 row.Add(stop);
 
                 panel.Add(row);
