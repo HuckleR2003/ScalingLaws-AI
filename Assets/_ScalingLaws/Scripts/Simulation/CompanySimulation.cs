@@ -198,6 +198,40 @@ namespace ScalingLaws.Simulation
         {
             // The pipeline only reaches the fresh end of the range; the catalog decides where
             // that is, so this passes the fact rather than the rule.
+            // **The ceiling and the precision gate are checked here as well as at the start.**
+            //
+            // They used to live only in TryStartTraining, so the creator would price a run happily
+            // and the GO button would then refuse it. The player saw a screen full of green numbers
+            // and a refusal with no warning attached to anything they had touched.
+            var ceiling = ParameterCeilingBillions();
+
+            if (blueprint.ParameterCountBillions > ceiling * 1.0001)
+            {
+                return TrainingProjection.Blocked(blueprint,
+                    ScaleCeiling.TryNextRung(State.HasResearch, out var rung, out _)
+                        ? $"The company can supervise a run up to {ceiling:N1}B parameters. "
+                          + $"{ResearchTree.Get(rung).DisplayName} raises that."
+                        : $"The company can supervise a run up to {ceiling:N1}B parameters.");
+            }
+
+            var widthGate = TrainingChoiceCatalog.GateFor(blueprint.Precision);
+
+            if (widthGate != ResearchNodeId.None && !State.HasResearch(widthGate))
+            {
+                return TrainingProjection.Blocked(blueprint,
+                    $"{TrainingChoiceCatalog.Get(blueprint.Precision).DisplayName} needs the "
+                    + $"{ResearchTree.Get(widthGate).DisplayName} research first.");
+            }
+
+            var passGate = TrainingChoiceCatalog.GateFor(blueprint.Deduplication);
+
+            if (passGate != ResearchNodeId.None && !State.HasResearch(passGate))
+            {
+                return TrainingProjection.Blocked(blueprint,
+                    $"That deduplication pass needs the "
+                    + $"{ResearchTree.Get(passGate).DisplayName} research first.");
+            }
+
             return TrainingPlanner.Project(
                 blueprint,
                 Profile,
@@ -338,6 +372,18 @@ namespace ScalingLaws.Simulation
                 projection.ProjectedCapability,
                 projection.Blend.AvailableTokensBillions,
                 0L);
+
+            // **The safety weeks, and only those.**
+            //
+            // The creator quotes compute time plus the safety stage, and the run used to honour
+            // only the first half: a model priced at eleven days finished in one, because the
+            // stage the player paid weeks for was never spent. It is a floor now.
+            //
+            // The floor is the stage alone rather than the whole quoted duration, because compute
+            // has to keep mattering. Pinning the run to its original estimate would mean buying
+            // accelerators mid-run bought nothing, which is one of the few decisions this game is
+            // actually about. Safety is the part no amount of silicon can hurry.
+            State.ActiveRun.SetCalendar(SafetyPlan.For(blueprint, State.DeployedModels.Count).ExtraDays);
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.TrainingStarted,
@@ -2334,6 +2380,8 @@ namespace ScalingLaws.Simulation
             run.Contribute(
                 researchPetaflops * runSlice * architecture.TrainingEfficiency * precision.Throughput,
                 SimUnits.ToDollars(researchCash * runSlice));
+
+            run.AdvanceCalendar();
 
             if (!run.IsComplete)
             {

@@ -377,7 +377,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 33;
+        public const int CurrentVersion = 34;
 
         public int version = CurrentVersion;
 

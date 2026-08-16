@@ -134,6 +134,7 @@ namespace ScalingLaws.Persistence
                     30 => UpgradeV30ToV31(current),
                     31 => UpgradeV31ToV32(current),
                     32 => UpgradeV32ToV33(current),
+                    33 => UpgradeV33ToV34(current),
                     _ => current
                 };
             }
@@ -1014,6 +1015,40 @@ namespace ScalingLaws.Persistence
         /// belongs to a deployed model, because that was the only kind there was, so the new flag
         /// is false on all of them.
         /// </remarks>
+        /// <summary>
+        /// v33 to v34: full width became a researched technology too.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// **Every existing company is granted the node**, for the third time and the same reason.
+        /// FP32 was the rung a v33 company trained at for free; their runs were priced at that
+        /// throughput and dropping them to double width would raise every future bill on a decision
+        /// nobody made. Granting it leaves them exactly where they were and makes the new bottom
+        /// rung what it is meant to be: where a brand new company starts, not where an old one is
+        /// sent back to.
+        /// </remarks>
+        public static SaveData UpgradeV33ToV34(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 34;
+            data.unlockedResearch ??= new List<int>();
+
+            if (!data.unlockedResearch.Contains((int)ResearchNodeId.SinglePrecisionTraining))
+            {
+                data.unlockedResearch.Add((int)ResearchNodeId.SinglePrecisionTraining);
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v33 to v34: FP32 became a researched technology, so every company that predates "
+                + "the change keeps it and trains at exactly the width it always did.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV32ToV33(SaveData data)
         {
             if (data == null)

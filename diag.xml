@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0,1527559">
+  <test-suite type="TestSuite" id="1000" name="ScalingLaws" fullname="ScalingLaws" runstate="Runnable" testcasecount="661" result="Passed" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0.152756" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1725" name="ScalingLaws.Tests.EditMode.dll" fullname="C:/Users/kemat/Desktop/HCK_Labs/ScalingLaws/Library/ScriptAssemblies/ScalingLaws.Tests.EditMode.dll" runstate="Runnable" testcasecount="661" result="Passed" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0.133547" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="7148" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1726" name="ScalingLaws" fullname="ScalingLaws" runstate="Runnable" testcasecount="661" result="Passed" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0.124395" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1727" name="Tests" fullname="ScalingLaws.Tests" runstate="Runnable" testcasecount="661" result="Passed" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0.116915" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1728" name="EditMode" fullname="ScalingLaws.Tests.EditMode" runstate="Runnable" testcasecount="623" result="Passed" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0.108463" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1723" name="ZDiag" fullname="ScalingLaws.Tests.EditMode.ZDiag" classname="ScalingLaws.Tests.EditMode.ZDiag" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0.098620" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1724" name="Diagnose" fullname="ScalingLaws.Tests.EditMode.ZDiag.Diagnose" methodname="Diagnose" classname="ScalingLaws.Tests.EditMode.ZDiag" runstate="Runnable" seed="905158768" result="Passed" start-time="2026-08-16 19:24:52Z" end-time="2026-08-16 19:24:53Z" duration="0.086027" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[DIAG projDays=11 PF=200,00 profileEff=1 155,43 share=0,7 mult=1,000
+DIAG afterOneDay done=808,80 of 200,00
+Saving results to: C:/Users/kemat/AppData/LocalLow/DefaultCompany/ScalingLaws\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

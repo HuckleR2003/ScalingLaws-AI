@@ -46,9 +46,45 @@ namespace ScalingLaws.Simulation
         /// <summary>Compute cash burned by this run so far, charged day by day.</summary>
         public long ComputeCashSpentUsd { get; private set; }
 
-        public double Progress => Math.Clamp(PetaflopDaysCompleted / PetaflopDaysRequired, 0.0, 1.0);
+        /// <summary>
+        /// Calendar days the run was promised to take, or zero for a run started before this
+        /// existed. See <see cref="IsComplete"/> for why it is here.
+        /// </summary>
+        public int CalendarDaysRequired { get; private set; }
 
-        public bool IsComplete => PetaflopDaysCompleted >= PetaflopDaysRequired;
+        public int DaysCompleted { get; private set; }
+
+        /// <summary>
+        /// Both clocks, and the slower of the two is the one the player watches.
+        ///
+        /// **The compute clock alone was letting the calendar evaporate.** The creator adds the
+        /// safety stage to the projected duration — that is deliberate, the stage is work and work
+        /// takes weeks — but the run only ever counted petaflop-days, so a model priced at eleven
+        /// days on the design screen finished in one. Everything the SAFETY stage promised in time
+        /// was quietly refunded, and the number the player planned around was fiction.
+        ///
+        /// The same two-clock rule the upgrade programmes have always used, for the same reason.
+        /// </summary>
+        public double Progress => Math.Clamp(
+            Math.Min(
+                PetaflopDaysRequired <= 0.0 ? 1.0 : PetaflopDaysCompleted / PetaflopDaysRequired,
+                CalendarDaysRequired <= 0 ? 1.0 : DaysCompleted / (double)CalendarDaysRequired),
+            0.0,
+            1.0);
+
+        public bool IsComplete =>
+            PetaflopDaysCompleted >= PetaflopDaysRequired
+            && (CalendarDaysRequired <= 0 || DaysCompleted >= CalendarDaysRequired);
+
+        /// <summary>Sets the calendar clock. Called once, when the run is created or restored.</summary>
+        public void SetCalendar(int daysRequired, int daysCompleted = 0)
+        {
+            CalendarDaysRequired = Math.Max(0, daysRequired);
+            DaysCompleted = Math.Max(0, daysCompleted);
+        }
+
+        /// <summary>Moves the calendar on a day. The compute clock moves in Contribute.</summary>
+        public void AdvanceCalendar() => DaysCompleted++;
 
         public int DaysElapsed(GameDate date) => Math.Max(0, date.DayIndex - StartDate.DayIndex);
 

@@ -71,8 +71,11 @@ namespace ScalingLaws.Data
         LowPrecisionTraining = 205,
         CorpusDeduplication = 206,
 
-        /// <summary>Opens BF16. The first rung of the precision ladder, and an era one node.</summary>
+        /// <summary>Opens BF16. The second rung of the precision ladder, and an era one node.</summary>
         MixedPrecisionTraining = 208,
+
+        /// <summary>Opens FP32. The first rung, and the cheapest node in the game.</summary>
+        SinglePrecisionTraining = 209,
         ContinuousDataPipeline = 207,
 
         // Era 3, autonomy.
@@ -360,15 +363,25 @@ namespace ScalingLaws.Data
                     + "it as well: the node alone is not enough before 2023.",
                 optionalTechnology: true),
 
-            // The first rung of the precision ladder. Era one, cheap, and early: a company
-            // should reach it inside its first year, because until it does every run is being
-            // trained at full width and paying for it.
+            // The bottom of the precision ladder, and deliberately the cheapest thing in the
+            // tree. A company starts at double width, which nobody has trained at for years, and
+            // this is the first month of work that gets it onto something modern. It is priced so
+            // that a player who does nothing else can still have it inside two months.
+            new(ResearchNodeId.SinglePrecisionTraining, ResearchEra.Foundations,
+                "Single precision training",
+                "Stop carrying sixty-four bits of mantissa nobody is using. A third more throughput "
+                + "out of the cluster you already rent, for a fortnight of somebody's time.",
+                GameDate.Start, costUsd: 450_000, durationDays: 20, petaflopDaysRequired: 8,
+                requires: new[] { ResearchNodeId.FineTuningAndPrompting }),
+
+            // The second rung. Era one, cheap, and early: a company should reach it inside its
+            // first year, because until it does every run is being trained wider than it needs.
             new(ResearchNodeId.MixedPrecisionTraining, ResearchEra.Foundations,
                 "Mixed precision training",
                 "Keep the master weights wide and do the arithmetic narrow. Half the memory and "
                 + "close to twice the throughput, for none of the risk that eight bits carries.",
                 GameDate.Start, costUsd: 1_800_000, durationDays: 45, petaflopDaysRequired: 40,
-                requires: new[] { ResearchNodeId.FineTuningAndPrompting }),
+                requires: new[] { ResearchNodeId.SinglePrecisionTraining }),
 
             new(ResearchNodeId.CorpusDeduplication, ResearchEra.Foundations,
                 "Corpus deduplication",

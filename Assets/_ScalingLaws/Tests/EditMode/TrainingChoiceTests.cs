@@ -38,7 +38,7 @@ namespace ScalingLaws.Tests.EditMode
             // one a company with no research gets, and since precision became a ladder that is full
             // width. Anchoring the 1.0 anywhere else means every new company trains at a permanent
             // penalty against an economy balanced for 1.0.
-            var precision = TrainingChoiceCatalog.Get(TrainingPrecision.Float32);
+            var precision = TrainingChoiceCatalog.Get(TrainingPrecision.Float64);
             Assert.AreEqual(1.0, precision.Throughput, 1e-9,
                 "The ungated rung has to be the reference width.");
             Assert.AreEqual(1.0, precision.Instability, 1e-9);
@@ -65,7 +65,7 @@ namespace ScalingLaws.Tests.EditMode
 
             var silent = simulation.Project(Basic());
             var explicitly = simulation.Project(Basic()
-                .WithPrecision(TrainingPrecision.Float32)
+                .WithPrecision(TrainingPrecision.Float64)
                 .WithShape(ModelShape.Balanced)
                 .WithDeduplication(DeduplicationPass.Standard)
                 .WithCutoff(0));
@@ -84,12 +84,16 @@ namespace ScalingLaws.Tests.EditMode
 
             // BF16 is a rung on the ladder now, so a company that has not bought it cannot be
             // projected at it and the comparison would be against a blocked projection.
+            simulation.State.UnlockedResearch.Add(ResearchNodeId.SinglePrecisionTraining);
             simulation.State.UnlockedResearch.Add(ResearchNodeId.MixedPrecisionTraining);
 
             // A run big enough that the difference survives rounding to whole days. The small
             // blueprint the rest of the file uses finishes inside a day at either width, so the
             // comparison was between two numbers that had both been rounded to the same one.
-            var big = new ModelBlueprint("Subject", ArchitectureId.DenseTransformer, 70.0, 1_400.0,
+            // Under the parameter ceiling a company with no scale research can supervise, because
+            // the projection refuses anything above it now. Big enough that the difference between
+            // the two widths survives rounding to whole days.
+            var big = new ModelBlueprint("Subject", ArchitectureId.DenseTransformer, 25.0, 1_400.0,
                 DatasetSource.WebCrawl);
 
             var wide = simulation.Project(big.WithPrecision(TrainingPrecision.Float32));
@@ -204,11 +208,18 @@ namespace ScalingLaws.Tests.EditMode
             // the rule this test exists for — the bottom of the ladder is never gated, because a
             // company with nothing researched still has to be able to train something.
             Assert.AreEqual(ResearchNodeId.None,
-                TrainingChoiceCatalog.GateFor(TrainingPrecision.Float32));
+                TrainingChoiceCatalog.GateFor(TrainingPrecision.Float64));
 
-            Assert.AreNotEqual(ResearchNodeId.None,
-                TrainingChoiceCatalog.GateFor(TrainingPrecision.BFloat16),
-                "BF16 is a rung on the ladder and has to be bought.");
+            // All three of the modern widths are bought now. Double precision is what a company
+            // is left with until it buys the first one, which is the point.
+            foreach (var bought in new[]
+            {
+                TrainingPrecision.Float32, TrainingPrecision.BFloat16, TrainingPrecision.Float8
+            })
+            {
+                Assert.AreNotEqual(ResearchNodeId.None, TrainingChoiceCatalog.GateFor(bought),
+                    $"{bought} is a rung on the ladder and has to be bought.");
+            }
 
             Assert.AreEqual(ResearchNodeId.None,
                 TrainingChoiceCatalog.GateFor(DeduplicationPass.Standard));

@@ -74,7 +74,7 @@ namespace ScalingLaws.UI
         /// <summary>
         /// Full width until the company researches its way down. See TrainingChoices.GateFor.
         /// </summary>
-        private TrainingPrecision blueprintPrecision = TrainingPrecision.Float32;
+        private TrainingPrecision blueprintPrecision = TrainingPrecision.Float64;
         private ModelShape blueprintShape = ModelShape.Balanced;
         private DeduplicationPass blueprintDedup = DeduplicationPass.Standard;
         private int blueprintCutoffMonths;
@@ -1825,7 +1825,7 @@ namespace ScalingLaws.UI
             // company without the research would otherwise start a run nobody could have started.
             var precision = Allowed(TrainingChoiceCatalog.GateFor(blueprintPrecision))
                 ? blueprintPrecision
-                : TrainingPrecision.Float32;
+                : TrainingPrecision.Float64;
 
             var dedup = Allowed(TrainingChoiceCatalog.GateFor(blueprintDedup))
                 ? blueprintDedup

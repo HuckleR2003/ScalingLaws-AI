@@ -10,6 +10,14 @@ namespace ScalingLaws.Data
         /// <summary>Full width. Slow, expensive, and it never surprises you.</summary>
         Float32 = 0,
 
+        /// <summary>
+        /// Double width. What you train at before you have researched anything at all.
+        ///
+        /// Numbered after the others because the enum is saved as an integer and renumbering it
+        /// would silently rewrite the precision of every model in every existing save.
+        /// </summary>
+        Float64 = 3,
+
         /// <summary>The default from 2023 onward. Half the width, none of the drama.</summary>
         BFloat16 = 1,
 
@@ -163,26 +171,38 @@ namespace ScalingLaws.Data
 
         private static readonly PrecisionDefinition[] Precisions =
         {
-            // **The rungs are stated against FP32, because FP32 is now the neutral option.**
+            // **The rungs are stated against FP64, because FP64 is the neutral option.**
             //
-            // The ratios below are exactly the ones this catalog has always had — 0.55 : 1.0 : 1.85
-            // divided through by 0.55 — but the numbers are anchored to the rung a company with no
-            // research actually trains at. Leaving the neutral rung at 0.55 would have meant every
-            // new company trained at a permanent 45% penalty against an economy balanced for 1.0,
-            // which is the neutral option rule this file already has a comment about breaking once.
-            new(TrainingPrecision.Float32, "FP32",
-                "Full width. What you train at before you have bought anything better, and the run "
-                + "lands where the projection said it would.",
+            // All four widths are now a ladder and the bottom of it is the one a company with no
+            // research trains at, so that is where the 1.0 sits. This is the third time this file
+            // has been re-anchored and the rule has been the same every time: whatever a player
+            // gets for free has to be 1.0, or the whole economy is quietly retuned underneath them.
+            //
+            // The top of the ladder is also an anchor. FP8 stays at 3.36 rather than being scaled
+            // up with everything else, because late-game throughput was balanced against that
+            // number and a fourth rung is not a reason to move the ceiling.
+            new(TrainingPrecision.Float64, "FP64",
+                "Double width. Nobody trains like this any more, which is exactly why it is what "
+                + "you are left with before you have researched anything. Slow, and it never lies "
+                + "to you about where the run will land.",
                 throughput: 1.0,
                 instability: 1.0,
+                earliest: GameDate.Start,
+                warning: string.Empty),
+
+            new(TrainingPrecision.Float32, "FP32",
+                "Full width. A third more through the same silicon than double, and still no drama "
+                + "in the loss curve.",
+                throughput: 1.30,
+                instability: 1.05,
                 earliest: GameDate.Start,
                 warning: string.Empty),
 
             new(TrainingPrecision.BFloat16, "BF16",
                 "What everybody trains in. Close to twice the throughput of full width, for none "
                 + "of the risk that eight bits carries.",
-                throughput: 1.82,
-                instability: 1.33,
+                throughput: 2.10,
+                instability: 1.40,
                 earliest: GameDate.Start,
                 warning: string.Empty),
 
@@ -314,6 +334,7 @@ namespace ScalingLaws.Data
         {
             TrainingPrecision.Float8 => ResearchNodeId.LowPrecisionTraining,
             TrainingPrecision.BFloat16 => ResearchNodeId.MixedPrecisionTraining,
+            TrainingPrecision.Float32 => ResearchNodeId.SinglePrecisionTraining,
             _ => ResearchNodeId.None
         };
 
