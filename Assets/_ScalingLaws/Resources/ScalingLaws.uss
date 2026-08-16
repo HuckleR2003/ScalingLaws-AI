@@ -9118,6 +9118,19 @@
     white-space: normal;
 }
 
+/* The one line that says this model has not shipped yet. Violet rather than the panel's grey,
+   because everything bought here goes out with the model rather than reaching customers later. */
+.udiff__shelf {
+    font-size: 11px;
+    color: rgb(198, 168, 232);
+    padding: 6px 10px;
+    margin-bottom: 12px;
+    border-left-width: 2px;
+    border-left-color: rgb(150, 110, 210);
+    background-color: rgba(150, 110, 210, 0.13);
+    white-space: normal;
+}
+
 .udiff__hint {
     font-size: 12px;
     color: rgb(134, 146, 166);

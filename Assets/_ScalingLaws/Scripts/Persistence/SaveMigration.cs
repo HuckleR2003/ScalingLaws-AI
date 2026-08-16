@@ -133,6 +133,7 @@ namespace ScalingLaws.Persistence
                     29 => UpgradeV29ToV30(current),
                     30 => UpgradeV30ToV31(current),
                     31 => UpgradeV31ToV32(current),
+                    32 => UpgradeV32ToV33(current),
                     _ => current
                 };
             }
@@ -1002,6 +1003,50 @@ namespace ScalingLaws.Persistence
         /// anything gets it too, because there is no way to tell the difference and refusing would
         /// punish a save for being young.
         /// </remarks>
+        /// <summary>
+        /// v32 to v33: a model waiting on the shelf can be improved before it ships.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// Nothing to reconstruct and nothing to grant. A v32 company could not do post-training
+        /// work before release, so every shelved model is exactly at the par its completion date
+        /// gave it, which is what the constructor sets anyway. Every upgrade programme in flight
+        /// belongs to a deployed model, because that was the only kind there was, so the new flag
+        /// is false on all of them.
+        /// </remarks>
+        public static SaveData UpgradeV32ToV33(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 33;
+
+            foreach (var shelved in data.shelf ?? new List<TrainedModelData>())
+            {
+                if (shelved != null)
+                {
+                    shelved.traitLevels ??= new List<int>();
+                }
+            }
+
+            foreach (var upgrade in data.upgrades ?? new List<UpgradeProjectData>())
+            {
+                if (upgrade != null)
+                {
+                    upgrade.onShelf = false;
+                }
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v32 to v33: nothing could be upgraded before release in this version, so every "
+                + "shelved model keeps the par it finished at and every programme in flight still "
+                + "belongs to a model already on sale.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV31ToV32(SaveData data)
         {
             if (data == null)

@@ -506,11 +506,18 @@ namespace ScalingLaws.Simulation
         public void AddSignal(IntelSignal signal) => signals.Add(signal);
 
         /// <summary>True when this trait already has a programme running on this model.</summary>
-        public bool IsUpgradeInFlight(int modelIndex, ModelTrait trait)
+        /// <summary>
+        /// Whether this exact programme is already running.
+        ///
+        /// The list matters as much as the index: shelf entry two and deployed model two are
+        /// different models, and without the flag one would block work on the other.
+        /// </summary>
+        public bool IsUpgradeInFlight(int modelIndex, ModelTrait trait, bool onShelf = false)
         {
             foreach (var project in upgradeProjects)
             {
-                if (project.ModelIndex == modelIndex && project.Trait == trait)
+                if (project.ModelIndex == modelIndex && project.Trait == trait
+                    && project.OnShelf == onShelf)
                 {
                     return true;
                 }

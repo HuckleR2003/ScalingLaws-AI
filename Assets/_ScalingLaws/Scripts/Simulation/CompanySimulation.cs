@@ -812,7 +812,16 @@ namespace ScalingLaws.Simulation
             return records;
         }
 
-        public bool TryStartUpgrade(int modelIndex, ModelTrait trait, out string failureReason)
+        /// <summary>
+        /// Commissions post-training work on one model.
+        ///
+        /// **`onShelf` is the whole reason a finished model can be improved before it ships.** A run
+        /// that has completed and not been released is exactly when a real lab does its evaluation
+        /// work, and until this argument existed the UPGRADE screen simply had nothing to show for
+        /// a company whose only model was sitting on the shelf.
+        /// </summary>
+        public bool TryStartUpgrade(int modelIndex, ModelTrait trait, out string failureReason,
+            bool onShelf = false)
         {
             failureReason = string.Empty;
 
@@ -822,7 +831,9 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (modelIndex < 0 || modelIndex >= State.DeployedModels.Count)
+            var stock = onShelf ? State.Shelf.Count : State.DeployedModels.Count;
+
+            if (modelIndex < 0 || modelIndex >= stock)
             {
                 failureReason = "No such model.";
                 return false;
@@ -853,14 +864,21 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (State.IsUpgradeInFlight(modelIndex, trait))
+            if (State.IsUpgradeInFlight(modelIndex, trait, onShelf))
             {
                 failureReason = $"{definition.DisplayName} is already being worked on for this model.";
                 return false;
             }
 
-            var model = State.DeployedModels[modelIndex];
-            var level = model.Traits.GetLevel(trait);
+            var traits = onShelf
+                ? State.Shelf[modelIndex].Traits
+                : State.DeployedModels[modelIndex].Traits;
+
+            var subject = onShelf
+                ? State.Shelf[modelIndex].Name
+                : State.DeployedModels[modelIndex].Name;
+
+            var level = traits.GetLevel(trait);
             if (level >= ModelTraitSetLimits.MaximumLevel)
             {
                 failureReason = $"{definition.DisplayName} is already at the ceiling.";
@@ -882,12 +900,14 @@ namespace ScalingLaws.Simulation
                 State.Date,
                 ScaleResearchDuration(definition.UpgradeDays(level)),
                 definition.UpgradePetaflopDays(level),
-                cost));
+                cost)
+            { OnShelf = onShelf });
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.UpgradeStarted,
                 State.Date,
-                $"{model.Name}: {definition.DisplayName} to level {level + 1}, about {definition.UpgradeDays(level)} days.",
+                $"{subject}: {definition.DisplayName} to level {level + 1}, about {definition.UpgradeDays(level)} days."
+                + (onShelf ? " Before release." : string.Empty),
                 cost));
 
             return true;
@@ -2346,22 +2366,43 @@ namespace ScalingLaws.Simulation
             foreach (var project in finished)
             {
                 State.RemoveUpgradeProject(project);
-                if (project.ModelIndex < 0 || project.ModelIndex >= State.DeployedModels.Count)
+
+                // The bound has to be the list the project points at. This checked the deployed
+                // list unconditionally, so a shelf programme on a company with nothing on sale
+                // failed 0 >= 0, was dropped on the day it completed, and the player got nothing
+                // for the money and the months.
+                var stock = project.OnShelf ? State.Shelf.Count : State.DeployedModels.Count;
+
+                if (project.ModelIndex < 0 || project.ModelIndex >= stock)
                 {
                     continue;
                 }
 
-                var model = State.DeployedModels[project.ModelIndex];
-                model.Traits.SetLevel(project.Trait, project.TargetLevel);
+                // Whichever list the project was pointed at. A finished programme applying to
+                // the wrong model would silently upgrade a stranger.
+                if (project.OnShelf)
+                {
+                    State.Shelf[project.ModelIndex].Traits
+                        .SetLevel(project.Trait, project.TargetLevel);
+                }
+                else
+                {
+                    State.DeployedModels[project.ModelIndex].Traits
+                        .SetLevel(project.Trait, project.TargetLevel);
+                }
+
+                var subject = project.OnShelf
+                    ? State.Shelf[project.ModelIndex].Name
+                    : State.DeployedModels[project.ModelIndex].Name;
 
                 var definition = ModelTraitCatalog.Get(project.Trait);
-
 
                 State.AwardSkill(PlayerSkill.Software, 320);
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.UpgradeCompleted,
                     State.Date,
-                    $"{model.Name}: {definition.DisplayName} now at level {project.TargetLevel}.",
+                    $"{subject}: {definition.DisplayName} now at level {project.TargetLevel}."
+                    + (project.OnShelf ? " It ships with the model." : string.Empty),
                     project.CashPaidUsd));
             }
         }

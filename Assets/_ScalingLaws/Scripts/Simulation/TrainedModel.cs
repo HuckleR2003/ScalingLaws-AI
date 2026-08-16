@@ -49,6 +49,10 @@ namespace ScalingLaws.Simulation
             Architecture = architecture;
             Capability = Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0);
             CompletedOn = completedOn;
+
+            // Par on the day the run finished. The market keeps moving after that, so a model left
+            // on the shelf falls behind on its own without anybody doing anything to it.
+            Traits = ModelTraitSet.AtMarketPar(completedOn);
             ActiveParameterCount = Math.Max(1e6, SimUnits.Finite(activeParameterCount, 1e6));
             ProjectedCapability = Math.Clamp(SimUnits.Finite(projectedCapability), 0.0, 100.0);
         }
@@ -90,6 +94,27 @@ namespace ScalingLaws.Simulation
         /// <inheritdoc cref="ModelBlueprint.SafetyEffort"/>
         public int SafetyEffort { get; }
 
+        /// <summary>
+        /// What the model is good at, before it has been released.
+        ///
+        /// **These used to be conjured at the moment of release and never existed before it.** The
+        /// comment on Release said the traits were frozen on the day training finished, which was
+        /// true and was exactly the problem: something frozen still exists, and a player looking at
+        /// a finished model on the shelf could not touch any of it. Materialising the set here is
+        /// what makes post-training work possible before the thing ships, which is when a real lab
+        /// does most of it.
+        /// </summary>
+        public ModelTraitSet Traits { get; private set; }
+
+        /// <summary>Puts a loaded or upgraded set back. Ignores null, like the deployed one does.</summary>
+        public void RestoreTraits(ModelTraitSet traits)
+        {
+            if (traits != null)
+            {
+                Traits = traits;
+            }
+        }
+
         public int DaysOnShelf(GameDate date) => Math.Max(0, date.DayIndex - CompletedOn.DayIndex);
 
         /// <summary>
@@ -130,9 +155,10 @@ namespace ScalingLaws.Simulation
 
             model.SetShape(Shape);
 
-            // Traits were frozen on the day training finished. Par has moved since, and the model
-            // ships already behind on anything nobody topped up.
-            model.RestoreTraits(ModelTraitSet.AtMarketPar(CompletedOn));
+            // The set the model has been carrying, including anything upgraded while it sat on
+            // the shelf. It starts at par for the day training finished, so a model nobody touched
+            // still ships behind on whatever the market moved on in the meantime.
+            model.RestoreTraits(Traits);
             return model;
         }
 

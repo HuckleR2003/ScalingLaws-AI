@@ -357,7 +357,8 @@ namespace ScalingLaws.Persistence
                     assaTier = shelved.AssaTier,
                     redTeamTier = shelved.RedTeamTier,
                     dataProtectionTier = shelved.DataProtectionTier,
-                    safetyEffort = shelved.SafetyEffort
+                    safetyEffort = shelved.SafetyEffort,
+                    traitLevels = new List<int>(shelved.Traits.ToArray())
                 });
             }
 
@@ -373,7 +374,8 @@ namespace ScalingLaws.Persistence
                     petaflopDaysRequired = project.PetaflopDaysRequired,
                     petaflopDaysCompleted = project.PetaflopDaysCompleted,
                     daysCompleted = project.DaysCompleted,
-                    cashPaidUsd = project.CashPaidUsd
+                    cashPaidUsd = project.CashPaidUsd,
+                    onShelf = project.OnShelf
                 });
             }
 
@@ -867,6 +869,14 @@ namespace ScalingLaws.Persistence
                     Math.Clamp(shelved.redTeamTier, 0, SafetyModuleCatalog.TierCount - 1),
                     Math.Clamp(shelved.dataProtectionTier, -1, SafetyModuleCatalog.TierCount - 1),
                     Math.Clamp(shelved.safetyEffort, 1, 4)));
+
+                // Anything upgraded while it waited. Empty on a file written before v33, in which
+                // case the model keeps the par set its constructor gave it, which is exactly what
+                // that save was already carrying implicitly.
+                if (shelved.traitLevels != null && shelved.traitLevels.Count > 0)
+                {
+                    state.Shelf[^1].RestoreTraits(ModelTraitSet.FromArray(shelved.traitLevels));
+                }
             }
 
             state.Ledger.Restore(safe.ledgerMonths, safe.ledgerAmounts, safe.ledgerCarriedForward);
@@ -924,7 +934,9 @@ namespace ScalingLaws.Persistence
                     new GameDate(upgrade.startedDayIndex),
                     upgrade.durationDays,
                     upgrade.petaflopDaysRequired,
-                    upgrade.cashPaidUsd);
+                    upgrade.cashPaidUsd)
+                { OnShelf = upgrade.onShelf };
+
                 project.Restore(upgrade.daysCompleted, upgrade.petaflopDaysCompleted);
                 state.AddUpgradeProject(project);
             }
@@ -1259,11 +1271,14 @@ namespace ScalingLaws.Persistence
                 item.activeParameterCount = Math.Clamp(Finite(item.activeParameterCount, 1e6), 1e6, 1e15);
             }
 
+            // The bound depends on which list the programme points at. Checking the deployed list
+            // for everything threw away every shelf programme on load, which is the same mistake
+            // the completion path made and just as silent: the player reloads and the work is gone.
             safe.upgrades.RemoveAll(item =>
                 item == null
                 || !Enum.IsDefined(typeof(ModelTrait), item.trait)
                 || item.modelIndex < 0
-                || item.modelIndex >= safe.models.Count);
+                || item.modelIndex >= (item.onShelf ? safe.shelf.Count : safe.models.Count));
             if (safe.upgrades.Count > CompanyState.MaximumConcurrentUpgrades)
             {
                 safe.upgrades.RemoveRange(

@@ -36,6 +36,9 @@ namespace ScalingLaws.UI
         private readonly Label status = new();
         private readonly List<int> modelIndices = new();
 
+        /// <summary>True for each entry that points into the shelf rather than the deployed list.</summary>
+        private readonly List<bool> modelOnShelf = new();
+
         /// <summary>
         /// What the player has picked, for the model they are looking at.
         ///
@@ -45,6 +48,9 @@ namespace ScalingLaws.UI
         private readonly HashSet<ModelTrait> chosen = new();
 
         private int basketModelIndex = -1;
+
+        /// <summary>Which list the basket was built against. Shelf 0 and deployed 0 are not the same model.</summary>
+        private bool basketOnShelf;
 
         public UpgradeGridPanel(CompanySimulation simulation)
         {
@@ -103,10 +109,13 @@ namespace ScalingLaws.UI
 
             var modelIndex = SelectedModelIndex();
 
-            if (modelIndex != basketModelIndex)
+            var onShelf = SelectedIsOnShelf();
+
+            if (modelIndex != basketModelIndex || onShelf != basketOnShelf)
             {
                 chosen.Clear();
                 basketModelIndex = modelIndex;
+                basketOnShelf = onShelf;
             }
 
             grid.Clear();
@@ -120,23 +129,26 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            var model = simulation.State.DeployedModels[modelIndex];
-            var standings = model.Traits.Standings(simulation.State.Date).ToList();
+            var traits = onShelf
+                ? simulation.State.Shelf[modelIndex].Traits
+                : simulation.State.DeployedModels[modelIndex].Traits;
+
+            var standings = traits.Standings(simulation.State.Date).ToList();
 
             foreach (var standing in standings)
             {
-                grid.Add(BuildTile(modelIndex, standing));
+                grid.Add(BuildTile(modelIndex, standing, onShelf));
             }
 
-            diff.Add(BuildDiff(modelIndex, model, standings));
+            diff.Add(BuildDiff(modelIndex, standings, onShelf));
         }
 
         // ---- one tile ---------------------------------------------------------------------------
 
-        private VisualElement BuildTile(int modelIndex, TraitStanding standing)
+        private VisualElement BuildTile(int modelIndex, TraitStanding standing, bool onShelf)
         {
             var definition = ModelTraitCatalog.Get(standing.Trait);
-            var inFlight = simulation.State.IsUpgradeInFlight(modelIndex, standing.Trait);
+            var inFlight = simulation.State.IsUpgradeInFlight(modelIndex, standing.Trait, onShelf);
             var picked = chosen.Contains(standing.Trait);
             var pickable = standing.IsAvailable && !standing.IsMaxed && !inFlight;
 
@@ -269,8 +281,8 @@ namespace ScalingLaws.UI
         /// before column plus the levels being bought. The bars animate in because the difference is
         /// the point of the panel and a static number does not read as a change.
         /// </summary>
-        private VisualElement BuildDiff(int modelIndex, DeployedModel model,
-            IReadOnlyList<TraitStanding> standings)
+        private VisualElement BuildDiff(int modelIndex, IReadOnlyList<TraitStanding> standings,
+            bool onShelf)
         {
             var panel = new VisualElement();
             panel.AddToClassList("udiff");
@@ -279,9 +291,22 @@ namespace ScalingLaws.UI
             heading.AddToClassList("udiff__heading");
             panel.Add(heading);
 
-            var subject = new Label(model.Name);
+            var today = simulation.State.Date;
+
+            var name = onShelf
+                ? simulation.State.Shelf[modelIndex].Name
+                : simulation.State.DeployedModels[modelIndex].Name;
+
+            var subject = new Label(name);
             subject.AddToClassList("udiff__subject");
             panel.Add(subject);
+
+            if (onShelf)
+            {
+                var note = new Label("Not released yet. Anything done now ships with it.");
+                note.AddToClassList("udiff__shelf");
+                panel.Add(note);
+            }
 
             if (chosen.Count == 0)
             {
@@ -320,16 +345,21 @@ namespace ScalingLaws.UI
                 days = Math.Max(days, standing.UpgradeDays);
             }
 
-            var today = simulation.State.Date;
+            var nowCapability = onShelf
+                ? simulation.State.Shelf[modelIndex].CapabilityIfReleasedOn(today)
+                : simulation.State.DeployedModels[modelIndex].EffectiveCapability(today);
 
-            panel.Add(BuildDiffRow("CAPABILITY", model.EffectiveCapability(today),
-                model.EffectiveCapability(today) + capability, 1));
+            var traits = onShelf
+                ? simulation.State.Shelf[modelIndex].Traits
+                : simulation.State.DeployedModels[modelIndex].Traits;
 
-            panel.Add(BuildDiffRow("BRAND", model.BrandBonus(today) * 100.0,
-                (model.BrandBonus(today) + brand) * 100.0, 1, "%"));
+            panel.Add(BuildDiffRow("CAPABILITY", nowCapability, nowCapability + capability, 1));
 
-            panel.Add(BuildDiffRow("SERVING EFFICIENCY", model.EfficiencyMultiplier(today) * 100.0,
-                (model.EfficiencyMultiplier(today) + efficiency) * 100.0, 1, "%"));
+            panel.Add(BuildDiffRow("BRAND", traits.BrandBonus(today) * 100.0,
+                (traits.BrandBonus(today) + brand) * 100.0, 1, "%"));
+
+            panel.Add(BuildDiffRow("SERVING EFFICIENCY", traits.EfficiencyMultiplier(today) * 100.0,
+                (traits.EfficiencyMultiplier(today) + efficiency) * 100.0, 1, "%"));
 
             var list = new VisualElement();
             list.AddToClassList("udiff__list");
@@ -365,7 +395,7 @@ namespace ScalingLaws.UI
             cancel.AddToClassList("udiff__cancel");
             buttons.Add(cancel);
 
-            var start = new Button(() => StartAll(modelIndex))
+            var start = new Button(() => StartAll(modelIndex, onShelf))
             {
                 text = picked.Count == 1 ? "START UPGRADE" : $"START {picked.Count} UPGRADES"
             };
@@ -478,7 +508,7 @@ namespace ScalingLaws.UI
         /// be started is reported by name rather than swallowed: a basket that half worked and said
         /// nothing is worse than one that failed.
         /// </summary>
-        public void StartAll(int modelIndex)
+        public void StartAll(int modelIndex, bool onShelf = false)
         {
             status.RemoveFromClassList("verdict--ok");
             status.RemoveFromClassList("verdict--blocked");
@@ -488,7 +518,7 @@ namespace ScalingLaws.UI
 
             foreach (var trait in chosen.ToList())
             {
-                if (simulation.TryStartUpgrade(modelIndex, trait, out var reason))
+                if (simulation.TryStartUpgrade(modelIndex, trait, out var reason, onShelf))
                 {
                     started++;
                     chosen.Remove(trait);
@@ -520,7 +550,22 @@ namespace ScalingLaws.UI
         private void RebuildModelChoices()
         {
             modelIndices.Clear();
+            modelOnShelf.Clear();
             var labels = new List<string>();
+
+            // **The shelf comes first.** A finished run waiting to be released is the moment a lab
+            // actually does its post-training work, and it was the one state this screen could not
+            // see: the list filtered on IsLiveOn, so a company whose only model was on the shelf
+            // opened UPGRADE and found nothing at all.
+            for (var index = 0; index < simulation.State.Shelf.Count; index++)
+            {
+                var shelved = simulation.State.Shelf[index];
+
+                modelIndices.Add(index);
+                modelOnShelf.Add(true);
+                labels.Add($"{shelved.Name}  (on the shelf, "
+                    + $"{UiFormat.Number(shelved.CapabilityIfReleasedOn(simulation.State.Date))})");
+            }
 
             for (var index = 0; index < simulation.State.DeployedModels.Count; index++)
             {
@@ -531,6 +576,7 @@ namespace ScalingLaws.UI
                 }
 
                 modelIndices.Add(index);
+                modelOnShelf.Add(false);
                 labels.Add($"{model.Name}  ({UiFormat.Number(model.EffectiveCapability(simulation.State.Date))})");
             }
 
@@ -550,5 +596,10 @@ namespace ScalingLaws.UI
 
             return modelIndices[Math.Clamp(modelField.index, 0, modelIndices.Count - 1)];
         }
+
+        /// <summary>Whether the chosen entry is a shelved model rather than one on sale.</summary>
+        private bool SelectedIsOnShelf() =>
+            modelOnShelf.Count != 0 && modelField.index >= 0
+            && modelOnShelf[Math.Clamp(modelField.index, 0, modelOnShelf.Count - 1)];
     }
 }

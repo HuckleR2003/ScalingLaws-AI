@@ -174,6 +174,14 @@ namespace ScalingLaws.Persistence
         public int shape = 1;
 
         /// <summary>
+        /// What the model is good at while it waits.
+        ///
+        /// Added in v33, when upgrading before release became possible. Without it, work bought
+        /// on a shelved model vanished on the next load and the player paid for nothing.
+        /// </summary>
+        public List<int> traitLevels = new();
+
+        /// <summary>
         /// What this model was hardened with when it was built.
         ///
         /// **Saved on the model rather than derived from the company**, because the protection is a
@@ -209,6 +217,9 @@ namespace ScalingLaws.Persistence
         public double petaflopDaysCompleted;
         public int daysCompleted;
         public long cashPaidUsd;
+
+        /// <summary>True when modelIndex points into the shelf rather than the deployed list. v33.</summary>
+        public bool onShelf;
     }
 
     /// <summary>One closed round. Added in v3.</summary>
@@ -366,7 +377,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 32;
+        public const int CurrentVersion = 33;
 
         public int version = CurrentVersion;
 

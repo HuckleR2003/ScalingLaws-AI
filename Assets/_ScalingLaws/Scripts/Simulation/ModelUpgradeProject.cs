@@ -34,7 +34,16 @@ namespace ScalingLaws.Simulation
             CashPaidUsd = Math.Max(0L, cashPaidUsd);
         }
 
+        /// <summary>
+        /// Index into the deployed list, or into the shelf when <see cref="OnShelf"/> is set.
+        ///
+        /// One field for two lists rather than two fields, because a project belongs to exactly one
+        /// model and carrying an index for the list it is not in invites the two to disagree.
+        /// </summary>
         public int ModelIndex { get; }
+
+        /// <summary>True when the model is still on the shelf rather than on sale.</summary>
+        public bool OnShelf { get; set; }
         public ModelTrait Trait { get; }
         public int TargetLevel { get; }
         public GameDate StartedOn { get; }

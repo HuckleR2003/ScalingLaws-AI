@@ -34,6 +34,11 @@ namespace ScalingLaws.UI
         private readonly VisualElement parameterLock = new();
         private readonly Label parameterLockLabel = new();
         private readonly Slider tokenSlider = new();
+
+        /// <summary>The shaded right-hand end of the token slider, and what it says.</summary>
+        private readonly VisualElement tokenLock = new();
+
+        private readonly Label tokenLockLabel = new();
         private readonly Slider rentedSlider = new();
         private readonly VisualElement dataToggles = new();
         private readonly VisualElement readouts = new();
@@ -854,8 +859,18 @@ namespace ScalingLaws.UI
 
             tokenLabel.AddToClassList("field__label");
             panel.Add(tokenLabel);
+            var tokenTrack = new VisualElement();
+            tokenTrack.AddToClassList("scale-track");
+
             ConfigureSlider(tokenSlider, MinimumLogTokens, MaximumLogTokens, 2.6f);
-            panel.Add(tokenSlider);
+            tokenTrack.Add(tokenSlider);
+
+            tokenLock.AddToClassList("scale-lock");
+            tokenLock.Add(tokenLockLabel);
+            tokenLockLabel.AddToClassList("scale-lock__label");
+            tokenTrack.Add(tokenLock);
+
+            panel.Add(tokenTrack);
 
             tokenBytesLabel.AddToClassList("field__hint");
             panel.Add(tokenBytesLabel);
@@ -1517,10 +1532,13 @@ namespace ScalingLaws.UI
             {
                 var captured = effort.Multiplier;
 
+                // RepriceAndRebuild, for the same reason the tier arrows needed it: the selected
+                // chip is a class set when the row was built, so Reprice alone changed the price
+                // and left x1 looking chosen however many times the player pressed x3.
                 var button = new Button(() =>
                 {
                     safetyEffort = captured;
-                    Reprice();
+                    RepriceAndRebuild();
                 })
                 { text = $"x{captured}" };
 
@@ -1676,6 +1694,41 @@ namespace ScalingLaws.UI
             var ceiling = simulation.ParameterCeilingBillions();
             parameterLockLabel.text =
                 ScaleCeiling.TryNextRung(simulation.State.HasResearch, out var rung, out _)
+                    ? $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP  ·  {ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}"
+                    : $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP";
+        }
+
+        /// <summary>
+        /// Holds the token slider under whatever the company's data pipeline can actually feed it.
+        ///
+        /// The same shape as the parameter ceiling and for the same reason: a company that has not
+        /// solved its corpus problem cannot train on a corpus it does not have. Half the travel to
+        /// begin with, and each rung of the data ladder opens more of it.
+        /// </summary>
+        private void RefreshTokenCeiling()
+        {
+            var fraction = TokenCeiling.FractionFor(simulation.State.HasResearch);
+            var ceilingLog = (float)(MinimumLogTokens
+                + (MaximumLogTokens - MinimumLogTokens) * fraction);
+
+            if (tokenSlider.value > ceilingLog)
+            {
+                tokenSlider.SetValueWithoutNotify(ceilingLog);
+            }
+
+            var locked = 1.0 - fraction;
+            tokenLock.style.display = locked <= 0.0005 ? DisplayStyle.None : DisplayStyle.Flex;
+            tokenLock.style.width = Length.Percent((float)(locked * 100.0));
+
+            if (locked <= 0.0005)
+            {
+                return;
+            }
+
+            var ceiling = Math.Pow(10.0, ceilingLog);
+
+            tokenLockLabel.text =
+                TokenCeiling.TryNextRung(simulation.State.HasResearch, out var rung, out _)
                     ? $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP  ·  {ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}"
                     : $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP";
         }
@@ -1845,11 +1898,19 @@ namespace ScalingLaws.UI
         {
             simulation.SetRentedPetaflops(rentedSlider.value);
 
+            // **The ceilings run first, before anything reads a slider.**
+            //
+            // They used to run after the blueprint was built, which meant the clamp moved the
+            // handle back and every number on the screen had already been computed from the
+            // position it was dragged to. The locked half of the parameter slider looked like it
+            // did nothing: the handle snapped back but the parameter count, the projected
+            // capability and the bill all reported the value the player had reached.
+            RefreshParameterCeiling();
+            RefreshTokenCeiling();
+
             var blueprint = CurrentBlueprint();
             var projection = simulation.Project(blueprint);
             var profile = simulation.Profile;
-
-            RefreshParameterCeiling();
 
             parameterLabel.text = $"Parameters: {UiFormat.Billions(blueprint.ParameterCountBillions)}";
             tokenLabel.text = $"Training tokens: {UiFormat.Billions(blueprint.TrainingTokensBillions)}";
