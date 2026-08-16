@@ -60,7 +60,26 @@ namespace ScalingLaws.Simulation
 
         public int Headcount => hires.Count;
 
-        public int Desks => OfficeCatalog.Get(Office).Desks;
+        /// <summary>
+        /// Seats bought from the furniture shop, on top of the ones the lease came with.
+        ///
+        /// A property the decorator writes rather than a reference to it, for the same reason
+        /// SaturationMultiplier is: the roster must not have to know that a furniture shop exists in
+        /// order to count its own chairs.
+        /// </summary>
+        public int ExtraDesks { get; set; }
+
+        /// <summary>
+        /// What the furniture on the floor adds to how well people work here.
+        ///
+        /// **This is where the shop's morale numbers actually land.** The game has no separate
+        /// morale stat, and a bonus with nowhere to go would be a mechanic that reads well in the
+        /// shop and does nothing in the campaign. Office effectiveness is the existing channel for
+        /// "this is a better place to work", so a sofa moves the same number a bigger lease does.
+        /// </summary>
+        public double ComfortBonus { get; set; }
+
+        public int Desks => OfficeCatalog.Get(Office).Desks + ExtraDesks;
 
         public bool HasFreeDesk => Headcount < Desks;
 
@@ -160,7 +179,8 @@ namespace ScalingLaws.Simulation
                 return 0.0;
             }
 
-            raw *= OfficeCatalog.Get(Office).EffectivenessMultiplier;
+            raw *= OfficeCatalog.Get(Office).EffectivenessMultiplier
+                + Math.Clamp(ComfortBonus, 0.0, 0.25);
             return raw / (1.0 + raw / (SaturationPoint * Math.Clamp(SaturationMultiplier, 0.5, 2.0)));
         }
 

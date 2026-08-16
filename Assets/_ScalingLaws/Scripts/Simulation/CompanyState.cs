@@ -274,6 +274,15 @@ namespace ScalingLaws.Simulation
         /// <summary>Everyone on the payroll and the room they work in.</summary>
         public StaffRoster Staff { get; } = new();
 
+        /// <summary>
+        /// Everything bought for the office and where it stands.
+        ///
+        /// On the state rather than on the roster because furniture outlives a move: a company that
+        /// buys a sofa and then takes a bigger floor still owns the sofa, and the pieces are stood
+        /// up again in the new room rather than sold with the lease.
+        /// </summary>
+        public DecorPlan Decor { get; set; } = new();
+
         /// <summary>How the company charges, how generous it is, and what it spends being noticed.</summary>
         public MonetizationPolicy Monetization { get; } = new();
 

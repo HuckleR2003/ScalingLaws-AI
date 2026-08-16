@@ -365,7 +365,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 29;
+        public const int CurrentVersion = 30;
 
         public int version = CurrentVersion;
 
@@ -566,6 +566,24 @@ namespace ScalingLaws.Persistence
         /// hub and later moves up still owns the small hub, and moving back has to be free.
         /// </summary>
         public List<int> ownedOffices = new();
+
+        /// <summary>
+        /// Everything bought for the office, one entry per piece.
+        ///
+        /// Four parallel lists rather than a list of objects because Unity's JsonUtility does not
+        /// serialise nested generic lists of custom types reliably, which is the same reason every
+        /// other collection in this file is shaped this way.
+        /// </summary>
+        public List<int> decorKinds = new();
+
+        /// <inheritdoc cref="decorKinds"/>
+        public List<float> decorX = new();
+
+        /// <inheritdoc cref="decorKinds"/>
+        public List<float> decorZ = new();
+
+        /// <inheritdoc cref="decorKinds"/>
+        public List<bool> decorPlaced = new();
 
         public bool actionOpen;
 

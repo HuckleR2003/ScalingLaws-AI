@@ -130,6 +130,7 @@ namespace ScalingLaws.Persistence
                     26 => UpgradeV26ToV27(current),
                     27 => UpgradeV27ToV28(current),
                     28 => UpgradeV28ToV29(current),
+                    29 => UpgradeV29ToV30(current),
                     _ => current
                 };
             }
@@ -965,6 +966,34 @@ namespace ScalingLaws.Persistence
         /// open and crediting it with a building now would hand it a purchase it never made and
         /// wipe a bill it has already been paying.
         /// </summary>
+        /// <summary>
+        /// v29 to v30: the office can be furnished.
+        ///
+        /// Empty, and deliberately so. A v29 company never had a furniture shop to spend in, so it
+        /// owns nothing; handing it a floor of free desks would raise a hiring cap it has been
+        /// playing under for the whole campaign, and handing it the bill retroactively would take
+        /// cash it has already spent on something else.
+        /// </summary>
+        public static SaveData UpgradeV29ToV30(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 30;
+            data.decorKinds = new List<int>();
+            data.decorX = new List<float>();
+            data.decorZ = new List<float>();
+            data.decorPlaced = new List<bool>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v29 to v30: there was no furniture shop before this version, so the office starts "
+                + "bare and the hiring cap is unchanged.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV28ToV29(SaveData data)
         {
             if (data == null)

@@ -81,6 +81,11 @@ namespace ScalingLaws.Simulation
 
             State.Staff.SaturationMultiplier = State.Skills.TeamSaturationMultiplier();
 
+            // Seats the player bought. Set every tick rather than when something is placed, so a
+            // save loaded mid-campaign seats the same number of people as the run that wrote it.
+            State.Staff.ExtraDesks = State.Decor?.ExtraDesks ?? 0;
+            State.Staff.ComfortBonus = State.Decor?.MoraleBonus ?? 0.0;
+
 
             ReportDeliveries();
             SyncPricing(market);
@@ -1514,6 +1519,117 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
+        // ------------------------------------------------------------------ the furniture shop
+
+        /// <summary>
+        /// Buys a piece for the office and stands it up.
+        ///
+        /// Returns the reason it could not happen, or empty on success. Same shape as the other
+        /// TryX methods on this class, so the screen that calls it does not need a second pattern.
+        ///
+        /// The room's own size is passed in because the simulation does not know what the office
+        /// looks like, only which tier it is; the caller reads it from the room catalog.
+        /// </summary>
+        public string TryBuyFurniture(FurnitureKind kind, DecorZone zone)
+        {
+            var piece = FurnitureCatalog.Get(kind);
+
+            if (State.CashUsd < piece.PriceUsd)
+            {
+                return $"Needs ${piece.PriceUsd:N0}, has ${State.CashUsd:N0}.";
+            }
+
+            State.Decor ??= new DecorPlan();
+
+            var item = State.Decor.Buy(kind, zone);
+
+            State.PostCash(LedgerLine.Facilities, (long)piece.PriceUsd);
+            State.LifetimeCapitalSpentUsd += (long)piece.PriceUsd;
+
+            // Reapplied at once rather than waiting for the next tick, so the desk the player just
+            // bought can be hired into on the same screen.
+            State.Staff.ExtraDesks = State.Decor.ExtraDesks;
+            State.Staff.ComfortBonus = State.Decor.MoraleBonus;
+
+            return item.IsPlaced
+                ? string.Empty
+                : "Bought, but the floor is full. It is in storage until something is moved.";
+        }
+
+        /// <summary>
+        /// Sells a piece back at the catalog's resale fraction and returns what it fetched.
+        ///
+        /// The refund is revenue on the facilities line rather than a negative cost, because that is
+        /// what it is: the company got money for a thing it owned.
+        /// </summary>
+        public double SellFurniture(DecorItem item)
+        {
+            if (State.Decor == null)
+            {
+                return 0.0;
+            }
+
+            var refund = State.Decor.Sell(item);
+            if (refund <= 0.0)
+            {
+                return 0.0;
+            }
+
+            // AssetSales, not a negative facilities cost. PostCash reads the sign from the line
+            // rather than from the number, so a negative on a cost line charges the company for
+            // selling its own sofa.
+            State.PostCash(LedgerLine.AssetSales, (long)refund);
+
+            State.Staff.ExtraDesks = State.Decor.ExtraDesks;
+            State.Staff.ComfortBonus = State.Decor.MoraleBonus;
+
+            return refund;
+        }
+
+        /// <summary>Puts a stored piece on the floor, or reports that there is no room for it.</summary>
+        public string TryPlaceFurniture(DecorItem item, DecorZone zone)
+        {
+            if (State.Decor == null || item == null)
+            {
+                return "Nothing to place.";
+            }
+
+            if (!State.Decor.Place(item, zone))
+            {
+                return "The floor is full.";
+            }
+
+            State.Staff.ExtraDesks = State.Decor.ExtraDesks;
+            State.Staff.ComfortBonus = State.Decor.MoraleBonus;
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Takes a piece off the floor.
+        ///
+        /// Blocked when a desk is being sat at, because removing it would leave somebody employed
+        /// with nowhere to sit and the hiring cap is the one number the shop can actually break.
+        /// </summary>
+        public string TryStoreFurniture(DecorItem item)
+        {
+            if (State.Decor == null || item == null)
+            {
+                return "Nothing to store.";
+            }
+
+            var seats = item.Definition.DeskSeats;
+            if (seats > 0 && State.Staff.Desks - seats < State.Staff.Headcount)
+            {
+                return $"Somebody is sitting there. The company has {State.Staff.Headcount} people "
+                    + $"and {State.Staff.Desks} desks.";
+            }
+
+            State.Decor.Store(item);
+            State.Staff.ExtraDesks = State.Decor.ExtraDesks;
+            State.Staff.ComfortBonus = State.Decor.MoraleBonus;
+            return string.Empty;
+        }
+
         // ------------------------------------------------------------------ safety incidents
 
         /// <summary>Chance of a public safety failure today, for the screen that shows it.</summary>
@@ -2565,7 +2681,12 @@ namespace ScalingLaws.Simulation
 
             var fromMoney = ResearchBudget.PointsFromFunding(budget) / 30.0;
 
-            State.ResearchPointsToday = fromWork + fromMoney;
+            // The office adds a few per cent on top, from whatever is standing on the floor. It
+            // lifts what the work and the money already earned rather than being a source of its
+            // own, so a lab that does no research still gets nothing out of a nice sofa.
+            var fromRoom = 1.0 + (State.Decor?.ResearchBonus ?? 0.0);
+
+            State.ResearchPointsToday = (fromWork + fromMoney) * fromRoom;
             State.ResearchPoints += State.ResearchPointsToday;
         }
 

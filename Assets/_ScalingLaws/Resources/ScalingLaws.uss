@@ -7409,3 +7409,172 @@
 .fleet-panel .field__label {
     font-size: 14px;
 }
+
+/* ---- the furniture shop -------------------------------------------------------------------
+   Laid over the office rather than replacing it: the player is deciding what the room should
+   look like and the room is the thing they are deciding about. Held off the edges so the site
+   rail behind it stays reachable. */
+
+.decor {
+    position: absolute;
+    left: 48px;
+    right: 132px;
+    top: 40px;
+    bottom: 40px;
+    padding: 24px 28px;
+    background-color: rgba(8, 11, 18, 0.94);
+    border-left-width: 3px;
+    border-left-color: rgb(214, 158, 62);
+    border-radius: 4px;
+}
+
+.decor__problem {
+    margin-top: 6px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    color: rgb(240, 206, 128);
+    background-color: rgba(214, 158, 62, 0.14);
+    white-space: normal;
+    font-size: 14px;
+}
+
+.decor__columns {
+    flex-direction: row;
+    flex-grow: 1;
+    margin-top: 12px;
+}
+
+.decor__column {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 20px;
+    /* UI Toolkit shrinks children by default, and a column that shrinks takes its scroller's
+       range with it, which leaves a list that cannot be scrolled to the bottom. */
+    flex-shrink: 0;
+}
+
+.decor__heading {
+    font-size: 15px;
+    color: rgb(150, 162, 182);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+.decor__list {
+    flex-grow: 1;
+}
+
+.decor__empty {
+    color: rgb(122, 132, 150);
+    white-space: normal;
+    padding: 12px 4px;
+}
+
+.decor-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background-color: rgba(255, 255, 255, 0.035);
+    border-radius: 3px;
+}
+
+/* Something in a box is not in the room, and the list has to say so at a glance. */
+.decor-row--stored {
+    opacity: 0.55;
+    border-left-width: 2px;
+    border-left-color: rgb(122, 132, 150);
+}
+
+.decor-row__swatch {
+    width: 34px;
+    height: 34px;
+    border-radius: 3px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.decor-row__text {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 12px;
+}
+
+.decor-row__name {
+    font-size: 15px;
+    color: rgb(232, 236, 244);
+}
+
+.decor-row__blurb {
+    font-size: 12px;
+    color: rgb(140, 150, 168);
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.decor-row__effect {
+    font-size: 12px;
+    color: rgb(126, 186, 148);
+    white-space: normal;
+    margin-top: 4px;
+}
+
+.decor-row__buttons {
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.decor-row__buy {
+    min-width: 168px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: rgb(18, 22, 30);
+    background-color: rgb(214, 158, 62);
+    border-width: 0;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.decor-row__buy:disabled {
+    color: rgb(122, 132, 150);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.decor-row__move {
+    min-width: 132px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: rgb(214, 226, 244);
+    background-color: rgba(90, 130, 190, 0.30);
+    border-width: 0;
+    border-radius: 3px;
+    margin-bottom: 4px;
+}
+
+.decor-row__sell {
+    min-width: 132px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: rgb(206, 156, 156);
+    background-color: rgba(150, 70, 70, 0.24);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.decor__close {
+    align-self: flex-end;
+    margin-top: 14px;
+    padding: 10px 30px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: rgb(232, 236, 244);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+/* The rail button while the shop is open, so it reads as a toggle and not as a dead icon. */
+.site-icon--on {
+    border-width: 2px;
+    border-color: rgb(214, 158, 62);
+}

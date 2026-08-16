@@ -137,6 +137,19 @@ namespace ScalingLaws.Persistence
                 data.ownedOffices.Add((int)owned);
             }
 
+            data.decorKinds.Clear();
+            data.decorX.Clear();
+            data.decorZ.Clear();
+            data.decorPlaced.Clear();
+
+            foreach (var item in state.Decor?.Items ?? (IReadOnlyList<DecorItem>)Array.Empty<DecorItem>())
+            {
+                data.decorKinds.Add((int)item.Kind);
+                data.decorX.Add(item.X);
+                data.decorZ.Add(item.Z);
+                data.decorPlaced.Add(item.IsPlaced);
+            }
+
             data.actionOpen = action != null;
 
             if (action != null)
@@ -589,6 +602,33 @@ namespace ScalingLaws.Persistence
                     }
                 }
             }
+
+            // Read by index across the four lists, and stopped by the shortest of them: a truncated
+            // file must not throw, and a piece with no position is a piece that cannot be drawn.
+            var decor = new List<(FurnitureKind, float, float, bool)>();
+            var pieces = safe.decorKinds?.Count ?? 0;
+
+            for (var index = 0; index < pieces; index++)
+            {
+                if (index >= (safe.decorX?.Count ?? 0)
+                    || index >= (safe.decorZ?.Count ?? 0)
+                    || index >= (safe.decorPlaced?.Count ?? 0))
+                {
+                    break;
+                }
+
+                if (!Enum.IsDefined(typeof(FurnitureKind), safe.decorKinds[index]))
+                {
+                    continue;
+                }
+
+                decor.Add(((FurnitureKind)safe.decorKinds[index], safe.decorX[index],
+                    safe.decorZ[index], safe.decorPlaced[index]));
+            }
+
+            state.Decor = DecorPlan.Restore(decor);
+            state.Staff.ExtraDesks = state.Decor.ExtraDesks;
+            state.Staff.ComfortBonus = state.Decor.MoraleBonus;
 
             if (safe.actionOpen)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Persistence;
@@ -67,6 +68,12 @@ namespace ScalingLaws.UI
         private GameHud hud;
         private KeyboardShortcuts shortcuts;
         private FounderPresence founder;
+
+        /// <summary>What the generated game scene calls the room the office camera looks at.</summary>
+        private const string OfficeStageRoot = "OfficeRoom";
+
+        /// <summary>The room on screen. Null in tests, where there is no scene to find it in.</summary>
+        private OfficeStage officeStage;
         private ResearchNodeId selectedResearch = ResearchNodeId.None;
         private string researchProblem = string.Empty;
         private bool cancelArmed;
@@ -167,6 +174,12 @@ namespace ScalingLaws.UI
         public const float CompanyInfoRevealSeconds = 3f;
 
         private bool companyInfoOpen = true;
+
+        /// <summary>Whether the furniture shop is laid over the office.</summary>
+        private bool decorOpen;
+
+        /// <summary>What the last shop action reported, or empty. Cleared when the panel opens.</summary>
+        private string decorProblem = string.Empty;
         private float companyInfoTimer = CompanyInfoRevealSeconds;
         private VisualElement trainingFill;
         private Label trainingLabel;
@@ -445,6 +458,12 @@ namespace ScalingLaws.UI
 
             // The room has had an empty Staff group since the day it was generated. Somebody lives
             // here now.
+            // The room the office camera points at, which changes with the lease. Built before the
+            // founder spawns so they walk into the floor the company is actually renting rather
+            // than into the garage it left three years ago.
+            officeStage = new OfficeStage(GameObject.Find(OfficeStageRoot));
+            officeStage.Show(state.Staff.Office, state.Decor);
+
             founder = new FounderPresence(() => state);
             founder.Spawn();
             AddHudSlots();
@@ -3645,6 +3664,11 @@ namespace ScalingLaws.UI
             bubbles = new ResearchBubbles(bubbleHost,
                 () => clock.Speed == SimSpeed.Paused ? 0.0 : simulation.State.ResearchPointsToday);
 
+            // Cheap when nothing changed, and the only place that has to notice a move: the office
+            // is not on screen anywhere else, so re-dressing it on every tab change would be work
+            // done for a camera nobody is looking through.
+            officeStage?.Show(state.Staff.Office, state.Decor);
+
             var view = Resources.Load<RenderTexture>("OfficeView");
             if (view != null)
             {
@@ -3741,11 +3765,321 @@ namespace ScalingLaws.UI
                 InsightTip.Placement.LeftOf);
 
             rail.Add(map);
+
+            // The furniture shop. Third in the rail rather than a tab of its own, because it is a
+            // thing you do *to the room you are looking at*, and walking away from the room to
+            // furnish it is the wrong way round.
+            var decorate = new Button(() =>
+            {
+                decorOpen = !decorOpen;
+                decorProblem = string.Empty;
+                Show(Screen.Site);
+            });
+
+            decorate.AddToClassList("site-icon");
+            decorate.EnableInClassList("site-icon--on", decorOpen);
+            SetIcon(decorate, "Ui/office_decorate", "DECOR");
+
+            InsightTip.Attach(decorate, "FURNISH THE OFFICE",
+                "Buy desks, sofas and everything else. Desks raise the hiring cap; the rest makes "
+                + "the floor a better place to work. Anything can be sold back at "
+                + $"{FurnitureCatalog.ResaleFraction:P0} of what it cost.",
+                InsightTip.Placement.LeftOf);
+
+            rail.Add(decorate);
             stage.Add(rail);
+
+            if (decorOpen)
+            {
+                page.Add(BuildDecorator());
+            }
 
             page.Add(stage);
             return page;
         }
+
+        /// <summary>
+        /// The furniture shop, laid over the room it changes.
+        ///
+        /// Two columns: what can be bought on the left, what is already owned on the right. The
+        /// room stays visible behind it on purpose. The player is deciding what the office should
+        /// look like, and hiding the office to do that would be perverse.
+        /// </summary>
+        private VisualElement BuildDecorator()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("decor");
+
+            var title = new Label("FURNISH THE OFFICE");
+            title.AddToClassList("page-title");
+            panel.Add(title);
+
+            var decor = state.Decor ?? new DecorPlan();
+            var room = RoomCatalog.For(state.Staff.Office);
+
+            var subtitle = new Label(
+                $"{state.Staff.Headcount} of {state.Staff.Desks} desks taken. "
+                + $"{decor.Placed.Count()} pieces on the floor, "
+                + $"{UiFormat.Money((long)decor.InvestedUsd)} spent on them. "
+                + "Only what is standing up counts.");
+
+            subtitle.AddToClassList("page-subtitle");
+            panel.Add(subtitle);
+
+            if (!string.IsNullOrEmpty(decorProblem))
+            {
+                var problem = new Label(decorProblem);
+                problem.AddToClassList("decor__problem");
+                panel.Add(problem);
+            }
+
+            if (!room.AllowsFurniture)
+            {
+                var closed = new Label(
+                    "There is no floor to spare here. The sofa, the bench, the rack and the stairs "
+                    + "are already touching, and anything else would be standing in the middle of "
+                    + "them. Rent a floor and the shop opens.");
+
+                closed.AddToClassList("decor__empty");
+                panel.Add(closed);
+            }
+            else
+            {
+                var columns = new VisualElement();
+                columns.AddToClassList("decor__columns");
+
+                columns.Add(BuildShop(room));
+                columns.Add(BuildOwned(decor, room));
+
+                panel.Add(columns);
+            }
+
+            var close = new Button(() =>
+            {
+                decorOpen = false;
+                Show(Screen.Site);
+            })
+            { text = "DONE" };
+
+            close.AddToClassList("decor__close");
+            panel.Add(close);
+
+            return panel;
+        }
+
+        private VisualElement BuildShop(RoomView room)
+        {
+            var column = new VisualElement();
+            column.AddToClassList("decor__column");
+
+            var heading = new Label("THE SHOP");
+            heading.AddToClassList("decor__heading");
+            column.Add(heading);
+
+            var list = new ScrollView();
+            list.AddToClassList("decor__list");
+
+            foreach (var piece in FurnitureCatalog.All)
+            {
+                list.Add(BuildShopRow(piece, room));
+            }
+
+            column.Add(list);
+            return column;
+        }
+
+        private VisualElement BuildShopRow(FurniturePiece piece, RoomView room)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("decor-row");
+
+            // The swatch is the only thing tying this list to the boxes in the room. Without it a
+            // player cannot tell which of five brown rectangles is the shelf they just bought.
+            var swatch = new VisualElement();
+            swatch.AddToClassList("decor-row__swatch");
+
+            if (ColorUtility.TryParseHtmlString(piece.Tint, out var tint))
+            {
+                swatch.style.backgroundColor = tint;
+            }
+
+            row.Add(swatch);
+
+            var text = new VisualElement();
+            text.AddToClassList("decor-row__text");
+
+            var name = new Label(piece.DisplayName);
+            name.AddToClassList("decor-row__name");
+            text.Add(name);
+
+            var blurb = new Label(piece.Blurb);
+            blurb.AddToClassList("decor-row__blurb");
+            text.Add(blurb);
+
+            var effect = new Label(EffectLine(piece));
+            effect.AddToClassList("decor-row__effect");
+            text.Add(effect);
+
+            row.Add(text);
+
+            var owned = (state.Decor ?? new DecorPlan()).CountOf(piece.Kind);
+            var affordable = state.CashUsd >= piece.PriceUsd;
+
+            var buy = new Button(() =>
+            {
+                decorProblem = simulation.TryBuyFurniture(piece.Kind, ZoneOf(room));
+
+                Show(Screen.Site);
+            })
+            {
+                text = owned > 0
+                    ? $"BUY   {UiFormat.Money((long)piece.PriceUsd)}   ({owned} owned)"
+                    : $"BUY   {UiFormat.Money((long)piece.PriceUsd)}"
+            };
+
+            buy.AddToClassList("decor-row__buy");
+            buy.SetEnabled(affordable);
+
+            if (!affordable)
+            {
+                buy.text = $"NEEDS {UiFormat.Money((long)piece.PriceUsd)}";
+            }
+
+            row.Add(buy);
+            return row;
+        }
+
+        /// <summary>What a piece does, in one line, or that it is only there to look at.</summary>
+        private static string EffectLine(FurniturePiece piece)
+        {
+            var parts = new List<string>();
+
+            if (piece.DeskSeats > 0)
+            {
+                parts.Add(piece.DeskSeats == 1 ? "+1 desk" : $"+{piece.DeskSeats} desks");
+            }
+
+            if (piece.MoraleBonus > 0.0)
+            {
+                parts.Add($"+{piece.MoraleBonus:P1} how well people work");
+            }
+
+            if (piece.ResearchBonus > 0.0)
+            {
+                parts.Add($"+{piece.ResearchBonus:P1} research");
+            }
+
+            parts.Add($"sells back for {UiFormat.Money((long)piece.ResaleValueUsd)}");
+
+            return string.Join("  -  ", parts);
+        }
+
+        private VisualElement BuildOwned(DecorPlan decor, RoomView room)
+        {
+            var column = new VisualElement();
+            column.AddToClassList("decor__column");
+
+            var heading = new Label("WHAT THE COMPANY OWNS");
+            heading.AddToClassList("decor__heading");
+            column.Add(heading);
+
+            var list = new ScrollView();
+            list.AddToClassList("decor__list");
+
+            if (decor.Items.Count == 0)
+            {
+                var empty = new Label("Nothing yet. The floor is as the lease left it.");
+                empty.AddToClassList("decor__empty");
+                list.Add(empty);
+            }
+
+            // Placed first, because those are the ones the player can see in the room behind this
+            // panel and the ones they are most likely to want to move or sell.
+            foreach (var item in decor.Items
+                .OrderByDescending(entry => entry.IsPlaced)
+                .ThenBy(entry => entry.Definition.DisplayName))
+            {
+                list.Add(BuildOwnedRow(item, room));
+            }
+
+            column.Add(list);
+            return column;
+        }
+
+        private VisualElement BuildOwnedRow(DecorItem item, RoomView room)
+        {
+            var piece = item.Definition;
+
+            var row = new VisualElement();
+            row.AddToClassList("decor-row");
+            row.EnableInClassList("decor-row--stored", !item.IsPlaced);
+
+            var swatch = new VisualElement();
+            swatch.AddToClassList("decor-row__swatch");
+
+            if (ColorUtility.TryParseHtmlString(piece.Tint, out var tint))
+            {
+                swatch.style.backgroundColor = tint;
+            }
+
+            row.Add(swatch);
+
+            var text = new VisualElement();
+            text.AddToClassList("decor-row__text");
+
+            var name = new Label(piece.DisplayName);
+            name.AddToClassList("decor-row__name");
+            text.Add(name);
+
+            var where = new Label(item.IsPlaced
+                ? $"On the floor at {item.X:0.#} by {item.Z:0.#}."
+                : "In storage. It does nothing until it is standing up.");
+
+            where.AddToClassList("decor-row__blurb");
+            text.Add(where);
+
+            row.Add(text);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("decor-row__buttons");
+
+            var move = new Button(() =>
+            {
+                decorProblem = item.IsPlaced
+                    ? simulation.TryStoreFurniture(item)
+                    : simulation.TryPlaceFurniture(item, ZoneOf(room));
+
+                Show(Screen.Site);
+            })
+            { text = item.IsPlaced ? "STORE" : "PLACE" };
+
+            move.AddToClassList("decor-row__move");
+            buttons.Add(move);
+
+            // One click. The refund is small enough that an accidental sale is a real loss but not
+            // a campaign-ending one, and a second click on every row would make clearing a floor a
+            // chore.
+            var sell = new Button(() =>
+            {
+                var got = simulation.SellFurniture(item);
+                decorProblem = got > 0.0
+                    ? $"Sold the {piece.DisplayName.ToLowerInvariant()} for {UiFormat.Money((long)got)}."
+                    : string.Empty;
+
+                Show(Screen.Site);
+            })
+            { text = $"SELL   {UiFormat.Money((long)piece.ResaleValueUsd)}" };
+
+            sell.AddToClassList("decor-row__sell");
+            buttons.Add(sell);
+
+            row.Add(buttons);
+            return row;
+        }
+
+        /// <summary>The patch of floor this room leaves clear for furniture.</summary>
+        private static DecorZone ZoneOf(RoomView room) =>
+            new(room.DecorX, room.DecorZ, room.DecorWidth, room.DecorDepth);
 
         /// <summary>
         /// Puts art on a control, or the word on it if the art is not there.
