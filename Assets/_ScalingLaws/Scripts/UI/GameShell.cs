@@ -600,11 +600,19 @@ namespace ScalingLaws.UI
 
             mail = new MailScreen(simulation, RefreshChrome);
 
+            // The simulation is told where the furniture goes rather than working it out, because it
+            // knows which tier the company is in and nothing about the shape of the room.
             offices = new OfficeChooser(
                 () => simulation.State,
-                tier => simulation.TryMoveOffice(tier, out var why) ? string.Empty : why,
+                (tier, furnished) =>
+                    simulation.TryMoveOffice(tier, FurnishZone(tier, furnished), out var why)
+                        ? string.Empty
+                        : why,
                 () => Show(Screen.Team),
-                tier => simulation.TryBuyOffice(tier, out var why) ? string.Empty : why);
+                (tier, furnished) =>
+                    simulation.TryBuyOffice(tier, FurnishZone(tier, furnished), out var why)
+                        ? string.Empty
+                        : why);
 
             news = new NewsScreen(simulation, (tier, joined) =>
             {
@@ -4692,27 +4700,31 @@ namespace ScalingLaws.UI
             // The furniture shop. Third in the rail rather than a tab of its own, because it is a
             // thing you do *to the room you are looking at*, and walking away from the room to
             // furnish it is the wrong way round.
-            var decorate = new Button(() =>
+            if (FurnishingShopIsOpen)
             {
-                decorOpen = !decorOpen;
-                decorProblem = string.Empty;
-                Show(Screen.Site);
-            });
+                var decorate = new Button(() =>
+                {
+                    decorOpen = !decorOpen;
+                    decorProblem = string.Empty;
+                    Show(Screen.Site);
+                });
 
-            decorate.AddToClassList("site-icon");
-            decorate.EnableInClassList("site-icon--on", decorOpen);
-            SetIcon(decorate, "Ui/office_decorate", "DECOR");
+                decorate.AddToClassList("site-icon");
+                decorate.EnableInClassList("site-icon--on", decorOpen);
+                SetIcon(decorate, "Ui/office_decorate", "DECOR");
 
-            InsightTip.Attach(decorate, "FURNISH THE OFFICE",
-                "Buy desks, sofas and everything else. Desks raise the hiring cap; the rest makes "
-                + "the floor a better place to work. Anything can be sold back at "
-                + $"{FurnitureCatalog.ResaleFraction:P0} of what it cost.",
-                InsightTip.Placement.LeftOf);
+                InsightTip.Attach(decorate, "FURNISH THE OFFICE",
+                    "Buy desks, sofas and everything else. Desks raise the hiring cap; the rest makes "
+                    + "the floor a better place to work. Anything can be sold back at "
+                    + $"{FurnitureCatalog.ResaleFraction:P0} of what it cost.",
+                    InsightTip.Placement.LeftOf);
 
-            rail.Add(decorate);
+                rail.Add(decorate);
+            }
+
             stage.Add(rail);
 
-            if (decorOpen)
+            if (FurnishingShopIsOpen && decorOpen)
             {
                 page.Add(BuildDecorator());
             }
@@ -4720,6 +4732,20 @@ namespace ScalingLaws.UI
             page.Add(stage);
             return page;
         }
+
+        /// <summary>
+        /// Whether the player can place furniture piece by piece.
+        ///
+        /// **Suspended on 2026-08-22 at the author's call**, in favour of the WITH FURNISHINGS tick
+        /// on the office chooser: a standard pack that arrives on the day of the move, cheaper than
+        /// the same pieces bought one at a time.
+        ///
+        /// Nothing under it is deleted. `DecorPlan`, `FurnitureCatalog` and `BuildDecorator` are
+        /// intact and still tested, the furnished move buys through the same `DecorPlan.Buy`, and
+        /// saves keep carrying whatever is on the floor. Turning this back on is one word, which is
+        /// the only reason it is a constant rather than a commit that tore the shop out.
+        /// </summary>
+        private const bool FurnishingShopIsOpen = false;
 
         /// <summary>
         /// The furniture shop, laid over the room it changes.
@@ -5003,6 +5029,24 @@ namespace ScalingLaws.UI
         /// <summary>The patch of floor this room leaves clear for furniture.</summary>
         private static DecorZone ZoneOf(RoomView room) =>
             new(room.DecorX, room.DecorZ, room.DecorWidth, room.DecorDepth);
+
+        /// <summary>
+        /// Where a furnished move would stand its pack, or nothing at all.
+        ///
+        /// Null for a place with no open floor, so the garage cannot be charged for six pieces it
+        /// has nowhere to put. The chooser already hides the cost in that case; this is the guard
+        /// that makes it true rather than merely displayed.
+        /// </summary>
+        private static DecorZone? FurnishZone(OfficeTier tier, bool furnished)
+        {
+            if (!furnished)
+            {
+                return null;
+            }
+
+            var room = RoomCatalog.For(tier);
+            return room.AllowsFurniture ? ZoneOf(room) : null;
+        }
 
         /// <summary>
         /// Puts art on a control, or the word on it if the art is not there.

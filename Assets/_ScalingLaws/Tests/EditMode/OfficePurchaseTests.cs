@@ -159,6 +159,75 @@ namespace ScalingLaws.Tests.EditMode
             Assert.AreEqual(0L, restored.Staff.DailyRentUsd);
         }
 
+        /// <summary>
+        /// A furnished move delivers furniture.
+        ///
+        /// **This is the check that this project has failed six times.** A tick that charged
+        /// $39,000 and handed over nothing would look completely correct: the money leaves, the
+        /// office changes, the event fires, and the only thing missing is the entire point. The
+        /// morale is asserted because that is what the pieces are for.
+        /// </summary>
+        [Test]
+        public void AFurnishedMoveActuallyPutsFurnitureOnTheFloor()
+        {
+            var simulation = Rich();
+            var room = RoomCatalog.For(OfficeTier.Loft);
+
+            Assert.IsTrue(room.AllowsFurniture, "This test needs a place with floor in it.");
+
+            var zone = new DecorZone(room.DecorX, room.DecorZ, room.DecorWidth, room.DecorDepth);
+
+            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, zone, out var why), why);
+
+            Assert.That(simulation.State.Decor, Is.Not.Null);
+
+            Assert.That(simulation.State.Decor.Items.Count,
+                Is.EqualTo(OfficeCatalog.FurnishedPack.Count),
+                "Every piece in the pack has to arrive, standing or stored.");
+
+            Assert.That(simulation.State.Staff.ComfortBonus, Is.GreaterThan(0.0),
+                "Furniture that raises nobody's morale is furniture that is not there.");
+        }
+
+        [Test]
+        public void AnUnfurnishedMoveCostsLessAndDeliversNothing()
+        {
+            var bare = Rich();
+            Assert.IsTrue(bare.TryMoveOffice(OfficeTier.Loft, null, out _));
+
+            var room = RoomCatalog.For(OfficeTier.Loft);
+            var zone = new DecorZone(room.DecorX, room.DecorZ, room.DecorWidth, room.DecorDepth);
+
+            var furnished = Rich();
+            Assert.IsTrue(furnished.TryMoveOffice(OfficeTier.Loft, zone, out _));
+
+            Assert.That(bare.State.CashUsd - furnished.State.CashUsd,
+                Is.EqualTo(OfficeCatalog.FurnishedPackUsd),
+                "The difference between the two moves is exactly the pack, and nothing else.");
+
+            Assert.That(bare.State.Decor?.Items.Count ?? 0, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// The pack is a saving, not a surcharge.
+        ///
+        /// If it ever costs more than the pieces are worth, ticking it is a tax on anybody who does
+        /// not check, and the option stops being a choice. The same rule the safety effort slider
+        /// is held to.
+        /// </summary>
+        [Test]
+        public void TheFurnishedPackIsCheaperThanBuyingThePiecesOneAtATime()
+        {
+            Assert.That(OfficeCatalog.FurnishedPackListUsd,
+                Is.GreaterThan(OfficeCatalog.FurnishedPackUsd),
+                "Nobody would take a standard fit-out that costs more than choosing it themselves.");
+
+            Assert.That(OfficeCatalog.FurnishedPack,
+                Has.None.EqualTo(FurnitureKind.Desk).And.None.EqualTo(FurnitureKind.StandingDesk),
+                "Desks are what caps hiring. A pack containing them is an economy change wearing a "
+                + "convenience label.");
+        }
+
         [Test]
         public void AnOlderCampaignOwnsNothing()
         {

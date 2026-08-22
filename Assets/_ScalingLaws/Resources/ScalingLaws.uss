@@ -10782,3 +10782,33 @@
 .taskbar__row--done .taskbar__text {
     color: rgb(140, 170, 150);
 }
+
+/* ---- the furnished move ---------------------------------------------------------------------
+
+   One tick in the header of the premises page rather than one on every row. It is a preference
+   about how you move, not a property of any one building. */
+
+.offices__furnish {
+    margin-top: 12px;
+    padding: 12px 14px;
+    max-width: 620px;
+    border-radius: 6px;
+    border-left-width: 3px;
+    border-left-color: rgb(226, 190, 44);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.offices__furnishbox {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 254);
+}
+
+.offices__furnishnote {
+    font-size: 11px;
+    color: rgb(140, 152, 174);
+    white-space: normal;
+    margin-top: 6px;
+}

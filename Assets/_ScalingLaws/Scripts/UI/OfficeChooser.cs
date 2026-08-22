@@ -22,8 +22,8 @@ namespace ScalingLaws.UI
     public sealed class OfficeChooser
     {
         private readonly Func<CompanyState> state;
-        private readonly Func<OfficeTier, string> tryMove;
-        private readonly Func<OfficeTier, string> tryBuy;
+        private readonly Func<OfficeTier, bool, string> tryMove;
+        private readonly Func<OfficeTier, bool, string> tryBuy;
         private readonly Action closed;
 
         // Nullable rather than a None member, because OfficeTier values live in saves
@@ -32,12 +32,12 @@ namespace ScalingLaws.UI
         private OfficeTier? armedPurchase;
         private string problem = string.Empty;
 
-        public OfficeChooser(Func<CompanyState> state, Func<OfficeTier, string> tryMove, Action closed,
-            Func<OfficeTier, string> tryBuy = null)
+        public OfficeChooser(Func<CompanyState> state, Func<OfficeTier, bool, string> tryMove,
+            Action closed, Func<OfficeTier, bool, string> tryBuy = null)
         {
             this.state = state;
             this.tryMove = tryMove;
-            this.tryBuy = tryBuy ?? (_ => "Buying is not wired up.");
+            this.tryBuy = tryBuy ?? ((_, _) => "Buying is not wired up.");
             this.closed = closed;
 
             Root = new VisualElement();
@@ -45,6 +45,24 @@ namespace ScalingLaws.UI
         }
 
         public VisualElement Root { get; }
+
+        /// <summary>
+        /// Whether a move arrives with the place already furnished.
+        ///
+        /// **On by default**, because the pack is cheaper than the same pieces bought one at a time
+        /// and an empty floor is the unusual choice, not the normal one. Public so a test can drive
+        /// the move without a panel: an EditMode test never dispatches a click, so a toggle that
+        /// could only be read off the control would make both paths through here untestable.
+        /// </summary>
+        public bool Furnished { get; set; } = true;
+
+        /// <summary>Whether this place has floor to put anything on.</summary>
+        private static bool CanBeFurnished(OfficeTier tier) =>
+            RoomCatalog.For(tier).AllowsFurniture;
+
+        /// <summary>What furnishing adds to a move into this place, which is nothing when it cannot.</summary>
+        private long FurnishingOn(OfficeTier tier) =>
+            Furnished && CanBeFurnished(tier) ? OfficeCatalog.FurnishedPackUsd : 0L;
 
         public void Refresh()
         {
@@ -71,6 +89,8 @@ namespace ScalingLaws.UI
             strap.AddToClassList("offices__strap");
             left.Add(strap);
             head.Add(left);
+
+            left.Add(BuildFurnishedToggle());
 
             var close = new Button(closed) { text = "CLOSE" };
             close.AddToClassList("chip");
@@ -110,10 +130,49 @@ namespace ScalingLaws.UI
             Root.Add(note);
         }
 
+        /// <summary>
+        /// The one option that rides with every move on this page.
+        ///
+        /// It sits in the header rather than on each row because it is a preference about how you
+        /// move, not a property of any one building, and eleven copies of the same tick is a page
+        /// that looks like it is asking eleven questions.
+        /// </summary>
+        private VisualElement BuildFurnishedToggle()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("offices__furnish");
+
+            var toggle = new Toggle("WITH FURNISHINGS") { value = Furnished };
+            toggle.AddToClassList("offices__furnishbox");
+            toggle.RegisterValueChangedCallback(change =>
+            {
+                Furnished = change.newValue;
+                Refresh();
+            });
+
+            block.Add(toggle);
+
+            var saving = OfficeCatalog.FurnishedPackListUsd - OfficeCatalog.FurnishedPackUsd;
+
+            var note = new Label(
+                $"{UiFormat.Money(OfficeCatalog.FurnishedPackUsd)} on top of the fit-out. An espresso "
+                + "bar, a sofa, a shelf, a whiteboard and two plants, standing up on the day you "
+                + $"move in. Bought one at a time they come to "
+                + $"{UiFormat.Money((long)OfficeCatalog.FurnishedPackListUsd)}, so this saves "
+                + $"{UiFormat.Money((long)saving)} for letting somebody else choose. No desks: "
+                + "those are what caps hiring and they stay a decision.");
+
+            note.AddToClassList("offices__furnishnote");
+            block.Add(note);
+
+            return block;
+        }
+
         private VisualElement BuildRow(OfficeDefinition place, CompanyState company)
         {
             var here = company.Staff.Office == place.Tier;
-            var affordable = company.CashUsd >= place.FitOutCostUsd
+            var moveBill = place.FitOutCostUsd + FurnishingOn(place.Tier);
+            var affordable = company.CashUsd >= moveBill
                              && company.CashUsd >= place.RequiredCashUsd;
 
             var openYet = company.Date.IsOnOrAfter(place.EarliestDate);
@@ -161,9 +220,9 @@ namespace ScalingLaws.UI
                     : UiFormat.Money(place.PurchasePriceUsd)));
             }
             figures.Add(Figure("DESKS", place.Desks == 0 ? "none" : place.Desks.ToString()));
-            figures.Add(Figure("FIT-OUT", place.FitOutCostUsd == 0
+            figures.Add(Figure("FIT-OUT", moveBill == 0
                 ? "nothing"
-                : UiFormat.Money(place.FitOutCostUsd)));
+                : UiFormat.Money(moveBill)));
 
             body.Add(figures);
 
@@ -271,7 +330,8 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BuildBuy(OfficeDefinition place, CompanyState company, bool here)
         {
-            var owed = place.PurchasePriceUsd + (here ? 0L : place.FitOutCostUsd);
+            var owed = place.PurchasePriceUsd
+                + (here ? 0L : place.FitOutCostUsd + FurnishingOn(place.Tier));
             var canAfford = company.CashUsd >= owed;
             var isArmed = armedPurchase == place.Tier;
 
@@ -308,7 +368,7 @@ namespace ScalingLaws.UI
             }
 
             armedPurchase = null;
-            problem = tryBuy(tier) ?? string.Empty;
+            problem = tryBuy(tier, Furnished && CanBeFurnished(tier)) ?? string.Empty;
             Refresh();
         }
 
@@ -335,11 +395,13 @@ namespace ScalingLaws.UI
 
             var isArmed = armed == place.Tier;
 
+            var bill = place.FitOutCostUsd + FurnishingOn(place.Tier);
+
             var move = new Button(() => Move(place.Tier))
             {
                 text = isArmed
                     ? "CONFIRM THE MOVE"
-                    : $"MOVE HERE   {UiFormat.Money(place.FitOutCostUsd)} TO FIT OUT"
+                    : $"MOVE HERE   {UiFormat.Money(bill)} TO FIT OUT"
             };
 
             move.AddToClassList("office-row__move");
@@ -350,7 +412,7 @@ namespace ScalingLaws.UI
             {
                 move.text = place.RequiredCashUsd > company.CashUsd
                     ? $"NEEDS {UiFormat.Money(place.RequiredCashUsd)} IN THE BANK"
-                    : $"NEEDS {UiFormat.Money(place.FitOutCostUsd)} TO FIT OUT";
+                    : $"NEEDS {UiFormat.Money(bill)} TO FIT OUT";
             }
 
             return move;
@@ -371,7 +433,7 @@ namespace ScalingLaws.UI
             }
 
             armed = null;
-            problem = tryMove(tier) ?? string.Empty;
+            problem = tryMove(tier, Furnished && CanBeFurnished(tier)) ?? string.Empty;
             Refresh();
         }
     }

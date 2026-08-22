@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ScalingLaws.Core;
 
 namespace ScalingLaws.Data
@@ -118,7 +119,38 @@ namespace ScalingLaws.Data
     /// <summary>The ONE office library.</summary>
     public static class OfficeCatalog
     {
-        public const string CatalogVersion = "2026.08.03";
+        public const string CatalogVersion = "2026.08.22";
+
+        /// <summary>
+        /// What a furnished move costs on top of the fit-out.
+        ///
+        /// **Deliberately less than the pieces are worth.** The pack below lists at $43,000, so
+        /// taking the standard fit-out saves about nine per cent against buying the same things one
+        /// at a time. That is what makes the tick a real option rather than a tax on anybody who
+        /// forgets to untick it: the saving is the price of not choosing.
+        /// </summary>
+        public const long FurnishedPackUsd = 39_000L;
+
+        /// <summary>
+        /// What arrives with a furnished move.
+        ///
+        /// **No desks, on purpose.** Desks are what caps hiring, so a pack that included them would
+        /// be a change to the economy dressed as a convenience. Everything here moves morale and
+        /// research and nothing else, which keeps the option out of the balance-critical path.
+        /// </summary>
+        public static readonly IReadOnlyList<FurnitureKind> FurnishedPack = new[]
+        {
+            FurnitureKind.CoffeeBar,
+            FurnitureKind.Sofa,
+            FurnitureKind.Bookshelf,
+            FurnitureKind.Whiteboard,
+            FurnitureKind.Plant,
+            FurnitureKind.Plant
+        };
+
+        /// <summary>What the pack would cost bought piece by piece.</summary>
+        public static double FurnishedPackListUsd =>
+            FurnishedPack.Sum(kind => FurnitureCatalog.Get(kind).PriceUsd);
 
         private static readonly OfficeDefinition[] Entries =
         {

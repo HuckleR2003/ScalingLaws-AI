@@ -1452,7 +1452,11 @@ namespace ScalingLaws.Simulation
         /// Owning is remembered per place. A company that buys the small hub and later moves up
         /// still owns the small hub, and moving back into it costs nothing.
         /// </summary>
-        public bool TryBuyOffice(OfficeTier tier, out string failureReason)
+        public bool TryBuyOffice(OfficeTier tier, out string failureReason) =>
+            TryBuyOffice(tier, null, out failureReason);
+
+        /// <inheritdoc cref="TryMoveOffice(OfficeTier, DecorZone?, out string)"/>
+        public bool TryBuyOffice(OfficeTier tier, DecorZone? furnishWith, out string failureReason)
         {
             failureReason = string.Empty;
 
@@ -1483,7 +1487,12 @@ namespace ScalingLaws.Simulation
             // The fit-out is only owed when the company is actually moving in. Buying a place it is
             // already sitting in is a purchase, not a move.
             var moving = State.Staff.Office != tier;
-            var owed = definition.PurchasePriceUsd + (moving ? definition.FitOutCostUsd : 0L);
+
+            // Furnishing rides with the fit-out, so buying a place the company already sits in
+            // neither owes it nor delivers it. That is a purchase, not a move.
+            var furnishing = moving && furnishWith.HasValue ? OfficeCatalog.FurnishedPackUsd : 0L;
+            var owed = definition.PurchasePriceUsd
+                + (moving ? definition.FitOutCostUsd + furnishing : 0L);
 
             if (State.CashUsd < owed)
             {
@@ -1506,6 +1515,11 @@ namespace ScalingLaws.Simulation
             if (moving)
             {
                 State.Staff.SetOffice(tier);
+
+                if (furnishWith.HasValue)
+                {
+                    Furnish(furnishWith.Value);
+                }
             }
 
             State.RaiseEvent(new CompanyEvent(
@@ -1518,7 +1532,22 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
-        public bool TryMoveOffice(OfficeTier tier, out string failureReason)
+        public bool TryMoveOffice(OfficeTier tier, out string failureReason) =>
+            TryMoveOffice(tier, null, out failureReason);
+
+        /// <summary>
+        /// Moves in, optionally with the place already furnished.
+        ///
+        /// **The zone comes from the caller, same as buying a single piece does.** The simulation
+        /// knows which tier the company is in and nothing about the shape of the room, so the one
+        /// place that can say where a sofa will fit is whoever read the room catalog. Pass null to
+        /// move into an empty floor.
+        ///
+        /// The pack is bought at the move, not promised: the pieces land in the decor plan and the
+        /// morale they carry is applied on the spot. A furnished option that only charged for
+        /// furniture would be the seventh unreachable mechanism in this project.
+        /// </summary>
+        public bool TryMoveOffice(OfficeTier tier, DecorZone? furnishWith, out string failureReason)
         {
             failureReason = string.Empty;
 
@@ -1540,10 +1569,13 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (State.CashUsd < definition.RequiredCashUsd || State.CashUsd < definition.FitOutCostUsd)
+            var furnishing = furnishWith.HasValue ? OfficeCatalog.FurnishedPackUsd : 0L;
+            var owed = definition.FitOutCostUsd + furnishing;
+
+            if (State.CashUsd < definition.RequiredCashUsd || State.CashUsd < owed)
             {
                 failureReason =
-                    $"Needs ${Math.Max(definition.RequiredCashUsd, definition.FitOutCostUsd):N0}, has ${State.CashUsd:N0}.";
+                    $"Needs ${Math.Max(definition.RequiredCashUsd, owed):N0}, has ${State.CashUsd:N0}.";
                 return false;
             }
 
@@ -1554,17 +1586,49 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.PostCash(LedgerLine.Facilities, definition.FitOutCostUsd);
-            State.LifetimeCapitalSpentUsd += definition.FitOutCostUsd;
+            State.PostCash(LedgerLine.Facilities, owed);
+            State.LifetimeCapitalSpentUsd += owed;
             State.Staff.SetOffice(tier);
+
+            var furnished = furnishWith.HasValue ? Furnish(furnishWith.Value) : 0;
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.OfficeMoved,
                 State.Date,
-                $"Moved into {definition.DisplayName}: {definition.Desks} desks at ${definition.MonthlyRentUsd:N0} a month.",
-                definition.FitOutCostUsd));
+                furnished > 0
+                    ? $"Moved into {definition.DisplayName}: {definition.Desks} desks at "
+                      + $"${definition.MonthlyRentUsd:N0} a month, furnished on the way in with "
+                      + $"{furnished} pieces."
+                    : $"Moved into {definition.DisplayName}: {definition.Desks} desks at ${definition.MonthlyRentUsd:N0} a month.",
+                owed));
 
             return true;
+        }
+
+        /// <summary>
+        /// Puts the standard pack on the floor. Returns how many pieces actually stood up.
+        ///
+        /// **Charged for already, so nothing here touches cash.** Anything that will not fit stays
+        /// in storage rather than being dropped, which is what the furniture shop already does and
+        /// is the only answer that does not quietly take the player's money for nothing.
+        /// </summary>
+        private int Furnish(DecorZone zone)
+        {
+            State.Decor ??= new DecorPlan();
+            var standing = 0;
+
+            foreach (var kind in OfficeCatalog.FurnishedPack)
+            {
+                if (State.Decor.Buy(kind, zone).IsPlaced)
+                {
+                    standing++;
+                }
+            }
+
+            State.Staff.ExtraDesks = State.Decor.ExtraDesks;
+            State.Staff.ComfortBonus = State.Decor.MoraleBonus;
+
+            return standing;
         }
 
         // ------------------------------------------------------------------ hiring
