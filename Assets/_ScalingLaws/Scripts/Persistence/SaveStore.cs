@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -284,8 +285,27 @@ namespace ScalingLaws.Persistence
 
             foreach (var model in state.DeployedModels)
             {
+                // The version list, written out as it stands. Adoption is causal: tomorrow's drift
+                // reads it, and the market's view of this model is the average of what its users are
+                // running. Dropping it would move every user onto the newest release on reload.
+                var versions = new List<ModelVersionData>();
+
+                foreach (var version in model.Line.Versions)
+                {
+                    versions.Add(new ModelVersionData
+                    {
+                        name = version.Name,
+                        releasedDayIndex = version.ReleasedOn.DayIndex,
+                        capability = version.Capability,
+                        priceUsdPerMonth = version.PriceUsdPerMonth,
+                        freeTokensPerDay = version.FreeTokensPerDay,
+                        adoption = version.Adoption
+                    });
+                }
+
                 data.models.Add(new DeployedModelData
                 {
+                    versions = versions,
                     name = model.Name,
                     architecture = (int)model.Architecture,
                     capability = model.Capability,
@@ -858,6 +878,24 @@ namespace ScalingLaws.Persistence
 
                 deployed.RestoreHistory(model.lifetimeRevenueUsd, model.daysOnSale, model.peakUsers,
                     new GameDate(Math.Max(GameDate.MinimumDayIndex, model.retiredDayIndex)));
+
+                if (model.versions is { Count: > 0 })
+                {
+                    deployed.RestoreLine(ReleaseLine.Restore(model.versions.Select(version => (
+                        version.name,
+                        Math.Max(GameDate.MinimumDayIndex, version.releasedDayIndex),
+                        version.capability,
+                        version.priceUsdPerMonth,
+                        version.freeTokensPerDay,
+                        Math.Clamp(version.adoption, 0.0, 1.0)))));
+                }
+                else
+                {
+                    // Written before v36, or by a build that never shipped a second version. Either
+                    // way the company sold one thing, at the terms the file records for it.
+                    deployed.SeedLine(safe.subscriptionPriceUsdPerMonth,
+                        safe.freeTierTokensPerUserPerDay);
+                }
 
                 if (model.isRetired)
                 {

@@ -53,6 +53,55 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public ModelTraitSet Traits { get; private set; }
 
+        /// <summary>
+        /// Every version of this model that has shipped, and who is on which.
+        ///
+        /// Seeded with the release itself the first time anybody asks, so a model that has never
+        /// been updated still reads as one version at a hundred per cent rather than as an empty
+        /// list the screens have to special-case.
+        /// </summary>
+        public ReleaseLine Line
+        {
+            get
+            {
+                if (line.Count == 0)
+                {
+                    line.Publish(Name, ReleaseDate, Capability, 0.0, 0.0);
+                }
+
+                return line;
+            }
+        }
+
+        private ReleaseLine line = new();
+
+        /// <summary>
+        /// Writes the first version, at the terms the company was actually selling on.
+        ///
+        /// **Idempotent, and it has to be**, because the lazy getter above will invent a base version
+        /// at zero the moment anything reads <see cref="Line"/>. Release calls this before anybody
+        /// looks, so the first entry carries a real price; calling it twice is a no-op rather than a
+        /// second identical release.
+        /// </summary>
+        public void SeedLine(double priceUsdPerMonth, double freeTokensPerDay)
+        {
+            if (line.Count > 0)
+            {
+                return;
+            }
+
+            line.Publish(Name, ReleaseDate, Capability, priceUsdPerMonth, freeTokensPerDay);
+        }
+
+        /// <summary>Puts a saved version list back, shares as written.</summary>
+        public void RestoreLine(ReleaseLine saved)
+        {
+            if (saved is { Count: > 0 })
+            {
+                line = saved;
+            }
+        }
+
         /// <summary>Replaces the whole trait set. Used by save loading, not by gameplay.</summary>
         public void RestoreTraits(ModelTraitSet traits)
         {

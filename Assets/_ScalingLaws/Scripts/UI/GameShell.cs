@@ -38,6 +38,9 @@ namespace ScalingLaws.UI
 
         private ModelCreatorPanel creator;
         private UpgradeGridPanel upgrades;
+
+        /// <summary>Where a version gets its name and its price. Opened from UPGRADE.</summary>
+        private ReleasePlanPanel releasePlan;
         private ArchitectureCreatorPanel families;
         private ManagementScreen management;
         private NewsScreen news;
@@ -266,6 +269,12 @@ namespace ScalingLaws.UI
             /// </summary>
             Model,
 
+            /// <summary>
+            /// Naming and pricing a version before it ships. Reached from UPGRADE and from
+            /// nowhere else, because it always carries a basket built on that screen.
+            /// </summary>
+            ReleasePlan,
+
             /// <summary>The wire. Reached from its own corner banner and from the bottom bar.</summary>
             News
         }
@@ -325,7 +334,18 @@ namespace ScalingLaws.UI
 
             creator = new ModelCreatorPanel(simulation);
             creator.started += () => Show(Screen.Site);
-            upgrades = new UpgradeGridPanel(simulation);
+            // UPGRADE hands its basket to the planner rather than commissioning anything itself,
+            // so the version is named and priced before a single day of work is paid for.
+            upgrades = new UpgradeGridPanel(simulation,
+                (index, traits) =>
+                {
+                    releasePlan.Open(index, traits);
+                    Show(Screen.ReleasePlan);
+                },
+                () => Show(Screen.Site));
+
+            releasePlan = new ReleasePlanPanel(simulation, ShipTheVersion,
+                () => Show(Screen.Upgrade));
             families = new ArchitectureCreatorPanel(simulation);
 
             BuildTree();
@@ -1026,6 +1046,11 @@ namespace ScalingLaws.UI
                 case Screen.Upgrade:
                     upgrades.Refresh();
                     host.Add(upgrades.Root);
+                    break;
+
+                case Screen.ReleasePlan:
+                    releasePlan.Refresh();
+                    host.Add(releasePlan.Root);
                     break;
                 case Screen.Release:
                     host.Add(BuildReleaseScreen());
@@ -2425,6 +2450,53 @@ namespace ScalingLaws.UI
             {
                 guide.Refresh();
             }
+        }
+
+        /// <summary>
+        /// Commissions the basket and publishes the version.
+        ///
+        /// **The version is published even when the work takes months.** What ships today is the
+        /// name, the price and the allowance — users move onto those immediately — and the
+        /// post-training programmes land on the same version as they finish. Holding the version
+        /// back until the last programme completed would mean a price change nobody could make
+        /// without also committing to three months of engineering.
+        /// </summary>
+        private void ShipTheVersion(string versionName)
+        {
+            var index = releasePlan.ModelIndex;
+
+            if (index < 0 || index >= state.DeployedModels.Count)
+            {
+                Show(Screen.Upgrade);
+                return;
+            }
+
+            var model = state.DeployedModels[index];
+            var refused = new List<string>();
+
+            foreach (var trait in releasePlan.Basket)
+            {
+                if (!simulation.TryStartUpgrade(index, trait, out var reason))
+                {
+                    refused.Add($"{ModelTraitCatalog.Get(trait).DisplayName}: {reason}");
+                }
+            }
+
+            state.Monetization.SubscriptionPriceUsdPerMonth = releasePlan.PriceUsdPerMonth;
+            state.Monetization.FreeTierTokensPerUserPerDay = releasePlan.FreeTokensPerDay;
+
+            model.Line.Publish(versionName, state.Date, model.EffectiveCapability(state.Date),
+                releasePlan.PriceUsdPerMonth, releasePlan.FreeTokensPerDay);
+
+            simulation.State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.ModelReleased, state.Date,
+                refused.Count == 0
+                    ? $"{model.Name} {versionName} shipped."
+                    : $"{model.Name} {versionName} shipped, but {string.Join("  ", refused)}",
+                0L));
+
+            RefreshChrome();
+            Show(Screen.Management);
         }
 
         /// <summary>Opens the screen a guide step is about.</summary>

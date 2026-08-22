@@ -89,6 +89,13 @@ namespace ScalingLaws.Simulation
             // Anybody who has finished thinking about it writes back today.
             AdvanceHiring();
 
+            // Users drift between the versions of each model they are on. A version list that never
+            // moved would be a table rather than a mechanic.
+            foreach (var model in State.DeployedModels)
+            {
+                model.Line.Advance();
+            }
+
 
             ReportDeliveries();
             SyncPricing(market);
@@ -709,6 +716,13 @@ namespace ScalingLaws.Simulation
 
             State.AddDeployedModel(model);
             State.RemoveFromShelf(shelfIndex);
+
+            // The first entry in the version list, written before anything can read the line and
+            // invent one at zero. What the company was charging on the day it shipped is the only
+            // honest opening price, and the release screen prints it back later as what people pay.
+            model.SeedLine(
+                State.Monetization.SubscriptionPriceUsdPerMonth,
+                State.Monetization.FreeTierTokensPerUserPerDay);
 
             var market = Market;
             var slippage = shelved.ParSlippage(State.Date);

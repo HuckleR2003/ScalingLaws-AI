@@ -115,9 +115,20 @@ namespace ScalingLaws.Simulation
         public static string[] RouteFor(FounderTask task) => task switch
         {
             FounderTask.Resting => new[] { "StairFoot", "StairHead", "Bed" },
-            FounderTask.Leaving => new[] { "StairFoot", "Door", "Garage", "Car" },
+            FounderTask.Leaving => new[] { "StairHead", "StairFoot", "Door", "Garage", "Car" },
             FounderTask.Away => Array.Empty<string>(),
-            _ => new[] { "Desk" }
+
+            // **Upstairs, at the desk that actually has a computer on it.**
+            //
+            // This used to be a single "Desk" waypoint, which the house builder puts on the ground
+            // floor beside the workshop — so the founder walked three metres from the front door,
+            // sat down next to the kitchen, and the mezzanine with the desk, the chair and the bed
+            // on it was never visited at all. The stairs were built and nothing ever climbed them.
+            //
+            // The route goes through the stairs explicitly because the walk is a straight line
+            // between waypoints: without the two stair markers the founder would slide diagonally
+            // up through the slab.
+            _ => new[] { "StairFoot", "StairHead", "UpstairsDesk" }
         };
 
         /// <summary>

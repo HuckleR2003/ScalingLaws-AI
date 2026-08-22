@@ -8909,30 +8909,70 @@
 /* ============================================================================================
    UPGRADE
 
-   Landscape tiles on the left, the difference on the right. The tiles carry a photograph and a
-   row of numbers, which is why they are wide: a square card pushed the numbers into three lines
-   of two words each.
+   A wall of things worth improving on the left, one panel about the model on the right. The tiles
+   carry their own photograph behind a scrim, which is what makes that column read as a shelf of
+   products rather than as a settings page.
    ============================================================================================ */
+
+.upg {
+    flex-shrink: 0;
+}
+
+.upg__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.upg__title {
+    font-size: 30px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+}
+
+.upg__picker {
+    width: 300px;
+    height: 40px;
+    margin: 0;
+    padding: 0 4px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.05);
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.upg__picker .unity-base-popup-field__input {
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    padding-left: 10px;
+}
 
 .upg__columns {
     flex-direction: row;
     flex-grow: 1;
-    margin-top: 10px;
 }
 
-.upg__grid {
+.upg__tiles {
+    flex-direction: row;
+    flex-wrap: wrap;
     flex-grow: 1;
     flex-shrink: 1;
-    margin-right: 16px;
+    margin-right: 18px;
+    align-content: flex-start;
 }
 
-.upg__diff {
-    width: 380px;
+.upg__detail {
+    width: 400px;
     flex-shrink: 0;
 }
 
 .upg__empty {
-    padding: 20px;
+    padding: 24px;
     font-size: 13px;
     color: rgb(130, 142, 162);
     white-space: normal;
@@ -8941,204 +8981,231 @@
 /* ---- one tile ------------------------------------------------------------------------------- */
 
 .utile {
-    flex-direction: row;
-    align-items: stretch;
-    height: 86px;
-    width: 100%;
-    margin: 0 0 8px 0;
+    width: 31.5%;
+    height: 190px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 1%;
+    margin-bottom: 14px;
     padding: 0;
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.07);
-    border-radius: 5px;
-    background-color: rgba(255, 255, 255, 0.035);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    background-color: rgb(18, 21, 28);
     overflow: hidden;
-    transition-property: border-color, background-color;
-    transition-duration: 0.16s;
+    transition-property: border-color, translate;
+    transition-duration: 0.18s;
+}
+
+.utile--art {
+    -unity-background-scale-mode: scale-and-crop;
 }
 
 .utile:hover {
-    border-color: rgba(255, 255, 255, 0.22);
-    background-color: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.30);
+    translate: 0 -3px;
 }
 
 .utile--picked {
-    border-color: rgb(214, 158, 62);
-    background-color: rgba(214, 158, 62, 0.13);
+    border-color: rgb(226, 190, 44);
 }
 
-.utile--behind {
-    border-left-width: 3px;
-    border-left-color: rgb(216, 118, 96);
-}
-
-.utile--busy,
 .utile--locked {
-    opacity: 0.5;
+    opacity: 0.42;
 }
 
-/* The photograph is its own strip, so the numbers land on flat colour and stay legible whatever
-   the image happens to be doing behind them. */
-.utile__art {
-    width: 150px;
-    flex-shrink: 0;
-    -unity-background-scale-mode: scale-and-crop;
-    background-color: rgba(0, 0, 0, 0.35);
+.utile--busy {
+    opacity: 0.55;
 }
 
-.utile__body {
-    flex-grow: 1;
-    flex-shrink: 1;
-    justify-content: center;
-    padding: 10px 14px;
+/* Heavy where the words are, clear where the picture should show. One flat wash over the whole
+   tile would kill the photograph the scrim exists to protect. */
+.utile__scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(8, 10, 16, 0.15);
+    border-bottom-width: 78px;
+    border-bottom-color: rgba(8, 10, 16, 0.80);
 }
 
-.utile__head {
-    flex-direction: row;
-    align-items: center;
+.utile__words {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 12px;
 }
 
 .utile__name {
-    font-size: 14px;
-    letter-spacing: 1.4px;
+    font-size: 15px;
+    letter-spacing: 1.8px;
     -unity-font-style: bold;
-    color: rgb(234, 240, 250);
-    margin-right: 10px;
-}
-
-.utile__tag {
-    font-size: 9px;
-    letter-spacing: 1.4px;
-    -unity-font-style: bold;
-    padding: 2px 8px;
-    border-radius: 2px;
-}
-
-.utile__tag--busy {
-    color: rgb(150, 200, 220);
-    background-color: rgba(79, 163, 199, 0.22);
-}
-
-.utile__tag--behind {
-    color: rgb(232, 152, 128);
-    background-color: rgba(216, 118, 96, 0.20);
-}
-
-.utile__tag--max {
-    color: rgb(150, 210, 172);
-    background-color: rgba(74, 168, 110, 0.20);
-}
-
-.utile__tag--locked {
-    color: rgb(140, 150, 168);
-    background-color: rgba(255, 255, 255, 0.07);
-}
-
-.utile__line {
-    font-size: 11px;
-    color: rgb(148, 160, 180);
-    margin-top: 5px;
+    color: rgb(255, 255, 255);
     white-space: normal;
 }
 
-/* The level against the market, drawn. The gap is the whole reason to press the tile and a pair
-   of numbers hid it inside a subtraction. */
-.ulevel {
-    margin-top: 6px;
+.utile__level {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: rgb(186, 198, 218);
+    margin-top: 3px;
 }
 
-.ulevel__track {
-    height: 5px;
-    border-radius: 3px;
-    background-color: rgba(255, 255, 255, 0.09);
-    overflow: hidden;
+.utile__next {
+    font-size: 11px;
+    color: rgb(226, 190, 44);
+    margin-top: 3px;
 }
 
-.ulevel__mine {
-    height: 5px;
-    border-radius: 3px;
-    background-color: rgb(96, 150, 226);
-}
-
-.ulevel__market {
+.utile__badge {
     position: absolute;
-    top: -2px;
-    width: 2px;
-    height: 9px;
-    background-color: rgb(232, 196, 120);
+    left: 12px;
+    top: 12px;
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    padding: 3px 9px;
+    border-radius: 3px;
 }
 
-.ulevel__reading {
-    font-size: 9px;
-    letter-spacing: 1.2px;
-    color: rgb(132, 144, 164);
-    margin-top: 4px;
+.utile__badge--busy {
+    color: rgb(180, 220, 240);
+    background-color: rgba(20, 60, 90, 0.88);
+}
+
+.utile__badge--behind {
+    color: rgb(250, 190, 170);
+    background-color: rgba(120, 45, 30, 0.88);
+}
+
+.utile__badge--max {
+    color: rgb(180, 240, 200);
+    background-color: rgba(24, 80, 48, 0.88);
 }
 
 .utile__check {
-    width: 22px;
-    height: 22px;
-    align-self: center;
-    margin-right: 14px;
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 24px;
+    height: 24px;
     border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.22);
-    border-radius: 4px;
-    flex-shrink: 0;
+    border-color: rgba(255, 255, 255, 0.45);
+    border-radius: 5px;
     transition-property: background-color, border-color;
     transition-duration: 0.16s;
 }
 
 .utile__check--on {
-    border-color: rgb(214, 158, 62);
-    background-color: rgb(214, 158, 62);
+    border-color: rgb(226, 190, 44);
+    background-color: rgb(226, 190, 44);
 }
 
-/* ---- the difference panel --------------------------------------------------------------------- */
+/* ---- the panel on the right ------------------------------------------------------------------ */
 
-.udiff {
-    padding: 18px;
-    border-radius: 5px;
+.udet {
+    padding: 20px;
+    border-radius: 8px;
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.08);
-    background-color: rgba(10, 14, 22, 0.72);
+    background-color: rgba(10, 13, 20, 0.80);
+    flex-grow: 1;
 }
 
-.udiff__heading {
-    font-size: 10px;
-    letter-spacing: 2.6px;
+.udet__kicker {
+    font-size: 9px;
+    letter-spacing: 3px;
     -unity-font-style: bold;
-    color: rgb(150, 162, 182);
+    color: rgb(140, 152, 174);
 }
 
-.udiff__subject {
-    font-size: 20px;
+.udet__name {
+    font-size: 26px;
     -unity-font-style: bold;
-    color: rgb(238, 243, 252);
+    color: rgb(242, 246, 254);
     margin-top: 2px;
-    margin-bottom: 14px;
     white-space: normal;
 }
 
-/* The one line that says this model has not shipped yet. Violet rather than the panel's grey,
-   because everything bought here goes out with the model rather than reaching customers later. */
-.udiff__shelf {
-    font-size: 11px;
-    color: rgb(198, 168, 232);
-    padding: 6px 10px;
-    margin-bottom: 12px;
-    border-left-width: 2px;
-    border-left-color: rgb(150, 110, 210);
-    background-color: rgba(150, 110, 210, 0.13);
-    white-space: normal;
-}
-
-.udiff__hint {
+.udet__version {
     font-size: 12px;
-    color: rgb(134, 146, 166);
+    -unity-font-style: italic;
+    color: rgb(150, 164, 190);
+    margin-bottom: 14px;
+}
+
+/* ---- the picture of the thing being improved -------------------------------------------------- */
+
+.uchip {
+    height: 150px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.03);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.uchip__die {
+    width: 128px;
+    height: 128px;
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgb(96, 112, 140);
+    background-color: rgb(26, 32, 44);
+    align-items: center;
+    justify-content: center;
+}
+
+.uchip__rail {
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    width: 7px;
+    justify-content: space-between;
+}
+
+.uchip__rail--left {
+    left: -9px;
+}
+
+.uchip__rail--right {
+    right: -9px;
+}
+
+.uchip__pin {
+    height: 6px;
+    width: 7px;
+    border-radius: 1px;
+    background-color: rgb(184, 168, 96);
+}
+
+.uchip__stamp {
+    font-size: 12px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(150, 176, 220);
     white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* ---- what the basket would change ------------------------------------------------------------- */
+
+.udet__hint {
+    font-size: 12px;
+    color: rgb(134, 148, 170);
+    white-space: normal;
+    margin-bottom: 14px;
+}
+
+.udet__changes {
+    margin-bottom: 4px;
 }
 
 .udrow {
-    margin-bottom: 14px;
+    margin-bottom: 13px;
 }
 
 .udrow__head {
@@ -9166,11 +9233,12 @@
 .udrow__arrow {
     font-size: 12px;
     color: rgb(120, 132, 152);
-    margin: 0 6px;
+    margin-left: 6px;
+    margin-right: 6px;
 }
 
 .udrow__after {
-    font-size: 15px;
+    font-size: 16px;
     -unity-font-style: bold;
     color: rgb(126, 216, 158);
 }
@@ -9189,98 +9257,545 @@
     background-color: rgb(96, 150, 226);
 }
 
-/* The gain. Born at zero and released a frame later, so the transition has somewhere to move from
-   and the difference reads as a difference rather than as a wider bar. */
 .udrow__gained {
     height: 8px;
     background-color: rgb(126, 216, 158);
     transition-property: width;
-    transition-duration: 0.55s;
+    transition-duration: 0.6s;
 }
 
-.udiff__list {
+.udet__list {
     margin-top: 4px;
     margin-bottom: 12px;
 }
 
-.udiff__item {
+.udet__item {
     font-size: 11px;
-    color: rgb(200, 212, 230);
-    padding: 4px 8px;
+    color: rgb(206, 216, 232);
+    padding: 5px 9px;
     margin-bottom: 3px;
     border-left-width: 2px;
-    border-left-color: rgb(214, 158, 62);
-    background-color: rgba(255, 255, 255, 0.035);
+    border-left-color: rgb(226, 190, 44);
+    background-color: rgba(255, 255, 255, 0.04);
 }
 
-.udiff__bill {
+.udet__bill {
     flex-direction: row;
     justify-content: space-between;
-    padding: 12px 0;
+    padding-top: 13px;
+    padding-bottom: 13px;
     border-top-width: 1px;
-    border-top-color: rgba(255, 255, 255, 0.08);
+    border-top-color: rgba(255, 255, 255, 0.09);
 }
 
-.udiff__cell {
+.udet__cell {
     flex-shrink: 1;
 }
 
-.udiff__cellcaption {
+.udet__cellcaption {
     font-size: 8px;
     letter-spacing: 1.4px;
     color: rgb(126, 138, 158);
 }
 
-.udiff__cellvalue {
-    font-size: 14px;
+.udet__cellvalue {
+    font-size: 15px;
     -unity-font-style: bold;
-    color: rgb(228, 236, 248);
+    color: rgb(230, 238, 250);
     margin-top: 2px;
 }
 
-.udiff__buttons {
-    flex-direction: row;
-    margin-top: 6px;
-}
-
-.udiff__cancel {
-    width: 96px;
-    height: 42px;
+.udet__problem {
     font-size: 11px;
-    letter-spacing: 1.6px;
-    border-width: 0;
-    border-radius: 4px;
-    color: rgb(198, 150, 150);
-    background-color: rgba(150, 70, 70, 0.22);
-    margin-right: 8px;
+    color: rgb(230, 140, 110);
+    white-space: normal;
+    margin-bottom: 8px;
 }
 
-.udiff__start {
-    flex-grow: 1;
-    height: 42px;
-    font-size: 12px;
+.udet__buttons {
+    flex-direction: row;
+    margin-top: 4px;
+}
+
+.udet__back {
+    -unity-text-align: middle-center;
+    width: 84px;
+    height: 46px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 10px;
+    margin-bottom: 0;
+    font-size: 11px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     border-width: 0;
-    border-radius: 4px;
-    color: rgb(16, 20, 28);
-    background-color: rgb(214, 158, 62);
+    border-radius: 5px;
+    color: rgb(242, 206, 206);
+    background-color: rgb(128, 44, 44);
 }
 
-.udiff__start:hover {
-    background-color: rgb(240, 184, 86);
+.udet__back:hover {
+    background-color: rgb(162, 56, 56);
 }
 
-.udiff__start:disabled {
+.udet__go {
+    -unity-text-align: middle-center;
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 46px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 5px;
+    color: rgb(10, 30, 18);
+    background-color: rgb(72, 190, 118);
+}
+
+.udet__go:hover {
+    background-color: rgb(96, 218, 142);
+}
+
+.udet__go:disabled {
     color: rgb(120, 130, 148);
     background-color: rgba(255, 255, 255, 0.06);
 }
 
-.udiff__short {
-    font-size: 11px;
-    color: rgb(224, 138, 108);
+/* ============================================================================================
+   THE RELEASE PLANNER
+
+   Name it, price it, and look at where the audience actually is. The list on the right is the
+   point of the screen, so it gets the space and it gets the gold.
+   ============================================================================================ */
+
+.rel {
+    flex-shrink: 0;
+}
+
+.rel__head {
+    margin-bottom: 18px;
+}
+
+.rel__model {
+    font-size: 44px;
+    letter-spacing: 5px;
+    -unity-font-style: bold;
+    color: rgb(244, 248, 255);
+}
+
+.rel__previous {
+    font-size: 20px;
+    -unity-font-style: italic;
+    color: rgb(160, 176, 206);
+    margin-top: 2px;
+}
+
+.rel__columns {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.rel__left {
+    width: 44%;
+    min-width: 420px;
+    margin-right: 20px;
+    flex-shrink: 0;
+}
+
+.rel__right {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.rel__left .relships {
+    flex-grow: 1;
+}
+
+/* The maroon block. USS has no gradients, so it is a deep maroon body with a lit left edge and a
+   lighter inner glow along the top, which reads the same way at this size. */
+.relcard {
+    padding: 20px;
+    border-radius: 8px;
+    border-left-width: 5px;
+    border-left-color: rgb(196, 72, 92);
+    border-top-width: 1px;
+    border-top-color: rgba(226, 132, 152, 0.35);
+    background-color: rgb(58, 22, 32);
+}
+
+.relcard__label {
+    font-size: 10px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(238, 176, 190);
+}
+
+.relcard__name {
     margin-top: 8px;
+    margin-bottom: 18px;
+    font-size: 20px;
+}
+
+.relrow {
+    padding: 13px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(0, 0, 0, 0.24);
+    transition-property: border-color, background-color;
+    transition-duration: 0.2s;
+}
+
+/* Unlocked. Red, because it is live and that should be readable from across the room. */
+.relrow--live {
+    border-color: rgb(228, 84, 84);
+    background-color: rgba(122, 26, 26, 0.44);
+}
+
+.relrow__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.relrow__caption {
+    font-size: 10px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(226, 186, 196);
+}
+
+.relrow__value {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+}
+
+/* Grey and half faded while it is locked; full strength the moment it is live. */
+.relrow__slider {
+    margin-top: 8px;
+    opacity: 0.34;
+}
+
+.relrow--live .relrow__slider {
+    opacity: 1;
+}
+
+.relrow__buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.relrow__unlock {
+    -unity-text-align: middle-center;
+    height: 30px;
+    padding: 0 16px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.22);
+    border-radius: 4px;
+    color: rgb(240, 214, 220);
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.relrow__unlock:hover {
+    border-color: rgba(255, 255, 255, 0.45);
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+.relrow__apply {
+    -unity-text-align: middle-center;
+    height: 30px;
+    padding: 0 18px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 6px;
+    margin-bottom: 0;
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 4px;
+    color: rgb(12, 30, 18);
+    background-color: rgb(96, 208, 136);
+}
+
+.relrow__cancel {
+    -unity-text-align: middle-center;
+    height: 30px;
+    padding: 0 14px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    border-width: 0;
+    border-radius: 4px;
+    color: rgb(228, 200, 206);
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.relships {
+    margin-top: 16px;
+    padding: 16px 18px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.relships__heading {
+    font-size: 9px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(146, 158, 180);
+    margin-bottom: 9px;
+}
+
+.relships__none {
+    font-size: 12px;
+    color: rgb(130, 142, 162);
     white-space: normal;
+}
+
+.relships__item {
+    font-size: 12px;
+    color: rgb(212, 222, 238);
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.relships__bill {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+    margin-top: 8px;
+}
+
+.rel__buttons {
+    flex-direction: row;
+    margin-top: 16px;
+}
+
+.rel__back {
+    -unity-text-align: middle-center;
+    width: 120px;
+    height: 50px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 10px;
+    margin-bottom: 0;
+    font-size: 12px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 5px;
+    color: rgb(242, 206, 206);
+    background-color: rgb(128, 44, 44);
+}
+
+.rel__back:hover {
+    background-color: rgb(162, 56, 56);
+}
+
+.rel__ship {
+    -unity-text-align: middle-center;
+    flex-grow: 1;
+    height: 50px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    font-size: 13px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 5px;
+    color: rgb(10, 30, 18);
+    background-color: rgb(72, 190, 118);
+}
+
+.rel__ship:hover {
+    background-color: rgb(96, 218, 142);
+}
+
+.rel__ship:disabled {
+    color: rgb(120, 130, 148);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- the version list -------------------------------------------------------------------------- */
+
+.vlist {
+    padding: 20px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(10, 13, 20, 0.72);
+    margin-bottom: 16px;
+}
+
+.vlist__heading {
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(146, 158, 180);
+    margin-bottom: 12px;
+}
+
+.vrow {
+    flex-direction: row;
+    align-items: center;
+    height: 54px;
+    padding-left: 14px;
+    padding-right: 14px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.03);
+    overflow: hidden;
+}
+
+/* The share, drawn behind the words. Two bars of different lengths answer "is the newest release
+   where people actually are" faster than two columns of percentages ever will. */
+.vrow__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(96, 150, 226, 0.20);
+}
+
+.vrow--current {
+    border-left-width: 3px;
+    border-left-color: rgb(226, 190, 44);
+    background-color: rgba(226, 190, 44, 0.09);
+}
+
+.vrow--current .vrow__fill {
+    background-color: rgba(226, 190, 44, 0.24);
+}
+
+.vrow__words {
+    flex-grow: 1;
+}
+
+.vrow__name {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 254);
+}
+
+.vrow--current .vrow__name {
+    color: rgb(250, 214, 96);
+}
+
+.vrow__when {
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    color: rgb(140, 152, 174);
+    margin-top: 2px;
+}
+
+.vrow__share {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+    flex-shrink: 0;
+}
+
+.vlist__note {
+    font-size: 11px;
+    color: rgb(226, 190, 44);
+    white-space: normal;
+    margin-top: 10px;
+    padding-left: 3px;
+}
+
+/* ---- the readings underneath --------------------------------------------------------------------- */
+
+.vcharts {
+    flex-grow: 1;
+    padding: 18px 20px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(10, 13, 20, 0.72);
+}
+
+.vcharts__heading {
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(146, 158, 180);
+    margin-bottom: 12px;
+}
+
+.vgauge {
+    margin-bottom: 12px;
+}
+
+.vgauge__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.vgauge__caption {
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    color: rgb(130, 142, 162);
+}
+
+.vgauge__value {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.vgauge__track {
+    height: 7px;
+    margin-top: 5px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.vgauge__fill {
+    height: 7px;
+    border-radius: 4px;
+    transition-property: width;
+    transition-duration: 0.5s;
+}
+
+.vspread {
+    flex-direction: row;
+    height: 14px;
+    margin-top: 6px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.vspread__slice {
+    height: 14px;
+}
+
+.vcharts__caption {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: rgb(130, 142, 162);
+    margin-top: 6px;
 }
 
 /* ---- the upgrade corner ------------------------------------------------------------------------

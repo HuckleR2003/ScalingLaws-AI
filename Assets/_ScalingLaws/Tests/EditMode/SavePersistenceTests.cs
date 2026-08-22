@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -80,6 +81,98 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(restored.DeployedModels[1].Capability, Is.EqualTo(48.25).Within(1e-9));
             Assert.That(restored.BestCapability, Is.EqualTo(original.BestCapability).Within(1e-9),
                 "Effective capability is par relative, so it has to survive the round trip too.");
+        }
+
+        /// <summary>
+        /// A version list survives a save, shares and all.
+        ///
+        /// **Adoption looks derived and it is not.** Tomorrow's drift reads today's shares, and the
+        /// capability the market sees is the average of what users are running, so a save that
+        /// dropped them would move everybody onto the newest release on reload and quietly undo a
+        /// bad update the player was living with. That is the fifth time in this project something
+        /// that looked computed turned out to be causal, and the other four each cost a session.
+        /// </summary>
+        [Test]
+        public void TheVersionsOfAModelAndWhoIsOnThemSurviveTheRoundTrip()
+        {
+            var original = BuildCampaign();
+            var model = original.DeployedModels[1];
+
+            model.SeedLine(20.0, 10_000.0);
+            model.Line.Publish("Muse 2.1", GameDate.FromCalendar(2024, 1, 8), 51.0, 24.0, 12_000.0);
+            model.Line.Publish("Muse 2.2", GameDate.FromCalendar(2024, 2, 14), 39.0, 30.0, 12_000.0);
+
+            for (var day = 0; day < 24; day++)
+            {
+                model.Line.Advance();
+            }
+
+            var before = model.Line.Versions
+                .Select(version => (version.Name, version.Adoption))
+                .ToList();
+
+            Assert.That(before.Count, Is.EqualTo(3));
+
+            var restored = SaveStore.Restore(
+                SaveStore.Parse(JsonUtility.ToJson(SaveStore.Capture(original))));
+
+            var line = restored.DeployedModels[1].Line;
+
+            Assert.That(line.Count, Is.EqualTo(3), "Three releases went in, three come back.");
+
+            for (var index = 0; index < before.Count; index++)
+            {
+                Assert.That(line.Versions[index].Name, Is.EqualTo(before[index].Name),
+                    "Order is the order they shipped in, and the screen prints it that way.");
+
+                Assert.That(line.Versions[index].Adoption,
+                    Is.EqualTo(before[index].Adoption).Within(1e-6),
+                    $"{before[index].Name} held {before[index].Adoption:P1} and has to still hold it.");
+            }
+
+            Assert.That(line.Versions[2].PriceUsdPerMonth, Is.EqualTo(30.0).Within(1e-9),
+                "The terms a version shipped on belong to that version, not to today's price list.");
+        }
+
+        /// <summary>
+        /// A file written before versions existed comes back selling exactly one thing.
+        ///
+        /// The least flattering reading that is still defensible: a v35 company had no version
+        /// history because the game had none, so it gets one release holding everybody rather than
+        /// an invented past.
+        /// </summary>
+        [Test]
+        public void AV35SaveGetsOneReleaseHoldingAllOfItsUsers()
+        {
+            var data = SaveStore.Capture(BuildCampaign());
+            data.version = 35;
+            data.subscriptionPriceUsdPerMonth = 18.0;
+
+            foreach (var model in data.models)
+            {
+                model.versions.Clear();
+            }
+
+            var upgraded = SaveMigration.UpgradeV35ToV36(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(36),
+                "Each step stamps its own number, never whatever happens to be newest today.");
+
+            foreach (var model in upgraded.models)
+            {
+                Assert.That(model.versions.Count, Is.EqualTo(1),
+                    "One model, one thing it was selling. Nothing else is knowable from a v35 file.");
+
+                Assert.That(model.versions[0].adoption, Is.EqualTo(1.0).Within(1e-9));
+                Assert.That(model.versions[0].name, Is.EqualTo(model.name));
+                Assert.That(model.versions[0].priceUsdPerMonth, Is.EqualTo(18.0).Within(1e-9),
+                    "Priced at what the file says the company was charging, not at a default.");
+            }
+
+            var state = SaveStore.Restore(upgraded);
+
+            Assert.That(state.DeployedModels[0].Line.Count, Is.EqualTo(1));
+            Assert.That(state.DeployedModels[0].Line.Newest.Adoption, Is.EqualTo(1.0).Within(1e-9));
         }
 
         [Test]

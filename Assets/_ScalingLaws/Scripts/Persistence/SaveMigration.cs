@@ -136,6 +136,7 @@ namespace ScalingLaws.Persistence
                     32 => UpgradeV32ToV33(current),
                     33 => UpgradeV33ToV34(current),
                     34 => UpgradeV34ToV35(current),
+                    35 => UpgradeV35ToV36(current),
                     _ => current
                 };
             }
@@ -1055,6 +1056,63 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v34 to v35: the guide did not exist in this version, so the company is recorded "
                 + "as having already been through it and the task strip starts closed.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v35 to v36: every live model gets the one version it has actually been selling.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// **A v35 file cannot say which versions existed, because versions did not.** The company
+        /// shipped a model and went on selling that one thing, so the only reading of the file that
+        /// is true is a single release holding the whole audience, dated to the model's own release
+        /// day and priced at what the file records the company charging.
+        ///
+        /// That is deliberately not flattering. It hands an established company no version history
+        /// to be proud of and no spread of users to manage, which is correct: it was playing a game
+        /// that had neither. The alternative, inventing three past releases so the list looks lived
+        /// in, would be a record of decisions the player never made.
+        /// </remarks>
+        public static SaveData UpgradeV35ToV36(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 36;
+            data.models ??= new List<DeployedModelData>();
+
+            var seeded = 0;
+
+            foreach (var model in data.models)
+            {
+                model.versions ??= new List<ModelVersionData>();
+
+                if (model.versions.Count > 0)
+                {
+                    continue;
+                }
+
+                model.versions.Add(new ModelVersionData
+                {
+                    name = string.IsNullOrWhiteSpace(model.name) ? "Release" : model.name,
+                    releasedDayIndex = model.releaseDayIndex,
+                    capability = model.capability,
+                    priceUsdPerMonth = data.subscriptionPriceUsdPerMonth,
+                    freeTokensPerDay = data.freeTierTokensPerUserPerDay,
+                    adoption = 1.0
+                });
+
+                seeded++;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                $"v35 to v36: {seeded} model(s) given a single release holding all of their users. "
+                + "Versions did not exist in v35, so there is no history to reconstruct and none "
+                + "was invented.");
 
             return data;
         }

@@ -32,6 +32,24 @@ namespace ScalingLaws.Persistence
         public int startedDayIndex;
     }
 
+    /// <summary>
+    /// One published version of a model and the share of its users still on it. Added in v36.
+    ///
+    /// **The share is a record, not a derivation.** It is the result of every day of drift since the
+    /// version shipped, and nothing in the state can recompute it: the same four releases in the
+    /// same order reach different shares depending on how long the player left between them.
+    /// </summary>
+    [Serializable]
+    public sealed class ModelVersionData
+    {
+        public string name = string.Empty;
+        public int releasedDayIndex;
+        public double capability;
+        public double priceUsdPerMonth;
+        public double freeTokensPerDay;
+        public double adoption;
+    }
+
     [Serializable]
     public sealed class DeployedModelData
     {
@@ -49,6 +67,9 @@ namespace ScalingLaws.Persistence
 
         /// <summary>Trait levels in catalog order. Added in v3.</summary>
         public List<int> traitLevels = new();
+
+        /// <summary>Every version still in use, oldest first. Added in v36.</summary>
+        public List<ModelVersionData> versions = new();
 
         // What this model did while it was on sale. Added in v23. Records, not derivations: nothing
         // can recompute a model's 2024 earnings from the company's state in 2031.
@@ -377,7 +398,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 35;
+        public const int CurrentVersion = 36;
 
         public int version = CurrentVersion;
 
