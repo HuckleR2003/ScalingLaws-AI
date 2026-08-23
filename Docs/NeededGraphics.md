@@ -1,107 +1,129 @@
-# NeededGraphics
+# Grafiki, których brakuje
 
-Co brakuje graficznie, i co proponuję żeby zakładki żyły. Krótko, jedna lista, aktualizowana na bieżąco.
+Stan na 2026-08-23. Zestawienie wyprodukowane z kodu, nie z pamięci: każda pozycja to nazwa pliku,
+o którą interfejs realnie prosi przez `Resources.Load`, albo miejsce, gdzie dziś rysuje się
+zastępnik.
 
-Zasada: **wszystko poniżej ma działający fallback** — gra nie wywala się bez tych plików, tylko wygląda ubożej. Nic tu nie jest blokerem.
-
----
-
-## 1. Brakujące pliki (posortowane po tym, ile dają)
-
-| # | Plik | Gdzie | Co jest teraz zamiast | Rozmiar |
-|---|------|-------|----------------------|---------|
-| 1 | `Resources/Ui/office_decorate.png` | Trzeci przycisk w prawym pasku SITE | napis „DECOR" | 128×128, PNG, przezroczyste tło |
-| 2 | `Resources/Ui/hire.png` | Przycisk HIRE NOW w TEAM | sam tekst | 128×128 |
-| 3 | `Resources/Ui/hire_remote.png` | Przycisk HIRE NOW – REMOTE | sam tekst | 128×128 |
-| 4 | `Resources/Hiring/ithand_logo.png` | Pasek adresu IThand.hck | tylko tekst adresu | 256×64, cyjan |
-| 5 | `Resources/Hiring/getadmin_logo.png` | Pasek adresu get-admin.hck | tylko tekst adresu | 256×64, złoto na czerni |
-| 6 | `Resources/Hiring/register_crest.png` | Nagłówek Agencji Pracy | tylko tekst | 96×96, godło urzędu, beż/szarość |
-| 7 | `Resources/Character/Looks/look_09..look_14` | Portrety kandydatów | 9 istniejących twarzy się powtarza | prefaby humanoidalne |
-| 8 | **Kobiece postacie** | Portrety, biuro | żadna z dwóch paczek ich nie ma | najpilniejsze z całej listy |
-| 9 | `Resources/Furniture/*.png` (10 szt.) | Sklep z meblami | kolorowy kwadrat (swatch) | 96×96, po jednej na `FurnitureKind` |
-| 10 | Zdjęcia podzespołów | COMPUTE (wybór krzemu) | — | patrz `ART_TODO.md`, wciąż otwarte |
-| 11 | `Resources/Models/type_*.png` (5 szt.) | Tabela modeli w zakładce MODEL | kolorowy kafelek z literą | 96×96, po jednej na `ModelType` |
-| 12 | `Resources/Labs/lab_huggyface.png` | Kafelek HuggyFace w YOUR LAB | litery „HF" | pozostałe 3 kafelki mają już prawdziwe logo |
+**Nic z tego nie wywala gry.** Każdy loader w tym projekcie ma fallback: pusta plakietka, rysowana
+płytka albo podpis „grafiki jeszcze nie ma". Dlatego brak pliku nigdy nie zgłasza się sam i dlatego
+ta lista musi powstawać ze skryptu.
 
 ---
 
-## 1a. Ikony RESEARCH — brakujące węzły
+## Zasada dla wszystkiego poniżej
 
-Węzły dodane w ostatnich sesjach nie mają własnej grafiki i dziedziczą tło ery.
+Grafika w tej grze leży **pod interfejsem**. Równomiernie ciemna, niski kontrast wewnętrzny, żadnego
+jasnego punktu, nic przy krawędziach, **nigdy tekstu ani logo w obrazie**.
 
-| Plik | Węzeł | Co przedstawia |
+Test: połóż biały wersalik w lewym górnym rogu i kwotę na dole. Jeśli którekolwiek jest trudne do
+odczytania, jest za jasna. Obraz, który sam w sobie wygląda świetnie, zwykle jest do tego zły.
+
+Pliki wchodzą do `Assets/_ScalingLaws/Resources/<folder>/<nazwa>.png` (lub `.jpg`). Nazwa musi być
+dokładnie taka jak w kolumnie **plik** — kod prosi o nią po nazwie.
+
+---
+
+## 1. Ikony badań — 8 brakuje
+
+**Folder:** `Resources/Research/` · **Rozmiar:** 300×300 PNG z przezroczystością
+**Styl:** cienki pierścień, ciemna kreska `rgb(22, 39, 39)` w środku, jeden pomysł na ikonę
+
+Te osiem węzłów **nie ma nawet nazwy pliku w kodzie**, więc rysują pustą plakietkę w drzewie:
+
+| węzeł | proponowany plik | co przedstawia |
 |---|---|---|
-| `Resources/Research/node_single_precision.png` | Single precision training | liczba 32-bitowa / rejestr, chłodne niebieskie |
-| `Resources/Research/node_mixed_precision.png` | Mixed precision training | dwa formaty obok siebie, jeden wąski |
-| `Resources/Research/node_low_precision.png` | Low precision training | 8 bitów, ostrzegawcza czerwień |
+| Single precision training | `research_fp32` | liczba tracąca połowę cyfr |
+| Mixed precision training | `research_bf16` | dwie szerokości obok siebie |
+| Low precision training | `research_int8` | wąska liczba i pęknięta krzywa |
+| Corpus deduplication | `research_dedup` | stos identycznych kartek, jedna zostaje |
+| Continuous data pipeline | `research_pipeline_data` | taśma wchodząca do zbiornika |
+| Hybrid state space | `research_hybrid` | fala przechodząca w siatkę |
+| Recursive self improvement | `research_recursive` | pętla wchodząca w samą siebie |
+| Artificial superintelligence | `research_asi` | pojedynczy punkt i wszystko wokół mniejsze |
 
-Reszta drzewa (35 węzłów) korzysta z 4 grafik er — to było świadome i działa.
+Po dorzuceniu plików trzeba je jeszcze **wpisać do `UI/ResearchIcons.cs`** — loader pyta o nazwę,
+sam jej nie zgadnie. `ArtTests` pilnuje, żeby nazwa bez pliku nie przeszła, więc jedno bez drugiego
+nie wejdzie.
 
-## 1b. Ikony UPGRADE — 11 cech modelu
+---
 
-Kafelki są teraz **poziome ze zdjęciem po lewej**, więc format się zmienił: `480×260`, kadr poziomy, ciemny, żeby liczby po prawej były czytelne.
+## 2. Biura — 2 brakuje, 2 nienazwane
 
-| Plik | Cecha | Propozycja ujęcia |
+**Folder:** `Resources/Offices/` · **Rozmiar:** 1072×460 (2,33:1), resample raz
+**Styl:** wnętrze, ciemne, szeroki kadr; to jest zdjęcie miejsca, nie renderu z gry
+
+| poziom | plik | jest? |
 |---|---|---|
-| `trait_reasoning.png` | Reasoning | łańcuch kroków / graf rozumowania |
-| `trait_knowledge.png` | Knowledge | serwerownia z archiwum, regały danych |
-| `trait_coding.png` | Coding | edytor kodu na dwóch monitorach |
-| `trait_multilingual.png` | Multilingual | ten sam napis w kilku alfabetach |
-| `trait_multimodal.png` | Multimodal | obraz + dźwięk + tekst w jednym kadrze |
-| `trait_context.png` | Context length | bardzo długi dokument / zwój |
-| `trait_safety.png` | Safety | red team przy monitorach, czerwone światło |
-| `trait_speed.png` | Latency | wykres opóźnień, stoper |
-| `trait_efficiency.png` | Efficiency | radiatory, chłodzenie |
-| `trait_tools.png` | Tool use | model wywołujący API, terminal |
-| `trait_ecosystem.png` | Ecosystem | integracje, wtyczki, partnerzy |
+| LVL 0 Garaż | `office_house` | ✅ |
+| LVL 1 Small office hub | `office_smallhub` | ❌ **nazwany w katalogu, pliku nie ma** |
+| LVL 2 Big company hub | `office_bighub` | ❌ **nazwany w katalogu, pliku nie ma** |
+| LVL 3 Campus | — | ❌ nie ma nawet nazwy |
+| LVL 4 Multi-site | — | ❌ nie ma nawet nazwy |
 
-**Te pliki już istnieją** i są wpięte (`CardArt.ForTrait`) — ale były robione pod kwadratowe karty. Poziomy kadr `480×260` wykorzysta nowy układ znacznie lepiej.
+Dwa pierwsze są pilne: ekran nieruchomości pokazuje dziś dla nich podpis zamiast zdjęcia, a to
+najczęściej odwiedzany ekran po siedzibie.
 
-## 1c. Mapa miasta — etap 1
+---
 
-Teren jest **blokoutem**, nie finalną grafiką. Do wyglądu z Twoich renderów brakuje:
+## 3. Procesor na ekranie ULEPSZEŃ — 1 brakuje
 
-| Co | Uwaga |
+**Plik:** `Resources/Cards/chip_model.png` · **Rozmiar:** 440×300
+**Styl:** krzem z bliska, ciemny, lekko rozmyty; to ma być „zdjęcie tego, co ulepszasz"
+
+Dziś prawy panel rysuje **narysowaną kością zastępczą** z pinami i nazwą modelu na środku. Działa,
+ale to jedyne miejsce w grze, gdzie widać, że czegoś brakuje.
+
+---
+
+## 4. Banery stron — 5 ekranów bez baneru
+
+**Folder:** `Resources/Banners/` · **Rozmiar:** 1600×230 po przycięciu (baner ma 112px wysokości)
+
+Dziesięć jest. Te ekrany nie mają żadnego i wyglądają nago obok reszty:
+
+| ekran | proponowany plik |
 |---|---|
-| Warstwy terenu (5–6) | trawa, skała, piasek/plaża, asfalt, beton, las — dziś jest **jedna** płaska barwa |
-| Materiał wody | dziś płaski niebieski plane; potrzebny shader z falą i przezroczystością |
-| Drzewa i krzewy | Terrain Tree prototypy, ~4 gatunki |
-| Drogi i mosty | etap 3 planu, geometria a nie tekstura |
-| Budynki dzielnic | etap 4 |
+| MARKETING | `background_marketing` |
+| MODEL | `background_model` |
+| WIADOMOŚCI | `background_news` |
+| @ POCZTA | `background_mail` |
+| ZESPÓŁ → zatrudnianie | `background_hiring` |
 
-### Uwaga do #7 i #8
-
-Kandydaci losują twarz z `PortraitSeed % LookCount`. Przy 9 wyglądach i 6 kandydatach na liście **powtórki są widoczne od razu**. Do 14 wyglądów problem praktycznie znika. Brak kobiet w obu paczkach to nie jest kwestia estetyki — to firma AI złożona wyłącznie z mężczyzn, czego nikt świadomie nie zaprojektował.
+Po dodaniu wpisać w `GameShell.BannerFor`.
 
 ---
 
-## 2. Propozycje: żeby zakładki żyły
+## 5. Pakiety hostingu — 1 brakuje
 
-Kolejność = stosunek efektu do roboty.
+**Folder:** `Resources/Hosting/`
 
-**TEAM — twarze na liście płac.**
-Portrety już są cache'owane (`CandidateFaces`). Wystarczy zapamiętać `PortraitSeed` w `Hire` i lista „ON THE PAYROLL" przestaje być tabelką, a staje się zespołem. Jedno pole w save.
-
-**TEAM — kafelek stanowiska podświetla się, gdy ktoś tam pracuje.**
-Dziś zmienia tylko tło. Delikatna poświata w kolorze stanowiska + licznik, który „tyka" przy zatrudnieniu, pokazałby kształt firmy jednym spojrzeniem.
-
-**SITE — ludzie w biurze odpowiadają zatrudnionym.**
-Grupa `Staff` w prefabach LVL 1/LVL 2 jest pusta. Jeden model na zatrudnionego, siedzący przy biurku, i biuro przestaje być pustą sceną z jednym założycielem. Reużywa `FounderPresence`.
-
-**MAIL — koperta w kolorze kanału.**
-Wiersz listu od kandydata mógłby mieć lewą krechę w kolorze Remote/Agency/Specialist. Zero nowych plików, sam USS.
-
-**Agencja Pracy — skan formularza w tle.**
-Jeden lekko pożółkły PNG jako tło (`E-11/b`) zrobiłby dla klimatu tej strony więcej niż wszystko inne razem. 800×1000, bardzo niski kontrast.
-
-**get-admin.hck — animowany pasek podczas wyszukiwania.**
-Dziś kandydat pojawia się natychmiast po opłaceniu. Dwie sekundy „przeszukiwanie rejestru" sprzedałyby te pieniądze.
-
-**RESEARCH / FLEET — ikony er i generacji.**
-Napisy „ERA – Foundations" są już białe i większe, ale nadal to sam tekst. Cztery ikony er ustawiłyby całą zakładkę.
+Są dwa (`hosting_renting`, `hosting_datacenter`), a katalog ma **trzy pakiety** (Growth cluster,
+Edge tier, Bulk allocation). Ekran MOC rysuje je dziś bez rozróżnienia.
 
 ---
 
-## 3. Co już nie jest potrzebne
+## 6. Czego **nie** brakuje
 
-- Ikony poziomów umiejętności 1–5 do zatrudniania — **stary system kafelków z cyframi został usunięty**, poziom jest teraz liczbą 1–100 i suwakiem.
+Żeby nie zamawiać dwa razy:
+
+- **Ikony paska dolnego** — 15 nazwanych, 16 plików ✅
+- **Logotypy rywali** — 13 nazwanych, 13 plików ✅
+- **Kafelki ULEPSZEŃ** — wszystkie 11 z Twoich zdjęć, przerobione ✅
+- **Kafelki kredytów** — 5, narysowane ✅
+- **Ikony umiejętności** — 7 ✅
+- **Wygląd założyciela** — 11 ✅
+- **Etapy tworzenia modelu** — 6 (`newmodel_1..6`) ✅
+- **Ikony badań** — 42 z 50 ✅ (brakujące osiem wyżej)
+
+---
+
+## Kolejność, gdybym miał wybierać
+
+1. **`office_smallhub` i `office_bighub`** — nazwane, brakujące, na często odwiedzanym ekranie
+2. **Osiem ikon badań** — puste plakietki w drzewie czytają się jak błąd
+3. **`chip_model`** — jedyne widoczne „tu miało coś być"
+4. **Pięć banerów** — kosmetyka, ale wyrównuje grę do jednego poziomu
+5. **Trzeci hosting** — najmniej pilne
+
+Jeśli nie chcesz zamawiać ikon badań, mogę je dorysować tak jak dziesięć poprzednich: 300×300,
+pierścień, ciemna kreska, pasują do dwudziestu dwóch istniejących.

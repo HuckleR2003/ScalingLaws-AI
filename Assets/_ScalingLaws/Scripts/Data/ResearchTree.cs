@@ -179,7 +179,8 @@ namespace ScalingLaws.Data
             // languages and falls back to English itself, so a second copy here would only be
             // somewhere for the two to disagree.
             _ = displayName;
-            Description = description ?? string.Empty;
+            // The English original the phrase book was built from. Not stored, same as the name.
+            _ = description;
             EarliestDate = earliestDate;
             CostUsd = Math.Clamp(costUsd, 0L, 500_000_000_000L);
             DurationDays = Math.Clamp(durationDays, 1, 1500);
@@ -282,7 +283,14 @@ namespace ScalingLaws.Data
             ResearchNodeId.InferenceTimeSearch => "node.inferencetimesearch",
             _ => "node.finetuning"
         };
-        public string Description { get; }
+        /// <summary>
+        /// What the node actually is, in whatever language the player reads.
+        ///
+        /// Same rule as the name: read at access time, English in the book as the fallback. These
+        /// are the longest player-facing text in the game after the tutorial, and they are the
+        /// whole reason somebody picks one node over another.
+        /// </summary>
+        public string Description => Loc.T(KeyFor(Id) + ".desc");
         public GameDate EarliestDate { get; }
         public long CostUsd { get; }
         public int DurationDays { get; }
