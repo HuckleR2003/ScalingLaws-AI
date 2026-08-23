@@ -4188,6 +4188,13 @@
     max-width: 100%;
 }
 
+/* And the five architecture directions, for the same reason. Without this they cap at 560px in a
+   1370px row and the cover marking the locked part lines up with the groove only by coincidence,
+   which is exactly how it looked the first time it was rendered. */
+.arx .unity-base-slider {
+    max-width: 100%;
+}
+
 /* ---------------------------------------------------------------------------
    Research nodes, made big enough to read.
 
@@ -8967,7 +8974,7 @@
 }
 
 .upg__detail {
-    width: 400px;
+    width: 440px;
     flex-shrink: 0;
 }
 
@@ -10811,4 +10818,601 @@
     color: rgb(140, 152, 174);
     white-space: normal;
     margin-top: 6px;
+}
+
+/* ============================================================================================
+   THE "(i)" CARD
+
+   The long form of an insight card: what a technology is, what it honestly moves, and what each
+   end of the control buys. Two coloured bands, because a slider has two ends and an explanation
+   that only describes one of them is telling the player which way to drag.
+   ============================================================================================ */
+
+.infodot {
+    width: 19px;
+    height: 19px;
+    margin-left: 7px;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    padding: 0;
+    font-size: 11px;
+    -unity-font-style: italic;
+    -unity-text-align: middle-center;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.26);
+    border-radius: 10px;
+    color: rgb(168, 182, 206);
+    background-color: rgba(255, 255, 255, 0.05);
+    transition-property: border-color, color, background-color;
+    transition-duration: 0.14s;
+}
+
+.infodot:hover {
+    border-color: rgb(226, 190, 44);
+    color: rgb(20, 22, 28);
+    background-color: rgb(226, 190, 44);
+}
+
+.insight--wide {
+    width: 400px;
+    padding-bottom: 14px;
+}
+
+.insight__what {
+    font-size: 12px;
+    color: rgb(196, 208, 228);
+    white-space: normal;
+    margin-top: 7px;
+}
+
+/* The honest line. Set apart, because "what this actually moves in the simulation" is a different
+   kind of statement from "what this technique is" and running them together buries the useful one. */
+.insight__affects {
+    font-size: 11px;
+    color: rgb(146, 160, 184);
+    white-space: normal;
+    margin-top: 8px;
+    padding-left: 9px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.18);
+}
+
+.insight__band {
+    margin-top: 9px;
+    padding: 7px 10px 8px 10px;
+    border-radius: 4px;
+    border-left-width: 3px;
+}
+
+.insight__bandhead {
+    font-size: 9px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+}
+
+.insight__bandbody {
+    font-size: 11px;
+    color: rgb(214, 222, 236);
+    white-space: normal;
+    margin-top: 3px;
+}
+
+/* Pink for the top of the range, gold for the bottom. Two hues rather than the usual green and red,
+   because neither end is the correct answer and colouring one of them green would say it was. */
+.insight__band--high {
+    border-left-color: rgb(236, 118, 168);
+    background-color: rgba(236, 118, 168, 0.11);
+}
+
+.insight__band--high .insight__bandhead {
+    color: rgb(246, 156, 194);
+}
+
+.insight__band--low {
+    border-left-color: rgb(232, 186, 62);
+    background-color: rgba(232, 186, 62, 0.11);
+}
+
+.insight__band--low .insight__bandhead {
+    color: rgb(244, 206, 96);
+}
+
+/* ============================================================================================
+   ARCHITECTURE
+
+   The five direction tracks are the screen, so they are the widest thing on it. Most of every
+   track is covered over: research opens the rest, the same arrangement the parameter slider in
+   the model creator already uses.
+
+   Prefixed arx rather than arch because .arch and .arch__head already belong to the live model
+   rows further up this sheet, and two features sharing a selector is how an edit silently does
+   nothing.
+   ============================================================================================ */
+
+.arx {
+    flex-shrink: 0;
+}
+
+.arx__head {
+    margin-bottom: 16px;
+}
+
+.arx__title {
+    font-size: 38px;
+    letter-spacing: 6px;
+    -unity-font-style: bold;
+    color: rgb(242, 246, 254);
+}
+
+.arx__strap {
+    font-size: 12px;
+    color: rgb(146, 160, 184);
+    white-space: normal;
+    max-width: 780px;
+    margin-top: 4px;
+}
+
+.arx__columns {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.arx__left {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 18px;
+}
+
+.arx__right {
+    width: 440px;
+    flex-shrink: 0;
+}
+
+.arx__card {
+    padding: 15px 18px 16px 18px;
+    margin-bottom: 11px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(10, 13, 20, 0.78);
+    flex-shrink: 0;
+}
+
+.arx__cardhead {
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(146, 158, 180);
+    margin-bottom: 10px;
+}
+
+.arx__subhead {
+    font-size: 9px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(132, 144, 166);
+    margin-top: 14px;
+    margin-bottom: 8px;
+}
+
+.arx__hint {
+    font-size: 11px;
+    color: rgb(128, 142, 164);
+    white-space: normal;
+    margin-top: 8px;
+}
+
+/* ---- the three pickers, side by side rather than stacked --------------------------------------- */
+
+.arx__fields {
+    flex-direction: row;
+}
+
+.arx__field {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 12px;
+}
+
+.arx__fieldlabel {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    color: rgb(130, 142, 162);
+    margin-bottom: 5px;
+}
+
+.arx__name {
+    margin: 0;
+}
+
+.arx__pick {
+    margin: 0;
+}
+
+.arx__slider {
+    margin-top: 8px;
+}
+
+/* ---- one direction ------------------------------------------------------------------------------ */
+
+.drow {
+    margin-bottom: 11px;
+}
+
+.drow__head {
+    flex-direction: row;
+    align-items: center;
+}
+
+.drow__name {
+    font-size: 12px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(226, 234, 248);
+}
+
+.drow__spacer {
+    flex-grow: 1;
+}
+
+.drow__value {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+}
+
+.drow__track {
+    margin-top: 6px;
+}
+
+/* Full width, or the control is 478px inside a 1368px track and the cover that marks the locked
+   part lines up with it only by accident. */
+.drow__slider {
+    width: 100%;
+    margin: 0;
+}
+
+/* What research has not opened, laid over the right-hand end of the slider. The value is clamped
+   rather than the range shrunk, so the control never rescales under the hand that is dragging it. */
+.dlock {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-left-width: 1px;
+    border-left-color: rgba(226, 78, 62, 0.5);
+    background-color: rgba(10, 12, 18, 0.86);
+}
+
+.dlock__label {
+    font-size: 8px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgba(230, 152, 132, 0.92);
+    white-space: nowrap;
+}
+
+/* ---- the answer ---------------------------------------------------------------------------------- */
+
+.arx__outcome {
+    flex-shrink: 0;
+}
+
+.arx__gauges {
+    flex-direction: row;
+}
+
+.agauge {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 10px;
+}
+
+.agauge__value {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(234, 242, 254);
+}
+
+.agauge__caption {
+    font-size: 8px;
+    letter-spacing: 1.4px;
+    color: rgb(126, 138, 158);
+    margin-top: 1px;
+}
+
+.agauge__track {
+    height: 5px;
+    margin-top: 5px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.agauge__fill {
+    height: 5px;
+    border-radius: 3px;
+}
+
+/* One outcome, drawn as the range it actually is. The width of the band is the risk. */
+.aband {
+    margin-bottom: 11px;
+}
+
+.aband__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.aband__caption {
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    color: rgb(130, 142, 162);
+}
+
+.aband__value {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(230, 238, 250);
+}
+
+.aband__track {
+    height: 8px;
+    margin-top: 4px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.aband__fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 4px;
+    background-color: rgba(96, 150, 226, 0.45);
+}
+
+.aband__fill--inverted {
+    background-color: rgba(126, 216, 158, 0.28);
+}
+
+.aband__tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    margin-left: -1px;
+    background-color: rgb(240, 246, 255);
+}
+
+.aband__ends {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 2px;
+}
+
+.aband__end {
+    font-size: 9px;
+    color: rgb(112, 124, 146);
+}
+
+.arx__bill {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.09);
+}
+
+.arx__cell {
+    flex-shrink: 1;
+}
+
+.arx__cellcaption {
+    font-size: 8px;
+    letter-spacing: 1.4px;
+    color: rgb(126, 138, 158);
+}
+
+.arx__cellvalue {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(230, 238, 250);
+    margin-top: 2px;
+}
+
+.arx__cellvalue--bad {
+    color: rgb(232, 130, 106);
+}
+
+.arx__verdict {
+    font-size: 12px;
+    white-space: normal;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 5px;
+    border-left-width: 3px;
+}
+
+.arx__verdict--ok {
+    color: rgb(178, 226, 194);
+    border-left-color: rgb(72, 190, 118);
+    background-color: rgba(72, 190, 118, 0.10);
+}
+
+.arx__verdict--blocked {
+    color: rgb(236, 174, 152);
+    border-left-color: rgb(196, 84, 62);
+    background-color: rgba(196, 84, 62, 0.10);
+}
+
+.arx__problem {
+    font-size: 11px;
+    color: rgb(232, 140, 110);
+    white-space: normal;
+    margin-top: 8px;
+}
+
+.arx__commit {
+    width: 100%;
+    height: 48px;
+    margin-left: 0;
+    margin-top: 12px;
+    margin-right: 0;
+    margin-bottom: 0;
+    font-size: 12px;
+    letter-spacing: 2.2px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    border-width: 0;
+    border-radius: 5px;
+    color: rgb(10, 30, 18);
+    background-color: rgb(72, 190, 118);
+}
+
+.arx__commit:hover {
+    background-color: rgb(96, 218, 142);
+}
+
+.arx__commit:disabled {
+    color: rgb(120, 130, 148);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- families the company owns -------------------------------------------------------------------- */
+
+.afam {
+    padding: 11px 13px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.16);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.afam--running {
+    border-left-color: rgb(226, 190, 44);
+    background-color: rgba(226, 190, 44, 0.08);
+}
+
+.afam__name {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.afam__stats {
+    font-size: 10px;
+    color: rgb(138, 150, 172);
+    margin-top: 3px;
+}
+
+.afam__track {
+    height: 5px;
+    margin-top: 7px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.afam__fill {
+    height: 5px;
+    border-radius: 3px;
+    background-color: rgb(226, 190, 44);
+}
+
+.afam__stop {
+    height: 30px;
+    margin-left: 0;
+    margin-top: 9px;
+    margin-right: 0;
+    margin-bottom: 0;
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    border-width: 1px;
+    border-color: rgba(226, 100, 80, 0.5);
+    border-radius: 4px;
+    color: rgb(232, 160, 140);
+    background-color: rgba(120, 40, 30, 0.35);
+}
+
+.afam__stop--armed {
+    color: rgb(255, 226, 220);
+    border-color: rgb(226, 78, 62);
+    background-color: rgb(150, 44, 34);
+}
+
+/* ============================================================================================
+   FORM CONTROLS
+
+   The runtime theme draws a text field, a dropdown and a slider as light grey slabs, which is
+   correct on an editor window and wrong on every screen in this game. Four tabs were showing
+   white bars on a near black page: the architecture pickers, the model name, the funding raise
+   and the fleet tables.
+
+   Styled once here against the element names the theme itself uses, so a control added on any
+   screen tomorrow inherits it without anybody remembering to ask.
+   ============================================================================================ */
+
+.unity-base-field__input {
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.13);
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgb(230, 238, 250);
+}
+
+.unity-base-text-field__input {
+    padding: 7px 10px;
+    font-size: 13px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.13);
+    color: rgb(232, 240, 252);
+}
+
+.unity-base-text-field__input:focus {
+    border-color: rgb(226, 190, 44);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.unity-base-popup-field__input {
+    padding: 7px 10px;
+    font-size: 13px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.13);
+    color: rgb(232, 240, 252);
+}
+
+.unity-base-popup-field__input:hover {
+    border-color: rgba(255, 255, 255, 0.30);
+}
+
+.unity-base-popup-field__text {
+    color: rgb(232, 240, 252);
+    -unity-text-align: middle-left;
+}
+
+.unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: rgb(180, 194, 216);
+}
+
+/* The slider already has its groove and handle styled further up this sheet. */
+
+.unity-base-slider--horizontal .unity-base-slider__drag-container {
+    height: 15px;
+}
+
+.unity-text-field__label,
+.unity-base-field__label {
+    color: rgb(150, 164, 188);
+    font-size: 11px;
 }

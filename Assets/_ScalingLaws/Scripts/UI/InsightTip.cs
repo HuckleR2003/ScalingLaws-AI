@@ -49,6 +49,12 @@ namespace ScalingLaws.UI
         private static VisualElement owner;
         private static Label cardTitle;
         private static Label cardBody;
+        private static Label cardWhat;
+        private static Label cardAffects;
+        private static VisualElement highBand;
+        private static Label highBody;
+        private static VisualElement lowBand;
+        private static Label lowBody;
 
         /// <summary>
         /// Makes a control show a card while the cursor is on it.
@@ -67,9 +73,87 @@ namespace ScalingLaws.UI
             // The runtime tooltip would otherwise open its own grey box on top of this one.
             target.tooltip = string.Empty;
 
-            target.RegisterCallback<MouseEnterEvent>(_ => Show(target, title, body, placement));
+            target.RegisterCallback<MouseEnterEvent>(_ =>
+                Show(target, title, body, default, placement));
+
             target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
             target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
+        }
+
+        /// <summary>
+        /// The long form: what a control is, what it honestly moves, and what each end of it buys.
+        ///
+        /// **Two ends, because a slider has two and every explanation in this game had only one.**
+        /// A sentence saying "sparsity lowers what a run costs" tells the player to push it right
+        /// and nothing else, so the control is not a decision, it is a chore. Naming what the low
+        /// end buys is what turns it back into one.
+        ///
+        /// <see cref="Affects"/> is the honest line and it is separate from <see cref="What"/> on
+        /// purpose. What a technique *is* reads like a brochure; what it actually touches in this
+        /// simulation is the thing a player needs and the thing a brochure never says.
+        /// </summary>
+        public readonly struct Reading
+        {
+            public Reading(string what, string affects, string high, string low)
+            {
+                What = what ?? string.Empty;
+                Affects = affects ?? string.Empty;
+                High = high ?? string.Empty;
+                Low = low ?? string.Empty;
+            }
+
+            /// <summary>What the technology is, in plain words.</summary>
+            public string What { get; }
+
+            /// <summary>What it moves in the simulation. No flattery.</summary>
+            public string Affects { get; }
+
+            /// <summary>What a high setting gives, and what it costs.</summary>
+            public string High { get; }
+
+            /// <summary>What a low setting gives, and what it costs.</summary>
+            public string Low { get; }
+
+            public bool IsEmpty => What.Length == 0 && Affects.Length == 0
+                && High.Length == 0 && Low.Length == 0;
+        }
+
+        /// <summary>Attaches a long-form card to any control.</summary>
+        public static void Attach(VisualElement target, string title, Reading reading,
+            Placement placement = Placement.Above)
+        {
+            if (target == null || string.IsNullOrEmpty(title))
+            {
+                return;
+            }
+
+            target.tooltip = string.Empty;
+
+            target.RegisterCallback<MouseEnterEvent>(_ => Show(target, title, null, reading, placement));
+            target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
+            target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
+        }
+
+        /// <summary>
+        /// The little "(i)" the player reaches for, already wired to its own card.
+        ///
+        /// Returned rather than mounted, so the caller decides where in its row it belongs. It is a
+        /// Button so it is reachable by click as well as by hover: on a laptop trackpad, resting a
+        /// pointer precisely on a twenty pixel circle to read a paragraph is a worse experience than
+        /// tapping it, and the click keeps the card up until the pointer leaves.
+        /// </summary>
+        public static Button InfoBadge(string title, Reading reading,
+            Placement placement = Placement.Above)
+        {
+            var badge = new Button { text = "i" };
+            badge.AddToClassList("infodot");
+
+            // Clicking re-opens the same card the hover shows, so the two cannot say different
+            // things. There is one Show and one payload.
+            badge.clicked += () => Show(badge, title, null, reading, placement);
+            Attach(badge, title, reading, placement);
+
+            return badge;
         }
 
         public static void Hide()
@@ -96,7 +180,8 @@ namespace ScalingLaws.UI
             }
         }
 
-        private static void Show(VisualElement target, string title, string body, Placement placement)
+        private static void Show(VisualElement target, string title, string body, Reading reading,
+            Placement placement)
         {
             var host = Host;
             if (host == null || target.panel == null)
@@ -109,6 +194,15 @@ namespace ScalingLaws.UI
             cardTitle.text = title;
             cardBody.text = body ?? string.Empty;
             cardBody.style.display = string.IsNullOrEmpty(body) ? DisplayStyle.None : DisplayStyle.Flex;
+
+            // The long form widens the card. A four section reading at 268px is a column of two
+            // word lines, which is harder to read than the paragraph it replaced.
+            card.EnableInClassList("insight--wide", !reading.IsEmpty);
+
+            Section(cardWhat, reading.What);
+            Section(cardAffects, reading.Affects);
+            Band(highBand, highBody, reading.High);
+            Band(lowBand, lowBody, reading.Low);
 
             owner = target;
             host.Add(card);
@@ -176,6 +270,52 @@ namespace ScalingLaws.UI
             cardBody = new Label();
             cardBody.AddToClassList("insight__body");
             card.Add(cardBody);
+
+            cardWhat = new Label();
+            cardWhat.AddToClassList("insight__what");
+            card.Add(cardWhat);
+
+            // "What it actually moves", set apart from the description above it. The two say
+            // different kinds of thing and running them together buries the useful one.
+            cardAffects = new Label();
+            cardAffects.AddToClassList("insight__affects");
+            card.Add(cardAffects);
+
+            (highBand, highBody) = BuildBand("HIGH VALUE", "insight__band--high");
+            card.Add(highBand);
+
+            (lowBand, lowBody) = BuildBand("LOW VALUE", "insight__band--low");
+            card.Add(lowBand);
+        }
+
+        private static (VisualElement Band, Label Body) BuildBand(string heading, string tone)
+        {
+            var band = new VisualElement();
+            band.AddToClassList("insight__band");
+            band.AddToClassList(tone);
+
+            var head = new Label(heading);
+            head.AddToClassList("insight__bandhead");
+            band.Add(head);
+
+            var body = new Label();
+            body.AddToClassList("insight__bandbody");
+            band.Add(body);
+
+            return (band, body);
+        }
+
+        /// <summary>Fills a line, or takes it out of the layout entirely when there is nothing to say.</summary>
+        private static void Section(Label label, string text)
+        {
+            label.text = text;
+            label.style.display = string.IsNullOrEmpty(text) ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
+        private static void Band(VisualElement band, Label body, string text)
+        {
+            body.text = text;
+            band.style.display = string.IsNullOrEmpty(text) ? DisplayStyle.None : DisplayStyle.Flex;
         }
     }
 }

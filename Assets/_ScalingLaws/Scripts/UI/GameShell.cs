@@ -36,6 +36,37 @@ namespace ScalingLaws.UI
         /// <summary>Days between automatic saves. Roughly a season of game time.</summary>
         public const int AutoSaveIntervalDays = 90;
 
+        // ---- the screen proof ---------------------------------------------------------------------
+        //
+        // Three members that exist for tooling rather than for the game, and they are worth the
+        // space. Every layout fault in this project has been found by looking, and until these
+        // existed there was no way to look at a tab without opening the editor and clicking to it.
+        // The proof walks all of them in one pass, so a stylesheet change can be checked against
+        // nineteen screens instead of against the one that prompted it.
+
+        /// <summary>Every screen this shell can open, by name.</summary>
+        public static IReadOnlyList<string> ScreenNames =>
+            Array.AsReadOnly(Enum.GetNames(typeof(Screen)));
+
+        /// <summary>The campaign behind the interface, so a proof can build a state worth photographing.</summary>
+        public CompanySimulation Simulation => simulation;
+
+        /// <summary>
+        /// Opens a screen by name. False when there is no such screen, rather than an exception:
+        /// the caller is usually iterating <see cref="ScreenNames"/> and a typo should read as a
+        /// missing picture, not as a crashed run.
+        /// </summary>
+        public bool OpenScreenByName(string name)
+        {
+            if (!Enum.TryParse<Screen>(name, out var screen))
+            {
+                return false;
+            }
+
+            Show(screen);
+            return true;
+        }
+
         private ModelCreatorPanel creator;
         private UpgradeGridPanel upgrades;
 

@@ -582,11 +582,47 @@ namespace ScalingLaws.Tests.EditMode
             state.CashUsd = 400_000_000;
             simulation.SetRentedAccelerators(3000);
 
+            var weights = new Dictionary<ResearchDirection, double>
+            {
+                [ResearchDirection.Sparsity] = 1.0,
+                [ResearchDirection.Throughput] = 0.3,
+                [ResearchDirection.Quality] = 0.4,
+                [ResearchDirection.Serving] = 0.5,
+                [ResearchDirection.Reasoning] = 0.2
+            };
+
+            // The directions are capped by research now, and this programme leans past the base in
+            // three of them. A player who wanted these weights would have walked the ladders first,
+            // so the fixture does too: it opens exactly the rungs the weights need and no more.
+            //
+            // Derived rather than listed, so changing a weight above cannot silently re-break this.
+            // That is a better model of a player than an exemption from the rule would be, and it
+            // is the treatment ScaleCeiling already needed on the parameter slider.
+            foreach (var (direction, wanted) in weights)
+            {
+                foreach (var (node, fraction) in ArchitectureCeiling.Ladders[direction])
+                {
+                    if (ArchitectureCeiling.FractionFor(direction, state.HasResearch) < wanted)
+                    {
+                        state.UnlockedResearch.Add(node);
+                    }
+
+                    if (fraction >= wanted)
+                    {
+                        break;
+                    }
+                }
+            }
+
             var blueprint = new ArchitectureBlueprint(
                 "House sparse 1",
                 ArchitectureId.CustomFamilyA,
                 ArchitectureId.None,
-                sparsity: 1.0, throughput: 0.3, quality: 0.4, serving: 0.5, reasoning: 0.2,
+                weights[ResearchDirection.Sparsity],
+                weights[ResearchDirection.Throughput],
+                weights[ResearchDirection.Quality],
+                weights[ResearchDirection.Serving],
+                weights[ResearchDirection.Reasoning],
                 researchBudgetUsd: 200_000_000,
                 durationDays: 500);
 

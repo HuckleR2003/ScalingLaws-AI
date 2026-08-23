@@ -1220,6 +1220,18 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
+            // The direction ceilings are a rule, not a slider bound. A cap that lives only in the
+            // interface is a suggestion the moment a second way to start a programme exists, and
+            // this project has shipped that mistake six times.
+            if (!ArchitectureCeiling.IsWithinCeiling(
+                    blueprint.Weight, State.HasResearch, out var beyond))
+            {
+                failureReason = $"{beyond} is pushed further than the company knows how to go. "
+                    + "Research opens the rest of that slider.";
+
+                return false;
+            }
+
             var projection = ProjectArchitecture(blueprint);
             if (!projection.IsFeasible)
             {

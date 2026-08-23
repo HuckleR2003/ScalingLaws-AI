@@ -94,6 +94,28 @@ namespace ScalingLaws.Data
         PipelineParallelism = 502,
         UltraReadiness = 503,
 
+        // 7xx opens the architecture directions. Five ladders of three, first rung each an existing
+        // node so the tree did not have to double in size to make the direction sliders real.
+        //
+        // Every one is optionalTechnology: none of them makes a better model on its own, each one
+        // only raises how far a family programme may lean one way. The scripted operator in
+        // PlayabilityTests skips them, which is what keeps the balance suite measuring the economy
+        // rather than measuring this.
+        LearnedRouting = 701,
+        ExpertParallelism = 702,
+
+        FusedKernels = 711,
+        OverlappedCollectives = 712,
+
+        CurriculumTraining = 721,
+        SelfDistillation = 722,
+
+        QuantisedServing = 731,
+        SpeculativeDecoding = 732,
+
+        ProcessSupervision = 741,
+        InferenceTimeSearch = 742,
+
         // 6xx is the SAFETY stage. Three lines of three, because the first tier of the first two is
         // something the company already knows how to do on the day it opens.
         //
@@ -611,6 +633,134 @@ namespace ScalingLaws.Data
                 requires: new[] { ResearchNodeId.PipelineParallelism, ResearchNodeId.ScalingLaws },
                 warning: "Opens almost the whole slider. What it does not do is pay for the run, "
                     + "and a run at this size is a year of the company's income.",
+                track: ResearchTrack.ModelImprovement),
+
+            // ------------------------------------------- the architecture directions
+            //
+            // Five ladders of two, sitting above a first rung that is an existing node. Nothing
+            // here makes a model better by itself: each one raises how far a family programme is
+            // allowed to lean in one direction, which is why every one is optionalTechnology and
+            // why the scripted campaign never buys them.
+            //
+            // Dated so that a direction cannot be pushed to its limit before the industry knew how.
+            // The dates are when the technique was actually being used at scale, rounded.
+
+            new(ResearchNodeId.LearnedRouting, ResearchEra.Scaling,
+                "Learned routing",
+                "A sparse model is only as good as the thing deciding which experts see a token. "
+                + "Train the router rather than hashing, balance the load across experts, and stop "
+                + "half the network from never being picked.",
+                GameDate.FromCalendar(2024, 4, 1), costUsd: 6_200_000, durationDays: 110,
+                petaflopDaysRequired: 380,
+                requires: new[] { ResearchNodeId.MixtureOfExperts },
+                warning: "Routing is the part of a sparse model that goes wrong. This makes deeper "
+                    + "sparsity survivable, not free.",
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.ExpertParallelism, ResearchEra.Autonomy,
+                "Expert parallelism",
+                "Put each expert on its own machines and route tokens across the fabric to reach "
+                + "them. The model stops having to fit anywhere, and the network becomes the thing "
+                + "you are buying.",
+                GameDate.FromCalendar(2024, 11, 1), costUsd: 19_000_000, durationDays: 175,
+                petaflopDaysRequired: 1_150,
+                requires: new[] { ResearchNodeId.LearnedRouting, ResearchNodeId.PipelineParallelism },
+                warning: "Opens the whole sparsity slider. A model this sparse is cheap per token "
+                    + "and needs a fabric most companies cannot afford.",
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.FusedKernels, ResearchEra.Foundations,
+                "Fused kernels",
+                "Stop writing intermediate results to memory between every operation. One kernel "
+                + "that does the whole block keeps the arithmetic units fed instead of the memory "
+                + "bus busy.",
+                GameDate.FromCalendar(2023, 2, 1), costUsd: 3_100_000, durationDays: 80,
+                petaflopDaysRequired: 140,
+                requires: new[] { ResearchNodeId.EfficientAttention },
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.OverlappedCollectives, ResearchEra.Scaling,
+                "Overlapped collectives",
+                "The cluster spends a large share of every step waiting for gradients to finish "
+                + "moving. Start the next block of arithmetic while they are still in flight and "
+                + "the waiting stops being time.",
+                GameDate.FromCalendar(2023, 8, 1), costUsd: 11_500_000, durationDays: 145,
+                petaflopDaysRequired: 700,
+                requires: new[] { ResearchNodeId.FusedKernels, ResearchNodeId.ShardedOptimizerStates },
+                warning: "Buys calendar and nothing else. Worth little to a company that is not "
+                    + "waiting on its cluster.",
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.CurriculumTraining, ResearchEra.Scaling,
+                "Curriculum training",
+                "The order tokens arrive in changes what the model gets out of them. Sequence the "
+                + "corpus rather than shuffling it, and raise the difficulty as the model can take "
+                + "it.",
+                GameDate.FromCalendar(2023, 3, 1), costUsd: 7_400_000, durationDays: 130,
+                petaflopDaysRequired: 460,
+                requires: new[] { ResearchNodeId.ScalingLaws },
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.SelfDistillation, ResearchEra.Autonomy,
+                "Self distillation",
+                "Train the next model against the one you already have as well as against the data. "
+                + "The student reaches the teacher's level for less, and then goes past it.",
+                GameDate.FromCalendar(2024, 5, 1), costUsd: 23_000_000, durationDays: 190,
+                petaflopDaysRequired: 1_400,
+                requires: new[] { ResearchNodeId.CurriculumTraining },
+                warning: "The slowest direction to pay off in the game. It raises the ceiling of "
+                    + "every model the family ever produces and none of them exist yet.",
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.QuantisedServing, ResearchEra.Scaling,
+                "Quantised serving",
+                "Serve at eight bits instead of sixteen. The weights are the same weights, the "
+                + "answers are near enough the same answers, and the machine holds twice as much of "
+                + "it.",
+                GameDate.FromCalendar(2023, 7, 1), costUsd: 2_900_000, durationDays: 75,
+                petaflopDaysRequired: 110,
+                requires: new[] { ResearchNodeId.LowPrecisionTraining },
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.SpeculativeDecoding, ResearchEra.Scaling,
+                "Speculative decoding",
+                "A small model guesses the next several tokens and the large one checks them all at "
+                + "once. Most guesses are right, and the ones that are not cost nothing to reject.",
+                GameDate.FromCalendar(2024, 1, 1), costUsd: 9_800_000, durationDays: 135,
+                petaflopDaysRequired: 540,
+                requires: new[] { ResearchNodeId.QuantisedServing },
+                warning: "Changes nothing a customer can see. It decides whether you can follow "
+                    + "somebody else's price cut.",
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.ProcessSupervision, ResearchEra.Autonomy,
+                "Process supervision",
+                "Reward the working rather than the answer. A model marked only on the final line "
+                + "learns to guess it; one marked on every step learns to get there.",
+                GameDate.FromCalendar(2025, 6, 1), costUsd: 14_000_000, durationDays: 160,
+                petaflopDaysRequired: 820,
+                requires: new[] { ResearchNodeId.ReasoningModels },
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.InferenceTimeSearch, ResearchEra.Autonomy,
+                "Inference time search",
+                "Spend compute when the question is asked rather than only when the model is built. "
+                + "Sample several attempts, score them, keep the best.",
+                GameDate.FromCalendar(2026, 1, 1), costUsd: 26_000_000, durationDays: 200,
+                petaflopDaysRequired: 1_600,
+                requires: new[] { ResearchNodeId.ProcessSupervision },
+                warning: "Capability a bigger cluster cannot buy, paid for on every request "
+                    + "forever rather than once at training time.",
+                optionalTechnology: true,
                 track: ResearchTrack.ModelImprovement),
 
             // ---------------------------------------------------------- era 4

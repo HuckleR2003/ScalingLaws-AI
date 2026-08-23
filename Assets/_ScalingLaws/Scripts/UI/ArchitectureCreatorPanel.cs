@@ -2,299 +2,688 @@ using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
 {
     /// <summary>
-    /// The family creator. Deliberately the same screen grammar as the model creator, because it is
-    /// the same kind of decision one level up: weight the directions, set a budget, set a deadline,
-    /// commit, and live with it.
+    /// The house architecture: what every later model in a family inherits from.
     ///
-    /// The one thing this screen says that the model creator does not is that the answer is not
-    /// known in advance. Instead of a single projected number it shows a band, and the band gets
-    /// narrower as the programme gets better funded and longer. A cheap rushed family is a lottery
-    /// ticket and the screen shows you the size of the lottery before you buy it.
+    /// **This was a form and it is a screen now.** The old version stacked a caption, a slider and a
+    /// paragraph five times down a column, then answered with eleven rows of `label ... value` on
+    /// the right, three of which read `0.918 .. 0.937 .. 0.955` and meant nothing at a glance. Every
+    /// control looked exactly as important as every other one, the INVESTMENT panel fell below the
+    /// fold, and the three text fields were the runtime theme's white slabs on a dark page.
+    ///
+    /// Three things changed and they are the whole design:
+    ///
+    /// **The directions are the screen.** Five rows, each a name, a reading, an "(i)" and one track.
+    /// The track is the decision, so it is the widest thing on the page.
+    ///
+    /// **Most of every track is locked.** A two person company in 2022 could previously ask for a
+    /// perfectly routed sparse mixture and simply chose not to; research opens the rest. The slider
+    /// keeps its full range and the locked part is covered, the same arrangement the parameter
+    /// slider already uses, because shrinking the range would rescale the control every time a node
+    /// lands and the player would never see that the cap had moved.
+    ///
+    /// **The answer is a band, drawn.** A family programme does not have one outcome, it has a
+    /// range, and the range narrows as the programme is better funded. Three numbers separated by
+    /// dots said that and nobody read it. A bar with the expected value marked on it says it in one
+    /// look, and the width of the bar *is* the risk.
     /// </summary>
     public sealed class ArchitectureCreatorPanel
     {
+        /// <summary>About $2M to about $2B, logarithmic.</summary>
+        public const float MinimumLogBudget = 6.3f;
+
+        public const float MaximumLogBudget = 9.3f;
+
         private readonly CompanySimulation simulation;
         private readonly VisualElement root;
 
         private readonly TextField nameField = new();
         private readonly DropdownField slotField = new();
         private readonly DropdownField baseField = new();
-        private readonly Slider budgetSlider = new();
-        private readonly Slider durationSlider = new();
-        private readonly VisualElement directionSliders = new();
-        private readonly VisualElement readouts = new();
-        private readonly Label budgetLabel = new();
-        private readonly Label durationLabel = new();
-        private readonly Label verdict = new();
-        private readonly Button startButton = new();
+        private readonly Slider budgetSlider = new(MinimumLogBudget, MaximumLogBudget);
+        private readonly Slider durationSlider = new(
+            ArchitectureBlueprint.MinimumDurationDays, ArchitectureBlueprint.MaximumDurationDays);
+
+        private readonly VisualElement directionRows = new();
+        private readonly VisualElement outcome = new();
         private readonly VisualElement ownedList = new();
+        private readonly Label budgetReading = new();
+        private readonly Label durationReading = new();
 
         private readonly Dictionary<ResearchDirection, Slider> directions = new();
+        private readonly Dictionary<ResearchDirection, VisualElement> locks = new();
+        private readonly Dictionary<ResearchDirection, Label> lockLabels = new();
+        private readonly Dictionary<ResearchDirection, Label> readings = new();
+
         private readonly List<ArchitectureId> slotOptions = new();
         private readonly List<ArchitectureId> baseOptions = new();
 
-        private const float MinimumLogBudget = 6.3f;   // about 2M
-        private const float MaximumLogBudget = 9.3f;   // about 2B
+        private bool abandonArmed;
+        private string problem = string.Empty;
+
+        /// <summary>Name, the note that explains it, and where the slider starts.</summary>
+        private static readonly (ResearchDirection Direction, string Label, Func<TechNotes.Note> Note,
+            float Initial)[] Directions =
+            {
+                (ResearchDirection.Sparsity, "Sparsity", () => TechNotes.Sparsity, 0.35f),
+                (ResearchDirection.Throughput, "Throughput", () => TechNotes.Throughput, 0.20f),
+                (ResearchDirection.Quality, "Quality per parameter", () => TechNotes.Quality, 0.30f),
+                (ResearchDirection.Serving, "Serving cost", () => TechNotes.Serving, 0.15f),
+                (ResearchDirection.Reasoning, "Reasoning", () => TechNotes.Reasoning, 0.10f)
+            };
 
         public ArchitectureCreatorPanel(CompanySimulation simulation)
         {
             this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
+
             root = new VisualElement();
             root.AddToClassList("content");
+            root.AddToClassList("arx");
+
             Build();
         }
 
         public VisualElement Root => root;
 
+        /// <summary>What the sliders currently say. Public so a test can commit without a panel.</summary>
+        public ArchitectureBlueprint Blueprint => CurrentBlueprint();
+
         public void Refresh()
         {
             RebuildSlots();
             RebuildBases();
+            RebuildCeilings();
             RebuildOwned();
             Reprice();
         }
 
+        // ---- the frame ---------------------------------------------------------------------------
+
         private void Build()
         {
-            var title = new Label("ARCHITECTURE FAMILY");
-            title.AddToClassList("page-title");
-            root.Add(title);
+            var head = new VisualElement();
+            head.AddToClassList("arx__head");
 
-            var subtitle = new Label(
-                "The family every later model inherits from. Budget and calendar together decide how far "
-                + "the programme reaches; focus decides whether it reaches anywhere at all.");
-            subtitle.AddToClassList("page-subtitle");
-            root.Add(subtitle);
+            var title = new Label("ARCHITECTURE");
+            title.AddToClassList("arx__title");
+            head.Add(title);
+
+            var strap = new Label(
+                "The house family every later model inherits from. Budget and calendar decide how "
+                + "far the programme reaches. Focus decides whether it reaches anywhere at all.");
+
+            strap.AddToClassList("arx__strap");
+            head.Add(strap);
+            root.Add(head);
 
             var columns = new VisualElement();
-            columns.style.flexDirection = FlexDirection.Row;
-            root.Add(columns);
+            columns.AddToClassList("arx__columns");
 
             var left = new VisualElement();
-            left.style.flexGrow = 1;
-            left.style.marginRight = 18;
+            left.AddToClassList("arx__left");
+            left.Add(BuildProgrammeCard());
+            left.Add(BuildDirectionsCard());
+            left.Add(BuildInvestmentCard());
             columns.Add(left);
 
             var right = new VisualElement();
-            right.style.width = 400;
+            right.AddToClassList("arx__right");
+            right.Add(outcome);
+            right.Add(BuildOwnedCard());
             columns.Add(right);
 
-            left.Add(BuildIdentityPanel());
-            left.Add(BuildDirectionPanel());
-            left.Add(BuildInvestmentPanel());
-
-            right.Add(BuildOutcomePanel());
-            right.Add(BuildOwnedPanel());
+            root.Add(columns);
         }
 
-        private VisualElement BuildIdentityPanel()
+        private static VisualElement Card(string heading, VisualElement into = null)
         {
-            var panel = NewPanel("PROGRAMME");
-
-            nameField.label = "Family name";
-            nameField.value = "House family 1";
-            nameField.AddToClassList("field");
-            nameField.RegisterValueChangedCallback(_ => Reprice());
-            panel.Add(nameField);
-
-            slotField.label = "Slot";
-            slotField.AddToClassList("field");
-            slotField.RegisterValueChangedCallback(_ => Reprice());
-            panel.Add(slotField);
-
-            baseField.label = "Build on";
-            baseField.AddToClassList("field");
-            baseField.RegisterValueChangedCallback(_ => Reprice());
-            panel.Add(baseField);
-
-            var hint = new Label(
-                "Iterating a family you already own costs 40 percent less and takes 40 percent less time, "
-                + "and each generation reaches about half as far as the one before it. Families plateau. "
-                + "A clean sheet costs full price and has no such ceiling.");
-            hint.AddToClassList("field__hint");
-            panel.Add(hint);
-
-            return panel;
-        }
-
-        private VisualElement BuildDirectionPanel()
-        {
-            var panel = NewPanel("RESEARCH DIRECTIONS");
-            panel.Add(directionSliders);
-
-            AddDirection(ResearchDirection.Sparsity, "Sparsity",
-                "Fewer parameters firing per token. The biggest lever on what a run costs.", 1.0f);
-            AddDirection(ResearchDirection.Throughput, "Throughput",
-                "Better cluster utilisation while training. Shortens the calendar.", 0.4f);
-            AddDirection(ResearchDirection.Quality, "Quality per parameter",
-                "Raises the ceiling on every model in the family.", 0.5f);
-            AddDirection(ResearchDirection.Serving, "Serving cost",
-                "Cheaper tokens once models are live. Invisible until the price war.", 0.3f);
-            AddDirection(ResearchDirection.Reasoning, "Reasoning",
-                "Structural gains that scaling alone does not buy.", 0.2f);
-
-            var hint = new Label(
-                "Effort is relative. Spreading it evenly across all five buys a fifth of the depth in each, "
-                + "which is a real choice and usually a bad one.");
-            hint.AddToClassList("field__hint");
-            panel.Add(hint);
-
-            return panel;
-        }
-
-        private void AddDirection(ResearchDirection direction, string label, string hint, float initial)
-        {
-            var caption = new Label(label);
-            caption.AddToClassList("field__label");
-            directionSliders.Add(caption);
-
-            var slider = new Slider(0f, 1f) { value = initial };
-            slider.AddToClassList("field");
-            slider.RegisterValueChangedCallback(_ => Reprice());
-            directions[direction] = slider;
-            directionSliders.Add(slider);
-
-            var note = new Label(hint);
-            note.AddToClassList("field__hint");
-            directionSliders.Add(note);
-        }
-
-        private VisualElement BuildInvestmentPanel()
-        {
-            var panel = NewPanel("INVESTMENT");
-
-            budgetLabel.AddToClassList("field__label");
-            panel.Add(budgetLabel);
-            budgetSlider.lowValue = MinimumLogBudget;
-            budgetSlider.highValue = MaximumLogBudget;
-            budgetSlider.value = 7.0f;
-            budgetSlider.AddToClassList("field");
-            budgetSlider.RegisterValueChangedCallback(_ => Reprice());
-            panel.Add(budgetSlider);
-
-            durationLabel.AddToClassList("field__label");
-            panel.Add(durationLabel);
-            durationSlider.lowValue = ArchitectureBlueprint.MinimumDurationDays;
-            durationSlider.highValue = ArchitectureBlueprint.MaximumDurationDays;
-            durationSlider.value = 365f;
-            durationSlider.AddToClassList("field");
-            durationSlider.RegisterValueChangedCallback(_ => Reprice());
-            panel.Add(durationSlider);
-
-            var hint = new Label(
-                "Money and time are a geometric mean, not a sum. A billion dollars in three months is not "
-                + "a breakthrough, and neither is three years of two people.");
-            hint.AddToClassList("field__hint");
-            panel.Add(hint);
-
-            return panel;
-        }
-
-        private VisualElement BuildOutcomePanel()
-        {
-            var panel = NewPanel("LIKELY OUTCOME");
-            panel.Add(readouts);
-
-            verdict.AddToClassList("verdict");
-            panel.Add(verdict);
-
-            startButton.text = "COMMIT THE PROGRAMME";
-            startButton.AddToClassList("button");
-            startButton.AddToClassList("button--primary");
-            startButton.style.marginTop = 14;
-            startButton.style.width = Length.Percent(100);
-            startButton.clicked += Commit;
-            panel.Add(startButton);
-
-            return panel;
-        }
-
-        private VisualElement BuildOwnedPanel()
-        {
-            var panel = NewPanel("HOUSE FAMILIES");
-            panel.Add(ownedList);
-            return panel;
-        }
-
-        private static VisualElement NewPanel(string heading)
-        {
-            var panel = new VisualElement();
-            panel.AddToClassList("panel");
+            var card = into ?? new VisualElement();
+            card.AddToClassList("arx__card");
 
             var label = new Label(heading);
-            label.AddToClassList("panel__heading");
-            panel.Add(label);
+            label.AddToClassList("arx__cardhead");
+            card.Add(label);
 
-            return panel;
+            return card;
         }
 
-        private void RebuildSlots()
+        private VisualElement BuildProgrammeCard()
         {
-            slotOptions.Clear();
-            var labels = new List<string>();
+            var card = Card("PROGRAMME");
 
-            foreach (var slot in ArchitectureCatalog.CustomSlots)
-            {
-                slotOptions.Add(slot);
-                labels.Add(simulation.State.CustomArchitectures.TryGetValue(slot, out var existing)
-                    ? $"{SlotLetter(slot)} - overwrite {existing.DisplayName}"
-                    : $"{SlotLetter(slot)} - empty");
-            }
+            var row = new VisualElement();
+            row.AddToClassList("arx__fields");
 
-            slotField.choices = labels;
-            if (slotField.index < 0)
-            {
-                var free = simulation.State.FirstFreeArchitectureSlot();
-                slotField.index = free == ArchitectureId.None ? 0 : slotOptions.IndexOf(free);
-            }
+            nameField.value = "House family 1";
+            nameField.AddToClassList("arx__name");
+            nameField.RegisterValueChangedCallback(_ => Reprice());
+            row.Add(Field("FAMILY NAME", nameField));
+
+            slotField.AddToClassList("arx__pick");
+            slotField.RegisterValueChangedCallback(_ => Reprice());
+            row.Add(Field("SLOT", slotField));
+
+            baseField.AddToClassList("arx__pick");
+            baseField.RegisterValueChangedCallback(_ => Reprice());
+            row.Add(Field("BUILD ON", baseField));
+
+            card.Add(row);
+
+            var hint = new Label(
+                "Iterating a family you already own costs 40% less and takes 40% less time, and each "
+                + "generation reaches about half as far as the one before it. Families plateau. A "
+                + "clean sheet costs full price and has no such ceiling.");
+
+            hint.AddToClassList("arx__hint");
+            card.Add(hint);
+
+            return card;
         }
 
-        private void RebuildBases()
+        private static VisualElement Field(string caption, VisualElement control)
         {
-            baseOptions.Clear();
-            var labels = new List<string>();
+            var block = new VisualElement();
+            block.AddToClassList("arx__field");
 
-            baseOptions.Add(ArchitectureId.None);
-            labels.Add("Clean sheet");
+            var label = new Label(caption);
+            label.AddToClassList("arx__fieldlabel");
+            block.Add(label);
+            block.Add(control);
 
-            foreach (var pair in simulation.State.CustomArchitectures)
+            return block;
+        }
+
+        // ---- the five directions -------------------------------------------------------------------
+
+        private VisualElement BuildDirectionsCard()
+        {
+            var card = Card("RESEARCH DIRECTIONS");
+
+            var note = new Label(
+                "Effort is relative. Spreading it evenly across all five buys a fifth of the depth "
+                + "in each, which is a real choice and usually a bad one.");
+
+            note.AddToClassList("arx__hint");
+            card.Add(note);
+            card.Add(directionRows);
+
+            foreach (var (direction, label, note1, initial) in Directions)
             {
-                var generation = simulation.State.FamilyGeneration(pair.Key);
-                baseOptions.Add(pair.Key);
-                labels.Add($"{pair.Value.DisplayName} (gen {generation})");
+                directionRows.Add(BuildDirectionRow(direction, label, note1(), initial));
             }
 
-            baseField.choices = labels;
-            if (baseField.index < 0 || baseField.index >= labels.Count)
+            return card;
+        }
+
+        private VisualElement BuildDirectionRow(ResearchDirection direction, string label,
+            TechNotes.Note note, float initial)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("drow");
+
+            var head = new VisualElement();
+            head.AddToClassList("drow__head");
+
+            var name = new Label(label.ToUpperInvariant());
+            name.AddToClassList("drow__name");
+            head.Add(name);
+
+            head.Add(InsightTip.InfoBadge(note.Title, Reading(note)));
+
+            var spacer = new VisualElement();
+            spacer.AddToClassList("drow__spacer");
+            head.Add(spacer);
+
+            var reading = new Label();
+            reading.AddToClassList("drow__value");
+            readings[direction] = reading;
+            head.Add(reading);
+
+            row.Add(head);
+
+            // The track: the slider, with the part research has not opened covered over it.
+            var track = new VisualElement();
+            track.AddToClassList("drow__track");
+
+            var slider = new Slider(0f, 1f) { value = initial };
+            slider.AddToClassList("drow__slider");
+            slider.RegisterValueChangedCallback(_ =>
             {
-                baseField.index = 0;
+                ClampToCeiling(direction);
+                Reprice();
+            });
+
+            directions[direction] = slider;
+            track.Add(slider);
+
+            var cover = new VisualElement();
+            cover.AddToClassList("dlock");
+            cover.pickingMode = PickingMode.Ignore;
+
+            var coverLabel = new Label();
+            coverLabel.AddToClassList("dlock__label");
+            cover.Add(coverLabel);
+
+            locks[direction] = cover;
+            lockLabels[direction] = coverLabel;
+            track.Add(cover);
+
+            row.Add(track);
+            return row;
+        }
+
+        private static InsightTip.Reading Reading(TechNotes.Note note) =>
+            new(note.What, note.Affects, note.High, note.Low);
+
+        /// <summary>
+        /// Holds a slider under what research has opened, and says what would open more.
+        ///
+        /// The value is clamped rather than the range shrunk. Moving `highValue` down would rescale
+        /// the whole control every time a node lands, so a drag that used to mean one thing would
+        /// mean another and the player would never see that the cap had moved at all.
+        /// </summary>
+        private void RebuildCeilings()
+        {
+            foreach (var (direction, _, _, _) in Directions)
+            {
+                var ceiling = ArchitectureCeiling.FractionFor(direction, simulation.State.HasResearch);
+                ClampToCeiling(direction);
+
+                var locked = 1.0 - ceiling;
+                var cover = locks[direction];
+
+                cover.style.display = locked <= 0.0005 ? DisplayStyle.None : DisplayStyle.Flex;
+                cover.style.width = Length.Percent((float)(locked * 100.0));
+
+                if (locked <= 0.0005)
+                {
+                    continue;
+                }
+
+                lockLabels[direction].text = ArchitectureCeiling.TryNextRung(
+                    direction, simulation.State.HasResearch, out var rung, out var next)
+                        ? $"{ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}  ·  {next:P0}"
+                        : "LOCKED";
             }
         }
 
-        // Armed before it fires. Months of compute do not come back.
-        private bool abandonArmed;
+        private void ClampToCeiling(ResearchDirection direction)
+        {
+            var ceiling = (float)ArchitectureCeiling.FractionFor(
+                direction, simulation.State.HasResearch);
+
+            if (directions[direction].value > ceiling)
+            {
+                directions[direction].SetValueWithoutNotify(ceiling);
+            }
+        }
+
+        // ---- money and calendar ----------------------------------------------------------------------
+
+        private VisualElement BuildInvestmentCard()
+        {
+            var card = Card("INVESTMENT");
+
+            var pair = new VisualElement();
+            pair.AddToClassList("arx__fields");
+
+            budgetSlider.value = 7.0f;
+            budgetSlider.AddToClassList("arx__slider");
+            budgetSlider.RegisterValueChangedCallback(_ => Reprice());
+            pair.Add(Money("RESEARCH BUDGET", TechNotes.ResearchBudget, budgetReading, budgetSlider));
+
+            durationSlider.value = 365f;
+            durationSlider.AddToClassList("arx__slider");
+            durationSlider.RegisterValueChangedCallback(_ => Reprice());
+            pair.Add(Money("PROGRAMME LENGTH", TechNotes.ProgrammeLength, durationReading, durationSlider));
+
+            card.Add(pair);
+
+            var hint = new Label(
+                "Money and time are a geometric mean, not a sum. A billion dollars in three months "
+                + "is not a breakthrough, and neither is three years of two people.");
+
+            hint.AddToClassList("arx__hint");
+            card.Add(hint);
+
+            return card;
+        }
+
+        private static VisualElement Money(string caption, TechNotes.Note note, Label reading,
+            Slider slider)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("drow");
+            block.AddToClassList("arx__field");
+
+            var head = new VisualElement();
+            head.AddToClassList("drow__head");
+
+            var label = new Label(caption);
+            label.AddToClassList("drow__name");
+            head.Add(label);
+
+            head.Add(InsightTip.InfoBadge(note.Title, Reading(note)));
+
+            var spacer = new VisualElement();
+            spacer.AddToClassList("drow__spacer");
+            head.Add(spacer);
+
+            reading.AddToClassList("drow__value");
+            head.Add(reading);
+
+            block.Add(head);
+            block.Add(slider);
+
+            return block;
+        }
+
+        // ---- the answer ---------------------------------------------------------------------------
+
+        private VisualElement BuildOwnedCard()
+        {
+            var card = Card("HOUSE FAMILIES");
+            card.Add(ownedList);
+            return card;
+        }
+
+        private void Reprice()
+        {
+            var blueprint = CurrentBlueprint();
+            var projection = simulation.ProjectArchitecture(blueprint);
+
+            foreach (var (direction, _, _, _) in Directions)
+            {
+                readings[direction].text = $"{directions[direction].value:P0}";
+            }
+
+            budgetReading.text = UiFormat.Money(blueprint.ResearchBudgetUsd)
+                + (blueprint.IsIteration
+                    ? $"  ·  pays {UiFormat.Money(ArchitectureDesigner.CashCostUsd(blueprint))}"
+                    : string.Empty);
+
+            durationReading.text = UiFormat.Days(ArchitectureDesigner.DurationDays(blueprint));
+
+            outcome.Clear();
+            Card("LIKELY OUTCOME", outcome);
+            outcome.AddToClassList("arx__outcome");
+
+            // The three numbers that say how good a bet this is, before any of the numbers that say
+            // what it would produce. A player deciding whether to commit a year reads these first.
+            var gauges = new VisualElement();
+            gauges.AddToClassList("arx__gauges");
+            gauges.Add(Gauge("RESEARCH POWER", projection.ResearchPower / 1.2,
+                UiFormat.Percent(projection.ResearchPower / 1.2), "#7ED89E"));
+
+            gauges.Add(Gauge("FOCUS", blueprint.Focus, UiFormat.Percent(blueprint.Focus), "#5B8DEF"));
+
+            // Drawn as "how sure is this", so full means certain. Spread is the opposite of that.
+            gauges.Add(Gauge("CERTAINTY", 1.0 - projection.Variance,
+                UiFormat.Percent(1.0 - projection.Variance), "#E0B83C"));
+
+            outcome.Add(gauges);
+
+            var what = new Label("WHAT IT WOULD PRODUCE");
+            what.AddToClassList("arx__subhead");
+            outcome.Add(what);
+
+            outcome.Add(Band("ACTIVE PARAMETERS",
+                projection.Ceiling.ActiveParameterFraction,
+                projection.Expected.ActiveParameterFraction,
+                projection.Floor.ActiveParameterFraction, 3, lowerIsBetter: true));
+
+            outcome.Add(Band("QUALITY PER PARAMETER",
+                projection.Floor.ParameterEfficiency,
+                projection.Expected.ParameterEfficiency,
+                projection.Ceiling.ParameterEfficiency, 2));
+
+            outcome.Add(Band("TRAINING EFFICIENCY",
+                projection.Floor.TrainingEfficiency,
+                projection.Expected.TrainingEfficiency,
+                projection.Ceiling.TrainingEfficiency, 2));
+
+            outcome.Add(Band("SERVING MULTIPLIER",
+                projection.Ceiling.InferenceCostMultiplier,
+                projection.Expected.InferenceCostMultiplier,
+                projection.Floor.InferenceCostMultiplier, 2, lowerIsBetter: true));
+
+            outcome.Add(Band("CAPABILITY BONUS",
+                projection.Floor.CapabilityBonus,
+                projection.Expected.CapabilityBonus,
+                projection.Ceiling.CapabilityBonus, 1));
+
+            var bill = new VisualElement();
+            bill.AddToClassList("arx__bill");
+
+            var cash = ArchitectureDesigner.CashCostUsd(blueprint);
+            bill.Add(Cell("CASH", UiFormat.Money(cash), cash > simulation.State.CashUsd));
+            bill.Add(Cell("COMPUTE", UiFormat.PetaflopDays(projection.PetaflopDaysRequired), false));
+            bill.Add(Cell("SAVES", UiFormat.Percent(projection.ComputeSavingVersusBaseline), false));
+            outcome.Add(bill);
+
+            outcome.Add(BuildVerdict(blueprint, projection));
+        }
+
+        private VisualElement BuildVerdict(ArchitectureBlueprint blueprint,
+            ArchitectureProjection projection)
+        {
+            var block = new VisualElement();
+
+            var busy = simulation.State.ActiveArchitectureProject != null;
+            var within = ArchitectureCeiling.IsWithinCeiling(
+                blueprint.Weight, simulation.State.HasResearch, out _);
+
+            var verdict = new Label();
+            verdict.AddToClassList("arx__verdict");
+
+            var runnable = projection.IsFeasible && !busy && within;
+
+            if (busy)
+            {
+                verdict.text = "A family programme is already running. One at a time.";
+            }
+            else if (!projection.IsFeasible)
+            {
+                verdict.text = projection.BlockingReason;
+            }
+            else if (projection.Variance > 0.3)
+            {
+                verdict.text = "Runnable, and underfunded enough that the result is close to a coin "
+                    + "toss. More money or more calendar narrows the band.";
+            }
+            else if (blueprint.Focus < 0.2)
+            {
+                verdict.text = "Runnable, and the effort is spread so evenly that no direction goes "
+                    + "deep enough to matter.";
+            }
+            else
+            {
+                verdict.text = "Runnable, and focused enough to land somewhere useful.";
+            }
+
+            verdict.EnableInClassList("arx__verdict--ok", runnable);
+            verdict.EnableInClassList("arx__verdict--blocked", !runnable);
+            block.Add(verdict);
+
+            if (!string.IsNullOrEmpty(problem))
+            {
+                var trouble = new Label(problem);
+                trouble.AddToClassList("arx__problem");
+                block.Add(trouble);
+            }
+
+            var commit = new Button(Commit) { text = "COMMIT THE PROGRAMME" };
+            commit.AddToClassList("arx__commit");
+            commit.SetEnabled(runnable);
+            block.Add(commit);
+
+            return block;
+        }
+
+        /// <summary>
+        /// One outcome, drawn as the range it actually is.
+        ///
+        /// **The width of the bar is the risk and that is the point.** The old screen printed three
+        /// numbers separated by dots, which is the same information and reads as one long number.
+        /// A player comparing a cheap programme against an expensive one wants to see the band
+        /// narrow, and nothing in a row of digits shows that.
+        /// </summary>
+        private static VisualElement Band(string caption, double worst, double expected, double best,
+            int decimals, bool lowerIsBetter = false)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("aband");
+
+            var head = new VisualElement();
+            head.AddToClassList("aband__head");
+
+            var label = new Label(caption);
+            label.AddToClassList("aband__caption");
+            head.Add(label);
+
+            var value = new Label(UiFormat.Number(expected, decimals));
+            value.AddToClassList("aband__value");
+            head.Add(value);
+
+            row.Add(head);
+
+            var track = new VisualElement();
+            track.AddToClassList("aband__track");
+
+            var low = Math.Min(worst, best);
+            var high = Math.Max(worst, best);
+
+            // **The track is a fixed window around the expected value, not the band itself.**
+            // Scaling the track to the band made every bar full width, so a certain programme and
+            // a coin toss drew identically and the one thing this is for was invisible. A quarter
+            // either side of expected means the width of the fill *is* the uncertainty.
+            var window = Math.Max(Math.Abs(expected) * 0.25, 1e-6);
+            var from = expected - window;
+            var span = window * 2.0;
+
+            double Place(double value) => Math.Clamp((value - from) / span, 0.0, 1.0);
+
+            var left = Place(low);
+            var right = Place(high);
+
+            var fill = new VisualElement();
+            fill.AddToClassList("aband__fill");
+            fill.EnableInClassList("aband__fill--inverted", lowerIsBetter);
+            fill.style.left = Length.Percent((float)(left * 100.0));
+            fill.style.width = Length.Percent((float)Math.Max((right - left) * 100.0, 1.5));
+            track.Add(fill);
+
+            var tick = new VisualElement();
+            tick.AddToClassList("aband__tick");
+            tick.style.left = Length.Percent((float)(Place(expected) * 100.0));
+
+            track.Add(tick);
+            row.Add(track);
+
+            var ends = new VisualElement();
+            ends.AddToClassList("aband__ends");
+
+            var worstLabel = new Label(UiFormat.Number(worst, decimals));
+            worstLabel.AddToClassList("aband__end");
+            ends.Add(worstLabel);
+
+            var bestLabel = new Label(UiFormat.Number(best, decimals));
+            bestLabel.AddToClassList("aband__end");
+            ends.Add(bestLabel);
+
+            row.Add(ends);
+            return row;
+        }
+
+        private static VisualElement Gauge(string caption, double fill, string reading, string tint)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("agauge");
+
+            var value = new Label(reading);
+            value.AddToClassList("agauge__value");
+            block.Add(value);
+
+            var label = new Label(caption);
+            label.AddToClassList("agauge__caption");
+            block.Add(label);
+
+            var track = new VisualElement();
+            track.AddToClassList("agauge__track");
+
+            var bar = new VisualElement();
+            bar.AddToClassList("agauge__fill");
+            bar.style.width = Length.Percent((float)(Math.Clamp(fill, 0.0, 1.0) * 100.0));
+
+            if (ColorUtility.TryParseHtmlString(tint, out var colour))
+            {
+                bar.style.backgroundColor = colour;
+            }
+
+            track.Add(bar);
+            block.Add(track);
+
+            return block;
+        }
+
+        private static VisualElement Cell(string caption, string value, bool bad)
+        {
+            var cell = new VisualElement();
+            cell.AddToClassList("arx__cell");
+
+            var label = new Label(caption);
+            label.AddToClassList("arx__cellcaption");
+            cell.Add(label);
+
+            var reading = new Label(value);
+            reading.AddToClassList("arx__cellvalue");
+            reading.EnableInClassList("arx__cellvalue--bad", bad);
+            cell.Add(reading);
+
+            return cell;
+        }
+
+        // ---- what the company already has ---------------------------------------------------------
 
         private void RebuildOwned()
         {
             ownedList.Clear();
 
             var project = simulation.State.ActiveArchitectureProject;
+
             if (project != null)
             {
-                var running = new Label(
-                    $"{project.Blueprint.Name} in progress: {UiFormat.Percent(project.Progress, 0)} "
-                    + $"({project.DaysCompleted} of {project.DurationDays} days)");
-                running.AddToClassList("readout__value");
-                ownedList.Add(running);
+                var running = new VisualElement();
+                running.AddToClassList("afam");
+                running.AddToClassList("afam--running");
 
-                // The same dead end the training run had. A family programme is months long and
-                // blocks the next one, and CancelArchitectureProgramme was never called from
-                // anywhere.
+                var name = new Label(project.Blueprint.Name);
+                name.AddToClassList("afam__name");
+                running.Add(name);
+
+                var progress = new Label(
+                    $"{UiFormat.Percent(project.Progress, 0)}  ·  day {project.DaysCompleted} "
+                    + $"of {project.DurationDays}");
+
+                progress.AddToClassList("afam__stats");
+                running.Add(progress);
+
+                var track = new VisualElement();
+                track.AddToClassList("afam__track");
+
+                var fill = new VisualElement();
+                fill.AddToClassList("afam__fill");
+                fill.style.width = Length.Percent((float)(Math.Clamp(project.Progress, 0.0, 1.0) * 100.0));
+                track.Add(fill);
+                running.Add(track);
+
+                // A family programme is months long and blocks the next one, so there has to be a
+                // way out. Armed before it fires: nothing comes back.
                 var stop = new Button(() =>
                 {
                     if (abandonArmed)
@@ -313,18 +702,20 @@ namespace ScalingLaws.UI
                     text = abandonArmed ? "CONFIRM, NOTHING COMES BACK" : "ABANDON THIS PROGRAMME"
                 };
 
-                stop.AddToClassList("button");
-                stop.AddToClassList("button--abandon");
-                stop.EnableInClassList("button--armed", abandonArmed);
-                stop.style.marginLeft = 0;
-                stop.style.marginTop = 8;
-                ownedList.Add(stop);
+                stop.AddToClassList("afam__stop");
+                stop.EnableInClassList("afam__stop--armed", abandonArmed);
+                running.Add(stop);
+
+                ownedList.Add(running);
             }
 
             if (simulation.State.CustomArchitectures.Count == 0)
             {
-                var empty = new Label("No house families yet. Everything is running on published techniques.");
-                empty.AddToClassList("field__hint");
+                var empty = new Label(
+                    "No house families yet. Everything is running on published techniques, which is "
+                    + "exactly what every rival is also running on.");
+
+                empty.AddToClassList("arx__hint");
                 ownedList.Add(empty);
                 return;
             }
@@ -332,17 +723,68 @@ namespace ScalingLaws.UI
             foreach (var pair in simulation.State.CustomArchitectures)
             {
                 var definition = pair.Value;
+
                 var row = new VisualElement();
-                row.AddToClassList("readout");
-                row.Add(new Label($"{definition.DisplayName} (gen {simulation.State.FamilyGeneration(pair.Key)})"));
+                row.AddToClassList("afam");
+
+                var name = new Label(
+                    $"{definition.DisplayName}   ·   gen {simulation.State.FamilyGeneration(pair.Key)}");
+
+                name.AddToClassList("afam__name");
+                row.Add(name);
 
                 var stats = new Label(
-                    $"active {UiFormat.Number(definition.ActiveParameterFraction, 3)}  "
-                    + $"bonus {UiFormat.Number(definition.CapabilityBonus)}  "
+                    $"active {UiFormat.Number(definition.ActiveParameterFraction, 3)}     "
+                    + $"bonus {UiFormat.Number(definition.CapabilityBonus)}     "
                     + $"serve {UiFormat.Number(definition.InferenceCostMultiplier, 2)}x");
-                stats.AddToClassList("readout__value");
+
+                stats.AddToClassList("afam__stats");
                 row.Add(stats);
                 ownedList.Add(row);
+            }
+        }
+
+        // ---- the pickers -----------------------------------------------------------------------------
+
+        private void RebuildSlots()
+        {
+            slotOptions.Clear();
+            var labels = new List<string>();
+
+            foreach (var slot in ArchitectureCatalog.CustomSlots)
+            {
+                slotOptions.Add(slot);
+                labels.Add(simulation.State.CustomArchitectures.TryGetValue(slot, out var existing)
+                    ? $"{SlotLetter(slot)} - overwrite {existing.DisplayName}"
+                    : $"{SlotLetter(slot)} - empty");
+            }
+
+            slotField.choices = labels;
+
+            if (slotField.index < 0)
+            {
+                var free = simulation.State.FirstFreeArchitectureSlot();
+                slotField.index = free == ArchitectureId.None ? 0 : slotOptions.IndexOf(free);
+            }
+        }
+
+        private void RebuildBases()
+        {
+            baseOptions.Clear();
+            var labels = new List<string> { "Clean sheet" };
+            baseOptions.Add(ArchitectureId.None);
+
+            foreach (var pair in simulation.State.CustomArchitectures)
+            {
+                baseOptions.Add(pair.Key);
+                labels.Add($"{pair.Value.DisplayName} (gen {simulation.State.FamilyGeneration(pair.Key)})");
+            }
+
+            baseField.choices = labels;
+
+            if (baseField.index < 0 || baseField.index >= labels.Count)
+            {
+                baseField.index = 0;
             }
         }
 
@@ -372,130 +814,16 @@ namespace ScalingLaws.UI
         private double Weight(ResearchDirection direction) =>
             directions.TryGetValue(direction, out var slider) ? slider.value : 0.0;
 
-        private void Reprice()
-        {
-            var blueprint = CurrentBlueprint();
-            var projection = simulation.ProjectArchitecture(blueprint);
-
-            budgetLabel.text = $"Research budget: {UiFormat.Money(blueprint.ResearchBudgetUsd)}"
-                + (blueprint.IsIteration
-                    ? $"  (pays {UiFormat.Money(ArchitectureDesigner.CashCostUsd(blueprint))})"
-                    : string.Empty);
-            durationLabel.text = $"Programme length: {UiFormat.Days(ArchitectureDesigner.DurationDays(blueprint))}";
-
-            readouts.Clear();
-            AddReadout("Research power", UiFormat.Percent(projection.ResearchPower / 1.2),
-                projection.ResearchPower > 0.6 ? Tone.Good : Tone.Warn);
-            AddReadout("Focus", UiFormat.Percent(blueprint.Focus),
-                blueprint.Focus > 0.35 ? Tone.Good : Tone.Warn);
-            AddReadout("Outcome spread", UiFormat.Percent(projection.Variance),
-                projection.Variance < 0.2 ? Tone.Good : Tone.Bad);
-
-            AddBand("Active parameter fraction",
-                projection.Ceiling.ActiveParameterFraction,
-                projection.Expected.ActiveParameterFraction,
-                projection.Floor.ActiveParameterFraction, 3);
-            AddBand("Quality per parameter",
-                projection.Floor.ParameterEfficiency,
-                projection.Expected.ParameterEfficiency,
-                projection.Ceiling.ParameterEfficiency, 2);
-            AddBand("Training efficiency",
-                projection.Floor.TrainingEfficiency,
-                projection.Expected.TrainingEfficiency,
-                projection.Ceiling.TrainingEfficiency, 2);
-            AddBand("Serving multiplier",
-                projection.Ceiling.InferenceCostMultiplier,
-                projection.Expected.InferenceCostMultiplier,
-                projection.Floor.InferenceCostMultiplier, 2);
-            AddBand("Capability bonus",
-                projection.Floor.CapabilityBonus,
-                projection.Expected.CapabilityBonus,
-                projection.Ceiling.CapabilityBonus, 1);
-
-            AddReadout("Compute it consumes", UiFormat.PetaflopDays(projection.PetaflopDaysRequired), Tone.Neutral);
-            AddReadout("Cash it costs", UiFormat.Money(ArchitectureDesigner.CashCostUsd(blueprint)),
-                ArchitectureDesigner.CashCostUsd(blueprint) > simulation.State.CashUsd ? Tone.Bad : Tone.Neutral);
-            AddReadout("Compute saved against baseline",
-                UiFormat.Percent(projection.ComputeSavingVersusBaseline),
-                projection.ComputeSavingVersusBaseline > 0.2 ? Tone.Good : Tone.Warn);
-
-            verdict.RemoveFromClassList("verdict--ok");
-            verdict.RemoveFromClassList("verdict--blocked");
-
-            if (projection.IsFeasible)
-            {
-                verdict.AddToClassList("verdict--ok");
-                verdict.text = projection.Variance > 0.3
-                    ? "Runnable, but underfunded enough that the result is close to a coin toss. More money or more time narrows it."
-                    : blueprint.Focus < 0.2
-                        ? "Runnable, but the effort is spread so evenly that no direction goes deep."
-                        : "Runnable, and focused enough to land somewhere useful.";
-            }
-            else
-            {
-                verdict.AddToClassList("verdict--blocked");
-                verdict.text = projection.BlockingReason;
-            }
-
-            var busy = simulation.State.ActiveArchitectureProject != null;
-            startButton.SetEnabled(projection.IsFeasible && !busy);
-            if (busy)
-            {
-                verdict.text = "A family programme is already running. One at a time.";
-            }
-        }
-
-        private enum Tone
-        {
-            Neutral,
-            Good,
-            Warn,
-            Bad
-        }
-
-        private void AddBand(string label, double worst, double expected, double best, int decimals)
-        {
-            AddReadout(
-                label,
-                $"{UiFormat.Number(worst, decimals)}  ..  {UiFormat.Number(expected, decimals)}  ..  {UiFormat.Number(best, decimals)}",
-                Tone.Neutral);
-        }
-
-        private void AddReadout(string label, string value, Tone tone)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("readout");
-            row.Add(new Label(label));
-
-            var valueLabel = new Label(value);
-            valueLabel.AddToClassList("readout__value");
-            switch (tone)
-            {
-                case Tone.Good:
-                    valueLabel.AddToClassList("readout__value--good");
-                    break;
-                case Tone.Warn:
-                    valueLabel.AddToClassList("readout__value--warn");
-                    break;
-                case Tone.Bad:
-                    valueLabel.AddToClassList("readout__value--bad");
-                    break;
-            }
-
-            row.Add(valueLabel);
-            readouts.Add(row);
-        }
-
         private void Commit()
         {
             if (!simulation.TryStartArchitectureProgramme(CurrentBlueprint(), out var reason))
             {
-                verdict.RemoveFromClassList("verdict--ok");
-                verdict.AddToClassList("verdict--blocked");
-                verdict.text = reason;
+                problem = reason;
+                Reprice();
                 return;
             }
 
+            problem = string.Empty;
             Refresh();
         }
 

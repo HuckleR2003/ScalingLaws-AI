@@ -65,7 +65,20 @@ namespace ScalingLaws.UI
             { ResearchNodeId.BasicDataIsolation, "research_data0_basic_isolation" },
             { ResearchNodeId.EncryptedDataVaults, "research_data1_encrypted_data" },
             { ResearchNodeId.DifferentialPrivacy, "research_data2_differential_privacy" },
-            { ResearchNodeId.PrivacyPreservingTraining, "research_data3_privacy_training" }
+            { ResearchNodeId.PrivacyPreservingTraining, "research_data3_privacy_training" },
+
+            // The architecture direction ladders. Drawn to match the twenty two above: a thin ring,
+            // dark ink line work, one idea each rather than a diagram.
+            { ResearchNodeId.LearnedRouting, "research_learnedrouting" },
+            { ResearchNodeId.ExpertParallelism, "research_expertparallelism" },
+            { ResearchNodeId.FusedKernels, "research_fusedkernels" },
+            { ResearchNodeId.OverlappedCollectives, "research_overlappedcollectives" },
+            { ResearchNodeId.CurriculumTraining, "research_curriculumtraining" },
+            { ResearchNodeId.SelfDistillation, "research_selfdistillation" },
+            { ResearchNodeId.QuantisedServing, "research_quantisedserving" },
+            { ResearchNodeId.SpeculativeDecoding, "research_speculativedecoding" },
+            { ResearchNodeId.ProcessSupervision, "research_processsupervision" },
+            { ResearchNodeId.InferenceTimeSearch, "research_inferencetimesearch" }
         };
 
         private static readonly Dictionary<ResearchNodeId, Texture2D> Loaded = new();

@@ -4,25 +4,6 @@ using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
-    /// <summary>The five things in-house research can push on. Explicit values; they go into saves.</summary>
-    public enum ResearchDirection
-    {
-        /// <summary>Fewer parameters firing per token. The biggest lever on what a run costs.</summary>
-        Sparsity = 0,
-
-        /// <summary>Better utilisation of the cluster during training. Shortens the calendar.</summary>
-        Throughput = 1,
-
-        /// <summary>More quality out of each parameter. Raises the ceiling on every model in the family.</summary>
-        Quality = 2,
-
-        /// <summary>Cheaper tokens once the model is live. Invisible until the price war.</summary>
-        Serving = 3,
-
-        /// <summary>Structural reasoning gains that scaling alone does not buy.</summary>
-        Reasoning = 4
-    }
-
     /// <summary>
     /// A family the company intends to design.
     ///
