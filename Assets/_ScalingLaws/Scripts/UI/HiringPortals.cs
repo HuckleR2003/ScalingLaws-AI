@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
@@ -75,8 +76,114 @@ namespace ScalingLaws.UI
             HiringPortal.Remote => BuildRemote(),
             HiringPortal.Agency => BuildAgency(),
             HiringPortal.Specialist => BuildSpecialist(),
-            _ => new VisualElement()
+            _ => BuildChooser()
         };
+
+        /// <summary>
+        /// The three ways to find somebody, when none of them is open yet.
+        ///
+        /// **This screen used to render nothing at all.** `Open` starts at `None`, and every route
+        /// into hiring went through a button on the team page that set it first, so the empty case
+        /// was assumed unreachable. It is reachable: coming back from a portal, and from anything
+        /// that opens the screen without choosing a channel first. What the player got was a blank
+        /// page with one BACK button on it, which reads as a broken game rather than as a screen
+        /// waiting for a decision.
+        ///
+        /// It is also the better screen. The three channels differ on cost, on quality and on how
+        /// long they take, and the old flow made that comparison somewhere else and then threw it
+        /// away. Here they sit side by side.
+        /// </summary>
+        private VisualElement BuildChooser()
+        {
+            var page = new VisualElement();
+            page.AddToClassList("hchoose");
+
+            var title = new Label("WHERE TO LOOK");
+            title.AddToClassList("hchoose__title");
+            page.Add(title);
+
+            var strap = new Label(
+                "Three ways to find somebody, and none of them is best. Contract work is cheap and "
+                + "shallow, the register is slow and free, and a specialist search is expensive and "
+                + "finds exactly who you asked for.");
+
+            strap.AddToClassList("hchoose__strap");
+            page.Add(strap);
+
+            var row = new VisualElement();
+            row.AddToClassList("hchoose__row");
+
+            foreach (var channel in HiringChannels.All)
+            {
+                row.Add(BuildChannelCard(channel));
+            }
+
+            page.Add(row);
+            return page;
+        }
+
+        private VisualElement BuildChannelCard(HiringChannel channel)
+        {
+            var card = new Button(() =>
+            {
+                Open = channel.Source switch
+                {
+                    HireSource.Remote => HiringPortal.Remote,
+                    HireSource.Agency => HiringPortal.Agency,
+                    _ => HiringPortal.Specialist
+                };
+
+                problem = string.Empty;
+                refresh();
+            });
+
+            card.AddToClassList("hcard");
+
+            // The channel's own colour down the left edge, so the three read as three places rather
+            // than as three copies of the same card.
+            if (ColorUtility.TryParseHtmlString(channel.AccentHex, out var accent))
+            {
+                card.style.borderLeftColor = accent;
+            }
+
+            var address = new Label(channel.SiteName);
+            address.AddToClassList("hcard__address");
+            card.Add(address);
+
+            var tagline = new Label(channel.Tagline);
+            tagline.AddToClassList("hcard__tagline");
+            card.Add(tagline);
+
+            var figures = new VisualElement();
+            figures.AddToClassList("hcard__figures");
+
+            
+            // The two numbers that make this a choice rather than a price list: what they ask, and
+            // what they are actually worth against the level on the advert.
+            figures.Add(Figure("WAGE",
+                channel.WageMultiplier.ToString("0.00", CultureInfo.InvariantCulture) + "x"));
+            figures.Add(Figure("WORTH",
+                channel.QualityMultiplier.ToString("0.00", CultureInfo.InvariantCulture) + "x"));
+
+            card.Add(figures);
+            return card;
+        }
+
+        private static VisualElement Figure(string caption, string value)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("hcard__figure");
+
+            var label = new Label(caption);
+            label.AddToClassList("hcard__figurelabel");
+            block.Add(label);
+
+            var reading = new Label(value);
+            reading.AddToClassList("hcard__figurevalue");
+            block.Add(reading);
+
+            return block;
+        }
 
         // ---- IThand.hck -----------------------------------------------------------------------
 

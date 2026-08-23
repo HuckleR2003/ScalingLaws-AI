@@ -400,13 +400,13 @@ namespace ScalingLaws.UI
             veil.AddToClassList("flourish");
             veil.pickingMode = PickingMode.Ignore;
 
-            var line = new Label("Lets think...");
+            var line = new Label("Let's think...");
             line.AddToClassList("flourish__line");
             veil.Add(line);
 
             veil.schedule.Execute(() =>
             {
-                line.text = "Lets create !";
+                line.text = "Let's create.";
                 line.AddToClassList("flourish__line--go");
             }).ExecuteLater(ThinkMilliseconds);
 

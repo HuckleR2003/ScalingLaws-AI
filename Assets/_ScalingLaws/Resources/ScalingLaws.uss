@@ -8553,30 +8553,41 @@
     height: 132px;
     width: 100%;
     margin: 0 0 12px 0;
-    padding: 18px 20px;
+    padding: 18px 22px;
     align-items: flex-start;
     justify-content: center;
-    border-width: 0;
-    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-left-width: 4px;
+    border-radius: 7px;
+    background-color: rgba(10, 13, 20, 0.80);
     white-space: normal;
+    transition-property: border-color, background-color, translate;
+    transition-duration: 0.18s;
 }
 
 .door--new {
-    color: rgb(18, 20, 26);
-    background-color: rgb(238, 240, 246);
+    border-left-color: rgb(120, 176, 255);
+    color: rgb(206, 220, 242);
 }
 
 .door--new:hover {
-    background-color: rgb(255, 255, 255);
+    border-color: rgba(255, 255, 255, 0.30);
+    border-left-color: rgb(150, 200, 255);
+    background-color: rgba(18, 24, 36, 0.92);
+    translate: 0 -3px;
 }
 
 .door--upgrade {
-    color: rgb(28, 24, 8);
-    background-color: rgb(226, 190, 44);
+    border-left-color: rgb(226, 190, 44);
+    color: rgb(226, 214, 176);
 }
 
 .door--upgrade:hover {
-    background-color: rgb(248, 212, 62);
+    border-color: rgba(255, 255, 255, 0.30);
+    border-left-color: rgb(248, 212, 62);
+    background-color: rgba(28, 24, 12, 0.92);
+    translate: 0 -3px;
 }
 
 .door:disabled {
@@ -8588,11 +8599,11 @@
     font-size: 30px;
     letter-spacing: 2px;
     -unity-font-style: bold;
-    color: rgb(18, 20, 26);
+    color: rgb(196, 220, 255);
 }
 
 .door--upgrade .door__title {
-    color: rgb(28, 24, 8);
+    color: rgb(240, 206, 76);
 }
 
 .door:disabled .door__title {
@@ -11415,4 +11426,171 @@
 .unity-base-field__label {
     color: rgb(150, 164, 188);
     font-size: 11px;
+}
+
+/* ============================================================================================
+   WHERE TO LOOK
+
+   The hiring screen with no portal open used to render one back button on an empty page, which
+   reads as a broken game rather than as a screen waiting for a decision. Three cards, side by
+   side, so the comparison the channels exist for happens here instead of somewhere else.
+   ============================================================================================ */
+
+.hchoose {
+    flex-shrink: 0;
+}
+
+.hchoose__title {
+    font-size: 30px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+}
+
+.hchoose__strap {
+    font-size: 12px;
+    color: rgb(146, 160, 184);
+    white-space: normal;
+    max-width: 760px;
+    margin-top: 4px;
+    margin-bottom: 20px;
+}
+
+.hchoose__row {
+    flex-direction: row;
+}
+
+.hcard {
+    width: 320px;
+    height: 190px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 16px;
+    margin-bottom: 0;
+    padding: 18px 20px;
+    align-items: flex-start;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-left-width: 4px;
+    border-radius: 8px;
+    background-color: rgba(10, 13, 20, 0.80);
+    transition-property: border-color, translate, background-color;
+    transition-duration: 0.18s;
+}
+
+.hcard:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background-color: rgba(18, 22, 32, 0.92);
+    translate: 0 -3px;
+}
+
+.hcard__address {
+    font-size: 19px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 254);
+    white-space: normal;
+}
+
+.hcard__tagline {
+    font-size: 12px;
+    color: rgb(140, 154, 178);
+    white-space: normal;
+    margin-top: 6px;
+    flex-grow: 1;
+}
+
+.hcard__figures {
+    flex-direction: row;
+}
+
+.hcard__figure {
+    margin-right: 26px;
+}
+
+.hcard__figurelabel {
+    font-size: 8px;
+    letter-spacing: 1.6px;
+    color: rgb(126, 138, 158);
+}
+
+.hcard__figurevalue {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+    margin-top: 2px;
+}
+
+/* ============================================================================================
+   THE PAID DESKS
+
+   Three memberships, as cards. They were three full-width bars of identical size and colour,
+   which read as empty input fields rather than as things to buy, and the pitch that tells the
+   player which is worth four hundred thousand a month was in a tooltip nobody opens.
+   ============================================================================================ */
+
+.dcards {
+    flex-direction: row;
+    margin-bottom: 18px;
+}
+
+.dcard {
+    width: 330px;
+    height: 210px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 16px;
+    margin-bottom: 0;
+    padding: 18px 20px 16px 20px;
+    align-items: flex-start;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    background-color: rgba(10, 13, 20, 0.80);
+    transition-property: border-color, translate, background-color;
+    transition-duration: 0.18s;
+}
+
+.dcard:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background-color: rgba(18, 22, 32, 0.92);
+    translate: 0 -3px;
+}
+
+/* Paid for. Gold, the same signal the current release carries on the version list. */
+.dcard--held {
+    border-color: rgb(226, 190, 44);
+    background-color: rgba(226, 190, 44, 0.08);
+}
+
+.dcard__name {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 254);
+    white-space: normal;
+}
+
+.dcard__pitch {
+    font-size: 11px;
+    color: rgb(140, 154, 178);
+    white-space: normal;
+    margin-top: 7px;
+    flex-grow: 1;
+}
+
+.dcard__price {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+}
+
+.dcard__action {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgb(150, 164, 188);
+    margin-top: 5px;
+}
+
+.dcard--held .dcard__action {
+    color: rgb(226, 190, 44);
 }

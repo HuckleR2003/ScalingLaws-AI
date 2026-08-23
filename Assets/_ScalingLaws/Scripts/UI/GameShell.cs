@@ -4468,8 +4468,14 @@ namespace ScalingLaws.UI
                 "What the research desk believes is coming. Confidence is what the desk claims about "
                 + "itself, and it is always higher than how often the desk turns out to be right.");
 
+            // Three cards side by side rather than three full-width bars.
+            //
+            // **The bars read as empty input fields, not as things to buy.** They were the same
+            // width, the same height and the same colour as each other, so the one decision on the
+            // page, which of these is worth four hundred thousand a month, was three identical
+            // rectangles with different words in them. The pitch was in a tooltip nobody opens.
             var tiers = new VisualElement();
-            tiers.AddToClassList("panel");
+            tiers.AddToClassList("dcards");
             page.Add(tiers);
 
             // Memberships are bought and cancelled here and on the news screen, and both go through
@@ -4479,25 +4485,34 @@ namespace ScalingLaws.UI
             {
                 var captured = tier;
                 var held = state.IsMember(tier);
+                var monthly = IntelligenceService.MonthlyRetainerUsd(tier);
 
-                var button = new Button(() =>
+                var card = new Button(() =>
                 {
                     simulation.SetIntelSubscription(captured, !held);
                     Show(Screen.Feed);
-                })
-                {
-                    text = (held ? "CANCEL  " : "JOIN  ")
-                        + NewsCatalog.OutletName(tier).ToUpperInvariant()
-                        + $"  {UiFormat.Money(IntelligenceService.MonthlyRetainerUsd(tier))}/MONTH"
-                };
+                });
 
-                button.AddToClassList("button");
-                button.EnableInClassList("button--primary", held);
-                button.style.marginBottom = 8;
-                button.style.marginLeft = 0;
-                button.style.width = Length.Percent(100);
-                button.tooltip = NewsCatalog.OutletPitch(tier);
-                tiers.Add(button);
+                card.AddToClassList("dcard");
+                card.EnableInClassList("dcard--held", held);
+
+                var name = new Label(NewsCatalog.OutletName(tier));
+                name.AddToClassList("dcard__name");
+                card.Add(name);
+
+                var pitch = new Label(NewsCatalog.OutletPitch(tier));
+                pitch.AddToClassList("dcard__pitch");
+                card.Add(pitch);
+
+                var price = new Label($"{UiFormat.Money(monthly)} / month");
+                price.AddToClassList("dcard__price");
+                card.Add(price);
+
+                var action = new Label(held ? "ON RETAINER  ·  CLICK TO CANCEL" : "JOIN");
+                action.AddToClassList("dcard__action");
+                card.Add(action);
+
+                tiers.Add(card);
             }
 
             var feed = new VisualElement();

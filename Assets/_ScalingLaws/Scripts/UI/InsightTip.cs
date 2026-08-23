@@ -27,6 +27,9 @@ namespace ScalingLaws.UI
         /// <summary>Width of the card. Fixed, so the placement can centre it before it is laid out.</summary>
         public const float Width = 268f;
 
+        /// <summary>Width of the long form. Kept in step with `.insight--wide` by hand.</summary>
+        public const float WideWidth = 400f;
+
         /// <summary>Which side of the control the card sits on.</summary>
         public enum Placement
         {
@@ -206,7 +209,7 @@ namespace ScalingLaws.UI
 
             owner = target;
             host.Add(card);
-            Place(host, target, placement);
+            Place(host, target, placement, reading.IsEmpty ? Width : WideWidth);
 
             // Born flat and a few pixels low, released a frame later so the transition has somewhere
             // to move from. Same trick the page arrival and the intro fade use.
@@ -221,7 +224,8 @@ namespace ScalingLaws.UI
         /// grows away from what it describes and never overlaps it however many lines the body runs
         /// to. That is why <see cref="Placement.Above"/> sets `bottom` and not `top`.
         /// </summary>
-        private static void Place(VisualElement host, VisualElement target, Placement placement)
+        private static void Place(VisualElement host, VisualElement target, Placement placement,
+            float cardWidth)
         {
             var bounds = target.worldBound;
             var width = host.resolvedStyle.width;
@@ -236,9 +240,13 @@ namespace ScalingLaws.UI
             }
 
             // Centred on the control, then held inside the window: the first and last slots in the
-            // bottom bar are close enough to the edges to push a 268px card off the screen.
-            var left = bounds.center.x - Width / 2f;
-            left = Mathf.Clamp(left, 12f, Mathf.Max(12f, width - Width - 12f));
+            // bottom bar are close enough to the edges to push a card off the screen.
+            //
+            // **Measured against the card's own width, not the narrow one.** The long form is 400px
+            // and the clamp used the 268 constant for both, so a badge in the right-hand third
+            // would have hung a third of the card off the edge of the screen.
+            var left = bounds.center.x - cardWidth / 2f;
+            left = Mathf.Clamp(left, 12f, Mathf.Max(12f, width - cardWidth - 12f));
 
             card.style.right = StyleKeyword.Auto;
             card.style.left = left;

@@ -193,6 +193,26 @@ namespace ScalingLaws.Tests.PlayMode
                 yield return Capture(null, settings, texture, $"tab_{name.ToLowerInvariant()}.png");
             }
 
+            // One more frame with an info card open. The card only exists while a pointer is resting
+            // on a badge, so it is invisible to every other pass over these screens, and it is the
+            // one piece of this interface that is nothing but text: if a band wraps badly or a
+            // section runs off the bottom, only a picture says so.
+            shell.OpenScreenByName("Family");
+            yield return null;
+
+            var badge = document.rootVisualElement.Q(className: "infodot");
+            Assert.That(badge, Is.Not.Null, "No info badge on the architecture screen.");
+
+            // Buttons answer a submit the same way they answer a click, and a synthetic pointer
+            // press is three events that have to arrive in the right order to do the same thing.
+            using (var submit = NavigationSubmitEvent.GetPooled())
+            {
+                submit.target = badge;
+                badge.SendEvent(submit);
+            }
+
+            yield return Capture(null, settings, texture, "card_open.png");
+
             texture.Release();
             Object.DestroyImmediate(texture);
             Object.DestroyImmediate(settings);
