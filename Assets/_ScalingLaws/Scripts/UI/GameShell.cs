@@ -4010,14 +4010,34 @@ namespace ScalingLaws.UI
             panel.Add(heading);
 
             var book = state.Loans;
-            var servicing = new Label(book.OpenCount == 0
-                ? "Nothing drawn. A facility is cash now against a fixed sum on a fixed date, whether "
-                    + "or not the quarter went well."
-                : $"Servicing {book.OpenCount} of {LoanCatalog.MaximumConcurrentLoans} facilities, "
-                    + $"{UiFormat.Money(DailyDebtServiceUsd())} a day.");
 
-            servicing.AddToClassList("field__hint");
-            panel.Add(servicing);
+            if (book.OpenCount == 0)
+            {
+                var nothing = new Label(Loc.T("loan.nothing_drawn"));
+                nothing.AddToClassList("field__hint");
+                panel.Add(nothing);
+            }
+            else
+            {
+                // **The two numbers a borrower plans around, side by side.**
+                //
+                // The instalment pays the loan down and stops when it is settled. The commission is
+                // rent on the facility and runs for as long as it is open. One figure a day for
+                // both said neither, which is why nobody could tell what a loan actually cost.
+                var summary = new VisualElement();
+                summary.AddToClassList("loanbill");
+
+                summary.Add(LoanFigure(Loc.T("loan.monthly_instalment"),
+                    UiFormat.Money(book.MonthlyInstalmentUsd(state.Date)), false));
+
+                summary.Add(LoanFigure(Loc.T("loan.monthly_commission"),
+                    UiFormat.Money(book.MonthlyCommissionUsd()), true));
+
+                summary.Add(LoanFigure(Loc.T("loan.open_facilities"),
+                    $"{book.OpenCount} / {LoanCatalog.MaximumConcurrentLoans}", false));
+
+                panel.Add(summary);
+            }
 
             foreach (var open in book.Loans)
             {
@@ -4030,12 +4050,26 @@ namespace ScalingLaws.UI
                 name.AddToClassList("loan-open__name");
                 row.Add(name);
 
-                var left = new Label(
-                    $"{UiFormat.Money(open.OutstandingUsd)} left of "
-                    + $"{UiFormat.Money(definition.TotalRepaymentUsd)}");
+                var left = new Label(Loc.T("loan.left_of",
+                    UiFormat.Money(open.OutstandingUsd),
+                    UiFormat.Money(definition.TotalRepaymentUsd)));
 
                 left.AddToClassList("loan-open__left");
                 row.Add(left);
+
+                // How far through it is, drawn. A pair of figures does not answer "am I nearly out
+                // of this" and a bar does.
+                var track = new VisualElement();
+                track.AddToClassList("loan-open__track");
+
+                var fill = new VisualElement();
+                fill.AddToClassList("loan-open__fill");
+                fill.style.width = Length.Percent(definition.TotalRepaymentUsd <= 0L
+                    ? 0f
+                    : (float)(100.0 * open.RepaidUsd / definition.TotalRepaymentUsd));
+
+                track.Add(fill);
+                row.Add(track);
 
                 panel.Add(row);
             }
@@ -4044,7 +4078,12 @@ namespace ScalingLaws.UI
             grid.AddToClassList("grid");
             panel.Add(grid);
 
-            foreach (var offer in simulation.LoanOffers())
+            // Commercial first, the state programme last, whatever order the catalog holds them in.
+            // The sovereign tile is twice the width of the others, so anywhere but the end it breaks
+            // the row it lands in and leaves a hole beside it.
+            foreach (var offer in simulation.LoanOffers()
+                         .OrderBy(entry => entry.Product == LoanProduct.SovereignCompute ? 1 : 0)
+                         .ThenBy(entry => LoanCatalog.Get(entry.Product).PrincipalUsd))
             {
                 grid.Add(BuildLoanCard(offer));
             }
@@ -4052,16 +4091,22 @@ namespace ScalingLaws.UI
             return panel;
         }
 
-        /// <summary>What every open facility costs today, summed. The book holds them one by one.</summary>
-        private long DailyDebtServiceUsd()
+        /// <summary>One figure in the running bill, with the fee picked out.</summary>
+        private static VisualElement LoanFigure(string caption, string value, bool isFee)
         {
-            var total = 0L;
-            foreach (var loan in state.Loans.Loans)
-            {
-                total += loan.DueToday(state.Date);
-            }
+            var block = new VisualElement();
+            block.AddToClassList("loanbill__cell");
 
-            return total;
+            var label = new Label(caption);
+            label.AddToClassList("loanbill__caption");
+            block.Add(label);
+
+            var reading = new Label(value);
+            reading.AddToClassList("loanbill__value");
+            reading.EnableInClassList("loanbill__value--fee", isFee);
+            block.Add(reading);
+
+            return block;
         }
 
         private VisualElement BuildLoanCard(LoanAvailability offer)
@@ -4074,39 +4119,72 @@ namespace ScalingLaws.UI
                 Show(Screen.Funding);
             });
 
-            card.AddToClassList("card");
-            card.EnableInClassList("card--ahead", offer.IsAvailable);
+            card.AddToClassList("ltile");
+            card.EnableInClassList("ltile--open", offer.IsAvailable);
 
-            var title = new Label(definition.DisplayName.ToUpperInvariant());
-            title.AddToClassList("card__title");
+            // The state programme is not one more product in a row. It is ten billion dollars and a
+            // government that will not renegotiate, so it gets its own colour and its own width.
+            var sovereign = offer.Product == LoanProduct.SovereignCompute;
+            card.EnableInClassList("ltile--state", sovereign);
+
+            var art = Resources.Load<Texture2D>("Cards/" + LoanArt(offer.Product));
+
+            if (art != null)
+            {
+                card.style.backgroundImage = new StyleBackground(art);
+            }
+
+            var kicker = new Label(Loc.T(sovereign ? "loan.state" : "loan.commercial"));
+            kicker.AddToClassList("ltile__kicker");
+            card.Add(kicker);
+
+            var title = new Label(definition.DisplayName);
+            title.AddToClassList("ltile__title");
             card.Add(title);
 
-            var principal = new Label(UiFormat.Money(definition.PrincipalUsd) + " now");
-            principal.AddToClassList("card__line");
+            var principal = new Label(UiFormat.Money(definition.PrincipalUsd));
+            principal.AddToClassList("ltile__principal");
             card.Add(principal);
 
-            // Both halves of the price, because the multiple alone hides the schedule and the daily
-            // instalment alone hides what it adds up to.
-            var terms = new Label(
-                $"Repay {UiFormat.Money(definition.TotalRepaymentUsd)} over "
-                + $"{UiFormat.Days(definition.TermDays)}, "
-                + $"{UiFormat.Money(definition.DailyInstalmentUsd)} a day");
+            var figures = new VisualElement();
+            figures.AddToClassList("ltile__figures");
 
-            terms.AddToClassList("card__line");
-            card.Add(terms);
+            figures.Add(LoanFigure(Loc.T("loan.monthly_instalment"),
+                UiFormat.Money(definition.MonthlyInstalmentUsd), false));
 
-            var grace = new Label(offer.IsAvailable
-                ? $"{UiFormat.Days(definition.GraceDays)} before the first instalment"
+            figures.Add(LoanFigure(Loc.T("loan.monthly_commission"),
+                UiFormat.Money(definition.MonthlyCommissionUsd), true));
+
+            figures.Add(LoanFigure(Loc.T("loan.back_in_total"),
+                $"{definition.EffectiveMultiple:P0}", false));
+
+            card.Add(figures);
+
+            var terms = new Label(offer.IsAvailable
+                ? Loc.T("loan.terms", UiFormat.Days(definition.TermDays),
+                    UiFormat.Days(definition.GraceDays))
                 : offer.Reason);
 
-            grace.AddToClassList("card__line");
-            grace.EnableInClassList("card__line--blocked", !offer.IsAvailable);
-            card.Add(grace);
+            terms.AddToClassList("ltile__terms");
+            terms.EnableInClassList("ltile__terms--blocked", !offer.IsAvailable);
+            card.Add(terms);
 
-            card.tooltip = definition.Description;
+            InsightTip.Attach(card, definition.DisplayName, definition.Description,
+                InsightTip.Placement.Above);
+
             card.SetEnabled(offer.IsAvailable);
             return card;
         }
+
+        /// <summary>Which plate a product carries. Named here so the catalog stays free of art.</summary>
+        private static string LoanArt(LoanProduct product) => product switch
+        {
+            LoanProduct.BridgeFacility => "loan_bridge",
+            LoanProduct.EquipmentFinance => "loan_equipment",
+            LoanProduct.VentureDebt => "loan_venture",
+            LoanProduct.CorporateBond => "loan_bond",
+            _ => "loan_sovereign"
+        };
 
         private VisualElement BuildRankingScreen()
         {

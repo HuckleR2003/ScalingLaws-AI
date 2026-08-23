@@ -51,9 +51,14 @@ namespace ScalingLaws.Tests.EditMode
             var sovereign = LoanCatalog.Get(LoanProduct.SovereignCompute);
 
             Assert.That(sovereign.PrincipalUsd, Is.EqualTo(10_000_000_000L));
-            Assert.That(sovereign.RepaymentMultiple, Is.EqualTo(2.25).Within(1e-9));
-            Assert.That(sovereign.TotalRepaymentUsd, Is.EqualTo(22_500_000_000L));
             Assert.That(sovereign.TermDays / 365.0, Is.InRange(10.0, 12.0), "About eleven years.");
+
+            // **The band the state lends in, fee included.** The headline multiple is only half the
+            // price now, so pinning it alone would let the arrangement fee move the real cost of the
+            // largest sum in the game without anything noticing.
+            Assert.That(sovereign.EffectiveMultiple, Is.InRange(2.45, 3.15),
+                "A government writes a very large cheque and wants between two and a half and three "
+                + "times it back. Outside that band it is either a gift or a joke.");
 
             foreach (var other in LoanCatalog.All)
             {
@@ -63,9 +68,49 @@ namespace ScalingLaws.Tests.EditMode
                 }
 
                 Assert.That(sovereign.PrincipalUsd, Is.GreaterThan(other.PrincipalUsd));
-                Assert.That(sovereign.RepaymentMultiple, Is.GreaterThan(other.RepaymentMultiple));
+                Assert.That(sovereign.EffectiveMultiple, Is.GreaterThan(other.EffectiveMultiple));
                 Assert.That(sovereign.ReputationOnDefault, Is.GreaterThan(other.ReputationOnDefault));
             }
+        }
+
+        /// <summary>
+        /// The fee is a fee, not a second loan.
+        ///
+        /// **A commission that outgrows the interest stops being an arrangement fee** and becomes a
+        /// way of charging twice for the same money without saying so. Holding it under the interest
+        /// is what keeps the headline multiple the number that mostly decides the price.
+        /// </summary>
+        [Test]
+        public void TheArrangementFeeIsSmallerThanTheInterest()
+        {
+            foreach (var definition in LoanCatalog.All)
+            {
+                var fee = definition.TotalCostUsd - definition.TotalRepaymentUsd;
+
+                Assert.That(fee, Is.GreaterThan(0L),
+                    $"{definition.DisplayName} charges nothing to hold, so the screen has a zero on it.");
+
+                Assert.That(fee, Is.LessThan(definition.InterestUsd),
+                    $"{definition.DisplayName}: the fee comes to ${fee:N0} against ${definition.InterestUsd:N0} "
+                    + "of interest, so it is a second loan wearing a smaller name.");
+            }
+        }
+
+        [Test]
+        public void TheFeeKeepsRunningThroughTheGracePeriod()
+        {
+            var book = new LoanBook();
+            var definition = LoanCatalog.Get(LoanProduct.BridgeFacility);
+
+            book.Add(new Loan(definition.Product, GameDate.Start, definition.PrincipalUsd,
+                definition.TotalRepaymentUsd, definition.TermDays, definition.GraceDays));
+
+            Assert.That(book.DailyServiceUsd(GameDate.Start), Is.Zero,
+                "Nothing is repaid during grace.");
+
+            Assert.That(book.DailyCommissionUsd(), Is.GreaterThan(0L),
+                "The grace is a holiday from repaying the loan, not from the lender's fee. A "
+                + "facility is arranged the day it is drawn and it costs from that day.");
         }
 
         [Test]

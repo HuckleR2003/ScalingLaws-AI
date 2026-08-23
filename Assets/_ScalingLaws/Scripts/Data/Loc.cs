@@ -620,6 +620,29 @@ namespace ScalingLaws.Data
             ["create.effort_hint"] = "How hard the team works this stage. It lengthens the safety work and nothing else in the run, and what it buys is deliberately small.",
             ["create.data_hint"] = "The run draws from the best corpus first. A small licensed archive lifts the top of the mix; raw crawl adds volume and drags the average down.",
 
+            // ---- the funding screen and the five facilities ------------------------------------------
+            ["funding.title"] = "FUNDING",
+            ["funding.borrowing"] = "BORROWING",
+            ["loan.commercial"] = "COMMERCIAL",
+            ["loan.state"] = "STATE PROGRAMME",
+            ["loan.monthly_instalment"] = "MONTHLY INSTALMENT",
+            ["loan.monthly_commission"] = "MONTHLY COMMISSION",
+            ["loan.back_in_total"] = "BACK IN TOTAL",
+            ["loan.open_facilities"] = "OPEN FACILITIES",
+            ["loan.terms"] = "{0} term, {1} before the first instalment",
+            ["loan.left_of"] = "{0} left of {1}",
+            ["loan.nothing_drawn"] = "Nothing drawn. A facility is cash now against a fixed sum on a fixed date, whether or not the quarter went well.",
+            ["loan.bridge.name"] = "Bridge facility",
+            ["loan.bridge.desc"] = "Six months of runway from a lender who expects a round to close behind it. Small, fast, and priced as if the round might not.",
+            ["loan.equipment.name"] = "Equipment finance",
+            ["loan.equipment.desc"] = "Borrowed against the accelerators rather than against the company. The lender does not care what the models do, only what the hardware would fetch, so it is cheap and it is small. Miss the schedule and the fleet is what they take.",
+            ["loan.venture.name"] = "Venture debt",
+            ["loan.venture.desc"] = "Growth capital that does not touch the cap table. The lender wants to see revenue, and once the schedule starts it does not pause for a bad quarter.",
+            ["loan.bond.name"] = "Corporate bond",
+            ["loan.bond.desc"] = "A real issuance against a real balance sheet. Cheap money by the standards of this industry, and the size of it means a missed schedule is a public event.",
+            ["loan.sovereign.name"] = "Sovereign compute programme",
+            ["loan.sovereign.desc"] = "A state decides that domestic frontier capability is infrastructure and writes the cheque to prove it. Ten billion now, most of three times that back over eleven years, and a government that will not renegotiate. Nothing else in the game moves this much money, and nothing else fails this loudly.",
+
         };
 
         // ==========================================================================================
@@ -1133,6 +1156,29 @@ namespace ScalingLaws.Data
             ["create.what_it_burns"] = "ILE SPALA",
             ["create.effort_hint"] = "Jak mocno zespół pracuje na tym etapie. Wydłuża prace nad bezpieczeństwem i nic więcej w treningu, a to, co daje, jest celowo niewielkie.",
             ["create.data_hint"] = "Trening czerpie najpierw z najlepszego korpusu. Małe licencjonowane archiwum podnosi górę mieszanki, surowy crawl dodaje objętości i ciągnie średnią w dół.",
+
+            // ---- the funding screen and the five facilities ------------------------------------------
+            ["funding.title"] = "KAPITAŁ",
+            ["funding.borrowing"] = "KREDYTY",
+            ["loan.commercial"] = "KOMERCYJNY",
+            ["loan.state"] = "PROGRAM PAŃSTWOWY",
+            ["loan.monthly_instalment"] = "RATA MIESIĘCZNA",
+            ["loan.monthly_commission"] = "PROWIZJA MIESIĘCZNA",
+            ["loan.back_in_total"] = "ZWROT ŁĄCZNIE",
+            ["loan.open_facilities"] = "OTWARTE KREDYTY",
+            ["loan.terms"] = "okres {0}, {1} do pierwszej raty",
+            ["loan.left_of"] = "zostało {0} z {1}",
+            ["loan.nothing_drawn"] = "Nic nie wzięte. Kredyt to gotówka teraz w zamian za stałą kwotę w stałym terminie, niezależnie od tego, jaki był kwartał.",
+            ["loan.bridge.name"] = "Kredyt pomostowy",
+            ["loan.bridge.desc"] = "Pół roku oddechu od kredytodawcy, który liczy, że zaraz zamkniesz rundę. Mały, szybki i wyceniony tak, jakby ta runda mogła nie dojść.",
+            ["loan.equipment.name"] = "Kredyt na sprzęt",
+            ["loan.equipment.desc"] = "Pod zastaw akceleratorów, nie firmy. Kredytodawcy jest wszystko jedno, co robią modele, liczy się, ile warty jest sprzęt, więc jest tanio i niewiele. Spóźnisz się z ratą i zabiorą flotę.",
+            ["loan.venture.name"] = "Dług venture",
+            ["loan.venture.desc"] = "Kapitał na wzrost, który nie rusza udziałów. Kredytodawca chce widzieć przychód, a gdy harmonogram ruszy, nie zatrzyma się na słaby kwartał.",
+            ["loan.bond.name"] = "Obligacja korporacyjna",
+            ["loan.bond.desc"] = "Prawdziwa emisja pod prawdziwy bilans. Tanie pieniądze jak na tę branżę, a przy tej skali spóźniona rata jest wydarzeniem publicznym.",
+            ["loan.sovereign.name"] = "Państwowy program mocy obliczeniowej",
+            ["loan.sovereign.desc"] = "Państwo uznaje, że krajowe zdolności na froncie to infrastruktura, i wypisuje czek, żeby to udowodnić. Dziesięć miliardów teraz, prawie trzy razy tyle z powrotem przez jedenaście lat i rząd, który nie renegocjuje. Nic innego w tej grze nie rusza tylu pieniędzy i nic innego nie upada tak głośno.",
 
         };
 

@@ -152,6 +152,65 @@ namespace ScalingLaws.Simulation
             return total;
         }
 
+        /// <summary>
+        /// What the open facilities cost in fees today.
+        ///
+        /// **Charged through the grace period as well.** The grace is a holiday from repaying the
+        /// loan, not from the lender's fee: a facility is arranged the day it is drawn and it is
+        /// costing something from that day. Settled loans stop.
+        /// </summary>
+        public long DailyCommissionUsd()
+        {
+            var total = 0.0;
+
+            foreach (var loan in loans)
+            {
+                if (loan.IsSettled)
+                {
+                    continue;
+                }
+
+                if (LoanCatalog.TryGet(loan.Product, out var definition))
+                {
+                    total += definition.PrincipalUsd * definition.MonthlyCommissionRate / 30.4375;
+                }
+            }
+
+            return SimUnits.ToDollars(total);
+        }
+
+        /// <summary>The same figure a player thinks in, for the screen.</summary>
+        public long MonthlyCommissionUsd()
+        {
+            var total = 0L;
+
+            foreach (var loan in loans)
+            {
+                if (!loan.IsSettled && LoanCatalog.TryGet(loan.Product, out var definition))
+                {
+                    total += definition.MonthlyCommissionUsd;
+                }
+            }
+
+            return total;
+        }
+
+        /// <summary>What the instalments come to in a month, for the same reason.</summary>
+        public long MonthlyInstalmentUsd(GameDate date)
+        {
+            var total = 0.0;
+
+            foreach (var loan in loans)
+            {
+                if (!loan.IsSettled && !loan.IsInGracePeriod(date))
+                {
+                    total += loan.DailyInstalmentUsd * 30.4375;
+                }
+            }
+
+            return SimUnits.ToDollars(total);
+        }
+
         public bool Has(LoanProduct product)
         {
             foreach (var loan in loans)

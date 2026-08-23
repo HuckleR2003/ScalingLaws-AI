@@ -11627,3 +11627,156 @@
     align-items: center;
     margin-bottom: 2px;
 }
+
+/* ============================================================================================
+   BORROWING
+
+   Five facilities as tiles, and the state programme is not one more product in a row: it is ten
+   billion dollars from a government that will not renegotiate, so it takes the full width and its
+   own colour.
+
+   The bill above them carries the two numbers a borrower plans around. The instalment pays the loan
+   down and stops when it is settled; the commission is rent on the facility and runs for as long as
+   it is open. One figure a day for both said neither.
+   ============================================================================================ */
+
+.loanbill {
+    flex-direction: row;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    border-left-width: 3px;
+    border-left-color: rgb(226, 190, 44);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.loanbill__cell {
+    margin-right: 34px;
+}
+
+.loanbill__caption {
+    font-size: 8px;
+    letter-spacing: 1.6px;
+    color: rgb(126, 138, 158);
+}
+
+.loanbill__value {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+    margin-top: 2px;
+}
+
+/* The fee, picked out. It is the number people forget is there. */
+.loanbill__value--fee {
+    color: rgb(236, 154, 122);
+}
+
+/* ---- one facility ------------------------------------------------------------------------------ */
+
+.ltile {
+    width: 32%;
+    height: 208px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 1.3%;
+    margin-bottom: 12px;
+    padding: 15px 17px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    -unity-text-align: middle-left;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background-color: rgba(10, 13, 20, 0.82);
+    -unity-background-scale-mode: scale-and-crop;
+    overflow: hidden;
+    transition-property: border-color, translate;
+    transition-duration: 0.18s;
+}
+
+.ltile:hover {
+    border-color: rgba(255, 255, 255, 0.30);
+    translate: 0 -3px;
+}
+
+.ltile:disabled {
+    opacity: 0.45;
+}
+
+/* Available. A lit left edge rather than a colour change, so the row reads as four cards of which
+   some are open rather than as four different kinds of thing. */
+.ltile--open {
+    border-left-width: 3px;
+    border-left-color: rgb(126, 216, 158);
+}
+
+/* Ten billion dollars is not a card in a row of cards. */
+.ltile--state {
+    width: 65.3%;
+    border-color: rgba(226, 120, 140, 0.45);
+}
+
+.ltile--state:hover {
+    border-color: rgb(236, 140, 160);
+}
+
+.ltile__kicker {
+    font-size: 8px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(140, 152, 174);
+}
+
+.ltile--state .ltile__kicker {
+    color: rgb(238, 148, 168);
+}
+
+.ltile__title {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 254);
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.ltile__principal {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+    margin-top: 6px;
+    flex-grow: 1;
+}
+
+.ltile__figures {
+    flex-direction: row;
+}
+
+.ltile__terms {
+    font-size: 10px;
+    color: rgb(134, 148, 170);
+    white-space: normal;
+    margin-top: 8px;
+}
+
+.ltile__terms--blocked {
+    color: rgb(230, 148, 120);
+}
+
+/* ---- what is already being serviced -------------------------------------------------------------- */
+
+.loan-open__track {
+    height: 5px;
+    width: 100%;
+    margin-top: 7px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.loan-open__fill {
+    height: 5px;
+    border-radius: 3px;
+    background-color: rgb(126, 216, 158);
+}

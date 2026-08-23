@@ -2362,6 +2362,20 @@ namespace ScalingLaws.Simulation
                 return;
             }
 
+            // The arrangement fee, charged daily so it moves with the clock like everything else.
+            //
+            // **It is not part of the instalment and it does not pay the loan down.** Servicing it
+            // separately is what makes it visible in the ledger as a cost of holding the facility
+            // rather than as part of the debt, which is exactly the distinction the funding screen
+            // is now built to show.
+            var commission = State.Loans.DailyCommissionUsd();
+
+            if (commission > 0L)
+            {
+                State.PostCash(LedgerLine.Interest, commission);
+                State.LifetimeOperatingCostUsd += commission;
+            }
+
             var due = State.Loans.DailyServiceUsd(State.Date);
             if (due <= 0L)
             {
