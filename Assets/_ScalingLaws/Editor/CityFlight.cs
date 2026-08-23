@@ -32,13 +32,26 @@ namespace ScalingLaws.Editor
         private const string OutputFolder = "CityFlight~";
         private const string ScenePath = "Assets/_ScalingLaws/Scenes/City.unity";
 
-        /// <summary>24fps for twenty seconds. Long enough to read the map, short enough to watch.</summary>
-        public const int Frames = 480;
+        /// <summary>30fps for thirty seconds. Long enough to read the map, short enough to watch.</summary>
+        public const int Frames = 900;
 
-        public const int FramesPerSecond = 24;
+        public const int FramesPerSecond = 30;
 
-        public const int Width = 1920;
-        public const int Height = 1080;
+        // 1600x900 rather than full HD, and it is not only about file size.
+        //
+        // **Nine hundred renders in one editor tick ran the GPU out of memory at frame 220.**
+        // `-executeMethod` never yields to a frame boundary, so every render, resolve and readback
+        // queues against the same device with nothing forcing it to drain, and 4x MSAA at full HD
+        // was enough to reach `E_OUTOFMEMORY` and take the editor down with it. Smaller buffers,
+        // 2x MSAA, an explicit flush after every frame and a fresh target every `RecycleEvery`
+        // frames between them keep it inside what the driver will hold.
+        //
+        // It also matches the interface tour, which matters because the two are cut together.
+        public const int Width = 1600;
+        public const int Height = 900;
+
+        /// <summary>How often the render target is thrown away and remade.</summary>
+        private const int RecycleEvery = 60;
 
         /// <summary>
         /// One moment in the flight: where the camera is, and what it is pointed at.
@@ -51,13 +64,15 @@ namespace ScalingLaws.Editor
         private readonly struct Beat
         {
             public Beat(string caption, float x, float z, float above, float lookX, float lookZ,
-                float lookAbove = 0f)
+                float lookAbove = 0f, float dwell = 1f, float roll = 0f)
             {
                 Caption = caption;
                 Ground = new Vector2(x, z);
                 Above = above;
                 Target = new Vector2(lookX, lookZ);
                 TargetAbove = lookAbove;
+                Dwell = Mathf.Max(0.05f, dwell);
+                Roll = roll;
             }
 
             public string Caption { get; }
@@ -65,6 +80,24 @@ namespace ScalingLaws.Editor
             public float Above { get; }
             public Vector2 Target { get; }
             public float TargetAbove { get; }
+
+            /// <summary>
+            /// How much of the running time the leg *into* this beat is worth.
+            ///
+            /// **This is the whole difference between a flight and a pan.** With one weight for
+            /// every leg, a low pass down a street and the long haul across the bay took the same
+            /// number of seconds, so the street crawled and the bay felt hurried. A number under one
+            /// is a fast pass; over one is a reveal the eye is given time to read.
+            /// </summary>
+            public float Dwell { get; }
+
+            /// <summary>
+            /// Bank, in degrees. Positive rolls right.
+            ///
+            /// A camera that turns without banking reads as a drone on rails. Twelve degrees through
+            /// a curve is enough to feel flown and little enough that the horizon is not a gimmick.
+            /// </summary>
+            public float Roll { get; }
         }
 
         /// <summary>
@@ -81,29 +114,75 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static readonly List<Beat> Flight = new()
         {
-            new Beat("approach", 1900f, 120f, 260f, 1610f, 405f),
-            new Beat("approach", 1900f, 120f, 260f, 1610f, 405f),
+            // Held: the spline needs a point before the start to know which way the curve leaves.
+            new Beat("hold", 1960f, 60f, 330f, 1610f, 405f, dwell: 1f),
+            new Beat("approach", 1930f, 90f, 300f, 1610f, 405f, dwell: 1.5f),
 
-            // Around the Riverdale loop. Two beats on opposite sides so the spline curves round it
-            // rather than cutting the corner.
-            new Beat("the loop, east", 1830f, 300f, 175f, 1610f, 405f),
-            new Beat("the loop, north", 1650f, 620f, 150f, 1610f, 420f),
-            new Beat("the loop, west", 1400f, 470f, 130f, 1620f, 430f),
+            // Riverdale. A fast low run round the loop: three legs, all under one, so the estate
+            // goes past at the speed the author asked for rather than at survey pace.
+            new Beat("the loop, east", 1855f, 250f, 132f, 1650f, 380f, dwell: 0.65f, roll: 9f),
+            new Beat("the loop, north", 1690f, 600f, 108f, 1600f, 430f, dwell: 0.6f, roll: 13f),
+            new Beat("the loop, west", 1395f, 480f, 118f, 1630f, 430f, dwell: 0.6f, roll: 10f),
 
-            // Down to the house, low and close.
-            new Beat("the house", 1520f, 560f, 96f, 1660f, 470f, 6f),
-            new Beat("over the house", 1640f, 548f, 82f, 1668f, 458f, 4f),
+            // The house. The one place the flight slows down, because it is the player's.
+            new Beat("the house", 1530f, 566f, 92f, 1662f, 472f, 6f, dwell: 1.5f, roll: -6f),
+            new Beat("over the house", 1648f, 546f, 74f, 1670f, 456f, 4f, dwell: 1.3f),
 
-            // Up and away, over the water.
-            new Beat("leaving", 1560f, 700f, 190f, 1300f, 900f),
-            new Beat("the bay", 1330f, 900f, 250f, 1080f, 1010f),
+            // Out over the water, climbing. A long leg, and it is allowed to take its time.
+            new Beat("leaving", 1600f, 720f, 200f, 1280f, 920f, dwell: 1.4f, roll: -11f),
+            new Beat("the bay", 1360f, 940f, 268f, 1060f, 1020f, dwell: 1.2f, roll: -7f),
 
-            // Downtown, rising over the towers.
-            new Beat("downtown", 1180f, 1010f, 210f, 1000f, 1030f, 60f),
-            new Beat("the towers", 1010f, 1180f, 260f, 1000f, 1030f, 70f),
-            new Beat("away", 800f, 1400f, 420f, 1000f, 1030f, 40f),
-            new Beat("away", 800f, 1400f, 420f, 1000f, 1030f, 40f)
+            // Downtown. Slow: the towers are the payoff and the eye needs time on them.
+            new Beat("downtown", 1190f, 1000f, 205f, 1000f, 1030f, 62f, dwell: 1.5f),
+            new Beat("the towers", 1030f, 1170f, 250f, 1000f, 1030f, 72f, dwell: 1.4f, roll: 8f),
+
+            // North west across the park to the second estate, fast again.
+            new Beat("the park", 860f, 1330f, 300f, 720f, 1500f, 20f, dwell: 0.8f, roll: 10f),
+            new Beat("greendale, east", 560f, 1580f, 150f, 360f, 1620f, dwell: 0.6f, roll: 12f),
+            new Beat("greendale, west", 250f, 1600f, 128f, 330f, 1660f, dwell: 0.6f, roll: 8f),
+
+            // And out, high enough that the last frame is the whole map.
+            new Beat("the whole map", 420f, 1180f, 560f, 980f, 1080f, dwell: 1.6f),
+            new Beat("hold", 520f, 940f, 700f, 1000f, 1040f, dwell: 1f)
         };
+
+        /// <summary>
+        /// Where each beat falls through the running time, from the dwells.
+        ///
+        /// Built once and cached: `Place` runs nine hundred times a flight and the answer never
+        /// changes. The first and last entries are the spline's control points and are not flown,
+        /// so they carry no time.
+        /// </summary>
+        private static float[] Milestones
+        {
+            get
+            {
+                if (milestones != null)
+                {
+                    return milestones;
+                }
+
+                var legs = Flight.Count - 3;
+                var marks = new float[legs + 1];
+                var total = 0f;
+
+                for (var leg = 0; leg < legs; leg++)
+                {
+                    total += Flight[leg + 2].Dwell;
+                    marks[leg + 1] = total;
+                }
+
+                for (var index = 0; index <= legs; index++)
+                {
+                    marks[index] /= total;
+                }
+
+                milestones = marks;
+                return milestones;
+            }
+        }
+
+        private static float[] milestones;
 
         [MenuItem("Scaling Laws/Fly over the city")]
         public static void Fly()
@@ -150,7 +229,7 @@ namespace ScalingLaws.Editor
                     + "and will very likely go through a hill.");
             }
 
-            var target = new RenderTexture(Width, Height, 24) { antiAliasing = 4 };
+            var target = NewTarget();
             var shot = new Texture2D(Width, Height, TextureFormat.RGB24, false);
             var wasActive = RenderTexture.active;
 
@@ -160,6 +239,17 @@ namespace ScalingLaws.Editor
             {
                 for (var frame = 0; frame < Frames; frame++)
                 {
+                    if (frame > 0 && frame % RecycleEvery == 0)
+                    {
+                        RenderTexture.active = null;
+                        camera.targetTexture = null;
+                        target.Release();
+                        UnityEngine.Object.DestroyImmediate(target);
+
+                        target = NewTarget();
+                        camera.targetTexture = target;
+                    }
+
                     Place(camera, terrain, frame / (float)(Frames - 1));
 
                     camera.Render();
@@ -167,9 +257,18 @@ namespace ScalingLaws.Editor
                     shot.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
                     shot.Apply();
 
+                    // Nothing else in this loop reaches a frame boundary, so this is the only thing
+                    // telling the driver it may drain what it is holding.
+                    GL.Flush();
+
                     File.WriteAllBytes(
                         Path.Combine(OutputFolder, $"frame_{frame:0000}.png"),
                         shot.EncodeToPNG());
+
+                    if (frame % 100 == 0)
+                    {
+                        Debug.Log($"[Scaling Laws] flight frame {frame} of {Frames}.");
+                    }
                 }
             }
             finally
@@ -200,41 +299,97 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static void Place(Camera camera, Terrain terrain, float through)
         {
-            var eased = Smooth(Mathf.Clamp01(through));
+            // Eased only at the very ends. Easing the whole path was what made every leg the same
+            // speed regardless of its dwell: the curve was doing the pacing and the weights had
+            // nothing left to do.
+            var eased = Ends(Mathf.Clamp01(through));
 
-            // The doubled beats at each end are the spline's control points and are not flown
-            // through, so the travelled span is one shorter at each end.
-            var span = Flight.Count - 3;
-            var scaled = eased * span;
-            var index = Mathf.Clamp(Mathf.FloorToInt(scaled), 0, span - 1);
-            var t = scaled - index;
+            var (index, t) = Leg(eased);
 
             var a = Flight[index];
             var b = Flight[index + 1];
             var c = Flight[index + 2];
             var d = Flight[index + 3];
 
-            var ground = CatmullRom(a.Ground, b.Ground, c.Ground, d.Ground, t);
-            var above = CatmullRom(a.Above, b.Above, c.Above, d.Above, t);
+            // Smooth within a leg as well, so the joins between beats are not corners.
+            var soft = Smooth(t);
 
-            var look = CatmullRom(a.Target, b.Target, c.Target, d.Target, t);
-            var lookAbove = CatmullRom(a.TargetAbove, b.TargetAbove, c.TargetAbove, d.TargetAbove, t);
+            var ground = CatmullRom(a.Ground, b.Ground, c.Ground, d.Ground, soft);
+            var above = CatmullRom(a.Above, b.Above, c.Above, d.Above, soft);
+
+            var look = CatmullRom(a.Target, b.Target, c.Target, d.Target, soft);
+            var lookAbove = CatmullRom(a.TargetAbove, b.TargetAbove, c.TargetAbove, d.TargetAbove, soft);
+            var roll = CatmullRom(a.Roll, b.Roll, c.Roll, d.Roll, soft);
 
             var position = new Vector3(ground.x, GroundAt(terrain, ground) + above, ground.y);
             var at = new Vector3(look.x, GroundAt(terrain, look) + lookAbove, look.y);
 
+            var forward = (at - position).normalized;
+
             camera.transform.position = position;
-            camera.transform.rotation = Quaternion.LookRotation((at - position).normalized, Vector3.up);
+
+            // Bank around the direction of travel rather than around world up, or the horizon
+            // shears instead of tilting.
+            camera.transform.rotation =
+                Quaternion.AngleAxis(roll, forward) * Quaternion.LookRotation(forward, Vector3.up);
+        }
+
+        /// <summary>Which leg the flight is on at this point through, and how far along it.</summary>
+        private static (int Index, float T) Leg(float through)
+        {
+            var marks = Milestones;
+
+            for (var index = 0; index < marks.Length - 1; index++)
+            {
+                if (through > marks[index + 1] && index < marks.Length - 2)
+                {
+                    continue;
+                }
+
+                var from = marks[index];
+                var span = Mathf.Max(marks[index + 1] - from, 1e-6f);
+
+                return (index, Mathf.Clamp01((through - from) / span));
+            }
+
+            return (marks.Length - 2, 1f);
+        }
+
+        /// <summary>
+        /// Eases the first and last tenth only.
+        ///
+        /// A smoothstep across the whole flight is a camera that accelerates for ten seconds and
+        /// decelerates for ten, which flattens every dwell in the table above.
+        /// </summary>
+        private static float Ends(float t)
+        {
+            const float lip = 0.10f;
+
+            if (t < lip)
+            {
+                return Smooth(t / lip) * lip;
+            }
+
+            if (t > 1f - lip)
+            {
+                return 1f - lip + Smooth((t - (1f - lip)) / lip) * lip;
+            }
+
+            return t;
         }
 
         /// <summary>Which beat the flight is closest to at this point, for naming a still.</summary>
         private static string Nearest(float through)
         {
-            var span = Flight.Count - 3;
-            var scaled = Smooth(Mathf.Clamp01(through)) * span;
-            var index = Mathf.Clamp(Mathf.RoundToInt(scaled) + 1, 1, Flight.Count - 1);
+            var (index, t) = Leg(Ends(Mathf.Clamp01(through)));
+            return Flight[index + (t < 0.5f ? 1 : 2)].Caption;
+        }
 
-            return Flight[index].Caption;
+        private static RenderTexture NewTarget()
+        {
+            var target = new RenderTexture(Width, Height, 24) { antiAliasing = 2 };
+            target.Create();
+            return target;
         }
 
         /// <summary>The ground under a map point, or sea level when there is no terrain.</summary>
@@ -302,7 +457,7 @@ namespace ScalingLaws.Editor
             camera.farClipPlane = Mathf.Max(camera.farClipPlane, CityLayout.Size * 2f);
 
             var terrain = Terrain.activeTerrain;
-            var target = new RenderTexture(Width, Height, 24) { antiAliasing = 4 };
+            var target = NewTarget();
             var shot = new Texture2D(Width, Height, TextureFormat.RGB24, false);
             var wasActive = RenderTexture.active;
 
