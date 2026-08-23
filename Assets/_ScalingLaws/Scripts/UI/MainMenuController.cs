@@ -433,17 +433,45 @@ namespace ScalingLaws.UI
             sheet.AddToClassList("settings-sheet");
             panel.Add(sheet);
 
-            var heading = new Label("SETTINGS");
+            var heading = new Label(Loc.T("settings.title"));
             heading.AddToClassList("page-title");
             sheet.Add(heading);
 
-            var sub = new Label("These are kept separately from a campaign and survive deleting one.");
+            var sub = new Label(Loc.T("settings.note"));
             sub.AddToClassList("page-subtitle");
             sheet.Add(sub);
 
+            // First on the page, and it rebuilds the page.
+            //
+            // **Everything below this row is written in whatever it is set to**, so changing it and
+            // then having to find the back button in a language you do not read would be a trap.
+            // The rebuild is why it is at the top: the eye is already there.
+            var languageRow = new VisualElement();
+            languageRow.AddToClassList("setting-row");
+            languageRow.Add(SettingCopy(Loc.T("settings.language"), Loc.T("settings.language.note")));
+
+            var languageField = new DropdownField
+            {
+                choices = new List<string> { "English", "Polski" },
+                index = GameSettings.Language == Language.Polish ? 1 : 0
+            };
+
+            languageField.style.width = 190;
+            languageField.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetLanguage(evt.newValue == "Polski" ? Language.Polish : Language.English);
+
+                // The sheet is a mode on the menu rather than a stage of its own, so redrawing the
+                // menu with settingsOpen still set is what puts the page back in the new language.
+                Show(Stage.Menu);
+            });
+
+            languageRow.Add(languageField);
+            sheet.Add(languageRow);
+
             var volumeRow = new VisualElement();
             volumeRow.AddToClassList("setting-row");
-            volumeRow.Add(SettingCopy("MASTER VOLUME", "All music and interface sound."));
+            volumeRow.Add(SettingCopy(Loc.T("settings.volume"), Loc.T("settings.volume.note")));
 
             var volumeValue = new Label($"{Mathf.RoundToInt(GameSettings.MasterVolume * 100f)}%");
             volumeValue.AddToClassList("setting-value");
@@ -462,7 +490,7 @@ namespace ScalingLaws.UI
 
             var fullscreenRow = new VisualElement();
             fullscreenRow.AddToClassList("setting-row");
-            fullscreenRow.Add(SettingCopy("FULLSCREEN", "Use a borderless full screen window."));
+            fullscreenRow.Add(SettingCopy(Loc.T("settings.fullscreen"), Loc.T("settings.fullscreen.note")));
             var fullscreenToggle = new Toggle { value = GameSettings.Fullscreen };
             fullscreenToggle.RegisterValueChangedCallback(evt => GameSettings.SetFullscreen(evt.newValue));
             fullscreenRow.Add(fullscreenToggle);
@@ -470,8 +498,7 @@ namespace ScalingLaws.UI
 
             var motionRow = new VisualElement();
             motionRow.AddToClassList("setting-row");
-            motionRow.Add(SettingCopy("REDUCE MOTION",
-                "Shortens the opening sequence and holds the office camera still."));
+            motionRow.Add(SettingCopy(Loc.T("settings.motion"), Loc.T("settings.motion.note")));
             var motionToggle = new Toggle { value = GameSettings.ReduceMotion };
             motionToggle.RegisterValueChangedCallback(evt => GameSettings.SetReduceMotion(evt.newValue));
             motionRow.Add(motionToggle);
@@ -496,7 +523,7 @@ namespace ScalingLaws.UI
                 settingsOpen = false;
                 Show(Stage.Menu);
             })
-            { text = "BACK" };
+            { text = Loc.T("common.back") };
             back.AddToClassList("menu-button");
             back.style.marginTop = 18;
             sheet.Add(back);

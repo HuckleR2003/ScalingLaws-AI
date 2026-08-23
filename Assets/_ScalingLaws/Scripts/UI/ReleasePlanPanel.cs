@@ -182,7 +182,7 @@ namespace ScalingLaws.UI
 
             // Italic, underneath, and it says what this is following — "Base" when nothing has
             // shipped yet, which is the only honest thing to print on a first release.
-            var version = new Label($"Version: {model.Line.PreviousName}");
+            var version = new Label(Loc.T("upgrade.version", model.Line.PreviousName));
             version.AddToClassList("rel__previous");
             head.Add(version);
 
@@ -199,7 +199,7 @@ namespace ScalingLaws.UI
             var card = new VisualElement();
             card.AddToClassList("relcard");
 
-            var nameLabel = new Label("Version name:");
+            var nameLabel = new Label(Loc.T("release.version_name"));
             nameLabel.AddToClassList("relcard__label");
             card.Add(nameLabel);
 
@@ -237,7 +237,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("relrow__head");
 
-            var caption = new Label("CHANGE PRICE");
+            var caption = new Label(Loc.T("release.change_price"));
             caption.AddToClassList("relrow__caption");
             head.Add(caption);
 
@@ -270,7 +270,7 @@ namespace ScalingLaws.UI
                     editing = Editing.Price;
                     Refresh();
                 })
-                { text = "CHANGE PRICE" };
+                { text = Loc.T("release.change_price") };
 
                 unlock.AddToClassList("relrow__unlock");
                 buttons.Add(unlock);
@@ -282,7 +282,7 @@ namespace ScalingLaws.UI
                     editing = Editing.Nothing;
                     Refresh();
                 })
-                { text = "APPLY" };
+                { text = Loc.T("release.apply") };
 
                 apply.AddToClassList("relrow__apply");
                 buttons.Add(apply);
@@ -293,7 +293,7 @@ namespace ScalingLaws.UI
                     editing = Editing.Nothing;
                     Refresh();
                 })
-                { text = "BACK" };
+                { text = Loc.T("common.back") };
 
                 back.AddToClassList("relrow__cancel");
                 buttons.Add(back);
@@ -315,7 +315,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("relrow__head");
 
-            var caption = new Label("FREE TOKENS PER USER");
+            var caption = new Label(Loc.T("release.free_tokens"));
             caption.AddToClassList("relrow__caption");
             head.Add(caption);
 
@@ -347,7 +347,7 @@ namespace ScalingLaws.UI
                     editing = Editing.FreeTokens;
                     Refresh();
                 })
-                { text = "CHANGE" };
+                { text = Loc.T("release.change") };
 
                 unlock.AddToClassList("relrow__unlock");
                 buttons.Add(unlock);
@@ -359,7 +359,7 @@ namespace ScalingLaws.UI
                     editing = Editing.Nothing;
                     Refresh();
                 })
-                { text = "APPLY" };
+                { text = Loc.T("release.apply") };
 
                 apply.AddToClassList("relrow__apply");
                 buttons.Add(apply);
@@ -370,7 +370,7 @@ namespace ScalingLaws.UI
                     editing = Editing.Nothing;
                     Refresh();
                 })
-                { text = "BACK" };
+                { text = Loc.T("common.back") };
 
                 back.AddToClassList("relrow__cancel");
                 buttons.Add(back);
@@ -385,13 +385,13 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("relships");
 
-            var heading = new Label("WHAT SHIPS IN THIS VERSION");
+            var heading = new Label(Loc.T("release.what_ships"));
             heading.AddToClassList("relships__heading");
             panel.Add(heading);
 
             if (basket.Count == 0)
             {
-                var none = new Label("Price and allowance only. No post-training work in this one.");
+                var none = new Label(Loc.T("release.nothing_ships"));
                 none.AddToClassList("relships__none");
                 panel.Add(none);
                 return panel;
@@ -425,11 +425,11 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("rel__buttons");
 
-            var back = new Button(() => goBack?.Invoke()) { text = "BACK" };
+            var back = new Button(() => goBack?.Invoke()) { text = Loc.T("common.back") };
             back.AddToClassList("rel__back");
             row.Add(back);
 
-            var ship = new Button(() => commit?.Invoke(versionName)) { text = "SHIP THIS VERSION" };
+            var ship = new Button(() => commit?.Invoke(versionName)) { text = Loc.T("release.ship") };
             ship.AddToClassList("rel__ship");
             ship.SetEnabled(!string.IsNullOrWhiteSpace(versionName));
             row.Add(ship);
@@ -463,7 +463,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("vlist");
 
-            var heading = new Label("RELEASES IN USE");
+            var heading = new Label(Loc.T("release.in_use"));
             heading.AddToClassList("vlist__heading");
             panel.Add(heading);
 
@@ -494,7 +494,7 @@ namespace ScalingLaws.UI
                 words.Add(name);
 
                 var when = new Label(current
-                    ? $"current   ·   {version.ReleasedOn}"
+                    ? $"{Loc.T("release.current")}   ·   {version.ReleasedOn}"
                     : version.ReleasedOn.ToString());
 
                 when.AddToClassList("vrow__when");
@@ -518,9 +518,7 @@ namespace ScalingLaws.UI
                 if (!ReferenceEquals(best, newest))
                 {
                     // The one sentence this screen exists to be able to say.
-                    var note = new Label(
-                        $"More people are still on {best.Name} than on the current release. "
-                        + "An update nobody liked does not take the audience.");
+                    var note = new Label(Loc.T("release.older_holds", best.Name));
 
                     note.AddToClassList("vlist__note");
                     panel.Add(note);
@@ -542,21 +540,21 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("vcharts");
 
-            var heading = new Label("WHAT THE MARKET SEES");
+            var heading = new Label(Loc.T("release.market_sees"));
             heading.AddToClassList("vcharts__heading");
             panel.Add(heading);
 
             var versions = model.Line.Versions;
             var best = versions.Count == 0 ? 0.0 : versions.Max(version => version.Capability);
 
-            panel.Add(Gauge("EFFECTIVE CAPABILITY",
+            panel.Add(Gauge(Loc.T("release.effective_capability"),
                 UiFormat.Number(model.Line.EffectiveCapability(), 1),
                 best <= 0.0 ? 0.0 : model.Line.EffectiveCapability() / best,
                 "#7ED89E"));
 
-            panel.Add(Gauge("BEST VERSION SHIPPED", UiFormat.Number(best, 1), 1.0, "#5B8DEF"));
+            panel.Add(Gauge(Loc.T("release.best_version"), UiFormat.Number(best, 1), 1.0, "#5B8DEF"));
 
-            panel.Add(Gauge("AVERAGE PRICE PAID",
+            panel.Add(Gauge(Loc.T("release.average_price"),
                 "$" + model.Line.EffectivePriceUsdPerMonth()
                     .ToString("N2", CultureInfo.InvariantCulture),
                 MaximumPriceUsd <= 0f
@@ -585,8 +583,9 @@ namespace ScalingLaws.UI
 
             panel.Add(spread);
 
-            var caption = new Label($"{versions.Count} "
-                + (versions.Count == 1 ? "release in use" : "releases in use"));
+            var caption = new Label(versions.Count == 1
+                ? Loc.T("release.count_one")
+                : Loc.T("release.count_many", versions.Count));
 
             caption.AddToClassList("vcharts__caption");
             panel.Add(caption);

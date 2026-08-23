@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using ScalingLaws.Data;
 
 namespace ScalingLaws.UI
 {
@@ -60,11 +61,14 @@ namespace ScalingLaws.UI
         {
             if (days < 60)
             {
-                return days + (days == 1 ? " day" : " days");
+                // Counted, because Polish has three forms and "1 dni" is the sort of thing that
+                // makes a translation read as a machine translation.
+                return days + " " + Loc.Plural(days, "noun.day");
             }
 
             var months = days / 30.4375;
-            return months.ToString("0.#", Culture) + " months";
+            return months.ToString("0.#", Culture) + " "
+                + Loc.Plural((int)System.Math.Round(months), "noun.month");
         }
 
         public static string Petaflops(double petaflops) => Count(petaflops) + " PF";

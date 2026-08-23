@@ -108,7 +108,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("upg__head");
 
-            var title = new Label("UPGRADE MODEL");
+            var title = new Label(Loc.T("upgrade.title"));
             title.AddToClassList("upg__title");
             head.Add(title);
 
@@ -151,7 +151,7 @@ namespace ScalingLaws.UI
 
             if (modelIndex < 0)
             {
-                var none = new Label("Nothing is live yet. Release a model and this fills up.");
+                var none = new Label(Loc.T("upgrade.none_live"));
                 none.AddToClassList("upg__empty");
                 tiles.Add(none);
                 return;
@@ -222,8 +222,8 @@ namespace ScalingLaws.UI
             words.Add(name);
 
             var level = new Label(standing.IsAvailable
-                ? $"LEVEL {standing.Level}"
-                : $"FROM {definition.AvailableFrom}");
+                ? Loc.T("upgrade.level", standing.Level)
+                : Loc.T("upgrade.from", definition.AvailableFrom));
 
             level.AddToClassList("utile__level");
             words.Add(level);
@@ -242,15 +242,15 @@ namespace ScalingLaws.UI
             // The state badge, out of flow in the corner so a long name cannot push it off.
             if (inFlight)
             {
-                tile.Add(Badge("IN PROGRESS", "utile__badge--busy"));
+                tile.Add(Badge(Loc.T("common.in_progress"), "utile__badge--busy"));
             }
             else if (standing.IsMaxed)
             {
-                tile.Add(Badge("MAX", "utile__badge--max"));
+                tile.Add(Badge(Loc.T("upgrade.max"), "utile__badge--max"));
             }
             else if (standing.IsBehindMarket)
             {
-                tile.Add(Badge($"{standing.Shortfall} BEHIND", "utile__badge--behind"));
+                tile.Add(Badge(Loc.T("upgrade.behind", standing.Shortfall), "utile__badge--behind"));
             }
 
             var check = new VisualElement();
@@ -287,7 +287,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("udet");
 
-            var kicker = new Label("UPGRADING");
+            var kicker = new Label(Loc.T("upgrade.upgrading"));
             kicker.AddToClassList("udet__kicker");
             panel.Add(kicker);
 
@@ -295,7 +295,7 @@ namespace ScalingLaws.UI
             name.AddToClassList("udet__name");
             panel.Add(name);
 
-            var version = new Label($"Version: {model.Line.PreviousName}");
+            var version = new Label(Loc.T("upgrade.version", model.Line.PreviousName));
             version.AddToClassList("udet__version");
             panel.Add(version);
 
@@ -305,9 +305,7 @@ namespace ScalingLaws.UI
 
             if (picked.Count == 0)
             {
-                var hint = new Label(
-                    "Pick one or more upgrades on the left. They can be commissioned together and "
-                    + "the cluster splits its time between them.");
+                var hint = new Label(Loc.T("upgrade.pick_hint"));
 
                 hint.AddToClassList("udet__hint");
                 panel.Add(hint);
@@ -341,13 +339,13 @@ namespace ScalingLaws.UI
             var changes = new VisualElement();
             changes.AddToClassList("udet__changes");
 
-            changes.Add(Row("CAPABILITY", model.EffectiveCapability(today),
+            changes.Add(Row(Loc.T("upgrade.capability"), model.EffectiveCapability(today),
                 model.EffectiveCapability(today) + capability, 1));
 
-            changes.Add(Row("BRAND", model.BrandBonus(today) * 100.0,
+            changes.Add(Row(Loc.T("upgrade.brand"), model.BrandBonus(today) * 100.0,
                 (model.BrandBonus(today) + brand) * 100.0, 1, "%"));
 
-            changes.Add(Row("SERVING EFFICIENCY", model.EfficiencyMultiplier(today) * 100.0,
+            changes.Add(Row(Loc.T("upgrade.efficiency"), model.EfficiencyMultiplier(today) * 100.0,
                 (model.EfficiencyMultiplier(today) + efficiency) * 100.0, 1, "%"));
 
             panel.Add(changes);
@@ -368,9 +366,9 @@ namespace ScalingLaws.UI
 
             var bill = new VisualElement();
             bill.AddToClassList("udet__bill");
-            bill.Add(Cell("COST", UiFormat.Money(cash)));
-            bill.Add(Cell("TIME", UiFormat.Days(days)));
-            bill.Add(Cell("COMPUTE", UiFormat.PetaflopDays(petaflopDays)));
+            bill.Add(Cell(Loc.T("upgrade.cost"), UiFormat.Money(cash)));
+            bill.Add(Cell(Loc.T("upgrade.time"), UiFormat.Days(days)));
+            bill.Add(Cell(Loc.T("upgrade.compute"), UiFormat.PetaflopDays(petaflopDays)));
             panel.Add(bill);
 
             if (!string.IsNullOrEmpty(problem))
@@ -437,7 +435,7 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("udet__buttons");
 
-            var back = new Button(() => goBack?.Invoke()) { text = "BACK" };
+            var back = new Button(() => goBack?.Invoke()) { text = Loc.T("common.back") };
             back.AddToClassList("udet__back");
             row.Add(back);
 
@@ -456,7 +454,7 @@ namespace ScalingLaws.UI
 
                 planRelease?.Invoke(modelIndex, chosen.ToList());
             })
-            { text = "PLAN THE RELEASE" };
+            { text = Loc.T("upgrade.plan_release") };
 
             go.AddToClassList("udet__go");
             go.SetEnabled(anyPicked && affordable);

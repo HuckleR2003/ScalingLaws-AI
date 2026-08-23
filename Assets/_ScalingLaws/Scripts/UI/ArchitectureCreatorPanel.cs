@@ -67,14 +67,21 @@ namespace ScalingLaws.UI
         private string problem = string.Empty;
 
         /// <summary>Name, the note that explains it, and where the slider starts.</summary>
-        private static readonly (ResearchDirection Direction, string Label, Func<TechNotes.Note> Note,
+        /// <summary>
+        /// The five directions, where each slider starts, and the note that explains it.
+        ///
+        /// **The name is a key rather than a word.** It is read when the row is built, so switching
+        /// language rebuilds the screen into the other one; a string baked in here would leave five
+        /// English headings on an otherwise Polish page, which is exactly how it first shipped.
+        /// </summary>
+        private static readonly (ResearchDirection Direction, string Key, Func<TechNotes.Note> Note,
             float Initial)[] Directions =
             {
-                (ResearchDirection.Sparsity, "Sparsity", () => TechNotes.Sparsity, 0.35f),
-                (ResearchDirection.Throughput, "Throughput", () => TechNotes.Throughput, 0.20f),
-                (ResearchDirection.Quality, "Quality per parameter", () => TechNotes.Quality, 0.30f),
-                (ResearchDirection.Serving, "Serving cost", () => TechNotes.Serving, 0.15f),
-                (ResearchDirection.Reasoning, "Reasoning", () => TechNotes.Reasoning, 0.10f)
+                (ResearchDirection.Sparsity, "tech.sparsity.title", () => TechNotes.Sparsity, 0.35f),
+                (ResearchDirection.Throughput, "tech.throughput.title", () => TechNotes.Throughput, 0.20f),
+                (ResearchDirection.Quality, "tech.quality.title", () => TechNotes.Quality, 0.30f),
+                (ResearchDirection.Serving, "tech.serving.title", () => TechNotes.Serving, 0.15f),
+                (ResearchDirection.Reasoning, "tech.reasoning.title", () => TechNotes.Reasoning, 0.10f)
             };
 
         public ArchitectureCreatorPanel(CompanySimulation simulation)
@@ -109,13 +116,11 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("arx__head");
 
-            var title = new Label("ARCHITECTURE");
+            var title = new Label(Loc.T("arch.title"));
             title.AddToClassList("arx__title");
             head.Add(title);
 
-            var strap = new Label(
-                "The house family every later model inherits from. Budget and calendar decide how "
-                + "far the programme reaches. Focus decides whether it reaches anywhere at all.");
+            var strap = new Label(Loc.T("arch.strap"));
 
             strap.AddToClassList("arx__strap");
             head.Add(strap);
@@ -154,7 +159,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildProgrammeCard()
         {
-            var card = Card("PROGRAMME");
+            var card = Card(Loc.T("arch.programme"));
 
             var row = new VisualElement();
             row.AddToClassList("arx__fields");
@@ -162,22 +167,19 @@ namespace ScalingLaws.UI
             nameField.value = "House family 1";
             nameField.AddToClassList("arx__name");
             nameField.RegisterValueChangedCallback(_ => Reprice());
-            row.Add(Field("FAMILY NAME", nameField));
+            row.Add(Field(Loc.T("arch.family_name"), nameField));
 
             slotField.AddToClassList("arx__pick");
             slotField.RegisterValueChangedCallback(_ => Reprice());
-            row.Add(Field("SLOT", slotField));
+            row.Add(Field(Loc.T("arch.slot"), slotField));
 
             baseField.AddToClassList("arx__pick");
             baseField.RegisterValueChangedCallback(_ => Reprice());
-            row.Add(Field("BUILD ON", baseField));
+            row.Add(Field(Loc.T("arch.build_on"), baseField));
 
             card.Add(row);
 
-            var hint = new Label(
-                "Iterating a family you already own costs 40% less and takes 40% less time, and each "
-                + "generation reaches about half as far as the one before it. Families plateau. A "
-                + "clean sheet costs full price and has no such ceiling.");
+            var hint = new Label(Loc.T("arch.iterate_hint"));
 
             hint.AddToClassList("arx__hint");
             card.Add(hint);
@@ -202,19 +204,17 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildDirectionsCard()
         {
-            var card = Card("RESEARCH DIRECTIONS");
+            var card = Card(Loc.T("arch.directions"));
 
-            var note = new Label(
-                "Effort is relative. Spreading it evenly across all five buys a fifth of the depth "
-                + "in each, which is a real choice and usually a bad one.");
+            var note = new Label(Loc.T("arch.directions_hint"));
 
             note.AddToClassList("arx__hint");
             card.Add(note);
             card.Add(directionRows);
 
-            foreach (var (direction, label, note1, initial) in Directions)
+            foreach (var (direction, key, note1, initial) in Directions)
             {
-                directionRows.Add(BuildDirectionRow(direction, label, note1(), initial));
+                directionRows.Add(BuildDirectionRow(direction, Loc.T(key), note1(), initial));
             }
 
             return card;
@@ -229,7 +229,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("drow__head");
 
-            var name = new Label(label.ToUpperInvariant());
+            var name = new Label(label);
             name.AddToClassList("drow__name");
             head.Add(name);
 
@@ -308,7 +308,7 @@ namespace ScalingLaws.UI
                 lockLabels[direction].text = ArchitectureCeiling.TryNextRung(
                     direction, simulation.State.HasResearch, out var rung, out var next)
                         ? $"{ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}  ·  {next:P0}"
-                        : "LOCKED";
+                        : Loc.T("common.locked");
             }
         }
 
@@ -327,7 +327,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildInvestmentCard()
         {
-            var card = Card("INVESTMENT");
+            var card = Card(Loc.T("arch.investment"));
 
             var pair = new VisualElement();
             pair.AddToClassList("arx__fields");
@@ -335,18 +335,16 @@ namespace ScalingLaws.UI
             budgetSlider.value = 7.0f;
             budgetSlider.AddToClassList("arx__slider");
             budgetSlider.RegisterValueChangedCallback(_ => Reprice());
-            pair.Add(Money("RESEARCH BUDGET", TechNotes.ResearchBudget, budgetReading, budgetSlider));
+            pair.Add(Money(Loc.T("arch.budget"), TechNotes.ResearchBudget, budgetReading, budgetSlider));
 
             durationSlider.value = 365f;
             durationSlider.AddToClassList("arx__slider");
             durationSlider.RegisterValueChangedCallback(_ => Reprice());
-            pair.Add(Money("PROGRAMME LENGTH", TechNotes.ProgrammeLength, durationReading, durationSlider));
+            pair.Add(Money(Loc.T("arch.length"), TechNotes.ProgrammeLength, durationReading, durationSlider));
 
             card.Add(pair);
 
-            var hint = new Label(
-                "Money and time are a geometric mean, not a sum. A billion dollars in three months "
-                + "is not a breakthrough, and neither is three years of two people.");
+            var hint = new Label(Loc.T("arch.investment_hint"));
 
             hint.AddToClassList("arx__hint");
             card.Add(hint);
@@ -387,7 +385,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildOwnedCard()
         {
-            var card = Card("HOUSE FAMILIES");
+            var card = Card(Loc.T("arch.families"));
             card.Add(ownedList);
             return card;
         }
@@ -410,49 +408,49 @@ namespace ScalingLaws.UI
             durationReading.text = UiFormat.Days(ArchitectureDesigner.DurationDays(blueprint));
 
             outcome.Clear();
-            Card("LIKELY OUTCOME", outcome);
+            Card(Loc.T("arch.outcome"), outcome);
             outcome.AddToClassList("arx__outcome");
 
             // The three numbers that say how good a bet this is, before any of the numbers that say
             // what it would produce. A player deciding whether to commit a year reads these first.
             var gauges = new VisualElement();
             gauges.AddToClassList("arx__gauges");
-            gauges.Add(Gauge("RESEARCH POWER", projection.ResearchPower / 1.2,
+            gauges.Add(Gauge(Loc.T("arch.research_power"), projection.ResearchPower / 1.2,
                 UiFormat.Percent(projection.ResearchPower / 1.2), "#7ED89E"));
 
-            gauges.Add(Gauge("FOCUS", blueprint.Focus, UiFormat.Percent(blueprint.Focus), "#5B8DEF"));
+            gauges.Add(Gauge(Loc.T("arch.focus"), blueprint.Focus, UiFormat.Percent(blueprint.Focus), "#5B8DEF"));
 
             // Drawn as "how sure is this", so full means certain. Spread is the opposite of that.
-            gauges.Add(Gauge("CERTAINTY", 1.0 - projection.Variance,
+            gauges.Add(Gauge(Loc.T("arch.certainty"), 1.0 - projection.Variance,
                 UiFormat.Percent(1.0 - projection.Variance), "#E0B83C"));
 
             outcome.Add(gauges);
 
-            var what = new Label("WHAT IT WOULD PRODUCE");
+            var what = new Label(Loc.T("arch.would_produce"));
             what.AddToClassList("arx__subhead");
             outcome.Add(what);
 
-            outcome.Add(Band("ACTIVE PARAMETERS",
+            outcome.Add(Band(Loc.T("arch.active_parameters"),
                 projection.Ceiling.ActiveParameterFraction,
                 projection.Expected.ActiveParameterFraction,
                 projection.Floor.ActiveParameterFraction, 3, lowerIsBetter: true));
 
-            outcome.Add(Band("QUALITY PER PARAMETER",
+            outcome.Add(Band(Loc.T("arch.quality_per_parameter"),
                 projection.Floor.ParameterEfficiency,
                 projection.Expected.ParameterEfficiency,
                 projection.Ceiling.ParameterEfficiency, 2));
 
-            outcome.Add(Band("TRAINING EFFICIENCY",
+            outcome.Add(Band(Loc.T("arch.training_efficiency"),
                 projection.Floor.TrainingEfficiency,
                 projection.Expected.TrainingEfficiency,
                 projection.Ceiling.TrainingEfficiency, 2));
 
-            outcome.Add(Band("SERVING MULTIPLIER",
+            outcome.Add(Band(Loc.T("arch.serving_multiplier"),
                 projection.Ceiling.InferenceCostMultiplier,
                 projection.Expected.InferenceCostMultiplier,
                 projection.Floor.InferenceCostMultiplier, 2, lowerIsBetter: true));
 
-            outcome.Add(Band("CAPABILITY BONUS",
+            outcome.Add(Band(Loc.T("arch.capability_bonus"),
                 projection.Floor.CapabilityBonus,
                 projection.Expected.CapabilityBonus,
                 projection.Ceiling.CapabilityBonus, 1));
@@ -461,9 +459,9 @@ namespace ScalingLaws.UI
             bill.AddToClassList("arx__bill");
 
             var cash = ArchitectureDesigner.CashCostUsd(blueprint);
-            bill.Add(Cell("CASH", UiFormat.Money(cash), cash > simulation.State.CashUsd));
-            bill.Add(Cell("COMPUTE", UiFormat.PetaflopDays(projection.PetaflopDaysRequired), false));
-            bill.Add(Cell("SAVES", UiFormat.Percent(projection.ComputeSavingVersusBaseline), false));
+            bill.Add(Cell(Loc.T("arch.cash"), UiFormat.Money(cash), cash > simulation.State.CashUsd));
+            bill.Add(Cell(Loc.T("arch.compute"), UiFormat.PetaflopDays(projection.PetaflopDaysRequired), false));
+            bill.Add(Cell(Loc.T("arch.saves"), UiFormat.Percent(projection.ComputeSavingVersusBaseline), false));
             outcome.Add(bill);
 
             outcome.Add(BuildVerdict(blueprint, projection));
@@ -485,7 +483,7 @@ namespace ScalingLaws.UI
 
             if (busy)
             {
-                verdict.text = "A family programme is already running. One at a time.";
+                verdict.text = Loc.T("arch.verdict.busy");
             }
             else if (!projection.IsFeasible)
             {
@@ -493,17 +491,15 @@ namespace ScalingLaws.UI
             }
             else if (projection.Variance > 0.3)
             {
-                verdict.text = "Runnable, and underfunded enough that the result is close to a coin "
-                    + "toss. More money or more calendar narrows the band.";
+                verdict.text = Loc.T("arch.verdict.coin_toss");
             }
             else if (blueprint.Focus < 0.2)
             {
-                verdict.text = "Runnable, and the effort is spread so evenly that no direction goes "
-                    + "deep enough to matter.";
+                verdict.text = Loc.T("arch.verdict.spread");
             }
             else
             {
-                verdict.text = "Runnable, and focused enough to land somewhere useful.";
+                verdict.text = Loc.T("arch.verdict.good");
             }
 
             verdict.EnableInClassList("arx__verdict--ok", runnable);
@@ -517,7 +513,7 @@ namespace ScalingLaws.UI
                 block.Add(trouble);
             }
 
-            var commit = new Button(Commit) { text = "COMMIT THE PROGRAMME" };
+            var commit = new Button(Commit) { text = Loc.T("arch.commit") };
             commit.AddToClassList("arx__commit");
             commit.SetEnabled(runnable);
             block.Add(commit);
@@ -699,7 +695,7 @@ namespace ScalingLaws.UI
                     Refresh();
                 })
                 {
-                    text = abandonArmed ? "CONFIRM, NOTHING COMES BACK" : "ABANDON THIS PROGRAMME"
+                    text = Loc.T(abandonArmed ? "arch.abandon_confirm" : "arch.abandon")
                 };
 
                 stop.AddToClassList("afam__stop");
@@ -711,9 +707,7 @@ namespace ScalingLaws.UI
 
             if (simulation.State.CustomArchitectures.Count == 0)
             {
-                var empty = new Label(
-                    "No house families yet. Everything is running on published techniques, which is "
-                    + "exactly what every rival is also running on.");
+                var empty = new Label(Loc.T("arch.no_families"));
 
                 empty.AddToClassList("arx__hint");
                 ownedList.Add(empty);
@@ -755,8 +749,8 @@ namespace ScalingLaws.UI
             {
                 slotOptions.Add(slot);
                 labels.Add(simulation.State.CustomArchitectures.TryGetValue(slot, out var existing)
-                    ? $"{SlotLetter(slot)} - overwrite {existing.DisplayName}"
-                    : $"{SlotLetter(slot)} - empty");
+                    ? Loc.T("arch.slot_overwrite", SlotLetter(slot), existing.DisplayName)
+                    : Loc.T("arch.slot_empty", SlotLetter(slot)));
             }
 
             slotField.choices = labels;
@@ -771,7 +765,7 @@ namespace ScalingLaws.UI
         private void RebuildBases()
         {
             baseOptions.Clear();
-            var labels = new List<string> { "Clean sheet" };
+            var labels = new List<string> { Loc.T("arch.clean_sheet") };
             baseOptions.Add(ArchitectureId.None);
 
             foreach (var pair in simulation.State.CustomArchitectures)

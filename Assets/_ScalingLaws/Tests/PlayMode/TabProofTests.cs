@@ -93,6 +93,11 @@ namespace ScalingLaws.Tests.PlayMode
 
             TabProofCampaign.Furnish(shell.Simulation);
 
+            // Half the pass in Polish, so the review sees what a Polish player sees. A phrase that
+            // is twice as long as its English original overflows a fixed-width control, and that is
+            // only ever visible in a picture.
+            Loc.Current = Language.English;
+
             // A runtime copy pointed at a texture, so the real asset is never dirtied and the shot
             // is a known size whatever window the run happens to have.
             var settings = Object.Instantiate(document.panelSettings);
@@ -147,6 +152,17 @@ namespace ScalingLaws.Tests.PlayMode
             }
 
             yield return Capture(null, settings, texture, "card_open.png");
+
+            // And again in Polish, on the four screens the author asked to have translated.
+            Loc.Current = Language.Polish;
+
+            foreach (var name in new[] { "Family", "Upgrade", "ReleasePlan", "Research" })
+            {
+                shell.OpenScreenByName(name);
+                yield return Capture(null, settings, texture, $"pl_{name.ToLowerInvariant()}.png");
+            }
+
+            Loc.Current = Language.English;
 
             texture.Release();
             Object.DestroyImmediate(texture);

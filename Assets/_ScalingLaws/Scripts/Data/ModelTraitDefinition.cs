@@ -28,8 +28,12 @@ namespace ScalingLaws.Data
             int expectationRiseDays)
         {
             Trait = trait;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? trait.ToString() : displayName;
-            Description = description ?? string.Empty;
+            // displayName and description are the English originals the phrase book was built
+            // from, and they are deliberately not stored. Loc holds both languages and falls back
+            // to English itself, so a second copy here would only be somewhere for the two to
+            // disagree. They stay as parameters because they document what each row is.
+            _ = displayName;
+            _ = description;
             AvailableFrom = availableFrom;
             CapabilityPerLevel = Math.Clamp(SimUnits.Finite(capabilityPerLevel), 0.0, 5.0);
             BrandPerLevel = Math.Clamp(SimUnits.Finite(brandPerLevel), 0.0, 0.2);
@@ -42,8 +46,44 @@ namespace ScalingLaws.Data
         }
 
         public ModelTrait Trait { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
+
+        /// <summary>
+        /// The trait's name, in whatever language the player reads.
+        ///
+        /// **Read at access time rather than stored**, because the language can change while the
+        /// game is running and a name captured when the catalog was built would leave eleven English
+        /// headings on an otherwise Polish upgrade screen. These eleven names are the parameters
+        /// that screen exists to change, so they are the last place to leave untranslated.
+        ///
+        /// The English strings above stay as the fallback: `Loc.T` returns them when a key is
+        /// missing, so a trait added tomorrow reads correctly before anybody writes its Polish.
+        /// </summary>
+        public string DisplayName => Loc.T($"trait.{KeyFor(Trait)}.name");
+
+        public string Description => Loc.T($"trait.{KeyFor(Trait)}.desc");
+
+        /// <summary>
+        /// The stem of the phrase-book key for a trait.
+        ///
+        /// Written out rather than derived from the enum name, because four of them do not match:
+        /// the enum says `ContextLength`, `Latency`, `ToolUse` and `Multilingual` while the player
+        /// reads context, speed, tool use and multilanguage. Deriving would produce keys nobody
+        /// would think to look for.
+        /// </summary>
+        private static string KeyFor(ModelTrait trait) => trait switch
+        {
+            ModelTrait.Reasoning => "reasoning",
+            ModelTrait.Knowledge => "knowledge",
+            ModelTrait.Coding => "coding",
+            ModelTrait.Multilingual => "multilingual",
+            ModelTrait.Multimodal => "multimodal",
+            ModelTrait.ContextLength => "context",
+            ModelTrait.Safety => "safety",
+            ModelTrait.Latency => "latency",
+            ModelTrait.Efficiency => "efficiency",
+            ModelTrait.ToolUse => "tooluse",
+            _ => "ecosystem"
+        };
 
         /// <summary>Nobody can build this before the field knows how.</summary>
         public GameDate AvailableFrom { get; }
