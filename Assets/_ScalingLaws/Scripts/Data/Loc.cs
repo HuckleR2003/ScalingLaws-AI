@@ -320,7 +320,6 @@ namespace ScalingLaws.Data
 
             // ---- the architecture screen -------------------------------------------------------------
             ["arch.title"] = "ARCHITECTURE",
-            ["arch.strap"] = "The house family every later model inherits from. Budget and calendar decide how far the programme reaches. Focus decides whether it reaches anywhere at all.",
             ["arch.programme"] = "PROGRAMME",
             ["arch.family_name"] = "FAMILY NAME",
             ["arch.slot"] = "SLOT",
@@ -643,6 +642,22 @@ namespace ScalingLaws.Data
             ["loan.sovereign.name"] = "Sovereign compute programme",
             ["loan.sovereign.desc"] = "A state decides that domestic frontier capability is infrastructure and writes the cheque to prove it. Ten billion now, most of three times that back over eleven years, and a government that will not renegotiate. Nothing else in the game moves this much money, and nothing else fails this loudly.",
 
+            // ---- making the architecture screen legible ----------------------------------------------
+            ["arch.strap"] = "Before you build models you can build the thing models are made of. One programme, once, and every model you ship afterwards inherits it: cheaper to run, better for its size, faster to train, or all three. It takes a year and the result is a range rather than a number.",
+            ["arch.setting_and_share"] = "{0}   ·   {1} of effort",
+            ["arch.cheaper_to_run"] = "{0} cheaper to run than what you have now",
+            ["arch.more_from_each"] = "{0} more capability from the same parameters",
+            ["arch.faster_runs"] = "{0} faster to train, every run",
+            ["arch.cheaper_tokens"] = "{0} cheaper per token once models are live",
+            ["arch.points_better"] = "{0} capability on top, before any scale",
+            ["arch.no_better"] = "no better than what you already run on",
+            ["arch.shape.none"] = "A family aimed at nothing in particular. Spreading the effort evenly is a decision, and it usually produces something no better than the published techniques you already use.",
+            ["arch.shape.sparsity"] = "A family built to be cheap to run. Enormous models that only wake part of themselves for each token, so you can serve a size nobody else can afford.",
+            ["arch.shape.throughput"] = "A family built for speed of delivery. The same runs finish sooner, so you ship more models a year and can still catch a launch window.",
+            ["arch.shape.quality"] = "A family built to be good. Every model it ever produces scores higher for the same compute, which compounds for a decade and shows up in the books last.",
+            ["arch.shape.serving"] = "A family built for margin. Nothing a customer can see, and it decides whether you can follow the next price cut somebody else starts.",
+            ["arch.shape.reasoning"] = "A family built to think. Capability that does not come from being bigger, which is the only lever left once everybody's clusters are the same size.",
+
         };
 
         // ==========================================================================================
@@ -857,7 +872,6 @@ namespace ScalingLaws.Data
 
             // ---- the architecture screen -------------------------------------------------------------
             ["arch.title"] = "ARCHITEKTURA",
-            ["arch.strap"] = "Rodzina, po której dziedziczy każdy późniejszy model. Budżet i kalendarz decydują, jak daleko sięgnie program. Skupienie decyduje, czy sięgnie gdziekolwiek.",
             ["arch.programme"] = "PROGRAM",
             ["arch.family_name"] = "NAZWA RODZINY",
             ["arch.slot"] = "SLOT",
@@ -1179,6 +1193,22 @@ namespace ScalingLaws.Data
             ["loan.bond.desc"] = "Prawdziwa emisja pod prawdziwy bilans. Tanie pieniądze jak na tę branżę, a przy tej skali spóźniona rata jest wydarzeniem publicznym.",
             ["loan.sovereign.name"] = "Państwowy program mocy obliczeniowej",
             ["loan.sovereign.desc"] = "Państwo uznaje, że krajowe zdolności na froncie to infrastruktura, i wypisuje czek, żeby to udowodnić. Dziesięć miliardów teraz, prawie trzy razy tyle z powrotem przez jedenaście lat i rząd, który nie renegocjuje. Nic innego w tej grze nie rusza tylu pieniędzy i nic innego nie upada tak głośno.",
+
+            // ---- making the architecture screen legible ----------------------------------------------
+            ["arch.strap"] = "Zanim zaczniesz budować modele, możesz zbudować to, z czego modele się robi. Jeden program, raz, i każdy model, który potem wydasz, to dziedziczy: tańszy w utrzymaniu, lepszy jak na swój rozmiar, szybszy w treningu albo wszystko naraz. Trwa rok, a wynik to przedział, nie liczba.",
+            ["arch.setting_and_share"] = "{0}   ·   {1} wysiłku",
+            ["arch.cheaper_to_run"] = "o {0} tańszy w utrzymaniu niż to, co masz teraz",
+            ["arch.more_from_each"] = "o {0} więcej zdolności z tych samych parametrów",
+            ["arch.faster_runs"] = "o {0} szybszy trening, przy każdym uruchomieniu",
+            ["arch.cheaper_tokens"] = "o {0} taniej za token, gdy modele już działają",
+            ["arch.points_better"] = "{0} zdolności na wierzchu, jeszcze przed skalą",
+            ["arch.no_better"] = "nie lepiej niż to, na czym już jeździsz",
+            ["arch.shape.none"] = "Rodzina wycelowana w nic konkretnego. Równe rozłożenie wysiłku to decyzja i zwykle daje coś nie lepszego od opublikowanych technik, których i tak używasz.",
+            ["arch.shape.sparsity"] = "Rodzina zbudowana pod tani rozruch. Ogromne modele, które budzą tylko część siebie na każdy token, więc serwujesz rozmiar, na który nikogo innego nie stać.",
+            ["arch.shape.throughput"] = "Rodzina zbudowana pod tempo dostarczania. Te same treningi kończą się szybciej, więc wydajesz więcej modeli rocznie i zdążasz na okno premiery.",
+            ["arch.shape.quality"] = "Rodzina zbudowana pod jakość. Każdy model, jaki z niej wyjdzie, punktuje wyżej przy tej samej mocy. To kumuluje się przez dekadę i najpóźniej widać to w księgach.",
+            ["arch.shape.serving"] = "Rodzina zbudowana pod marżę. Nic, co widzi klient, a decyduje o tym, czy pójdziesz za kolejną obniżką ceny, którą ktoś zacznie.",
+            ["arch.shape.reasoning"] = "Rodzina zbudowana pod myślenie. Zdolności, które nie biorą się z rozmiaru, czyli jedyna dźwignia, gdy wszyscy mają klastry tej samej wielkości.",
 
         };
 

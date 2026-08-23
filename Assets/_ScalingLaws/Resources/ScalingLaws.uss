@@ -11780,3 +11780,25 @@
     border-radius: 3px;
     background-color: rgb(126, 216, 158);
 }
+
+/* What a reading means against what the company runs on today. A bare 0.953 is unreadable and
+   "5% cheaper to run" is the same number needing no explanation. */
+
+.aband__versus {
+    font-size: 10px;
+    color: rgb(126, 216, 158);
+    white-space: normal;
+    margin-top: 3px;
+}
+
+/* One sentence naming the thing, before five bars describing it. */
+
+.arx__shape {
+    font-size: 11px;
+    color: rgb(196, 208, 228);
+    white-space: normal;
+    margin-bottom: 10px;
+    padding-left: 9px;
+    border-left-width: 2px;
+    border-left-color: rgb(226, 190, 44);
+}

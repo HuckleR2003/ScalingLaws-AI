@@ -395,9 +395,27 @@ namespace ScalingLaws.UI
             var blueprint = CurrentBlueprint();
             var projection = simulation.ProjectArchitecture(blueprint);
 
+            // **Both numbers, because one of them is meaningless alone.**
+            //
+            // The setting is what the slider says. The share is what the programme will actually
+            // spend there, and it is the one that decides the outcome: effort is normalised, so
+            // pushing one direction up takes from every other one whether the player meant it or
+            // not. Showing only the setting hid the entire trade this screen is about.
+            var effort = 0.0;
+
             foreach (var (direction, _, _, _) in Directions)
             {
-                readings[direction].text = $"{directions[direction].value:P0}";
+                effort += directions[direction].value;
+            }
+
+            foreach (var (direction, _, _, _) in Directions)
+            {
+                var value = directions[direction].value;
+                var share = effort <= 0.0 ? 0.0 : value / effort;
+
+                readings[direction].text = effort <= 0.0
+                    ? $"{value:P0}"
+                    : Loc.T("arch.setting_and_share", $"{value:P0}", $"{share:P0}");
             }
 
             budgetReading.text = UiFormat.Money(blueprint.ResearchBudgetUsd)
@@ -430,30 +448,53 @@ namespace ScalingLaws.UI
             what.AddToClassList("arx__subhead");
             outcome.Add(what);
 
+            // One sentence naming the thing, before five bars describing it. A player who reads
+            // nothing else on this panel should still come away knowing what they are commissioning.
+            var shape = new Label(DescribeFamily(blueprint));
+            shape.AddToClassList("arx__shape");
+            outcome.Add(shape);
+
+            // Everything is stated against the dense transformer, which is what a company with no
+            // house family of its own is running. A bare 0.953 is unreadable; "5% cheaper to run
+            // than today" is the same number and needs no explanation.
+            var today = ArchitectureCatalog.Baseline;
+
             outcome.Add(Band(Loc.T("arch.active_parameters"),
                 projection.Ceiling.ActiveParameterFraction,
                 projection.Expected.ActiveParameterFraction,
-                projection.Floor.ActiveParameterFraction, 3, lowerIsBetter: true));
+                projection.Floor.ActiveParameterFraction, 3, lowerIsBetter: true,
+                versus: Against(projection.Expected.ActiveParameterFraction,
+                    today.ActiveParameterFraction, lowerIsBetter: true, "arch.cheaper_to_run")));
 
             outcome.Add(Band(Loc.T("arch.quality_per_parameter"),
                 projection.Floor.ParameterEfficiency,
                 projection.Expected.ParameterEfficiency,
-                projection.Ceiling.ParameterEfficiency, 2));
+                projection.Ceiling.ParameterEfficiency, 2,
+                versus: Against(projection.Expected.ParameterEfficiency,
+                    today.ParameterEfficiency, lowerIsBetter: false, "arch.more_from_each")));
 
             outcome.Add(Band(Loc.T("arch.training_efficiency"),
                 projection.Floor.TrainingEfficiency,
                 projection.Expected.TrainingEfficiency,
-                projection.Ceiling.TrainingEfficiency, 2));
+                projection.Ceiling.TrainingEfficiency, 2,
+                versus: Against(projection.Expected.TrainingEfficiency,
+                    today.TrainingEfficiency, lowerIsBetter: false, "arch.faster_runs")));
 
             outcome.Add(Band(Loc.T("arch.serving_multiplier"),
                 projection.Ceiling.InferenceCostMultiplier,
                 projection.Expected.InferenceCostMultiplier,
-                projection.Floor.InferenceCostMultiplier, 2, lowerIsBetter: true));
+                projection.Floor.InferenceCostMultiplier, 2, lowerIsBetter: true,
+                versus: Against(projection.Expected.InferenceCostMultiplier,
+                    today.InferenceCostMultiplier, lowerIsBetter: true, "arch.cheaper_tokens")));
 
             outcome.Add(Band(Loc.T("arch.capability_bonus"),
                 projection.Floor.CapabilityBonus,
                 projection.Expected.CapabilityBonus,
-                projection.Ceiling.CapabilityBonus, 1));
+                projection.Ceiling.CapabilityBonus, 1,
+                versus: projection.Expected.CapabilityBonus - today.CapabilityBonus < 0.05
+                    ? Loc.T("arch.no_better")
+                    : Loc.T("arch.points_better",
+                        UiFormat.Number(projection.Expected.CapabilityBonus - today.CapabilityBonus, 1))));
 
             var bill = new VisualElement();
             bill.AddToClassList("arx__bill");
@@ -465,6 +506,47 @@ namespace ScalingLaws.UI
             outcome.Add(bill);
 
             outcome.Add(BuildVerdict(blueprint, projection));
+        }
+
+        /// <summary>
+        /// What this programme is aiming at, said as a kind of thing rather than as five numbers.
+        ///
+        /// **Named from the direction the effort actually goes into**, using the normalised share
+        /// rather than the raw setting, because that is what the simulation spends. A programme with
+        /// no direction above a third of the budget is not aiming at anything, and it says so.
+        /// </summary>
+        private string DescribeFamily(ArchitectureBlueprint blueprint)
+        {
+            var leading = ResearchDirection.Sparsity;
+            var best = 0.0;
+
+            foreach (var (direction, _, _, _) in Directions)
+            {
+                var share = blueprint.NormalizedWeight(direction);
+
+                if (share > best)
+                {
+                    best = share;
+                    leading = direction;
+                }
+            }
+
+            // Written out rather than built from the enum name. A key assembled by concatenation is
+            // invisible to the guard that checks every key exists, which is the whole reason that
+            // guard is there: it can only see literals.
+            if (best < 0.34)
+            {
+                return Loc.T("arch.shape.none");
+            }
+
+            return leading switch
+            {
+                ResearchDirection.Sparsity => Loc.T("arch.shape.sparsity"),
+                ResearchDirection.Throughput => Loc.T("arch.shape.throughput"),
+                ResearchDirection.Quality => Loc.T("arch.shape.quality"),
+                ResearchDirection.Serving => Loc.T("arch.shape.serving"),
+                _ => Loc.T("arch.shape.reasoning")
+            };
         }
 
         private VisualElement BuildVerdict(ArchitectureBlueprint blueprint,
@@ -529,8 +611,28 @@ namespace ScalingLaws.UI
         /// A player comparing a cheap programme against an expensive one wants to see the band
         /// narrow, and nothing in a row of digits shows that.
         /// </summary>
+        /// <summary>
+        /// One reading against what the company runs on today, in words.
+        ///
+        /// Returns an empty string when the difference is not worth a sentence, so a family that
+        /// changes nothing says nothing rather than claiming a 0.2% improvement.
+        /// </summary>
+        private static string Against(double expected, double baseline, bool lowerIsBetter, string key)
+        {
+            if (baseline <= 0.0)
+            {
+                return string.Empty;
+            }
+
+            var change = lowerIsBetter
+                ? 1.0 - expected / baseline
+                : expected / baseline - 1.0;
+
+            return change < 0.005 ? Loc.T("arch.no_better") : Loc.T(key, $"{change:P0}");
+        }
+
         private static VisualElement Band(string caption, double worst, double expected, double best,
-            int decimals, bool lowerIsBetter = false)
+            int decimals, bool lowerIsBetter = false, string versus = null)
         {
             var row = new VisualElement();
             row.AddToClassList("aband");
@@ -593,6 +695,14 @@ namespace ScalingLaws.UI
             ends.Add(bestLabel);
 
             row.Add(ends);
+
+            if (!string.IsNullOrEmpty(versus))
+            {
+                var meaning = new Label(versus);
+                meaning.AddToClassList("aband__versus");
+                row.Add(meaning);
+            }
+
             return row;
         }
 
