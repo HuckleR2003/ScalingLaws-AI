@@ -96,7 +96,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("taskbar__head");
 
-            var kicker = new Label($"ZADANIE  {done + 1}/{Data.GuideScript.Tasks.Count}");
+            var kicker = new Label($"{Data.Loc.T("guide.task")}  {done + 1}/{Data.GuideScript.Tasks.Count}");
             kicker.AddToClassList("taskbar__kicker");
             head.Add(kicker);
 

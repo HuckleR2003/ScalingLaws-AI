@@ -218,6 +218,7 @@ namespace ScalingLaws.Persistence
             data.guideStep = state.Guide.Step;
             data.guideStartingCashUsd = state.Guide.StartingCashUsd;
             data.guideBannerDismissed = state.Guide.BannerDismissed;
+            data.guideFreeResearchOwed = state.Guide.FreeResearchOwed;
 
             foreach (var approach in state.Hiring.Approaches)
             {
@@ -787,7 +788,8 @@ namespace ScalingLaws.Persistence
                     : GuideStage.Unseen,
                 safe.guideStep,
                 safe.guideStartingCashUsd,
-                safe.guideBannerDismissed);
+                safe.guideBannerDismissed,
+                safe.guideFreeResearchOwed);
 
             foreach (var incident in safe.incidents)
             {

@@ -141,20 +141,20 @@ namespace ScalingLaws.UI
                     goTo?.Invoke(step.Target);
                     Advance();
                 })
-                { text = step.Prompt ?? "Pokaż mi" };
+                { text = step.Prompt ?? Loc.T("guide.show_me") };
 
                 next.AddToClassList("guide__next");
                 next.AddToClassList("guide__next--go");
             }
             else
             {
-                next = new Button(Advance) { text = step.Prompt ?? "Dalej" };
+                next = new Button(Advance) { text = step.Prompt ?? Loc.T("guide.next") };
                 next.AddToClassList("guide__next");
             }
 
             buttons.Add(next);
 
-            var skip = new Button(Skip) { text = "Pomiń" };
+            var skip = new Button(Skip) { text = Loc.T("guide.skip") };
             skip.AddToClassList("guide__skip");
             buttons.Add(skip);
 
@@ -208,6 +208,16 @@ namespace ScalingLaws.UI
         private void Advance()
         {
             var state = progress();
+
+            // The favour is handed over on the way out of the step that offers it, so a player who
+            // leaves the tour before that point never had it and one who hears the offer keeps it
+            // whatever they do next. Named rather than counted: inserting a line above it must not
+            // quietly move the gift to a different part of the conversation.
+            if (Current?.Id == GuideScript.GiftStepId)
+            {
+                state.FreeResearchOwed = true;
+            }
+
             state.Step++;
 
             if (state.Step >= GuideScript.Steps.Count)
@@ -219,9 +229,22 @@ namespace ScalingLaws.UI
             changed?.Invoke();
         }
 
+        /// <summary>
+        /// Leaving early, which is allowed at every step and is not a failure.
+        ///
+        /// **Anything already given stays given.** Walking out after he offers the favour and before
+        /// he finishes explaining it would otherwise take it back, and a tutorial that punishes you
+        /// for ending it is a tutorial people sit through resenting.
+        /// </summary>
         private void Skip()
         {
             var state = progress();
+
+            if (Current?.Id == GuideScript.GiftStepId)
+            {
+                state.FreeResearchOwed = true;
+            }
+
             state.Stage = GuideStage.Finished;
 
             Hide();

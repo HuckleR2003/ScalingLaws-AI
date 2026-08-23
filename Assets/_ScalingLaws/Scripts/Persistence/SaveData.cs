@@ -398,7 +398,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 36;
+        public const int CurrentVersion = 37;
 
         public int version = CurrentVersion;
 
@@ -645,6 +645,14 @@ namespace ScalingLaws.Persistence
 
         /// <summary>True once the task strip was closed for good.</summary>
         public bool guideBannerDismissed;
+
+        /// <summary>
+        /// A research node still owed to the player. Added in v37.
+        ///
+        /// Causal state, not a record: the next programme reads it and does not charge. Dropping it
+        /// on reload would take back something the tutorial already gave.
+        /// </summary>
+        public bool guideFreeResearchOwed;
 
         public bool actionOpen;
 

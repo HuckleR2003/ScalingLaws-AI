@@ -137,6 +137,7 @@ namespace ScalingLaws.Persistence
                     33 => UpgradeV33ToV34(current),
                     34 => UpgradeV34ToV35(current),
                     35 => UpgradeV35ToV36(current),
+                    36 => UpgradeV36ToV37(current),
                     _ => current
                 };
             }
@@ -1113,6 +1114,33 @@ namespace ScalingLaws.Persistence
                 $"v35 to v36: {seeded} model(s) given a single release holding all of their users. "
                 + "Versions did not exist in v35, so there is no history to reconstruct and none "
                 + "was invented.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v36 to v37: nobody is owed a free research node.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// **The favour did not exist in v36, so nobody can have been promised one.** Granting it
+        /// to every existing save would hand a fifteen year old company a gift meant for its first
+        /// week, and the honest reading of a file written before the promise existed is that the
+        /// promise was never made.
+        /// </remarks>
+        public static SaveData UpgradeV36ToV37(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 37;
+            data.guideFreeResearchOwed = false;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v36 to v37: the tutorial's free research node did not exist in this version, so "
+                + "nothing is owed.");
 
             return data;
         }

@@ -2550,6 +2550,9 @@ namespace ScalingLaws.UI
                 case GuideTarget.Research: Show(Screen.Research); break;
                 case GuideTarget.Team: Show(Screen.Team); break;
                 case GuideTarget.Release: Show(Screen.Release); break;
+                case GuideTarget.Upgrade: Show(Screen.Upgrade); break;
+                case GuideTarget.Architecture: Show(Screen.Family); break;
+                case GuideTarget.Offices: Show(Screen.Offices); break;
             }
         }
 

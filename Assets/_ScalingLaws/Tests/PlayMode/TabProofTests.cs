@@ -153,6 +153,22 @@ namespace ScalingLaws.Tests.PlayMode
 
             yield return Capture(null, settings, texture, "card_open.png");
 
+            // The tour, mid-conversation. It only exists while the guide is running, so every other
+            // pass over these screens is blind to it, and it is the one part of the interface that
+            // is nothing but a paragraph of somebody talking: a line that wraps to four rows pushes
+            // its own buttons off the strip and only a picture says so.
+            shell.Simulation.State.Guide.Stage = GuideStage.Touring;
+            shell.Simulation.State.Guide.Step = 9;   // the step that hands over the favour
+            shell.OpenScreenByName("Research");
+            yield return Capture(null, settings, texture, "guide_en.png");
+
+            Loc.Current = Language.Polish;
+            shell.OpenScreenByName("Research");
+            yield return Capture(null, settings, texture, "guide_pl.png");
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Finished;
+            Loc.Current = Language.English;
+
             // And again in Polish, on the four screens the author asked to have translated.
             Loc.Current = Language.Polish;
 

@@ -80,7 +80,23 @@ namespace ScalingLaws.Tests.EditMode
                 Assert.That(done, Is.False);
             }
 
-            Assert.That(state.Guide.CurrentTask(state), Is.EqualTo("first_model"));
+            Assert.That(state.Guide.CurrentTask(state), Is.EqualTo("first_research"),
+                "The list opens on research now: the tutorial hands over a free node and this is "
+                + "the line that points at it.");
+        }
+
+        [Test]
+        public void TheStartingNodeDoesNotCountAsResearchTheCompanyDid()
+        {
+            var state = NewCompany();
+
+            Assert.That(state.Guide.IsDone("first_research", state), Is.False,
+                "Every company begins holding ResearchTree.StartingNode, so counting unlocked nodes "
+                + "crossed this off on day zero and the strip opened already ticked.");
+
+            state.UnlockedResearch.Add(ResearchNodeId.SinglePrecisionTraining);
+
+            Assert.That(state.Guide.IsDone("first_research", state), Is.True);
         }
 
         [Test]
@@ -136,6 +152,9 @@ namespace ScalingLaws.Tests.EditMode
         {
             var state = NewCompany(10_000_000);
 
+            Assert.That(state.Guide.CurrentTask(state), Is.EqualTo("first_research"));
+
+            state.UnlockedResearch.Add(ResearchNodeId.SinglePrecisionTraining);
             Assert.That(state.Guide.CurrentTask(state), Is.EqualTo("first_model"));
 
             state.AddToShelf(new TrainedModel("Subject", ArchitectureId.DenseTransformer, 30.0,
@@ -143,7 +162,11 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.That(state.Guide.CurrentTask(state), Is.EqualTo("first_release"));
 
-            state.AddDeployedModel(AModel(state));
+            var model = AModel(state);
+            state.AddDeployedModel(model);
+            Assert.That(state.Guide.CurrentTask(state), Is.EqualTo("first_upgrade"));
+
+            model.Traits.SetLevel(ModelTrait.Reasoning, model.Traits.GetLevel(ModelTrait.Reasoning) + 1);
             Assert.That(state.Guide.CurrentTask(state), Is.EqualTo("double_cash"));
 
             state.CashUsd = 20_000_000;

@@ -1026,18 +1026,23 @@ namespace ScalingLaws.Simulation
             // Points first, because that is the real gate now. Cash is a fraction of what it was and
             // a company that has been building will usually have it; a company that has been idle
             // will have the money and none of the understanding, which is the whole point.
-            var points = ResearchBudget.PointCostOf(node.CostUsd);
-            if (State.ResearchPoints < points)
+            // A node the favour is going to pay for is affordable by definition, and reporting it
+            // as blocked would hide the one thing the tutorial is trying to hand over.
+            if (!State.Guide.FreeResearchOwed)
             {
-                return new ResearchStanding(node, false, false, false,
-                    $"needs {points:N0} research points, you have {State.ResearchPoints:N0}", duration);
-            }
+                var points = ResearchBudget.PointCostOf(node.CostUsd);
+                if (State.ResearchPoints < points)
+                {
+                    return new ResearchStanding(node, false, false, false,
+                        $"needs {points:N0} research points, you have {State.ResearchPoints:N0}", duration);
+                }
 
-            var cash = ResearchBudget.CashCostOf(node.CostUsd);
-            if (State.CashUsd < cash)
-            {
-                return new ResearchStanding(node, false, false, false,
-                    $"needs ${cash:N0}", duration);
+                var cash = ResearchBudget.CashCostOf(node.CostUsd);
+                if (State.CashUsd < cash)
+                {
+                    return new ResearchStanding(node, false, false, false,
+                        $"needs ${cash:N0}", duration);
+                }
             }
 
             return new ResearchStanding(node, false, false, true, string.Empty, duration);
@@ -1101,18 +1106,31 @@ namespace ScalingLaws.Simulation
             var cash = ResearchBudget.CashCostOf(node.CostUsd);
             var points = ResearchBudget.PointCostOf(node.CostUsd);
 
-            State.PostCash(LedgerLine.Research, cash);
-            State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - points);
+            // The favour, spent. It covers both currencies because covering only the cash would be
+            // no gift at all: points are the real gate and a new company has almost none.
+            var free = State.Guide.FreeResearchOwed;
+
+            if (free)
+            {
+                State.Guide.FreeResearchOwed = false;
+            }
+            else
+            {
+                State.PostCash(LedgerLine.Research, cash);
+                State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - points);
+            }
 
             State.ActiveResearch = new ResearchProject(
-                nodeId, State.Date, standing.DurationDays, node.PetaflopDaysRequired, cash);
+                nodeId, State.Date, standing.DurationDays, node.PetaflopDaysRequired, free ? 0L : cash);
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchStarted,
                 State.Date,
-                node.HasWarning
-                    ? $"{node.DisplayName} begun. {node.Warning}"
-                    : $"{node.DisplayName} begun, about {standing.DurationDays} days.",
+                free
+                    ? Loc.T("guide.favour.spent", node.DisplayName, standing.DurationDays)
+                    : node.HasWarning
+                        ? $"{node.DisplayName} begun. {node.Warning}"
+                        : $"{node.DisplayName} begun, about {standing.DurationDays} days.",
                 node.CostUsd));
 
             return true;
