@@ -421,7 +421,9 @@
 
 .page-subtitle {
     color: var(--ink-dim);
-    margin-bottom: 20px;
+    font-size: 12px;
+    margin-bottom: 12px;
+    max-width: 900px;
     white-space: normal;
 }
 
@@ -518,11 +520,13 @@
 
 /* ---- creator form ----------------------------------------------------- */
 
+/* Tightened from 18/16 for the compact pass. Every screen in the game is made of these, so four
+   pixels of padding and four of margin is a visible amount of page back on all of them. */
 .panel {
     background-color: rgba(6, 30, 62, 0.45);
     border-radius: var(--card-radius);
-    padding: 18px;
-    margin-bottom: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
 
     /* UI Toolkit shrinks children before it overflows them. Without this the two panels below
        the Scale belt were squashed to nothing and the whole SCALING READOUT section was invisible
@@ -2222,9 +2226,9 @@
 /* ---- banners, half again taller ---- */
 
 .page-banner {
-    height: 189px;
-    margin-top: 2px;
-    margin-bottom: 10px;
+    height: 112px;
+    margin-top: 0;
+    margin-bottom: 8px;
     flex-shrink: 0;
     justify-content: flex-end;
     border-radius: 4px;
@@ -3664,12 +3668,13 @@
 }
 
 .hswitch__half--on {
-    background-color: rgb(252, 250, 246);
-    color: rgb(114, 12, 46);
+    background-color: rgba(226, 190, 44, 0.13);
+    border-color: rgb(226, 190, 44);
+    color: rgb(244, 206, 96);
 }
 
 .hswitch__half--on:hover {
-    background-color: rgb(255, 255, 255);
+    background-color: rgba(226, 190, 44, 0.22);
 }
 
 .hswitch__half--locked {
@@ -3908,7 +3913,9 @@
     flex-shrink: 0;
     margin-right: 12px;
     padding: 10px;
-    background-color: rgb(250, 250, 250);
+    background-color: rgba(10, 13, 20, 0.80);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
     border-radius: 4px;
 }
 
@@ -3918,22 +3925,22 @@
     align-items: center;
     justify-content: center;
     border-right-width: 1px;
-    border-right-color: rgb(228, 228, 230);
+    border-right-color: rgba(255, 255, 255, 0.10);
 }
 
 .rnow__caption {
     font-size: 12px;
-    color: rgb(158, 160, 166);
+    color: rgb(137, 135, 129);
 }
 
 .rnow__big {
     font-size: 26px;
-    color: rgb(88, 92, 100);
+    color: rgb(207, 203, 195);
 }
 
 .rnow__under {
     font-size: 9px;
-    color: rgb(158, 160, 166);
+    color: rgb(137, 135, 129);
 }
 
 .rnow__right {
@@ -3943,7 +3950,7 @@
 
 .rnow__heading {
     font-size: 12px;
-    color: rgb(120, 124, 132);
+    color: rgb(175, 171, 163);
     white-space: normal;
 }
 
@@ -3951,7 +3958,7 @@
     margin-top: 2px;
     margin-bottom: 5px;
     font-size: 19px;
-    color: rgb(58, 62, 70);
+    color: rgb(126, 216, 158);
 }
 
 .rnow-stat {
@@ -3968,7 +3975,7 @@
 .rnow-stat__value {
     font-size: 9px;
     -unity-font-style: bold;
-    color: rgb(74, 78, 86);
+    color: rgb(226, 234, 248);
 }
 
 /* ---- the two charts ---- */
@@ -3978,7 +3985,9 @@
     flex-grow: 1;
     flex-shrink: 1;
     padding: 8px;
-    background-color: rgb(250, 250, 250);
+    background-color: rgba(10, 13, 20, 0.80);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
     border-radius: 4px;
 }
 
@@ -3992,7 +4001,7 @@
 
 .chart-block__title {
     font-size: 11px;
-    color: rgb(120, 124, 132);
+    color: rgb(150, 164, 188);
     -unity-text-align: middle-center;
 }
 
