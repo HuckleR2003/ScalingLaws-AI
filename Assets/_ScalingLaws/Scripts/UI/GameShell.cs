@@ -1313,7 +1313,7 @@ namespace ScalingLaws.UI
             var text = new VisualElement();
             text.AddToClassList("researching__text");
 
-            var title = new Label("RESEARCHING IN PROGRESS");
+            var title = new Label(Loc.T("panel.researching"));
             title.AddToClassList("researching__title");
             text.Add(title);
 
@@ -1543,7 +1543,7 @@ namespace ScalingLaws.UI
             var effects = new List<VisualElement>(UnlockLines(node));
             if (effects.Count > 0)
             {
-                var opens = new Label("WHAT IT OPENS");
+                var opens = new Label(Loc.T("panel.what_it_opens"));
                 opens.AddToClassList("rcard__opens");
                 researchCard.Add(opens);
 
@@ -1808,7 +1808,7 @@ namespace ScalingLaws.UI
             effects.AddToClassList("panel");
             effects.AddToClassList("team__worth");
 
-            var effectsHeading = new Label("WHAT THE TEAM IS WORTH");
+            var effectsHeading = new Label(Loc.T("panel.team_worth"));
             effectsHeading.AddToClassList("panel__heading");
             effects.Add(effectsHeading);
 
@@ -1825,7 +1825,7 @@ namespace ScalingLaws.UI
             offices.AddToClassList("panel");
             offices.AddToClassList("team__where");
 
-            var officeHeading = new Label("WHERE YOU WORK");
+            var officeHeading = new Label(Loc.T("panel.where_you_work"));
             officeHeading.AddToClassList("panel__heading");
             offices.Add(officeHeading);
 
@@ -1858,7 +1858,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("POSITIONS");
+            var heading = new Label(Loc.T("panel.positions"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -2137,7 +2137,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("ON THE PAYROLL");
+            var heading = new Label(Loc.T("panel.payroll"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -2640,7 +2640,7 @@ namespace ScalingLaws.UI
                 button.AddToClassList("office-upgrade--art");
             }
 
-            var caption = new Label("UPGRADE THE OFFICE");
+            var caption = new Label(Loc.T("panel.upgrade_office"));
             caption.AddToClassList("office-upgrade__caption");
             button.Add(caption);
 
@@ -2734,7 +2734,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("SERVICE");
+            var heading = new Label(Loc.T("panel.service"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -2940,7 +2940,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("RESERVED CAPACITY");
+            var heading = new Label(Loc.T("panel.reserved_capacity"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -3030,7 +3030,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("fleet-bill__head");
 
-            var heading = new Label("WHAT THE DAY COSTS");
+            var heading = new Label(Loc.T("panel.day_costs"));
             heading.AddToClassList("panel__heading");
             heading.style.marginBottom = 0;
             head.Add(heading);
@@ -3098,16 +3098,14 @@ namespace ScalingLaws.UI
         {
             var state = simulation.State;
 
-            var page = NewPage("MARKETING",
-                "Advertising buys attention, never quality. A product people have not heard of loses "
-                + "to one they have, and a bad product they have heard of gets tried and dropped.");
+            var page = NewPage(Loc.T("page.marketing"), Loc.T("page.marketing.strap"));
 
             page.Add(BuildAwarenessPanel());
 
             var channels = new VisualElement();
             channels.AddToClassList("panel");
 
-            var heading = new Label("CHANNELS");
+            var heading = new Label(Loc.T("panel.channels"));
             heading.AddToClassList("panel__heading");
             channels.Add(heading);
 
@@ -3141,7 +3139,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("rfund__head");
 
-            var heading = new Label("WHO HAS HEARD OF YOU");
+            var heading = new Label(Loc.T("panel.heard_of_you"));
             heading.AddToClassList("panel__heading");
             heading.style.marginBottom = 0;
             head.Add(heading);
@@ -3236,7 +3234,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("mkbook");
 
-            var heading = new Label("START A NEW CAMPAIGN");
+            var heading = new Label(Loc.T("panel.new_campaign"));
             heading.AddToClassList("mkbook__heading");
             panel.Add(heading);
 
@@ -3371,7 +3369,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("RUNNING");
+            var heading = new Label(Loc.T("panel.running"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -3479,7 +3477,7 @@ namespace ScalingLaws.UI
             // The two panels at the top of FLEET are the ones a player reads while deciding what to
             // spend, and they were the smallest things on the screen. Forty percent taller.
             rental.AddToClassList("fleet-panel");
-            var rentalHeading = new Label("RENTED CAPACITY");
+            var rentalHeading = new Label(Loc.T("panel.rented_capacity"));
             rentalHeading.AddToClassList("panel__heading");
             rental.Add(rentalHeading);
 
@@ -3509,7 +3507,7 @@ namespace ScalingLaws.UI
             var ladder = new VisualElement();
             ladder.AddToClassList("panel");
             ladder.AddToClassList("fleet-panel");
-            var ladderHeading = new Label("COMPUTE TIERS");
+            var ladderHeading = new Label(Loc.T("panel.compute_tiers"));
             ladderHeading.AddToClassList("panel__heading");
             ladder.Add(ladderHeading);
 
@@ -3541,7 +3539,7 @@ namespace ScalingLaws.UI
 
             var owned = new VisualElement();
             owned.AddToClassList("panel");
-            var ownedHeading = new Label("OWNED HARDWARE");
+            var ownedHeading = new Label(Loc.T("panel.owned_hardware"));
             ownedHeading.AddToClassList("panel__heading");
             owned.Add(ownedHeading);
 
@@ -3650,7 +3648,7 @@ namespace ScalingLaws.UI
 
             if (generation.IsProjection)
             {
-                var badge = new Label("PROJECTED");
+                var badge = new Label(Loc.T("panel.projected"));
                 badge.AddToClassList("card__badge");
                 card.Add(badge);
             }
@@ -3678,7 +3676,7 @@ namespace ScalingLaws.UI
 
             var pricing = new VisualElement();
             pricing.AddToClassList("panel");
-            var pricingHeading = new Label("PRICING");
+            var pricingHeading = new Label(Loc.T("panel.pricing"));
             pricingHeading.AddToClassList("panel__heading");
             pricing.Add(pricingHeading);
 
@@ -3751,7 +3749,7 @@ namespace ScalingLaws.UI
 
             var free = new VisualElement();
             free.AddToClassList("panel");
-            var freeHeading = new Label("FREE TIER");
+            var freeHeading = new Label(Loc.T("panel.free_tier"));
             freeHeading.AddToClassList("panel__heading");
             free.Add(freeHeading);
 
@@ -3883,9 +3881,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildReleaseScreen()
         {
-            var page = NewPage("RELEASE",
-                "Finished runs wait here. Waiting costs nothing directly, and costs position every day: "
-                + "market par keeps rising under a model that has not shipped.");
+            var page = NewPage(Loc.T("page.release"), Loc.T("page.release.strap"));
 
             if (state.Shelf.Count == 0)
             {
@@ -3931,10 +3927,11 @@ namespace ScalingLaws.UI
         private VisualElement BuildFundingScreen()
         {
             var capTable = state.CapTable;
-            var page = NewPage("FUNDING",
-                $"Founders hold {UiFormat.Percent(capTable.FounderEquity)} after {capTable.RoundCount} round(s). "
-                + $"Raised {UiFormat.Money(capTable.TotalRaisedUsd)} in total. "
-                + $"Investor mood is {FundingCatalog.SentimentLabel(FundingCatalog.SentimentOn(state.Date))}.");
+            var page = NewPage(Loc.T("funding.title"), Loc.T("funding.strap",
+                UiFormat.Percent(capTable.FounderEquity),
+                capTable.RoundCount,
+                UiFormat.Money(capTable.TotalRaisedUsd),
+                FundingCatalog.SentimentLabel(FundingCatalog.SentimentOn(state.Date))));
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
@@ -4005,7 +4002,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("BORROWING");
+            var heading = new Label(Loc.T("funding.borrowing"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -4188,9 +4185,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildRankingScreen()
         {
-            var page = NewPage("RANKING",
-                "Capability, market share and brand, weighted. Every number here is the same one the "
-                + "revenue side runs on, so a position on this board and an income statement cannot disagree.");
+            var page = NewPage(Loc.T("page.ranking"), Loc.T("page.ranking.strap"));
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
@@ -4305,7 +4300,7 @@ namespace ScalingLaws.UI
             var chapters = dossier.ChaptersBy(state.Date);
             if (chapters.Count > 0)
             {
-                var heading = new Label("WHAT HAS HAPPENED");
+                var heading = new Label(Loc.T("panel.what_happened"));
                 heading.AddToClassList("dossier__heading");
                 labCard.Add(heading);
 
@@ -4449,7 +4444,7 @@ namespace ScalingLaws.UI
             regulatoryBanner.AddToClassList("regulatory");
             regulatoryBanner.pickingMode = PickingMode.Ignore;
 
-            var headline = new Label("REGULATORY ACTION");
+            var headline = new Label(Loc.T("panel.regulatory"));
             headline.AddToClassList("regulatory__headline");
             regulatoryBanner.Add(headline);
 
@@ -4545,9 +4540,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildFeedScreen()
         {
-            var page = NewPage("INTELLIGENCE",
-                "What the research desk believes is coming. Confidence is what the desk claims about "
-                + "itself, and it is always higher than how often the desk turns out to be right.");
+            var page = NewPage(Loc.T("intel.title"), Loc.T("intel.strap"));
 
             // Three cards side by side rather than three full-width bars.
             //
@@ -4735,7 +4728,7 @@ namespace ScalingLaws.UI
             }
             else
             {
-                var pending = new Label("THE OFFICE");
+                var pending = new Label(Loc.T("panel.the_office"));
                 pending.AddToClassList("site-stage__title");
                 stage.Add(pending);
 
@@ -4886,7 +4879,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("decor");
 
-            var title = new Label("FURNISH THE OFFICE");
+            var title = new Label(Loc.T("panel.furnish"));
             title.AddToClassList("page-title");
             panel.Add(title);
 
@@ -4948,7 +4941,7 @@ namespace ScalingLaws.UI
             var column = new VisualElement();
             column.AddToClassList("decor__column");
 
-            var heading = new Label("THE SHOP");
+            var heading = new Label(Loc.T("panel.the_shop"));
             heading.AddToClassList("decor__heading");
             column.Add(heading);
 
@@ -5055,7 +5048,7 @@ namespace ScalingLaws.UI
             var column = new VisualElement();
             column.AddToClassList("decor__column");
 
-            var heading = new Label("WHAT THE COMPANY OWNS");
+            var heading = new Label(Loc.T("panel.company_owns"));
             heading.AddToClassList("decor__heading");
             column.Add(heading);
 
@@ -5345,7 +5338,7 @@ namespace ScalingLaws.UI
             card.AddToClassList("notice");
             card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
 
-            var title = new Label("THE RUN HAS FINISHED");
+            var title = new Label(Loc.T("panel.run_finished"));
             title.AddToClassList("notice__title");
             card.Add(title);
 
