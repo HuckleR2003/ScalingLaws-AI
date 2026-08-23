@@ -8987,6 +8987,7 @@
 .upg__detail {
     width: 440px;
     flex-shrink: 0;
+    align-self: flex-start;
 }
 
 .upg__empty {
@@ -8998,13 +8999,18 @@
 
 /* ---- one tile ------------------------------------------------------------------------------- */
 
+/* Four across at 158px rather than three at 190.
+
+   About a fifth smaller in both directions, which is what the author asked for, and it takes the
+   eleven traits from four rows to three. The photographs are cut 2:1 to match this box exactly, so
+   nothing is cropped by the layout. */
 .utile {
-    width: 31.5%;
-    height: 190px;
+    width: 23.5%;
+    height: 158px;
     margin-left: 0;
     margin-top: 0;
     margin-right: 1%;
-    margin-bottom: 14px;
+    margin-bottom: 11px;
     padding: 0;
     border-width: 2px;
     border-color: rgba(255, 255, 255, 0.06);
@@ -9036,51 +9042,57 @@
     opacity: 0.55;
 }
 
-/* Heavy where the words are, clear where the picture should show. One flat wash over the whole
-   tile would kill the photograph the scrim exists to protect. */
+/* Barely there now.
+
+   The scrim used to carry a 78px band across the bottom because the art ran the full width of the
+   tile and the words sat on top of it. The photographs fade out on their left third, so the words
+   already sit on plain tile and a band would only be darkening something that is not there. What
+   is left is a whisper of tint to hold the whole card together. */
 .utile__scrim {
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
     bottom: 0;
-    background-color: rgba(8, 10, 16, 0.15);
-    border-bottom-width: 78px;
-    border-bottom-color: rgba(8, 10, 16, 0.80);
+    background-color: rgba(8, 10, 16, 0.20);
 }
 
+/* Bottom left, and held clear of the picture. Without the right bound a long trait name runs
+   under the photograph and the last word is unreadable against whatever it lands on. */
 .utile__words {
     position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 12px;
+    left: 12px;
+    right: 42%;
+    bottom: 10px;
+    -unity-text-align: middle-left;
 }
 
 .utile__name {
-    font-size: 15px;
-    letter-spacing: 1.8px;
+    font-size: 13px;
+    letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(255, 255, 255);
     white-space: normal;
 }
 
 .utile__level {
-    font-size: 11px;
-    letter-spacing: 1.4px;
+    font-size: 10px;
+    letter-spacing: 1.2px;
     color: rgb(186, 198, 218);
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 .utile__next {
-    font-size: 11px;
+    font-size: 10px;
     color: rgb(226, 190, 44);
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 .utile__badge {
     position: absolute;
-    left: 12px;
-    top: 12px;
+    left: 10px;
+    top: 10px;
+    -unity-text-align: middle-center;
     font-size: 9px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
@@ -9105,10 +9117,10 @@
 
 .utile__check {
     position: absolute;
-    right: 12px;
-    top: 12px;
-    width: 24px;
-    height: 24px;
+    right: 10px;
+    top: 10px;
+    width: 21px;
+    height: 21px;
     border-width: 2px;
     border-color: rgba(255, 255, 255, 0.45);
     border-radius: 5px;
@@ -9123,13 +9135,17 @@
 
 /* ---- the panel on the right ------------------------------------------------------------------ */
 
+/* Hugs its contents rather than filling the column. With nothing picked the panel is four lines
+   long, and stretching it to the height of eleven tiles drew a tall empty box with a paragraph in
+   the corner. */
 .udet {
-    padding: 20px;
+    padding: 18px;
     border-radius: 8px;
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.08);
     background-color: rgba(10, 13, 20, 0.80);
-    flex-grow: 1;
+    flex-grow: 0;
+    flex-shrink: 0;
 }
 
 .udet__kicker {
@@ -11593,4 +11609,12 @@
 
 .dcard--held .dcard__action {
     color: rgb(226, 190, 44);
+}
+
+/* A caption and its "(i)" on one line. */
+
+.explained {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 2px;
 }

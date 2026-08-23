@@ -1132,7 +1132,7 @@ namespace ScalingLaws.UI
             var active = state.ActiveResearch;
             // No standing blurb. The tree is the explanation, and a paragraph above it pushed the
             // first era half a screen down for something nobody reads twice.
-            var page = NewPage("RESEARCH",
+            var page = NewPage(Loc.T("research.title"),
                 active == null
                     ? string.Empty
                     : active.IsWaitingForCompute
@@ -1228,7 +1228,7 @@ namespace ScalingLaws.UI
                     var band = new VisualElement();
                     band.AddToClassList("deepening");
 
-                    var bandHeading = new Label("MODEL IMPROVEMENT");
+                    var bandHeading = new Label(Loc.T("research.model_improvement"));
                     bandHeading.AddToClassList("deepening__heading");
                     band.Add(bandHeading);
 
@@ -1380,7 +1380,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("rfund__head");
 
-            var heading = new Label("FUNDING");
+            var heading = new Label(Loc.T("research.funding"));
             heading.AddToClassList("panel__heading");
             heading.style.marginBottom = 0;
             head.Add(heading);
@@ -1396,10 +1396,10 @@ namespace ScalingLaws.UI
             var modes = new VisualElement();
             modes.AddToClassList("rfund__modes");
 
-            modes.Add(FundingChip("A FIXED BUDGET", ResearchFundingMode.Fixed,
+            modes.Add(FundingChip(Loc.T("research.fixed_budget"), ResearchFundingMode.Fixed,
                 state.ResearchFunding == ResearchFundingMode.Fixed));
 
-            modes.Add(FundingChip("A SHARE OF REVENUE", ResearchFundingMode.RevenueShare,
+            modes.Add(FundingChip(Loc.T("research.revenue_share"), ResearchFundingMode.RevenueShare,
                 state.ResearchFunding == ResearchFundingMode.RevenueShare));
 
             panel.Add(modes);
@@ -1761,10 +1761,10 @@ namespace ScalingLaws.UI
 
         private static string EraTitle(ResearchEra era) => era switch
         {
-            ResearchEra.Foundations => "ERA 1   FOUNDATIONS   2022 TO 2023",
-            ResearchEra.Scaling => "ERA 2   THE SCALING RACE   2023 TO 2024",
-            ResearchEra.Autonomy => "ERA 3   AUTONOMY   2024 TO 2025",
-            _ => "ERA 4   SUPERINTELLIGENCE   2026 ONWARD"
+            ResearchEra.Foundations => Loc.T("research.era.1"),
+            ResearchEra.Scaling => Loc.T("research.era.2"),
+            ResearchEra.Autonomy => Loc.T("research.era.3"),
+            _ => Loc.T("research.era.4")
         };
 
         /// <summary>

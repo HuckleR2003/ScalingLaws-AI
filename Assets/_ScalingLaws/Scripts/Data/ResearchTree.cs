@@ -175,7 +175,10 @@ namespace ScalingLaws.Data
             OptionalTechnology = optionalTechnology;
             Id = id;
             Era = era;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? id.ToString() : displayName;
+            // The English original the phrase book was built from. Not stored: Loc holds both
+            // languages and falls back to English itself, so a second copy here would only be
+            // somewhere for the two to disagree.
+            _ = displayName;
             Description = description ?? string.Empty;
             EarliestDate = earliestDate;
             CostUsd = Math.Clamp(costUsd, 0L, 500_000_000_000L);
@@ -210,7 +213,75 @@ namespace ScalingLaws.Data
         /// button. A real player sees them exactly like any other node.
         /// </summary>
         public bool OptionalTechnology { get; }
-        public string DisplayName { get; }
+        /// <summary>
+        /// The node's name, in whatever language the player reads.
+        ///
+        /// **Read at access time rather than stored.** Fifty of these are drawn on the research
+        /// tree, on the locked end of every architecture slider and in the news, so a name captured
+        /// when the catalog was built leaves the largest screen in the game in English.
+        /// </summary>
+        public string DisplayName => Loc.T(KeyFor(Id));
+
+        /// <summary>
+        /// The phrase-book stem for a node.
+        ///
+        /// Written out rather than derived from the enum name: half of them do not match what the
+        /// player reads, and deriving would produce keys nobody would think to look for.
+        /// </summary>
+        private static string KeyFor(ResearchNodeId id) => id switch
+        {
+            ResearchNodeId.FineTuningAndPrompting => "node.finetuning",
+            ResearchNodeId.HumanFeedback => "node.humanfeedback",
+            ResearchNodeId.EfficientAttention => "node.efficientattention",
+            ResearchNodeId.MultimodalGeneration => "node.multimodal",
+            ResearchNodeId.CuratedCorpora => "node.curatedcorpora",
+            ResearchNodeId.CodingModels => "node.coding",
+            ResearchNodeId.ConversationalModels => "node.conversational",
+            ResearchNodeId.AutomationModels => "node.automation",
+            ResearchNodeId.AgenticWorkstation => "node.agentic",
+            ResearchNodeId.ModelSeries => "node.series",
+            ResearchNodeId.ScalingLaws => "node.scalinglaws",
+            ResearchNodeId.MixtureOfExperts => "node.mixtureofexperts",
+            ResearchNodeId.ContextWindowExpansion => "node.context",
+            ResearchNodeId.LicensedArchives => "node.licensed",
+            ResearchNodeId.LowPrecisionTraining => "node.lowprecision",
+            ResearchNodeId.CorpusDeduplication => "node.dedup",
+            ResearchNodeId.MixedPrecisionTraining => "node.mixedprecision",
+            ResearchNodeId.SinglePrecisionTraining => "node.singleprecision",
+            ResearchNodeId.ContinuousDataPipeline => "node.pipeline_data",
+            ResearchNodeId.AutonomousAgents => "node.autonomousagents",
+            ResearchNodeId.SyntheticDataGeneration => "node.syntheticdata",
+            ResearchNodeId.ReasoningModels => "node.reasoning",
+            ResearchNodeId.LongContextMixtures => "node.longcontext",
+            ResearchNodeId.DatacenterProgramme => "node.datacenter",
+            ResearchNodeId.ShardedOptimizerStates => "node.sharding",
+            ResearchNodeId.PipelineParallelism => "node.pipeline",
+            ResearchNodeId.UltraReadiness => "node.ultrareadiness",
+            ResearchNodeId.LicensedStackedAssa => "node.assa1",
+            ResearchNodeId.AdvancedAssa => "node.assa2",
+            ResearchNodeId.AssaEcosystem => "node.assa3",
+            ResearchNodeId.AutomatedRedTeaming => "node.red1",
+            ResearchNodeId.AdversarialCampaigns => "node.red2",
+            ResearchNodeId.ContinuousRedTeam => "node.red3",
+            ResearchNodeId.BasicDataIsolation => "node.data0",
+            ResearchNodeId.EncryptedDataVaults => "node.data1",
+            ResearchNodeId.DifferentialPrivacy => "node.data2",
+            ResearchNodeId.PrivacyPreservingTraining => "node.data3",
+            ResearchNodeId.HybridArchitectures => "node.hybrid",
+            ResearchNodeId.RecursiveSelfImprovement => "node.recursive",
+            ResearchNodeId.ArtificialSuperintelligence => "node.asi",
+            ResearchNodeId.LearnedRouting => "node.learnedrouting",
+            ResearchNodeId.ExpertParallelism => "node.expertparallelism",
+            ResearchNodeId.FusedKernels => "node.fusedkernels",
+            ResearchNodeId.OverlappedCollectives => "node.overlappedcollectives",
+            ResearchNodeId.CurriculumTraining => "node.curriculumtraining",
+            ResearchNodeId.SelfDistillation => "node.selfdistillation",
+            ResearchNodeId.QuantisedServing => "node.quantisedserving",
+            ResearchNodeId.SpeculativeDecoding => "node.speculativedecoding",
+            ResearchNodeId.ProcessSupervision => "node.processsupervision",
+            ResearchNodeId.InferenceTimeSearch => "node.inferencetimesearch",
+            _ => "node.finetuning"
+        };
         public string Description { get; }
         public GameDate EarliestDate { get; }
         public long CostUsd { get; }

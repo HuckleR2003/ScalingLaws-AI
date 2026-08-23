@@ -133,7 +133,12 @@ namespace ScalingLaws.UI
         /// itself, which is how Devices Tycoon and Smartphone Tycoon both handle a build.
         /// </summary>
         private static readonly string[] StageNames =
-            { "FOUNDATION", "SCALE", "DATA", "COMPUTE", "SAFETY", "REVIEW", "AFTER THE RUN" };
+            {
+                Loc.T("create.stage.foundation"), Loc.T("create.stage.scale"),
+                Loc.T("create.stage.data"), Loc.T("create.stage.compute"),
+                Loc.T("create.stage.safety"), Loc.T("create.stage.review"),
+                Loc.T("create.stage.after")
+            };
 
         private static readonly string[] StageBlurbs =
         {
@@ -262,6 +267,26 @@ namespace ScalingLaws.UI
         /// adding one to a new stage moves it: there is exactly one parameter slider in existence and
         /// no way for a second copy to drift out of step with the blueprint.
         /// </summary>
+        /// <summary>
+        /// Which stage the creator is on.
+        ///
+        /// **Public so a test can walk them.** Only the current stage is in the visual tree, so a
+        /// check that the screen explains its controls sees nothing at all unless it can turn the
+        /// pages, and the badges were added to four different stages.
+        /// </summary>
+        public int Stage
+        {
+            get => stage;
+            set
+            {
+                stage = Math.Clamp(value, 0, StageNames.Length - 1);
+                ShowStage();
+            }
+        }
+
+        /// <summary>How many stages there are, so a caller can walk them without knowing the list.</summary>
+        public static int StageCount => StageNames.Length;
+
         private void ShowStage()
         {
             stageRail.Clear();
@@ -834,11 +859,10 @@ namespace ScalingLaws.UI
             var top = new VisualElement();
             top.AddToClassList("panel-row");
 
-            var panel = NewPanel("SIZE");
+            var panel = NewPanel(Loc.T("create.size"));
             panel.AddToClassList("scale-half");
 
-            parameterLabel.AddToClassList("field__label");
-            panel.Add(parameterLabel);
+            panel.Add(Explained(parameterLabel, TechNotes.Parameters));
 
             // The slider and the locked overlay share a host, because the overlay is positioned
             // against the track and has to move with it rather than against the panel.
@@ -857,8 +881,7 @@ namespace ScalingLaws.UI
 
             panel.Add(parameterTrack);
 
-            tokenLabel.AddToClassList("field__label");
-            panel.Add(tokenLabel);
+            panel.Add(Explained(tokenLabel, TechNotes.TokensPerParameter));
             var tokenTrack = new VisualElement();
             tokenTrack.AddToClassList("scale-track");
 
@@ -1019,6 +1042,54 @@ namespace ScalingLaws.UI
             }
         }
 
+        /// <summary>
+        /// A field caption with an "(i)" beside it.
+        ///
+        /// **One helper rather than a badge added by hand at each site**, because a caption that
+        /// explains itself is the pattern now and the next control added to this screen should get
+        /// one without anybody having to remember.
+        /// </summary>
+        private static VisualElement Explained(Label caption, TechNotes.Note note)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("explained");
+
+            caption.AddToClassList("field__label");
+            row.Add(caption);
+            row.Add(InsightTip.InfoBadge(note.Title,
+                new InsightTip.Reading(note.What, note.Affects, note.High, note.Low)));
+
+            return row;
+        }
+
+        /// <summary>
+        /// Puts an "(i)" after a panel's own heading, for a stage rather than a single field.
+        ///
+        /// The heading is lifted out and re-inserted inside a row at the same position, so the panel
+        /// keeps the order its builder gave it whatever else has already been added.
+        /// </summary>
+        private static VisualElement ExplainedHeading(VisualElement panel, TechNotes.Note note)
+        {
+            var heading = panel.Q<Label>(className: "panel__heading");
+
+            if (heading == null)
+            {
+                return panel;
+            }
+
+            var index = panel.IndexOf(heading);
+            heading.RemoveFromHierarchy();
+
+            var row = new VisualElement();
+            row.AddToClassList("explained");
+            row.Add(heading);
+            row.Add(InsightTip.InfoBadge(note.Title,
+                new InsightTip.Reading(note.What, note.Affects, note.High, note.Low)));
+
+            panel.Insert(index, row);
+            return panel;
+        }
+
         private static Label SectionHeading(string text)
         {
             var heading = new Label(text);
@@ -1174,12 +1245,11 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildDataPanel()
         {
-            var panel = NewPanel("DATA MIX");
+            var panel = NewPanel(Loc.T("create.data_mix"));
+            ExplainedHeading(panel, TechNotes.CuratedWeb);
             panel.Add(dataToggles);
 
-            var hint = new Label(
-                "The run draws from the best corpus first. A small licensed archive lifts the top of the mix; "
-                + "raw crawl adds volume and drags the average down.");
+            var hint = new Label(Loc.T("create.data_hint"));
             hint.AddToClassList("field__hint");
             panel.Add(hint);
 
@@ -1515,12 +1585,11 @@ namespace ScalingLaws.UI
         /// <summary>How much extra work to put into the stage. Only the safety days move.</summary>
         private VisualElement BuildEffortPanel()
         {
-            var panel = NewPanel("EFFORT");
+            var panel = NewPanel(Loc.T("create.effort"));
+            ExplainedHeading(panel, TechNotes.SafetyEffort);
             panel.AddToClassList("scale-half");
 
-            var pitch = new Label(
-                "How hard the team works this stage. It lengthens the safety work and nothing else "
-                + "in the run, and what it buys is deliberately small.");
+            var pitch = new Label(Loc.T("create.effort_hint"));
 
             pitch.AddToClassList("field__hint");
             panel.Add(pitch);
