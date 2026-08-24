@@ -84,5 +84,64 @@ namespace ScalingLaws.Data
         public static Note TokensPerParameter => From("tech.tokens");
 
         public static Note SafetyEffort => From("tech.safety");
+
+        // ---- the twenty six the rest of the game was missing ------------------------------------
+        //
+        // Written in a different register from the thirteen above, on purpose. Those explain a
+        // control the player is dragging; these explain a word on a screen to somebody who has never
+        // read anything about this industry. Every one of them opens with an everyday thing, because
+        // a correct definition is exactly what the screens already were.
+
+        public static Note Revenue => From("tech.revenue");
+
+        public static Note Margin => From("tech.margin");
+
+        public static Note TokenPrice => From("tech.tokenprice");
+
+        public static Note DailyBurn => From("tech.burn");
+
+        public static Note Valuation => From("tech.valuation");
+
+        public static Note FounderStake => From("tech.equity");
+
+        public static Note Instalment => From("tech.instalment");
+
+        public static Note PetaflopDay => From("tech.petaflop");
+
+        public static Note RentOrOwn => From("tech.rentbuy");
+
+        public static Note ReservedCapacity => From("tech.reserved");
+
+        public static Note Positions => From("tech.headcount");
+
+        public static Note Wage => From("tech.wage");
+
+        public static Note TeamWorth => From("tech.talent");
+
+        public static Note Awareness => From("tech.awareness");
+
+        public static Note Channels => From("tech.channel");
+
+        public static Note CampaignLength => From("tech.campaign");
+
+        public static Note MarketPar => From("tech.par");
+
+        public static Note WaitingToRelease => From("tech.shelf");
+
+        public static Note Capability => From("tech.capability");
+
+        public static Note MarketShare => From("tech.share");
+
+        public static Note ResearchPoints => From("tech.points");
+
+        public static Note Eras => From("tech.era");
+
+        public static Note Traits => From("tech.trait");
+
+        public static Note TraitLevels => From("tech.traitlevel");
+
+        public static Note Pricing => From("tech.pricing");
+
+        public static Note FreeTier => From("tech.freetier");
     }
 }

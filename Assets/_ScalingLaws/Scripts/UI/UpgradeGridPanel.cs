@@ -75,6 +75,10 @@ namespace ScalingLaws.UI
 
             root = new VisualElement();
             root.AddToClassList("content");
+
+            // The two words this whole screen is made of, explained where somebody who does not
+            // know them is standing.
+            UiParts.ExplainPage(root, TechNotes.Traits, TechNotes.TraitLevels);
             root.AddToClassList("upg");
 
             Build();

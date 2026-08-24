@@ -23,7 +23,10 @@ namespace ScalingLaws.Data
         Offices = 9,
 
         /// <summary>The house family screen.</summary>
-        Architecture = 10
+        Architecture = 10,
+
+        /// <summary>The bank. Where the money comes from when the company has not earned it yet.</summary>
+        Funding = 11
     }
 
     /// <summary>
@@ -181,6 +184,17 @@ namespace ScalingLaws.Data
                 GuideTarget.Compute, null, "guide.show_me", true),
             new("compute_rent", "guide.step.compute_rent", GuideTarget.Compute, "fleet-panel"),
             new("compute_dial", "guide.step.compute_dial", GuideTarget.Compute, "service__dial"),
+
+            // ---- where the money comes from before the company earns any --------------------
+            //
+            // Directly after the burn, because that is the question the burn raises and leaving it
+            // unanswered for six acts is what makes a new player think the opening is unwinnable.
+            new("bank_pitch", "guide.step.bank_pitch"),
+            new("bank_open", "guide.step.bank_open",
+                GuideTarget.Funding, null, "guide.show_me", true),
+            new("bank_tiles", "guide.step.bank_tiles", GuideTarget.Funding, "ltile"),
+            new("bank_cost", "guide.step.bank_cost", GuideTarget.Funding, "loanbill"),
+            new("bank_state", "guide.step.bank_state", GuideTarget.Funding, "ltile--state"),
 
             // ---- research, and the first one is on him ------------------------------------
             new("research_pitch", "guide.step.research_pitch"),

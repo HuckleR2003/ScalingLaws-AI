@@ -413,9 +413,10 @@
 
 
 .page-title {
-    font-size: 22px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 25px;
     -unity-font-style: bold;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     margin-bottom: 4px;
 }
 
@@ -550,8 +551,9 @@
 }
 
 .panel__heading {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
     -unity-font-style: bold;
-    letter-spacing: 1px;
+    letter-spacing: 1.6px;
     font-size: 13px;
     color: var(--ink-dim);
     margin-bottom: 12px;
@@ -2246,6 +2248,7 @@
 /* The era headings were 12px grey on a dark page, which is a caption rather than a heading: the
    tree read as one undivided run of circles. White and half again as large. */
 .era__heading {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
     font-size: 18px;
     letter-spacing: 3.4px;
     -unity-font-style: bold;
@@ -3421,6 +3424,7 @@
 }
 
 .mb__title {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
     font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 2px;
@@ -3638,8 +3642,8 @@
     flex-shrink: 0;
     margin-bottom: 12px;
     background-color: rgb(16, 20, 27);
-    border-width: 2px;
-    border-color: rgb(232, 226, 214);
+    border-width: 1px;
+    border-color: rgb(44, 54, 72);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -3655,31 +3659,35 @@
     flex-grow: 1;
     margin: 0;
     border-width: 0;
-    border-left-width: 2px;
-    border-right-width: 2px;
-    border-color: rgb(232, 226, 214);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-color: rgb(44, 54, 72);
     border-radius: 0;
-    background-color: rgb(244, 240, 232);
-    font-size: 21px;
+    background-color: rgb(19, 24, 34);
+    background-image: none;
+    font-size: 15px;
     -unity-font-style: bold;
-    letter-spacing: 1px;
-    color: rgb(20, 22, 28);
+    letter-spacing: 1.4px;
+    color: rgb(126, 140, 166);
     white-space: normal;
 }
 
 .hswitch__half--on {
-    background-color: rgba(226, 190, 44, 0.13);
-    border-color: rgb(226, 190, 44);
-    color: rgb(244, 206, 96);
+    background-color: rgba(150, 122, 226, 0.16);
+    border-color: rgb(150, 122, 226);
+    color: rgb(216, 206, 250);
 }
 
 .hswitch__half--on:hover {
-    background-color: rgba(226, 190, 44, 0.22);
+    background-color: rgba(150, 122, 226, 0.24);
 }
 
+/* Locked reads as "not yet", not as "broken". A mid grey slab with darker grey text on it was the
+   single brightest thing on any screen in the game and it looked like a rendering fault. */
+
 .hswitch__half--locked {
-    background-color: rgb(120, 122, 126);
-    color: rgb(74, 76, 82);
+    background-color: rgb(17, 21, 29);
+    color: rgb(76, 86, 106);
 }
 
 /* ---- the service readout ---- */
@@ -4404,12 +4412,12 @@
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
-    padding: 22px;
+    padding: 18px;
     margin-bottom: 14px;
     border-radius: var(--card-radius);
-    background-color: rgba(78, 20, 34, 0.55);
+    background-color: rgba(24, 30, 44, 0.88);
     border-left-width: 3px;
-    border-left-color: rgb(226, 78, 62);
+    border-left-color: rgb(150, 122, 226);
 }
 
 .mg-hero__left {
@@ -9165,6 +9173,7 @@
 }
 
 .udet__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
     font-size: 26px;
     -unity-font-style: bold;
     color: rgb(242, 246, 254);
@@ -11059,6 +11068,7 @@
 }
 
 .arx__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
     margin: 0;
 }
 
@@ -11801,4 +11811,134 @@
     padding-left: 9px;
     border-left-width: 2px;
     border-left-color: rgb(226, 190, 44);
+}
+
+/* A section heading and its "(i)", on one line. The badge sits after the words rather than at the
+   end of the row, so it reads as belonging to that heading and not to the panel. */
+
+.headrow {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.headrow > .panel__heading {
+    margin-bottom: 0;
+    margin-right: 7px;
+}
+
+/* The words this screen uses, each with its own "(i)". A quiet strip: it has to be findable by
+   somebody who does not understand the page and invisible to somebody who does. */
+
+.terms {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.terms__chip {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 16px;
+    margin-bottom: 4px;
+}
+
+.terms__word {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(122, 136, 160);
+    margin-right: 5px;
+}
+
+/* An upgrade programme running, in the corner under the product it is happening to.
+
+   The bar is behind the words rather than under them, so the whole row is the progress. Same shape
+   the training strip and the research strip already use, because a player should not have to learn
+   three ways of being told the same thing. */
+
+.ustrip {
+    margin-top: 5px;
+}
+
+.ustrip__row {
+    height: 40px;
+    margin-bottom: 4px;
+    background-color: rgba(14, 20, 32, 0.86);
+    border-left-width: 2px;
+    border-left-color: rgb(150, 122, 226);
+}
+
+.ustrip__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(150, 122, 226, 0.22);
+}
+
+.ustrip__text {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    flex-grow: 1;
+}
+
+.ustrip__left {
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+.ustrip__kicker {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgb(178, 158, 235);
+}
+
+.ustrip__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 12px;
+    color: rgb(228, 234, 246);
+    -unity-font-style: bold;
+}
+
+.ustrip__days {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(210, 200, 246);
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+
+/* A screen with nothing on it yet. Not a grey sentence in the void: a panel, a reason, and the door
+   to the thing that would fill it. An empty page with one line on it reads as a failure to load. */
+
+.emptystate {
+    align-items: flex-start;
+    max-width: 620px;
+}
+
+.emptystate__title {
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 1.6px;
+    color: rgb(208, 218, 236);
+    margin-bottom: 8px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.emptystate__body {
+    font-size: 12px;
+    color: rgb(138, 152, 176);
+    white-space: normal;
+    margin-bottom: 14px;
+}
+
+.emptystate__go {
+    margin-left: 0;
+    margin-top: 0;
 }

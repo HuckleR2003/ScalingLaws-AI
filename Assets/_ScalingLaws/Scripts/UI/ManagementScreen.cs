@@ -115,6 +115,9 @@ namespace ScalingLaws.UI
             });
 
             subtitle.AddToClassList("page-subtitle");
+
+            // The desk is where a price is set, so the two words the price is made of live here.
+            UiParts.ExplainPage(Root, TechNotes.Pricing, TechNotes.FreeTier);
             Root.Add(subtitle);
 
             Root.Add(BuildTabs());

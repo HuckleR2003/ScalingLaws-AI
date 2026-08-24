@@ -20,6 +20,38 @@ namespace ScalingLaws.UI
         private static Font cachedFont;
         private static bool fontLookupDone;
 
+        private static Font cachedTitleFont;
+        private static bool titleLookupDone;
+
+        /// <summary>
+        /// The face section headings and page titles are set in.
+        ///
+        /// **Montserrat SemiBold, bundled rather than asked for by name.** Everything in this game
+        /// was rendering in the editor's fallback Arial, which is legible and says nothing, and a
+        /// tycoon interface is mostly headings. Loading a system font by name would look right on
+        /// the machine it was written on and fall back to Arial on every other one, silently, which
+        /// is the failure this project keeps finding in other forms.
+        ///
+        /// It is under the SIL Open Font License, so it may travel in a public repository as long
+        /// as the licence travels with it. `Resources/Fonts/OFL.txt` is that copy and must not be
+        /// deleted.
+        ///
+        /// Falls back to the body font rather than to nothing: a missing heading face should make
+        /// the game look plainer, never make the headings vanish.
+        /// </summary>
+        public static Font ResolveTitleFont()
+        {
+            if (titleLookupDone)
+            {
+                return cachedTitleFont;
+            }
+
+            titleLookupDone = true;
+            cachedTitleFont = Resources.Load<Font>("Fonts/Montserrat-SemiBold") ?? ResolveFont();
+
+            return cachedTitleFont;
+        }
+
         /// <summary>
         /// A font that definitely exists. UI Toolkit will happily resolve to nothing and render
         /// invisible text, so nothing is left to the theme.

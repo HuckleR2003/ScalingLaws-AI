@@ -156,6 +156,11 @@ namespace ScalingLaws.UI
             badge.clicked += () => Show(badge, title, null, reading, placement);
             Attach(badge, title, reading, placement);
 
+            // The payload rides on the element. A badge whose card is empty renders as a heading
+            // over nothing, and that is indistinguishable from a rendering fault unless something
+            // can read what the badge is holding without opening it.
+            badge.userData = reading;
+
             return badge;
         }
 

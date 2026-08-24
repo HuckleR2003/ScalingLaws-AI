@@ -79,6 +79,7 @@ namespace ScalingLaws.UI
         private MailScreen mail;
         private OfficeChooser offices;
         private VisualElement bannerStack;
+        private UpgradeStrip upgradeStrip;
 
         /// <summary>
         /// One banner per product on sale, after the lead one.
@@ -662,6 +663,11 @@ namespace ScalingLaws.UI
             bannerStack = new VisualElement();
             bannerStack.AddToClassList("mb-stack");
             bannerStack.Add(modelBanner.Root);
+
+            // Under the product, because an upgrade is work happening to the thing above it.
+            upgradeStrip = new UpgradeStrip(() => simulation.State);
+            bannerStack.Add(upgradeStrip.Root);
+
             root.Add(bannerStack);
 
             RefreshChrome();
@@ -1142,6 +1148,7 @@ namespace ScalingLaws.UI
                           + $"{UiFormat.Percent(active.Progress, 0)}, "
                           + $"{Math.Min(active.DaysCompleted, active.DurationDays)} of "
                           + $"{active.DurationDays} days.");
+            UiParts.ExplainPage(page, TechNotes.Eras);
 
             var board = simulation.ResearchBoard();
             var funding = BuildResearchFunding();
@@ -1382,12 +1389,13 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("research.funding"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.ResearchPoints);
             heading.style.marginBottom = 0;
             head.Add(heading);
 
-            var banked = new Label(
-                $"{UiFormat.Number(state.ResearchPoints, 0)} points banked, "
-                + $"{state.ResearchPointsToday:N1} a day");
+            var banked = new Label(Loc.T("research.points_banked",
+                UiFormat.Number(state.ResearchPoints, 0),
+                UiFormat.Number(state.ResearchPointsToday, 1)));
 
             banked.AddToClassList("rfund__banked");
             head.Add(banked);
@@ -1456,10 +1464,8 @@ namespace ScalingLaws.UI
                 state.ResearchMonthlyUsd, state.ResearchRevenueShare,
                 simulation.MonthlyRevenueUsd());
 
-            var hint = new Label(
-                $"Buys about {ResearchBudget.PointsFromFunding(budget):N0} points a month. "
-                + "Four times the money buys twice the points, so nobody purchases the tree outright. "
-                + "Building things earns more than paying for them.");
+            var hint = new Label(Loc.T("research.funding_note",
+                UiFormat.Number(ResearchBudget.PointsFromFunding(budget), 0)));
 
             hint.AddToClassList("field__hint");
             panel.Add(hint);
@@ -1783,13 +1789,17 @@ namespace ScalingLaws.UI
         {
             var roster = state.Staff;
 
-            var page = NewPage("TEAM",
-                $"{roster.SeatedHeadcount} of {roster.Desks} desks in {roster.OfficeDefinition.DisplayName}"
+            var page = NewPage(Loc.T("page.team"),
+                Loc.T("page.team.strap",
+                    roster.SeatedHeadcount,
+                    roster.Desks,
+                    roster.OfficeDefinition.DisplayName,
+                    UiFormat.Money(roster.DailyPayrollUsd))
                 + (roster.CountFrom(HireSource.Remote) > 0
-                    ? $", plus {roster.CountFrom(HireSource.Remote)} working remotely"
-                    : string.Empty)
-                + $". Payroll {UiFormat.Money(roster.DailyPayrollUsd)} a day. Every discipline "
-                + "saturates, so a seventh person in one adds a fraction of what the second did.");
+                    ? " " + Loc.T("page.team.remote", roster.CountFrom(HireSource.Remote))
+                    : string.Empty));
+
+            UiParts.ExplainPage(page, TechNotes.Wage);
 
             page.Add(BuildPositionGrid());
             page.Add(BuildHireButtons());
@@ -1810,6 +1820,7 @@ namespace ScalingLaws.UI
 
             var effectsHeading = new Label(Loc.T("panel.team_worth"));
             effectsHeading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(effectsHeading, TechNotes.TeamWorth);
             effects.Add(effectsHeading);
 
             effects.Add(Row("Training outcome spread",
@@ -1860,6 +1871,7 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("panel.positions"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.Positions);
             panel.Add(heading);
 
             var grid = new VisualElement();
@@ -2553,6 +2565,7 @@ namespace ScalingLaws.UI
                 case GuideTarget.Upgrade: Show(Screen.Upgrade); break;
                 case GuideTarget.Architecture: Show(Screen.Family); break;
                 case GuideTarget.Offices: Show(Screen.Offices); break;
+                case GuideTarget.Funding: Show(Screen.Funding); break;
             }
         }
 
@@ -2736,6 +2749,7 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("panel.service"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.ReservedCapacity);
             panel.Add(heading);
 
             var row = new VisualElement();
@@ -2942,6 +2956,7 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("panel.reserved_capacity"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.ReservedCapacity);
             panel.Add(heading);
 
             var row = new VisualElement();
@@ -3032,6 +3047,7 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("panel.day_costs"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.DailyBurn);
             heading.style.marginBottom = 0;
             head.Add(heading);
 
@@ -3099,6 +3115,7 @@ namespace ScalingLaws.UI
             var state = simulation.State;
 
             var page = NewPage(Loc.T("page.marketing"), Loc.T("page.marketing.strap"));
+UiParts.ExplainPage(page, TechNotes.CampaignLength);
 
             page.Add(BuildAwarenessPanel());
 
@@ -3107,6 +3124,7 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("panel.channels"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.Channels);
             channels.Add(heading);
 
             var grid = new VisualElement();
@@ -3141,6 +3159,7 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("panel.heard_of_you"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.Awareness);
             heading.style.marginBottom = 0;
             head.Add(heading);
 
@@ -3457,11 +3476,14 @@ namespace ScalingLaws.UI
             var profile = simulation.Profile;
             var market = simulation.Market;
 
-            var page = NewPage("FLEET",
-                $"{UiFormat.Petaflops(profile.RawPetaflops)} nameplate, "
-                + $"{UiFormat.Petaflops(profile.EffectivePetaflops)} usable. "
-                + $"{UiFormat.Money(profile.DailyOperatingCostUsd is var c ? (long)c : 0)} a day to run, "
-                + $"{UiFormat.Money((long)profile.DailyDepreciationUsd)} a day in value lost.");
+            var page = NewPage(Loc.T("page.fleet"),
+                Loc.T("page.fleet.strap",
+                    UiFormat.Petaflops(profile.RawPetaflops),
+                    UiFormat.Petaflops(profile.EffectivePetaflops),
+                    UiFormat.Money(profile.DailyOperatingCostUsd is var c ? (long)c : 0),
+                    UiFormat.Money((long)profile.DailyDepreciationUsd)));
+
+            UiParts.ExplainPage(page, TechNotes.PetaflopDay);
 
             page.Add(BuildHostingSwitch());
             page.Add(BuildServicePanel());
@@ -3479,6 +3501,7 @@ namespace ScalingLaws.UI
             rental.AddToClassList("fleet-panel");
             var rentalHeading = new Label(Loc.T("panel.rented_capacity"));
             rentalHeading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(rentalHeading, TechNotes.RentOrOwn);
             rental.Add(rentalHeading);
 
             var rentedLabel = new Label();
@@ -3509,6 +3532,7 @@ namespace ScalingLaws.UI
             ladder.AddToClassList("fleet-panel");
             var ladderHeading = new Label(Loc.T("panel.compute_tiers"));
             ladderHeading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(ladderHeading, TechNotes.PetaflopDay);
             ladder.Add(ladderHeading);
 
             foreach (var status in state.ComputeTierLadder())
@@ -3541,6 +3565,7 @@ namespace ScalingLaws.UI
             owned.AddToClassList("panel");
             var ownedHeading = new Label(Loc.T("panel.owned_hardware"));
             ownedHeading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(ownedHeading, TechNotes.RentOrOwn);
             owned.Add(ownedHeading);
 
             if (state.Pool.Assets.Count == 0)
@@ -3669,15 +3694,17 @@ namespace ScalingLaws.UI
             var policy = state.Monetization;
             var market = simulation.Market;
 
-            var page = NewPage("BUSINESS",
-                $"Market rate today is {UiFormat.Money((long)(market.PricePerMillionTokensUsd * 1000))} "
-                + "per billion tokens. What you charge against that decides your share; what you give "
-                + "away decides how much of what you serve is worth anything.");
+            var page = NewPage(Loc.T("page.business"),
+                Loc.T("page.business.strap",
+                    UiFormat.Money((long)(market.PricePerMillionTokensUsd * 1000))));
+
+            UiParts.ExplainPage(page, TechNotes.Revenue, TechNotes.Margin, TechNotes.TokenPrice);
 
             var pricing = new VisualElement();
             pricing.AddToClassList("panel");
             var pricingHeading = new Label(Loc.T("panel.pricing"));
             pricingHeading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(pricingHeading, TechNotes.Pricing);
             pricing.Add(pricingHeading);
 
             var modelRow = new VisualElement();
@@ -3751,6 +3778,7 @@ namespace ScalingLaws.UI
             free.AddToClassList("panel");
             var freeHeading = new Label(Loc.T("panel.free_tier"));
             freeHeading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(freeHeading, TechNotes.FreeTier);
             free.Add(freeHeading);
 
             var freeLabel = new Label(
@@ -3882,10 +3910,32 @@ namespace ScalingLaws.UI
         private VisualElement BuildReleaseScreen()
         {
             var page = NewPage(Loc.T("page.release"), Loc.T("page.release.strap"));
+UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
 
             if (state.Shelf.Count == 0)
             {
-                page.Add(Hint("Nothing on the shelf. A run has to finish before there is a decision to make."));
+                // **An empty page with one grey sentence on it reads as a screen that failed to
+                // load.** It is the state a new player meets first, so it gets a panel, a reason,
+                // and the door to the thing that would fill it.
+                var empty = new VisualElement();
+                empty.AddToClassList("panel");
+                empty.AddToClassList("emptystate");
+
+                var emptyHeading = new Label(Loc.T("release.empty.title"));
+                emptyHeading.AddToClassList("emptystate__title");
+                empty.Add(emptyHeading);
+
+                var emptyBody = new Label(Loc.T("release.empty.body"));
+                emptyBody.AddToClassList("emptystate__body");
+                empty.Add(emptyBody);
+
+                var go = new Button(() => Show(Screen.Create)) { text = Loc.T("release.empty.go") };
+                go.AddToClassList("button");
+                go.AddToClassList("button--primary");
+                go.AddToClassList("emptystate__go");
+                empty.Add(go);
+
+                page.Add(empty);
                 return page;
             }
 
@@ -3932,6 +3982,7 @@ namespace ScalingLaws.UI
                 capTable.RoundCount,
                 UiFormat.Money(capTable.TotalRaisedUsd),
                 FundingCatalog.SentimentLabel(FundingCatalog.SentimentOn(state.Date))));
+UiParts.ExplainPage(page, TechNotes.Valuation, TechNotes.FounderStake);
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
@@ -4004,6 +4055,7 @@ namespace ScalingLaws.UI
 
             var heading = new Label(Loc.T("funding.borrowing"));
             heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.Instalment);
             panel.Add(heading);
 
             var book = state.Loans;
@@ -4186,6 +4238,7 @@ namespace ScalingLaws.UI
         private VisualElement BuildRankingScreen()
         {
             var page = NewPage(Loc.T("page.ranking"), Loc.T("page.ranking.strap"));
+UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
@@ -5392,6 +5445,8 @@ namespace ScalingLaws.UI
 
         private void RefreshChrome()
         {
+            upgradeStrip?.Refresh();
+
             cashLabel.text = UiFormat.Money(state.CashUsd);
             RefreshCashArrows(state);
             RefreshStanding(state);
