@@ -71,6 +71,17 @@ namespace ScalingLaws.UI
         public void Refresh()
         {
             Root.Clear();
+
+            // **After the clear, not in the constructor.** This screen rebuilds itself into the same
+            // root on every refresh, so anything added once at construction survives exactly until
+            // the first message arrives. It went in at construction first and the banner was gone
+            // from every frame, which looks identical to art that failed to load.
+            var strip = PageArt.BannerFor("background_mail");
+
+            if (strip != null)
+            {
+                Root.Add(strip);
+            }
             Root.Add(BuildHeader());
 
             var letters = Visible();

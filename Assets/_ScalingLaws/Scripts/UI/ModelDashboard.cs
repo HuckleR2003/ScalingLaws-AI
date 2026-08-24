@@ -68,6 +68,16 @@ namespace ScalingLaws.UI
             page.AddToClassList("content");
             page.AddToClassList("modelhub");
 
+            // This screen builds its own page rather than going through GameShell.NewPage, so it has
+            // to ask for its own strip. Without this it was the only main screen with no picture on
+            // it, which reads as a screen that failed to finish loading rather than as a choice.
+            var strip = PageArt.BannerFor("background_model");
+
+            if (strip != null)
+            {
+                page.Add(strip);
+            }
+
             page.Add(BuildTopRow(company, state, product));
             page.Add(BuildTable(company));
 
@@ -277,7 +287,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("modelhub__table");
 
-            var heading = new Label("ON SALE");
+            var heading = new Label(Loc.T("model.on_sale"));
             heading.AddToClassList("modelhub__heading");
             panel.Add(heading);
 
@@ -285,7 +295,7 @@ namespace ScalingLaws.UI
 
             if (rows.Count == 0)
             {
-                var none = new Label("Nothing on sale. Build a model, then release it.");
+                var none = new Label(Loc.T("model.on_sale.none"));
                 none.AddToClassList("modelhub__empty");
                 panel.Add(none);
                 return panel;
@@ -295,10 +305,10 @@ namespace ScalingLaws.UI
 
             foreach (var row in rows)
             {
-                panel.Add(ModelRowElement(row));
+                panel.Add(ModelRowElement(row, company.State.CompanyName));
             }
 
-            var go = new Button(openRelease) { text = "MANAGE WHAT IS ON SALE" };
+            var go = new Button(openRelease) { text = Loc.T("model.manage") };
             go.AddToClassList("modelhub__manage");
             panel.Add(go);
 
@@ -320,29 +330,34 @@ namespace ScalingLaws.UI
             return row;
         }
 
-        private static VisualElement ModelRowElement(ModelRow model)
+        private static VisualElement ModelRowElement(ModelRow model, string company)
         {
             var row = new VisualElement();
             row.AddToClassList("mrow");
 
-            // A coloured tile with the type's initial rather than an icon: the project has no
-            // per-model-type art yet, and an empty 30px frame reads as a failed load. Listed in
-            // Docs/NeededGraphics.md.
-            var icon = new VisualElement();
-            icon.AddToClassList("mrow__icon");
-
-            var definition = ModelTypeCatalog.Get(model.Type);
+            // **The same piece of silicon the creator designed and the upgrade screen improves.**
+            // It was a coloured square with the model type's first letter in it, which said nothing
+            // the row did not already say two columns to the right, and it meant the thing the
+            // player had just branded turned into an anonymous tile the moment it shipped.
+            //
+            // The type keeps its colour, as the edge of the die rather than as the whole tile.
+            var chip = ChipPreview.Build(company);
+            chip.AddToClassList("die--row");
 
             if (ColorUtility.TryParseHtmlString(TintFor(model.Type), out var tint))
             {
-                icon.style.backgroundColor = tint;
+                var body = chip.Q(className: "die__body");
+
+                if (body != null)
+                {
+                    body.style.borderTopColor = tint;
+                    body.style.borderBottomColor = tint;
+                    body.style.borderLeftColor = tint;
+                    body.style.borderRightColor = tint;
+                }
             }
 
-            var initial = new Label(definition.DisplayName[..1].ToUpperInvariant());
-            initial.AddToClassList("mrow__initial");
-            icon.Add(initial);
-
-            row.Add(icon);
+            row.Add(chip);
 
             var name = new VisualElement();
             name.AddToClassList("mrow__name");

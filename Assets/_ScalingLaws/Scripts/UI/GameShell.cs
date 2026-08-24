@@ -2332,6 +2332,14 @@ namespace ScalingLaws.UI
             var page = new VisualElement();
             page.AddToClassList("content");
 
+            // Built by hand rather than through NewPage, so it has to ask for its own strip.
+            var strip = PageArt.BannerFor("background_hiring");
+
+            if (strip != null)
+            {
+                page.Add(strip);
+            }
+
             page.Add(portals.Build());
 
             if (state.Hiring.OpenCount > 0)
@@ -4710,6 +4718,9 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
             Screen.Family => "background_architecture",
             Screen.Fleet => "background_compute",
             Screen.Team => "background_team",
+            Screen.Marketing => "background_marketing",
+            Screen.Mail => "background_mail",
+            Screen.Hiring => "background_hiring",
             _ => null
         };
 

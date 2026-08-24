@@ -11942,3 +11942,414 @@
     margin-left: 0;
     margin-top: 0;
 }
+
+/* ============================================================================================
+   THE BRAND MARK, THE BROWSER AND THE CHIP
+
+   Three things the player designs on the first page of the creator, drawn once here and reused on
+   the model hub, the upgrade screen and the management page. A mark drawn one way on one screen and
+   another way on the next reads as two different companies.
+   ============================================================================================ */
+
+.mark {
+    width: 46px;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mark__letter {
+    font-size: 17px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 0;
+}
+
+.mark--hero {
+    width: 88px;
+    height: 88px;
+}
+
+.mark--hero > .mark__letter {
+    font-size: 33px;
+}
+
+.mark--badge {
+    width: 34px;
+    height: 34px;
+}
+
+.mark--badge > .mark__letter {
+    font-size: 13px;
+}
+
+.mark--die {
+    width: 40px;
+    height: 40px;
+}
+
+.mark--die > .mark__letter {
+    font-size: 15px;
+}
+
+/* ---- the browser ---- */
+
+.wb {
+    flex-grow: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgb(11, 14, 20);
+    border-width: 1px;
+    border-color: rgb(38, 47, 64);
+}
+
+.wb__chrome {
+    flex-direction: row;
+    align-items: center;
+    height: 32px;
+    flex-shrink: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgb(17, 21, 30);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(32, 40, 55);
+}
+
+.wb__lights {
+    flex-direction: row;
+    margin-right: 14px;
+}
+
+.wb__light {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    background-color: rgb(52, 62, 80);
+}
+
+.wb__address {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    height: 19px;
+    border-radius: 10px;
+    padding-left: 9px;
+    background-color: rgb(23, 28, 39);
+}
+
+.wb__lock {
+    width: 6px;
+    height: 8px;
+    margin-right: 7px;
+    border-radius: 1px;
+    background-color: rgb(96, 178, 140);
+}
+
+.wb__url {
+    font-size: 9px;
+    color: rgb(126, 140, 166);
+}
+
+.wb__body {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+/* ---- the rail ---- */
+
+.wb__rail {
+    width: 132px;
+    flex-shrink: 0;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: rgb(14, 18, 26);
+    border-right-width: 1px;
+    border-right-color: rgb(30, 38, 52);
+}
+
+.wb__house {
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1.3px;
+    color: rgb(190, 202, 224);
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+
+.wb__navitem {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 9px;
+}
+
+.wb__navdot {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    margin-right: 8px;
+    background-color: rgb(44, 54, 72);
+}
+
+.wb__navline {
+    height: 4px;
+    border-radius: 2px;
+    background-color: rgb(36, 45, 61);
+}
+
+/* The founder, by name, where every product this imitates puts the signed-in account. */
+
+.wb__account {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 10px;
+    border-top-width: 1px;
+    border-top-color: rgb(30, 38, 52);
+}
+
+.wb__avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    background-color: rgb(52, 44, 78);
+    border-width: 1px;
+    border-color: rgb(96, 84, 140);
+}
+
+.wb__who {
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+.wb__founder {
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(214, 222, 238);
+}
+
+.wb__role {
+    font-size: 8px;
+    color: rgb(104, 118, 142);
+}
+
+/* ---- the page ---- */
+
+.wb__page {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.wb__badge {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+}
+
+.wb__centre {
+    align-items: center;
+}
+
+.wb__markrow {
+    flex-direction: row;
+    align-items: center;
+}
+
+.wb__arrow {
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    margin-left: 10px;
+    margin-right: 10px;
+    padding: 0;
+    border-radius: 13px;
+    border-width: 1px;
+    border-color: rgb(38, 47, 64);
+    background-color: rgba(0, 0, 0, 0);
+    background-image: none;
+    color: rgb(72, 84, 104);
+    font-size: 12px;
+    -unity-text-align: middle-center;
+}
+
+.wb__arrow:disabled {
+    opacity: 1;
+    color: rgb(60, 70, 88);
+}
+
+.wb__product {
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(232, 238, 250);
+    margin-top: 12px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.wb__prompt {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 268px;
+    height: 34px;
+    margin-top: 20px;
+    padding-left: 14px;
+    padding-right: 5px;
+    border-radius: 17px;
+    background-color: rgb(19, 24, 34);
+    border-width: 1px;
+    border-color: rgb(38, 47, 64);
+}
+
+.wb__ask {
+    font-size: 10px;
+    color: rgb(96, 108, 130);
+}
+
+.wb__send {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: rgb(226, 232, 244);
+}
+
+/* ---- the processor ---- */
+
+.die {
+    align-items: center;
+    justify-content: center;
+}
+
+.die__body {
+    width: 132px;
+    height: 132px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background-color: rgb(21, 26, 36);
+    border-width: 1px;
+    border-color: rgb(52, 62, 82);
+}
+
+.die__rail {
+    position: absolute;
+    top: 16px;
+    bottom: 16px;
+    width: 5px;
+    justify-content: space-between;
+}
+
+.die__rail--left {
+    left: -5px;
+}
+
+.die__rail--right {
+    right: -5px;
+}
+
+.die__pin {
+    height: 3px;
+    border-radius: 1px;
+    background-color: rgb(84, 96, 120);
+}
+
+.die__face {
+    align-items: center;
+    justify-content: center;
+}
+
+.die__stamp {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgb(126, 140, 166);
+    margin-top: 5px;
+}
+
+/* Small enough for a list row: the pins and the stamp would be noise at this size. */
+
+.die--row > .die__body {
+    width: 42px;
+    height: 42px;
+    border-radius: 6px;
+}
+
+.die--row .die__rail {
+    top: 7px;
+    bottom: 7px;
+    width: 3px;
+}
+
+.die--row .die__rail--left {
+    left: -3px;
+}
+
+.die--row .die__rail--right {
+    right: -3px;
+}
+
+.die--row .die__pin {
+    height: 2px;
+}
+
+.die--row .mark--die {
+    width: 26px;
+    height: 26px;
+}
+
+.die--row .mark--die > .mark__letter {
+    font-size: 10px;
+}
+
+/* ---- the stage that holds all of it ---- */
+
+.brand-stage {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.brand-stage__screen {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 16px;
+}
+
+.brand-stage__caption {
+    font-size: 10px;
+    color: rgb(112, 126, 150);
+    white-space: normal;
+    margin-top: 8px;
+}
+
+.brand-stage__side {
+    width: 360px;
+    flex-shrink: 0;
+}
+
+.brand-silicon {
+    align-items: stretch;
+}
+
+.brand-silicon__stage {
+    align-items: center;
+    margin-top: 4px;
+    margin-bottom: 10px;
+}
+
+/* The half of the rail above the account: the company name and the navigation stand-ins. */
+
+.wb__railtop {
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+/* The shopfront on the management page. A fixed height, because a browser that grows with the page
+   stops reading as a window and starts reading as the page itself. */
+
+.mg-front {
+    height: 300px;
+    flex-shrink: 0;
+    margin-bottom: 14px;
+}

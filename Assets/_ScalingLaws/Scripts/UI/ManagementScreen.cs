@@ -217,6 +217,24 @@ namespace ScalingLaws.UI
         {
             var flagship = simulation.Flagship();
 
+            // **What a stranger actually sees, above what the numbers say about it.** This page has
+            // always claimed to be the public view and then shown a card of figures; the mock is the
+            // page. It is the same element the creator brands, so a company that renamed itself last
+            // month looks renamed here too.
+            //
+            // Returned inside a wrapper rather than added to the root from here, because this method
+            // is called into a layout that decides where its result goes.
+            var block = new VisualElement();
+
+            var shopfront = new VisualElement();
+            shopfront.AddToClassList("mg-front");
+
+            var preview = new BrowserPreview();
+            preview.Show(simulation.State.CompanyName, flagship?.Name, simulation.State.FounderName);
+            shopfront.Add(preview.Root);
+
+            block.Add(shopfront);
+
             var hero = new VisualElement();
             hero.AddToClassList("mg-hero");
 
@@ -260,7 +278,8 @@ namespace ScalingLaws.UI
             right.Add(who);
 
             hero.Add(right);
-            return hero;
+            block.Add(hero);
+            return block;
         }
 
         /// <summary>Five pips, filled by how much people prefer this to their next best option.</summary>

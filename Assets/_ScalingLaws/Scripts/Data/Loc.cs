@@ -599,6 +599,15 @@ namespace ScalingLaws.Data
             ["node.inferencetimesearch"] = "Inference time search",
 
             // ---- the model creator -------------------------------------------------------------------
+            ["create.stage.branding"] = "BRANDING",
+            ["create.branding.caption"] = "What people see when they look you up. The mark comes from the company and cannot be changed yet.",
+            ["create.branding.silicon"] = "SILICON",
+            ["create.branding.silicon_note"] = "The same plate the model hub and the upgrade screen show, so what you are designing here is what turns up in the list.",
+            ["wb.untitled"] = "Untitled",
+            ["wb.you"] = "You",
+            ["wb.owner"] = "Owner",
+            ["wb.ask"] = "Ask anything",
+            ["wb.locked"] = "Choosing your own mark is not in the game yet. It follows the company for now.",
             ["create.title"] = "NEW MODEL",
             ["create.stage.foundation"] = "FOUNDATION",
             ["create.stage.scale"] = "SCALE",
@@ -1389,6 +1398,15 @@ namespace ScalingLaws.Data
             ["node.inferencetimesearch"] = "Przeszukiwanie w czasie inferencji",
 
             // ---- the model creator -------------------------------------------------------------------
+            ["create.stage.branding"] = "MARKA",
+            ["create.branding.caption"] = "To, co ludzie widzą, kiedy cię wyszukają. Znak bierze się z firmy i na razie nie da się go zmienić.",
+            ["create.branding.silicon"] = "KRZEM",
+            ["create.branding.silicon_note"] = "Ta sama płytka, którą pokazuje lista modeli i ekran ulepszeń, więc to, co tu projektujesz, tak samo wygląda potem na liście.",
+            ["wb.untitled"] = "Bez nazwy",
+            ["wb.you"] = "Ty",
+            ["wb.owner"] = "Właściciel",
+            ["wb.ask"] = "Zapytaj o cokolwiek",
+            ["wb.locked"] = "Wybór własnego znaku jeszcze nie istnieje w grze. Na razie idzie za firmą.",
             ["create.title"] = "NOWY MODEL",
             ["create.stage.foundation"] = "FUNDAMENT",
             ["create.stage.scale"] = "SKALA",

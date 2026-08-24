@@ -89,6 +89,8 @@ namespace ScalingLaws.UI
         private bool commercialise;
         private readonly DemographicPanel demographics = new();
         private int dots;
+        private BrowserPreview browser;
+        private VisualElement chipHost;
         private Label laptopName;
         private Label laptopStatus;
         private Label laptopArchitecture;
@@ -134,6 +136,7 @@ namespace ScalingLaws.UI
         /// </summary>
         private static readonly string[] StageNames =
             {
+                Loc.T("create.stage.branding"),
                 Loc.T("create.stage.foundation"), Loc.T("create.stage.scale"),
                 Loc.T("create.stage.data"), Loc.T("create.stage.compute"),
                 Loc.T("create.stage.safety"), Loc.T("create.stage.review"),
@@ -313,12 +316,13 @@ namespace ScalingLaws.UI
 
             stageHost.Add(stage switch
             {
-                0 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
-                1 => WithArt("newmodel_2", BuildShapePanel()),
-                2 => BuildDataPanel(),
-                3 => BuildComputePanel(),
-                4 => BuildSafetyPanel(),
-                5 => BuildProjectionPanel(),
+                0 => BuildBrandingStage(),
+                1 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
+                2 => WithArt("newmodel_2", BuildShapePanel()),
+                3 => BuildDataPanel(),
+                4 => BuildComputePanel(),
+                5 => BuildSafetyPanel(),
+                6 => BuildProjectionPanel(),
                 _ => BuildDeployStage()
             });
 
@@ -363,6 +367,80 @@ namespace ScalingLaws.UI
             row.Add(column);
 
             return row;
+        }
+
+
+        /// <summary>
+        /// The first stage: what the thing is called, and what it looks like to everybody else.
+        ///
+        /// **This is in front of the engineering on purpose.** Every other page in the creator is a
+        /// trade with a wrong side; this one is the only page where the player is simply deciding
+        /// who they are, and putting it first means the six pages after it are about a product that
+        /// already has a name and a face rather than about an unnamed configuration.
+        ///
+        /// The browser on the left is a live mock, not a picture: it re-letters as the name is
+        /// typed. The chip under the controls is the same element the model hub and the upgrade
+        /// screen draw, so the thing being designed here is recognisably the thing that shows up in
+        /// the list afterwards.
+        /// </summary>
+        private VisualElement BuildBrandingStage()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("brand-stage");
+
+            var left = new VisualElement();
+            left.AddToClassList("brand-stage__screen");
+
+            browser = new BrowserPreview();
+            left.Add(browser.Root);
+
+            var caption = new Label(Loc.T("create.branding.caption"));
+            caption.AddToClassList("brand-stage__caption");
+            left.Add(caption);
+
+            row.Add(left);
+
+            var right = new VisualElement();
+            right.AddToClassList("brand-stage__side");
+            right.Add(BuildIdentityPanel());
+
+            var silicon = NewPanel(Loc.T("create.branding.silicon"));
+            silicon.AddToClassList("brand-silicon");
+
+            chipHost = new VisualElement();
+            chipHost.AddToClassList("brand-silicon__stage");
+            silicon.Add(chipHost);
+
+            var siliconNote = new Label(Loc.T("create.branding.silicon_note"));
+            siliconNote.AddToClassList("field__hint");
+            silicon.Add(siliconNote);
+
+            right.Add(silicon);
+            row.Add(right);
+
+            RefreshBranding();
+            return row;
+        }
+
+        /// <summary>
+        /// Repaints the mock and the chip from whatever is currently typed.
+        ///
+        /// Called from the name field and from the architecture field, because both are on this page
+        /// and a preview that only follows one of them is worse than one that follows neither.
+        /// </summary>
+        private void RefreshBranding()
+        {
+            var company = simulation.State.CompanyName;
+
+            browser?.Show(company, DisplayName(), simulation.State.FounderName);
+
+            if (chipHost == null)
+            {
+                return;
+            }
+
+            chipHost.Clear();
+            chipHost.Add(ChipPreview.Build(company, DisplayName()));
         }
 
         /// <summary>
@@ -434,11 +512,13 @@ namespace ScalingLaws.UI
         {
             var column = new VisualElement();
 
+            // Identity moved to the branding stage in front of this one. What is left here is the
+            // three decisions about who the model is *for*, which is a different subject from what
+            // it is called.
             var top = new VisualElement();
             top.AddToClassList("panel-row");
-            top.Add(BuildIdentityPanel());
 
-            var series = NewPanel("SERIES / MODEL UPGRADE RELEASE");
+            var series = NewPanel(Loc.T("create.series"));
             familyField = new DropdownField("Model family");
             familyField.AddToClassList("field");
             familyField.RegisterValueChangedCallback(_ => Reprice());
@@ -810,9 +890,9 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildIdentityPanel()
         {
-            var panel = NewPanel("IDENTITY");
+            var panel = NewPanel(Loc.T("create.identity"));
 
-            nameField.label = "Model name";
+            nameField.label = Loc.T("create.model_name");
             nameField.value = "Muse 1";
             nameField.AddToClassList("field");
             nameField.RegisterValueChangedCallback(_ =>
@@ -822,11 +902,12 @@ namespace ScalingLaws.UI
                     laptopName.text = DisplayName();
                 }
 
+                RefreshBranding();
                 Reprice();
             });
             panel.Add(nameField);
 
-            architectureField.label = "Architecture";
+            architectureField.label = Loc.T("create.architecture");
             architectureField.AddToClassList("field");
             architectureField.RegisterValueChangedCallback(_ => Reprice());
             panel.Add(architectureField);
