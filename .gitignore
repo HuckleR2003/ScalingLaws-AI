@@ -100,3 +100,9 @@ CityFlight~/
 TabProof~/
 UiFlight~/
 Videos~/
+
+# Reference screenshots of other people's products. They carry somebody else's branding and
+# sometimes the author's own account details, and this repository is public. Keep them on the
+# desktop and out of the tree.
+Assets/_ScalingLaws/Art/ai_browser.png
+Assets/_ScalingLaws/Art/ai_browser.png.meta
