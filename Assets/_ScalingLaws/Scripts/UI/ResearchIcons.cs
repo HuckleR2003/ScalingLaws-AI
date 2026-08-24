@@ -25,6 +25,18 @@ namespace ScalingLaws.UI
         private static readonly Dictionary<ResearchNodeId, string> FileNames = new()
         {
             { ResearchNodeId.FineTuningAndPrompting, "research_finetuning" },
+
+            // The eight that had no icon named at all, so the tree drew an empty badge for
+            // each of them. Six of the files existed in Art and had never reached
+            // Resources, where alone they can be loaded from.
+            { ResearchNodeId.SinglePrecisionTraining, "research_fp32" },
+            { ResearchNodeId.MixedPrecisionTraining, "research_bf16" },
+            { ResearchNodeId.LowPrecisionTraining, "research_int8" },
+            { ResearchNodeId.CorpusDeduplication, "research_dedup" },
+            { ResearchNodeId.ContinuousDataPipeline, "research_pipeline_data" },
+            { ResearchNodeId.HybridArchitectures, "research_hybrid" },
+            { ResearchNodeId.RecursiveSelfImprovement, "research_recursive" },
+            { ResearchNodeId.ArtificialSuperintelligence, "research_asi" },
             { ResearchNodeId.HumanFeedback, "research_humanfeedback" },
             { ResearchNodeId.EfficientAttention, "research_efficientattention" },
             { ResearchNodeId.MultimodalGeneration, "research_multimodal" },

@@ -1,6 +1,6 @@
 # Grafiki, których brakuje
 
-Stan na 2026-08-23. Zestawienie wyprodukowane z kodu, nie z pamięci: każda pozycja to nazwa pliku,
+Stan na 2026-08-24. Zestawienie wyprodukowane z kodu, nie z pamięci: każda pozycja to nazwa pliku,
 o którą interfejs realnie prosi przez `Resources.Load`, albo miejsce, gdzie dziś rysuje się
 zastępnik.
 
@@ -23,29 +23,18 @@ dokładnie taka jak w kolumnie **plik** — kod prosi o nią po nazwie.
 
 ---
 
-## 1. Ikony badań — 8 brakuje
+## 1. Ikony badań — ZROBIONE ✅
 
-**Folder:** `Resources/Research/` · **Rozmiar:** 300×300 PNG z przezroczystością
-**Styl:** cienki pierścień, ciemna kreska `rgb(22, 39, 39)` w środku, jeden pomysł na ikonę
+**Domknięte 2026-08-24.** Sześć plików leżało w `Art/Research/` i nigdy nie trafiło do
+`Resources/Research/`, a `Resources.Load` nie widzi niczego poza folderem Resources, więc były to
+ikony, których gra fizycznie nie mogła narysować. Dwie kolejne (`research_hybrid`,
+`research_recursive`) leżały w Resources i nikt ich nie nazywał w `ResearchIcons.cs`.
 
-Te osiem węzłów **nie ma nawet nazwy pliku w kodzie**, więc rysują pustą plakietkę w drzewie:
+Wszystkie osiem przeskalowane raz do 256×256 pod resztę i wpisane do kodu.
 
-| węzeł | proponowany plik | co przedstawia |
-|---|---|---|
-| Single precision training | `research_fp32` | liczba tracąca połowę cyfr |
-| Mixed precision training | `research_bf16` | dwie szerokości obok siebie |
-| Low precision training | `research_int8` | wąska liczba i pęknięta krzywa |
-| Corpus deduplication | `research_dedup` | stos identycznych kartek, jedna zostaje |
-| Continuous data pipeline | `research_pipeline_data` | taśma wchodząca do zbiornika |
-| Hybrid state space | `research_hybrid` | fala przechodząca w siatkę |
-| Recursive self improvement | `research_recursive` | pętla wchodząca w samą siebie |
-| Artificial superintelligence | `research_asi` | pojedynczy punkt i wszystko wokół mniejsze |
-
-Po dorzuceniu plików trzeba je jeszcze **wpisać do `UI/ResearchIcons.cs`** — loader pyta o nazwę,
-sam jej nie zgadnie. `ArtTests` pilnuje, żeby nazwa bez pliku nie przeszła, więc jedno bez drugiego
-nie wejdzie.
-
----
+```
+nazwane przez kod: 50 z 50      węzły bez ikony: brak
+```
 
 ## 2. Biura — 2 brakuje, 2 nienazwane
 
@@ -113,17 +102,18 @@ Edge tier, Bulk allocation). Ekran MOC rysuje je dziś bez rozróżnienia.
 - **Ikony umiejętności** — 7 ✅
 - **Wygląd założyciela** — 11 ✅
 - **Etapy tworzenia modelu** — 6 (`newmodel_1..6`) ✅
-- **Ikony badań** — 42 z 50 ✅ (brakujące osiem wyżej)
+- **Ikony badań** — 50 z 50 ✅
 
 ---
 
 ## Kolejność, gdybym miał wybierać
 
 1. **`office_smallhub` i `office_bighub`** — nazwane, brakujące, na często odwiedzanym ekranie
-2. **Osiem ikon badań** — puste plakietki w drzewie czytają się jak błąd
-3. **`chip_model`** — jedyne widoczne „tu miało coś być"
-4. **Pięć banerów** — kosmetyka, ale wyrównuje grę do jednego poziomu
-5. **Trzeci hosting** — najmniej pilne
+2. **`chip_model`** — jedyne widoczne „tu miało coś być"
+3. **Pięć banerów** — kosmetyka, ale wyrównuje grę do jednego poziomu
+4. **Trzeci hosting** — najmniej pilne
+
+Ikony badań spadły z tej listy — są zrobione.
 
 Jeśli nie chcesz zamawiać ikon badań, mogę je dorysować tak jak dziesięć poprzednich: 300×300,
 pierścień, ciemna kreska, pasują do dwudziestu dwóch istniejących.
