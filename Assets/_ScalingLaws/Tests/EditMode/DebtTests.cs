@@ -67,10 +67,47 @@ namespace ScalingLaws.Tests.EditMode
                     continue;
                 }
 
-                Assert.That(sovereign.PrincipalUsd, Is.GreaterThan(other.PrincipalUsd));
-                Assert.That(sovereign.EffectiveMultiple, Is.GreaterThan(other.EffectiveMultiple));
-                Assert.That(sovereign.ReputationOnDefault, Is.GreaterThan(other.ReputationOnDefault));
+                Assert.That(sovereign.PrincipalUsd, Is.GreaterThan(other.PrincipalUsd),
+                    "Nothing in the game moves more money than the full programme.");
+                Assert.That(sovereign.ReputationOnDefault,
+                    Is.GreaterThanOrEqualTo(other.ReputationOnDefault),
+                    "And nothing fails louder.");
+
+                // **The rate is deliberately not the biggest.** A second, smaller state programme
+                // was added and it is dearer per dollar on purpose: a government putting up a
+                // billion is buying a foothold, not a national champion, and prices it like a bet.
+                // Only the commercial products have to sit under the full programme.
+                if (other.Product != LoanProduct.SovereignSeed)
+                {
+                    Assert.That(sovereign.EffectiveMultiple,
+                        Is.GreaterThan(other.EffectiveMultiple));
+                }
             }
+        }
+
+        /// <summary>
+        /// The smaller state programme is easier to reach and worse value, which is the trade.
+        /// </summary>
+        [Test]
+        public void TheSmallerStateProgrammeCostsMorePerDollar()
+        {
+            var full = LoanCatalog.Get(LoanProduct.SovereignCompute);
+            var seed = LoanCatalog.Get(LoanProduct.SovereignSeed);
+
+            Assert.That(seed.PrincipalUsd, Is.LessThan(full.PrincipalUsd),
+                "A tenth of the sum, which is what makes it reachable mid-campaign.");
+
+            Assert.That(seed.EffectiveMultiple, Is.GreaterThan(full.EffectiveMultiple),
+                "If the smaller one were also cheaper per dollar, nobody would ever take the full "
+                + "programme and the late game would lose its one enormous decision.");
+
+            Assert.That(seed.EffectiveMultiple, Is.InRange(3.15, 3.45),
+                "About three hundred and thirty per cent back in total, which is what was asked "
+                + "for. The headline multiple is only half of that now, so this has to be pinned on "
+                + "the effective figure.");
+
+            Assert.That(seed.EarliestDate.Year, Is.LessThan(full.EarliestDate.Year),
+                "It opens years before the full programme, or it is not the reachable one.");
         }
 
         /// <summary>

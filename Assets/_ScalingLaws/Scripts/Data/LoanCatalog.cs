@@ -14,7 +14,18 @@ namespace ScalingLaws.Data
         SovereignCompute = 4,
 
         /// <summary>Secured on the fleet. Added after the funding screen was rebuilt.</summary>
-        EquipmentFinance = 5
+        EquipmentFinance = 5,
+
+        /// <summary>
+        /// A tenth the size of the full programme, and dearer per dollar.
+        ///
+        /// The full sovereign facility is ten billion and unreachable until the very late game, so
+        /// for most of a campaign the state column had exactly one tile in it that nobody could
+        /// take. A billion at a worse multiple is the version a mid-game company can actually reach,
+        /// and the fact that it costs more per dollar is the point: a state lending less takes less
+        /// interest in whether you survive.
+        /// </summary>
+        SovereignSeed = 6
     }
 
     /// <summary>
@@ -75,6 +86,7 @@ namespace ScalingLaws.Data
         {
             LoanProduct.BridgeFacility => "bridge",
             LoanProduct.EquipmentFinance => "equipment",
+            LoanProduct.SovereignSeed => "sovseed",
             LoanProduct.VentureDebt => "venture",
             LoanProduct.CorporateBond => "bond",
             _ => "sovereign"
@@ -219,6 +231,25 @@ namespace ScalingLaws.Data
                 requiredResearch: ResearchNodeId.RecursiveSelfImprovement,
                 reputationOnDefault: 0.35,
                 monthlyCommissionRate: 0.0035),
+
+            // The smaller state programme. 330 per cent back, which is dearer per dollar than the
+            // full facility at 286: a government putting up a billion is buying a foothold, not a
+            // national champion, and prices it like a bet rather than like infrastructure.
+            new(LoanProduct.SovereignSeed, "State compute grant",
+                "A ministry with a budget line and something to prove. A billion, at terms nobody "
+                + "would call generous, on the understanding that the capability stays in the "
+                + "country. Smaller than the full programme and easier to reach, and it costs more "
+                + "for every dollar of it.",
+                principalUsd: 1_000_000_000,
+                repaymentMultiple: 2.93,
+                termDays: 2_920,
+                graceDays: 365,
+                earliestDate: GameDate.FromCalendar(2024, 1, 1),
+                requiredAnnualRevenueUsd: 300_000_000,
+                requiredCapabilityRatio: 0.80,
+                requiredResearch: ResearchNodeId.DatacenterProgramme,
+                reputationOnDefault: 0.30,
+                monthlyCommissionRate: 0.0038),
 
             // A second commercial option on day one, so the opening is a choice rather than one
             // button. Secured against the fleet, which is the only collateral a young lab has, and

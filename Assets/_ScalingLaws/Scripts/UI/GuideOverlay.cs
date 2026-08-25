@@ -51,11 +51,18 @@ namespace ScalingLaws.UI
         /// <summary>Turns every other tab off while a step is waiting for one particular click.</summary>
         private readonly Action<GuideTarget?> lockToTab;
 
+        /// <summary>Puts the model creator on the page the step is describing.</summary>
+        private readonly Action<int> showCreatorStage;
+
+        /// <summary>Raised when the player steps out meaning to come back.</summary>
+        public Action leftForNow;
+
         private VisualElement strip;
         private Label line;
         private Label counter;
         private Button next;
         private Button skip;
+        private Button later;
         private Label speakerName;
         private Label speakerRelation;
         private VisualElement portrait;
@@ -66,8 +73,10 @@ namespace ScalingLaws.UI
         public GuideOverlay(VisualElement host, Func<GuideProgress> progress,
             Action<GuideTarget> goTo, Action changed,
             Func<GuideTarget, VisualElement> tabFor = null,
+            Action<int> showCreatorStage = null,
             Action<GuideTarget?> lockToTab = null)
         {
+            this.showCreatorStage = showCreatorStage;
             this.host = host;
             this.progress = progress;
             this.goTo = goTo;
@@ -119,6 +128,16 @@ namespace ScalingLaws.UI
 
             if (builtFor != state.Step || strip == null || strip.parent == null)
             {
+                // **Armed on the way in, not on the way out.** The playtest reached the step where
+                // he offers to pay for the first node, clicked a node while he was still talking,
+                // and was told it needed fifty research points it did not have. Handing the favour
+                // over when the step is left means the offer is refused for exactly as long as the
+                // offer is on screen.
+                if (step.Id == GuideScript.GiftStepId)
+                {
+                    state.FreeResearchOwed = true;
+                }
+
                 Build(step);
                 builtFor = state.Step;
             }
@@ -129,6 +148,13 @@ namespace ScalingLaws.UI
                 // was built, so switching language mid-tour left Emil talking English over a Polish
                 // screen. Text is cheap to set and setting it destroys nothing.
                 Retext(step);
+            }
+
+            // The creator page first, because the highlight below is a query against whatever is on
+            // screen and moving the page after ringing something rings the wrong thing.
+            if (step.CreatorStage >= 0)
+            {
+                showCreatorStage?.Invoke(step.CreatorStage);
             }
 
             // Always, whatever happened above. The page behind was very likely rebuilt, so the ring
@@ -161,6 +187,11 @@ namespace ScalingLaws.UI
             if (skip != null)
             {
                 skip.text = Loc.T("guide.skip");
+            }
+
+            if (later != null)
+            {
+                later.text = Loc.T("guide.later");
             }
 
             // His name and how he is related. Missed on the first pass at this, and it is the same
@@ -258,6 +289,14 @@ namespace ScalingLaws.UI
 
             buttons.Add(next);
 
+            // **Two ways out, and they are different promises.** "I'll take it from here" is a
+            // player who does not want a tutorial. "I'll come back later" is one who does and has
+            // something else on, and telling them there is something waiting at the end is the
+            // cheapest possible reason to return.
+            later = new Button(Later) { text = Loc.T("guide.later") };
+            later.AddToClassList("guide__later");
+            buttons.Add(later);
+
             skip = new Button(Skip) { text = Loc.T("guide.skip") };
             skip.AddToClassList("guide__skip");
             buttons.Add(skip);
@@ -345,15 +384,6 @@ namespace ScalingLaws.UI
         {
             var state = progress();
 
-            // The favour is handed over on the way out of the step that offers it, so a player who
-            // leaves the tour before that point never had it and one who hears the offer keeps it
-            // whatever they do next. Named rather than counted: inserting a line above it must not
-            // quietly move the gift to a different part of the conversation.
-            if (Current?.Id == GuideScript.GiftStepId)
-            {
-                state.FreeResearchOwed = true;
-            }
-
             state.Step++;
 
             if (state.Step >= GuideScript.Steps.Count)
@@ -376,14 +406,52 @@ namespace ScalingLaws.UI
         /// he finishes explaining it would otherwise take it back, and a tutorial that punishes you
         /// for ending it is a tutorial people sit through resenting.
         /// </summary>
+        /// <summary>
+        /// Stepping out with the intention of coming back.
+        ///
+        /// **The tour is paused, not ended.** `GuideStage` goes back to Talking, which is the state
+        /// the phone leaves it in before the player answers, so the step is kept and the phone can
+        /// ring again. Ending it here would make the button a second Skip with a friendlier label.
+        /// </summary>
+        private void Later()
+        {
+            // **He gets the last word before the strip goes.** A tutorial that vanishes when you
+            // press a button tells you nothing about whether it is coming back, and the one reason
+            // to return is that there is something waiting at the end.
+            if (line != null && next != null && skip != null && later != null)
+            {
+                line.text = Loc.T("guide.later.reply");
+
+                later.style.display = DisplayStyle.None;
+                skip.style.display = DisplayStyle.None;
+                next.text = Loc.T("common.close");
+
+                // The button now closes rather than advances, so it is rebuilt with that one job.
+                var closing = new Button(Pause) { text = Loc.T("common.close") };
+                closing.AddToClassList("guide__next");
+                next.parent.Add(closing);
+                next.style.display = DisplayStyle.None;
+
+                return;
+            }
+
+            Pause();
+        }
+
+        /// <summary>Puts the tour down, keeping the step so it can be picked up again.</summary>
+        private void Pause()
+        {
+            var state = progress();
+            state.Stage = GuideStage.Paused;
+
+            Hide();
+            changed?.Invoke();
+            leftForNow?.Invoke();
+        }
+
         private void Skip()
         {
             var state = progress();
-
-            if (Current?.Id == GuideScript.GiftStepId)
-            {
-                state.FreeResearchOwed = true;
-            }
 
             state.Stage = GuideStage.Finished;
 

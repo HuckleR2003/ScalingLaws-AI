@@ -40,7 +40,8 @@ namespace ScalingLaws.Data
     public sealed class GuideStep
     {
         public GuideStep(string id, string line, GuideTarget target = GuideTarget.None,
-            string highlight = null, string prompt = null, bool waitForClick = false)
+            string highlight = null, string prompt = null, bool waitForClick = false,
+            int creatorStage = -1)
         {
             Id = id;
             lineKey = line;
@@ -48,6 +49,7 @@ namespace ScalingLaws.Data
             Highlight = highlight;
             promptKey = prompt;
             WaitForClick = waitForClick;
+            CreatorStage = creatorStage;
         }
 
         public string Id { get; }
@@ -90,6 +92,19 @@ namespace ScalingLaws.Data
         /// described means they have done it once before it matters.
         /// </summary>
         public bool WaitForClick { get; }
+
+        /// <summary>
+        /// Which page of the model creator this step is talking about, or -1 for none.
+        ///
+        /// **The tour got lost here in the first playtest and this is why.** Opening the creator put
+        /// the player on whatever page they had left it on, while Emil went on describing the scale
+        /// belt, then precision, then safety. Nothing was highlighted because none of it was on
+        /// screen, and there was no way for the player to know which of eight pages he meant.
+        ///
+        /// So the step names the page and the shell puts the creator on it. That is the difference
+        /// between a guide and a voice-over.
+        /// </summary>
+        public int CreatorStage { get; }
     }
 
     /// <summary>
@@ -202,6 +217,8 @@ namespace ScalingLaws.Data
                 GuideTarget.Research, null, "guide.show_me", true),
             new("research_tree", "guide.step.research_tree", GuideTarget.Research, "tree-node"),
             new("research_cost", "guide.step.research_cost", GuideTarget.Research, "tree-node"),
+            new("research_groups", "guide.step.research_groups", GuideTarget.Research, "era"),
+            new("launch_trap", "guide.step.launch_trap", GuideTarget.Research),
             new(GiftStepId, "guide.step.research_gift", GuideTarget.Research, "tree-node"),
             new("research_gift_note", "guide.step.research_gift_note", GuideTarget.Research),
 
@@ -209,13 +226,35 @@ namespace ScalingLaws.Data
             new("model_open", "guide.step.model_open",
                 GuideTarget.Model, null, "guide.show_me", true),
             new("model_hub", "guide.step.model_hub", GuideTarget.Model, "door"),
+            // Page 0, so opening the creator lands on branding rather than on wherever the player
+            // last left it. A tour that opens a door onto the middle of a form is not a tour.
             new("create_open", "guide.step.create_open",
-                GuideTarget.Create, null, "guide.show_me", true),
-            new("create_scale", "guide.step.create_scale", GuideTarget.Create, "scale-half"),
-            new("create_locked", "guide.step.create_locked", GuideTarget.Create, "scale-lock"),
-            new("create_precision", "guide.step.create_precision", GuideTarget.Create, "chip"),
-            new("create_safety", "guide.step.create_safety", GuideTarget.Create, "tier-plate"),
-            new("create_review", "guide.step.create_review", GuideTarget.Create, "verdict"),
+                GuideTarget.Create, null, "guide.show_me", true, 0),
+            new("create_brand", "guide.step.create_brand", GuideTarget.Create, "wb", null, false, 0),
+            new("create_foundation", "guide.step.create_foundation", GuideTarget.Create,
+                "type-tile", null, false, 1),
+            new("create_scale", "guide.step.create_scale", GuideTarget.Create, "scale-half",
+                null, false, 2),
+            new("create_locked", "guide.step.create_locked", GuideTarget.Create, "scale-lock",
+                null, false, 2),
+
+            // Nothing to say about the data page and the compute page beyond what is on them, so he
+            // says he is waiting rather than filling the silence. Except for the one control on the
+            // compute page that has cost real players real money.
+            new("create_data", "guide.step.create_data", GuideTarget.Create, null, null, false, 3),
+            new("create_spend", "guide.step.create_spend", GuideTarget.Create, "stage-slider",
+                null, false, 4),
+            new("create_waiting", "guide.step.create_waiting", GuideTarget.Create, null,
+                null, false, 4),
+
+            new("create_safety", "guide.step.create_safety", GuideTarget.Create, "effort-chip",
+                null, false, 5),
+            new("create_fine", "guide.step.create_fine", GuideTarget.Create, "effort-chip",
+                null, false, 5),
+            new("create_precision", "guide.step.create_precision", GuideTarget.Create, "chip",
+                null, false, 4),
+            new("create_review", "guide.step.create_review", GuideTarget.Create, "verdict",
+                null, false, 6),
 
             // ---- the level above the model ------------------------------------------------
             new("arch_pitch", "guide.step.arch_pitch"),

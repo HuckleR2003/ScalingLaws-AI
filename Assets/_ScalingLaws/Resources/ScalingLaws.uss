@@ -829,10 +829,11 @@
 }
 
 .skill-row__name {
-    font-size: 13px;
+    font-size: 15px;
     -unity-font-style: bold;
     color: rgb(206, 216, 230);
     letter-spacing: 1px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
 }
 
 .skill-track {
@@ -865,8 +866,8 @@
 }
 
 .skill-row__effect {
-    font-size: 11px;
-    color: rgb(122, 134, 152);
+    font-size: 12.5px;
+    color: rgb(158, 172, 194);
     white-space: nowrap;
     overflow: hidden;
 }
@@ -1001,18 +1002,19 @@
 }
 
 .trait-card__title {
-    font-size: 13px;
+    font-size: 14.5px;
     -unity-font-style: bold;
     color: rgb(228, 236, 248);
     letter-spacing: 1px;
     padding-top: 9px;
     padding-left: 10px;
     padding-right: 10px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
 }
 
 .trait-card__flavour {
-    font-size: 11px;
-    color: rgb(124, 136, 154);
+    font-size: 12.5px;
+    color: rgb(160, 174, 196);
     white-space: normal;
     padding-top: 3px;
     padding-left: 10px;
@@ -3638,7 +3640,7 @@
 .hswitch {
     flex-direction: row;
     align-items: stretch;
-    height: 74px;
+    height: 132px;
     flex-shrink: 0;
     margin-bottom: 12px;
     background-color: rgb(16, 20, 27);
@@ -3649,7 +3651,7 @@
 }
 
 .hswitch__art {
-    width: 128px;
+    width: 232px;
     flex-shrink: 0;
     background-color: rgb(28, 34, 44);
     -unity-background-scale-mode: scale-and-crop;
@@ -3665,7 +3667,7 @@
     border-radius: 0;
     background-color: rgb(19, 24, 34);
     background-image: none;
-    font-size: 15px;
+    font-size: 19px;
     -unity-font-style: bold;
     letter-spacing: 1.4px;
     color: rgb(126, 140, 166);
@@ -12334,7 +12336,7 @@
 }
 
 .brand-stage__side {
-    width: 360px;
+    width: 440px;
     flex-shrink: 0;
 }
 
@@ -12416,4 +12418,46 @@
     right: 0;
     top: 0;
     bottom: 0;
+}
+
+/* What you charge and what you give away, side by side. They are the same question asked twice and
+   reading them a screen apart is what makes a generous free tier look free. */
+
+.price-row {
+    align-items: stretch;
+}
+
+.price-row__half {
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+/* The author's cover for a hosting package. Sits above the words rather than behind them: these
+   are photographs of racks and text over a photograph is a legibility gamble even after a scrim. */
+
+.pack__cover {
+    height: 104px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+/* Stepping out meaning to come back. Between the two existing buttons in weight, because it is
+   between them in what it means. */
+
+.guide__later {
+    height: 42px;
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-left: 8px;
+    margin-top: 0;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    border-width: 1px;
+    border-color: rgb(52, 64, 86);
+    border-radius: 4px;
+    color: rgb(196, 208, 228);
+    background-color: rgba(255, 255, 255, 0.04);
+    background-image: none;
+    -unity-text-align: middle-center;
 }

@@ -41,6 +41,10 @@ namespace ScalingLaws.UI
             return texture;
         }
 
+        /// <summary>A hosting package cover, or null when there is no art for it yet.</summary>
+        public static Texture2D Hosting(string name) =>
+            string.IsNullOrEmpty(name) ? null : Load("Hosting/" + name);
+
         /// <summary>
         /// The strip under a page heading. Returns null when there is no art for that page, and the
         /// caller adds nothing rather than adding an empty box.

@@ -134,6 +134,12 @@ namespace ScalingLaws.UI
         /// <summary>Emil talking over the game while the tour runs.</summary>
         private GuideOverlay guide;
 
+        /// <summary>How long he leaves it before ringing back after a "come back later".</summary>
+        private const int DaysBeforeHeRingsBack = 3;
+
+        /// <summary>The day the player stepped out, so he does not ring the same afternoon.</summary>
+        private int pausedOn;
+
         /// <summary>The quiet strip under the corner banners with the next task on it.</summary>
         private TaskBanner tasks;
 
@@ -372,6 +378,7 @@ namespace ScalingLaws.UI
                 (index, traits) =>
                 {
                     releasePlan.Open(index, traits);
+            upgrades.goToCreator = () => Show(Screen.Create);
                     Show(Screen.ReleasePlan);
                 },
                 () => Show(Screen.Site));
@@ -591,10 +598,16 @@ namespace ScalingLaws.UI
 
             guide = new GuideOverlay(root, () => state.Guide, GoToGuideTarget, RefreshChrome,
                 target => ScreenForGuideTarget(target) is { } screen ? hud?.SlotFor(screen) : null,
+                PutCreatorOnStage,
                 target => hud?.LockToSlot(
                     target.HasValue && ScreenForGuideTarget(target.Value) is { } shown
                         ? shown
                         : null));
+
+            guide.leftForNow = () =>
+            {
+                pausedOn = state.Date.Day;
+            };
 
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
 
@@ -2479,7 +2492,16 @@ namespace ScalingLaws.UI
         /// </summary>
         private void RingTheCousinIfThisIsDayOne()
         {
-            if (state.Guide.Stage != GuideStage.Unseen || phone.IsOpen)
+            // Day one, or a player who stepped out and has had a few days to notice the corner is
+            // quiet. Both routes end in the same phone.
+            var paused = state.Guide.Stage == GuideStage.Paused;
+
+            if ((state.Guide.Stage != GuideStage.Unseen && !paused) || phone.IsOpen)
+            {
+                return;
+            }
+
+            if (paused && state.Date.Day - pausedOn < DaysBeforeHeRingsBack)
             {
                 return;
             }
@@ -2491,9 +2513,12 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            state.Guide.Stage = GuideStage.Talking;
-            state.Guide.StartingCashUsd = state.CashUsd;
+            if (!paused)
+            {
+                state.Guide.StartingCashUsd = state.CashUsd;
+            }
 
+            state.Guide.Stage = GuideStage.Talking;
             phone.Ring();
         }
 
@@ -2505,8 +2530,17 @@ namespace ScalingLaws.UI
         /// </summary>
         private void AnswerTheCousin(bool accepted)
         {
+            // **Only a first acceptance starts at the beginning.** Somebody resuming after stepping
+            // out is picked up where they left off, or the button would be a restart wearing the
+            // word "later".
+            var resuming = state.Guide.Stage == GuideStage.Paused;
+
             state.Guide.Stage = accepted ? GuideStage.Touring : GuideStage.Finished;
-            state.Guide.Step = 0;
+
+            if (!resuming)
+            {
+                state.Guide.Step = 0;
+            }
 
             RefreshChrome();
 
@@ -2586,6 +2620,35 @@ namespace ScalingLaws.UI
             GuideTarget.Funding => Screen.Funding,
             _ => null
         };
+
+        /// <summary>
+        /// Puts the creator on the page a guide step is talking about.
+        ///
+        /// **The tour got lost here in the first playtest.** Opening the creator left the player on
+        /// whatever page they were last on while Emil described the scale belt, then precision, then
+        /// safety, none of which were on screen. A guide that names a page and does not open it is a
+        /// voice-over.
+        ///
+        /// Called from the tour's own refresh rather than from the button, so a step reached by any
+        /// route lands on the right page.
+        /// </summary>
+        private void PutCreatorOnStage(int stage)
+        {
+            if (creator == null || stage < 0 || stage >= ModelCreatorPanel.StageCount)
+            {
+                return;
+            }
+
+            if (current != Screen.Create)
+            {
+                Show(Screen.Create);
+            }
+
+            if (creator.Stage != stage)
+            {
+                creator.Stage = stage;
+            }
+        }
 
         /// <summary>Opens the screen a guide step is about.</summary>
         private void GoToGuideTarget(GuideTarget target)
@@ -3000,6 +3063,20 @@ namespace ScalingLaws.UI
             return panel;
         }
 
+        /// <summary>
+        /// Which cover belongs to which package.
+        ///
+        /// Written out rather than built from the enum name, so a renamed package fails to compile
+        /// here instead of quietly losing its picture.
+        /// </summary>
+        private static string HostingCoverFor(HostingPackage id) => id switch
+        {
+            HostingPackage.Standard => "hosting_growth",
+            HostingPackage.LowLatency => "hosting_edge",
+            HostingPackage.Bulk => "hosting_bulk",
+            _ => null
+        };
+
         private VisualElement BuildPackageCard(HostingPackageDefinition definition)
         {
             var held = simulation.State.Pool.PackageCount(definition.Id);
@@ -3007,6 +3084,18 @@ namespace ScalingLaws.UI
             var card = new VisualElement();
             card.AddToClassList("pack");
             card.EnableInClassList("pack--on", held > 0);
+
+            // The author drew a cover for each package. A missing one leaves the plate as it was
+            // rather than throwing, same rule every other loader in the project follows.
+            var cover = PageArt.Hosting(HostingCoverFor(definition.Id));
+
+            if (cover != null)
+            {
+                var plate = new VisualElement();
+                plate.AddToClassList("pack__cover");
+                plate.style.backgroundImage = new StyleBackground(cover);
+                card.Add(plate);
+            }
 
             var name = new Label(definition.DisplayName.ToUpperInvariant());
             name.AddToClassList("pack__name");
@@ -3505,14 +3594,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             var profile = simulation.Profile;
             var market = simulation.Market;
 
-            var page = NewPage(Loc.T("page.fleet"),
-                Loc.T("page.fleet.strap",
-                    UiFormat.Petaflops(profile.RawPetaflops),
-                    UiFormat.Petaflops(profile.EffectivePetaflops),
-                    UiFormat.Money(profile.DailyOperatingCostUsd is var c ? (long)c : 0),
-                    UiFormat.Money((long)profile.DailyDepreciationUsd)));
-
-            UiParts.ExplainPage(page, TechNotes.PetaflopDay);
+            var page = NewPage(Loc.T("page.fleet"), string.Empty);
 
             page.Add(BuildHostingSwitch());
             page.Add(BuildServicePanel());
@@ -3729,8 +3811,16 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
 
             UiParts.ExplainPage(page, TechNotes.Revenue, TechNotes.Margin, TechNotes.TokenPrice);
 
+            // The two halves of one decision, side by side. What you charge and what you give
+            // away are the same question asked twice, and reading them a screen apart is what makes
+            // a generous free tier look free.
+            var priceRow = new VisualElement();
+            priceRow.AddToClassList("panel-row");
+            priceRow.AddToClassList("price-row");
+
             var pricing = new VisualElement();
             pricing.AddToClassList("panel");
+            pricing.AddToClassList("price-row__half");
             var pricingHeading = new Label(Loc.T("panel.pricing"));
             pricingHeading.AddToClassList("panel__heading");
             UiParts.ExplainHeading(pricingHeading, TechNotes.Pricing);
@@ -3801,7 +3891,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                     + "The serving bill is not."));
             }
 
-            page.Add(pricing);
+            priceRow.Add(pricing);
 
             var free = new VisualElement();
             free.AddToClassList("panel");
@@ -3847,7 +3937,9 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             free.Add(Hint("Serving capacity does not care which kind of token it is producing and "
                 + "neither does the bill. A generous tier widens the funnel and can quietly turn most "
                 + "of the fleet into a cost centre."));
-            page.Add(free);
+            free.AddToClassList("price-row__half");
+            priceRow.Add(free);
+            page.Add(priceRow);
 
             page.Add(BuildCampaignPanel(CampaignKind.Company, "COMPANY MARKETING",
                 "Reputation, slowly, and it survives a model going out of date."));
@@ -4006,12 +4098,8 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
         private VisualElement BuildFundingScreen()
         {
             var capTable = state.CapTable;
-            var page = NewPage(Loc.T("funding.title"), Loc.T("funding.strap",
-                UiFormat.Percent(capTable.FounderEquity),
-                capTable.RoundCount,
-                UiFormat.Money(capTable.TotalRaisedUsd),
-                FundingCatalog.SentimentLabel(FundingCatalog.SentimentOn(state.Date))));
-UiParts.ExplainPage(page, TechNotes.Valuation, TechNotes.FounderStake);
+            var page = NewPage(Loc.T("funding.title"), string.Empty);
+            UiParts.ExplainPage(page, TechNotes.Valuation, TechNotes.FounderStake);
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
@@ -4156,11 +4244,12 @@ UiParts.ExplainPage(page, TechNotes.Valuation, TechNotes.FounderStake);
             grid.AddToClassList("grid");
             panel.Add(grid);
 
-            // Commercial first, the state programme last, whatever order the catalog holds them in.
-            // The sovereign tile is twice the width of the others, so anywhere but the end it breaks
-            // the row it lands in and leaves a hole beside it.
+            // Commercial first, then both state programmes, smallest of those first. The full
+            // sovereign tile is twice the width of the others, so anywhere but the very end it
+            // breaks the row it lands in and leaves a hole beside it.
             foreach (var offer in simulation.LoanOffers()
-                         .OrderBy(entry => entry.Product == LoanProduct.SovereignCompute ? 1 : 0)
+                         .OrderBy(entry => entry.Product == LoanProduct.SovereignCompute
+                                        || entry.Product == LoanProduct.SovereignSeed ? 1 : 0)
                          .ThenBy(entry => LoanCatalog.Get(entry.Product).PrincipalUsd))
             {
                 grid.Add(BuildLoanCard(offer));
@@ -4202,7 +4291,8 @@ UiParts.ExplainPage(page, TechNotes.Valuation, TechNotes.FounderStake);
 
             // The state programme is not one more product in a row. It is ten billion dollars and a
             // government that will not renegotiate, so it gets its own colour and its own width.
-            var sovereign = offer.Product == LoanProduct.SovereignCompute;
+            var sovereign = offer.Product == LoanProduct.SovereignCompute
+                            || offer.Product == LoanProduct.SovereignSeed;
             card.EnableInClassList("ltile--state", sovereign);
 
             var art = Resources.Load<Texture2D>("Cards/" + LoanArt(offer.Product));

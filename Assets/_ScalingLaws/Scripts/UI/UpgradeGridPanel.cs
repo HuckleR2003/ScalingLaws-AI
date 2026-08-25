@@ -138,6 +138,9 @@ namespace ScalingLaws.UI
             root.Add(columns);
         }
 
+        /// <summary>Opens the model creator, for the empty state. Null when there is nowhere to go.</summary>
+        public System.Action goToCreator;
+
         public void Refresh()
         {
             RebuildModelChoices();
@@ -155,9 +158,32 @@ namespace ScalingLaws.UI
 
             if (modelIndex < 0)
             {
-                var none = new Label(Loc.T("upgrade.none_live"));
-                none.AddToClassList("upg__empty");
-                tiles.Add(none);
+                // **A panel with a reason and a door, not one grey sentence.** The release screen
+                // was given this treatment last week and this screen was left as a line of text in
+                // an otherwise empty page, which reads as a screen that failed to load rather than
+                // as a screen with nothing on it yet.
+                var empty = new VisualElement();
+                empty.AddToClassList("panel");
+                empty.AddToClassList("emptystate");
+
+                var heading = new Label(Loc.T("upgrade.empty.title"));
+                heading.AddToClassList("emptystate__title");
+                empty.Add(heading);
+
+                var body = new Label(Loc.T("upgrade.empty.body"));
+                body.AddToClassList("emptystate__body");
+                empty.Add(body);
+
+                if (goToCreator != null)
+                {
+                    var go = new Button(goToCreator) { text = Loc.T("upgrade.empty.go") };
+                    go.AddToClassList("button");
+                    go.AddToClassList("button--primary");
+                    go.AddToClassList("emptystate__go");
+                    empty.Add(go);
+                }
+
+                tiles.Add(empty);
                 return;
             }
 

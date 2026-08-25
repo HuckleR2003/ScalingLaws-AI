@@ -18,7 +18,17 @@ namespace ScalingLaws.Simulation
         Touring = 2,
 
         /// <summary>Done, either way. The corner keeps the task list and nothing else.</summary>
-        Finished = 3
+        Finished = 3,
+
+        /// <summary>
+        /// Stepped out meaning to come back. The step is kept and the phone rings again.
+        ///
+        /// **A stage of its own rather than reusing Talking.** Talking means the phone is up and
+        /// nobody has answered yet, and the day-one ring is guarded on Unseen; folding a pause into
+        /// either would have made "come back later" either a second Skip or a tour that restarts
+        /// from the beginning. Appended, never renumbered, because this is written into saves.
+        /// </summary>
+        Paused = 4
     }
 
     /// <summary>
@@ -64,6 +74,24 @@ namespace ScalingLaws.Simulation
         /// offering it.
         /// </summary>
         public bool FreeResearchOwed { get; set; }
+
+        /// <summary>
+        /// How long the favour takes, at most.
+        ///
+        /// A node the cousin pays for still has to be built, and a real node is months. That is the
+        /// right price for a node the company chose; it is the wrong shape for a gift, which has to
+        /// land while the player still remembers being given it.
+        /// </summary>
+        public const int FavourDays = 7;
+
+        /// <summary>
+        /// And it asks the cluster for a fraction of what it would normally need.
+        ///
+        /// Without this the calendar finishes in a week and the programme then sits waiting for
+        /// compute for months, which reads as the gift being broken rather than as a stall. Research
+        /// has been caught by exactly that before.
+        /// </summary>
+        public const double FavourComputeShare = 0.08;
 
         /// <summary>
         /// Whether a task is done, read from the company.

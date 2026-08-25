@@ -32,6 +32,7 @@ namespace ScalingLaws.Tests.EditMode
 
                 Overlay = new GuideOverlay(Host, () => State, target => Opened.Add(target),
                     () => Changes++, target => Tabs.TryGetValue(target, out var tab) ? tab : null,
+                    stage => CreatorStage = stage,
                     target => Locked = target);
             }
 
@@ -41,6 +42,9 @@ namespace ScalingLaws.Tests.EditMode
             public List<GuideTarget> Opened { get; } = new();
             public Dictionary<GuideTarget, VisualElement> Tabs { get; } = new();
             public GuideTarget? Locked { get; private set; }
+
+            /// <summary>The creator page the tour last asked for, or -1.</summary>
+            public int CreatorStage { get; private set; } = -1;
             public int Changes { get; private set; }
 
             public Button Next() =>
@@ -176,6 +180,43 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsEmpty(missing,
                 "Steps telling the player to press a tab while pointing at nothing:\n  "
                 + string.Join("\n  ", missing));
+        }
+
+
+        /// <summary>
+        /// A step that names a creator page puts the creator on it.
+        ///
+        /// **The tour got lost here in the first playtest.** Emil described the scale belt, then
+        /// precision, then safety, while the creator sat on whatever page the player had left it on.
+        /// Nothing was highlighted because none of it was on screen.
+        /// </summary>
+        [Test]
+        public void AStepAboutACreatorPageOpensThatPage()
+        {
+            var talking = GuideScript.Steps
+                .Select((step, index) => (step, index))
+                .First(pair => pair.step.CreatorStage >= 0);
+
+            var rig = new Rig(talking.index);
+            rig.Overlay.Refresh();
+
+            Assert.That(rig.CreatorStage, Is.EqualTo(talking.step.CreatorStage),
+                $"\"{talking.step.Id}\" talks about creator page {talking.step.CreatorStage} and "
+                + "never asks for it.");
+        }
+
+        [Test]
+        public void EveryCreatorStepNamesAPageThatExists()
+        {
+            var wrong = GuideScript.Steps
+                .Where(step => step.Target == GuideTarget.Create && step.CreatorStage < 0)
+                .Select(step => step.Id)
+                .ToList();
+
+            Assert.IsEmpty(wrong,
+                "Steps about the creator that do not say which of its eight pages they mean, so the "
+                + "player is told to look at something that may not be on screen:\n  "
+                + string.Join("\n  ", wrong));
         }
 
         /// <summary>

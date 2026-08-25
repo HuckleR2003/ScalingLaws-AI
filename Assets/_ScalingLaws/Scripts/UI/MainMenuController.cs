@@ -61,7 +61,7 @@ namespace ScalingLaws.UI
         private readonly SkillSet skills = new();
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
         private string companyName = "Prometheus AI";
-        private string founderName = "Anonymous";
+        private string founderName = string.Empty;
         private bool showAllTraits;
 
         // Which face and which glasses. The look is stored by name rather than by index, so adding
@@ -1001,7 +1001,7 @@ namespace ScalingLaws.UI
             // 42 is the tallest box that still fits inside the height the text beside it already
             // sets, so the row does not grow by a pixel. The rest of the size came from cropping
             // the art tight to its glyph: half of each source image was empty margin.
-            row.Add(SkillIcons.Badge(definition.Skill, 42));
+            row.Add(SkillIcons.Badge(definition.Skill, 48));
 
             var body = new VisualElement();
             body.AddToClassList("skill-row__body");

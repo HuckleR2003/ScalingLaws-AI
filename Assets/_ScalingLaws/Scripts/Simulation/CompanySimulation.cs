@@ -1120,8 +1120,18 @@ namespace ScalingLaws.Simulation
                 State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - points);
             }
 
+            // **The favour is a favour.** A gift that takes four months to arrive is a gift the
+            // player has forgotten about by the time it lands, and the whole point of it is to put
+            // one finished node behind them before they design their first model.
+            var days = free
+                ? Math.Min(standing.DurationDays, GuideProgress.FavourDays)
+                : standing.DurationDays;
+
             State.ActiveResearch = new ResearchProject(
-                nodeId, State.Date, standing.DurationDays, node.PetaflopDaysRequired, free ? 0L : cash);
+                nodeId, State.Date, days,
+                free ? node.PetaflopDaysRequired * GuideProgress.FavourComputeShare
+                     : node.PetaflopDaysRequired,
+                free ? 0L : cash);
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchStarted,
