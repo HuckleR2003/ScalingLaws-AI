@@ -138,6 +138,7 @@ namespace ScalingLaws.Persistence
                     34 => UpgradeV34ToV35(current),
                     35 => UpgradeV35ToV36(current),
                     36 => UpgradeV36ToV37(current),
+                    37 => UpgradeV37ToV38(current),
                     _ => current
                 };
             }
@@ -1141,6 +1142,33 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v36 to v37: the tutorial's free research node did not exist in this version, so "
                 + "nothing is owed.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v37 to v38: the basement, and nothing in it.
+        /// </summary>
+        /// <remarks>
+        /// **No room, and that is the only true reading of a v37 file.** It was played in a game
+        /// where the basement did not exist, so it neither earned one from the tour nor bought one.
+        /// Inventing four cabinets for it would hand an old campaign an asset it never made a
+        /// decision about, which is the same reasoning the tutorial's favour was given last version.
+        /// </remarks>
+        public static SaveData UpgradeV37ToV38(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 38;
+
+            data.hasServerRoom = false;
+            data.serverRoomWasAGift = false;
+            data.hallRacks = new List<int>();
+            data.hallAccelerators = new List<int>();
+            data.hallFans = new List<int>();
 
             return data;
         }

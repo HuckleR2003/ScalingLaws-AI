@@ -57,6 +57,9 @@ namespace ScalingLaws.UI
         /// <summary>Raised when the player steps out meaning to come back.</summary>
         public Action leftForNow;
 
+        /// <summary>Opens the basement. Set by the shell, because only it can move money.</summary>
+        public Action handOverBasement;
+
         /// <summary>One extra button a step may offer, or null. Set by the shell.</summary>
         public Func<GuideStep, GuideOffer?> offerFor;
 
@@ -152,6 +155,14 @@ namespace ScalingLaws.UI
                 if (step.Id == GuideScript.GiftStepId)
                 {
                     state.FreeResearchOwed = true;
+                }
+
+                // The basement, on arrival for the same reason: the step names a screen, and a
+                // player who clicks through to it before pressing the button would otherwise find a
+                // locked page with a price on it.
+                if (step.Id == GuideScript.BasementStepId)
+                {
+                    handOverBasement?.Invoke();
                 }
 
                 Build(step);

@@ -24,6 +24,11 @@ namespace ScalingLaws.Tests.PlayMode
         /// </summary>
         public static void Furnish(CompanySimulation simulation)
         {
+            // The basement, so the room screen has cabinets to photograph rather than a locked page.
+            simulation.TryOpenServerRoom(true, out _);
+            simulation.State.Hall.Stock(simulation.State.Hall.TotalSlots - 2);
+            simulation.TryFitFan(0, 0, out _);
+
             var state = simulation.State;
 
             // The tutorial phone lays itself over the middle of the screen and the task strip sits

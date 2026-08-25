@@ -73,6 +73,21 @@ namespace ScalingLaws.UI
 
         public static string Petaflops(double petaflops) => Count(petaflops) + " PF";
 
+        /// <summary>
+        /// Power, one decimal.
+        ///
+        /// **Here rather than as a format string at the call site**, which is how the server room
+        /// shipped "22,6 kW" on its first render: a raw `:0.0` follows the machine's culture and
+        /// this one is Polish. Every number the player reads goes through this file for exactly
+        /// that reason and it has caught the same fault three times.
+        /// </summary>
+        public static string Kilowatts(double kilowatts) =>
+            Number(kilowatts, 1) + " kW";
+
+        /// <summary>Milliseconds, whole. Same reason.</summary>
+        public static string Milliseconds(double milliseconds) =>
+            Number(milliseconds, 0) + " ms";
+
         public static string PetaflopDays(double petaflopDays) => Count(petaflopDays) + " PF-days";
     }
 }

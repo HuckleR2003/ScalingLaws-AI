@@ -94,6 +94,27 @@ namespace ScalingLaws.Simulation
         public string FounderName { get; set; } = "Anonymous";
 
         /// <summary>
+        /// The floor the company's own cabinets stand on, and whether it has one at all.
+        ///
+        /// **`ServerHall` was written months ago and connected to nothing**, which made it the
+        /// seventh complete mechanism in this project with no way in. This is the way in: a basement
+        /// under Emil's building, either given at the end of his tour or bought afterwards.
+        ///
+        /// Four by four rather than the hall's default six by six. It is a basement, not a hall, and
+        /// the smaller floor is what makes the first upgrade to a real room mean something.
+        /// </summary>
+        public ServerHall Hall { get; } = new(BasementColumns, BasementRows);
+
+        /// <summary>True once there is somewhere to stand a rack.</summary>
+        public bool HasServerRoom { get; set; }
+
+        /// <summary>True when the room came from the cousin rather than from a purchase.</summary>
+        public bool ServerRoomWasAGift { get; set; }
+
+        public const int BasementColumns = 4;
+        public const int BasementRows = 4;
+
+        /// <summary>
         /// Which model walks around the office, by prefab name, and whether they wear glasses.
         ///
         /// Presentation, and saved anyway. A founder who changes face when a campaign is reloaded is

@@ -12576,3 +12576,250 @@
     font-size: 22px;
     color: rgb(126, 216, 158);
 }
+
+/* ============================================================================================
+   THE SERVER ROOM
+
+   A floor of squares, a cabinet on some of them, and a corner that says what the floor is doing.
+   The heat is carried by colour rather than by numbers: a grid of sixteen figures is a spreadsheet,
+   and a grid where two cabinets are orange is a room you can read at a glance.
+   ============================================================================================ */
+
+/* The page itself. The corner banner is absolute against this, so it stays put when a cabinet
+   is opened over the floor. */
+
+.room {
+    position: relative;
+}
+
+.room__grid {
+    margin-top: 10px;
+}
+
+.room__row {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.room__square {
+    width: 132px;
+    height: 104px;
+    margin: 0;
+    margin-right: 8px;
+    padding: 9px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    border-radius: 6px;
+    border-width: 1px;
+    border-left-width: 3px;
+    border-color: rgb(44, 54, 72);
+    border-left-color: rgb(96, 178, 140);
+    background-color: rgb(19, 24, 34);
+    background-image: none;
+}
+
+.room__square:hover {
+    background-color: rgb(24, 31, 43);
+}
+
+/* Bare floor. Dashed, because a solid empty box reads as a cabinet that failed to draw. */
+
+.room__square--empty {
+    border-left-width: 1px;
+    border-color: rgb(38, 47, 64);
+    border-left-color: rgb(38, 47, 64);
+    background-color: rgba(255, 255, 255, 0.02);
+    align-items: center;
+    justify-content: center;
+}
+
+.room__plus {
+    font-size: 26px;
+    color: rgb(64, 76, 96);
+}
+
+.room__square--warm { border-left-color: rgb(226, 190, 44); }
+.room__square--hot { border-left-color: rgb(232, 140, 62); }
+.room__square--cooking { border-left-color: rgb(216, 78, 68); }
+
+.room__name {
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    color: rgb(160, 174, 196);
+    white-space: normal;
+}
+
+.room__fill {
+    font-size: 19px;
+    color: rgb(228, 236, 250);
+    margin-top: 4px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.room__fans {
+    font-size: 9px;
+    color: rgb(126, 168, 210);
+    margin-top: 2px;
+}
+
+/* ---- the corner ---- */
+
+.rbanner {
+    position: absolute;
+    top: 96px;
+    right: 22px;
+    width: 244px;
+    padding: 14px 16px 12px 16px;
+    border-radius: 8px;
+    background-color: rgba(10, 13, 20, 0.94);
+    border-width: 1px;
+    border-color: rgb(44, 54, 72);
+}
+
+.rbanner__block {
+    margin-bottom: 11px;
+}
+
+.rbanner__caption {
+    font-size: 8px;
+    letter-spacing: 1.6px;
+    color: rgb(112, 126, 150);
+}
+
+.rbanner__value {
+    font-size: 21px;
+    color: rgb(228, 236, 250);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.rbanner__note {
+    font-size: 9px;
+    color: rgb(118, 132, 156);
+}
+
+.rbanner__loadhead {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.rbanner__ms {
+    font-size: 12px;
+    color: rgb(196, 208, 228);
+}
+
+.rbanner__track {
+    height: 6px;
+    margin-top: 5px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.rbanner__fill {
+    height: 6px;
+    border-radius: 3px;
+}
+
+.rbanner__health {
+    font-size: 10px;
+    color: rgb(126, 216, 158);
+    margin-top: 4px;
+}
+
+.rbanner__health--bad {
+    color: rgb(232, 140, 62);
+}
+
+/* ---- one cabinet, opened ---- */
+
+.rackmodal {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 11, 0.78);
+}
+
+.rackmodal__card {
+    width: 560px;
+    padding: 20px 22px 18px 22px;
+    border-radius: 10px;
+    background-color: rgb(17, 21, 30);
+    border-width: 1px;
+    border-color: rgb(52, 64, 86);
+}
+
+.rackmodal__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.rackmodal__name {
+    font-size: 19px;
+    color: rgb(232, 238, 250);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.rackmodal__close {
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, 0.06);
+    background-image: none;
+    color: rgb(180, 192, 212);
+    -unity-text-align: middle-center;
+}
+
+.rackmodal__slots {
+    margin-bottom: 14px;
+}
+
+/* The cabinet as a column of bars: nine lit and three empty answers "will the fan fit" without
+   anybody having to read a number. */
+
+.rackmodal__stack {
+    margin-top: 8px;
+}
+
+.rackmodal__slot {
+    height: 9px;
+    margin-bottom: 3px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.rackmodal__slot--card {
+    background-color: rgb(92, 132, 196);
+}
+
+.rackmodal__slot--fan {
+    background-color: rgb(96, 178, 140);
+}
+
+.rackmodal__stats {
+    margin-bottom: 14px;
+}
+
+.rackmodal__verdict {
+    font-size: 11.5px;
+    color: rgb(126, 216, 158);
+    white-space: normal;
+    margin-top: 10px;
+}
+
+.rackmodal__verdict--bad {
+    color: rgb(232, 140, 62);
+}
+
+.rackmodal__actions {
+    flex-direction: row;
+}

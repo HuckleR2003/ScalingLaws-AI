@@ -196,7 +196,13 @@ namespace ScalingLaws.Simulation
         /// <summary>
         /// The whole fleet reduced to the dozen numbers the rest of the simulation needs.
         /// </summary>
-        public ComputeProfile BuildProfile(GameDate date, MarketConditions market)
+        /// <param name="hall">
+        /// The company's own floor, or null before it has one. Passed in rather than held: the pool
+        /// is about capacity and the hall is about a building, and a pool that owned a floor would
+        /// be two subjects in one class.
+        /// </param>
+        public ComputeProfile BuildProfile(GameDate date, MarketConditions market,
+            ServerHall hall = null)
         {
             var ownedAccelerators = 0;
             var acceleratorsInTransit = 0;
@@ -285,6 +291,33 @@ namespace ScalingLaws.Simulation
                 weightedCeiling += packaged * 0.92;
                 rentedPetaflops += packaged;
                 cloudRent += PackagesDailyCostUsd;
+            }
+
+            // **The basement joins here, as a third source rather than a second pool.** One
+            // capacity number reaches the market whatever produced it; a parallel pool would let the
+            // market, the books and the corner banner each read a different fleet.
+            //
+            // Its throughput arrives already throttled by its own heat, because the hall applies
+            // that per cabinet, which is where the decision was made.
+            if (hall != null && HardwareCatalog.TryGet(market.RentableGeneration, out var housed))
+            {
+                var output = hall.Output(housed.PetaflopsPerUnit, housed.PowerKilowatts);
+
+                if (output.Petaflops > 0.0)
+                {
+                    ownedPetaflops += output.Petaflops;
+
+                    // A cabinet in a basement is not a tuned hall. Below anything in a datacenter
+                    // and above nothing at all.
+                    weightedCeiling += output.Petaflops * 0.62;
+                }
+
+                powerDraw += output.DrawKilowatts;
+
+                // Domestic supply, not a datacenter contract, and upkeep is a monthly bill spread
+                // over the days it covers.
+                electricity += output.DrawKilowatts * SimUnits.HoursPerDay * 0.19;
+                maintenance += hall.MonthlyUpkeepUsd / DaysPerMonth;
             }
 
             var rawPetaflops = ownedPetaflops + rentedPetaflops;

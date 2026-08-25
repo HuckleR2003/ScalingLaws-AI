@@ -108,6 +108,49 @@ namespace ScalingLaws.Data
         /// <summary>The worst a badly cooled rack is ever reduced to. It throttles, it does not die.</summary>
         public const double WorstThrottle = 0.45;
 
+        /// <summary>
+        /// How steeply heat past the headroom costs throughput.
+        ///
+        /// **Measured rather than chosen, and the mechanic did not exist before it.** With a gentle
+        /// slope a full cabinet at twenty per cent over its rating lost eight per cent, so trading a
+        /// card for a fan was never worth it in any rack, with any generation, at any point in the
+        /// game. Fans cost money and a slot and changed no number anybody would act on, which is
+        /// exactly the class of thing this project has shipped six times.
+        ///
+        /// At 2.2 the sums come out like this, and the pattern is the spine of the whole game:
+        ///
+        /// | Generation | Open frame | Enclosed | High density | Immersion |
+        /// |---|---|---|---|---|
+        /// | H100 to GB300 | full | full | full | full |
+        /// | VR200 (2027) | **3 cards + 1 fan** | full | full | full |
+        /// | Next (2029) | **3 + 1** | **7 + 1** | full | full |
+        ///
+        /// Cabinets do not age. Chips get hotter. A room filled in 2023 and never revisited is
+        /// quietly throttling by 2027 without the player having changed anything, and the fix costs
+        /// a slot. That is "upgrades are timed, not purchased" applied to the one thing they own.
+        /// </summary>
+        public const double ThrottlePenalty = 2.2;
+
+        // ---- cooling you add afterwards ---------------------------------------------------------
+        //
+        // A rack's rating is what it sheds on its own. Everything past that is a fan, and a fan
+        // takes a slot: the trade is silicon against air in the same cabinet, which is the decision
+        // this whole screen exists for.
+
+        /// <summary>Heat one fan moves, on top of whatever the rack sheds by itself.</summary>
+        public const double FanCoolingKilowatts = 2.4;
+
+        /// <summary>What a fan draws. Moving heat out of a box costs a little more heat.</summary>
+        public const double FanDrawKilowatts = 0.18;
+
+        /// <summary>Slots one fan occupies. One, or nobody would ever weigh it against a card.</summary>
+        public const int FanSlots = 1;
+
+        public const long FanPriceUsd = 2_600;
+
+        /// <summary>Servicing, per fan, per month. Bearings.</summary>
+        public const long FanMonthlyUpkeepUsd = 40;
+
         private static readonly ServerRackDefinition[] Entries =
         {
             new(ServerRack.OpenFrame, "Open frame",
@@ -206,7 +249,7 @@ namespace ScalingLaws.Data
             }
 
             var over = (ratio - ThrottleFreeHeadroom) / ThrottleFreeHeadroom;
-            return Math.Clamp(1.0 - over * (1.0 - WorstThrottle), WorstThrottle, 1.0);
+            return Math.Clamp(1.0 - over * ThrottlePenalty, WorstThrottle, 1.0);
         }
     }
 }

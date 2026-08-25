@@ -398,7 +398,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 37;
+        public const int CurrentVersion = 38;
 
         public int version = CurrentVersion;
 
@@ -653,6 +653,17 @@ namespace ScalingLaws.Persistence
         /// on reload would take back something the tutorial already gave.
         /// </summary>
         public bool guideFreeResearchOwed;
+
+        // ---- the basement, v38 -------------------------------------------------------------------
+        //
+        // Three parallel lists rather than a list of structs, because that is the shape every other
+        // grid in this file uses and JsonUtility does not serialise a list of nested types the way
+        // anybody expects.
+        public bool hasServerRoom;
+        public bool serverRoomWasAGift;
+        public List<int> hallRacks = new();
+        public List<int> hallAccelerators = new();
+        public List<int> hallFans = new();
 
         public bool actionOpen;
 

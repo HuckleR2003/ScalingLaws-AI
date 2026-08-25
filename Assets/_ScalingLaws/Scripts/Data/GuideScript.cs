@@ -29,7 +29,10 @@ namespace ScalingLaws.Data
         Funding = 11,
 
         /// <summary>The board, for the one line where he points at his own company on it.</summary>
-        Ranking = 12
+        Ranking = 12,
+
+        /// <summary>The basement, for the step where he hands over the keys to it.</summary>
+        Room = 13
     }
 
     /// <summary>
@@ -174,6 +177,14 @@ namespace ScalingLaws.Data
         /// Named rather than counted, so inserting a step above it cannot quietly move the gift to
         /// a different part of the conversation.
         /// </summary>
+        /// <summary>
+        /// The step where he hands over the basement.
+        ///
+        /// Named rather than counted, same as the research favour: inserting a line above it must
+        /// not quietly move a gift to a different part of the conversation.
+        /// </summary>
+        public const string BasementStepId = "gift_racks";
+
         public const string GiftStepId = "research_gift";
 
         /// <summary>
@@ -287,6 +298,16 @@ namespace ScalingLaws.Data
             // He names his own company on the way out, now that it is on the board. A permanent
             // character with no place in the world is a voice from nowhere.
             new("emil_company", "guide.step.emil_company", GuideTarget.Ranking, "rank-row"),
+
+            // ---- and the thing at the end -----------------------------------------------------
+            //
+            // The reward for finishing, and the reason "I'll come back later" says there is one. It
+            // is a real asset rather than a line of dialogue: four cabinets in a basement, which is
+            // the first compute the company physically owns.
+            new("gift_tease", "guide.step.gift_tease"),
+            new("gift_basement", "guide.step.gift_basement"),
+            new(BasementStepId, "guide.step.gift_racks", GuideTarget.Room, null,
+                "guide.gift.accept", true),
 
             new("wrap", "guide.step.wrap")
         };

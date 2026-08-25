@@ -220,6 +220,10 @@ namespace ScalingLaws.Persistence
             data.guideBannerDismissed = state.Guide.BannerDismissed;
             data.guideFreeResearchOwed = state.Guide.FreeResearchOwed;
 
+            data.hasServerRoom = state.HasServerRoom;
+            data.serverRoomWasAGift = state.ServerRoomWasAGift;
+            state.Hall.Capture(data.hallRacks, data.hallAccelerators, data.hallFans);
+
             foreach (var approach in state.Hiring.Approaches)
             {
                 var candidate = approach.Candidate;
@@ -647,6 +651,10 @@ namespace ScalingLaws.Persistence
             }
 
             state.FounderName = safe.founderName;
+
+            state.HasServerRoom = safe.hasServerRoom;
+            state.ServerRoomWasAGift = safe.serverRoomWasAGift;
+            state.Hall.Restore(safe.hallRacks, safe.hallAccelerators, safe.hallFans);
             state.Staff.Owned.Clear();
             if (safe.ownedOffices != null)
             {

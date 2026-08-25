@@ -115,6 +115,7 @@ namespace ScalingLaws.UI
 
         /// <summary>The product landing page. Counts its own visits, for the opening flourish.</summary>
         private ModelDashboard modelHub;
+        private ServerRoomScreen serverRoom;
 
         /// <summary>The Agency-or-Specialist card, while it is up.</summary>
         private VisualElement hiringChoice;
@@ -294,6 +295,9 @@ namespace ScalingLaws.UI
 
             /// <summary>The inbox. Demands, applications and everything waiting on an answer.</summary>
             Mail,
+
+            /// <summary>The basement, and the cabinets in it. Reached from the office rail.</summary>
+            Room,
 
             /// <summary>The places the company can be. First piece of the second map.</summary>
             Offices,
@@ -604,6 +608,14 @@ namespace ScalingLaws.UI
                         ? shown
                         : null));
 
+            guide.handOverBasement = () =>
+            {
+                if (simulation.TryOpenServerRoom(true, out _))
+                {
+                    RefreshChrome();
+                }
+            };
+
             guide.leftForNow = () =>
             {
                 pausedOn = state.Date.Day;
@@ -613,6 +625,10 @@ namespace ScalingLaws.UI
 
             modelHub = new ModelDashboard(() => simulation, () => Show(Screen.Create),
                 () => Show(Screen.Upgrade), () => Show(Screen.Release));
+
+            // The basement. Built here rather than lazily, because the corner banner in it reads the
+            // live simulation and a screen constructed on first open would miss the day it opened.
+            serverRoom = new ServerRoomScreen(() => simulation, () => Show(Screen.Room));
 
             officeStage = new OfficeStage(GameObject.Find(OfficeStageRoot));
             officeStage.Show(state.Staff.Office, state.Decor);
@@ -1098,6 +1114,9 @@ namespace ScalingLaws.UI
 
                 case Screen.Model:
                     host.Add(modelHub.Build());
+                    break;
+                case Screen.Room:
+                    host.Add(serverRoom.Build());
                     break;
                 case Screen.Business:
                     host.Add(BuildBusinessScreen());
@@ -2619,6 +2638,7 @@ namespace ScalingLaws.UI
             GuideTarget.Offices => Screen.Offices,
             GuideTarget.Funding => Screen.Funding,
             GuideTarget.Ranking => Screen.Ranking,
+            GuideTarget.Room => Screen.Room,
             _ => null
         };
 
@@ -4982,6 +5002,20 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 InsightTip.Placement.LeftOf);
 
             rail.Add(map);
+
+            // The basement. Below the map on the same rail, because it is a place in the building
+            // rather than a tab: you go downstairs to it. The author's own icon.
+            var room = new Button(() => Show(Screen.Room));
+            room.AddToClassList("site-icon");
+            SetIcon(room, "Ui/tab_compute_center", "ROOM");
+
+            InsightTip.Attach(room, Loc.T("room.title"),
+                state.HasServerRoom
+                    ? Loc.T("room.strap")
+                    : Loc.T("room.locked.body"),
+                InsightTip.Placement.LeftOf);
+
+            rail.Add(room);
 
             // The furniture shop. Third in the rail rather than a tab of its own, because it is a
             // thing you do *to the room you are looking at*, and walking away from the room to

@@ -53,7 +53,124 @@ namespace ScalingLaws.Simulation
         public MarketConditions Market =>
             MarketModel.Evaluate(State.Date, State.Rivals.FrontierCapability(State.Date));
 
-        public ComputeProfile Profile => State.Pool.BuildProfile(State.Date, Market);
+        public ComputeProfile Profile =>
+            State.Pool.BuildProfile(State.Date, Market, State.HasServerRoom ? State.Hall : null);
+
+        /// <summary>What the basement costs anybody who did not take the tour.</summary>
+        public const long BasementPriceUsd = 70_000;
+
+        /// <summary>How many cabinets it comes with, whichever way it was got.</summary>
+        public const int BasementRacks = 4;
+
+        /// <summary>
+        /// Opens the basement, and it is one body reached two ways.
+        ///
+        /// **A gift and a purchase must not be two openings.** They differ in exactly one thing,
+        /// whether money moves, and everything else about the room is identical: the same four
+        /// cabinets, the same floor, the same bills from the next tick. Two methods here would be
+        /// two places to get the starting racks wrong.
+        /// </summary>
+        public bool TryOpenServerRoom(bool asGift, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.already");
+                return false;
+            }
+
+            if (!asGift && State.CashUsd < BasementPriceUsd)
+            {
+                failureReason = Loc.T("room.cannot_afford", UiMoney(BasementPriceUsd));
+                return false;
+            }
+
+            if (!asGift)
+            {
+                State.PostCash(LedgerLine.Hardware, BasementPriceUsd);
+            }
+
+            State.HasServerRoom = true;
+            State.ServerRoomWasAGift = asGift;
+
+            // The four cabinets he leaves behind are the cheapest kind. They are a start, not a
+            // present worth more than the tour that earned it.
+            for (var index = 0; index < BasementRacks; index++)
+            {
+                var column = index % CompanyState.BasementColumns;
+                var row = index / CompanyState.BasementColumns;
+
+                State.Hall.TryPlace(column, row, ServerRack.Enclosed, out _);
+            }
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.HardwareOrdered,
+                State.Date,
+                asGift ? Loc.T("room.gift_landed") : Loc.T("room.bought"),
+                asGift ? 0L : BasementPriceUsd));
+
+            return true;
+        }
+
+        /// <summary>
+        /// Buys a cabinet and stands it on a square.
+        ///
+        /// **Here rather than in the screen**, because this is where money moves and the hall must
+        /// never be able to gain a rack nobody paid for. The hall keeps the placement rules; the
+        /// simulation keeps the till.
+        /// </summary>
+        public bool TryPlaceRack(int column, int row, ServerRack rack, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.locked.title");
+                return false;
+            }
+
+            var price = ServerRackCatalog.Get(rack).PriceUsd;
+
+            if (State.CashUsd < price)
+            {
+                failureReason = Loc.T("room.cannot_afford", UiMoney(price));
+                return false;
+            }
+
+            if (!State.Hall.TryPlace(column, row, rack, out failureReason))
+            {
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Hardware, price);
+            return true;
+        }
+
+        /// <summary>Buys a fan and fits it. Same reason this is not in the panel.</summary>
+        public bool TryFitFan(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (State.CashUsd < ServerRackCatalog.FanPriceUsd)
+            {
+                failureReason = Loc.T("room.cannot_afford",
+                    UiMoney(ServerRackCatalog.FanPriceUsd));
+
+                return false;
+            }
+
+            if (!State.Hall.TryFitFan(column, row, out failureReason))
+            {
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Hardware, ServerRackCatalog.FanPriceUsd);
+            return true;
+        }
+
+        private static string UiMoney(long usd) => "$" + usd.ToString("N0",
+            System.Globalization.CultureInfo.InvariantCulture);
 
         // ------------------------------------------------------------------ tick
 

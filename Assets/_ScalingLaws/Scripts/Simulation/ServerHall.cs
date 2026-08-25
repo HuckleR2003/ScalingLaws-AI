@@ -8,12 +8,13 @@ namespace ScalingLaws.Simulation
     /// <summary>One square of floor, and whatever is standing on it.</summary>
     public readonly struct HallSquare
     {
-        public HallSquare(int column, int row, ServerRack rack, int accelerators)
+        public HallSquare(int column, int row, ServerRack rack, int accelerators, int fans = 0)
         {
             Column = column;
             Row = row;
             Rack = rack;
             Accelerators = Math.Max(0, accelerators);
+            Fans = Math.Max(0, fans);
         }
 
         public int Column { get; }
@@ -24,6 +25,14 @@ namespace ScalingLaws.Simulation
 
         /// <summary>How many accelerators are actually in it. Never more than the rack holds.</summary>
         public int Accelerators { get; }
+
+        /// <summary>
+        /// Fans fitted, each taking a slot the silicon cannot have.
+        ///
+        /// The rack's own rating is what it sheds unaided; these are what a player adds when the
+        /// generation they wanted turned out to run hotter than the cabinet can take.
+        /// </summary>
+        public int Fans { get; }
 
         public bool IsEmpty => Rack == ServerRack.None;
 
@@ -53,11 +62,13 @@ namespace ScalingLaws.Simulation
 
         private readonly ServerRack[] racks;
         private readonly int[] accelerators;
+        private readonly int[] fans;
 
         public ServerHall(int columns = DefaultColumns, int rows = DefaultRows)
         {
             Columns = Math.Clamp(columns, 1, 32);
             Rows = Math.Clamp(rows, 1, 32);
+            fans = new int[Columns * Rows];
 
             racks = new ServerRack[Columns * Rows];
             accelerators = new int[Columns * Rows];
@@ -76,7 +87,7 @@ namespace ScalingLaws.Simulation
         public HallSquare At(int column, int row) =>
             Contains(column, row)
                 ? new HallSquare(column, row, racks[IndexOf(column, row)],
-                    accelerators[IndexOf(column, row)])
+                    accelerators[IndexOf(column, row)], fans[IndexOf(column, row)])
                 : new HallSquare(column, row, ServerRack.None, 0);
 
         public bool IsEmpty(int column, int row) =>
@@ -187,6 +198,82 @@ namespace ScalingLaws.Simulation
             racks[index] = ServerRack.None;
             accelerators[index] = 0;
             return true;
+        }
+
+        /// <summary>
+        /// How many slots this square has left once its silicon and its fans are counted.
+        ///
+        /// **Both compete for the same space**, which is the entire decision this screen exists for:
+        /// a slot given to air is a slot not given to a card, and the newest generation needs
+        /// several of them to run at all.
+        /// </summary>
+        public int FreeSlots(int column, int row)
+        {
+            if (!Contains(column, row))
+            {
+                return 0;
+            }
+
+            var index = IndexOf(column, row);
+
+            if (racks[index] == ServerRack.None)
+            {
+                return 0;
+            }
+
+            var total = ServerRackCatalog.Get(racks[index]).Slots;
+            var used = accelerators[index] + fans[index] * ServerRackCatalog.FanSlots;
+
+            return Math.Max(0, total - used);
+        }
+
+        /// <summary>Fits one fan, if the cabinet has room for it.</summary>
+        public bool TryFitFan(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!Contains(column, row) || racks[IndexOf(column, row)] == ServerRack.None)
+            {
+                failureReason = "there is no rack on that square";
+                return false;
+            }
+
+            if (FreeSlots(column, row) < ServerRackCatalog.FanSlots)
+            {
+                failureReason = "the rack is full";
+                return false;
+            }
+
+            fans[IndexOf(column, row)]++;
+            return true;
+        }
+
+        /// <summary>Takes one out again. False when there was none to take.</summary>
+        public bool TryPullFan(int column, int row)
+        {
+            if (!Contains(column, row) || fans[IndexOf(column, row)] <= 0)
+            {
+                return false;
+            }
+
+            fans[IndexOf(column, row)]--;
+            return true;
+        }
+
+        /// <summary>Every fan on the floor.</summary>
+        public int FanCount
+        {
+            get
+            {
+                var total = 0;
+
+                foreach (var count in fans)
+                {
+                    total += count;
+                }
+
+                return total;
+            }
         }
 
         /// <summary>
@@ -320,7 +407,8 @@ namespace ScalingLaws.Simulation
                     }
                 }
 
-                return total;
+                // Bearings. A fan is a moving part in a room with no moving parts.
+                return total + FanCount * ServerRackCatalog.FanMonthlyUpkeepUsd;
             }
         }
 
@@ -354,7 +442,13 @@ namespace ScalingLaws.Simulation
                 var definition = ServerRackCatalog.Get(racks[index]);
                 var heat = accelerators[index] * perUnitHeat;
 
-                var factor = ServerRackCatalog.ThrottleFactor(heat, definition.CoolingCapacityKilowatts);
+                // **Fans raise the cabinet's rating rather than lowering the heat**, which is the
+                // honest shape: air moves warmth out of the box, it does not make the silicon draw
+                // less. The bill goes up either way, and that is the cost of the fix.
+                var cooling = definition.CoolingCapacityKilowatts
+                    + fans[index] * ServerRackCatalog.FanCoolingKilowatts;
+
+                var factor = ServerRackCatalog.ThrottleFactor(heat, cooling);
                 if (factor < 1.0)
                 {
                     throttled++;
@@ -363,8 +457,9 @@ namespace ScalingLaws.Simulation
                 petaflops += accelerators[index] * perUnit * factor;
 
                 // The power is drawn whether or not the work gets done, which is the whole cost of
-                // getting this wrong: the bill is for the heat, and the output is not.
-                draw += heat;
+                // getting this wrong: the bill is for the heat, and the output is not. The fans are
+                // on the same bill.
+                draw += heat + fans[index] * ServerRackCatalog.FanDrawKilowatts;
             }
 
             return new HallOutput(petaflops, draw, throttled);
@@ -372,10 +467,12 @@ namespace ScalingLaws.Simulation
 
         // ---- persistence ------------------------------------------------------------------------
 
-        public void Capture(List<int> intoRacks, List<int> intoAccelerators)
+        public void Capture(List<int> intoRacks, List<int> intoAccelerators,
+            List<int> intoFans = null)
         {
             intoRacks.Clear();
             intoAccelerators.Clear();
+            intoFans?.Clear();
 
             foreach (var rack in racks)
             {
@@ -386,14 +483,26 @@ namespace ScalingLaws.Simulation
             {
                 intoAccelerators.Add(count);
             }
+
+            if (intoFans == null)
+            {
+                return;
+            }
+
+            foreach (var count in fans)
+            {
+                intoFans.Add(count);
+            }
         }
 
-        public void Restore(IReadOnlyList<int> savedRacks, IReadOnlyList<int> savedAccelerators)
+        public void Restore(IReadOnlyList<int> savedRacks, IReadOnlyList<int> savedAccelerators,
+            IReadOnlyList<int> savedFans = null)
         {
             for (var index = 0; index < racks.Length; index++)
             {
                 racks[index] = ServerRack.None;
                 accelerators[index] = 0;
+                fans[index] = 0;
 
                 if (savedRacks != null && index < savedRacks.Count
                     && Enum.IsDefined(typeof(ServerRack), savedRacks[index]))
@@ -405,6 +514,12 @@ namespace ScalingLaws.Simulation
                 {
                     accelerators[index] = Math.Max(0, savedAccelerators[index]);
                 }
+
+                // A file written before fans existed has none, which is the true reading of it.
+                if (savedFans != null && index < savedFans.Count)
+                {
+                    fans[index] = Math.Max(0, savedFans[index]);
+                }
             }
         }
 
@@ -414,6 +529,7 @@ namespace ScalingLaws.Simulation
             {
                 racks[index] = ServerRack.None;
                 accelerators[index] = 0;
+                fans[index] = 0;
             }
         }
     }
