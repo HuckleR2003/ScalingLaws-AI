@@ -1,7 +1,6 @@
 using System;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -12,12 +11,21 @@ namespace ScalingLaws.UI
     /// **It sits over the game rather than replacing it.** The whole point of a guide like this is
     /// that the player is looking at the real screens while somebody talks over them — a tutorial
     /// that shows its own mock-ups teaches the mock-ups. So this is a strip along the bottom, the
-    /// screens behind it are live and clickable, and the step that says "open COMPUTE" waits until
-    /// COMPUTE is actually open.
+    /// screens behind it are live, and the step that says "open COMPUTE" rings the COMPUTE tab.
     ///
-    /// The highlight works by class rather than by element: a step names a USS class and everything
-    /// wearing it gets a ring. That way a screen can be rebuilt out of different elements and the
-    /// tutorial still points at the right thing.
+    /// ## The bug that made the first playtest stop here
+    ///
+    /// The strip used to be rebuilt on every `Refresh`, and `Refresh` is called from `Show`, which
+    /// runs **every time a simulated day rolls over** — about every one and a half seconds at normal
+    /// speed. So the button under the player's cursor was destroyed and replaced between the press
+    /// and the release, and the click went nowhere. Every symptom the playtest reported came from
+    /// that one fact: NEXT "not working", the same line appearing three times in a row, and then
+    /// several steps going by at once when a click finally landed between two rebuilds.
+    ///
+    /// **The strip is now rebuilt only when the step actually changes.** The highlight is still
+    /// re-applied on every refresh, because the page behind it genuinely was rebuilt and the old
+    /// ring is on elements that no longer exist. Those are two different lifetimes and treating them
+    /// as one is what broke it.
     /// </summary>
     public sealed class GuideOverlay
     {
@@ -29,18 +37,43 @@ namespace ScalingLaws.UI
         private readonly Action<GuideTarget> goTo;
         private readonly Action changed;
 
+        /// <summary>
+        /// Finds the bottom-bar tab a step is pointing at, or null when the step points at no tab.
+        ///
+        /// **The step does not name a class for this and must not.** Every "open the tab" step
+        /// already says which target it wants, and asking the author to also write
+        /// `hud-slot--compute` beside it is a second copy of the same fact that can go out of step
+        /// with the first. It did: all six of those steps shipped with no highlight at all, which is
+        /// how the tour ended up saying "click COMPUTE" while pointing at nothing.
+        /// </summary>
+        private readonly Func<GuideTarget, VisualElement> tabFor;
+
+        /// <summary>Turns every other tab off while a step is waiting for one particular click.</summary>
+        private readonly Action<GuideTarget?> lockToTab;
+
         private VisualElement strip;
         private Label line;
+        private Label counter;
         private Button next;
+        private Button skip;
+        private Label speakerName;
+        private Label speakerRelation;
         private VisualElement portrait;
 
+        /// <summary>Which step the strip currently shows, or -1 when there is no strip.</summary>
+        private int builtFor = -1;
+
         public GuideOverlay(VisualElement host, Func<GuideProgress> progress,
-            Action<GuideTarget> goTo, Action changed)
+            Action<GuideTarget> goTo, Action changed,
+            Func<GuideTarget, VisualElement> tabFor = null,
+            Action<GuideTarget?> lockToTab = null)
         {
             this.host = host;
             this.progress = progress;
             this.goTo = goTo;
             this.changed = changed;
+            this.tabFor = tabFor;
+            this.lockToTab = lockToTab;
         }
 
         public bool IsShowing => strip != null && strip.parent != null;
@@ -61,8 +94,8 @@ namespace ScalingLaws.UI
         /// <summary>
         /// Draws the strip for whatever step the player is on.
         ///
-        /// Rebuilt rather than updated, because the strip is four elements and a rebuild cannot
-        /// leave a stale highlight behind — which is exactly the bug a partial update would have.
+        /// **Rebuilds only on a step change.** See the note on the class: rebuilding on every call
+        /// is what ate the player's clicks.
         /// </summary>
         public void Refresh()
         {
@@ -84,7 +117,63 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            Build(step);
+            if (builtFor != state.Step || strip == null || strip.parent == null)
+            {
+                Build(step);
+                builtFor = state.Step;
+            }
+            else
+            {
+                // **The words are updated even when the elements are not.** Not rebuilding was the
+                // fix for the click-eating; it also froze whatever the strip said at the moment it
+                // was built, so switching language mid-tour left Emil talking English over a Polish
+                // screen. Text is cheap to set and setting it destroys nothing.
+                Retext(step);
+            }
+
+            // Always, whatever happened above. The page behind was very likely rebuilt, so the ring
+            // is sitting on elements that have left the tree.
+            ApplyHighlight(step);
+            ApplyLock(step);
+        }
+
+        /// <summary>
+        /// Repoints the existing strip at the current step's words, touching no elements.
+        /// </summary>
+        private void Retext(GuideStep step)
+        {
+            if (line != null)
+            {
+                line.text = step.Line;
+            }
+
+            if (counter != null)
+            {
+                counter.text = $"{progress().Step + 1} / {GuideScript.Steps.Count}";
+            }
+
+            if (next != null)
+            {
+                next.text = step.Prompt
+                    ?? (step.WaitForClick ? Loc.T("guide.show_me") : Loc.T("guide.next"));
+            }
+
+            if (skip != null)
+            {
+                skip.text = Loc.T("guide.skip");
+            }
+
+            // His name and how he is related. Missed on the first pass at this, and it is the same
+            // fault: anything set once in Build is frozen in whatever language Build ran in.
+            if (speakerName != null)
+            {
+                speakerName.text = GuideScript.CousinName;
+            }
+
+            if (speakerRelation != null)
+            {
+                speakerRelation.text = $"({GuideScript.CousinRelation})";
+            }
         }
 
         private void Build(GuideStep step)
@@ -106,23 +195,38 @@ namespace ScalingLaws.UI
             portrait.AddToClassList("guide__portrait");
             speaker.Add(portrait);
 
+            // The torn plate, with the names laid over it. Behind rather than around, because a
+            // drawn shape cannot be a container that lays its own children out.
+            var nameBlock = new VisualElement();
+            nameBlock.AddToClassList("guide__nameblock");
+            nameBlock.pickingMode = PickingMode.Ignore;
+            nameBlock.Add(new GuideNamePlate());
+
             var names = new VisualElement();
             names.AddToClassList("guide__names");
             names.pickingMode = PickingMode.Ignore;
 
-            var name = new Label(GuideScript.CousinName);
-            name.AddToClassList("guide__name");
-            names.Add(name);
+            speakerName = new Label(GuideScript.CousinName);
+            speakerName.AddToClassList("guide__name");
+            names.Add(speakerName);
 
-            var relation = new Label($"({GuideScript.CousinRelation})");
-            relation.AddToClassList("guide__relation");
-            names.Add(relation);
+            speakerRelation = new Label($"({GuideScript.CousinRelation})");
+            speakerRelation.AddToClassList("guide__relation");
+            names.Add(speakerRelation);
 
-            speaker.Add(names);
+            nameBlock.Add(names);
+            speaker.Add(nameBlock);
             strip.Add(speaker);
 
             var bar = new VisualElement();
             bar.AddToClassList("guide__bar");
+
+            // **Where the player is in the tour.** The playtest reported not knowing what stage it
+            // was at, which is fair: a conversation with no shape to it could be two steps from the
+            // end or twenty.
+            counter = new Label($"{progress().Step + 1} / {GuideScript.Steps.Count}");
+            counter.AddToClassList("guide__counter");
+            bar.Add(counter);
 
             line = new Label(step.Line);
             line.AddToClassList("guide__line");
@@ -154,7 +258,7 @@ namespace ScalingLaws.UI
 
             buttons.Add(next);
 
-            var skip = new Button(Skip) { text = Loc.T("guide.skip") };
+            skip = new Button(Skip) { text = Loc.T("guide.skip") };
             skip.AddToClassList("guide__skip");
             buttons.Add(skip);
 
@@ -166,12 +270,14 @@ namespace ScalingLaws.UI
             strip.AddToClassList("guide--arriving");
             strip.schedule.Execute(() => strip.RemoveFromClassList("guide--arriving"))
                 .ExecuteLater(ArriveMilliseconds);
-
-            ApplyHighlight(step);
         }
 
         /// <summary>
-        /// Rings everything wearing the step's class.
+        /// Rings whatever this step is pointing at.
+        ///
+        /// Two sources, in order. A step that waits for a tab rings that tab, worked out from its
+        /// own target so it cannot drift. Anything else rings every element wearing the class the
+        /// step names.
         ///
         /// Deferred a frame because the screen behind may have been rebuilt in the same pass, and a
         /// query that runs before the layout finds nothing at all.
@@ -179,6 +285,18 @@ namespace ScalingLaws.UI
         private void ApplyHighlight(GuideStep step)
         {
             ClearHighlight();
+
+            if (step.WaitForClick && step.Target != GuideTarget.None)
+            {
+                var tab = tabFor?.Invoke(step.Target);
+
+                if (tab != null)
+                {
+                    tab.AddToClassList("guide-lit");
+                    tab.AddToClassList("guide-lit--tab");
+                    return;
+                }
+            }
 
             if (string.IsNullOrEmpty(step.Highlight))
             {
@@ -196,12 +314,30 @@ namespace ScalingLaws.UI
             }).ExecuteLater(24);
         }
 
+        /// <summary>
+        /// While a step is waiting for one particular tab, the other tabs are off.
+        ///
+        /// **Asked for after a playtest, and it is a fix rather than a restriction.** A player who
+        /// wanders off to another screen mid-step comes back to a conversation that has moved on
+        /// without them, and the tour reads as broken. Closing the other doors for the two seconds
+        /// it takes to press the right one costs nothing and removes the whole failure.
+        ///
+        /// Only for the steps that ask for a click. Everything else leaves the bar alone, so a
+        /// player who wants to look around between beats still can.
+        /// </summary>
+        private void ApplyLock(GuideStep step)
+        {
+            lockToTab?.Invoke(
+                step.WaitForClick && step.Target != GuideTarget.None ? step.Target : null);
+        }
+
         /// <summary>Takes the ring off everything. Public so the shell can clear it on a repaint.</summary>
         public void ClearHighlight()
         {
             foreach (var element in host.Query<VisualElement>(className: "guide-lit").ToList())
             {
                 element.RemoveFromClassList("guide-lit");
+                element.RemoveFromClassList("guide-lit--tab");
             }
         }
 
@@ -227,6 +363,10 @@ namespace ScalingLaws.UI
             }
 
             changed?.Invoke();
+
+            // The shell's chrome refresh does not rebuild the page, so nothing else would draw the
+            // next line. Before this, advancing relied on a day rolling over to repaint the tour.
+            Refresh();
         }
 
         /// <summary>
@@ -254,8 +394,10 @@ namespace ScalingLaws.UI
         public void Hide()
         {
             ClearHighlight();
+            lockToTab?.Invoke(null);
             strip?.RemoveFromHierarchy();
             strip = null;
+            builtFor = -1;
         }
     }
 }

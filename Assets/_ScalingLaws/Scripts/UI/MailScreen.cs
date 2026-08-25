@@ -134,7 +134,7 @@ namespace ScalingLaws.UI
 
             var left = new VisualElement();
 
-            var title = new Label("@  MAIL");
+            var title = new Label(Loc.T("mail.title"));
             title.AddToClassList("mail__title");
             left.Add(title);
 
@@ -318,7 +318,7 @@ namespace ScalingLaws.UI
 
             if (letter == null)
             {
-                var none = new Label("Nothing selected.");
+                var none = new Label(Loc.T("common.nothing_selected"));
                 none.AddToClassList("mail-empty");
                 pane.Add(none);
                 return pane;
@@ -517,7 +517,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("haggle");
 
-            var heading = new Label("YOUR OFFER");
+            var heading = new Label(Loc.T("hire.your_offer"));
             heading.AddToClassList("haggle__heading");
             panel.Add(heading);
 
@@ -563,11 +563,11 @@ namespace ScalingLaws.UI
             var buttons = new VisualElement();
             buttons.AddToClassList("haggle__buttons");
 
-            var decline = new Button(() => Act(letter.Id, MailAction.Decline)) { text = "DECLINE" };
+            var decline = new Button(() => Act(letter.Id, MailAction.Decline)) { text = Loc.T("hire.decline") };
             decline.AddToClassList("haggle__decline");
             buttons.Add(decline);
 
-            var send = new Button(() => SendOffer(letter)) { text = "SEND OFFER" };
+            var send = new Button(() => SendOffer(letter)) { text = Loc.T("hire.send_offer") };
             send.AddToClassList("haggle__send");
             buttons.Add(send);
 

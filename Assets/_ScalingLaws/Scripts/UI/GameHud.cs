@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
+using ScalingLaws.Data;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -136,6 +137,45 @@ namespace ScalingLaws.UI
             }
         }
 
+        /// <summary>
+        /// The tab for a category, or null when there is no such slot.
+        ///
+        /// Slots already carry their key in `userData`, so this needs no second table. The tutorial
+        /// uses it to ring the tab it is asking for, which it could not do before: the only class
+        /// available was `hud-slot`, which is all fifteen of them.
+        /// </summary>
+        public VisualElement SlotFor(object key)
+        {
+            foreach (var slot in slots)
+            {
+                if (Equals(slot.userData, key))
+                {
+                    return slot;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Turns every tab off except one, or turns them all back on when given null.
+        ///
+        /// **For the tutorial and nothing else.** A player who wanders to another screen in the
+        /// middle of a step comes back to a conversation that has moved on without them, and the
+        /// tour reads as broken. Closing the other doors for the two seconds it takes to press the
+        /// right one removes the whole failure.
+        /// </summary>
+        public void LockToSlot(object key)
+        {
+            foreach (var slot in slots)
+            {
+                var open = key == null || Equals(slot.userData, key);
+
+                slot.SetEnabled(open);
+                slot.EnableInClassList("hud-slot--shut", !open);
+            }
+        }
+
         private VisualElement SlotHost { get; set; }
 
         /// <summary>Lights the info button while the panels it opens are on screen.</summary>
@@ -246,13 +286,13 @@ namespace ScalingLaws.UI
                 controls.Add(button);
             }
 
-            var skip = new Button(() => onSkipDay?.Invoke()) { text = "SKIP DAY" };
+            var skip = new Button(() => onSkipDay?.Invoke()) { text = Loc.T("hud.skip_day") };
             skip.AddToClassList("hud-skip");
             InsightTip.Attach(skip, "SKIP DAY",
                 "Runs exactly one day and stops, which is what makes it useful while paused.");
             controls.Add(skip);
 
-            infoButton = new Button(() => onCompanyInfo?.Invoke()) { text = "COMPANY INFO" };
+            infoButton = new Button(() => onCompanyInfo?.Invoke()) { text = Loc.T("hud.company_info") };
             infoButton.AddToClassList("hud-skip");
             infoButton.AddToClassList("hud-info");
             InsightTip.Attach(infoButton, "COMPANY INFO",

@@ -44,7 +44,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("nb__head");
 
-            var masthead = new Label("THE WIRE");
+            var masthead = new Label(Loc.T("news.the_wire"));
             masthead.AddToClassList("nb__masthead");
             head.Add(masthead);
 
@@ -82,7 +82,7 @@ namespace ScalingLaws.UI
             body.Add(text);
             Root.Add(body);
 
-            var open = new Button(openNews) { text = "SEE NEWS" };
+            var open = new Button(openNews) { text = Loc.T("news.see_news") };
             open.AddToClassList("nb__open");
             Root.Add(open);
         }

@@ -152,7 +152,7 @@ namespace ScalingLaws.UI
 
             if (model == null)
             {
-                var none = new Label("Nothing selected.");
+                var none = new Label(Loc.T("common.nothing_selected"));
                 none.AddToClassList("upg__empty");
                 root.Add(none);
                 return;

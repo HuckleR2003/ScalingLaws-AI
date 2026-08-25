@@ -1,5 +1,6 @@
 using System;
 using ScalingLaws.Simulation;
+using ScalingLaws.Data;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -61,7 +62,7 @@ namespace ScalingLaws.UI
                 bar.Add(gone);
             }
 
-            var improve = new Button(upgrade) { text = "UPGRADE" };
+            var improve = new Button(upgrade) { text = Loc.T("model.upgrade") };
             improve.AddToClassList("mcb__upgrade");
             improve.SetEnabled(record.IsLive && upgrade != null);
 

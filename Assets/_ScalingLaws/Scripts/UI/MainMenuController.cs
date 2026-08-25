@@ -181,7 +181,7 @@ namespace ScalingLaws.UI
                 footer.Add(reason);
             }
 
-            var back = new Button(onBack) { text = "BACK" };
+            var back = new Button(onBack) { text = Loc.T("common.back") };
             back.AddToClassList("menu-button");
             back.AddToClassList("menu-button--quiet");
             back.style.width = 150;
@@ -251,7 +251,7 @@ namespace ScalingLaws.UI
             var lockup = new VisualElement();
             lockup.AddToClassList("title-lockup");
 
-            var small = new Label("AN AI COMPANY TYCOON");
+            var small = new Label(Loc.T("menu.tycoon"));
             small.AddToClassList("title-line");
             small.AddToClassList("title-line--small");
             lockup.Add(small);
@@ -294,7 +294,7 @@ namespace ScalingLaws.UI
             actions.AddToClassList("menu-actions");
             copy.Add(actions);
 
-            var resume = new Button(SceneFlow.ResumeCampaign) { text = "CONTINUE" };
+            var resume = new Button(SceneFlow.ResumeCampaign) { text = Loc.T("menu.continue") };
             resume.AddToClassList("menu-button");
             resume.AddToClassList("menu-button--primary");
             resume.SetEnabled(SaveStore.HasSave);
@@ -325,11 +325,11 @@ namespace ScalingLaws.UI
                 settingsOpen = true;
                 Show(Stage.Menu);
             })
-            { text = "SETTINGS" };
+            { text = Loc.T("menu.settings") };
             settings.AddToClassList("menu-button");
             actions.Add(settings);
 
-            var quit = new Button(Quit) { text = "QUIT" };
+            var quit = new Button(Quit) { text = Loc.T("menu.quit") };
             quit.AddToClassList("menu-button");
             quit.AddToClassList("menu-button--quiet");
             actions.Add(quit);
@@ -401,7 +401,7 @@ namespace ScalingLaws.UI
 
             card.Add(rack);
 
-            var caption = new Label("RENTED CAPACITY  ONLINE");
+            var caption = new Label(Loc.T("fleet.rented_online"));
             caption.AddToClassList("console-caption");
             card.Add(caption);
 
@@ -511,7 +511,7 @@ namespace ScalingLaws.UI
             studio.AddToClassList("signature-studio");
             var author = new Label("Marcin 'HCK' Firmuga");
             author.AddToClassList("signature-author");
-            var discipline = new Label("SOFTWARE AND GAMES");
+            var discipline = new Label(Loc.T("menu.software_and_games"));
             discipline.AddToClassList("console-caption");
             about.Add(studio);
             about.Add(author);
@@ -579,7 +579,7 @@ namespace ScalingLaws.UI
             // The button arrives with the last character rather than sitting there through the
             // whole thing. A CONTINUE that is clickable before the sentence exists is a CONTINUE
             // most people press without reading anything.
-            introContinue = new Button(PlayIntroFilm) { text = "CONTINUE" };
+            introContinue = new Button(PlayIntroFilm) { text = Loc.T("menu.continue") };
             introContinue.AddToClassList("button");
             introContinue.AddToClassList("intro-continue");
             introContinue.style.marginTop = 34;
@@ -648,7 +648,7 @@ namespace ScalingLaws.UI
             root.Clear();
             root.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
 
-            var skip = new Button(FinishIntroFilm) { text = "SKIP" };
+            var skip = new Button(FinishIntroFilm) { text = Loc.T("common.skip") };
             skip.AddToClassList("button");
             skip.AddToClassList("intro-skip");
             root.Add(skip);
@@ -774,7 +774,7 @@ namespace ScalingLaws.UI
             var page = new VisualElement();
             page.AddToClassList("creator");
 
-            var heading = new Label("WHO ARE YOU");
+            var heading = new Label(Loc.T("creator.who_are_you"));
             heading.AddToClassList("page-title");
             page.Add(heading);
 
@@ -791,7 +791,7 @@ namespace ScalingLaws.UI
             var traitsHeader = new VisualElement();
             traitsHeader.AddToClassList("traits__header");
 
-            var traitsHeading = new Label("TRAITS");
+            var traitsHeading = new Label(Loc.T("creator.traits"));
             traitsHeading.AddToClassList("panel__heading");
             traitsHeader.Add(traitsHeading);
 
@@ -852,7 +852,7 @@ namespace ScalingLaws.UI
 
             // The name sits above the portrait so the plate can take every pixel left over. When it
             // was underneath, the column ended in dead space no matter how tall the page got.
-            var line = new Label("They call me");
+            var line = new Label(Loc.T("creator.they_call_me"));
             line.AddToClassList("creator__line");
             column.Add(line);
 
@@ -885,11 +885,11 @@ namespace ScalingLaws.UI
 
             if (!studio.Open(founderLook, founderGlasses))
             {
-                var hint = new Label("PORTRAIT");
+                var hint = new Label(Loc.T("creator.portrait"));
                 hint.AddToClassList("portrait__label");
                 portrait.Add(hint);
 
-                var why = new Label("No character pack in this copy of the project.");
+                var why = new Label(Loc.T("creator.no_pack"));
                 why.AddToClassList("portrait__why");
                 portrait.Add(why);
 
@@ -950,7 +950,7 @@ namespace ScalingLaws.UI
             var header = new VisualElement();
             header.AddToClassList("skills-header");
 
-            var title = new Label("SKILLS");
+            var title = new Label(Loc.T("creator.skills"));
             title.AddToClassList("panel__heading");
             header.Add(title);
 
@@ -1111,7 +1111,7 @@ namespace ScalingLaws.UI
 
             if (picked)
             {
-                var badge = new Label("PICKED");
+                var badge = new Label(Loc.T("creator.picked"));
                 badge.AddToClassList("trait-card__badge");
                 card.Add(badge);
             }
@@ -1196,7 +1196,7 @@ namespace ScalingLaws.UI
             var page = new VisualElement();
             page.AddToClassList("creator");
 
-            var heading = new Label("YOUR LAB");
+            var heading = new Label(Loc.T("creator.your_lab"));
             heading.AddToClassList("page-title");
             page.Add(heading);
 
@@ -1283,7 +1283,7 @@ namespace ScalingLaws.UI
             var header = new VisualElement();
             header.AddToClassList("region__header");
 
-            var title = new Label("REGION");
+            var title = new Label(Loc.T("creator.region"));
             title.AddToClassList("panel__heading");
             header.Add(title);
 
@@ -1305,7 +1305,7 @@ namespace ScalingLaws.UI
 
             if (chosenRegion == WorldRegion.None)
             {
-                var prompt = new Label("Click a continent.");
+                var prompt = new Label(Loc.T("creator.click_continent"));
                 prompt.AddToClassList("field__hint");
                 list.Add(prompt);
             }
@@ -1342,7 +1342,7 @@ namespace ScalingLaws.UI
 
             if (chosenRegion == WorldRegion.None)
             {
-                var none = new Label("Pick a region to see what it costs and what it is worth.");
+                var none = new Label(Loc.T("creator.pick_region"));
                 none.AddToClassList("field__hint");
                 strip.Add(none);
                 return strip;

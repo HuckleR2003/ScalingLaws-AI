@@ -194,7 +194,7 @@ namespace ScalingLaws.UI
             var header = new VisualElement();
             header.AddToClassList("stage-header");
 
-            var title = new Label("NEW MODEL");
+            var title = new Label(Loc.T("create.new_model"));
             title.AddToClassList("page-title");
             title.AddToClassList("stage-header__title");
             header.Add(title);
@@ -463,7 +463,7 @@ namespace ScalingLaws.UI
             rule.AddToClassList("laptop-screen__rule");
             screen.Add(rule);
 
-            laptopStatus = new Label("PREPARING");
+            laptopStatus = new Label(Loc.T("create.preparing"));
             laptopStatus.AddToClassList("laptop-screen__status");
             screen.Add(laptopStatus);
 
@@ -739,7 +739,7 @@ namespace ScalingLaws.UI
                 policy.FreeTierTokensPerUserPerDay = 0.0;
                 RepriceAndRebuild();
             })
-            { text = "NO FREE ACCESS" };
+            { text = Loc.T("create.no_free_access") };
             noFree.AddToClassList("chip");
             noFree.EnableInClassList("chip--on", policy.FreeTierTokensPerUserPerDay <= 0.0);
             freeRow.Add(noFree);
@@ -749,7 +749,7 @@ namespace ScalingLaws.UI
                 policy.Model = PricingModel.FreeOnly;
                 RepriceAndRebuild();
             })
-            { text = "FREE ONLY" };
+            { text = Loc.T("create.free_only") };
             freeOnly.AddToClassList("chip");
             freeOnly.EnableInClassList("chip--on", policy.Model == PricingModel.FreeOnly);
             freeRow.Add(freeOnly);
@@ -1013,7 +1013,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("belt-block__head");
 
-            var title = new Label("TOKENS PER PARAMETER");
+            var title = new Label(Loc.T("create.tokens_per_parameter"));
             title.AddToClassList("belt-block__title");
             head.Add(title);
 
@@ -1035,7 +1035,7 @@ namespace ScalingLaws.UI
             zones.Add(ZoneCaption("DATA-HEAVY SPILL", "belt-zone--right"));
             block.Add(zones);
 
-            var balance = new Button(BalanceShape) { text = "MATCH THE OPTIMUM" };
+            var balance = new Button(BalanceShape) { text = Loc.T("create.match_optimum") };
             balance.AddToClassList("button");
             balance.style.marginTop = 8;
             balance.style.marginLeft = 0;
@@ -1468,7 +1468,7 @@ namespace ScalingLaws.UI
 
             if (blend.SourceCount == 0)
             {
-                var none = new Label("No corpus selected. The run cannot start without one.");
+                var none = new Label(Loc.T("create.no_corpus_selected"));
                 none.AddToClassList("scale-note");
                 none.AddToClassList("scale-note--bad");
                 dataReadout.Add(none);
@@ -1601,7 +1601,7 @@ namespace ScalingLaws.UI
             {
                 // Across the middle of the picture, which is where the author asked for it and also
                 // the only place a player is definitely looking.
-                var locked = new Label("LOCKED\nRESEARCH TO UNLOCK");
+                var locked = new Label(Loc.T("create.locked_research"));
                 locked.AddToClassList("tier-plate__locked");
                 plate.Add(locked);
             }
@@ -1945,7 +1945,7 @@ namespace ScalingLaws.UI
 
             if (dataSourceToggles.Count == 0)
             {
-                var empty = new Label("No corpora owned. Acquire data before training anything.");
+                var empty = new Label(Loc.T("create.no_corpora"));
                 empty.AddToClassList("field__hint");
                 dataToggles.Add(empty);
             }

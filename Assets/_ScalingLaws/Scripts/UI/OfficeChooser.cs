@@ -74,11 +74,11 @@ namespace ScalingLaws.UI
 
             var left = new VisualElement();
 
-            var kicker = new Label("PREMISES");
+            var kicker = new Label(Loc.T("offices.premises"));
             kicker.AddToClassList("offices__kicker");
             left.Add(kicker);
 
-            var title = new Label("Where the company is");
+            var title = new Label(Loc.T("offices.where_company"));
             title.AddToClassList("offices__title");
             left.Add(title);
 
@@ -92,7 +92,7 @@ namespace ScalingLaws.UI
 
             left.Add(BuildFurnishedToggle());
 
-            var close = new Button(closed) { text = "CLOSE" };
+            var close = new Button(closed) { text = Loc.T("common.close") };
             close.AddToClassList("chip");
             head.Add(close);
 
@@ -249,7 +249,7 @@ namespace ScalingLaws.UI
             }
             else
             {
-                var pending = new Label("PHOTOGRAPH\nOF THIS PLACE\nGOES HERE");
+                var pending = new Label(Loc.T("offices.photo_here"));
                 pending.AddToClassList("office-row__pending");
                 photo.Add(pending);
             }
@@ -299,7 +299,7 @@ namespace ScalingLaws.UI
 
             if (here && owned)
             {
-                var settled = new Label("Yours. No rent, ever.");
+                var settled = new Label(Loc.T("offices.yours"));
                 settled.AddToClassList("office-row__here");
                 return settled;
             }

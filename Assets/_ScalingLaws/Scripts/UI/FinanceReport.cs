@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Simulation;
 using UnityEngine;
+using ScalingLaws.Data;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -131,7 +132,7 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("finance__head");
 
-            var title = new Label("WHERE THE MONEY WENT");
+            var title = new Label(Loc.T("books.where_money_went"));
             title.AddToClassList("finance__title");
             head.Add(title);
 
@@ -140,7 +141,7 @@ namespace ScalingLaws.UI
             head.Add(monthly);
             head.Add(daily);
 
-            var dismiss = new Button(close) { text = "CLOSE" };
+            var dismiss = new Button(close) { text = Loc.T("common.close") };
             dismiss.AddToClassList("button");
             dismiss.style.marginLeft = 10;
             dismiss.style.marginTop = 0;
@@ -293,7 +294,7 @@ namespace ScalingLaws.UI
 
             if (!info.IsCash)
             {
-                var tag = new Label("NOT CASH");
+                var tag = new Label(Loc.T("books.not_cash"));
                 tag.AddToClassList("finance-row__tag");
                 row.Add(tag);
             }

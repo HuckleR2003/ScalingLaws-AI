@@ -2328,9 +2328,9 @@
 
 .tree-node__label {
     margin-top: 6px;
-    font-size: 10.5px;
+    font-size: 11.5px;
     letter-spacing: 1px;
-    color: rgb(126, 140, 160);
+    color: rgb(150, 164, 186);
     white-space: normal;
     -unity-text-align: middle-center;
 }
@@ -4079,8 +4079,8 @@
 
 .rcard {
     position: absolute;
-    width: 320px;
-    padding: 12px;
+    width: 372px;
+    padding: 14px;
     background-color: rgb(16, 21, 30);
     border-width: 1px;
     border-color: rgb(120, 176, 250);
@@ -4106,11 +4106,12 @@
 }
 
 .rcard__title {
-    font-size: 12px;
+    font-size: 14px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(228, 238, 252);
     white-space: normal;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
 }
 
 .rcard__badge {
@@ -4126,9 +4127,10 @@
     color: rgb(126, 196, 250); }
 
 .rcard__body {
-    font-size: 10px;
-    color: rgb(170, 182, 200);
+    font-size: 12.5px;
+    color: rgb(196, 208, 226);
     white-space: normal;
+    -unity-paragraph-spacing: 5px;
 }
 
 .rcard__cost {
@@ -10670,14 +10672,15 @@
 }
 
 .guide__name {
-    font-size: 30px;
+    font-size: 27px;
     -unity-font-style: bold;
     color: rgb(255, 255, 255);
     letter-spacing: 1px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
 }
 
 .guide__relation {
-    font-size: 13px;
+    font-size: 12px;
     color: rgb(168, 196, 236);
     margin-left: 8px;
 }
@@ -10685,19 +10688,22 @@
 /* The line he is saying. Twenty-five per cent black behind it, as asked, and fully opaque text —
    which is the combination that stays readable over both the office and a white panel. */
 .guide__bar {
-    width: 62%;
-    min-width: 620px;
-    padding: 18px 24px;
+    width: 72%;
+    min-width: 720px;
+    padding: 16px 26px 18px 26px;
     border-radius: 10px;
     border-left-width: 4px;
     border-left-color: rgb(120, 176, 255);
-    background-color: rgba(0, 0, 0, 0.75);
+    background-color: rgba(4, 6, 11, 0.90);
 }
 
 .guide__line {
-    font-size: 16px;
+    font-size: 19px;
     color: rgb(255, 255, 255);
     white-space: normal;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    -unity-paragraph-spacing: 6px;
+    max-width: 1020px;
 }
 
 .guide__buttons {
@@ -10707,15 +10713,17 @@
 }
 
 .guide__next {
-    height: 38px;
+    height: 42px;
     padding: 0 26px;
-    font-size: 12px;
+    font-size: 13px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     border-width: 0;
     border-radius: 4px;
     color: rgb(14, 20, 30);
     background-color: rgb(120, 176, 255);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    -unity-text-align: middle-center;
 }
 
 .guide__next--go {
@@ -10723,7 +10731,7 @@
 }
 
 .guide__skip {
-    height: 38px;
+    height: 42px;
     padding: 0 18px;
     margin-left: 8px;
     font-size: 11px;
@@ -10732,14 +10740,16 @@
     border-radius: 4px;
     color: rgb(170, 180, 198);
     background-color: rgba(255, 255, 255, 0.08);
+    -unity-text-align: middle-center;
 }
 
 /* What the current step is pointing at. Deliberately loud: it is on screen for one step and it
    has to be findable without reading the sentence twice. */
 .guide-lit {
-    border-width: 2px;
+    border-width: 3px;
     border-color: rgb(226, 190, 44);
-    background-color: rgba(226, 190, 44, 0.14);
+    background-color: rgba(226, 190, 44, 0.22);
+    border-radius: 5px;
 }
 
 /* ============================================================================================
@@ -12352,4 +12362,58 @@
     height: 300px;
     flex-shrink: 0;
     margin-bottom: 14px;
+}
+
+/* ============================================================================================
+   THE TUTORIAL, AFTER THE FIRST PLAYTEST
+
+   Everything here exists because somebody sat down with the game and could not follow it.
+   ============================================================================================ */
+
+/* A tab the tour is asking for. Much louder than the ordinary highlight, and it moves: a static
+   ring at the bottom of the screen is something the eye has already skipped past by the time the
+   sentence has been read. */
+
+.guide-lit--tab {
+    border-width: 3px;
+    border-color: rgb(255, 214, 74);
+    background-color: rgba(255, 214, 74, 0.30);
+    scale: 1.14 1.14;
+    transition-property: scale, background-color;
+    transition-duration: 0.45s;
+    transition-timing-function: ease-in-out;
+}
+
+/* Tabs that are shut while a step waits for one particular click. Dimmed rather than hidden: the
+   player has to be able to see that the bar is still there and that this is temporary. */
+
+.hud-slot--shut {
+    opacity: 0.28;
+}
+
+/* Where the player is in the conversation. Small, above the line, and the reason it exists is that
+   the playtest said it had no idea how far in it was. */
+
+.guide__counter {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgb(150, 166, 194);
+    margin-bottom: 7px;
+}
+
+/* The torn plate his name sits on. The block is the positioning; the plate underneath is drawn. */
+
+.guide__nameblock {
+    justify-content: center;
+    margin-left: 10px;
+    margin-bottom: 16px;
+    padding: 7px 20px 8px 20px;
+}
+
+.guide__plate {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
 }

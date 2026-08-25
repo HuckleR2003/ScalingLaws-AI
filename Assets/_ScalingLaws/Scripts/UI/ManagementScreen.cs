@@ -98,9 +98,9 @@ namespace ScalingLaws.UI
 
             var title = new Label(showing switch
             {
-                Tab.Desk => "MANAGEMENT",
-                Tab.Archive => "ARCHIVE",
-                _ => "OFFICIAL PAGE"
+                Tab.Desk => Loc.T("mg.management"),
+                Tab.Archive => Loc.T("mg.archive"),
+                _ => Loc.T("mg.official_page")
             });
 
             title.AddToClassList("page-title");
@@ -111,7 +111,7 @@ namespace ScalingLaws.UI
                 Tab.Desk => "What the numbers say. Held users, what they think, what it costs to keep them.",
                 Tab.Archive => "Every model the company ever put on sale, newest first. What each one "
                     + "scored, what it earned, and whether anyone is still using it.",
-                _ => "What a stranger sees when they look you up."
+                _ => Loc.T("mg.stranger_sees")
             });
 
             subtitle.AddToClassList("page-subtitle");
@@ -158,9 +158,9 @@ namespace ScalingLaws.UI
             var tabs = new VisualElement();
             tabs.AddToClassList("mg-tabs");
 
-            tabs.Add(TabButton("OFFICIAL PAGE", showing == Tab.Page, () => Open(Tab.Page)));
-            tabs.Add(TabButton("MANAGEMENT", showing == Tab.Desk, () => Open(Tab.Desk)));
-            tabs.Add(TabButton("ARCHIVE", showing == Tab.Archive, () => Open(Tab.Archive)));
+            tabs.Add(TabButton(Loc.T("mg.official_page"), showing == Tab.Page, () => Open(Tab.Page)));
+            tabs.Add(TabButton(Loc.T("mg.management"), showing == Tab.Desk, () => Open(Tab.Desk)));
+            tabs.Add(TabButton(Loc.T("mg.archive"), showing == Tab.Archive, () => Open(Tab.Archive)));
 
             return tabs;
         }
@@ -179,7 +179,7 @@ namespace ScalingLaws.UI
             panel.AddToClassList("panel");
             panel.AddToClassList("mg-empty");
 
-            var heading = new Label("NOTHING ON SALE");
+            var heading = new Label(Loc.T("mg.nothing_on_sale"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -193,7 +193,7 @@ namespace ScalingLaws.UI
             line.AddToClassList("field__hint");
             panel.Add(line);
 
-            var go = new Button(openRelease) { text = "GO TO RELEASE" };
+            var go = new Button(openRelease) { text = Loc.T("mg.go_to_release") };
             go.AddToClassList("button");
             go.AddToClassList("button--primary");
             go.style.marginLeft = 0;
@@ -339,7 +339,7 @@ namespace ScalingLaws.UI
             detail.AddToClassList("mg-status__detail");
             strip.Add(detail);
 
-            var go = new Button(openFleet) { text = "COMPUTE" };
+            var go = new Button(openFleet) { text = Loc.T("hud.compute") };
             go.AddToClassList("chip");
             strip.Add(go);
 
@@ -353,7 +353,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("PLANS");
+            var heading = new Label(Loc.T("mg.plans"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -361,7 +361,7 @@ namespace ScalingLaws.UI
             row.AddToClassList("mg-plans");
 
             var freeTokens = money.FreeTierTokensPerUserPerDay;
-            row.Add(Plan("FREE", freeTokens <= 0.0 ? "Closed" : "$0",
+            row.Add(Plan(Loc.T("mg.free"), freeTokens <= 0.0 ? Loc.T("mg.closed") : "$0",
                 freeTokens <= 0.0 ? string.Empty : "a month",
                 freeTokens <= 0.0
                     ? new[]
@@ -443,7 +443,7 @@ namespace ScalingLaws.UI
 
             if (favoured)
             {
-                var tag = new Label("MOST USED");
+                var tag = new Label(Loc.T("mg.most_used"));
                 tag.AddToClassList("mg-plan__tag");
                 card.Add(tag);
             }
@@ -467,7 +467,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("WHAT PEOPLE SAY");
+            var heading = new Label(Loc.T("mg.what_people_say"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -560,7 +560,7 @@ namespace ScalingLaws.UI
                 var panel = new VisualElement();
                 panel.AddToClassList("panel");
 
-                var heading = new Label("NOTHING SHIPPED YET");
+                var heading = new Label(Loc.T("mg.nothing_shipped"));
                 heading.AddToClassList("panel__heading");
                 panel.Add(heading);
 
@@ -824,7 +824,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("HOW YOU ARE SEEN");
+            var heading = new Label(Loc.T("mg.how_seen"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -850,7 +850,7 @@ namespace ScalingLaws.UI
 
             if (state.Campaigns.Count == 0)
             {
-                var go = new Button(openMarketing) { text = "MARKETING" };
+                var go = new Button(openMarketing) { text = Loc.T("hud.marketing") };
                 go.AddToClassList("chip");
                 go.style.marginLeft = 0;
                 panel.Add(go);
@@ -871,7 +871,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("WHO IS USING IT");
+            var heading = new Label(Loc.T("mg.who_is_using"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
@@ -893,7 +893,7 @@ namespace ScalingLaws.UI
 
             if (standings.Count == 0)
             {
-                var none = new Label("Nobody yet.");
+                var none = new Label(Loc.T("mg.nobody_yet"));
                 none.AddToClassList("field__hint");
                 panel.Add(none);
             }
@@ -966,7 +966,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
-            var heading = new Label("THE FIELD");
+            var heading = new Label(Loc.T("mg.the_field"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 

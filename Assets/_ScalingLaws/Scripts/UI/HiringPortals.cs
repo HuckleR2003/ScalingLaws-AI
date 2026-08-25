@@ -98,7 +98,7 @@ namespace ScalingLaws.UI
             var page = new VisualElement();
             page.AddToClassList("hchoose");
 
-            var title = new Label("WHERE TO LOOK");
+            var title = new Label(Loc.T("hire.where_to_look"));
             title.AddToClassList("hchoose__title");
             page.Add(title);
 
@@ -229,7 +229,7 @@ namespace ScalingLaws.UI
             }
             else
             {
-                var badge = new Label("PARTNER");
+                var badge = new Label(Loc.T("hire.partner"));
                 badge.AddToClassList("ithand__badge");
                 bar.Add(badge);
                 page.Add(bar);
@@ -301,7 +301,7 @@ namespace ScalingLaws.UI
             var band = new VisualElement();
             band.AddToClassList("getadmin__band");
 
-            var bandTitle = new Label("MINIMUM LEVEL");
+            var bandTitle = new Label(Loc.T("hire.minimum_level"));
             bandTitle.AddToClassList("getadmin__label");
             band.Add(bandTitle);
 
@@ -507,7 +507,7 @@ namespace ScalingLaws.UI
 
                 refresh();
             })
-            { text = "GET IN TOUCH" };
+            { text = Loc.T("hire.get_in_touch") };
 
             contact.AddToClassList("candidate__contact");
             row.Add(contact);
@@ -525,7 +525,7 @@ namespace ScalingLaws.UI
         /// <summary>The way from a portal back to the inbox, once somebody has written.</summary>
         public VisualElement InboxLink()
         {
-            var button = new Button(openMail) { text = "OPEN THE INBOX" };
+            var button = new Button(openMail) { text = Loc.T("hire.open_inbox") };
             button.AddToClassList("portal__inbox");
             return button;
         }

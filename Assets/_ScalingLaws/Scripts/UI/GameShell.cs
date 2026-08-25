@@ -589,7 +589,12 @@ namespace ScalingLaws.UI
                 }
             }
 
-            guide = new GuideOverlay(root, () => state.Guide, GoToGuideTarget, RefreshChrome);
+            guide = new GuideOverlay(root, () => state.Guide, GoToGuideTarget, RefreshChrome,
+                target => ScreenForGuideTarget(target) is { } screen ? hud?.SlotFor(screen) : null,
+                target => hud?.LockToSlot(
+                    target.HasValue && ScreenForGuideTarget(target.Value) is { } shown
+                        ? shown
+                        : null));
 
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
 
@@ -844,11 +849,11 @@ namespace ScalingLaws.UI
                 SaveStore.Save(state);
                 daysSinceAutoSave = 0;
             })
-            { text = "SAVE" };
+            { text = Loc.T("common.save") };
             save.AddToClassList("topbar__action");
             right.Add(save);
 
-            var menu = new Button(SceneFlow.LoadMainMenu) { text = "MENU" };
+            var menu = new Button(SceneFlow.LoadMainMenu) { text = Loc.T("common.menu") };
             menu.AddToClassList("topbar__action");
             right.Add(menu);
 
@@ -976,7 +981,7 @@ namespace ScalingLaws.UI
             panel.Add(Row("Raised from investors", UiFormat.Money(state.CapTable.TotalRaisedUsd)));
             panel.Add(Row("Founders held", UiFormat.Percent(state.CapTable.FounderEquity)));
 
-            var back = new Button(SceneFlow.LoadMainMenu) { text = "BACK TO MENU" };
+            var back = new Button(SceneFlow.LoadMainMenu) { text = Loc.T("menu.back_to_menu") };
             back.AddToClassList("button");
             back.AddToClassList("button--primary");
             back.style.marginTop = 16;
@@ -1625,7 +1630,7 @@ namespace ScalingLaws.UI
                 buttons.Add(start);
             }
 
-            var close = new Button(() => researchCard?.RemoveFromHierarchy()) { text = "CLOSE" };
+            var close = new Button(() => researchCard?.RemoveFromHierarchy()) { text = Loc.T("common.close") };
             close.AddToClassList("button");
             close.style.marginLeft = 6;
             buttons.Add(close);
@@ -2015,7 +2020,7 @@ namespace ScalingLaws.UI
 
             card.Add(list);
 
-            var close = new Button(() => rosterCard?.RemoveFromHierarchy()) { text = "CLOSE" };
+            var close = new Button(() => rosterCard?.RemoveFromHierarchy()) { text = Loc.T("common.close") };
             close.AddToClassList("notice__button");
             card.Add(close);
 
@@ -2064,7 +2069,7 @@ namespace ScalingLaws.UI
             // The way into their own page, which does not exist yet. It is here rather than absent
             // because the row is the only place it will ever belong, and a disabled control that
             // says what it is for is a promise; a missing one is a redesign later.
-            var open = new Button { text = "DETAILS" };
+            var open = new Button { text = Loc.T("common.details") };
             open.AddToClassList("rperson__open");
             open.SetEnabled(false);
             open.tooltip = "Their own page is not built yet.";
@@ -2076,7 +2081,7 @@ namespace ScalingLaws.UI
                 rosterCard?.RemoveFromHierarchy();
                 Show(Screen.Team);
             })
-            { text = "LET GO" };
+            { text = Loc.T("team.let_go") };
 
             release.AddToClassList("rperson__release");
             row.Add(release);
@@ -2210,7 +2215,7 @@ namespace ScalingLaws.UI
                     simulation.TryLetGo(slot, out _);
                     Show(Screen.Team);
                 })
-                { text = "LET GO" };
+                { text = Loc.T("team.let_go") };
 
                 release.AddToClassList("crew__release");
                 row.Add(release);
@@ -2242,7 +2247,7 @@ namespace ScalingLaws.UI
             card.AddToClassList("notice--hiring");
             card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
 
-            var title = new Label("WHERE ARE YOU LOOKING?");
+            var title = new Label(Loc.T("hire.where_looking2"));
             title.AddToClassList("notice__title");
             card.Add(title);
 
@@ -2278,7 +2283,7 @@ namespace ScalingLaws.UI
 
             card.Add(choices);
 
-            var cancel = new Button(() => hiringChoice?.RemoveFromHierarchy()) { text = "NOT NOW" };
+            var cancel = new Button(() => hiringChoice?.RemoveFromHierarchy()) { text = Loc.T("common.not_now") };
             cancel.AddToClassList("notice__button");
             card.Add(cancel);
 
@@ -2347,7 +2352,7 @@ namespace ScalingLaws.UI
                 page.Add(portals.InboxLink());
             }
 
-            var back = new Button(() => Show(Screen.Team)) { text = "BACK TO THE TEAM" };
+            var back = new Button(() => Show(Screen.Team)) { text = Loc.T("hire.back_to_team") };
             back.AddToClassList("portal__back");
             page.Add(back);
 
@@ -2558,22 +2563,38 @@ namespace ScalingLaws.UI
             Show(Screen.Management);
         }
 
+        /// <summary>
+        /// Which screen a guide target means, or null when it means none.
+        ///
+        /// **One table, because there are now three callers.** The tour opens the screen, rings the
+        /// tab, and shuts the other tabs while it waits, and a second copy of this mapping would let
+        /// the tour point at one tab and open another. That is exactly the class of drift that left
+        /// six steps saying "click COMPUTE" while highlighting nothing.
+        /// </summary>
+        private static Screen? ScreenForGuideTarget(GuideTarget target) => target switch
+        {
+            GuideTarget.Site => Screen.Site,
+            GuideTarget.Compute => Screen.Fleet,
+            GuideTarget.Model => Screen.Model,
+            GuideTarget.Create => Screen.Create,
+            GuideTarget.Research => Screen.Research,
+            GuideTarget.Team => Screen.Team,
+            GuideTarget.Release => Screen.Release,
+            GuideTarget.Upgrade => Screen.Upgrade,
+            GuideTarget.Architecture => Screen.Family,
+            GuideTarget.Offices => Screen.Offices,
+            GuideTarget.Funding => Screen.Funding,
+            _ => null
+        };
+
         /// <summary>Opens the screen a guide step is about.</summary>
         private void GoToGuideTarget(GuideTarget target)
         {
-            switch (target)
+            var screen = ScreenForGuideTarget(target);
+
+            if (screen.HasValue)
             {
-                case GuideTarget.Site: Show(Screen.Site); break;
-                case GuideTarget.Compute: Show(Screen.Fleet); break;
-                case GuideTarget.Model: Show(Screen.Model); break;
-                case GuideTarget.Create: Show(Screen.Create); break;
-                case GuideTarget.Research: Show(Screen.Research); break;
-                case GuideTarget.Team: Show(Screen.Team); break;
-                case GuideTarget.Release: Show(Screen.Release); break;
-                case GuideTarget.Upgrade: Show(Screen.Upgrade); break;
-                case GuideTarget.Architecture: Show(Screen.Family); break;
-                case GuideTarget.Offices: Show(Screen.Offices); break;
-                case GuideTarget.Funding: Show(Screen.Funding); break;
+                Show(screen.Value);
             }
         }
 
@@ -2707,13 +2728,13 @@ namespace ScalingLaws.UI
             // It did nothing at all, which reads as broken rather than as the only option. Renting
             // is where the fleet controls already are, so the half that is live says so and scrolls
             // to them instead of pretending to be a mode switch that has nothing to switch to.
-            var renting = new Button(() => Show(Screen.Fleet)) { text = "RENTING HOSTING" };
+            var renting = new Button(() => Show(Screen.Fleet)) { text = Loc.T("fleet.renting") };
             renting.tooltip = "The fleet you rent. Everything below this bar is it.";
             renting.AddToClassList("hswitch__half");
             renting.AddToClassList("hswitch__half--on");
             strip.Add(renting);
 
-            var owning = new Button(() => { }) { text = "YOUR OWN DATACENTER" };
+            var owning = new Button(() => { }) { text = Loc.T("fleet.own_datacenter") };
             owning.tooltip = "Locked until the Datacenter programme research lands. Renting is the "
                 + "only way to buy compute until then.";
             owning.AddToClassList("hswitch__half");
@@ -2774,7 +2795,7 @@ namespace ScalingLaws.UI
             percent.AddToClassList("service__percent");
             dialBlock.Add(percent);
 
-            var caption = new Label("Server Usage");
+            var caption = new Label(Loc.T("fleet.server_usage"));
             caption.AddToClassList("service__caption");
             dialBlock.Add(caption);
 
@@ -2844,7 +2865,7 @@ namespace ScalingLaws.UI
             var left = new VisualElement();
             left.AddToClassList("rnow__left");
 
-            var caption = new Label("Right now");
+            var caption = new Label(Loc.T("fleet.right_now"));
             caption.AddToClassList("rnow__caption");
             left.Add(caption);
 
@@ -2852,7 +2873,7 @@ namespace ScalingLaws.UI
             big.AddToClassList("rnow__big");
             left.Add(big);
 
-            var under = new Label("Online users");
+            var under = new Label(Loc.T("fleet.online_users"));
             under.AddToClassList("rnow__under");
             left.Add(under);
 
@@ -2861,7 +2882,7 @@ namespace ScalingLaws.UI
             var right = new VisualElement();
             right.AddToClassList("rnow__right");
 
-            var heading = new Label("Today's Estimated Income");
+            var heading = new Label(Loc.T("fleet.today_income"));
             heading.AddToClassList("rnow__heading");
             right.Add(heading);
 
@@ -2905,7 +2926,7 @@ namespace ScalingLaws.UI
             var left = new VisualElement();
             left.AddToClassList("chart-block");
 
-            var leftTitle = new Label("Registered Users");
+            var leftTitle = new Label(Loc.T("fleet.registered_users"));
             leftTitle.AddToClassList("chart-block__title");
             left.Add(leftTitle);
 
@@ -2925,7 +2946,7 @@ namespace ScalingLaws.UI
             var right = new VisualElement();
             right.AddToClassList("chart-block");
 
-            var rightTitle = new Label("Online users");
+            var rightTitle = new Label(Loc.T("fleet.online_users"));
             rightTitle.AddToClassList("chart-block__title");
             right.Add(rightTitle);
 
@@ -2941,7 +2962,7 @@ namespace ScalingLaws.UI
             onlineChart.Set(curve, new Color(0.92f, 0.45f, 0.32f), false);
             right.Add(onlineChart);
 
-            var rightFoot = new Label("00:00 to 23:00");
+            var rightFoot = new Label(Loc.T("fleet.hours"));
             rightFoot.AddToClassList("chart-block__foot");
             right.Add(rightFoot);
 
@@ -3309,7 +3330,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
 
             if (pickedChannels.Count == 0)
             {
-                var pick = new Label("Pick at least one channel above.");
+                var pick = new Label(Loc.T("mk.pick_channel"));
                 pick.AddToClassList("mkbook__pick");
                 panel.Add(pick);
             }
@@ -3362,7 +3383,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                 pickedChannels.Clear();
                 Show(Screen.Marketing);
             })
-            { text = "BOOK IT" };
+            { text = Loc.T("mk.book_it") };
 
             book.AddToClassList("mkbook__go");
             book.SetEnabled(pickedChannels.Count > 0);
@@ -3468,7 +3489,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                     simulation.State.RemoveCampaign(campaign);
                     Show(Screen.Marketing);
                 })
-                { text = "STOP" };
+                { text = Loc.T("common.stop") };
 
                 stop.AddToClassList("run-row__stop");
                 row.Add(stop);
@@ -3612,7 +3633,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                         simulation.TrySellHardware(slot, asset.Units, out _, out _);
                         Show(Screen.Fleet);
                     })
-                    { text = "SELL" };
+                    { text = Loc.T("common.sell") };
                     sell.AddToClassList("button");
                     sell.style.height = 28;
                     sell.style.minWidth = 90;
@@ -3627,7 +3648,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
 
             var buy = new VisualElement();
             buy.AddToClassList("panel");
-            var buyHeading = new Label("BUY");
+            var buyHeading = new Label(Loc.T("common.buy"));
             buyHeading.AddToClassList("panel__heading");
             buy.Add(buyHeading);
 
@@ -3811,7 +3832,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
 
             var givenAway = new VisualElement();
             givenAway.AddToClassList("readout");
-            givenAway.Add(new Label("Served for nothing"));
+            givenAway.Add(new Label(Loc.T("books.served_for_nothing")));
             var givenValue = new Label(UiFormat.Percent(policy.FreeShareOfTokens));
             givenValue.AddToClassList("readout__value");
             givenValue.AddToClassList(policy.FreeShareOfTokens > 0.45 ? "readout__value--bad" : "readout__value--warn");
@@ -3873,9 +3894,9 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
 
                 Show(Screen.Business);
             })
-            { text = "STOP" };
+            { text = Loc.T("common.stop") };
             stop.AddToClassList("card");
-            stop.Add(new Label("NOTHING"));
+            stop.Add(new Label(Loc.T("common.none")));
             grid.Add(stop);
 
             foreach (var campaign in MonetizationCatalog.OfKind(kind))
@@ -4028,7 +4049,7 @@ UiParts.ExplainPage(page, TechNotes.Valuation, TechNotes.FounderStake);
                     simulation.TryOpenFundingRound(out _);
                     Show(Screen.Funding);
                 })
-                { text = "OPEN A ROUND" };
+                { text = Loc.T("funding.open_round") };
                 open.AddToClassList("button");
                 open.SetEnabled(availability.IsAvailable);
                 open.style.marginTop = 14;
@@ -4344,7 +4365,7 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
 
             head.Add(titles);
 
-            var close = new Button(() => labCard?.RemoveFromHierarchy()) { text = "CLOSE" };
+            var close = new Button(() => labCard?.RemoveFromHierarchy()) { text = Loc.T("common.close") };
             close.AddToClassList("chip");
             head.Add(close);
 
@@ -4992,7 +5013,7 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 decorOpen = false;
                 Show(Screen.Site);
             })
-            { text = "DONE" };
+            { text = Loc.T("common.done") };
 
             close.AddToClassList("decor__close");
             panel.Add(close);
@@ -5121,7 +5142,7 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
 
             if (decor.Items.Count == 0)
             {
-                var empty = new Label("Nothing yet. The floor is as the lease left it.");
+                var empty = new Label(Loc.T("offices.floor_as_left"));
                 empty.AddToClassList("decor__empty");
                 list.Add(empty);
             }
@@ -5427,7 +5448,7 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 runFinished?.RemoveFromHierarchy();
                 Show(Screen.Release);
             })
-            { text = "GO TO RELEASE" };
+            { text = Loc.T("mg.go_to_release") };
 
             release.AddToClassList("notice__button");
             release.AddToClassList("notice__button--go");
@@ -5438,7 +5459,7 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 runFinished?.RemoveFromHierarchy();
                 Show(Screen.Upgrade);
             })
-            { text = "GO TO UPGRADE" };
+            { text = Loc.T("mg.go_to_upgrade") };
 
             upgrade.AddToClassList("notice__button");
             buttons.Add(upgrade);

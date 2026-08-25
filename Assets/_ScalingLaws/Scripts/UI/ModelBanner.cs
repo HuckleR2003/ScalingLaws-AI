@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ScalingLaws.Simulation;
 using UnityEngine;
+using ScalingLaws.Data;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -197,7 +198,7 @@ namespace ScalingLaws.UI
             divider.AddToClassList("mb__divider");
             head.Add(divider);
 
-            manage = new Button(openManagement) { text = "Official Page / Management" };
+            manage = new Button(openManagement) { text = Loc.T("mg.official_or_desk") };
             manage.AddToClassList("mb__manage");
             head.Add(manage);
 

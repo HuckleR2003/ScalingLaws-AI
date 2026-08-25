@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ScalingLaws.Data;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -78,7 +79,7 @@ namespace ScalingLaws.UI
             in_.AddToClassList("rmap__step");
             bar.Add(in_);
 
-            var fit = new Button(Reset) { text = "FIT" };
+            var fit = new Button(Reset) { text = Loc.T("common.fit") };
             fit.AddToClassList("rmap__fit");
             bar.Add(fit);
 

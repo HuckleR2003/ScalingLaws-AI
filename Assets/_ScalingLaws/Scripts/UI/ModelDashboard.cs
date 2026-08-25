@@ -120,7 +120,7 @@ namespace ScalingLaws.UI
             fresh.AddToClassList("door");
             fresh.AddToClassList("door--new");
 
-            var freshTitle = new Label("NEW MODEL");
+            var freshTitle = new Label(Loc.T("create.new_model"));
             freshTitle.AddToClassList("door__title");
             fresh.Add(freshTitle);
 
@@ -135,7 +135,7 @@ namespace ScalingLaws.UI
             better.AddToClassList("door");
             better.AddToClassList("door--upgrade");
 
-            var betterTitle = new Label("UPGRADE");
+            var betterTitle = new Label(Loc.T("model.upgrade"));
             betterTitle.AddToClassList("door__title");
             better.Add(betterTitle);
 
@@ -158,13 +158,13 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("modelhub__service");
 
-            var heading = new Label("SERVICE");
+            var heading = new Label(Loc.T("model.service"));
             heading.AddToClassList("modelhub__heading");
             panel.Add(heading);
 
             if (!product.Exists)
             {
-                var none = new Label("Nothing is being served. The dial starts when a model does.");
+                var none = new Label(Loc.T("model.service.none"));
                 none.AddToClassList("modelhub__empty");
                 panel.Add(none);
                 return panel;
@@ -183,7 +183,7 @@ namespace ScalingLaws.UI
             percent.AddToClassList("service__percent");
             dial.Add(percent);
 
-            var caption = new Label("Server Usage");
+            var caption = new Label(Loc.T("fleet.server_usage"));
             caption.AddToClassList("service__caption");
             dial.Add(caption);
 
@@ -210,7 +210,7 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("modelhub__money");
 
-            var heading = new Label("THIS MONTH");
+            var heading = new Label(Loc.T("model.this_month2"));
             heading.AddToClassList("modelhub__heading");
             panel.Add(heading);
 
@@ -415,7 +415,7 @@ namespace ScalingLaws.UI
             veil.AddToClassList("flourish");
             veil.pickingMode = PickingMode.Ignore;
 
-            var line = new Label("Let's think...");
+            var line = new Label(Loc.T("model.lets_think"));
             line.AddToClassList("flourish__line");
             veil.Add(line);
 

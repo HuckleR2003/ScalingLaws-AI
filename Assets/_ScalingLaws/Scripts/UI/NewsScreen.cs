@@ -66,7 +66,7 @@ namespace ScalingLaws.UI
 
             var left = new VisualElement();
 
-            var title = new Label("THE WIRE");
+            var title = new Label(Loc.T("news.the_wire"));
             title.AddToClassList("news__title");
             left.Add(title);
 
