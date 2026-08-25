@@ -26,7 +26,10 @@ namespace ScalingLaws.Data
         Architecture = 10,
 
         /// <summary>The bank. Where the money comes from when the company has not earned it yet.</summary>
-        Funding = 11
+        Funding = 11,
+
+        /// <summary>The board, for the one line where he points at his own company on it.</summary>
+        Ranking = 12
     }
 
     /// <summary>
@@ -280,6 +283,10 @@ namespace ScalingLaws.Data
                 GuideTarget.Offices, null, "guide.show_me", true),
             new("offices", "guide.step.offices", GuideTarget.Offices, "office-row__move"),
             new("offices_desks", "guide.step.offices_desks", GuideTarget.Offices, "office-figure"),
+
+            // He names his own company on the way out, now that it is on the board. A permanent
+            // character with no place in the world is a voice from nowhere.
+            new("emil_company", "guide.step.emil_company", GuideTarget.Ranking, "rank-row"),
 
             new("wrap", "guide.step.wrap")
         };

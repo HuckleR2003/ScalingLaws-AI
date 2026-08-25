@@ -24,6 +24,7 @@ namespace ScalingLaws.UI
         private static readonly Dictionary<CompetitorId, string> FileNames = new()
         {
             { CompetitorId.OpenAi, "lab_opensi" },
+            { CompetitorId.ESolutions, "lab_esolutions" },
             { CompetitorId.Anthropic, "lab_antropic" },
             { CompetitorId.GoogleDeepMind, "lab_deepthink" },
             { CompetitorId.MetaAi, "lab_infinity" },

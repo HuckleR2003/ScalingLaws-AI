@@ -470,6 +470,48 @@ namespace ScalingLaws.Data
 
                 // ------------------------------------------------------------- the survivor
 
+                // **The one invented company on this board**, and the only reason it is here is
+                // that Emil is a permanent character. A cousin who walks you through your first hour
+                // and then exists nowhere in the world is a voice from nothing.
+                //
+                // Everything about the arc is deliberately unremarkable. He is not a rival: he is
+                // somebody the player knows who happens to run a small shop, always a step behind
+                // the middle of the board and never falling off it. A cousin who turned out to be
+                // secretly winning would make the favour he does in the tutorial read as charity.
+                //
+                // Every chapter carries IsProjection, because the honesty flag is about not passing
+                // invention off as record and this is invention from end to end.
+                new LabDossier(CompetitorId.ESolutions, "E-Solutions", On(2021, 9, 1), "Radom",
+                    "Build the boring thing, make it work, invoice for it.",
+                    "Six people above a hardware shop, doing the work nobody writes articles about: "
+                    + "helpdesk assistants for regional firms, back office automation, a support "
+                    + "line that answers. It has never been near the frontier and has never tried "
+                    + "to be. Your cousin started it a year before you started yours, which is the "
+                    + "entire reason he has opinions about your first year.",
+                    LabFate.Independent,
+                    new[]
+                    {
+                        new LabChapter(On(2023, 2, 20), LabChapterKind.Milestone,
+                            "First product out of the door",
+                            "A helpdesk assistant for three regional insurers. Nobody covered it. "
+                            + "It has been paying six salaries ever since.",
+                            isProjection: true),
+
+                        new LabChapter(On(2024, 6, 3), LabChapterKind.Milestone,
+                            "Turns down an acquisition",
+                            "An offer arrives that would have made him comfortable and made the "
+                            + "company somebody else's. He says the quiet part out loud in a trade "
+                            + "interview: he likes the work and does not want a manager.",
+                            isProjection: true),
+
+                        new LabChapter(On(2026, 5, 19), LabChapterKind.Milestone,
+                            "Still here",
+                            "Four years, four products, no funding round and no headline. Whatever "
+                            + "else has happened on this board, E-Solutions has invoiced every "
+                            + "month of it.",
+                            isProjection: true)
+                    }),
+
                 new LabDossier(CompetitorId.Cohere, "Gohere", On(2019, 1, 1), "Toronto",
                     "Sell to companies, run inside their walls, never chase the consumer.",
                     "Founded in 2019 by, among others, one of the authors of the 2017 attention "

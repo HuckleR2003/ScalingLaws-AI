@@ -215,7 +215,11 @@ namespace ScalingLaws.Simulation
             { CompetitorId.AlibabaQwen, CompetitorStrategy.CostLeader },
 
             // Cheap, because it has nothing else to sell.
-            { CompetitorId.Groq, CompetitorStrategy.CostLeader }
+            { CompetitorId.Groq, CompetitorStrategy.CostLeader },
+
+            // Emil sells to companies who want the boring thing to work. Same strategy as the two
+            // enterprise labs, a quarter of the size.
+            { CompetitorId.ESolutions, CompetitorStrategy.EnterpriseFocus }
         };
 
         private static string LabName(CompetitorId competitor) =>

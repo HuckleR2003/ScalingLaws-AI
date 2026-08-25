@@ -107,6 +107,18 @@ namespace ScalingLaws.Data
             new(CompetitorId.Cohere, "Retrieval model 2", GameDate.FromCalendar(2025, 8, 14),
                 capability: 55.0, brandStrength: 0.25, priceMultiplier: 1.20, isProjection: true),
 
+            // Emil's shop. Always a step behind the middle of the board and never falling off it,
+            // which is what a small consultancy that ships what its customers asked for looks like.
+            // Invented, so every entry is a projection.
+            new(CompetitorId.ESolutions, "Helpdesk assistant", GameDate.FromCalendar(2023, 2, 20),
+                capability: 24.0, brandStrength: 0.05, priceMultiplier: 0.92, isProjection: true),
+            new(CompetitorId.ESolutions, "Helpdesk assistant 2", GameDate.FromCalendar(2024, 1, 16),
+                capability: 38.0, brandStrength: 0.09, priceMultiplier: 0.92, isProjection: true),
+            new(CompetitorId.ESolutions, "Back office suite", GameDate.FromCalendar(2025, 3, 4),
+                capability: 49.0, brandStrength: 0.13, priceMultiplier: 0.95, isProjection: true),
+            new(CompetitorId.ESolutions, "Back office suite 2", GameDate.FromCalendar(2026, 5, 19),
+                capability: 61.0, brandStrength: 0.16, priceMultiplier: 0.95, isProjection: true),
+
             new(CompetitorId.OpenAi, "Chat assistant launch", GameDate.FromCalendar(2022, 11, 30),
                 capability: 31.0, brandStrength: 0.55, priceMultiplier: 1.00, isProjection: false),
             new(CompetitorId.Anthropic, "Clyde", GameDate.FromCalendar(2023, 3, 14),

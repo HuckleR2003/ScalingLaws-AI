@@ -2618,6 +2618,7 @@ namespace ScalingLaws.UI
             GuideTarget.Architecture => Screen.Family,
             GuideTarget.Offices => Screen.Offices,
             GuideTarget.Funding => Screen.Funding,
+            GuideTarget.Ranking => Screen.Ranking,
             _ => null
         };
 

@@ -47,6 +47,19 @@ namespace ScalingLaws.Data
         AlephAlpha = 12,
 
         /// <summary>The survivor. Never chased the frontier, never had to.</summary>
-        Cohere = 13
+        Cohere = 13,
+
+        /// <summary>
+        /// Emil's shop. The one company on this board that is not drawn from a real one.
+        ///
+        /// He is the cousin who walks the player through their first hour, and a permanent character
+        /// with no place in the world is a voice from nowhere. Small, steady, mid-table, never near
+        /// the frontier and still trading at the end: a cousin who turned out to be secretly winning
+        /// would make the favour he does in the tutorial read as charity.
+        ///
+        /// Everything about it carries `isProjection`, because it is invented and the honesty flag
+        /// is about not passing invention off as record.
+        /// </summary>
+        ESolutions = 14
     }
 }
