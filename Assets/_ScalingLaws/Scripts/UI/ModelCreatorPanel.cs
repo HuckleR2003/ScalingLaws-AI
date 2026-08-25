@@ -91,6 +91,8 @@ namespace ScalingLaws.UI
         private int dots;
         private BrowserPreview browser;
         private VisualElement chipHost;
+        private readonly SpendMeter spendMeter = new();
+        private readonly Label spendCaption = new();
         private Label laptopName;
         private Label laptopStatus;
         private Label laptopArchitecture;
@@ -888,6 +890,26 @@ namespace ScalingLaws.UI
             return block;
         }
 
+        /// <summary>
+        /// Repaints the spend meter and says in words what the colour means.
+        ///
+        /// The words matter more than the colour: a bar that turns orange tells a player something
+        /// is wrong and not what, and this is the control that has cost real campaigns real money.
+        /// </summary>
+        private void RefreshSpend(long perDay)
+        {
+            spendMeter.PerDayUsd = perDay;
+
+            var key = perDay > SpendMeter.SevereAbove ? "spend.ruin"
+                : perDay > SpendMeter.HeavyAbove ? "spend.severe"
+                : perDay > SpendMeter.WarnAbove ? "spend.heavy"
+                : perDay > SpendMeter.AdvisedUsdPerDay ? "spend.warn"
+                : "spend.calm";
+
+            spendCaption.text = Loc.T(key, UiFormat.Money(perDay));
+            spendCaption.style.color = SpendMeter.ToneFor(perDay);
+        }
+
         private VisualElement BuildIdentityPanel()
         {
             var panel = NewPanel(Loc.T("create.identity"));
@@ -1501,6 +1523,13 @@ namespace ScalingLaws.UI
             ConfigureSlider(rentedSlider, 0f, 25000f, 150f);
             panel.Add(rentedSlider);
 
+            // What the day costs, with a mark at what he tells you to stay under. The one control
+            // in this creator that bills every day whether or not anything is training.
+            panel.Add(spendMeter);
+
+            spendCaption.AddToClassList("spend__caption");
+            panel.Add(spendCaption);
+
             var hint = new Label(
                 "Rented capacity is contracted in petaflops, not in boxes, so the bill does not move on "
                 + "its own when the clouds change generation. It never ages, and it bills every day it "
@@ -2069,6 +2098,8 @@ namespace ScalingLaws.UI
                 + $"({profile.RentedAcceleratorCount:N0} units of today's part, "
                 + $"{UiFormat.Petaflops(profile.EffectivePetaflops)} usable, "
                 + $"{UiFormat.Money(SimUnitsToDaily(profile))}/day)";
+
+            RefreshSpend(SimUnitsToDaily(profile));
 
             BeginReadouts();
             AddReadout("Projected capability", UiFormat.Number(projection.ProjectedCapability), Tone.Neutral);

@@ -8524,17 +8524,10 @@
     margin-top: 14px;
 }
 
-.service__below .rnow {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-height: 190px;
-    margin-right: 14px;
-}
-
 .service__below .charts {
     flex-grow: 1;
     flex-shrink: 1;
-    min-height: 190px;
+    min-height: 132px;
 }
 
 /* ---- the lab tiles on the founding screen ----------------------------------------------------- */
@@ -12436,7 +12429,7 @@
    are photographs of racks and text over a photograph is a legibility gamble even after a scrim. */
 
 .pack__cover {
-    height: 104px;
+    height: 78px;
     margin-bottom: 10px;
     border-radius: 4px;
     -unity-background-scale-mode: scale-and-crop;
@@ -12460,4 +12453,126 @@
     background-color: rgba(255, 255, 255, 0.04);
     background-image: none;
     -unity-text-align: middle-center;
+}
+
+/* What a day of rented capacity costs. The one control in the creator that bills whether or not
+   anything is training, so it gets a bar of its own rather than a number in a sentence. */
+
+.spend {
+    height: 7px;
+    margin-top: 8px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.spend__caption {
+    font-size: 11.5px;
+    margin-top: 6px;
+    white-space: normal;
+}
+
+/* The skill name and its "(i)", on one line. The creator asks for two hundred points to be spent
+   across seven words and explained none of them. */
+
+.skill-row__title {
+    flex-direction: row;
+    align-items: center;
+}
+
+.skill-row__title > .skill-row__name {
+    margin-right: 6px;
+}
+
+/* The bar reddens as it climbs. Bands rather than a gradient, because USS has neither, and honest
+   either way: the budget is smaller than seven maxed skills, so every point past the middle is a
+   point taken from somewhere else. */
+
+.skill-track__fill--high {
+    background-color: rgb(214, 178, 72);
+}
+
+.skill-track__fill--higher {
+    background-color: rgb(216, 132, 60);
+}
+
+.skill-track__fill--peak {
+    background-color: rgb(206, 78, 68);
+}
+
+/* The one thing he will do for you rather than describe. Green because it is the only button in the
+   tour that changes the game rather than the conversation. */
+
+.guide__offer {
+    height: 42px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-left: 8px;
+    margin-top: 0;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    border-width: 0;
+    border-radius: 4px;
+    color: rgb(12, 26, 18);
+    background-color: rgb(104, 196, 132);
+    background-image: none;
+    -unity-text-align: middle-center;
+}
+
+/* One sentence typed onto black between the opening and the film. It exists to land the stake: the
+   opening is context and the film is atmosphere, and there was a cut between them. */
+
+.intro-hook {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 44%;
+    font-size: 28px;
+    color: rgb(236, 242, 252);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    letter-spacing: 0.6px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+/* The fade out into the film, which starts on the same black anyway. */
+
+.intro-hook-out {
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.65s;
+}
+
+/* Today's money and today's audience, beside the dial. Replaces a card twice as wide that put the
+   label at one edge and the figure at the other, so the eye had to cross the panel to join a word
+   to its own number. */
+
+.sfig {
+    justify-content: center;
+    margin-left: 26px;
+    padding-left: 22px;
+    border-left-width: 1px;
+    border-left-color: rgb(38, 47, 64);
+    flex-shrink: 0;
+}
+
+.sfig__block {
+    margin-bottom: 12px;
+}
+
+.sfig__caption {
+    font-size: 9px;
+    letter-spacing: 1.3px;
+    color: rgb(118, 132, 156);
+}
+
+.sfig__value {
+    font-size: 17px;
+    color: rgb(224, 232, 246);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.sfig__value--lead {
+    font-size: 22px;
+    color: rgb(126, 216, 158);
 }

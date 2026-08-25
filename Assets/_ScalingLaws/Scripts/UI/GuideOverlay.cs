@@ -57,6 +57,22 @@ namespace ScalingLaws.UI
         /// <summary>Raised when the player steps out meaning to come back.</summary>
         public Action leftForNow;
 
+        /// <summary>One extra button a step may offer, or null. Set by the shell.</summary>
+        public Func<GuideStep, GuideOffer?> offerFor;
+
+        /// <summary>A thing the cousin will do for you, if you ask him on the right step.</summary>
+        public readonly struct GuideOffer
+        {
+            public GuideOffer(string label, Action act)
+            {
+                Label = label;
+                Act = act;
+            }
+
+            public string Label { get; }
+            public Action Act { get; }
+        }
+
         private VisualElement strip;
         private Label line;
         private Label counter;
@@ -289,6 +305,21 @@ namespace ScalingLaws.UI
 
             buttons.Add(next);
 
+            // **Only on the step that asks.** A step can offer one extra thing, and this is the
+            // mechanism for it: the shell decides what the offer does, the tour only draws it.
+            if (offerFor != null && offerFor(step) is { } offer)
+            {
+                var help = new Button(() =>
+                {
+                    offer.Act();
+                    Advance();
+                })
+                { text = offer.Label };
+
+                help.AddToClassList("guide__offer");
+                buttons.Add(help);
+            }
+
             // **Two ways out, and they are different promises.** "I'll take it from here" is a
             // player who does not want a tutorial. "I'll come back later" is one who does and has
             // something else on, and telling them there is something waiting at the end is the
@@ -436,6 +467,35 @@ namespace ScalingLaws.UI
             }
 
             Pause();
+        }
+
+        /// <summary>
+        /// The player got there on their own, so the step is finished.
+        ///
+        /// **Asked for after the playtest and it is a real annoyance, not a nicety.** A step that
+        /// says "click COMPUTE" and then still wants a button pressed after the player has clicked
+        /// COMPUTE is a tutorial arguing with somebody who is already doing what it asked.
+        ///
+        /// Only for steps that were waiting on that exact screen. Everything else is a step that is
+        /// talking, and talking is not finished by walking away from it.
+        /// </summary>
+        public void PlayerOpened(GuideTarget target)
+        {
+            var state = progress();
+
+            if (state.Stage != GuideStage.Touring || target == GuideTarget.None)
+            {
+                return;
+            }
+
+            var step = Current;
+
+            if (step == null || !step.WaitForClick || step.Target != target)
+            {
+                return;
+            }
+
+            Advance();
         }
 
         /// <summary>Puts the tour down, keeping the step so it can be picked up again.</summary>

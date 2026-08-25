@@ -2890,16 +2890,18 @@ namespace ScalingLaws.UI
             words.Add(effect);
 
             row.Add(words);
+
+            // **The three figures a player checks while looking at the dial**, on the same line as
+            // it. They were in a wide card underneath with the label at one edge and the number at
+            // the other, which is a lot of empty space between a thing and its own value.
+            row.Add(BuildServiceFigures());
+
             panel.Add(row);
 
-            // **The two stat cards used to sit on the same line as the dial**, which gave five
-            // things one row and left every one of them too narrow to read. They are the money and
-            // the audience; they deserve the width of the panel rather than a quarter of it. The
-            // reserved-capacity control moves up into the space they left, next to the dial, which
-            // is also where it belongs: it is the lever the dial is measuring.
+            // The charts keep the full width. They are the only thing on this screen that is a
+            // shape rather than a number, and a shape squeezed into a quarter of a row is a smudge.
             var below = new VisualElement();
             below.AddToClassList("service__below");
-            below.Add(BuildRightNowCard());
             below.Add(BuildUserCharts());
 
             panel.Add(below);
@@ -2915,60 +2917,48 @@ namespace ScalingLaws.UI
         /// here from the clock. Confusing the two is how a dashboard ends up claiming ten million
         /// people are using something simultaneously.
         /// </summary>
-        private VisualElement BuildRightNowCard()
+        /// <summary>
+        /// Today's money and today's audience, in three lines, beside the dial.
+        ///
+        /// **This replaces a card that was twice as wide and said the same thing.** The label sat at
+        /// one edge and the figure at the other, so the eye had to cross the panel to join a word to
+        /// its own number. Three stacked pairs read in one glance.
+        /// </summary>
+        private VisualElement BuildServiceFigures()
         {
             var breakdown = simulation.MarketByType();
             var registered = breakdown.TotalUsersOverall * breakdown.OverallShareOf(0);
-            var hour = clock.DayProgress * 24.0;
-            var online = Concurrency.OnlineAt(registered, hour);
-
-            var card = new VisualElement();
-            card.AddToClassList("rnow");
-
-            var left = new VisualElement();
-            left.AddToClassList("rnow__left");
-
-            var caption = new Label(Loc.T("fleet.right_now"));
-            caption.AddToClassList("rnow__caption");
-            left.Add(caption);
-
-            var big = new Label(UiFormat.Count(online));
-            big.AddToClassList("rnow__big");
-            left.Add(big);
-
-            var under = new Label(Loc.T("fleet.online_users"));
-            under.AddToClassList("rnow__under");
-            left.Add(under);
-
-            card.Add(left);
-
-            var right = new VisualElement();
-            right.AddToClassList("rnow__right");
-
-            var heading = new Label(Loc.T("fleet.today_income"));
-            heading.AddToClassList("rnow__heading");
-            right.Add(heading);
+            var online = Concurrency.OnlineAt(registered, clock.DayProgress * 24.0);
 
             var month = Ledger.MonthKeyOf(simulation.State.Date);
             var earned = simulation.State.Ledger.MonthTotal(month, LedgerLine.Subscriptions);
-            var spent = simulation.State.Ledger.MonthCost(month);
 
-            var income = new Label(UiFormat.Money(earned));
-            income.AddToClassList("rnow__income");
-            right.Add(income);
+            var strip = new VisualElement();
+            strip.AddToClassList("sfig");
 
-            right.Add(UiParts.StatLine("Registered Users", UiFormat.Count(registered)));
-            right.Add(UiParts.StatLine("Potential Users", UiFormat.Count(breakdown.AddressableUsers)));
-            right.Add(UiParts.StatLine("Subscribers", UiFormat.Count(registered * PaidShare())));
-            right.Add(UiParts.StatLine("All Expenses", "-" + UiFormat.Money(spent)));
+            strip.Add(Figure(Loc.T("fleet.today_income"), UiFormat.Money(earned), true));
+            strip.Add(Figure(Loc.T("fleet.registered_users"), UiFormat.Count(registered), false));
+            strip.Add(Figure(Loc.T("fleet.online_users"), UiFormat.Count(online), false));
 
-            card.Add(right);
-            return card;
+            return strip;
+
+            static VisualElement Figure(string caption, string value, bool lead)
+            {
+                var block = new VisualElement();
+                block.AddToClassList("sfig__block");
+
+                var label = new Label(caption);
+                label.AddToClassList("sfig__caption");
+                block.Add(label);
+
+                var figure = new Label(value);
+                figure.AddToClassList("sfig__value");
+                figure.EnableInClassList("sfig__value--lead", lead);
+                block.Add(figure);
+
+                return block;
+            }
         }
-
-        /// <summary>What share of the people held are on a paid account rather than the free tier.</summary>
-        private double PaidShare() =>
-            Math.Clamp(1.0 - simulation.State.Monetization.FreeShareOfTokens, 0.0, 1.0);
 
         /// <summary>
         /// The two charts side by side: the day by day account base, and today's traffic curve.

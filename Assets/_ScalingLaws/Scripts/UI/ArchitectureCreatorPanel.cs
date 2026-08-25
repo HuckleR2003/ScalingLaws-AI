@@ -312,6 +312,47 @@ namespace ScalingLaws.UI
             }
         }
 
+        /// <summary>
+        /// Sets the five directions to something defensible, up to what the company has researched.
+        ///
+        /// **Not the optimum, because there is no optimum.** The five directions buy different
+        /// things and which one is worth most depends on what the company is selling, so a button
+        /// claiming to compute the best answer would be lying about the whole screen. What this does
+        /// is what a friend does: a shape that is not wrong, weighted toward the two directions that
+        /// pay in every strategy, and clamped to what has actually been unlocked.
+        ///
+        /// One button, and pressing it leaves every slider live. The player can move all five
+        /// afterwards, which is the difference between advice and an autopilot.
+        /// </summary>
+        public void TakeTheAdvice()
+        {
+            // Cheap to run and good for a family is where a first programme should sit. Reasoning is
+            // the one that cannot be bought with scale later, so it gets the third share.
+            var wanted = new Dictionary<ResearchDirection, float>
+            {
+                [ResearchDirection.Sparsity] = 0.30f,
+                [ResearchDirection.Quality] = 0.26f,
+                [ResearchDirection.Reasoning] = 0.20f,
+                [ResearchDirection.Throughput] = 0.14f,
+                [ResearchDirection.Serving] = 0.10f
+            };
+
+            foreach (var (direction, share) in wanted)
+            {
+                if (!directions.TryGetValue(direction, out var slider))
+                {
+                    continue;
+                }
+
+                var ceiling = (float)ArchitectureCeiling.FractionFor(
+                    direction, simulation.State.HasResearch);
+
+                slider.value = Math.Min(share, ceiling);
+            }
+
+            Refresh();
+        }
+
         private void ClampToCeiling(ResearchDirection direction)
         {
             var ceiling = (float)ArchitectureCeiling.FractionFor(

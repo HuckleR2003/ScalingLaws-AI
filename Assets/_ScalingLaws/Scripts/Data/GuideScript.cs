@@ -222,6 +222,14 @@ namespace ScalingLaws.Data
             new(GiftStepId, "guide.step.research_gift", GuideTarget.Research, "tree-node"),
             new("research_gift_note", "guide.step.research_gift_note", GuideTarget.Research),
 
+            // ---- the level above the model ------------------------------------------------
+            new("arch_pitch", "guide.step.arch_pitch"),
+            new("arch_open", "guide.step.arch_open",
+                GuideTarget.Architecture, null, "guide.show_me", true),
+            new("arch_what", "guide.step.arch_what", GuideTarget.Architecture, "arx__card"),
+            new("arch_locked", "guide.step.arch_locked", GuideTarget.Architecture, "dlock"),
+            new("arch_info", "guide.step.arch_info", GuideTarget.Architecture, "infodot"),
+
             // ---- the model ---------------------------------------------------------------
             new("model_open", "guide.step.model_open",
                 GuideTarget.Model, null, "guide.show_me", true),
@@ -242,6 +250,8 @@ namespace ScalingLaws.Data
             // says he is waiting rather than filling the silence. Except for the one control on the
             // compute page that has cost real players real money.
             new("create_data", "guide.step.create_data", GuideTarget.Create, null, null, false, 3),
+            new("create_precision", "guide.step.create_precision", GuideTarget.Create, "chip",
+                null, false, 4),
             new("create_spend", "guide.step.create_spend", GuideTarget.Create, "stage-slider",
                 null, false, 4),
             new("create_waiting", "guide.step.create_waiting", GuideTarget.Create, null,
@@ -251,18 +261,10 @@ namespace ScalingLaws.Data
                 null, false, 5),
             new("create_fine", "guide.step.create_fine", GuideTarget.Create, "effort-chip",
                 null, false, 5),
-            new("create_precision", "guide.step.create_precision", GuideTarget.Create, "chip",
-                null, false, 4),
             new("create_review", "guide.step.create_review", GuideTarget.Create, "verdict",
                 null, false, 6),
-
-            // ---- the level above the model ------------------------------------------------
-            new("arch_pitch", "guide.step.arch_pitch"),
-            new("arch_open", "guide.step.arch_open",
-                GuideTarget.Architecture, null, "guide.show_me", true),
-            new("arch_what", "guide.step.arch_what", GuideTarget.Architecture, "arx__card"),
-            new("arch_locked", "guide.step.arch_locked", GuideTarget.Architecture, "dlock"),
-            new("arch_info", "guide.step.arch_info", GuideTarget.Architecture, "infodot"),
+            new("create_start", "guide.step.create_start", GuideTarget.Create, "verdict",
+                null, false, 6),
 
             // ---- what you do the day after a release ---------------------------------------
             new("after_release", "guide.step.after_release"),

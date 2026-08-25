@@ -26,20 +26,25 @@ namespace ScalingLaws.UI
         /// <summary>Traits shown before the SHOW MORE banner. One row, and the row is four wide.</summary>
         public const int TraitsPerRow = 4;
 
-        private static readonly string[] IntroLines =
+        /// <summary>
+        /// The cold open, resolved when it is read rather than when the type loads.
+        ///
+        /// **A `static readonly string[]` was the bug.** It is built once, before the player has
+        /// chosen anything, so the opening stayed in whatever language the field happened to be
+        /// initialised in. A property that resolves per call is the same rule every catalog in this
+        /// project already follows.
+        ///
+        /// The one line above the header, then the header, then the rest.
+        /// </summary>
+        private static string[] IntroLines => new[]
         {
-            // The one line above the header, then the header, then the rest. The typewriter was
-            // added on top of this list rather than replacing it, so the screen printed the opening
-            // twice: once typed and once revealed a line at a time underneath.
-            "Twelve million dollars, no product, and eleven months before the world finds out what "
-            + "any of this is for.",
-            "JANUARY 2022",
-            "Language models are a research curiosity with a following of maybe ten thousand people.",
-            "Nobody outside the field can name one. Nothing has been productised. Nothing has been priced.",
-            "In eleven months a chat box will reach a hundred million users and every assumption in this "
-            + "industry will be rewritten twice before 2026.",
-            "You have twelve million dollars and no product.",
-            "None of the decisions ahead of you can be undone. Most of them are about timing."
+            Loc.T("intro.money"),
+            Loc.T("intro.month"),
+            Loc.T("intro.curiosity"),
+            Loc.T("intro.unpriced"),
+            Loc.T("intro.rewritten"),
+            Loc.T("intro.you_have"),
+            Loc.T("intro.timing")
         };
 
         [SerializeField] private StyleSheet theme;
@@ -80,6 +85,7 @@ namespace ScalingLaws.UI
         private Typewriter introTypist;
         private Typewriter menuTypist;
         private Button introContinue;
+        private bool introHookShown;
         private VideoPlayer introFilm;
         private bool introFilmPlayed;
 
@@ -632,8 +638,61 @@ namespace ScalingLaws.UI
         /// film already ended on is the difference between one continuous opening and two things
         /// that happened to be next to each other.
         /// </summary>
+        /// <summary>
+        /// The beat between the opening and the film.
+        ///
+        /// **Asked for after a playtest and it does one job: it lands the stake.** The opening is
+        /// seven lines of context and the film is atmosphere; between them there was a cut. One
+        /// sentence typed onto black, two seconds of nothing, then the film comes up out of the same
+        /// black it was going to start on anyway.
+        /// </summary>
         private void PlayIntroFilm()
         {
+            if (introHookShown)
+            {
+                StartIntroFilm();
+                return;
+            }
+
+            introHookShown = true;
+
+            root.Clear();
+            root.style.backgroundColor = Color.black;
+
+            var hook = new Label();
+            hook.AddToClassList("intro-hook");
+            root.Add(hook);
+
+            var typed = 0;
+            var full = Loc.T("intro.hook");
+
+            hook.schedule.Execute(() =>
+            {
+                if (typed >= full.Length)
+                {
+                    return;
+                }
+
+                typed = Math.Min(full.Length, typed + 1);
+                hook.text = full[..typed];
+
+                if (typed >= full.Length)
+                {
+                    // Two seconds to read it, then the fade. The class carries the transition, so
+                    // the timing lives beside the look rather than in two places.
+                    hook.schedule.Execute(() =>
+                    {
+                        root.AddToClassList("intro-hook-out");
+                        root.schedule.Execute(StartIntroFilm).ExecuteLater(700);
+                    }).ExecuteLater(2000);
+                }
+            }).Every(28);
+        }
+
+        private void StartIntroFilm()
+        {
+            root.RemoveFromClassList("intro-hook-out");
+
             if (introFilmPlayed || introFilm == null)
             {
                 Show(Stage.Founder);
@@ -1006,9 +1065,21 @@ namespace ScalingLaws.UI
             var body = new VisualElement();
             body.AddToClassList("skill-row__body");
 
+            // The name and its "(i)", on one line. Seven skills with numbers attached and nothing
+            // anywhere saying what any of them is: the creator asks for two hundred points to be
+            // spent across words the player has never been told the meaning of.
+            var titleRow = new VisualElement();
+            titleRow.AddToClassList("skill-row__title");
+
             var name = new Label(definition.DisplayName.ToUpperInvariant());
             name.AddToClassList("skill-row__name");
-            body.Add(name);
+            titleRow.Add(name);
+
+            var note = SkillNotes.For(definition.Skill);
+            titleRow.Add(InsightTip.InfoBadge(note.Title,
+                new InsightTip.Reading(note.What, note.Affects, note.High, note.Low)));
+
+            body.Add(titleRow);
 
             var track = new VisualElement();
             track.AddToClassList("skill-track");
@@ -1016,6 +1087,13 @@ namespace ScalingLaws.UI
             fill.AddToClassList("skill-track__fill");
             fill.style.width = Length.Percent(level);
             fill.EnableInClassList("skill-track__fill--lowered", level < PlayerSkillLimits.StartingLevel);
+
+            // **The bar reddens as it climbs**, which is the playtest's request and also honest: the
+            // budget is smaller than seven maxed skills, so every point past the middle is a point
+            // taken from somewhere else. Bands rather than a gradient, because USS has neither.
+            fill.EnableInClassList("skill-track__fill--high", level >= 55 && level < 75);
+            fill.EnableInClassList("skill-track__fill--higher", level >= 75 && level < 90);
+            fill.EnableInClassList("skill-track__fill--peak", level >= 90);
             track.Add(fill);
 
             var baseline = new VisualElement();

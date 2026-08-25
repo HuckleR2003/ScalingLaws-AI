@@ -143,12 +143,20 @@ namespace ScalingLaws.Tests.EditMode
         {
             var source = Source("MainMenuController.cs");
 
-            var money = source.IndexOf("Twelve million dollars", System.StringComparison.Ordinal);
-            var header = source.IndexOf("\"JANUARY 2022\"", System.StringComparison.Ordinal);
+            // **The lines are keys now, not literals.** The opening shipped in English on a Polish
+            // machine because a `static readonly string[]` is built once, before a language has been
+            // chosen, so it froze whatever was current at type load. The order is still the thing
+            // worth guarding; it is just measured on the keys.
+            var money = source.IndexOf("\"intro.money\"", System.StringComparison.Ordinal);
+            var header = source.IndexOf("\"intro.month\"", System.StringComparison.Ordinal);
 
-            Assert.Greater(money, 0);
-            Assert.Greater(header, 0);
+            Assert.Greater(money, 0, "The money line is not in the opening at all.");
+            Assert.Greater(header, 0, "The header is not in the opening at all.");
             Assert.Less(money, header, "The money line sits above the header, which is the ask.");
+
+            // And it has to resolve per read rather than once, or keying it changed nothing.
+            StringAssert.Contains("private static string[] IntroLines => new[]", source,
+                "A static array is built before the player picks a language.");
 
             // And the big styling has to follow the header to its new index, or the money line is
             // set at 46px and the header at 17px.
