@@ -33,7 +33,18 @@ namespace ScalingLaws.UI
         /// <summary>The free allowance range, in tokens per user per day.</summary>
         public const float MinimumFreeTokens = 0f;
 
-        public const float MaximumFreeTokens = 400_000f;
+        /// <summary>
+        /// The top of the range, and it is **the point where generosity saturates**, not a round
+        /// number above it.
+        ///
+        /// `MonetizationPolicy.Generosity` clamps at `GenerousFreeTierTokensPerDay`, so every token
+        /// past that bought no reach and was still served and still billed. This read 400,000 and a
+        /// playtest raised an allowance from 40k to 370k and reported nothing happened: above 250k
+        /// that was exactly right, and a slider with 37% dead travel that costs money in the dead
+        /// part is worse than no slider.
+        /// </summary>
+        public const float MaximumFreeTokens =
+            (float)MonetizationCatalog.GenerousFreeTierTokensPerDay;
 
         private readonly CompanySimulation simulation;
         private readonly Action<string> commit;
@@ -237,7 +248,10 @@ namespace ScalingLaws.UI
             var head = new VisualElement();
             head.AddToClassList("relrow__head");
 
-            var caption = new Label(Loc.T("release.change_price"));
+            // **A noun, not the verb on the button.** Both carried `release.change_price`, so the
+            // row was headed CHANGE PRICE and never said which price, and a playtest guessed it was
+            // the server rent.
+            var caption = new Label(Loc.T("release.price_caption"));
             caption.AddToClassList("relrow__caption");
             head.Add(caption);
 
@@ -270,7 +284,7 @@ namespace ScalingLaws.UI
                     editing = Editing.Price;
                     Refresh();
                 })
-                { text = Loc.T("release.change_price") };
+                { text = Loc.T("release.change") };
 
                 unlock.AddToClassList("relrow__unlock");
                 buttons.Add(unlock);
@@ -300,6 +314,11 @@ namespace ScalingLaws.UI
             }
 
             row.Add(buttons);
+
+            var note = new Label(Loc.T("release.price_note"));
+            note.AddToClassList("relrow__note");
+            row.Add(note);
+
             return row;
         }
 
@@ -377,6 +396,14 @@ namespace ScalingLaws.UI
             }
 
             row.Add(buttons);
+
+            var note = new Label(freeTokens >= MaximumFreeTokens
+                ? Loc.T("release.free_note_max")
+                : Loc.T("release.free_note"));
+
+            note.AddToClassList("relrow__note");
+            row.Add(note);
+
             return row;
         }
 
@@ -410,7 +437,9 @@ namespace ScalingLaws.UI
                 panel.Add(line);
             }
 
-            var days = standings.Count == 0 ? 0 : standings.Max(entry => entry.UpgradeDays);
+            // Summed and scaled, matching the commission exactly. The longest-of-them reading here
+            // priced a four-card basket at the length of its longest card.
+            var days = standings.Sum(entry => simulation.ScaleResearchDuration(entry.UpgradeDays));
             var cash = standings.Sum(entry => entry.UpgradeCostUsd);
 
             var bill = new Label($"{UiFormat.Money(cash)}   ·   about {UiFormat.Days(days)}");

@@ -3784,15 +3784,21 @@
     flex-shrink: 0;
 }
 
+/* Narrower than the row, on purpose. Three tiles stretched across 1370px gave each one a picture
+   band nine times wider than it was tall, and no crop of a 16:9 render survives that. */
+
 .pack {
-    flex-grow: 1;
-    flex-basis: 0;
-    margin-right: 8px;
-    padding: 10px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 290px;
+    margin-right: 14px;
+    padding: 0;
+    padding-bottom: 10px;
     background-color: rgba(255, 255, 255, 0.03);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.09);
     border-radius: 3px;
+    overflow: hidden;
 }
 
 .pack:last-child { margin-right: 0; }
@@ -3802,15 +3808,27 @@
     border-color: rgb(120, 176, 250);
 }
 
+.pack__body {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+/* The name sits on the picture, along its bottom edge, which is where a cover puts its title.
+   Absolute so it cannot add height to the plate. */
+
 .pack__name {
-    font-size: 11px;
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 9px;
+    font-size: 13px;
     -unity-font-style: bold;
-    letter-spacing: 1px;
-    color: rgb(222, 232, 246);
+    letter-spacing: 1.1px;
+    color: rgb(236, 242, 252);
 }
 
 .pack__size {
-    margin-top: 2px;
+    margin-top: 9px;
     font-size: 9px;
     color: rgb(150, 200, 250);
 }
@@ -9541,6 +9559,16 @@
     margin-top: 8px;
 }
 
+/* One sentence under each row saying what that control actually is. The price row was headed with
+   the verb on its own button, so a playtest read CHANGE PRICE and guessed it meant the server rent. */
+
+.relrow__note {
+    margin-top: 8px;
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    white-space: normal;
+}
+
 .relrow__unlock {
     -unity-text-align: middle-center;
     height: 30px;
@@ -11113,8 +11141,14 @@
     color: rgb(226, 190, 44);
 }
 
+/* Tall enough for the two lines the lock puts on it. The cover is stretched to the track, and
+   the track was the height of a slider, so the rebuilt gate was clipped at both ends — found by
+   rendering the page and looking at it, which is the only thing that finds this class of fault. */
+
 .drow__track {
     margin-top: 6px;
+    min-height: 46px;
+    justify-content: center;
 }
 
 /* Full width, or the control is 478px inside a 1368px track and the cover that marks the locked
@@ -11133,19 +11167,51 @@
     bottom: 0;
     align-items: center;
     justify-content: center;
+    padding-left: 8px;
+    padding-right: 8px;
     overflow: hidden;
     border-left-width: 1px;
     border-left-color: rgba(226, 78, 62, 0.5);
     background-color: rgba(10, 12, 18, 0.86);
 }
 
-.dlock__label {
-    font-size: 8px;
-    letter-spacing: 1.2px;
+/* The gate reads as a sentence now: a RESEARCH kicker with the hud's own icon, the node's name
+   under it, and the share that node would open under that. It was one 8px bold line carrying all
+   three, which is a size for a label and not for an explanation. */
+
+.dlock__kicker {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3px;
+}
+
+.dlock__icon {
+    width: 13px;
+    height: 13px;
+    margin-right: 5px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.dlock__word {
+    font-size: 9px;
+    letter-spacing: 1.6px;
     -unity-font-style: bold;
+    color: rgba(232, 168, 150, 0.85);
+}
+
+.dlock__label {
+    font-size: 12px;
     -unity-text-align: middle-center;
-    color: rgba(230, 152, 132, 0.92);
-    white-space: nowrap;
+    color: rgb(238, 214, 208);
+    white-space: normal;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.dlock__amount {
+    margin-left: 6px;
+    font-size: 10px;
+    color: rgba(206, 156, 142, 0.78);
 }
 
 /* ---- the answer ---------------------------------------------------------------------------------- */
@@ -12428,11 +12494,26 @@
 /* The author's cover for a hosting package. Sits above the words rather than behind them: these
    are photographs of racks and text over a photograph is a legibility gamble even after a scrim. */
 
+/* **The whole picture, not a slice of it.** `scale-and-crop` fills the box and throws the rest
+   away, which on a wide render in a short band is almost all of it. The plate is 16:9 now and
+   scales to fit, so the cover arrives as the cover.
+
+   A scrim band along the bottom carries the name; without it a title over a light part of a render
+   is unreadable and there is no way to know which render that will be. */
+
 .pack__cover {
-    height: 78px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    -unity-background-scale-mode: scale-and-crop;
+    height: 163px;
+    -unity-background-scale-mode: scale-to-fit;
+    background-color: rgb(9, 14, 24);
+}
+
+.pack__scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 46px;
+    background-color: rgba(6, 10, 18, 0.72);
 }
 
 /* Stepping out meaning to come back. Between the two existing buttons in weight, because it is
@@ -12547,7 +12628,12 @@
    label at one edge and the figure at the other, so the eye had to cross the panel to join a word
    to its own number. */
 
+/* One line, not a stack. Registered and online belong beside today's income: they are the same
+   question asked three ways and reading them down a column makes them look sequential. */
+
 .sfig {
+    flex-direction: row;
+    align-items: center;
     justify-content: center;
     margin-left: 26px;
     padding-left: 22px;
@@ -12557,8 +12643,10 @@
 }
 
 .sfig__block {
-    margin-bottom: 12px;
+    margin-right: 30px;
 }
+
+.sfig__block:last-child { margin-right: 0; }
 
 .sfig__caption {
     font-size: 9px;
@@ -12668,33 +12756,33 @@
     position: absolute;
     top: 96px;
     right: 22px;
-    width: 244px;
-    padding: 14px 16px 12px 16px;
-    border-radius: 8px;
+    width: 336px;
+    padding: 20px 22px 18px 22px;
+    border-radius: 10px;
     background-color: rgba(10, 13, 20, 0.94);
     border-width: 1px;
     border-color: rgb(44, 54, 72);
 }
 
 .rbanner__block {
-    margin-bottom: 11px;
+    margin-bottom: 16px;
 }
 
 .rbanner__caption {
-    font-size: 8px;
-    letter-spacing: 1.6px;
-    color: rgb(112, 126, 150);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: rgb(140, 156, 182);
 }
 
 .rbanner__value {
-    font-size: 21px;
+    font-size: 29px;
     color: rgb(228, 236, 250);
     -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
 }
 
 .rbanner__note {
-    font-size: 9px;
-    color: rgb(118, 132, 156);
+    font-size: 12px;
+    color: rgb(134, 148, 172);
 }
 
 .rbanner__loadhead {
@@ -12704,27 +12792,27 @@
 }
 
 .rbanner__ms {
-    font-size: 12px;
-    color: rgb(196, 208, 228);
+    font-size: 16px;
+    color: rgb(206, 218, 238);
 }
 
 .rbanner__track {
-    height: 6px;
-    margin-top: 5px;
+    height: 9px;
+    margin-top: 7px;
     border-radius: 3px;
     background-color: rgba(255, 255, 255, 0.07);
     overflow: hidden;
 }
 
 .rbanner__fill {
-    height: 6px;
+    height: 9px;
     border-radius: 3px;
 }
 
 .rbanner__health {
-    font-size: 10px;
+    font-size: 13px;
     color: rgb(126, 216, 158);
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
 .rbanner__health--bad {
@@ -12822,4 +12910,185 @@
 
 .rackmodal__actions {
     flex-direction: row;
+}
+
+/* ============================================================================================
+   RENTED CAPACITY: THE METERS AND THE BAND
+
+   The slider used to carry one line of prose over it. Three facts were run together in that line
+   and the one being decided, the daily bill, was a fragment in the middle. Each is its own meter
+   now, with a bar behind it, because a figure with no scale cannot say whether it is a lot.
+
+   The band under the slider answers the question the control is really being asked: not how many
+   petaflops, but whether the product stays up for the people the company already has.
+   ============================================================================================ */
+
+.rmeters {
+    flex-direction: row;
+    margin-bottom: 14px;
+}
+
+.rmeters__block {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 20px;
+}
+
+.rmeters__block:last-child { margin-right: 0; }
+
+.rmeters__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.rmeters__caption {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    color: rgb(126, 140, 164);
+}
+
+.rmeters__value {
+    font-size: 19px;
+    color: rgb(228, 236, 250);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.rmeters__track {
+    height: 7px;
+    margin-top: 6px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.rmeters__fill {
+    height: 7px;
+    border-radius: 4px;
+    background-color: rgb(120, 176, 250);
+}
+
+/* Three colours, and they are not a ladder: capacity is neutral, the bill is the one that hurts,
+   delivered is the one that is good news when it is high. */
+
+.rmeters__fill--capacity { background-color: rgb(120, 176, 250); }
+.rmeters__fill--bill     { background-color: rgb(232, 140, 62); }
+.rmeters__fill--delivered{ background-color: rgb(126, 216, 158); }
+
+.rmeters__note {
+    margin-top: 5px;
+    font-size: 10px;
+    color: rgb(118, 132, 156);
+    white-space: normal;
+}
+
+.rband {
+    margin-top: 14px;
+    padding: 14px 18px 14px 18px;
+    border-radius: 6px;
+    background-color: rgba(120, 176, 250, 0.10);
+    border-left-width: 3px;
+    border-left-color: rgb(120, 176, 250);
+}
+
+.rband__caption {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: rgb(150, 178, 216);
+}
+
+.rband__figure {
+    margin-top: 2px;
+    font-size: 30px;
+    color: rgb(232, 240, 252);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.rband__verdict {
+    margin-top: 3px;
+    font-size: 12px;
+    color: rgb(146, 196, 168);
+    white-space: normal;
+}
+
+.rband__verdict--short {
+    color: rgb(232, 140, 62);
+}
+
+/* ============================================================================================
+   THE DOCKED PHONE
+
+   When the tour ended the phone left the game, so a player who pressed "I'll take it from here"
+   in the first minute had permanently skipped the tutorial with no route back. The handset now
+   rests under the bottom bar with its top edge showing, above the intelligence and marketing
+   slots, and rises when the cursor finds it.
+
+   `bottom` is set from C# once the element has been measured, because the resting offset is
+   "height minus the peek" and the height is not known until layout has run.
+   ============================================================================================ */
+
+.phonedock {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0;
+    align-items: center;
+}
+
+.phonedock__handset {
+    position: absolute;
+    /* Over INTELLIGENCE and MARKETING, which is where the author asked for it. The slot row is
+       centred, so this is measured from the middle rather than from either edge. */
+    left: 62%;
+    width: 132px;
+    height: 208px;
+    padding: 0;
+    margin: 0;
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: rgb(58, 70, 92);
+    background-color: rgb(14, 18, 28);
+    -unity-background-scale-mode: scale-and-crop;
+    align-items: center;
+    transition-property: bottom;
+    transition-duration: 0.16s;
+}
+
+.phonedock__handset:hover {
+    border-color: rgb(120, 176, 250);
+}
+
+.phonedock__handset--art {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+/* The speaker slot. It is what makes 26 visible pixels read as the top of a phone rather than as
+   a rounded rectangle somebody left on the screen. */
+
+.phonedock__notch {
+    width: 42px;
+    height: 5px;
+    margin-top: 9px;
+    border-radius: 3px;
+    background-color: rgb(74, 88, 112);
+}
+
+.phonedock__caption {
+    margin-top: 12px;
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    -unity-text-align: middle-center;
+    color: rgb(150, 166, 192);
+    white-space: normal;
+}
+
+.phonedock__dot {
+    position: absolute;
+    top: 7px;
+    right: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgb(226, 96, 80);
 }

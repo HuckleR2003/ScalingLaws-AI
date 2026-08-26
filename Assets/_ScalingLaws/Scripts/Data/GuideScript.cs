@@ -154,13 +154,40 @@ namespace ScalingLaws.Data
         public static IReadOnlyList<string> Backlog =>
             new[] { Loc.T("guide.backlog.1"), Loc.T("guide.backlog.2") };
 
-        /// <summary>What he types while the player is watching, with the pause before each.</summary>
+        /// <summary>
+        /// What is on screen when he calls **back**, after the player stepped out.
+        ///
+        /// A different opening, because the first one introduces him and this one does not need to:
+        /// repeating the welcome would say the tour is starting over, which is exactly the thing
+        /// that is not happening.
+        /// </summary>
+        public static IReadOnlyList<string> ReturnBacklog =>
+            new[] { Loc.T("guide.return.backlog.1") };
+
+        /// <summary>
+        /// What he types while the player is watching, with the pause before each.
+        ///
+        /// **The first pause is long on purpose.** The phone lands, the screen wakes, the app opens
+        /// — and if he starts typing under all that, the player is reading a message while the
+        /// animation that introduces the messenger is still running.
+        /// </summary>
         public static IReadOnlyList<(float DelaySeconds, float TypingSeconds, string Text)> Live =>
             new[]
             {
-                (3f, 2f, Loc.T("guide.live.1")),
+                (5f, 2f, Loc.T("guide.live.1")),
                 (0f, 2f, Loc.T("guide.live.2"))
             };
+
+        /// <summary>The call back, which is shorter because he is picking something up.</summary>
+        public static IReadOnlyList<(float DelaySeconds, float TypingSeconds, string Text)> ReturnLive =>
+            new[]
+            {
+                (3f, 1.6f, Loc.T("guide.return.live.1")),
+                (0f, 1.6f, Loc.T("guide.return.live.2"))
+            };
+
+        /// <summary>Pick the tour back up.</summary>
+        public static string ReturnAccept => Loc.T("guide.return.accept");
 
         /// <summary>Take the tutorial.</summary>
         public static string ReplyAccept => Loc.T("guide.reply.accept");
@@ -186,6 +213,28 @@ namespace ScalingLaws.Data
         public const string BasementStepId = "gift_racks";
 
         public const string GiftStepId = "research_gift";
+
+        /// <summary>
+        /// The one step that carries an offer: he sets the five direction sliders.
+        ///
+        /// Named here for the same reason the two gifts are, and because the shell has to recognise
+        /// it without a second copy of the id written into `GameShell`.
+        /// </summary>
+        public const string ArchitectureOfferStepId = "arch_what";
+
+        /// <summary>Where a named step sits in the tour, or -1 when there is no such step.</summary>
+        public static int IndexOf(string stepId)
+        {
+            for (var index = 0; index < Steps.Count; index++)
+            {
+                if (Steps[index].Id == stepId)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
 
         /// <summary>
         /// The tour, in six acts.
@@ -260,12 +309,16 @@ namespace ScalingLaws.Data
             new("create_locked", "guide.step.create_locked", GuideTarget.Create, "scale-lock",
                 null, false, 2),
 
+            // **On page 2, because that is where the control is.** It was on page 4 with a
+            // highlight class that matches the free-tier pricing pill, so the tour walked forward a
+            // page, described something two pages behind it, and rang the wrong thing.
+            new("create_precision", "guide.step.create_precision", GuideTarget.Create, "scale-half",
+                null, false, 2),
+
             // Nothing to say about the data page and the compute page beyond what is on them, so he
             // says he is waiting rather than filling the silence. Except for the one control on the
             // compute page that has cost real players real money.
             new("create_data", "guide.step.create_data", GuideTarget.Create, null, null, false, 3),
-            new("create_precision", "guide.step.create_precision", GuideTarget.Create, "chip",
-                null, false, 4),
             new("create_spend", "guide.step.create_spend", GuideTarget.Create, "stage-slider",
                 null, false, 4),
             new("create_waiting", "guide.step.create_waiting", GuideTarget.Create, null,
@@ -279,6 +332,13 @@ namespace ScalingLaws.Data
                 null, false, 6),
             new("create_start", "guide.step.create_start", GuideTarget.Create, "verdict",
                 null, false, 6),
+
+            // **The step the playtest asked for by name.** The tour finished the creator and never
+            // said where a finished model is put on sale, so a player who followed it exactly ended
+            // up with a trained model on a shelf and no idea which tab shipped it.
+            new("create_publish", "guide.step.create_publish", GuideTarget.Release,
+                null, "guide.show_me", true),
+            new("publish_how", "guide.step.publish_how", GuideTarget.Release, "relrow"),
 
             // ---- what you do the day after a release ---------------------------------------
             new("after_release", "guide.step.after_release"),

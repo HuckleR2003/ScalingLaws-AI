@@ -139,6 +139,7 @@ namespace ScalingLaws.Persistence
                     35 => UpgradeV35ToV36(current),
                     36 => UpgradeV36ToV37(current),
                     37 => UpgradeV37ToV38(current),
+                    38 => UpgradeV38ToV39(current),
                     _ => current
                 };
             }
@@ -1169,6 +1170,37 @@ namespace ScalingLaws.Persistence
             data.hallRacks = new List<int>();
             data.hallAccelerators = new List<int>();
             data.hallFans = new List<int>();
+
+            return data;
+        }
+
+        /// <summary>
+        /// v38 to v39: an upgrade programme carries a basket.
+        ///
+        /// **The single trait a v38 programme was commissioned for is the whole of it.** That file
+        /// was written in a game where one card meant one programme, so filling the step list from
+        /// the headline is not a guess, it is the same fact in the new shape.
+        /// </summary>
+        public static SaveData UpgradeV38ToV39(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 39;
+            data.upgrades ??= new List<UpgradeProjectData>();
+
+            // A v38 campaign that still holds the favour was given it; one that does not either
+            // spent it or never got that far, and the tour will hand it over when it reaches the
+            // step. Both readings are true of the file.
+            data.guideFavourGranted = data.guideFreeResearchOwed;
+
+            foreach (var upgrade in data.upgrades)
+            {
+                upgrade.stepTraits = new List<int> { upgrade.trait };
+                upgrade.stepTargetLevels = new List<int> { upgrade.targetLevel };
+            }
 
             return data;
         }

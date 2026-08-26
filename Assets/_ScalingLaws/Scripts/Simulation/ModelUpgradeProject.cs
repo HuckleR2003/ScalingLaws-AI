@@ -1,21 +1,77 @@
 using System;
+using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
+    /// <summary>One trait moving up one level, inside a programme.</summary>
+    public readonly struct UpgradeStep
+    {
+        public UpgradeStep(ModelTrait trait, int targetLevel)
+        {
+            Trait = trait;
+            TargetLevel = Math.Clamp(targetLevel, 1, ModelTraitSetLimits.MaximumLevel);
+        }
+
+        public ModelTrait Trait { get; }
+        public int TargetLevel { get; }
+
+        public override string ToString() => $"{Trait}→L{TargetLevel}";
+    }
+
     /// <summary>
-    /// One trait being pushed up one level on one live model.
+    /// One block of post-training work on one model, covering everything the player picked.
     ///
-    /// Upgrades run on the same compute pool as training, so an upgrade programme and a new run are
-    /// in direct competition for the cluster. That is the tension the whole upgrade grid exists to
-    /// create: another point of Reasoning on last year's model, or a new model entirely.
+    /// **A programme is a batch, not a trait.** Picking four cards used to commission four
+    /// programmes, and because each one advanced its own calendar by a day every day, all four ran
+    /// the same days at once: a playtest saw four "UPGRADE IN PROGRESS" rows counting down in step,
+    /// four completion messages, and work finishing during work it was supposed to follow. The team
+    /// does one job at a time, so the days add up and the cluster time adds up, and the whole basket
+    /// lands together.
     ///
-    /// Unlike a training run, an upgrade has a fixed day count as well as a compute bill. Throwing
+    /// Upgrades run on the same compute pool as training, so a programme and a new run are in direct
+    /// competition for the cluster. That is the tension the whole upgrade grid exists to create:
+    /// another point of Reasoning on last year's model, or a new model entirely.
+    ///
+    /// Unlike a training run, a programme has a fixed day count as well as a compute bill. Throwing
     /// the whole cluster at it does not make people integrate faster.
     /// </summary>
     public sealed class ModelUpgradeProject
     {
+        private readonly List<UpgradeStep> steps = new();
+
+        public ModelUpgradeProject(
+            int modelIndex,
+            IEnumerable<UpgradeStep> work,
+            GameDate startedOn,
+            int durationDays,
+            double petaflopDaysRequired,
+            long cashPaidUsd)
+        {
+            ModelIndex = Math.Max(0, modelIndex);
+
+            if (work != null)
+            {
+                foreach (var step in work)
+                {
+                    steps.Add(step);
+                }
+            }
+
+            if (steps.Count == 0)
+            {
+                throw new ArgumentException("A programme with no work in it cannot be commissioned.",
+                    nameof(work));
+            }
+
+            StartedOn = startedOn;
+            DurationDays = Math.Clamp(durationDays, 1, 400);
+            PetaflopDaysRequired = Math.Max(0.0, SimUnits.Finite(petaflopDaysRequired));
+            CashPaidUsd = Math.Max(0L, cashPaidUsd);
+        }
+
+        /// <summary>One trait on its own, which is still the common case.</summary>
         public ModelUpgradeProject(
             int modelIndex,
             ModelTrait trait,
@@ -24,14 +80,9 @@ namespace ScalingLaws.Simulation
             int durationDays,
             double petaflopDaysRequired,
             long cashPaidUsd)
+            : this(modelIndex, new[] { new UpgradeStep(trait, targetLevel) }, startedOn,
+                durationDays, petaflopDaysRequired, cashPaidUsd)
         {
-            ModelIndex = Math.Max(0, modelIndex);
-            Trait = trait;
-            TargetLevel = Math.Clamp(targetLevel, 1, ModelTraitSetLimits.MaximumLevel);
-            StartedOn = startedOn;
-            DurationDays = Math.Clamp(durationDays, 1, 400);
-            PetaflopDaysRequired = Math.Max(0.0, SimUnits.Finite(petaflopDaysRequired));
-            CashPaidUsd = Math.Max(0L, cashPaidUsd);
         }
 
         /// <summary>
@@ -44,8 +95,37 @@ namespace ScalingLaws.Simulation
 
         /// <summary>True when the model is still on the shelf rather than on sale.</summary>
         public bool OnShelf { get; set; }
-        public ModelTrait Trait { get; }
-        public int TargetLevel { get; }
+
+        /// <summary>Everything this programme will apply, in the order the player picked it.</summary>
+        public IReadOnlyList<UpgradeStep> Steps => steps;
+
+        /// <summary>
+        /// The headline trait, which is the first one picked.
+        ///
+        /// Kept because the strip needs something to name and the in-flight check needs something to
+        /// compare, and both were written when a programme was a single trait.
+        /// </summary>
+        public ModelTrait Trait => steps[0].Trait;
+
+        public int TargetLevel => steps[0].TargetLevel;
+
+        /// <summary>True when this programme is doing more than one thing.</summary>
+        public bool IsBatch => steps.Count > 1;
+
+        /// <summary>Whether this programme includes the given trait.</summary>
+        public bool Covers(ModelTrait trait)
+        {
+            foreach (var step in steps)
+            {
+                if (step.Trait == trait)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public GameDate StartedOn { get; }
         public int DurationDays { get; }
         public double PetaflopDaysRequired { get; }
@@ -94,6 +174,6 @@ namespace ScalingLaws.Simulation
         }
 
         public override string ToString() =>
-            $"{Trait} to L{TargetLevel} on model {ModelIndex}: {Progress * 100.0:0}%";
+            $"{steps.Count} step(s) on model {ModelIndex}: {Progress * 100.0:0}%";
     }
 }

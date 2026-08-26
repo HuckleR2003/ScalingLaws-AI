@@ -359,9 +359,12 @@ namespace ScalingLaws.UI
                 cash += standing.UpgradeCostUsd;
                 petaflopDays += standing.UpgradePetaflopDays;
 
-                // The cluster runs them side by side, so the calendar is the longest of them. The
-                // compute is the sum, and that is what actually slows them all down.
-                days = Math.Max(days, standing.UpgradeDays);
+                // **The sum, and through the same scaling the commission uses.** This took the
+                // longest of them, on the theory that the cluster ran them side by side. It did —
+                // that was the bug: four programmes counting the same calendar down together. One
+                // team does one job after another, so the days add up, and quoting anything else
+                // here would price the basket at a fraction of what it costs.
+                days += simulation.ScaleResearchDuration(standing.UpgradeDays);
             }
 
             var today = simulation.State.Date;

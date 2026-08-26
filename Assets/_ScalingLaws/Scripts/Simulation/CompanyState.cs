@@ -545,8 +545,11 @@ namespace ScalingLaws.Simulation
         {
             foreach (var project in upgradeProjects)
             {
-                if (project.ModelIndex == modelIndex && project.Trait == trait
-                    && project.OnShelf == onShelf)
+                // `Covers`, not `Trait`. A programme carries the whole basket now, and checking only
+                // its headline would let the second commission of a trait slip past the guard and
+                // set the same level twice.
+                if (project.ModelIndex == modelIndex && project.OnShelf == onShelf
+                    && project.Covers(trait))
                 {
                     return true;
                 }

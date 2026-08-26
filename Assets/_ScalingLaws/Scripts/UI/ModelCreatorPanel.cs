@@ -136,14 +136,22 @@ namespace ScalingLaws.UI
         /// which of eleven controls moved the number. One decision at a time can afford to explain
         /// itself, which is how Devices Tycoon and Smartphone Tycoon both handle a build.
         /// </summary>
-        private static readonly string[] StageNames =
-            {
-                Loc.T("create.stage.branding"),
-                Loc.T("create.stage.foundation"), Loc.T("create.stage.scale"),
-                Loc.T("create.stage.data"), Loc.T("create.stage.compute"),
-                Loc.T("create.stage.safety"), Loc.T("create.stage.review"),
-                Loc.T("create.stage.after")
-            };
+        /// <summary>
+        /// The eight page names, resolved every read.
+        ///
+        /// **A `static readonly` array of `Loc.T` calls freezes the language at type load.** The
+        /// cold open shipped exactly this fault: the words were fetched once, before the player had
+        /// chosen anything, and no amount of translating the rest changed them. A property costs an
+        /// allocation per repaint and cannot go out of step with the setting.
+        /// </summary>
+        private static string[] StageNames => new[]
+        {
+            Loc.T("create.stage.branding"),
+            Loc.T("create.stage.foundation"), Loc.T("create.stage.scale"),
+            Loc.T("create.stage.data"), Loc.T("create.stage.compute"),
+            Loc.T("create.stage.safety"), Loc.T("create.stage.review"),
+            Loc.T("create.stage.after")
+        };
 
         private static readonly string[] StageBlurbs =
         {
@@ -758,9 +766,13 @@ namespace ScalingLaws.UI
 
             free.Add(freeRow);
 
-            free.Add(BuildSlider("TOKENS A DAY, FREE ACCOUNT",
-                UiFormat.Count(policy.FreeTierTokensPerUserPerDay),
-                0f, (float)(MonetizationCatalog.GenerousFreeTierTokensPerDay * 1.5),
+            // **The slider stops where the effect stops.** It ran to 1.5x the generous mark, and
+            // `Generosity` clamps at 1.0, so the top third of the travel bought nothing at all and
+            // still billed for every token in it. A playtest raised the allowance from 40k to 370k
+            // and reported that nothing happened, which was true above 250k.
+            free.Add(BuildSlider(Loc.T("creator.free_tokens"),
+                amount => UiFormat.Count(amount),
+                0f, (float)MonetizationCatalog.GenerousFreeTierTokensPerDay,
                 (float)policy.FreeTierTokensPerUserPerDay,
                 value =>
                 {
@@ -786,8 +798,8 @@ namespace ScalingLaws.UI
             page.Add(free);
 
             var paid = NewPanel("SUBSCRIPTION");
-            paid.Add(BuildSlider("PRICE A MONTH",
-                $"${policy.SubscriptionPriceUsdPerMonth:0}",
+            paid.Add(BuildSlider(Loc.T("creator.price_month"),
+                amount => UiFormat.Money((long)Math.Round(amount)),
                 0f, 200f, (float)policy.SubscriptionPriceUsdPerMonth,
                 value =>
                 {
@@ -863,8 +875,20 @@ namespace ScalingLaws.UI
             return block;
         }
 
-        private static VisualElement BuildSlider(string label, string readout, float minimum, float maximum,
-            float value, Action<float> onChange)
+        /// <summary>
+        /// A labelled slider whose reading follows the handle.
+        ///
+        /// **The reading is re-lettered, not rebuilt.** It used to be a string handed in once, so
+        /// PRICE A MONTH sat at $20 however far the handle moved and only came right when something
+        /// else happened to repaint the page. The free-tokens slider looked correct purely because
+        /// its callback rebuilt everything — and rebuilding a control from inside its own drag is
+        /// the fault that ate the tutorial's clicks, so it is not the fix here either.
+        ///
+        /// <paramref name="format"/> is asked for the text, so the caller decides the units and
+        /// there is no second copy of the formatting.
+        /// </summary>
+        private static VisualElement BuildSlider(string label, Func<float, string> format,
+            float minimum, float maximum, float value, Action<float> onChange)
         {
             var block = new VisualElement();
             block.AddToClassList("stage-slider");
@@ -876,15 +900,22 @@ namespace ScalingLaws.UI
             name.AddToClassList("stage-slider__label");
             head.Add(name);
 
-            var amount = new Label(readout);
+            var start = Mathf.Clamp(value, minimum, maximum);
+
+            var amount = new Label(format(start));
             amount.AddToClassList("stage-slider__value");
             head.Add(amount);
 
             block.Add(head);
 
-            var slider = new Slider(minimum, maximum) { value = Mathf.Clamp(value, minimum, maximum) };
+            var slider = new Slider(minimum, maximum) { value = start };
             slider.AddToClassList("stage-slider__control");
-            slider.RegisterValueChangedCallback(evt => onChange(evt.newValue));
+            slider.RegisterValueChangedCallback(evt =>
+            {
+                amount.text = format(evt.newValue);
+                onChange(evt.newValue);
+            });
+
             block.Add(slider);
 
             return block;

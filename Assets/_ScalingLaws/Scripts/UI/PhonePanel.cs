@@ -67,15 +67,23 @@ namespace ScalingLaws.UI
         /// <summary>True while the phone is on screen and has not been answered.</summary>
         public bool IsOpen => frame != null && frame.parent != null;
 
+        /// <summary>True when this is him ringing back rather than the opening call.</summary>
+        private bool returning;
+
         /// <summary>
         /// Puts the phone on screen and starts the sequence.
         ///
         /// Nothing here waits on the player until the two reply buttons appear, which is the point
         /// at which they are given something to decide.
         /// </summary>
-        public void Ring()
+        public void Ring(bool callingBack = false)
         {
             Close();
+
+            // **Which conversation this is.** He introduced himself the first time; doing it again
+            // when the player asked him to call back would say the tour was starting over, which is
+            // the one thing this call is not.
+            returning = callingBack;
 
             frame = new VisualElement();
             frame.AddToClassList("phone");
@@ -238,7 +246,7 @@ namespace ScalingLaws.UI
             chatList.AddToClassList("chat__list");
             screen.Add(chatList);
 
-            foreach (var line in GuideScript.Backlog)
+            foreach (var line in returning ? GuideScript.ReturnBacklog : GuideScript.Backlog)
             {
                 chatList.Add(Bubble(line, false));
             }
@@ -246,7 +254,7 @@ namespace ScalingLaws.UI
             // Then he starts typing, which is what turns a wall of text into a conversation.
             var delay = 0f;
 
-            foreach (var (pause, typing, text) in GuideScript.Live)
+            foreach (var (pause, typing, text) in returning ? GuideScript.ReturnLive : GuideScript.Live)
             {
                 delay += pause;
 
@@ -309,7 +317,10 @@ namespace ScalingLaws.UI
             choices = new VisualElement();
             choices.AddToClassList("chat__choices");
 
-            var accept = new Button(() => Answer(true)) { text = GuideScript.ReplyAccept };
+            var accept = new Button(() => Answer(true))
+            {
+                text = returning ? GuideScript.ReturnAccept : GuideScript.ReplyAccept
+            };
             accept.AddToClassList("chat__choice");
             accept.AddToClassList("chat__choice--yes");
             choices.Add(accept);

@@ -219,6 +219,7 @@ namespace ScalingLaws.Persistence
             data.guideStartingCashUsd = state.Guide.StartingCashUsd;
             data.guideBannerDismissed = state.Guide.BannerDismissed;
             data.guideFreeResearchOwed = state.Guide.FreeResearchOwed;
+            data.guideFavourGranted = state.Guide.FavourGranted;
 
             data.hasServerRoom = state.HasServerRoom;
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
@@ -394,7 +395,7 @@ namespace ScalingLaws.Persistence
 
             foreach (var project in state.UpgradeProjects)
             {
-                data.upgrades.Add(new UpgradeProjectData
+                var row = new UpgradeProjectData
                 {
                     modelIndex = project.ModelIndex,
                     trait = (int)project.Trait,
@@ -406,7 +407,15 @@ namespace ScalingLaws.Persistence
                     daysCompleted = project.DaysCompleted,
                     cashPaidUsd = project.CashPaidUsd,
                     onShelf = project.OnShelf
-                });
+                };
+
+                foreach (var step in project.Steps)
+                {
+                    row.stepTraits.Add((int)step.Trait);
+                    row.stepTargetLevels.Add(step.TargetLevel);
+                }
+
+                data.upgrades.Add(row);
             }
 
             foreach (var round in state.CapTable.Rounds)
@@ -797,7 +806,8 @@ namespace ScalingLaws.Persistence
                 safe.guideStep,
                 safe.guideStartingCashUsd,
                 safe.guideBannerDismissed,
-                safe.guideFreeResearchOwed);
+                safe.guideFreeResearchOwed,
+                safe.guideFavourGranted);
 
             foreach (var incident in safe.incidents)
             {
@@ -991,10 +1001,27 @@ namespace ScalingLaws.Persistence
 
             foreach (var upgrade in safe.upgrades)
             {
+                // A v38 file has no step list, so the headline trait is the whole programme, which
+                // is exactly what it was when that file was written.
+                var steps = new List<UpgradeStep>();
+
+                for (var index = 0; index < upgrade.stepTraits.Count; index++)
+                {
+                    var level = index < upgrade.stepTargetLevels.Count
+                        ? upgrade.stepTargetLevels[index]
+                        : 1;
+
+                    steps.Add(new UpgradeStep((ModelTrait)upgrade.stepTraits[index], level));
+                }
+
+                if (steps.Count == 0)
+                {
+                    steps.Add(new UpgradeStep((ModelTrait)upgrade.trait, upgrade.targetLevel));
+                }
+
                 var project = new ModelUpgradeProject(
                     upgrade.modelIndex,
-                    (ModelTrait)upgrade.trait,
-                    upgrade.targetLevel,
+                    steps,
                     new GameDate(upgrade.startedDayIndex),
                     upgrade.durationDays,
                     upgrade.petaflopDaysRequired,
@@ -1311,6 +1338,12 @@ namespace ScalingLaws.Persistence
             // ---- v3 collections ----
             safe.shelf ??= new List<TrainedModelData>();
             safe.upgrades ??= new List<UpgradeProjectData>();
+
+            foreach (var upgrade in safe.upgrades)
+            {
+                upgrade.stepTraits ??= new List<int>();
+                upgrade.stepTargetLevels ??= new List<int>();
+            }
             safe.fundingRounds ??= new List<FundingRoundData>();
             safe.rivals ??= new List<CompetitorAgentData>();
             safe.revenueWindow ??= new List<long>();

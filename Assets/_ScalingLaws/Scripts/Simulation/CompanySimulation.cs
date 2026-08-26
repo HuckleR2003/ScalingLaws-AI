@@ -998,7 +998,23 @@ namespace ScalingLaws.Simulation
         /// a company whose only model was sitting on the shelf.
         /// </summary>
         public bool TryStartUpgrade(int modelIndex, ModelTrait trait, out string failureReason,
-            bool onShelf = false)
+            bool onShelf = false) =>
+            TryStartUpgrades(modelIndex, new[] { trait }, out failureReason, onShelf);
+
+        /// <summary>
+        /// Commissions a whole basket of post-training work as **one** programme.
+        ///
+        /// **The team does one job at a time.** Every trait used to become its own programme, and
+        /// because each advanced its own calendar by a day every day, four of them ran the same four
+        /// weeks simultaneously: a playtest got four countdown rows moving in lockstep, four
+        /// "ships" messages, and work landing inside work it was supposed to follow. The days add,
+        /// the cluster time adds, the money adds, and the basket lands once.
+        ///
+        /// All or nothing. A partial commission would take the money for the traits it accepted and
+        /// leave the player to work out which of their picks silently vanished.
+        /// </summary>
+        public bool TryStartUpgrades(int modelIndex, IEnumerable<ModelTrait> traits,
+            out string failureReason, bool onShelf = false)
         {
             failureReason = string.Empty;
 
@@ -1016,22 +1032,22 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (!ModelTraitCatalog.TryGet(trait, out var definition))
+            var wanted = new List<ModelTrait>();
+
+            if (traits != null)
             {
-                failureReason = "Unknown trait.";
-                return false;
+                foreach (var trait in traits)
+                {
+                    if (!wanted.Contains(trait))
+                    {
+                        wanted.Add(trait);
+                    }
+                }
             }
 
-            if (!definition.IsAvailableOn(State.Date))
+            if (wanted.Count == 0)
             {
-                failureReason = $"{definition.DisplayName} is not a solved problem until {definition.AvailableFrom}.";
-                return false;
-            }
-
-            var traitGate = ResearchTree.GateForTrait(trait);
-            if (!State.HasResearch(traitGate))
-            {
-                failureReason = $"Needs the {ResearchTree.Get(traitGate).DisplayName} research first.";
+                failureReason = "Nothing was picked.";
                 return false;
             }
 
@@ -1041,13 +1057,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (State.IsUpgradeInFlight(modelIndex, trait, onShelf))
-            {
-                failureReason = $"{definition.DisplayName} is already being worked on for this model.";
-                return false;
-            }
-
-            var traits = onShelf
+            var traitSet = onShelf
                 ? State.Shelf[modelIndex].Traits
                 : State.DeployedModels[modelIndex].Traits;
 
@@ -1055,14 +1065,58 @@ namespace ScalingLaws.Simulation
                 ? State.Shelf[modelIndex].Name
                 : State.DeployedModels[modelIndex].Name;
 
-            var level = traits.GetLevel(trait);
-            if (level >= ModelTraitSetLimits.MaximumLevel)
+            var steps = new List<UpgradeStep>(wanted.Count);
+            var names = new List<string>(wanted.Count);
+
+            var cost = 0L;
+            var days = 0;
+            var petaflopDays = 0.0;
+
+            foreach (var trait in wanted)
             {
-                failureReason = $"{definition.DisplayName} is already at the ceiling.";
-                return false;
+                if (!ModelTraitCatalog.TryGet(trait, out var definition))
+                {
+                    failureReason = "Unknown trait.";
+                    return false;
+                }
+
+                if (!definition.IsAvailableOn(State.Date))
+                {
+                    failureReason = $"{definition.DisplayName} is not a solved problem until {definition.AvailableFrom}.";
+                    return false;
+                }
+
+                var traitGate = ResearchTree.GateForTrait(trait);
+                if (!State.HasResearch(traitGate))
+                {
+                    failureReason = $"Needs the {ResearchTree.Get(traitGate).DisplayName} research first.";
+                    return false;
+                }
+
+                if (State.IsUpgradeInFlight(modelIndex, trait, onShelf))
+                {
+                    failureReason = $"{definition.DisplayName} is already being worked on for this model.";
+                    return false;
+                }
+
+                var level = traitSet.GetLevel(trait);
+                if (level >= ModelTraitSetLimits.MaximumLevel)
+                {
+                    failureReason = $"{definition.DisplayName} is already at the ceiling.";
+                    return false;
+                }
+
+                steps.Add(new UpgradeStep(trait, level + 1));
+                names.Add(definition.DisplayName);
+
+                cost += definition.UpgradeCostUsd(level);
+                petaflopDays += definition.UpgradePetaflopDays(level);
+
+                // **Summed, not maximised.** One team, one job after another, which is the whole
+                // reason this is a single programme rather than four racing each other.
+                days += ScaleResearchDuration(definition.UpgradeDays(level));
             }
 
-            var cost = definition.UpgradeCostUsd(level);
             if (State.CashUsd < cost)
             {
                 failureReason = $"Needs ${cost:N0}, has ${State.CashUsd:N0}.";
@@ -1072,18 +1126,17 @@ namespace ScalingLaws.Simulation
             State.PostCash(LedgerLine.Research, cost);
             State.AddUpgradeProject(new ModelUpgradeProject(
                 modelIndex,
-                trait,
-                level + 1,
+                steps,
                 State.Date,
-                ScaleResearchDuration(definition.UpgradeDays(level)),
-                definition.UpgradePetaflopDays(level),
+                days,
+                petaflopDays,
                 cost)
             { OnShelf = onShelf });
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.UpgradeStarted,
                 State.Date,
-                $"{subject}: {definition.DisplayName} to level {level + 1}, about {definition.UpgradeDays(level)} days."
+                $"{subject}: {string.Join(", ", names)}, about {days} days."
                 + (onShelf ? " Before release." : string.Empty),
                 cost));
 
@@ -2581,6 +2634,63 @@ namespace ScalingLaws.Simulation
         /// programmes, then advances both. A run in flight takes the larger share, which is why
         /// starting a big run stalls the upgrade grid and vice versa.
         /// </summary>
+        /// <summary>
+        /// How the research slice of the cluster divides between the four things that can want it.
+        ///
+        /// **One method, because the banner and the day both need this answer.** The countdown on
+        /// the product banner used to divide the remaining petaflop-days by the whole fleet, which
+        /// ignored both the research share and this split: a run quoted at twenty-one days announced
+        /// four. Weights normalised over whichever consumers are actually live, so a company doing
+        /// one thing does it at full speed.
+        ///
+        /// Returns false when nothing is running, in which case the slices are meaningless.
+        /// </summary>
+        private bool TrySliceCluster(out double run, out double upgrades, out double architecture,
+            out double node)
+        {
+            var runWeight = State.ActiveRun != null ? RunComputeWeight : 0.0;
+            var upgradeWeight = State.UpgradeProjects.Count > 0 ? UpgradeComputeWeight : 0.0;
+            var familyWeight = State.ActiveArchitectureProject != null ? ArchitectureComputeWeight : 0.0;
+            var nodeWeight = State.ActiveResearch != null ? ResearchComputeWeight : 0.0;
+
+            var total = runWeight + upgradeWeight + familyWeight + nodeWeight;
+
+            if (total <= 0.0)
+            {
+                run = upgrades = architecture = node = 0.0;
+                return false;
+            }
+
+            run = runWeight / total;
+            upgrades = upgradeWeight / total;
+            architecture = familyWeight / total;
+            node = nodeWeight / total;
+            return true;
+        }
+
+        /// <summary>
+        /// Petaflop-days the training run in flight actually receives in a day.
+        ///
+        /// The number the run is advanced by, exposed so the countdown beside it is the same
+        /// arithmetic rather than a second guess at it. Zero when no run is in flight.
+        /// </summary>
+        public double RunPetaflopDaysPerDay()
+        {
+            var run = State.ActiveRun;
+
+            if (run == null || !TrySliceCluster(out var runSlice, out _, out _, out _))
+            {
+                return 0.0;
+            }
+
+            var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
+            var architecture = State.ResolveArchitecture(run.Blueprint.Architecture);
+            var precision = TrainingChoiceCatalog.Get(run.Blueprint.Precision);
+
+            return Profile.EffectivePetaflops * share * TrainingThroughputMultiplier()
+                * runSlice * architecture.TrainingEfficiency * precision.Throughput;
+        }
+
         private double AdvanceResearch(ComputeProfile profile)
         {
             var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
@@ -2590,26 +2700,15 @@ namespace ScalingLaws.Simulation
 
             var run = State.ActiveRun;
             var upgradeCount = State.UpgradeProjects.Count;
-            var family = State.ActiveArchitectureProject;
-            var node = State.ActiveResearch;
 
-            // Four consumers, weighted, normalised over whichever are actually running. A company
-            // doing all four at once does all four slowly, which is the intended pressure.
-            var runWeight = run != null ? RunComputeWeight : 0.0;
-            var upgradeWeight = upgradeCount > 0 ? UpgradeComputeWeight : 0.0;
-            var familyWeight = family != null ? ArchitectureComputeWeight : 0.0;
-            var nodeWeight = node != null ? ResearchComputeWeight : 0.0;
-            var totalWeight = runWeight + upgradeWeight + familyWeight + nodeWeight;
-
-            if (totalWeight <= 0.0)
+            if (!TrySliceCluster(out var runSlice, out var upgradeSlice, out var familySlice,
+                    out var nodeSlice))
             {
                 return 0.0;
             }
 
-            var runSlice = runWeight / totalWeight;
-            var upgradeSlice = upgradeWeight / totalWeight;
-            var familySlice = familyWeight / totalWeight;
-            var nodeSlice = nodeWeight / totalWeight;
+            var family = State.ActiveArchitectureProject;
+            var node = State.ActiveResearch;
 
             AdvanceUpgrades(researchPetaflops * upgradeSlice, upgradeCount);
             AdvanceArchitecture(researchPetaflops * familySlice);
@@ -2677,28 +2776,32 @@ namespace ScalingLaws.Simulation
 
                 // Whichever list the project was pointed at. A finished programme applying to
                 // the wrong model would silently upgrade a stranger.
-                if (project.OnShelf)
+                var traits = project.OnShelf
+                    ? State.Shelf[project.ModelIndex].Traits
+                    : State.DeployedModels[project.ModelIndex].Traits;
+
+                var applied = new List<string>(project.Steps.Count);
+
+                foreach (var step in project.Steps)
                 {
-                    State.Shelf[project.ModelIndex].Traits
-                        .SetLevel(project.Trait, project.TargetLevel);
-                }
-                else
-                {
-                    State.DeployedModels[project.ModelIndex].Traits
-                        .SetLevel(project.Trait, project.TargetLevel);
+                    traits.SetLevel(step.Trait, step.TargetLevel);
+                    applied.Add($"{ModelTraitCatalog.Get(step.Trait).DisplayName} L{step.TargetLevel}");
                 }
 
                 var subject = project.OnShelf
                     ? State.Shelf[project.ModelIndex].Name
                     : State.DeployedModels[project.ModelIndex].Name;
 
-                var definition = ModelTraitCatalog.Get(project.Trait);
+                // One award for one programme, scaled by how much work was in it. Paying the full
+                // amount per trait would make a four-card basket a skill exploit.
+                State.AwardSkill(PlayerSkill.Software, 320 + 90 * (project.Steps.Count - 1));
 
-                State.AwardSkill(PlayerSkill.Software, 320);
+                // **One message for one programme.** Four traits used to mean four of these on the
+                // same day, which is what turned the mail into noise the player learned to skip.
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.UpgradeCompleted,
                     State.Date,
-                    $"{subject}: {definition.DisplayName} now at level {project.TargetLevel}."
+                    $"{subject}: {string.Join(", ", applied)}."
                     + (project.OnShelf ? " It ships with the model." : string.Empty),
                     project.CashPaidUsd));
             }

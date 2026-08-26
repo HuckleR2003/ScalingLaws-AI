@@ -107,6 +107,34 @@ namespace ScalingLaws.Simulation
             return Math.Max(0.0, (PetaflopDaysRequired - PetaflopDaysCompleted) / rate);
         }
 
+        /// <summary>
+        /// Whole days until this run lands, counting **both** clocks.
+        ///
+        /// **The banner used to read the compute clock alone**, so a playtest saw a run quoted at
+        /// twenty-one days announce four, then sit at "0 days" while the calendar kept turning. Both
+        /// symptoms were the same missing `Math.Max`: `IsComplete` needs the compute clock and the
+        /// safety stage, and a countdown that watches one of two clocks is worse than no countdown,
+        /// because it describes a thing that has already finished.
+        ///
+        /// <paramref name="petaflopDaysPerDay"/> must be what actually reaches this run after the
+        /// cluster is split, not the size of the fleet. Reading the whole fleet here is the other
+        /// half of why the quote and the banner disagreed.
+        /// </summary>
+        public int DaysRemaining(double petaflopDaysPerDay)
+        {
+            var calendar = Math.Max(0, CalendarDaysRequired - DaysCompleted);
+            var compute = EstimatedDaysRemaining(petaflopDaysPerDay);
+
+            if (double.IsPositiveInfinity(compute))
+            {
+                // Nothing is being delivered, so the run is not landing at all. The calendar is the
+                // only honest thing left to report.
+                return calendar;
+            }
+
+            return Math.Max(calendar, (int)Math.Ceiling(compute));
+        }
+
         public override string ToString() =>
             $"{Blueprint.Name}: {Progress * 100.0:0.0}% of {PetaflopDaysRequired:N0} PF-days";
     }

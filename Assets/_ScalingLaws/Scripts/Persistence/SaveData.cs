@@ -241,6 +241,15 @@ namespace ScalingLaws.Persistence
 
         /// <summary>True when modelIndex points into the shelf rather than the deployed list. v33.</summary>
         public bool onShelf;
+
+        // ---- the basket, v39 ---------------------------------------------------------------------
+        //
+        // A programme is a batch now. `trait` and `targetLevel` above stay as the headline so a v38
+        // file still loads into something sensible; these two carry the rest. Parallel lists rather
+        // than a list of pairs, because JsonUtility does not serialise nested types the way anybody
+        // expects and every other grid in this file is already shaped this way.
+        public List<int> stepTraits = new();
+        public List<int> stepTargetLevels = new();
     }
 
     /// <summary>One closed round. Added in v3.</summary>
@@ -398,7 +407,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 38;
+        public const int CurrentVersion = 39;
 
         public int version = CurrentVersion;
 
@@ -653,6 +662,15 @@ namespace ScalingLaws.Persistence
         /// on reload would take back something the tutorial already gave.
         /// </summary>
         public bool guideFreeResearchOwed;
+
+        /// <summary>
+        /// True once he has handed the favour over, spent or not. v39.
+        ///
+        /// Separate from `guideFreeResearchOwed`, which only says it is unspent. Without the two
+        /// being distinct, a campaign that used the gift would look identical to one that never
+        /// reached the step, and the tour would hand it over again.
+        /// </summary>
+        public bool guideFavourGranted;
 
         // ---- the basement, v38 -------------------------------------------------------------------
         //

@@ -70,6 +70,9 @@ namespace ScalingLaws.UI
         private ModelCreatorPanel creator;
         private UpgradeGridPanel upgrades;
 
+        /// <summary>The handset resting under the bottom bar once the tour is over.</summary>
+        private PhoneDock phoneDock;
+
         /// <summary>Where a version gets its name and its price. Opened from UPGRADE.</summary>
         private ReleasePlanPanel releasePlan;
         private ArchitectureCreatorPanel families;
@@ -204,11 +207,13 @@ namespace ScalingLaws.UI
             {
                 var run = state.ActiveRun;
                 var progress = Math.Clamp(run.Progress, 0.0, 1.0);
-                var left = run.PetaflopDaysRequired - run.PetaflopDaysCompleted;
-                var perDay = Math.Max(1.0, simulation.Profile.EffectivePetaflops);
 
+                // **Both clocks, and the rate the run actually gets.** This divided the remaining
+                // petaflop-days by the size of the whole fleet and ignored the safety stage
+                // entirely, so a playtest was quoted twenty-one days, told four, and then watched
+                // "0 days" sit on screen while the calendar kept turning.
                 return new WorkInFlight("TRAINING MODEL", run.Blueprint.Name, progress,
-                    (int)Math.Ceiling(Math.Max(0.0, left) / perDay));
+                    run.DaysRemaining(simulation.RunPetaflopDaysPerDay()));
             }
 
             // **Research is deliberately not here any more.** This banner is the product, and it
@@ -616,10 +621,35 @@ namespace ScalingLaws.UI
                 }
             };
 
+            // **The offer, which was declared and never assigned.** `GuideOverlay.offerFor` and
+            // `ArchitectureCreatorPanel.TakeTheAdvice` were both written and nothing joined them, so
+            // the one step in the tour that hands the player something to press drew no button at
+            // all. Same failure class as the server hall: complete on both sides, no wire.
+            guide.offerFor = step => step.Id == GuideScript.ArchitectureOfferStepId
+                ? new GuideOverlay.GuideOffer(Loc.T("guide.offer.arch"), () =>
+                {
+                    families?.TakeTheAdvice();
+                    RefreshChrome();
+                })
+                : null;
+
             guide.leftForNow = () =>
             {
                 pausedOn = state.Date.Day;
             };
+
+            // **He does not leave when the tour ends.** Pressing "I'll take it from here" in the
+            // first minute used to skip the tutorial permanently with no way back to it, which is a
+            // dead end reached by one click. The handset stays docked under the bar and rings him.
+            phoneDock = new PhoneDock(root, () => state.Guide, () =>
+            {
+                phoneDock.Hide();
+
+                var resuming = state.Guide.Stage == GuideStage.Paused;
+
+                state.Guide.Stage = GuideStage.Talking;
+                phone.Ring(callingBack: resuming || state.Guide.Step > 0);
+            });
 
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
 
@@ -2538,7 +2568,7 @@ namespace ScalingLaws.UI
             }
 
             state.Guide.Stage = GuideStage.Talking;
-            phone.Ring();
+            phone.Ring(callingBack: paused);
         }
 
         /// <summary>
@@ -2552,7 +2582,13 @@ namespace ScalingLaws.UI
             // **Only a first acceptance starts at the beginning.** Somebody resuming after stepping
             // out is picked up where they left off, or the button would be a restart wearing the
             // word "later".
-            var resuming = state.Guide.Stage == GuideStage.Paused;
+            //
+            // Read off the step rather than off the stage. `Paused` is overwritten with `Talking`
+            // by the ring itself, several frames before anybody answers, so this always saw
+            // `Talking`, always reset to zero, and the playtest watched the whole tour start again
+            // three days after asking him to call back. The step is the checkpoint, it survives a
+            // save, and nothing else touches it.
+            var resuming = state.Guide.Step > 0;
 
             state.Guide.Stage = accepted ? GuideStage.Touring : GuideStage.Finished;
 
@@ -2591,12 +2627,13 @@ namespace ScalingLaws.UI
             var model = state.DeployedModels[index];
             var refused = new List<string>();
 
-            foreach (var trait in releasePlan.Basket)
+            // **The whole basket as one programme.** This looped and commissioned one per trait, so
+            // four picks became four programmes each ticking the same calendar, landing together,
+            // and filling the mail with four separate completions.
+            if (releasePlan.Basket.Count > 0
+                && !simulation.TryStartUpgrades(index, releasePlan.Basket, out var reason))
             {
-                if (!simulation.TryStartUpgrade(index, trait, out var reason))
-                {
-                    refused.Add($"{ModelTraitCatalog.Get(trait).DisplayName}: {reason}");
-                }
+                refused.Add(reason);
             }
 
             state.Monetization.SubscriptionPriceUsdPerMonth = releasePlan.PriceUsdPerMonth;
@@ -3100,32 +3137,45 @@ namespace ScalingLaws.UI
             // rather than throwing, same rule every other loader in the project follows.
             var cover = PageArt.Hosting(HostingCoverFor(definition.Id));
 
+            // The picture and the name are one block: a cover with its title on it. Built even when
+            // the art is missing, so the name lands in the same place either way and a missing file
+            // reads as a dark plate rather than as a differently shaped card.
+            var plate = new VisualElement();
+            plate.AddToClassList("pack__cover");
+
             if (cover != null)
             {
-                var plate = new VisualElement();
-                plate.AddToClassList("pack__cover");
                 plate.style.backgroundImage = new StyleBackground(cover);
-                card.Add(plate);
             }
+
+            var scrim = new VisualElement();
+            scrim.AddToClassList("pack__scrim");
+            plate.Add(scrim);
 
             var name = new Label(definition.DisplayName.ToUpperInvariant());
             name.AddToClassList("pack__name");
-            card.Add(name);
+            plate.Add(name);
+
+            card.Add(plate);
+
+            var body = new VisualElement();
+            body.AddToClassList("pack__body");
+            card.Add(body);
 
             var size = new Label(
                 $"{UiFormat.Petaflops(definition.Petaflops)}  "
                 + $"about {UiFormat.Count(HostingCatalog.CoversAccounts(definition.Petaflops))} accounts");
 
             size.AddToClassList("pack__size");
-            card.Add(size);
+            body.Add(size);
 
             var pitch = new Label(definition.Pitch);
             pitch.AddToClassList("pack__pitch");
-            card.Add(pitch);
+            body.Add(pitch);
 
             var price = new Label($"{UiFormat.Money(definition.MonthlyCostUsd)} a month each");
             price.AddToClassList("pack__price");
-            card.Add(price);
+            body.Add(price);
 
             var controls = new VisualElement();
             controls.AddToClassList("pack__controls");
@@ -3144,7 +3194,7 @@ namespace ScalingLaws.UI
             more.SetEnabled(held < definition.UnitCap);
             controls.Add(more);
 
-            card.Add(controls);
+            body.Add(controls);
 
             if (held > 0)
             {
@@ -3153,7 +3203,7 @@ namespace ScalingLaws.UI
                     + $"{UiFormat.Money(definition.MonthlyCostUsd * held)} a month");
 
                 total.AddToClassList("pack__total");
-                card.Add(total);
+                body.Add(total);
             }
 
             return card;
@@ -3626,23 +3676,31 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             UiParts.ExplainHeading(rentalHeading, TechNotes.RentOrOwn);
             rental.Add(rentalHeading);
 
-            var rentedLabel = new Label();
-            rentedLabel.AddToClassList("field__label");
-            rental.Add(rentedLabel);
+            // **Three meters instead of one sentence.** The capacity, the daily bill and what the
+            // pool actually delivers were run together in a line of prose over a bare slider, so the
+            // number the player is deciding was a fragment in the middle of it.
+            rental.Add(RentReadout.Meters(profile, market, state.Pool.RentedPetaflops));
 
-            var rentedSlider = new Slider(0f, 40000f) { value = (float)state.Pool.RentedPetaflops };
+            var rentedSlider = new Slider(0f, (float)RentReadout.FullScalePetaflops)
+            {
+                value = (float)state.Pool.RentedPetaflops
+            };
+
             rentedSlider.AddToClassList("field");
             rentedSlider.RegisterValueChangedCallback(evt =>
             {
                 simulation.SetRentedPetaflops(evt.newValue);
                 Show(Screen.Fleet);
             });
+
             rental.Add(rentedSlider);
 
-            rentedLabel.text =
-                $"{UiFormat.Petaflops(state.Pool.RentedPetaflops)} at "
-                + $"{UiFormat.Money((long)market.RentPricePerPetaflopDayUsd)} per PF-day, currently "
-                + $"{HardwareCatalog.Get(market.RentableGeneration).DisplayName}";
+            // And the question the slider is really being asked, in the largest type on the panel.
+            var breakdown = simulation.MarketByType();
+
+            rental.Add(RentReadout.CapacityBand(
+                state.Pool.RentedPetaflops,
+                breakdown.TotalUsersOverall * breakdown.OverallShareOf(0)));
 
             rental.Add(Hint(
                 "Contracted in petaflops, not boxes, so the bill does not move when the clouds change "
@@ -5612,6 +5670,17 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
             newsBanner?.Refresh();
 
             RefreshFollowerBanners();
+
+            // Hidden while the phone itself is up, or the sliver would sit under the call it is
+            // meant to start.
+            if (phone != null && phone.IsOpen)
+            {
+                phoneDock?.Hide();
+            }
+            else
+            {
+                phoneDock?.Refresh();
+            }
 
             // Letters waiting on an answer, not letters unread: an unread notice is not a task, and
             // a badge that counts things the player cannot act on trains them to ignore the badge.

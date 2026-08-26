@@ -145,22 +145,20 @@ namespace ScalingLaws.UI
                 return;
             }
 
+            // **Outside the rebuild branch, and derived from the step index.** Arming the favour
+            // inside the branch below made the gift depend on whether that one step happened to
+            // trigger a rebuild: the second playtest reached the research screen, past the offer,
+            // and was still told it needed 278 points it did not have. The rule is now "the tour has
+            // reached the step where he pays for it", which is true however the player got there.
+            state.GrantGiftsUpTo(state.Step);
+
             if (builtFor != state.Step || strip == null || strip.parent == null)
             {
-                // **Armed on the way in, not on the way out.** The playtest reached the step where
-                // he offers to pay for the first node, clicked a node while he was still talking,
-                // and was told it needed fifty research points it did not have. Handing the favour
-                // over when the step is left means the offer is refused for exactly as long as the
-                // offer is on screen.
-                if (step.Id == GuideScript.GiftStepId)
-                {
-                    state.FreeResearchOwed = true;
-                }
-
-                // The basement, on arrival for the same reason: the step names a screen, and a
-                // player who clicks through to it before pressing the button would otherwise find a
-                // locked page with a price on it.
-                if (step.Id == GuideScript.BasementStepId)
+                // The basement on arrival, read off the index for the same reason: the step names a
+                // screen, and a player who clicks through to it before pressing the button would
+                // otherwise find a locked page with a price on it. Opening is idempotent, so asking
+                // again on a rebuild costs nothing.
+                if (state.BasementIsOwed(state.Step))
                 {
                     handOverBasement?.Invoke();
                 }
@@ -244,6 +242,15 @@ namespace ScalingLaws.UI
             // Ignores the mouse everywhere except its own buttons, so the player can keep clicking
             // the screens underneath while he talks.
             strip.pickingMode = PickingMode.Ignore;
+
+            // **He gets out of the way when you look behind him.** Resting the cursor over the strip
+            // fades it, because he sits across the bottom of a screen the player is being asked to
+            // read and there is no way to move him.
+            //
+            // Driven from the host's mouse position rather than from MouseEnter on the strip: the
+            // strip is `PickingMode.Ignore` on purpose, so it never receives a mouse event of its
+            // own, and turning picking back on to get one would put a dead surface over the page.
+            host.RegisterCallback<MouseMoveEvent>(FadeIfPointerIsOver);
 
             var speaker = new VisualElement();
             speaker.AddToClassList("guide__speaker");
@@ -411,6 +418,36 @@ namespace ScalingLaws.UI
             lockToTab?.Invoke(
                 step.WaitForClick && step.Target != GuideTarget.None ? step.Target : null);
         }
+
+        /// <summary>How much of him is left when the cursor is resting on top of him.</summary>
+        public const float FadedOpacity = 0.2f;
+
+        /// <summary>
+        /// Fades the strip while the pointer is over it, and restores it the moment it leaves.
+        ///
+        /// Registered once per build on the host rather than on the strip, because the strip ignores
+        /// the mouse and would never hear about it. Cheap: one rectangle test per mouse move, and it
+        /// only touches the style when the answer changes.
+        /// </summary>
+        private void FadeIfPointerIsOver(MouseMoveEvent move)
+        {
+            if (strip == null || strip.parent == null)
+            {
+                return;
+            }
+
+            var over = strip.worldBound.Contains(move.mousePosition);
+
+            if (over == faded)
+            {
+                return;
+            }
+
+            faded = over;
+            strip.style.opacity = over ? FadedOpacity : 1f;
+        }
+
+        private bool faded;
 
         /// <summary>Takes the ring off everything. Public so the shell can clear it on a repaint.</summary>
         public void ClearHighlight()

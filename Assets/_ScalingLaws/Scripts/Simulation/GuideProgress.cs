@@ -76,6 +76,59 @@ namespace ScalingLaws.Simulation
         public bool FreeResearchOwed { get; set; }
 
         /// <summary>
+        /// True once the favour has been handed over, whether or not it has been spent.
+        ///
+        /// **Without this the gift could be handed over twice, or never.** It used to be armed by
+        /// the overlay, inside the branch that rebuilds the strip, so whether the player got it
+        /// depended on whether that one step happened to trigger a rebuild: skipping forward,
+        /// resuming from a checkpoint or advancing two steps in a frame all walked straight past it,
+        /// and a playtest reached the research screen still being told it needed 278 points.
+        ///
+        /// Saved, because "he already gave you this" is not reconstructable from anything else.
+        /// </summary>
+        public bool FavourGranted { get; set; }
+
+        /// <summary>
+        /// Hands over anything the tour owes by the step it has reached.
+        ///
+        /// Derived from the step index rather than fired by an event, so arriving at the step by any
+        /// route — Next, a resumed checkpoint, a reload — hands over the same things. Idempotent:
+        /// called on every repaint and does nothing on all but one of them.
+        ///
+        /// Returns true when something was actually given, so the caller can repaint.
+        /// </summary>
+        public bool GrantGiftsUpTo(int stepIndex)
+        {
+            if (FavourGranted)
+            {
+                return false;
+            }
+
+            var gift = GuideScript.IndexOf(GuideScript.GiftStepId);
+
+            if (gift < 0 || stepIndex < gift)
+            {
+                return false;
+            }
+
+            FavourGranted = true;
+            FreeResearchOwed = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Whether the tour has reached the step where he hands over the basement.
+        ///
+        /// Same rule as the favour and for the same reason. The opening itself is idempotent — the
+        /// company refuses a second one — so this only decides whether to ask.
+        /// </summary>
+        public bool BasementIsOwed(int stepIndex)
+        {
+            var step = GuideScript.IndexOf(GuideScript.BasementStepId);
+            return step >= 0 && stepIndex >= step;
+        }
+
+        /// <summary>
         /// How long the favour takes, at most.
         ///
         /// A node the cousin pays for still has to be built, and a real node is months. That is the
@@ -160,13 +213,17 @@ namespace ScalingLaws.Simulation
         public bool AllTasksDone(CompanyState state) => CurrentTask(state) == null;
 
         public void Restore(GuideStage stage, int step, long startingCash, bool dismissed,
-            bool freeResearchOwed = false)
+            bool freeResearchOwed = false, bool favourGranted = false)
         {
             Stage = Enum.IsDefined(typeof(GuideStage), stage) ? stage : GuideStage.Unseen;
             Step = Math.Max(0, step);
             StartingCashUsd = Math.Max(0L, startingCash);
             BannerDismissed = dismissed;
             FreeResearchOwed = freeResearchOwed;
+
+            // A file that still owes the favour has obviously been given it. Without this the grant
+            // would fire a second time on load and hand out a node the player already spent.
+            FavourGranted = favourGranted || freeResearchOwed;
         }
     }
 }

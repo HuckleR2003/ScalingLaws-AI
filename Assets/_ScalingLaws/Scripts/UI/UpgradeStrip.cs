@@ -121,7 +121,13 @@ namespace ScalingLaws.UI
             var definition = ModelTraitCatalog.Get(project.Trait);
 
             row.Kicker.text = Loc.T("ustrip.kicker");
-            row.Name.text = $"{definition.DisplayName} {Loc.T("ustrip.to_level", project.TargetLevel + 1)}";
+
+            // A programme is a basket now. Naming only its headline would say "Reasoning" over a
+            // strip that is also doing three other things, and the player would go looking for the
+            // rows that used to be there.
+            row.Name.text = project.IsBatch
+                ? Loc.T("ustrip.batch", project.Steps.Count)
+                : $"{definition.DisplayName} {Loc.T("ustrip.to_level", project.TargetLevel + 1)}";
 
             // **Days, not per cent, is the headline.** It is the number a player plans around, and
             // the same choice the training banner already made. The bar behind the words carries the

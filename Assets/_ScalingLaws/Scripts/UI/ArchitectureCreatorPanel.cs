@@ -58,6 +58,7 @@ namespace ScalingLaws.UI
         private readonly Dictionary<ResearchDirection, Slider> directions = new();
         private readonly Dictionary<ResearchDirection, VisualElement> locks = new();
         private readonly Dictionary<ResearchDirection, Label> lockLabels = new();
+        private readonly Dictionary<ResearchDirection, Label> lockAmounts = new();
         private readonly Dictionary<ResearchDirection, Label> readings = new();
 
         private readonly List<ArchitectureId> slotOptions = new();
@@ -265,12 +266,41 @@ namespace ScalingLaws.UI
             cover.AddToClassList("dlock");
             cover.pickingMode = PickingMode.Ignore;
 
+            // **A kicker, an icon and the node's name**, rather than one 8px line carrying all
+            // three facts. The player has to know both that this is a research gate and which node
+            // opens it, and a single small line said neither at a glance.
+            var kicker = new VisualElement();
+            kicker.AddToClassList("dlock__kicker");
+
+            var mark = new VisualElement();
+            mark.AddToClassList("dlock__icon");
+
+            var icon = Resources.Load<Texture2D>("Hud/hud_research");
+
+            if (icon != null)
+            {
+                mark.style.backgroundImage = new StyleBackground(icon);
+            }
+
+            kicker.Add(mark);
+
+            var word = new Label(Loc.T("hud.research").ToUpperInvariant());
+            word.AddToClassList("dlock__word");
+            kicker.Add(word);
+
+            cover.Add(kicker);
+
             var coverLabel = new Label();
             coverLabel.AddToClassList("dlock__label");
             cover.Add(coverLabel);
 
+            var amount = new Label();
+            amount.AddToClassList("dlock__amount");
+            kicker.Add(amount);
+
             locks[direction] = cover;
             lockLabels[direction] = coverLabel;
+            lockAmounts[direction] = amount;
             track.Add(cover);
 
             row.Add(track);
@@ -307,8 +337,15 @@ namespace ScalingLaws.UI
 
                 lockLabels[direction].text = ArchitectureCeiling.TryNextRung(
                     direction, simulation.State.HasResearch, out var rung, out var next)
-                        ? $"{ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}  ·  {next:P0}"
+                        ? ResearchTree.Get(rung).DisplayName
                         : Loc.T("common.locked");
+
+                // The share that rung would open, under the name rather than beside it. Two facts
+                // on one 8px line was most of why neither could be read.
+                lockAmounts[direction].text = ArchitectureCeiling.TryNextRung(
+                    direction, simulation.State.HasResearch, out _, out var share)
+                        ? $"·  {share:P0}"
+                        : string.Empty;
             }
         }
 
