@@ -13092,3 +13092,123 @@
     border-radius: 4px;
     background-color: rgb(226, 96, 80);
 }
+
+/* ============================================================================================
+   BENEFITS
+
+   Two figures on every tile and the second one is the point: a price per person is a small
+   number nobody reacts to, and the same number across the payroll is a line on the monthly bill.
+   ============================================================================================ */
+
+.benefits__summary {
+    flex-direction: row;
+    margin-top: 10px;
+    margin-bottom: 14px;
+}
+
+.benefits__figure {
+    margin-right: 42px;
+}
+
+.benefits__caption {
+    font-size: 10px;
+    letter-spacing: 1.3px;
+    color: rgb(126, 140, 164);
+}
+
+.benefits__value {
+    margin-top: 2px;
+    font-size: 17px;
+    color: rgb(228, 236, 250);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.benefits__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.benefit {
+    width: 31.5%;
+    margin: 0 1% 10px 0;
+    padding: 12px 14px 12px 14px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 4px;
+    -unity-text-align: upper-left;
+    align-items: stretch;
+    height: auto;
+}
+
+/* Ticked reads as green ground rather than as a coloured outline, because the row is a thing you
+   are buying and the outline is already carrying focus. */
+
+.benefit--on {
+    background-color: rgba(96, 190, 130, 0.13);
+    border-color: rgb(96, 190, 130);
+}
+
+.benefit__head {
+    flex-direction: row;
+    align-items: center;
+}
+
+.benefit__box {
+    width: 14px;
+    height: 14px;
+    margin-right: 9px;
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: rgb(96, 108, 130);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.benefit__box--on {
+    background-color: rgb(96, 190, 130);
+    border-color: rgb(96, 190, 130);
+}
+
+.benefit__name {
+    font-size: 13px;
+    color: rgb(228, 236, 250);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.benefit__note {
+    margin-top: 6px;
+    font-size: 10.5px;
+    color: rgb(140, 152, 172);
+    white-space: normal;
+}
+
+.benefit__bill {
+    flex-direction: row;
+    align-items: baseline;
+    margin-top: 9px;
+}
+
+.benefit__each {
+    font-size: 12px;
+    color: rgb(170, 182, 202);
+}
+
+.benefit__total {
+    margin-left: 10px;
+    font-size: 14px;
+    color: rgb(150, 162, 184);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+/* Grey while it is hypothetical, green once it is actually being paid. */
+
+.benefit__total--on {
+    color: rgb(126, 216, 158);
+}
+
+.benefit__gain {
+    margin-top: 4px;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    color: rgb(150, 178, 216);
+}

@@ -70,6 +70,9 @@ namespace ScalingLaws.UI
         private ModelCreatorPanel creator;
         private UpgradeGridPanel upgrades;
 
+        /// <summary>What the company offers its people. Lives on the business page.</summary>
+        private BenefitsPanel benefits;
+
         /// <summary>The handset resting under the bottom bar once the tour is over.</summary>
         private PhoneDock phoneDock;
 
@@ -391,6 +394,8 @@ namespace ScalingLaws.UI
                     Show(Screen.ReleasePlan);
                 },
                 () => Show(Screen.Site));
+
+            benefits = new BenefitsPanel(() => simulation, () => Show(Screen.Business));
 
             releasePlan = new ReleasePlanPanel(simulation, ShipTheVersion,
                 () => Show(Screen.Upgrade));
@@ -4026,6 +4031,11 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                 "Reputation, slowly, and it survives a model going out of date."));
             page.Add(BuildCampaignPanel(CampaignKind.Model, "MODEL MARKETING",
                 "Attention on the current flagship. It stops working the day the invoices stop."));
+
+            // Benefits sit on the business page rather than on the team page, because what they
+            // are is a standing monthly cost that scales with headcount. The team page is about
+            // who is here; this is about what the company spends.
+            page.Add(benefits.Build());
 
             return page;
         }
