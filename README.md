@@ -13,6 +13,7 @@ find out later that a regulator judges you on what you had switched on the day y
 [![Tests](https://img.shields.io/badge/tests-785%20EditMode%20%2B%2012%20PlayMode-brightgreen)](#testing)
 [![Unity](https://img.shields.io/badge/Unity-6000.5.8f1-black)](#running-it)
 [![Languages](https://img.shields.io/badge/languages-EN%20%2F%20PL-lightgrey)](#)
+[![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial-orange)](LICENSE.md)
 
 > **Download the first public build:** [Releases](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
 > · What changed in each version: [CHANGELOG.md](CHANGELOG.md)
@@ -257,3 +258,12 @@ anything the game invents carries a projection flag, and no individual person is
 
 Built solo by Marcin "HCK" Firmuga ([HCK Labs](https://pcworkman.dev)), who also builds
 [PC Workman](https://github.com/HuckleR2003/PC_Workman_HCK).
+
+## Licence
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md). Read it, learn from it, run it, fork it, change it, share
+your fork, for any purpose that is not commercial. Selling it, or a game built from it, needs a
+separate agreement: kematex2202@gmail.com.
+
+The imported Asset Store packs used for the office furniture and character models are not in this
+repository and are not covered by that licence.
