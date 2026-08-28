@@ -1078,6 +1078,7 @@ namespace ScalingLaws.UI
             // tick, and animating that would make the whole interface twitch once a day.
             if (changed)
             {
+                AudioDirector.Play(UiSound.Tab);
                 PlayPageTransition();
             }
 
@@ -1672,10 +1673,12 @@ namespace ScalingLaws.UI
                         // standing says it can start. If it ever is, say why rather than doing
                         // nothing, which is what made this button feel broken before.
                         researchProblem = why;
+                        AudioDirector.Deny();
                         Show(Screen.Research);
                         return;
                     }
 
+                    AudioDirector.Confirm();
                     researchCard?.RemoveFromHierarchy();
 
                     // Same as starting a run. The work is months long and there is nothing further
@@ -2648,6 +2651,15 @@ namespace ScalingLaws.UI
                     ? $"{model.Name} {versionName} shipped."
                     : $"{model.Name} {versionName} shipped, but {string.Join("  ", refused)}",
                 0L));
+
+            if (refused.Count == 0)
+            {
+                AudioDirector.Confirm();
+            }
+            else
+            {
+                AudioDirector.Warning();
+            }
 
             RefreshChrome();
             Show(Screen.Management);
@@ -5567,10 +5579,39 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 }
 
                 recentEvents.Add(companyEvent);
+                PlayEventCue(companyEvent.Type);
                 if (recentEvents.Count > 60)
                 {
                     recentEvents.RemoveAt(0);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Event audio belongs to the presenter, not to the simulation. The same campaign must
+        /// produce the same ledger with sound disabled, missing, or turned down to zero.
+        /// </summary>
+        private static void PlayEventCue(CompanyEventType type)
+        {
+            switch (type)
+            {
+                case CompanyEventType.TrainingCompleted:
+                case CompanyEventType.ModelReleased:
+                case CompanyEventType.ResearchCompleted:
+                case CompanyEventType.UpgradeCompleted:
+                case CompanyEventType.ArchitectureResearchCompleted:
+                case CompanyEventType.FundingClosed:
+                    AudioDirector.Positive();
+                    break;
+
+                case CompanyEventType.SafetyIncident:
+                case CompanyEventType.CreditLineBreached:
+                case CompanyEventType.LoanMissed:
+                case CompanyEventType.LoanDefaulted:
+                case CompanyEventType.DemandOverdue:
+                case CompanyEventType.TaxDemanded:
+                    AudioDirector.Warning();
+                    break;
             }
         }
 
