@@ -10,7 +10,7 @@ one you can pay for. Decide whether three weeks of safety evaluation is worth de
 find out later that a regulator judges you on what you had switched on the day you shipped.
 
 [![Build](https://img.shields.io/badge/build-v0.1.0-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
-[![Tests](https://img.shields.io/badge/tests-793%20EditMode%20%2B%2012%20PlayMode-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-793%20EditMode%20%2B%2013%20PlayMode-brightgreen)](#testing)
 [![Unity](https://img.shields.io/badge/Unity-6000.5.8f1-black)](#running-it)
 [![Languages](https://img.shields.io/badge/languages-EN%20%2F%20PL-lightgrey)](#)
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial-orange)](LICENSE.md)
@@ -96,7 +96,7 @@ deviate. A patient lab that sees better silicon landing shortly after its planne
 train on the newer hardware and come out measurably stronger. Three of them come apart during the
 campaign, over the same exposures that can end your company.
 
-**Research** is a tree of 50 nodes across four eras and four tracks. Every architecture, corpus,
+**Research** is a tree of 50 nodes across four eras and three tracks. Every architecture, corpus,
 upgrade line and compute tier sits behind one. Money is a bad gate because money compounds; a node
 also costs calendar, and calendar cannot be compounded away.
 
