@@ -54,7 +54,19 @@ namespace ScalingLaws.Simulation
         ResearchCancelled = 37,
 
         /// <summary>A candidate answered, withdrew, or the company signed a partnership.</summary>
-        HiringNotice = 38
+        HiringNotice = 38,
+
+        /// <summary>
+        /// Something the company should know that nobody has to answer.
+        ///
+        /// Deliberately broad. Timed effects starting and ending, and the calls that follow a
+        /// poaching attempt, are all things that happened rather than things waiting on a decision,
+        /// which is exactly the line the mailbox draws between itself and the wire.
+        /// </summary>
+        Notice = 39,
+
+        /// <summary>Somebody left a rival and joined this company.</summary>
+        StaffPoached = 40
     }
 
     /// <summary>

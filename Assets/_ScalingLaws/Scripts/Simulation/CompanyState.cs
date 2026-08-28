@@ -44,6 +44,7 @@ namespace ScalingLaws.Simulation
             CashUsd = StartingCashUsd;
             Pool = new ComputePool();
             Random = new DeterministicRandom(randomSeed);
+            RosterSeed = randomSeed;
             OwnedDataSources = DatasetCatalog.StartingSources;
             AdoptedArchitectures = new HashSet<ArchitectureId> { ArchitectureId.DenseTransformer };
             Reputation = 0.05;
@@ -557,6 +558,60 @@ namespace ScalingLaws.Simulation
 
             return false;
         }
+
+        /// <summary>
+        /// What the company offers its people beyond the salary.
+        ///
+        /// Billed per head per month for everybody, including the people who never use it, which is
+        /// what makes it a decision: the cost scales with hiring and the benefit does not scale with
+        /// anything.
+        /// </summary>
+        public HashSet<StaffBenefit> Benefits { get; } = new();
+
+        /// <summary>Loyalty points the current set of benefits is worth. Read, never stored.</summary>
+        public double BenefitPoints => BenefitCatalog.PointsFor(Benefits);
+
+        /// <summary>What the benefits cost today, across everybody on the payroll.</summary>
+        public long DailyBenefitCostUsd =>
+            Staff.Headcount <= 0 || Benefits.Count == 0
+                ? 0L
+                : (long)Math.Round(
+                    BenefitCatalog.MonthlyCostPerHead(Benefits) * Staff.Headcount * 12.0 / 365.0);
+
+        /// <summary>
+        /// The seed the rival rosters are generated from.
+        ///
+        /// **Separate from `Random`, and it has to be.** The shared stream advances every time
+        /// anything rolls, so generating a roster from it would give a lab different people every
+        /// time the panel was opened. This one never moves, which is what makes the list a place
+        /// rather than a slot machine.
+        /// </summary>
+        public uint RosterSeed { get; set; } = 0x5CA1AB1E;
+
+        /// <summary>How every other lab feels about this one, and the record of why.</summary>
+        public RivalRelations Relations { get; } = new();
+
+        /// <summary>Everything currently true about the company that will stop being true.</summary>
+        public EffectBook Effects { get; } = new();
+
+        /// <summary>
+        /// People taken off rivals' payrolls, by id.
+        ///
+        /// The rosters themselves are generated rather than stored, so this short list is the only
+        /// part of them the player actually changed and the only part worth saving.
+        /// </summary>
+        public HashSet<int> PoachedRivalStaff { get; } = new();
+
+        /// <summary>
+        /// The last day something went publicly wrong: a penalty, a forced withdrawal, a scandal.
+        ///
+        /// Safe Harbour is a year measured from here, so this is causal rather than decorative and
+        /// it has to survive a save. Negative means nothing has ever gone wrong.
+        /// </summary>
+        public int LastTroubleDayIndex { get; set; } = -1;
+
+        /// <summary>True once the company has released anything, so the new-lab window fires once.</summary>
+        public bool FirstReleaseWindowUsed { get; set; }
 
         /// <summary>
         /// True once the one feedback letter has been posted.

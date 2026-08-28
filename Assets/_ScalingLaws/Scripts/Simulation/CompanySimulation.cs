@@ -224,8 +224,12 @@ namespace ScalingLaws.Simulation
                 profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier
                 * State.Skills.OperatingCostMultiplier());
             var intelCost = DailyIntelRetainerUsd();
+            // Benefits are payroll, not a perk line. They ride with the salaries because they
+            // are charged for every head whether or not that head uses them, which is the entire
+            // shape of the decision.
             var salaryCost = SimUnits.ToDollars(
-                State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier);
+                State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier)
+                + State.DailyBenefitCostUsd;
             var marketingCost = State.Monetization.TotalMarketingDailyUsd;
 
             var operatingCost = servingCost + intelCost + salaryCost + marketingCost;
@@ -291,6 +295,12 @@ namespace ScalingLaws.Simulation
             ExpireFundingOffer();
             UpdateReputation(share, served);
             ReportNewlyUnlockedTiers(previousLadder);
+
+            State.Relations.Advance();
+            State.Effects.Advance(State.Date);
+            AwardSafeHarbourIfEarned();
+            RollForViral();
+
             CheckSolvency();
 
             // After solvency, so an insolvent campaign gets asked on the day it happens rather than
@@ -567,6 +577,202 @@ namespace ScalingLaws.Simulation
                 Loc.T("feedback.subject"),
                 Loc.T("feedback.body"));
         }
+
+        /// <summary>
+        /// A year with nothing going publicly wrong earns the company Safe Harbour.
+        ///
+        /// **Measured from the last thing that went wrong, not from the start.** A company that
+        /// takes a fine in month eleven starts the clock again, which is what makes the effect worth
+        /// something: it is the only thing in the game that has to be kept rather than bought.
+        ///
+        /// A brand new company does not get it for free. The clock starts at the first release,
+        /// because a year of nothing going wrong at a company that shipped nothing is not a record.
+        /// </summary>
+        private void AwardSafeHarbourIfEarned()
+        {
+            if (State.DeployedModels.Count == 0 || State.Effects.Has(ModelEffectKind.SafeHarbour, State.Date))
+            {
+                return;
+            }
+
+            var since = State.LastTroubleDayIndex >= 0
+                ? State.LastTroubleDayIndex
+                : State.DeployedModels[0].ReleaseDate.DayIndex;
+
+            if (State.Date.DayIndex - since < EffectBook.SafeHarbourDays)
+            {
+                return;
+            }
+
+            State.Effects.Add(
+                new ModelEffect(ModelEffectKind.SafeHarbour, State.Date, 3650,
+                    EffectBook.SafeHarbourMagnitude),
+                State.Date);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.Notice, State.Date, Loc.T("effect.harbour.earned")));
+        }
+
+        /// <summary>Chance per day that a running campaign catches and something goes viral.</summary>
+        public const double ViralChancePerDay = 0.004;
+
+        /// <summary>And how much harder it is when nobody is spending anything on being seen.</summary>
+        public const double ViralChanceWithoutCampaign = 0.0004;
+
+        /// <summary>
+        /// Rolls for the window where more people arrive than the product explains.
+        ///
+        /// **Marketing raises the chance, it does not buy the outcome.** A campaign that reliably
+        /// produced a viral window would just be a more expensive campaign; one that makes it ten
+        /// times more likely is a bet, which is the only version of this worth having.
+        ///
+        /// It needs something on sale. A company with no product cannot go viral, whatever it spends.
+        /// </summary>
+        private void RollForViral()
+        {
+            if (State.DeployedModels.Count == 0
+                || State.Effects.Has(ModelEffectKind.Viral, State.Date)
+                || State.Effects.Has(ModelEffectKind.Backlash, State.Date))
+            {
+                return;
+            }
+
+            var spending = State.Monetization.TotalMarketingDailyUsd > 0;
+            var chance = spending ? ViralChancePerDay : ViralChanceWithoutCampaign;
+
+            if (State.Random.NextDouble() > chance)
+            {
+                return;
+            }
+
+            // Between a month and four, and the size is drawn with it: a short spike and a long
+            // simmer are different stories and both should be reachable.
+            var days = 30 + (int)(State.Random.NextDouble() * 90);
+            var magnitude = 0.15 + State.Random.NextDouble() * 0.30;
+
+            State.Effects.Add(
+                new ModelEffect(ModelEffectKind.Viral, State.Date, days, magnitude), State.Date);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.Notice, State.Date,
+                Loc.T("effect.viral.news", Flagship()?.Name ?? State.CompanyName)));
+        }
+
+        // ------------------------------------------------------------------ poaching
+
+        /// <summary>
+        /// Makes somebody at another lab an offer.
+        ///
+        /// **One call, three ways it can end, and the player only controls the money.** They take
+        /// it, they refuse quietly, or they refuse and tell their employer who has been calling.
+        /// Which one happens is decided here rather than by the interface, because it moves money
+        /// and it moves a relationship.
+        ///
+        /// The bonus is spent whatever the answer is. That is the entire risk: a refusal costs the
+        /// money and buys nothing, and a reported refusal costs the money and a relationship.
+        /// </summary>
+        public bool TryPoach(RivalStaffMember member, long signingBonusUsd,
+            out PoachOutcome outcome, out string note)
+        {
+            outcome = PoachOutcome.Blocked;
+            note = string.Empty;
+
+            if (State.IsBankrupt)
+            {
+                note = Loc.T("poach.blocked.broke");
+                return false;
+            }
+
+            if (State.PoachedRivalStaff.Contains(member.Id))
+            {
+                note = Loc.T("poach.blocked.gone");
+                return false;
+            }
+
+            if (!State.Staff.HasFreeDesk)
+            {
+                note = Loc.T("poach.blocked.desks");
+                return false;
+            }
+
+            var bonus = Math.Max(0L, signingBonusUsd);
+
+            if (State.CashUsd < bonus)
+            {
+                note = Loc.T("poach.blocked.cash");
+                return false;
+            }
+
+            // Spent on the call, not on the signature. Approaching somebody costs money whether or
+            // not it works, which is what stops this being a free lottery ticket.
+            State.PostCash(LedgerLine.Salaries, bonus);
+
+            if (State.Random.NextDouble() <= Poaching.AcceptanceChance(member, State.Date, bonus))
+            {
+                outcome = PoachOutcome.Accepted;
+                State.PoachedRivalStaff.Add(member.Id);
+
+                var role = Poaching.RoleFor(member.Position);
+                var salary = Poaching.SalaryAt(member);
+
+                State.Staff.Add(new Hire(
+                    role, member.SkillBand, State.Date, member.Name, member.Position,
+                    HireSource.Specialist,
+                    salary / (double)PositionCatalog.PaidHoursPerYear));
+
+                State.Relations.Record(member.Employer, State.Date,
+                    Poaching.RelationCostOfSuccess, "relation.reason.poached", member.Name);
+
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.StaffPoached, State.Date,
+                    Loc.T("poach.joined", member.Name,
+                        CompetitorCatalog.NameOf(member.Employer)), bonus));
+
+                note = Loc.T("poach.accepted", member.Name);
+                return true;
+            }
+
+            // Refused. Whether it stays between the two of you is the second roll, and a person who
+            // has been somewhere eight years is far more likely to mention it.
+            if (State.Random.NextDouble() <= Poaching.ReportChance(member, State.Date))
+            {
+                outcome = PoachOutcome.Reported;
+
+                State.Relations.Record(member.Employer, State.Date,
+                    Poaching.RelationCostOfReport, "relation.reason.reported", member.Name);
+
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.Notice, State.Date,
+                    Loc.T("poach.reported", CompetitorCatalog.NameOf(member.Employer)), bonus));
+
+                note = Loc.T("poach.refused.reported", member.Name);
+                return false;
+            }
+
+            outcome = PoachOutcome.Refused;
+            note = Loc.T("poach.refused", member.Name);
+            return false;
+        }
+
+        /// <summary>
+        /// How the player answers the call that follows a reported approach.
+        ///
+        /// Two ways to reply and both cost something, which is the point: there is no version of
+        /// this conversation where the company comes out even. Apologising costs less and it is
+        /// still an admission.
+        /// </summary>
+        public void AnswerTheCall(CompetitorId lab, bool apologise)
+        {
+            State.Relations.Record(
+                lab,
+                State.Date,
+                apologise ? Poaching.RelationCostOfApology : Poaching.RelationCostOfHangingUp,
+                apologise ? "relation.reason.apologised" : "relation.reason.hungup");
+        }
+
+        /// <summary>The roster of one lab, with the people already taken removed.</summary>
+        public System.Collections.Generic.List<RivalStaffMember> RosterOf(CompetitorId lab) =>
+            RivalStaff.RosterFor(lab, State.Date, State.RosterSeed, State.PoachedRivalStaff);
 
         /// <summary>Cancels the run in flight. The compute already burned does not come back.</summary>
         public bool CancelTraining()
@@ -901,6 +1107,27 @@ namespace ScalingLaws.Simulation
                 waited > 0
                     ? $"{model.Name} is live after {waited} days on the shelf. Par moved {slippage:0.0} capability against it while it waited. Frontier stands at {market.FrontierCapability:0.0}."
                     : $"{model.Name} is live. Frontier stands at {market.FrontierCapability:0.0}."));
+
+            // **The clean slate a company gets exactly once.** People look at a new lab
+            // because it is new, and that attention is not earned by the product and does not come
+            // back. Guarded by a flag rather than by counting models, because a company that
+            // withdraws its first release and ships another has still had its turn.
+            if (!State.FirstReleaseWindowUsed)
+            {
+                State.FirstReleaseWindowUsed = true;
+
+                var window = EffectBook.FirstReleaseDaysLow
+                    + (int)(State.Random.NextDouble()
+                        * (EffectBook.FirstReleaseDaysHigh - EffectBook.FirstReleaseDaysLow));
+
+                State.Effects.Add(
+                    new ModelEffect(ModelEffectKind.FirstRelease, State.Date, window,
+                        EffectBook.FirstReleaseMagnitude),
+                    State.Date);
+
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.Notice, State.Date, Loc.T("effect.first.news")));
+            }
 
             State.AwardSkill(PlayerSkill.Management, 480);
 
@@ -2353,6 +2580,29 @@ namespace ScalingLaws.Simulation
 
             State.Reputation -= incident.ReputationLoss;
 
+            // **Twelve months of nothing going wrong, and one Tuesday takes it.** Safe Harbour is
+            // the only thing in the game that has to be kept rather than bought, which is what
+            // makes losing it worth something. Letting it limp to its natural end after the thing
+            // it described stopped being true would be the game lying.
+            if (State.Effects.End(ModelEffectKind.SafeHarbour))
+            {
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.Notice, State.Date, Loc.T("effect.harbour.lost")));
+            }
+
+            State.LastTroubleDayIndex = State.Date.DayIndex;
+
+            // People leave over this, and they leave over weeks rather than on the day. The size
+            // follows the severity, so a bad week and a data leak are not the same story.
+            var weight = incident.Severity == IncidentSeverity.Severe ? 0.34
+                : incident.Severity == IncidentSeverity.Major ? 0.20
+                : 0.09;
+
+            State.Effects.Add(
+                new ModelEffect(ModelEffectKind.Backlash, State.Date, 45 + (int)(weight * 200),
+                    -weight),
+                State.Date);
+
             // The penalty arrives as a letter rather than vanishing from the account. A fine the
             // player never saw was indistinguishable from the market turning against them, which is
             // the specific reason incidents read as a bug rather than as a hard game.
@@ -3386,7 +3636,14 @@ namespace ScalingLaws.Simulation
 
             // Reach from the free tier, then capped: a giveaway widens the funnel, it does not
             // hand over the market.
-            share = Math.Clamp(share * State.Monetization.ReachMultiplier, 0.0, 1.0);
+            // And whatever is temporarily true about the company. A viral window, the clean
+            // slate a new lab gets once, a year with nothing going wrong, or a public mess. Applied
+            // here beside the free-tier reach because they are the same kind of term: neither makes
+            // the product better, both change how many people are pointed at it.
+            share = Math.Clamp(
+                share * State.Monetization.ReachMultiplier * State.Effects.DemandMultiplier(State.Date),
+                0.0,
+                1.0);
             var demanded = market.TotalDemandBillionTokensPerDay * share;
 
             var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);

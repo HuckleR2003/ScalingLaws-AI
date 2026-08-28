@@ -141,6 +141,7 @@ namespace ScalingLaws.Persistence
                     37 => UpgradeV37ToV38(current),
                     38 => UpgradeV38ToV39(current),
                     39 => UpgradeV39ToV40(current),
+                    40 => UpgradeV40ToV41(current),
                     _ => current
                 };
             }
@@ -1221,6 +1222,48 @@ namespace ScalingLaws.Persistence
 
             data.version = 40;
             data.feedbackLetterSent = false;
+
+            return data;
+        }
+
+        /// <summary>
+        /// v40 to v41: benefits, relations, timed effects and poaching.
+        ///
+        /// **Everything empty, and that is the true reading.** A v40 campaign was played in a build
+        /// where none of this existed, so it offered no benefits, has done nothing to anybody, and
+        /// nothing temporary is true about it. Inventing a Safe Harbour for a company that had never
+        /// had the chance to earn one would be handing an old campaign something it never decided.
+        ///
+        /// `lastTroubleDayIndex` stays at minus one, which the rule reads as "nothing has ever gone
+        /// wrong", so the clock starts from that campaign's first release rather than from today.
+        /// </summary>
+        public static SaveData UpgradeV40ToV41(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 41;
+
+            data.benefits = new List<int>();
+            data.poachedRivalStaff = new List<int>();
+            data.relationLabs = new List<int>();
+            data.relationValues = new List<double>();
+            data.relationHistoryLabs = new List<int>();
+            data.relationHistoryDays = new List<int>();
+            data.relationHistoryDeltas = new List<double>();
+            data.relationHistoryKeys = new List<string>();
+            data.relationHistorySubjects = new List<string>();
+            data.effectKinds = new List<int>();
+            data.effectStartDays = new List<int>();
+            data.effectDays = new List<int>();
+            data.effectMagnitudes = new List<double>();
+            data.effectModelIndices = new List<int>();
+
+            data.lastTroubleDayIndex = -1;
+            data.firstReleaseWindowUsed = data.models != null && data.models.Count > 0;
+            data.rosterSeed = data.randomState == 0 ? 0x5CA1AB1E : data.randomState;
 
             return data;
         }

@@ -222,6 +222,44 @@ namespace ScalingLaws.Persistence
             data.guideFavourGranted = state.Guide.FavourGranted;
             data.feedbackLetterSent = state.FeedbackLetterSent;
 
+            data.lastTroubleDayIndex = state.LastTroubleDayIndex;
+            data.firstReleaseWindowUsed = state.FirstReleaseWindowUsed;
+            data.rosterSeed = state.RosterSeed;
+
+            foreach (var benefit in state.Benefits)
+            {
+                data.benefits.Add((int)benefit);
+            }
+
+            foreach (var id in state.PoachedRivalStaff)
+            {
+                data.poachedRivalStaff.Add(id);
+            }
+
+            foreach (var lab in state.Relations.Known)
+            {
+                data.relationLabs.Add((int)lab);
+                data.relationValues.Add(state.Relations.With(lab));
+            }
+
+            foreach (var entry in state.Relations.History)
+            {
+                data.relationHistoryLabs.Add((int)entry.Lab);
+                data.relationHistoryDays.Add(entry.Date.DayIndex);
+                data.relationHistoryDeltas.Add(entry.Delta);
+                data.relationHistoryKeys.Add(entry.ReasonKey);
+                data.relationHistorySubjects.Add(entry.Subject);
+            }
+
+            foreach (var effect in state.Effects.All)
+            {
+                data.effectKinds.Add((int)effect.Kind);
+                data.effectStartDays.Add(effect.StartedOn.DayIndex);
+                data.effectDays.Add(effect.Days);
+                data.effectMagnitudes.Add(effect.Magnitude);
+                data.effectModelIndices.Add(effect.ModelIndex);
+            }
+
             data.hasServerRoom = state.HasServerRoom;
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
             state.Hall.Capture(data.hallRacks, data.hallAccelerators, data.hallFans);
@@ -662,6 +700,36 @@ namespace ScalingLaws.Persistence
 
             state.FounderName = safe.founderName;
             state.FeedbackLetterSent = safe.feedbackLetterSent;
+
+            state.LastTroubleDayIndex = safe.lastTroubleDayIndex;
+            state.FirstReleaseWindowUsed = safe.firstReleaseWindowUsed;
+            state.RosterSeed = safe.rosterSeed == 0 ? 0x5CA1AB1E : safe.rosterSeed;
+
+            state.Benefits.Clear();
+
+            foreach (var benefit in safe.benefits)
+            {
+                if (Enum.IsDefined(typeof(StaffBenefit), benefit))
+                {
+                    state.Benefits.Add((StaffBenefit)benefit);
+                }
+            }
+
+            state.PoachedRivalStaff.Clear();
+
+            foreach (var id in safe.poachedRivalStaff)
+            {
+                state.PoachedRivalStaff.Add(id);
+            }
+
+            state.Relations.Restore(
+                safe.relationLabs, safe.relationValues,
+                safe.relationHistoryLabs, safe.relationHistoryDays, safe.relationHistoryDeltas,
+                safe.relationHistoryKeys, safe.relationHistorySubjects);
+
+            state.Effects.Restore(
+                safe.effectKinds, safe.effectStartDays, safe.effectDays,
+                safe.effectMagnitudes, safe.effectModelIndices);
 
             state.HasServerRoom = safe.hasServerRoom;
             state.ServerRoomWasAGift = safe.serverRoomWasAGift;
@@ -1340,6 +1408,21 @@ namespace ScalingLaws.Persistence
             // ---- v3 collections ----
             safe.shelf ??= new List<TrainedModelData>();
             safe.upgrades ??= new List<UpgradeProjectData>();
+
+            safe.benefits ??= new List<int>();
+            safe.poachedRivalStaff ??= new List<int>();
+            safe.relationLabs ??= new List<int>();
+            safe.relationValues ??= new List<double>();
+            safe.relationHistoryLabs ??= new List<int>();
+            safe.relationHistoryDays ??= new List<int>();
+            safe.relationHistoryDeltas ??= new List<double>();
+            safe.relationHistoryKeys ??= new List<string>();
+            safe.relationHistorySubjects ??= new List<string>();
+            safe.effectKinds ??= new List<int>();
+            safe.effectStartDays ??= new List<int>();
+            safe.effectDays ??= new List<int>();
+            safe.effectMagnitudes ??= new List<double>();
+            safe.effectModelIndices ??= new List<int>();
 
             foreach (var upgrade in safe.upgrades)
             {

@@ -12,7 +12,16 @@ namespace ScalingLaws.Data
         Loft = 1,
         Floor = 2,
         Campus = 3,
-        MultiSite = 4
+        MultiSite = 4,
+
+        /// <summary>
+        /// Added 2026-08-28, between Campus and MultiSite on the ladder and after both in the enum.
+        ///
+        /// **Appended rather than inserted.** These values are written into saves, so renumbering
+        /// MultiSite would move an existing campaign into a building it never leased. Order on
+        /// screen comes from the catalog array, which nothing reads numerically.
+        /// </summary>
+        Tower = 5
     }
 
     /// <summary>
@@ -202,8 +211,8 @@ namespace ScalingLaws.Data
             new(OfficeTier.Campus, "Campus",
                 "Purpose built, well equipped, and expensive enough that the rent shows up in the "
                 + "monthly numbers whether or not the desks are full.",
-                desks: 120,
-                monthlyRentUsd: 900_000,
+                desks: 50,
+                monthlyRentUsd: 620_000,
                 fitOutCostUsd: 18_000_000,
                 effectivenessMultiplier: 1.18,
                 requiredCashUsd: 150_000_000,
@@ -211,17 +220,29 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.FromCalendar(2023, 6, 1),
                 level: 3),
 
+            new(OfficeTier.Tower, "Tower floor",
+                "Two floors of a building with your name in the lobby. The rent is a number the "
+                + "board asks about, and the desks fill faster than anybody plans for.",
+                desks: 125,
+                monthlyRentUsd: 1_450_000,
+                fitOutCostUsd: 34_000_000,
+                effectivenessMultiplier: 1.22,
+                requiredCashUsd: 380_000_000,
+                purchasePriceUsd: 0,
+                earliestDate: GameDate.FromCalendar(2024, 1, 1),
+                level: 4),
+
             new(OfficeTier.MultiSite, "Multiple sites",
                 "Three time zones and a travel budget. More people than any one room can hold, at the "
                 + "price of nobody being in the same room.",
-                desks: 400,
-                monthlyRentUsd: 4_200_000,
+                desks: 200,
+                monthlyRentUsd: 2_400_000,
                 fitOutCostUsd: 70_000_000,
                 effectivenessMultiplier: 1.12,
                 requiredCashUsd: 800_000_000,
                 purchasePriceUsd: 0,
-                earliestDate: GameDate.FromCalendar(2024, 6, 1),
-                level: 4)
+                earliestDate: GameDate.FromCalendar(2025, 1, 1),
+                level: 5)
         };
 
         private static readonly Dictionary<OfficeTier, OfficeDefinition> ByTier = BuildIndex();

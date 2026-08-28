@@ -407,7 +407,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 40;
+        public const int CurrentVersion = 41;
 
         public int version = CurrentVersion;
 
@@ -680,6 +680,49 @@ namespace ScalingLaws.Persistence
         /// advertisement.
         /// </summary>
         public bool feedbackLetterSent;
+
+        // ---- the world that has opinions about you, v41 -------------------------------------------
+        //
+        // Every one of these is causal. Effects multiply demand, relations gate what rivals will do,
+        // and a poached person is somebody who is no longer on a roster. Parallel lists rather than
+        // nested types, because JsonUtility does not serialise a list of structs the way anybody
+        // expects and every other collection in this file is already shaped this way.
+
+        /// <summary>Benefits currently offered, as StaffBenefit values.</summary>
+        public List<int> benefits = new();
+
+        /// <summary>How each lab feels about the company, paired by index.</summary>
+        public List<int> relationLabs = new();
+
+        public List<double> relationValues = new();
+
+        /// <summary>And why, which is the half that makes the number mean anything.</summary>
+        public List<int> relationHistoryLabs = new();
+
+        public List<int> relationHistoryDays = new();
+        public List<double> relationHistoryDeltas = new();
+        public List<string> relationHistoryKeys = new();
+        public List<string> relationHistorySubjects = new();
+
+        /// <summary>Timed effects still running, paired by index.</summary>
+        public List<int> effectKinds = new();
+
+        public List<int> effectStartDays = new();
+        public List<int> effectDays = new();
+        public List<double> effectMagnitudes = new();
+        public List<int> effectModelIndices = new();
+
+        /// <summary>People taken off rivals' payrolls, by generated id.</summary>
+        public List<int> poachedRivalStaff = new();
+
+        /// <summary>The last day something went publicly wrong. Safe Harbour counts from here.</summary>
+        public int lastTroubleDayIndex = -1;
+
+        /// <summary>True once the new-lab window has been spent.</summary>
+        public bool firstReleaseWindowUsed;
+
+        /// <summary>The seed rival rosters are generated from. Never moves.</summary>
+        public uint rosterSeed = 0x5CA1AB1E;
 
         // ---- the basement, v38 -------------------------------------------------------------------
         //
