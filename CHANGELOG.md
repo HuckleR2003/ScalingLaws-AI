@@ -53,10 +53,14 @@ looks.
   and compute tier sits behind one.
 - **Fourteen rival labs**, each with a dated history. Three of them come apart during the campaign,
   over the same exposures that can end the player's company.
-- **Two languages.** Polish and English, 952 phrases, switchable from settings at any time including
+- **Two languages.** Polish and English, 957 phrases, switchable from settings at any time including
   mid-conversation.
 - **Interface audio.** Synthesised at runtime rather than sampled, so the build carries no licensed
   audio and a missing file cannot break a screen.
+- **A way to tell me where you got stuck.** One letter arrives in the mailbox, once per campaign, on
+  a first release, an insolvency, or day 120, whichever comes first. It opens a form in your browser
+  carrying the build number and how far into the campaign you were, and nothing else. The game has no
+  networking of its own and never sends anything on its own.
 
 ### Changed
 
@@ -81,12 +85,12 @@ looks.
 
 ### Save compatibility
 
-Save format **v39**. This is the first public build, so there is nothing older to load. Every future
+Save format **v40**. This is the first public build, so there is nothing older to load. Every future
 version will carry a migration step, and a campaign started here will keep opening.
 
 ### Under the hood
 
-- 784 EditMode tests and 12 PlayMode tests, across 76 and 6 fixtures.
+- 793 EditMode tests and 12 PlayMode tests, across 78 and 6 fixtures.
 - Unity 6000.5.8f1. Earlier 6000.4 editors cannot open the project.
 - 188 C# files. `Simulation/` imports no UnityEngine, which is why the suite runs without loading a
   scene.

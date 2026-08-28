@@ -1054,6 +1054,11 @@ namespace ScalingLaws.Data
             ["news.see_news"] = "SEE NEWS",
             ["mk.book_it"] = "BOOK IT",
             ["mk.pick_channel"] = "Pick at least one channel above.",
+            ["feedback.sender"] = "HCK Labs",
+            ["feedback.subject"] = "Where did you get stuck?",
+            ["feedback.body"] = "I made this on my own and you are one of the first people to play it. I am not after a review. There is one thing worth telling me: the exact moment you got confused, or bored, or could not find what you were looking for. That is worth more to me than any number of downloads. It takes a minute, it opens in your browser, and the game itself sends nothing. Marcin",
+            ["feedback.open"] = "TELL HIM",
+            ["feedback.dismiss"] = "NOT NOW",
 
             // ---- what the seven founder skills are ---------------------------------------------------
             ["skill.development.title"] = "DEVELOPMENT",
@@ -2084,6 +2089,11 @@ namespace ScalingLaws.Data
             ["news.see_news"] = "ZOBACZ WIADOMOŚCI",
             ["mk.book_it"] = "REZERWUJ",
             ["mk.pick_channel"] = "Wybierz co najmniej jeden kanał powyżej.",
+            ["feedback.sender"] = "HCK Labs",
+            ["feedback.subject"] = "Gdzie utknąłeś?",
+            ["feedback.body"] = "Zrobiłem to sam i jesteś jedną z pierwszych osób, które w to grają. Nie chodzi mi o recenzję. Jest jedna rzecz, którą warto mi powiedzieć: dokładny moment, w którym się pogubiłeś, znudziłeś albo nie mogłeś znaleźć tego, czego szukałeś. To jest dla mnie warte więcej niż jakakolwiek liczba pobrań. Zajmie minutę, otworzy się w przeglądarce, a sama gra nic nie wysyła. Marcin",
+            ["feedback.open"] = "POWIEDZ MU",
+            ["feedback.dismiss"] = "NIE TERAZ",
 
             // ---- what the seven founder skills are ---------------------------------------------------
             ["skill.development.title"] = "PROGRAMOWANIE",

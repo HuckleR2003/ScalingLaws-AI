@@ -140,6 +140,7 @@ namespace ScalingLaws.Persistence
                     36 => UpgradeV36ToV37(current),
                     37 => UpgradeV37ToV38(current),
                     38 => UpgradeV38ToV39(current),
+                    39 => UpgradeV39ToV40(current),
                     _ => current
                 };
             }
@@ -1201,6 +1202,25 @@ namespace ScalingLaws.Persistence
                 upgrade.stepTraits = new List<int> { upgrade.trait };
                 upgrade.stepTargetLevels = new List<int> { upgrade.targetLevel };
             }
+
+            return data;
+        }
+
+        /// <summary>
+        /// v39 to v40: the feedback letter.
+        ///
+        /// **Not sent.** A v39 campaign was played in a build that had no such letter, so it has
+        /// not received one, and saying otherwise would silently deny it to somebody still playing.
+        /// </summary>
+        public static SaveData UpgradeV39ToV40(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 40;
+            data.feedbackLetterSent = false;
 
             return data;
         }

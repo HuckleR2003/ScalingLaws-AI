@@ -293,6 +293,10 @@ namespace ScalingLaws.Simulation
             ReportNewlyUnlockedTiers(previousLadder);
             CheckSolvency();
 
+            // After solvency, so an insolvent campaign gets asked on the day it happens rather than
+            // the day after. It is the moment the player has the most to say.
+            OfferToHearAboutIt();
+
             return BuildReport(share, demanded, served, revenue, operatingCost, depreciation, trainingProgress);
         }
 
@@ -516,6 +520,52 @@ namespace ScalingLaws.Simulation
                 projection.ComputeCashCostUsd));
 
             return true;
+        }
+
+        /// <summary>
+        /// How long a campaign runs before the letter arrives on its own.
+        ///
+        /// Long enough that the player has met the whole opening loop, short enough that somebody
+        /// who is drifting still gets asked. Whichever comes first: a release, an insolvency, or
+        /// this many days.
+        /// </summary>
+        public const int FeedbackLetterDays = 120;
+
+        /// <summary>
+        /// Posts the one letter asking the player where they got stuck.
+        ///
+        /// **Triggered on reaching something rather than on a timer alone.** A first release means
+        /// they have seen the loop; going insolvent means they hit the wall. Either is a moment
+        /// worth asking about, and the day count is only the fallback for a campaign that has done
+        /// neither.
+        ///
+        /// Once per campaign, recorded in the save, because a request for help that keeps asking is
+        /// an advertisement.
+        /// </summary>
+        private void OfferToHearAboutIt()
+        {
+            if (State.FeedbackLetterSent)
+            {
+                return;
+            }
+
+            var reached = State.DeployedModels.Count > 0
+                || State.IsBankrupt
+                || State.Date.DayIndex >= FeedbackLetterDays;
+
+            if (!reached)
+            {
+                return;
+            }
+
+            State.FeedbackLetterSent = true;
+
+            State.Mail.Add(
+                MailKind.Feedback,
+                State.Date,
+                Loc.T("feedback.sender"),
+                Loc.T("feedback.subject"),
+                Loc.T("feedback.body"));
         }
 
         /// <summary>Cancels the run in flight. The compute already burned does not come back.</summary>

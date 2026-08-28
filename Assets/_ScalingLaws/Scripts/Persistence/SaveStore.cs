@@ -220,6 +220,7 @@ namespace ScalingLaws.Persistence
             data.guideBannerDismissed = state.Guide.BannerDismissed;
             data.guideFreeResearchOwed = state.Guide.FreeResearchOwed;
             data.guideFavourGranted = state.Guide.FavourGranted;
+            data.feedbackLetterSent = state.FeedbackLetterSent;
 
             data.hasServerRoom = state.HasServerRoom;
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
@@ -660,6 +661,7 @@ namespace ScalingLaws.Persistence
             }
 
             state.FounderName = safe.founderName;
+            state.FeedbackLetterSent = safe.feedbackLetterSent;
 
             state.HasServerRoom = safe.hasServerRoom;
             state.ServerRoomWasAGift = safe.serverRoomWasAGift;

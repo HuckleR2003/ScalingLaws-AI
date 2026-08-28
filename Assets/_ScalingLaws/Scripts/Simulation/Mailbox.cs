@@ -21,7 +21,16 @@ namespace ScalingLaws.Simulation
         JobOffer = 3,
 
         /// <summary>A lender saying something about a facility already drawn.</summary>
-        LoanNotice = 4
+        LoanNotice = 4,
+
+        /// <summary>
+        /// The person who made the game, asking where you got stuck.
+        ///
+        /// **It is mail rather than a news item because it is waiting on an answer**, which is the
+        /// test this file already applies to everything else. It arrives once per campaign and never
+        /// returns, because a request for help that keeps asking is an advertisement.
+        /// </summary>
+        Feedback = 5
     }
 
     /// <summary>What the reader can do about it.</summary>
@@ -36,7 +45,16 @@ namespace ScalingLaws.Simulation
         Haggle = 4,
 
         /// <summary>Ask the revenue to wait. Costs interest, costs no standing, has a ceiling.</summary>
-        Defer = 5
+        Defer = 5,
+
+        /// <summary>
+        /// Open something outside the game.
+        ///
+        /// The simulation never learns what the address is. Opening a browser is `Application.OpenURL`
+        /// and `Simulation/` does not import UnityEngine, so the letter says only that it offers a
+        /// link and the interface decides where it goes.
+        /// </summary>
+        OpenLink = 6
     }
 
     /// <summary>
@@ -148,6 +166,10 @@ namespace ScalingLaws.Simulation
                         ? new[] { MailAction.Pay }
                         : new[] { MailAction.Pay, MailAction.Defer },
                     MailKind.Fine => new[] { MailAction.Pay },
+
+                    // Two ways out, and closing it is one of them. A letter you cannot dismiss is a
+                    // letter that becomes furniture.
+                    MailKind.Feedback => new[] { MailAction.OpenLink, MailAction.Decline },
                     // A letter from the hiring desk always offers haggling, because the rounds are
                     // counted on the letter now and running out of them is what ends it. The older
                     // shape still gets one counter and no more.

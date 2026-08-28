@@ -558,6 +558,15 @@ namespace ScalingLaws.Simulation
             return false;
         }
 
+        /// <summary>
+        /// True once the one feedback letter has been posted.
+        ///
+        /// Saved, because it is a thing that happened to this campaign rather than something
+        /// derivable from it. Without the flag a reload would post it again, and a request for help
+        /// that keeps arriving is an advertisement.
+        /// </summary>
+        public bool FeedbackLetterSent { get; set; }
+
         public string CompanyName { get; set; }
         public GameDate Date { get; set; }
         public long CashUsd { get; set; }

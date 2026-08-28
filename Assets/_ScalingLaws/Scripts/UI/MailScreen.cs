@@ -672,6 +672,16 @@ namespace ScalingLaws.UI
                         return;
                     }
 
+                    // The one action that leaves the game. Handled here rather than in the
+                    // simulation, which never learns the address: opening a browser is
+                    // `Application.OpenURL` and `Simulation/` does not import UnityEngine.
+                    if (captured == MailAction.OpenLink)
+                    {
+                        FeedbackLink.Open(simulation.State.Date);
+                        Act(letter.Id, MailAction.Decline);
+                        return;
+                    }
+
                     Act(letter.Id, captured);
                 })
                 {
@@ -684,6 +694,7 @@ namespace ScalingLaws.UI
                     MailAction.Pay => "mail-action--pay",
                     MailAction.Accept => "mail-action--yes",
                     MailAction.Haggle or MailAction.Defer => "mail-action--haggle",
+                    MailAction.OpenLink => "mail-action--yes",
                     _ => "mail-action--no"
                 });
 
@@ -704,7 +715,11 @@ namespace ScalingLaws.UI
             MailAction.Defer =>
                 $"DEFER {CompanySimulation.DeferralStepDays} DAYS  +{CompanySimulation.DeferralInterest:P1}",
 
-            _ => "DECLINE"
+            MailAction.OpenLink => Loc.T("feedback.open"),
+
+            // A feedback letter is not being turned down, it is being put away, and a button
+            // reading DECLINE over a request for help is a small unkindness.
+            _ => letter.Kind == MailKind.Feedback ? Loc.T("feedback.dismiss") : "DECLINE"
         };
 
         /// <summary>Public so a test can drive the button without a panel to dispatch clicks into.</summary>

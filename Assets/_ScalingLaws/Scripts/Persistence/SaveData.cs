@@ -407,7 +407,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 39;
+        public const int CurrentVersion = 40;
 
         public int version = CurrentVersion;
 
@@ -671,6 +671,15 @@ namespace ScalingLaws.Persistence
         /// reached the step, and the tour would hand it over again.
         /// </summary>
         public bool guideFavourGranted;
+
+        /// <summary>
+        /// True once the one letter asking where the player got stuck has been posted. v40.
+        ///
+        /// A thing that happened to this campaign rather than something derivable from it. Without
+        /// it, reloading posts the letter again, and a request for help that keeps arriving is an
+        /// advertisement.
+        /// </summary>
+        public bool feedbackLetterSent;
 
         // ---- the basement, v38 -------------------------------------------------------------------
         //
