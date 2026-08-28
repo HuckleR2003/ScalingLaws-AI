@@ -614,6 +614,47 @@ namespace ScalingLaws.Simulation
         public bool FirstReleaseWindowUsed { get; set; }
 
         /// <summary>
+        /// How much standing has been taken off each rival by things this company paid for, and
+        /// the day the last one landed.
+        ///
+        /// **It decays.** A permanent cut bought once for forty thousand dollars would compound
+        /// across fourteen years into the strongest purchase in the game, and a story people have
+        /// stopped repeating has stopped costing the company it was about anything.
+        /// </summary>
+        public Dictionary<CompetitorId, double> SmearDamage { get; } = new();
+
+        /// <summary>The first day each lab can be targeted again. Absent means today.</summary>
+        public Dictionary<CompetitorId, int> SmearQuietUntil { get; } = new();
+
+        /// <summary>
+        /// Actions in front of a court, open and closed.
+        ///
+        /// Causal, because the verdict has not been rolled yet: dropping these would let a reload
+        /// undo a judgment, which is the same hole `PendingAction` was built to close.
+        /// </summary>
+        public List<Lawsuit> Lawsuits { get; } = new();
+
+        /// <summary>An offer to buy the company, or null. At most one at a time.</summary>
+        public AcquisitionOffer PendingAcquisition { get; set; }
+
+        /// <summary>When the last offer was turned down, so nobody asks again immediately.</summary>
+        public int AcquisitionRefusedOnDayIndex { get; set; } = -1;
+
+        /// <summary>Non-zero once the company has been sold, which is how a campaign ends well.</summary>
+        public long AcquiredForUsd { get; set; }
+
+        /// <summary>The last day the press ran a story about this company. Negative means never.</summary>
+        public int LastScandalDayIndex { get; set; } = -1;
+
+        /// <summary>
+        /// The free allowance as it stood yesterday.
+        ///
+        /// Kept so that cutting it can be noticed. A cut is a thing that happened on a day, and the
+        /// only way to see it from a single value is to remember what the value used to be.
+        /// </summary>
+        public double LastFreeTierSeen { get; set; } = -1.0;
+
+        /// <summary>
         /// True once the one feedback letter has been posted.
         ///
         /// Saved, because it is a thing that happened to this campaign rather than something

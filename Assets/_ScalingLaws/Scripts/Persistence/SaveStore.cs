@@ -236,6 +236,50 @@ namespace ScalingLaws.Persistence
                 data.poachedRivalStaff.Add(id);
             }
 
+            // ---- rivalry, v42 ----
+
+            foreach (var pair in state.SmearDamage)
+            {
+                data.smearLabs.Add((int)pair.Key);
+                data.smearDamage.Add(pair.Value);
+            }
+
+            foreach (var pair in state.SmearQuietUntil)
+            {
+                data.smearQuietLabs.Add((int)pair.Key);
+                data.smearQuietUntil.Add(pair.Value);
+            }
+
+            foreach (var suit in state.Lawsuits)
+            {
+                data.lawsuitTargets.Add((int)suit.Target);
+                data.lawsuitFiledDays.Add(suit.FiledOn.DayIndex);
+                data.lawsuitDamages.Add(suit.DamagesDemandedUsd);
+                data.lawsuitCosts.Add(suit.CostsUsd);
+                data.lawsuitGrounds.Add(suit.GroundsKey);
+                data.lawsuitDaysElapsed.Add(suit.DaysElapsed);
+                data.lawsuitVerdicts.Add((int)suit.Verdict);
+                data.lawsuitAwarded.Add(suit.AwardedUsd);
+            }
+
+            if (state.PendingAcquisition != null)
+            {
+                data.acquisitionFrom = (int)state.PendingAcquisition.From;
+                data.acquisitionMadeDay = state.PendingAcquisition.MadeOn.DayIndex;
+                data.acquisitionAmountUsd = state.PendingAcquisition.AmountUsd;
+                data.acquisitionMultiple = state.PendingAcquisition.ValuationMultiple;
+                data.acquisitionDaysElapsed = state.PendingAcquisition.DaysElapsed;
+            }
+            else
+            {
+                data.acquisitionFrom = -1;
+            }
+
+            data.acquisitionRefusedOnDayIndex = state.AcquisitionRefusedOnDayIndex;
+            data.acquiredForUsd = state.AcquiredForUsd;
+            data.lastScandalDayIndex = state.LastScandalDayIndex;
+            data.lastFreeTierSeen = state.LastFreeTierSeen;
+
             foreach (var lab in state.Relations.Known)
             {
                 data.relationLabs.Add((int)lab);
@@ -721,6 +765,91 @@ namespace ScalingLaws.Persistence
             {
                 state.PoachedRivalStaff.Add(id);
             }
+
+            // ---- rivalry, v42 ----
+
+            state.SmearDamage.Clear();
+
+            for (var index = 0;
+                index < safe.smearLabs.Count && index < safe.smearDamage.Count;
+                index++)
+            {
+                if (Enum.IsDefined(typeof(CompetitorId), safe.smearLabs[index]))
+                {
+                    state.SmearDamage[(CompetitorId)safe.smearLabs[index]] =
+                        Math.Clamp(safe.smearDamage[index], 0.0, 0.6);
+                }
+            }
+
+            state.SmearQuietUntil.Clear();
+
+            for (var index = 0;
+                index < safe.smearQuietLabs.Count && index < safe.smearQuietUntil.Count;
+                index++)
+            {
+                if (Enum.IsDefined(typeof(CompetitorId), safe.smearQuietLabs[index]))
+                {
+                    state.SmearQuietUntil[(CompetitorId)safe.smearQuietLabs[index]] =
+                        safe.smearQuietUntil[index];
+                }
+            }
+
+            state.Lawsuits.Clear();
+
+            for (var index = 0; index < safe.lawsuitTargets.Count; index++)
+            {
+                if (index >= safe.lawsuitFiledDays.Count
+                    || index >= safe.lawsuitDamages.Count
+                    || index >= safe.lawsuitCosts.Count
+                    || index >= safe.lawsuitGrounds.Count
+                    || index >= safe.lawsuitDaysElapsed.Count
+                    || index >= safe.lawsuitVerdicts.Count
+                    || index >= safe.lawsuitAwarded.Count)
+                {
+                    break;
+                }
+
+                if (!Enum.IsDefined(typeof(CompetitorId), safe.lawsuitTargets[index]))
+                {
+                    continue;
+                }
+
+                var suit = new Lawsuit(
+                    (CompetitorId)safe.lawsuitTargets[index],
+                    new GameDate(safe.lawsuitFiledDays[index]),
+                    safe.lawsuitDamages[index],
+                    safe.lawsuitCosts[index],
+                    safe.lawsuitGrounds[index]);
+
+                var verdict = Enum.IsDefined(typeof(LawsuitVerdict), safe.lawsuitVerdicts[index])
+                    ? (LawsuitVerdict)safe.lawsuitVerdicts[index]
+                    : LawsuitVerdict.Pending;
+
+                suit.Restore(safe.lawsuitDaysElapsed[index], verdict, safe.lawsuitAwarded[index]);
+                state.Lawsuits.Add(suit);
+            }
+
+            if (safe.acquisitionFrom >= 0
+                && Enum.IsDefined(typeof(CompetitorId), safe.acquisitionFrom))
+            {
+                var offer = new AcquisitionOffer(
+                    (CompetitorId)safe.acquisitionFrom,
+                    new GameDate(safe.acquisitionMadeDay),
+                    safe.acquisitionAmountUsd,
+                    safe.acquisitionMultiple);
+
+                offer.Restore(safe.acquisitionDaysElapsed);
+                state.PendingAcquisition = offer;
+            }
+            else
+            {
+                state.PendingAcquisition = null;
+            }
+
+            state.AcquisitionRefusedOnDayIndex = safe.acquisitionRefusedOnDayIndex;
+            state.AcquiredForUsd = Math.Max(0L, safe.acquiredForUsd);
+            state.LastScandalDayIndex = safe.lastScandalDayIndex;
+            state.LastFreeTierSeen = safe.lastFreeTierSeen;
 
             state.Relations.Restore(
                 safe.relationLabs, safe.relationValues,
@@ -1411,6 +1540,19 @@ namespace ScalingLaws.Persistence
 
             safe.benefits ??= new List<int>();
             safe.poachedRivalStaff ??= new List<int>();
+
+            safe.smearLabs ??= new List<int>();
+            safe.smearDamage ??= new List<double>();
+            safe.smearQuietLabs ??= new List<int>();
+            safe.smearQuietUntil ??= new List<int>();
+            safe.lawsuitTargets ??= new List<int>();
+            safe.lawsuitFiledDays ??= new List<int>();
+            safe.lawsuitDamages ??= new List<long>();
+            safe.lawsuitCosts ??= new List<long>();
+            safe.lawsuitGrounds ??= new List<string>();
+            safe.lawsuitDaysElapsed ??= new List<int>();
+            safe.lawsuitVerdicts ??= new List<int>();
+            safe.lawsuitAwarded ??= new List<long>();
             safe.relationLabs ??= new List<int>();
             safe.relationValues ??= new List<double>();
             safe.relationHistoryLabs ??= new List<int>();

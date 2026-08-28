@@ -15,7 +15,7 @@ namespace ScalingLaws.Simulation
     /// bills come out, the gates get re-checked. Nothing in that order is negotiable, because a
     /// cluster that arrives in the morning should serve tokens the same afternoon.
     /// </summary>
-    public sealed class CompanySimulation
+    public sealed partial class CompanySimulation
     {
         /// <summary>
         /// Share of nameplate throughput inference actually reaches. Far below training, because
@@ -300,6 +300,14 @@ namespace ScalingLaws.Simulation
             State.Effects.Advance(State.Date);
             AwardSafeHarbourIfEarned();
             RollForViral();
+
+            // The world moving on, and the company's own dealings with it. All of it after the
+            // market has been served, because every one of these reads a figure the day produced.
+            FadeSmears();
+            AdvanceLawsuits();
+            ConsiderAcquisitionOffer();
+            ReportRivalExpansion();
+            RunTheScandalDesk(State.LastQuality.Utilisation, market.PricePerMillionTokensUsd);
 
             CheckSolvency();
 
@@ -3298,12 +3306,14 @@ namespace ScalingLaws.Simulation
                     continue;
                 }
 
+                // Expansion and anything paid for against them land here, on the one figure that
+                // reaches the market, rather than as a second standing nobody can reconcile.
                 entrants.Add(new MarketEntrant(
                     slot,
                     rival.DisplayName,
                     rival.Type,
                     rival.Capability,
-                    rival.BrandStrength,
+                    rival.BrandStrength * RivalStandingMultiplier(rival.Competitor),
                     rival.PriceMultiplier,
                     rival.ReleaseDate.YearsUntil(State.Date),
                     rival.ServingBurden));

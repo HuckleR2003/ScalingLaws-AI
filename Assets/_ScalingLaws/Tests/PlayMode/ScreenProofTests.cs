@@ -268,8 +268,30 @@ namespace ScalingLaws.Tests.PlayMode
                 "relation.reason.reported", "Somebody");
 
             var panel = new RivalPanel(() => simulation, () => { });
+            var acts = new RivalActionsPanel(() => simulation, () => { });
 
-            yield return Capture(panel.Build(lab), "rival_card.png");
+            var card = panel.Build(lab);
+            card.Add(acts.Build(lab));
+
+            yield return Capture(card, "rival_card.png");
+        }
+
+        /// <summary>
+        /// The premises page, which now ends with the two places that are announced and not built.
+        ///
+        /// Worth a frame of its own because those rows have to read as unavailable at a glance. A
+        /// row that looks like an option and refuses every click reads as a bug, and no test can
+        /// tell the difference.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOfficeChooserDraws()
+        {
+            var simulation = Campaign();
+            var chooser = new OfficeChooser(
+                () => simulation.State, (_, _) => string.Empty, () => { });
+            chooser.Refresh();
+
+            yield return Capture(chooser.Root, "offices.png");
         }
 
         [UnityTest]

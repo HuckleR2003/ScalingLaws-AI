@@ -66,7 +66,25 @@ namespace ScalingLaws.Simulation
         Notice = 39,
 
         /// <summary>Somebody left a rival and joined this company.</summary>
-        StaffPoached = 40
+        StaffPoached = 40,
+
+        /// <summary>Money was spent making a competitor look worse.</summary>
+        SmearLaunched = 41,
+
+        /// <summary>An action was filed against a rival.</summary>
+        LawsuitFiled = 42,
+
+        /// <summary>A court decided one, either way.</summary>
+        LawsuitDecided = 43,
+
+        /// <summary>Somebody offered to buy the company.</summary>
+        AcquisitionOffered = 44,
+
+        /// <summary>A rival opened something: an office, a site, a region.</summary>
+        RivalExpanded = 45,
+
+        /// <summary>The press ran a story about something this company did.</summary>
+        ModelScandal = 46
     }
 
     /// <summary>

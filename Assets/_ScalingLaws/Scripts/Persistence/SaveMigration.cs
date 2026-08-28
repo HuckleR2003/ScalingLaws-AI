@@ -142,6 +142,7 @@ namespace ScalingLaws.Persistence
                     38 => UpgradeV38ToV39(current),
                     39 => UpgradeV39ToV40(current),
                     40 => UpgradeV40ToV41(current),
+                    41 => UpgradeV41ToV42(current),
                     _ => current
                 };
             }
@@ -1552,6 +1553,57 @@ namespace ScalingLaws.Persistence
         private static string Append(string existing, string addition) =>
             string.IsNullOrEmpty(existing) ? addition : existing + " " + addition;
 
+
+        /// <summary>
+        /// v41 to v42: smear campaigns, lawsuits, acquisition offers and the scandal desk.
+        ///
+        /// **Everything empty, and every clock reading "never".** A v41 campaign was played in a
+        /// build where none of this existed, so it has smeared nobody, sued nobody, turned nobody
+        /// down and has never been written about.
+        ///
+        /// `lastFreeTierSeen` is the one that needs saying out loud. It stays at minus one, which
+        /// the desk reads as "no reading yet" rather than as zero. Writing today's allowance into
+        /// it would be the same claim; writing zero would make the very next tick believe the
+        /// company had just cut its free tier to nothing and run a scandal about a decision nobody
+        /// made. That is the least flattering assumption *not* being the defensible one, which is
+        /// why the field has a third state at all.
+        /// </summary>
+        public static SaveData UpgradeV41ToV42(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 42;
+
+            data.smearLabs = new List<int>();
+            data.smearDamage = new List<double>();
+            data.smearQuietLabs = new List<int>();
+            data.smearQuietUntil = new List<int>();
+
+            data.lawsuitTargets = new List<int>();
+            data.lawsuitFiledDays = new List<int>();
+            data.lawsuitDamages = new List<long>();
+            data.lawsuitCosts = new List<long>();
+            data.lawsuitGrounds = new List<string>();
+            data.lawsuitDaysElapsed = new List<int>();
+            data.lawsuitVerdicts = new List<int>();
+            data.lawsuitAwarded = new List<long>();
+
+            data.acquisitionFrom = -1;
+            data.acquisitionMadeDay = -1;
+            data.acquisitionAmountUsd = 0L;
+            data.acquisitionMultiple = 1.0;
+            data.acquisitionDaysElapsed = 0;
+            data.acquisitionRefusedOnDayIndex = -1;
+            data.acquiredForUsd = 0L;
+
+            data.lastScandalDayIndex = -1;
+            data.lastFreeTierSeen = -1.0;
+
+            return data;
+        }
         /// <summary>
         /// Runs the rival field forward from day zero with no player in it. Deterministic: the same
         /// save date always reconstructs the same field.

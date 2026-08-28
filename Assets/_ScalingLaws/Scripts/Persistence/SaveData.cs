@@ -407,7 +407,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 41;
+        public const int CurrentVersion = 42;
 
         public int version = CurrentVersion;
 
@@ -723,6 +723,57 @@ namespace ScalingLaws.Persistence
 
         /// <summary>The seed rival rosters are generated from. Never moves.</summary>
         public uint rosterSeed = 0x5CA1AB1E;
+
+        // ---- rivalry, v42 ------------------------------------------------------------------------
+        //
+        // Parallel lists rather than nested types, the same shape the rest of this file uses,
+        // because JsonUtility does not serialise a list of nested types the way anybody expects.
+
+        /// <summary>Standing taken off rivals by things this company paid for. Decays daily.</summary>
+        public List<int> smearLabs = new();
+
+        public List<double> smearDamage = new();
+
+        /// <summary>The first day each lab can be targeted again.</summary>
+        public List<int> smearQuietLabs = new();
+
+        public List<int> smearQuietUntil = new();
+
+        /// <summary>
+        /// Actions in front of a court.
+        ///
+        /// Open cases carry an unrolled verdict, so this is causal rather than a record: dropping
+        /// it would let a reload undo a judgment the same way dropping `actionOpen` would.
+        /// </summary>
+        public List<int> lawsuitTargets = new();
+
+        public List<int> lawsuitFiledDays = new();
+        public List<long> lawsuitDamages = new();
+        public List<long> lawsuitCosts = new();
+        public List<string> lawsuitGrounds = new();
+        public List<int> lawsuitDaysElapsed = new();
+        public List<int> lawsuitVerdicts = new();
+        public List<long> lawsuitAwarded = new();
+
+        /// <summary>An open offer to buy the company. Negative bidder means none.</summary>
+        public int acquisitionFrom = -1;
+
+        public int acquisitionMadeDay = -1;
+        public long acquisitionAmountUsd;
+        public double acquisitionMultiple = 1.0;
+        public int acquisitionDaysElapsed;
+
+        /// <summary>When the last offer was refused, so nobody asks again immediately.</summary>
+        public int acquisitionRefusedOnDayIndex = -1;
+
+        /// <summary>Non-zero once the company has been sold.</summary>
+        public long acquiredForUsd;
+
+        /// <summary>The last day the press ran a story. Negative means never.</summary>
+        public int lastScandalDayIndex = -1;
+
+        /// <summary>Yesterday's free allowance, so a cut can be noticed.</summary>
+        public double lastFreeTierSeen = -1.0;
 
         // ---- the basement, v38 -------------------------------------------------------------------
         //

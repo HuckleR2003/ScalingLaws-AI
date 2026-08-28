@@ -13474,3 +13474,162 @@
     flex-shrink: 0;
     padding-top: 10px;
 }
+
+/* A place that is announced and not built. Flat on purpose: nothing about it may read as
+   clickable, because a row that looks like an option and refuses every click reads as a bug. */
+
+.soonrow {
+    flex-shrink: 0;
+    margin-bottom: 6px;
+    padding: 10px 14px 11px 14px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.018);
+}
+
+.soonrow__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.soonrow__kicker {
+    width: 86px;
+    flex-shrink: 0;
+    font-size: 9px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(110, 120, 142);
+}
+
+.soonrow__name {
+    flex-grow: 1;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(150, 160, 180);
+}
+
+.soonrow__desks {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: rgb(110, 120, 142);
+}
+
+.soonrow__note {
+    font-size: 12px;
+    color: rgb(104, 114, 134);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-top: 5px;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Acting against a competitor: paying for a story, and taking them to court.
+
+   The cost and the chance of being caught are both on the closed row. This is the one system in
+   the game where the effective play and the honest play come apart, and folding the risk away
+   would be the interface quietly taking a side.
+   --------------------------------------------------------------------------------------------- */
+
+.acts {
+    flex-shrink: 0;
+    margin-top: 12px;
+}
+
+.acts__block {
+    flex-shrink: 0;
+    padding-bottom: 12px;
+}
+
+.act {
+    flex-shrink: 0;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.025);
+}
+
+.act--open {
+    border-color: rgba(255, 255, 255, 0.16);
+    background-color: rgba(255, 255, 255, 0.045);
+    padding-bottom: 12px;
+}
+
+.act__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    width: 100%;
+    height: 40px;
+    margin: 0;
+    padding: 0 12px 0 12px;
+    border-width: 0;
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-text-align: middle-left;
+}
+
+.act__name {
+    flex-grow: 1;
+    font-size: 12.5px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(226, 232, 244);
+}
+
+.act__cost {
+    width: 118px;
+    flex-shrink: 0;
+    font-size: 12.5px;
+    color: rgb(178, 188, 206);
+    -unity-text-align: middle-right;
+}
+
+.act__risk {
+    width: 74px;
+    flex-shrink: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(226, 186, 112);
+    -unity-text-align: middle-right;
+}
+
+.act__risk--high {
+    color: rgb(224, 132, 104);
+}
+
+.act__note {
+    font-size: 12px;
+    color: rgb(160, 170, 190);
+    white-space: normal;
+    flex-shrink: 0;
+    padding: 2px 12px 8px 12px;
+}
+
+.act__figures {
+    flex-shrink: 0;
+    padding: 0 12px 10px 12px;
+}
+
+.pair {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.pair__label {
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(122, 134, 156);
+}
+
+.pair__value {
+    font-size: 12.5px;
+    color: rgb(226, 232, 244);
+}

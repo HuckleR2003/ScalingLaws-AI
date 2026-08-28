@@ -247,6 +247,46 @@ namespace ScalingLaws.Data
 
         private static readonly Dictionary<OfficeTier, OfficeDefinition> ByTier = BuildIndex();
 
+        /// <summary>
+        /// Places that are announced and not built.
+        ///
+        /// **Deliberately not `OfficeTier` members and deliberately not in `Entries`.** Those values
+        /// are written into saves, so adding two the player can never occupy would put two numbers
+        /// into the format that mean nothing, forever, to buy a caption. These are a separate small
+        /// list that only the chooser reads, they carry no economics, and deleting them is deleting
+        /// one field.
+        ///
+        /// They exist because a ladder that stops without saying so reads as a ladder you have
+        /// finished climbing. Showing where it goes is the difference between a player who knows
+        /// there is more coming and one who concludes the game ended at the top floor.
+        /// </summary>
+        public readonly struct AnnouncedOffice
+        {
+            public AnnouncedOffice(string nameKey, string noteKey, int desks)
+            {
+                NameKey = nameKey;
+                NoteKey = noteKey;
+                Desks = desks;
+            }
+
+            public string NameKey { get; }
+            public string NoteKey { get; }
+
+            /// <summary>What it would hold, so the ladder reads as a ladder rather than as a rumour.</summary>
+            public int Desks { get; }
+
+            public string DisplayName => Loc.T(NameKey);
+            public string Note => Loc.T(NoteKey);
+        }
+
+        private static readonly AnnouncedOffice[] Announced =
+        {
+            new("office.soon.tower.name", "office.soon.tower.note", 320),
+            new("office.soon.campus.name", "office.soon.campus.note", 500)
+        };
+
+        public static IReadOnlyList<AnnouncedOffice> ComingSoon => Announced;
+
         public static IReadOnlyList<OfficeDefinition> All => Entries;
 
         /// <summary>

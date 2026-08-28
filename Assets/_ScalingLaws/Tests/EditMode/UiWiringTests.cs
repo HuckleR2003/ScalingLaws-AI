@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -57,8 +59,20 @@ namespace ScalingLaws.Tests.EditMode
 
             var orphans = new List<string>();
 
+            // A partial type is spread across several files, so "declared here and never mentioned
+            // here" stopped meaning "unreachable" the moment GameShell was split. The unit of
+            // search is the type, not the file: everything declaring the same partial class is
+            // searched together.
+            //
+            // Narrowing this to the type rather than to the whole folder matters. Searching every
+            // UI file would let an identically named method in an unrelated class vouch for a dead
+            // one, and this guard has paid for itself six times precisely by not doing that.
+            var partOf = PartnerText(sources);
+
             foreach (var (fileName, text) in sources)
             {
+                var searchable = partOf[fileName];
+
                 foreach (Match match in declaration.Matches(text))
                 {
                     var name = match.Groups[1].Value;
@@ -80,9 +94,9 @@ namespace ScalingLaws.Tests.EditMode
                     // groups: generateVisualContent += Draw, new Button(SkipDay), a callback passed
                     // by name. Counting only call syntax reported every one of those as dead, which
                     // is the kind of false alarm that gets a test deleted rather than fixed.
-                    var uses = Regex.Matches(text, @"\b" + Regex.Escape(name) + @"\b").Count;
+                    var uses = Regex.Matches(searchable, @"\b" + Regex.Escape(name) + @"\b").Count;
                     var declarations = Regex.Matches(
-                        text, @"private\s+(?:static\s+)?[\w<>\[\],\.\?]+\s+"
+                        searchable, @"private\s+(?:static\s+)?[\w<>\[\],\.\?]+\s+"
                               + Regex.Escape(name) + @"\s*\(").Count;
 
                     if (uses <= declarations)
@@ -98,13 +112,57 @@ namespace ScalingLaws.Tests.EditMode
                 + "\n\nThis has shipped five times. Delete it or wire it.");
         }
 
+
+        /// <summary>
+        /// The text every part of a type is spread across, keyed by file.
+        ///
+        /// A partial class is one type in several files, so "declared here and never mentioned
+        /// here" stopped being evidence of anything the moment `GameShell` was split. Grouping by
+        /// the declared type keeps the guard as strict as it was: it is still not enough for a
+        /// method to be mentioned somewhere in the folder, only somewhere in its own class.
+        /// </summary>
+        private static Dictionary<string, string> PartnerText(Dictionary<string, string> sources)
+        {
+            // Anchored to a real declaration line, with its modifiers. Matching the bare word
+            // "class" found it first inside a doc comment ("the failure class is ...") and
+            // grouped the two halves of one type under two invented names, which silently
+            // turned this guard off while leaving it green.
+            var declared = new Regex(
+                @"^\s*(?:public|internal|private|protected)[\w\s]*?\bclass\s+(\w+)",
+                RegexOptions.Compiled | RegexOptions.Multiline);
+            var byType = new Dictionary<string, string>();
+            var typeOf = new Dictionary<string, string>();
+
+            foreach (var (fileName, text) in sources)
+            {
+                var match = declared.Match(text);
+                var type = match.Success ? match.Groups[1].Value : fileName;
+
+                typeOf[fileName] = type;
+                byType[type] = byType.TryGetValue(type, out var alreadySeen) ? alreadySeen + text : text;
+            }
+
+            var result = new Dictionary<string, string>();
+
+            foreach (var (fileName, type) in typeOf)
+            {
+                result[fileName] = byType[type];
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// The specific one that just cost a turn: the research popup has to be opened by something.
         /// </summary>
         [Test]
         public void ClickingAResearchNodeOpensTheCard()
         {
-            var shell = UiSources()["GameShell.cs"];
+            // Read across the whole partial type. The declaration is in GameShell.Research.cs and
+            // the click that opens it is in GameShell.cs, so naming one file finds one half.
+            var shell = string.Concat(UiSources()
+                .Where(entry => entry.Key.StartsWith("GameShell", StringComparison.Ordinal))
+                .Select(entry => entry.Value));
 
             var calls = Regex.Matches(shell, @"ShowResearchCard\s*\(").Count;
 

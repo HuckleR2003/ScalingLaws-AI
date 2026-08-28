@@ -123,11 +123,50 @@ namespace ScalingLaws.UI
                 Root.Add(BuildRow(place, company));
             }
 
-            var note = new Label("More places are being built. A tier with nowhere to move into is "
-                + "not offered here, because moving to nowhere is not a decision.");
+            // Where the ladder goes next, drawn rather than described. The sentence that used to
+            // sit here said more places were being built and named none of them, which is a
+            // promise the player cannot plan against. It was also the last untranslated literal
+            // on this page.
+            foreach (var soon in OfficeCatalog.ComingSoon)
+            {
+                Root.Add(BuildAnnouncedRow(soon));
+            }
+        }
 
-            note.AddToClassList("field__hint");
-            Root.Add(note);
+        /// <summary>
+        /// A place that is announced and not built.
+        ///
+        /// Deliberately flat: no price, no button, no hover. Everything that would make it look
+        /// clickable is left off, because a row that reads as an option and refuses every click
+        /// reads as a bug rather than as a plan.
+        /// </summary>
+        private static VisualElement BuildAnnouncedRow(OfficeCatalog.AnnouncedOffice soon)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("soonrow");
+
+            var head = new VisualElement();
+            head.AddToClassList("soonrow__head");
+
+            var kicker = new Label(Loc.T("office.soon"));
+            kicker.AddToClassList("soonrow__kicker");
+            head.Add(kicker);
+
+            var name = new Label(soon.DisplayName);
+            name.AddToClassList("soonrow__name");
+            head.Add(name);
+
+            var desks = new Label(Loc.Counted(soon.Desks, "noun.desk"));
+            desks.AddToClassList("soonrow__desks");
+            head.Add(desks);
+
+            row.Add(head);
+
+            var note = new Label(soon.Note);
+            note.AddToClassList("soonrow__note");
+            row.Add(note);
+
+            return row;
         }
 
         /// <summary>
