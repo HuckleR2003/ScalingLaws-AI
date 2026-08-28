@@ -73,6 +73,12 @@ namespace ScalingLaws.UI
         /// <summary>What the company offers its people. Lives on the business page.</summary>
         private BenefitsPanel benefits;
 
+        /// <summary>Relations, their staff and the offers. Opens inside the lab card.</summary>
+        private RivalPanel rivals;
+
+        /// <summary>Which lab's card is open, so an offer can redraw the one it happened on.</summary>
+        private CompetitorId openLab;
+
         /// <summary>The handset resting under the bottom bar once the tour is over.</summary>
         private PhoneDock phoneDock;
 
@@ -4523,6 +4529,17 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 return;
             }
 
+            // A half-typed offer belongs to the lab it was typed about. Carrying it to the next
+            // card would let a bonus meant for one company be sent to another by one click.
+            rivals ??= new RivalPanel(() => simulation, () => ShowLabDossier(openLab));
+
+            if (openLab != lab)
+            {
+                rivals.Reset();
+            }
+
+            openLab = lab;
+
             labCard = new VisualElement();
             labCard.AddToClassList("dossier");
 
@@ -4589,6 +4606,8 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 nothing.AddToClassList("dossier__story");
                 labCard.Add(nothing);
             }
+
+            labCard.Add(rivals.Build(lab));
 
             shellRoot.Add(labCard);
         }

@@ -247,6 +247,31 @@ namespace ScalingLaws.Tests.PlayMode
             yield return Capture(panel.Root, "upgrade_picked.png");
         }
 
+        /// <summary>
+        /// The rival card, with a relationship that has gone wrong and an offer form open.
+        ///
+        /// **The empty state teaches nothing here.** A lab nothing has happened with draws a neutral
+        /// band, no history and twelve calm rows, which is the one arrangement where none of the
+        /// colour rules, none of the bands and none of the form can be wrong. So the frame is taken
+        /// against a company that has been poached from and reported.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheRivalCardDraws()
+        {
+            var simulation = Campaign();
+            var lab = CompetitorId.OpenAi;
+
+            simulation.State.Relations.Record(lab, simulation.State.Date, -14.0,
+                "relation.reason.poached", "Somebody");
+
+            simulation.State.Relations.Record(lab, simulation.State.Date, -9.0,
+                "relation.reason.reported", "Somebody");
+
+            var panel = new RivalPanel(() => simulation, () => { });
+
+            yield return Capture(panel.Build(lab), "rival_card.png");
+        }
+
         [UnityTest]
         public IEnumerator TheReleasePlannerDraws()
         {

@@ -13212,3 +13212,265 @@
     letter-spacing: 0.8px;
     color: rgb(150, 178, 216);
 }
+
+/* ---------------------------------------------------------------------------------------------
+   The rival block inside the lab card: where they stand, what you did, and who works there.
+
+   Every block states flex-shrink: 0. The card has a fixed top and bottom, so a child that is
+   allowed to shrink is squashed onto its own text rather than scrolled, which is the fault the
+   creator pages already shipped once.
+   --------------------------------------------------------------------------------------------- */
+
+.rival {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-top: 10px;
+}
+
+.rival__standing {
+    flex-shrink: 0;
+    padding-bottom: 10px;
+}
+
+.rival__bandrow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-right: 4px;
+    padding-bottom: 6px;
+}
+
+.rival__band {
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+}
+
+.rival__value {
+    font-size: 13px;
+    color: rgb(122, 134, 156);
+}
+
+.rival__track {
+    height: 5px;
+    flex-shrink: 0;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.rival__fill {
+    position: absolute;
+    top: 0;
+    height: 5px;
+    border-radius: 3px;
+}
+
+.rival__note {
+    font-size: 12px;
+    color: rgb(150, 160, 180);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-top: 7px;
+}
+
+/* The band as ink for the word, and as paint for the bar. One rule doing both put the band
+   name in gold on a gold ground, which the rendered frame caught and no test could. */
+
+.rival--friendly { color: rgb(126, 214, 164); }
+.rival--neutral { color: rgb(168, 178, 198); }
+.rival--tense { color: rgb(226, 186, 112); }
+.rival--hostile { color: rgb(224, 132, 104); }
+.rival--rivalry { color: rgb(214, 96, 96); }
+
+.rival--friendly-fill { background-color: rgb(126, 214, 164); }
+.rival--neutral-fill { background-color: rgb(168, 178, 198); }
+.rival--tense-fill { background-color: rgb(226, 186, 112); }
+.rival--hostile-fill { background-color: rgb(224, 132, 104); }
+.rival--rivalry-fill { background-color: rgb(214, 96, 96); }
+
+.rival__history {
+    flex-shrink: 0;
+    padding-bottom: 8px;
+}
+
+.rival__entry {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.rival__delta {
+    width: 42px;
+    flex-shrink: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(126, 214, 164);
+}
+
+.rival__delta--bad {
+    color: rgb(224, 132, 104);
+}
+
+.rival__reason {
+    flex-grow: 1;
+    font-size: 12px;
+    color: rgb(178, 188, 206);
+    white-space: normal;
+}
+
+.rival__roster {
+    flex-shrink: 0;
+    padding-top: 4px;
+}
+
+.rival__warning {
+    font-size: 11.5px;
+    color: rgb(226, 186, 112);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-bottom: 8px;
+}
+
+.rival__outcome {
+    font-size: 12.5px;
+    color: rgb(226, 232, 244);
+    white-space: normal;
+    flex-shrink: 0;
+    padding: 8px 10px 8px 10px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border-left-width: 2px;
+    border-left-color: rgb(226, 186, 112);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.rival__locked {
+    flex-shrink: 0;
+    padding: 9px 11px 9px 11px;
+    margin-top: 6px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.rival__lockedcount {
+    font-size: 12.5px;
+    -unity-font-style: bold;
+    color: rgb(198, 208, 226);
+}
+
+/* One person on their roster. */
+
+.person {
+    flex-shrink: 0;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.025);
+}
+
+.person__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 8px 10px 8px 12px;
+}
+
+.person__name {
+    width: 152px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: rgb(232, 238, 250);
+}
+
+.person__role {
+    flex-grow: 1;
+    font-size: 11.5px;
+    color: rgb(150, 160, 180);
+}
+
+.person__years {
+    width: 74px;
+    flex-shrink: 0;
+    font-size: 11.5px;
+    color: rgb(122, 134, 156);
+}
+
+.person__loyalty {
+    width: 96px;
+    flex-shrink: 0;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+}
+
+.person__loyalty--loose { color: rgb(224, 132, 104); }
+.person__loyalty--open { color: rgb(226, 186, 112); }
+.person__loyalty--settled { color: rgb(168, 178, 198); }
+.person__loyalty--committed { color: rgb(126, 214, 164); }
+
+.person__offer {
+    width: 96px;
+    height: 26px;
+    flex-shrink: 0;
+    margin-left: 8px;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    padding: 0;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    -unity-text-align: middle-center;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.16);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgb(214, 222, 238);
+}
+
+.person__form {
+    flex-shrink: 0;
+    padding: 4px 12px 12px 12px;
+}
+
+.person__caption {
+    font-size: 12.5px;
+    color: rgb(226, 232, 244);
+    flex-shrink: 0;
+    padding-bottom: 4px;
+}
+
+.person__slider {
+    max-width: none;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.rival__call {
+    flex-shrink: 0;
+    margin-top: 10px;
+    padding: 12px 14px 12px 14px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(224, 132, 104, 0.45);
+    background-color: rgba(224, 132, 104, 0.08);
+}
+
+.rival__calltitle {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+    flex-shrink: 0;
+    padding-bottom: 5px;
+}
+
+.rival__callbuttons {
+    flex-direction: row;
+    flex-shrink: 0;
+    padding-top: 10px;
+}
