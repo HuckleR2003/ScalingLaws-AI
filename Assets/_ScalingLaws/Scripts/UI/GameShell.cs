@@ -82,6 +82,14 @@ namespace ScalingLaws.UI
         /// <summary>Paying for a story, and taking them to court. Same card, below the roster.</summary>
         private RivalActionsPanel rivalActs;
 
+        /// <summary>
+        /// The stock screen.
+        ///
+        /// Held rather than rebuilt so which company the player was looking at survives a day
+        /// rolling over, which happens every second and a half at normal speed.
+        /// </summary>
+        private InvestingScreen investing;
+
         /// <summary>The handset resting under the bottom bar once the tour is over.</summary>
         private PhoneDock phoneDock;
 
@@ -299,6 +307,12 @@ namespace ScalingLaws.UI
             Release,
             Funding,
             Ranking,
+
+            /// <summary>
+            /// The stock screen. Appended rather than inserted: `Screen` is compared by value in
+            /// the tour's target table and by the bottom bar's slot userData.
+            /// </summary>
+            Investing,
             Feed,
 
             Marketing,
@@ -1188,6 +1202,11 @@ namespace ScalingLaws.UI
                 case Screen.Ranking:
                     host.Add(BuildRankingScreen());
                     break;
+                case Screen.Investing:
+                    investing ??= new InvestingScreen(() => simulation, () => Show(Screen.Investing));
+                    investing.Refresh();
+                    host.Add(investing.Root);
+                    break;
                 default:
                     host.Add(BuildFeedScreen());
                     break;
@@ -1597,10 +1616,61 @@ namespace ScalingLaws.UI
             return button;
         }
 
+        /// <summary>
+        /// The strip that carries the player from the board to the stock screen.
+        ///
+        /// Styled as one wide button rather than as a row of text, because it is a door and doors
+        /// on this page are cards. It names both halves the way the screen itself does, so arriving
+        /// there is not a surprise.
+        /// </summary>
+        private VisualElement BuildInvestingBanner()
+        {
+            var banner = new Button(() => Show(Screen.Investing));
+            banner.AddToClassList("investbanner");
+
+            var titles = new VisualElement();
+            titles.AddToClassList("investbanner__titles");
+
+            var row = new VisualElement();
+            row.AddToClassList("investbanner__row");
+
+            var mark = new Label(Loc.T("invest.title"));
+            mark.AddToClassList("investbanner__mark");
+            row.Add(mark);
+
+            var rule = new VisualElement();
+            rule.AddToClassList("investbanner__rule");
+            row.Add(rule);
+
+            var name = new Label(Loc.T("invest.banner"));
+            name.AddToClassList("investbanner__name");
+            row.Add(name);
+
+            titles.Add(row);
+
+            var note = new Label(Loc.T("invest.banner.note"));
+            note.AddToClassList("investbanner__note");
+            titles.Add(note);
+
+            banner.Add(titles);
+
+            var arrow = new Label(">");
+            arrow.AddToClassList("investbanner__arrow");
+            banner.Add(arrow);
+
+            return banner;
+        }
+
         private VisualElement BuildRankingScreen()
         {
             var page = NewPage(Loc.T("page.ranking"), Loc.T("page.ranking.strap"));
 UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
+
+            // The way in to the stock screen, at the top of the board rather than in the bottom
+            // bar. This is the page where a player is already looking at a list of companies and
+            // wondering what they could do about them, which is the only moment the offer means
+            // anything. A sixteenth slot on the bar would also overflow it.
+            page.Add(BuildInvestingBanner());
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");

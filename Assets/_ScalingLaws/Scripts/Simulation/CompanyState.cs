@@ -647,6 +647,25 @@ namespace ScalingLaws.Simulation
         public int LastScandalDayIndex { get; set; } = -1;
 
         /// <summary>
+        /// Shares held in other companies, by lab.
+        ///
+        /// The price is derived from the lab's own standing on the day, so none of it is stored.
+        /// What is stored is the part the player changed: how many shares, and what they paid.
+        /// </summary>
+        public Dictionary<CompetitorId, long> Shareholdings { get; } = new();
+
+        /// <summary>
+        /// What was paid for the holding, so the screen can say whether it was worth it.
+        ///
+        /// Reduced in proportion on a partial sale rather than cleared, or the remainder would
+        /// read as though it had cost nothing.
+        /// </summary>
+        public Dictionary<CompetitorId, long> ShareCostBasis { get; } = new();
+
+        /// <summary>Labs bought outright. They stop trading and their shares stop being for sale.</summary>
+        public HashSet<CompetitorId> AcquiredLabs { get; } = new();
+
+        /// <summary>
         /// The free allowance as it stood yesterday.
         ///
         /// Kept so that cutting it can be noticed. A cut is a thing that happened on a day, and the

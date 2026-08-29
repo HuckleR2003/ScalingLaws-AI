@@ -25,6 +25,22 @@ namespace ScalingLaws.Simulation
         /// <summary>A cluster with no hosts, memory or fabric still limps along at this fraction.</summary>
         public const double MinimumBalanceFactor = 0.15;
 
+        /// <summary>
+        /// How well a cabinet in your own building is used, as a share of what the same card would
+        /// reach in a tuned facility.
+        ///
+        /// **Relative, not absolute, and that distinction was found by a failing test.** The first
+        /// version of this was a flat 0.62, chosen to read as "below a datacenter and above
+        /// nothing". Generation ceilings in this catalog sit nearer 0.40, so the flat number made
+        /// the basement comfortably *better* than a datacenter and turned the room into free money.
+        /// A share of whatever the card would otherwise have reached cannot invert, whatever the
+        /// hardware catalog does later.
+        /// </summary>
+        public const double BasementUtilisationPenalty = 0.85;
+
+        /// <summary>Domestic supply, not a datacenter contract.</summary>
+        public const double DomesticTariffUsd = 0.19;
+
         private const double DaysPerMonth = 30.4375;
         private const double DaysPerYear = 365.2425;
 
@@ -214,6 +230,14 @@ namespace ScalingLaws.Simulation
             var cloudRent = 0.0;
             var electricity = 0.0;
             var housing = 0.0;
+
+            // What the accelerators alone draw and cost. The basement swap is apportioned from
+            // these rather than from the totals, because host CPUs and fabric do not move into a
+            // cabinet in somebody's house.
+            var acceleratorPowerKw = 0.0;
+            var acceleratorHousing = 0.0;
+            var acceleratorElectricity = 0.0;
+
             var maintenance = 0.0;
             var depreciation = 0.0;
             var residualValue = 0L;
@@ -259,6 +283,13 @@ namespace ScalingLaws.Simulation
                 if (generation.Class == HardwareClass.Accelerator)
                 {
                     ownedAccelerators += asset.Units;
+
+                    acceleratorPowerKw += assetPower;
+                    acceleratorElectricity +=
+                        assetPower * SimUnits.HoursPerDay * tier.PowerCostPerKilowattHourUsd;
+                    acceleratorHousing +=
+                        assetPower * tier.HousingCostPerKilowattMonthUsd / DaysPerMonth;
+
                     var assetPetaflops = generation.PetaflopsPerUnit * asset.Units;
                     ownedPetaflops += assetPetaflops;
                     weightedCeiling += assetPetaflops * generation.UtilizationCeiling;
@@ -268,6 +299,57 @@ namespace ScalingLaws.Simulation
                 {
                     supportCapacity[generation.Class] += (double)generation.AcceleratorsServed * asset.Units;
                 }
+            }
+
+            // **The basement, and it houses rather than adds.**
+            //
+            // Everything above counted every owned accelerator as living in a datacenter, paying
+            // that tier's housing and power. A cabinet in your own building is the same card in a
+            // different place: the capacity is not new, the bills are, and so is the heat.
+            //
+            // Apportioned from the accelerator totals rather than tracked per asset. That is an
+            // approximation and it is a stated one: which individual cards went downstairs is a
+            // question the player never answers, so the game must not pretend to know.
+            //
+            // The room is charged whether or not anything is in it. Racks draw their idle and the
+            // upkeep is due on an empty floor, which is what makes opening one early a decision.
+            if (hall != null)
+            {
+                var perUnitPetaflops = ownedAccelerators > 0
+                    ? ownedPetaflops / ownedAccelerators
+                    : 0.0;
+
+                var perUnitKilowatts = ownedAccelerators > 0
+                    ? acceleratorPowerKw / ownedAccelerators
+                    : 0.0;
+
+                var housed = hall.Stock(ownedAccelerators);
+                var output = hall.Output(perUnitPetaflops, perUnitKilowatts);
+
+                if (housed > 0 && ownedAccelerators > 0)
+                {
+                    var share = housed / (double)ownedAccelerators;
+                    var unthrottled = housed * perUnitPetaflops;
+
+                    // At this point nothing but owned accelerators has touched the ceiling, so this
+                    // average is theirs alone. Rented and packaged capacity join below.
+                    var averageCeiling = ownedPetaflops > 0.0
+                        ? weightedCeiling / ownedPetaflops
+                        : 0.0;
+
+                    ownedPetaflops -= unthrottled - output.Petaflops;
+                    weightedCeiling -= unthrottled * averageCeiling;
+                    weightedCeiling += output.Petaflops * averageCeiling
+                        * BasementUtilisationPenalty;
+
+                    powerDraw -= acceleratorPowerKw * share;
+                    housing -= acceleratorHousing * share;
+                    electricity -= acceleratorElectricity * share;
+                }
+
+                powerDraw += output.DrawKilowatts;
+                electricity += output.DrawKilowatts * SimUnits.HoursPerDay * DomesticTariffUsd;
+                maintenance += hall.MonthlyUpkeepUsd / DaysPerMonth;
             }
 
             var rentedPetaflops = 0.0;
@@ -291,33 +373,6 @@ namespace ScalingLaws.Simulation
                 weightedCeiling += packaged * 0.92;
                 rentedPetaflops += packaged;
                 cloudRent += PackagesDailyCostUsd;
-            }
-
-            // **The basement joins here, as a third source rather than a second pool.** One
-            // capacity number reaches the market whatever produced it; a parallel pool would let the
-            // market, the books and the corner banner each read a different fleet.
-            //
-            // Its throughput arrives already throttled by its own heat, because the hall applies
-            // that per cabinet, which is where the decision was made.
-            if (hall != null && HardwareCatalog.TryGet(market.RentableGeneration, out var housed))
-            {
-                var output = hall.Output(housed.PetaflopsPerUnit, housed.PowerKilowatts);
-
-                if (output.Petaflops > 0.0)
-                {
-                    ownedPetaflops += output.Petaflops;
-
-                    // A cabinet in a basement is not a tuned hall. Below anything in a datacenter
-                    // and above nothing at all.
-                    weightedCeiling += output.Petaflops * 0.62;
-                }
-
-                powerDraw += output.DrawKilowatts;
-
-                // Domestic supply, not a datacenter contract, and upkeep is a monthly bill spread
-                // over the days it covers.
-                electricity += output.DrawKilowatts * SimUnits.HoursPerDay * 0.19;
-                maintenance += hall.MonthlyUpkeepUsd / DaysPerMonth;
             }
 
             var rawPetaflops = ownedPetaflops + rentedPetaflops;

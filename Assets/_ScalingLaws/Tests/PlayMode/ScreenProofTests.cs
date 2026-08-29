@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using ScalingLaws.Core;
@@ -185,6 +186,57 @@ namespace ScalingLaws.Tests.PlayMode
             return Inside(page, right);
         }
 
+        /// <summary>
+        /// True for an element built by the runtime theme rather than by this project.
+        ///
+        /// Every class it carries has to be a `unity-` class. An element with no classes is not
+        /// theme-internal, it is an unstyled element this project made, and those are exactly the
+        /// ones worth catching.
+        /// </summary>
+        private static bool IsThemeInternal(VisualElement element)
+        {
+            var any = false;
+
+            foreach (var name in element.GetClasses())
+            {
+                any = true;
+
+                if (!name.StartsWith("unity-", System.StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return any;
+        }
+
+        /// <summary>
+        /// Where an element sits, named by the styled ancestors around it and how wide each is.
+        ///
+        /// A control the runtime theme assembles reports its own class as
+        /// `unity-base-slider__dragger-border`, which identifies nothing. The panel it is in is
+        /// what the stylesheet can actually be aimed at, and the widths say which link in the
+        /// chain is the one that stopped fitting.
+        /// </summary>
+        private static string Chain(VisualElement element)
+        {
+            var parts = new List<string>();
+            var walk = element;
+
+            while (walk != null && parts.Count < 8)
+            {
+                var classes = string.Join(".", walk.GetClasses());
+
+                parts.Add(string.IsNullOrEmpty(classes)
+                    ? $"<{walk.GetType().Name} {walk.worldBound.width:0}w>"
+                    : $"{classes} [{walk.worldBound.xMin:0}..{walk.worldBound.xMax:0}]");
+
+                walk = walk.parent;
+            }
+
+            return string.Join("  <  ", parts);
+        }
+
         private static bool Inside(VisualElement element, float right)
         {
             foreach (var child in element.Children())
@@ -194,11 +246,22 @@ namespace ScalingLaws.Tests.PlayMode
                     continue;
                 }
 
+                // Parts the runtime theme assembles inside its own controls. A slider's
+                // dragger-border is sized to the whole track and offset by the value, so it leaves
+                // its parent by design; no stylesheet here can reach it and there is nothing to
+                // fix. Skipped only when every class it carries is a theme class, so anything this
+                // project styles is still checked.
+                if (IsThemeInternal(child))
+                {
+                    continue;
+                }
+
                 if (child.worldBound.width > 0f && child.worldBound.xMax > right)
                 {
                     Debug.LogError($"[Scaling Laws] {child.GetType().Name} "
                         + $"[{string.Join(" ", child.GetClasses())}] reaches "
-                        + $"{child.worldBound.xMax:0} against a page edge at {right:0}.");
+                        + $"{child.worldBound.xMax:0} against a page edge at {right:0}."
+                        + $"\n  in: {Chain(child)}");
 
                     return false;
                 }
@@ -283,6 +346,28 @@ namespace ScalingLaws.Tests.PlayMode
         /// row that looks like an option and refuses every click reads as a bug, and no test can
         /// tell the difference.
         /// </summary>
+        /// <summary>
+        /// The stock screen, with a position already open.
+        ///
+        /// An empty portfolio draws zeroes in every figure on the right, which is the one
+        /// arrangement where none of the good/bad colouring, none of the ownership bar and none of
+        /// the takeover block can be wrong. So the frame is taken holding a real parcel.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheInvestingScreenDraws()
+        {
+            var simulation = Campaign();
+            simulation.State.CashUsd = 40_000_000_000L;
+
+            simulation.TryBuyShares(CompetitorId.OpenAi, 30_000_000, out _, out _);
+
+            var screen = new InvestingScreen(() => simulation, () => { });
+            screen.Select(CompetitorId.OpenAi);
+            screen.Refresh();
+
+            yield return Capture(screen.Root, "investing.png");
+        }
+
         [UnityTest]
         public IEnumerator TheOfficeChooserDraws()
         {

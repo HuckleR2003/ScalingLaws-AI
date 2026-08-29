@@ -33,6 +33,20 @@ namespace ScalingLaws.UI
         /// <summary>Full precision with separators, for anything that reads like a bank balance.</summary>
         public static string MoneyExact(long amount) => amount.ToString("C0", Culture);
 
+        /// <summary>
+        /// A share price, which is the one figure in this game that needs cents.
+        ///
+        /// `Money` rounds to whole dollars below a thousand, so every share on the board would
+        /// print as `$20` and a chart that moved between 19.60 and 20.71 would have a caption that
+        /// never changed. This is also why it is not a raw format string: `:0.00` follows the
+        /// machine culture and this one is Polish, which has bitten this project four times.
+        /// </summary>
+        public static string SharePrice(double usd) =>
+            "$" + usd.ToString("0.00", Culture);
+
+        /// <summary>A count of things, short. Share parcels run to hundreds of millions.</summary>
+        public static string Compact(long value) => Count(value);
+
         public static string Count(double value)
         {
             return value switch

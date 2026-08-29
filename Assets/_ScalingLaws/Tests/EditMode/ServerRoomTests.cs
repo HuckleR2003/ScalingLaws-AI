@@ -252,16 +252,67 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Company(cash: 50_000_000);
 
-            var empty = simulation.Profile.RawPetaflops;
+            // Cards the company actually owns. The old version of this test stocked the hall
+            // directly with as many accelerators as it had slots, which is how the room used to
+            // conjure capacity out of nothing: it housed hardware nobody had bought. Fixing that
+            // was the point, so the setup has to buy hardware the way a player does.
+            simulation.State.Pool.AddAsset(new HardwareAsset(
+                HardwareGenerationId.AcceleratorA100, ComputeTier.ColocatedServers, 24,
+                simulation.State.Date, 10_000, 0));
+
+            var rented = simulation.Profile;
 
             simulation.TryOpenServerRoom(true, out _);
-            simulation.State.Hall.Stock(simulation.State.Hall.TotalSlots);
+            simulation.Advance(1);
 
-            var housed = simulation.Profile.RawPetaflops;
+            Assert.That(simulation.State.Hall.HousedAccelerators, Is.GreaterThan(0),
+                "The company owns hardware and the racks are still empty, so nothing ever puts a "
+                + "card in a cabinet and the room is a screen that computes numbers nothing "
+                + "consumes.");
 
-            Assert.That(housed, Is.GreaterThan(empty),
-                "The cabinets are full and the fleet has not noticed, so the room is a screen that "
-                + "computes numbers nothing consumes.");
+            var owned = simulation.Profile;
+
+            // Effective, not raw. These cabinets do not throttle an A100, so the card produces
+            // exactly what it did in a datacenter; what changes is how well it is used, and the
+            // market consumes the effective figure rather than the nameplate one.
+            Assert.That(owned.EffectivePetaflops, Is.Not.EqualTo(rented.EffectivePetaflops),
+                "Housing the fleet changed nothing the market can read.");
+        }
+
+        /// <summary>
+        /// The room is a cheaper address, not free hardware.
+        ///
+        /// **This is the whole trade and it is easy to lose in either direction.** Housing your own
+        /// silicon saves a datacenter's monthly fee and costs you the utilisation a tuned hall
+        /// would have given you. Make the basement produce more petaflops than the same cards in a
+        /// datacenter and it stops being a decision; make it save nothing and nobody opens one.
+        /// </summary>
+        [Test]
+        public void HousingYourOwnFleetIsCheaperAndSlightlyWorse()
+        {
+            var datacentre = Company(cash: 50_000_000);
+            var basement = Company(cash: 50_000_000);
+
+            foreach (var simulation in new[] { datacentre, basement })
+            {
+                simulation.State.Pool.AddAsset(new HardwareAsset(
+                    HardwareGenerationId.AcceleratorA100, ComputeTier.ColocatedServers, 24,
+                    simulation.State.Date, 10_000, 0));
+            }
+
+            basement.TryOpenServerRoom(true, out _);
+            basement.Advance(1);
+            datacentre.Advance(1);
+
+            Assert.That(basement.State.Hall.HousedAccelerators, Is.GreaterThan(0));
+
+            Assert.That(basement.Profile.EffectivePetaflops,
+                Is.LessThan(datacentre.Profile.EffectivePetaflops),
+                "A cabinet in a house got as much out of the same card as a datacenter did, which "
+                + "makes the room free money rather than a trade.");
+
+            Assert.That(basement.Profile.UtilizationCeiling,
+                Is.LessThan(datacentre.Profile.UtilizationCeiling));
         }
 
         [Test]

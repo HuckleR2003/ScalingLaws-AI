@@ -31,7 +31,16 @@ namespace ScalingLaws.Simulation
         Interest = 19,
         Tax = 20,
         Depreciation = 21,
-        Fines = 22
+        Fines = 22,
+
+        /// <summary>
+        /// Buying shares in other companies, and buying whole ones.
+        ///
+        /// Its own line rather than folded into Funding, because money going out to acquire an
+        /// asset and money coming in from a lender are opposite facts and a books page that
+        /// nets them says nothing about either.
+        /// </summary>
+        Investment = 26
     }
 
     /// <summary>What a line is called and which side of the report it sits on.</summary>
@@ -105,7 +114,8 @@ namespace ScalingLaws.Simulation
             new(LedgerLine.Interest, "Debt interest", "Capital", false, true),
             new(LedgerLine.Tax, "Corporate tax", "Company", false, true),
             new(LedgerLine.Depreciation, "Depreciation", "Capital", false, false),
-            new(LedgerLine.Fines, "Fines and incidents", "Company", false, true)
+            new(LedgerLine.Fines, "Fines and incidents", "Company", false, true),
+            new(LedgerLine.Investment, "Shares and acquisitions", "Capital", false, false)
         };
 
         /// <summary>month index (year * 12 + month - 1) to the totals for that month.</summary>

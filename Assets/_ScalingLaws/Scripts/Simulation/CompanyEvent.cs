@@ -84,7 +84,13 @@ namespace ScalingLaws.Simulation
         RivalExpanded = 45,
 
         /// <summary>The press ran a story about something this company did.</summary>
-        ModelScandal = 46
+        ModelScandal = 46,
+
+        /// <summary>The monthly cheque from shares held in other companies.</summary>
+        DividendPaid = 47,
+
+        /// <summary>A rival was bought outright.</summary>
+        LabAcquired = 48
     }
 
     /// <summary>

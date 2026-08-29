@@ -1,6 +1,6 @@
 ﻿<Solution>
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="ScalingLaws.Runtime.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="ScalingLaws.Tests.EditMode.csproj" />
   <Project Path="ScalingLaws.Editor.csproj" />
   <Project Path="ScalingLaws.Tests.PlayMode.csproj" />

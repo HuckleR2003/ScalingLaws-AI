@@ -407,7 +407,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 42;
+        public const int CurrentVersion = 43;
 
         public int version = CurrentVersion;
 
@@ -774,6 +774,24 @@ namespace ScalingLaws.Persistence
 
         /// <summary>Yesterday's free allowance, so a cut can be noticed.</summary>
         public double lastFreeTierSeen = -1.0;
+
+        // ---- investing, v43 ----------------------------------------------------------------------
+        //
+        // The share price is a function of the lab's own live standing on a date, so the market
+        // itself is never written down. Storing ninety days of prices for fourteen labs would put
+        // a few thousand recomputable numbers in every file, and a recorded series would drift
+        // from the live price the first time a smear moved a lab's standing.
+
+        /// <summary>Shares held, paired by index with <see cref="shareCounts"/>.</summary>
+        public List<int> shareLabs = new();
+
+        public List<long> shareCounts = new();
+
+        /// <summary>What the holding cost, so the screen can say whether it was worth it.</summary>
+        public List<long> shareCostBasis = new();
+
+        /// <summary>Labs bought outright. They stop trading.</summary>
+        public List<int> acquiredLabs = new();
 
         // ---- the basement, v38 -------------------------------------------------------------------
         //

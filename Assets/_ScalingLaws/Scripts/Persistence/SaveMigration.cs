@@ -143,6 +143,7 @@ namespace ScalingLaws.Persistence
                     39 => UpgradeV39ToV40(current),
                     40 => UpgradeV40ToV41(current),
                     41 => UpgradeV41ToV42(current),
+                    42 => UpgradeV42ToV43(current),
                     _ => current
                 };
             }
@@ -1690,6 +1691,33 @@ namespace ScalingLaws.Persistence
                 $"bought {purchaseDate} at list price. v1 stored no purchase date, so the age is an assumption, not a record.";
 
             return upgraded;
+        }
+
+        /// <summary>
+        /// v42 to v43: shares in other companies.
+        ///
+        /// Empty, and that is the only true reading. A v42 campaign was played in a build with no
+        /// stock market in it, so it holds nothing, has paid for nothing and has bought nobody.
+        ///
+        /// Nothing about the market itself needs reconstructing, because nothing about it was ever
+        /// stored: prices are derived from each lab's standing on a date, so a v42 file opened in
+        /// v43 sees exactly the same board a new campaign would.
+        /// </summary>
+        public static SaveData UpgradeV42ToV43(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 43;
+
+            data.shareLabs = new List<int>();
+            data.shareCounts = new List<long>();
+            data.shareCostBasis = new List<long>();
+            data.acquiredLabs = new List<int>();
+
+            return data;
         }
     }
 }

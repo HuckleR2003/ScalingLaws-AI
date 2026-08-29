@@ -280,6 +280,21 @@ namespace ScalingLaws.Persistence
             data.lastScandalDayIndex = state.LastScandalDayIndex;
             data.lastFreeTierSeen = state.LastFreeTierSeen;
 
+            // ---- investing, v43 ----
+
+            foreach (var pair in state.Shareholdings)
+            {
+                data.shareLabs.Add((int)pair.Key);
+                data.shareCounts.Add(pair.Value);
+                data.shareCostBasis.Add(
+                    state.ShareCostBasis.TryGetValue(pair.Key, out var spent) ? spent : 0L);
+            }
+
+            foreach (var lab in state.AcquiredLabs)
+            {
+                data.acquiredLabs.Add((int)lab);
+            }
+
             foreach (var lab in state.Relations.Known)
             {
                 data.relationLabs.Add((int)lab);
@@ -850,6 +865,45 @@ namespace ScalingLaws.Persistence
             state.AcquiredForUsd = Math.Max(0L, safe.acquiredForUsd);
             state.LastScandalDayIndex = safe.lastScandalDayIndex;
             state.LastFreeTierSeen = safe.lastFreeTierSeen;
+
+            // ---- investing, v43 ----
+
+            state.Shareholdings.Clear();
+            state.ShareCostBasis.Clear();
+
+            for (var index = 0;
+                index < safe.shareLabs.Count && index < safe.shareCounts.Count;
+                index++)
+            {
+                if (!Enum.IsDefined(typeof(CompetitorId), safe.shareLabs[index]))
+                {
+                    continue;
+                }
+
+                var lab = (CompetitorId)safe.shareLabs[index];
+                var held = Math.Max(0L, safe.shareCounts[index]);
+
+                if (held <= 0L)
+                {
+                    continue;
+                }
+
+                state.Shareholdings[lab] = held;
+
+                state.ShareCostBasis[lab] = index < safe.shareCostBasis.Count
+                    ? Math.Max(0L, safe.shareCostBasis[index])
+                    : 0L;
+            }
+
+            state.AcquiredLabs.Clear();
+
+            foreach (var lab in safe.acquiredLabs)
+            {
+                if (Enum.IsDefined(typeof(CompetitorId), lab))
+                {
+                    state.AcquiredLabs.Add((CompetitorId)lab);
+                }
+            }
 
             state.Relations.Restore(
                 safe.relationLabs, safe.relationValues,
@@ -1541,6 +1595,10 @@ namespace ScalingLaws.Persistence
             safe.benefits ??= new List<int>();
             safe.poachedRivalStaff ??= new List<int>();
 
+            safe.shareLabs ??= new List<int>();
+            safe.shareCounts ??= new List<long>();
+            safe.shareCostBasis ??= new List<long>();
+            safe.acquiredLabs ??= new List<int>();
             safe.smearLabs ??= new List<int>();
             safe.smearDamage ??= new List<double>();
             safe.smearQuietLabs ??= new List<int>();

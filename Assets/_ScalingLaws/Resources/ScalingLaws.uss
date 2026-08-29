@@ -13633,3 +13633,440 @@
     font-size: 12.5px;
     color: rgb(226, 232, 244);
 }
+
+/* ---------------------------------------------------------------------------------------------
+   INVESTING: the companies down the left, one chart in the middle, the ticket on the right.
+
+   Three columns because the decision has three parts read in that order. The chart is the only
+   thing on the page that is a shape rather than a number, so it gets the width.
+   --------------------------------------------------------------------------------------------- */
+
+.invest {
+    /* The width is stated. Without it the root sizes to its own content and the columns lay out
+       against nothing, which put the ticket past the page edge. Found by rendering. */
+    width: 100%;
+    flex-grow: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.invest__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 62px;
+    padding: 0 26px 0 22px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+}
+
+.invest__title {
+    font-size: 22px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(238, 243, 252);
+}
+
+.invest__rule {
+    width: 1px;
+    height: 26px;
+    flex-shrink: 0;
+    margin-left: 16px;
+    margin-right: 16px;
+    background-color: rgba(255, 255, 255, 0.22);
+}
+
+.invest__subtitle {
+    font-size: 17px;
+    letter-spacing: 2.4px;
+    color: rgb(150, 162, 186);
+}
+
+.invest__spacer {
+    flex-grow: 1;
+}
+
+.invest__cash {
+    font-size: 21px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(238, 243, 252);
+}
+
+.invest__body {
+    flex-direction: row;
+    flex-grow: 1;
+    width: 100%;
+    padding: 16px 22px 16px 22px;
+    overflow: hidden;
+}
+
+/* The list of companies. */
+
+.invest__list {
+    width: 330px;
+    flex-shrink: 0;
+    margin-right: 18px;
+}
+
+.srow {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 74px;
+    width: 100%;
+    margin: 0 0 8px 0;
+    padding: 0 14px 0 12px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.028);
+    -unity-text-align: middle-left;
+}
+
+.srow--on {
+    border-color: rgba(126, 214, 164, 0.55);
+    background-color: rgba(126, 214, 164, 0.10);
+}
+
+.srow--up {
+    border-left-width: 3px;
+    border-left-color: rgb(126, 214, 164);
+}
+
+.srow--down {
+    border-left-width: 3px;
+    border-left-color: rgb(224, 132, 104);
+}
+
+.srow__badge {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.srow__text {
+    flex-grow: 1;
+}
+
+.srow__namerow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.srow__name {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.srow__held {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(126, 214, 164);
+}
+
+.srow__figures {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 4px;
+}
+
+.srow__price {
+    font-size: 15px;
+    color: rgb(198, 208, 226);
+    margin-right: 10px;
+}
+
+.srow__move {
+    font-size: 13px;
+    color: rgb(150, 162, 186);
+}
+
+/* The chart and everything under it. */
+
+.invest__detail {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.invest__chart {
+    flex-shrink: 0;
+    height: 300px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.022);
+}
+
+.invest__lower {
+    flex-direction: row;
+    flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.invest__position {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin-right: 16px;
+    padding: 16px 18px 16px 18px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.022);
+}
+
+.pos {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.pos__label {
+    font-size: 14px;
+    color: rgb(198, 208, 226);
+}
+
+.pos__value {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.pos--plain { color: rgb(232, 238, 250); }
+.pos--spent { color: rgb(224, 132, 104); }
+.pos--good { color: rgb(126, 214, 164); }
+.pos--bad { color: rgb(224, 132, 104); }
+
+.invest__ownership {
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.invest__ownlabel {
+    font-size: 14px;
+    color: rgb(232, 238, 250);
+    padding-bottom: 7px;
+}
+
+.invest__owntrack {
+    height: 12px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.invest__ownfill {
+    height: 12px;
+    border-radius: 6px;
+    background-color: rgb(240, 196, 68);
+}
+
+.invest__ownnote {
+    font-size: 11.5px;
+    -unity-font-style: italic;
+    color: rgb(140, 150, 172);
+    white-space: normal;
+    padding-top: 6px;
+}
+
+.invest__available {
+    font-size: 13px;
+    color: rgb(178, 188, 206);
+    white-space: normal;
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* The ticket. */
+
+.ticket {
+    width: 380px;
+    flex-shrink: 0;
+    padding: 14px 18px 16px 18px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.ticket__tabs {
+    flex-direction: row;
+    flex-shrink: 0;
+    padding-bottom: 10px;
+}
+
+.ticket__tab {
+    flex-grow: 1;
+    height: 34px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    font-size: 16px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(140, 150, 172);
+}
+
+.ticket__tab--on {
+    color: rgb(126, 214, 164);
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(126, 214, 164);
+}
+
+.ticket__line {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.ticket__label {
+    font-size: 14px;
+    color: rgb(198, 208, 226);
+}
+
+.ticket__value {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.ticket--count { color: rgb(126, 214, 164); }
+.ticket--out { color: rgb(224, 132, 104); }
+.ticket--in { color: rgb(126, 214, 164); }
+
+.ticket__slider {
+    /* An explicit width, not `max-width: none` alone. The dragger is absolutely positioned inside
+       the track and reached 37px past the page edge when the slider was left to size itself, which
+       the proof render caught and no layout test could. 344 is the ticket less its own padding. */
+    width: 344px;
+    max-width: 344px;
+    flex-shrink: 0;
+    margin-top: 10px;
+    margin-bottom: 12px;
+}
+
+.ticket__takeover {
+    flex-shrink: 0;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+.ticket__takenote {
+    font-size: 11.5px;
+    color: rgb(150, 162, 186);
+    white-space: normal;
+    padding-top: 4px;
+    padding-bottom: 10px;
+}
+
+.ticket__locked {
+    font-size: 12px;
+    color: rgb(130, 140, 162);
+    white-space: normal;
+}
+
+.ticket__owned {
+    font-size: 16px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(126, 214, 164);
+    -unity-text-align: middle-center;
+    padding: 24px 0 24px 0;
+}
+
+.ticket__note {
+    font-size: 12.5px;
+    color: rgb(226, 186, 112);
+    white-space: normal;
+    padding-top: 10px;
+}
+
+/* The door from the ranking board to the stock screen. A card, because every other way off this
+   page is a card, and a row of plain text there reads as a caption rather than as a way through. */
+
+.investbanner {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    width: 100%;
+    height: 78px;
+    margin: 0 0 14px 0;
+    padding: 0 20px 0 20px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-left-width: 3px;
+    border-color: rgba(126, 214, 164, 0.35);
+    border-left-color: rgb(126, 214, 164);
+    background-color: rgba(126, 214, 164, 0.075);
+    -unity-text-align: middle-left;
+}
+
+.investbanner__titles {
+    flex-grow: 1;
+}
+
+.investbanner__row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.investbanner__mark {
+    font-size: 16px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(126, 214, 164);
+}
+
+.investbanner__rule {
+    width: 1px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-left: 12px;
+    margin-right: 12px;
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
+.investbanner__name {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: rgb(226, 232, 244);
+}
+
+.investbanner__note {
+    font-size: 12px;
+    color: rgb(150, 162, 186);
+    white-space: normal;
+    padding-top: 5px;
+}
+
+.investbanner__arrow {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(126, 214, 164);
+    flex-shrink: 0;
+    padding-left: 16px;
+}

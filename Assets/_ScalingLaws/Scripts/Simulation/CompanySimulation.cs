@@ -191,7 +191,10 @@ namespace ScalingLaws.Simulation
             RunRivals();
 
             var market = MarketModel.Evaluate(State.Date, State.Rivals.FrontierCapability(State.Date));
-            var profile = State.Pool.BuildProfile(State.Date, market);
+            // The hall goes in here too. It was passed to the read-only accessor and not to the
+            // day that actually runs, so the room could show capacity the market never received.
+            var profile = State.Pool.BuildProfile(
+                State.Date, market, State.HasServerRoom ? State.Hall : null);
 
             State.SkillsLevelledToday.Clear();
 
@@ -304,6 +307,7 @@ namespace ScalingLaws.Simulation
             // The world moving on, and the company's own dealings with it. All of it after the
             // market has been served, because every one of these reads a figure the day produced.
             FadeSmears();
+            PayShareDividends();
             AdvanceLawsuits();
             ConsiderAcquisitionOffer();
             ReportRivalExpansion();
