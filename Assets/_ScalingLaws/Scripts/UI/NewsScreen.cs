@@ -27,6 +27,15 @@ namespace ScalingLaws.UI
         private readonly CompanySimulation simulation;
         private readonly Action<IntelTier, bool> setMembership;
 
+        /// <summary>
+        /// Which desk has its benefits open, or none.
+        ///
+        /// **One at a time.** Three tiles with three paragraphs open is the wall of text this
+        /// column was rebuilt to stop being, and the point of the button is that a player reads the
+        /// case for the one they are actually considering.
+        /// </summary>
+        private IntelTier? benefitsFor;
+
         public NewsScreen(CompanySimulation simulation, Action<IntelTier, bool> setMembership)
         {
             this.simulation = simulation;
@@ -308,6 +317,7 @@ namespace ScalingLaws.UI
                 }
 
                 panel.Add(MembershipButton(desk.Requires, true));
+                panel.Add(BenefitsBlock(desk.Requires));
                 return panel;
             }
 
@@ -340,6 +350,7 @@ namespace ScalingLaws.UI
                 panel.Add(second);
             }
 
+            panel.Add(BenefitsBlock(missing));
             return panel;
         }
 
@@ -359,6 +370,56 @@ namespace ScalingLaws.UI
             button.tooltip = NewsCatalog.OutletPitch(tier);
             return button;
         }
+
+        /// <summary>
+        /// The case for one membership, behind a button.
+        ///
+        /// The pitch above says what the outlet is. This says what it buys you, which is a
+        /// different question and the one a player is actually asking with their hand on the
+        /// money.
+        /// </summary>
+        private VisualElement BenefitsBlock(IntelTier tier)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("desk__benefits");
+
+            var open = benefitsFor == tier;
+
+            var toggle = new Button(() =>
+            {
+                benefitsFor = open ? null : tier;
+                Refresh();
+            })
+            { text = Loc.T(open ? "intel.benefits.hide" : "intel.benefits.show") };
+
+            toggle.AddToClassList("desk__seebenefits");
+            block.Add(toggle);
+
+            if (!open)
+            {
+                return block;
+            }
+
+            var body = new Label(BenefitsCopy(tier));
+            body.AddToClassList("desk__benefitstext");
+            block.Add(body);
+
+            return block;
+        }
+
+        /// <summary>
+        /// What each membership is worth, in the outlet's own terms.
+        ///
+        /// **A switch rather than a key assembled from the enum name.** A phrase-book key built by
+        /// concatenation is invisible to `LocalisationTests`, and this project has already shipped
+        /// one screen of raw keys that way.
+        /// </summary>
+        private static string BenefitsCopy(IntelTier tier) => tier switch
+        {
+            IntelTier.NationalPress => Loc.T("intel.benefits.press"),
+            IntelTier.KnownWords => Loc.T("intel.benefits.known"),
+            _ => Loc.T("intel.benefits.trend")
+        };
 
         // ---- small pieces ---------------------------------------------------------------------------
 

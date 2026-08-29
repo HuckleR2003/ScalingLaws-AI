@@ -30,6 +30,18 @@ namespace ScalingLaws.UI
             strap.AddToClassList("panel__strap");
             panel.Add(strap);
 
+            // Where the company sits on the ladder, and what opens the next rung. Without this the
+            // player has no way of knowing that finishing one award is what makes the larger
+            // bodies write at all.
+            var reached = simulation.GrantTierReached();
+
+            var rung = new Label(reached < GrantCatalog.TopTier
+                ? Loc.T("grant.tier", reached) + "  ·  " + Loc.T("grant.tier.locked", reached)
+                : Loc.T("grant.tier", reached));
+
+            rung.AddToClassList("grant__rung");
+            panel.Add(rung);
+
             BuildHeldGrants(panel);
             BuildOfferedGrants(panel);
 
@@ -148,7 +160,7 @@ namespace ScalingLaws.UI
 
             card.Add(head);
 
-            var body = new Label(Loc.T(definition.BodyKey));
+            var body = new Label(simulation.BodyOf(definition));
             body.AddToClassList("gcard__body");
             card.Add(body);
 
@@ -257,6 +269,9 @@ namespace ScalingLaws.UI
 
                 GrantGoal.SustainReputation => Loc.T("grant.goal.reputation",
                     UiFormat.Percent(definition.Target, 0)),
+
+                GrantGoal.SustainOnSale => Loc.T("grant.goal.onsale",
+                    (int)Math.Round(definition.Target)),
 
                 _ => Loc.T("grant.goal.protected", (int)Math.Round(definition.Target))
             };

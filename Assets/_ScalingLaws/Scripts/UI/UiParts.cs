@@ -119,6 +119,59 @@ namespace ScalingLaws.UI
         /// the row, which is also the honest shape: these are the words on this page that a player
         /// may not know, and here they are.
         /// </summary>
+        /// <summary>
+        /// The terms and the page's own sentence on one line.
+        ///
+        /// The strap under a page title is usually a paragraph, and a paragraph plus a row of
+        /// defined terms is two bands of small grey text saying related things. On the board where
+        /// the terms *are* the sentence, they belong on one line and the strap has to be short
+        /// enough to sit on it.
+        /// </summary>
+        public static void ExplainInline(VisualElement page, string strap,
+            params TechNotes.Note[] notes)
+        {
+            if (page == null || notes == null || notes.Length == 0)
+            {
+                return;
+            }
+
+            var row = TermsRow(notes);
+            row.AddToClassList("terms--inline");
+
+            if (!string.IsNullOrEmpty(strap))
+            {
+                var sentence = new Label(strap);
+                sentence.AddToClassList("terms__strap");
+                row.Add(sentence);
+            }
+
+            page.Insert(System.Math.Min(2, page.childCount), row);
+        }
+
+        private static VisualElement TermsRow(TechNotes.Note[] notes)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("terms");
+
+            foreach (var note in notes)
+            {
+                var chip = new VisualElement();
+                chip.AddToClassList("terms__chip");
+
+                var word = new Label(note.Title);
+                word.AddToClassList("terms__word");
+
+                chip.Add(word);
+                chip.Add(InsightTip.InfoBadge(note.Title,
+                    new InsightTip.Reading(note.What, note.Affects, note.High, note.Low),
+                    InsightTip.Placement.Above));
+
+                row.Add(chip);
+            }
+
+            return row;
+        }
+
         public static void ExplainPage(VisualElement page, params TechNotes.Note[] notes)
         {
             if (page == null || notes == null || notes.Length == 0)

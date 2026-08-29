@@ -334,10 +334,15 @@ namespace ScalingLaws.Tests.PlayMode
             var panel = new RivalPanel(() => simulation, () => { });
             var acts = new RivalActionsPanel(() => simulation, () => { });
 
-            var card = panel.Build(lab);
-            card.Add(acts.Build(lab));
+            // Both sections, because the card is tabs now and a proof of one of them proves
+            // nothing about the other. The roster is the half that changed most.
+            yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_card.png");
 
-            yield return Capture(card, "rival_card.png");
+            panel.ShowPeople();
+            yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_people.png");
+
+            panel.ShowActions();
+            yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_actions.png");
         }
 
         /// <summary>

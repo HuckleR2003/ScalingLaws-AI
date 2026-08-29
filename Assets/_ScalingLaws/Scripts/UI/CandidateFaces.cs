@@ -33,14 +33,21 @@ namespace ScalingLaws.UI
         /// Null is a real answer rather than a failure: the looks live in an Asset Store pack that
         /// is gitignored, so a fresh clone has none of them and every caller has to cope.
         /// </summary>
-        public static Texture2D Get(Candidate candidate)
-        {
-            if (candidate == null)
-            {
-                return null;
-            }
+        public static Texture2D Get(Candidate candidate) =>
+            candidate == null ? null : Get(candidate.PortraitSeed);
 
-            if (Cache.TryGetValue(candidate.PortraitSeed, out var cached) && cached != null)
+        /// <summary>
+        /// The same portrait machinery keyed on a bare seed.
+        ///
+        /// **Added so a rival's staff can have faces without becoming `Candidate` objects.** They
+        /// are a different type with a different life: a candidate is somebody in the middle of a
+        /// hiring conversation, and one of these is a stranger on somebody else's payroll. Copying
+        /// the renderer into the rival panel would have been the second face pipeline in a project
+        /// whose whole rule is one mechanism per subject.
+        /// </summary>
+        public static Texture2D Get(int portraitSeed)
+        {
+            if (Cache.TryGetValue(portraitSeed, out var cached) && cached != null)
             {
                 return cached;
             }
@@ -55,9 +62,10 @@ namespace ScalingLaws.UI
 
             // The seed picks the face and whether they wear glasses. Stable per person, so the
             // same candidate looks the same in the inbox on day one and day nine.
-            var look = studio.LookCount > 0 ? candidate.PortraitSeed % studio.LookCount : 0;
+            var seed = System.Math.Abs(portraitSeed);
+            var look = studio.LookCount > 0 ? seed % studio.LookCount : 0;
             var glasses = studio.GlassesCount > 0
-                ? (candidate.PortraitSeed / 7) % studio.GlassesCount
+                ? (seed / 7) % studio.GlassesCount
                 : 0;
 
             studio.StepLook(look - studio.LookIndex);
@@ -72,7 +80,7 @@ namespace ScalingLaws.UI
                 return null;
             }
 
-            Remember(candidate.PortraitSeed, baked);
+            Remember(portraitSeed, baked);
             return baked;
         }
 
@@ -82,7 +90,11 @@ namespace ScalingLaws.UI
         /// One helper rather than two, because every screen that shows a candidate wants the same
         /// fallback and a screen that forgot it would show an empty square.
         /// </summary>
-        public static VisualElement Frame(Candidate candidate, int size, string accentHex)
+        public static VisualElement Frame(Candidate candidate, int size, string accentHex) =>
+            Frame(candidate?.PortraitSeed ?? 0, candidate?.Name, size, accentHex);
+
+        /// <summary>The frame for anybody the game can name and seed.</summary>
+        public static VisualElement Frame(int portraitSeed, string name, int size, string accentHex)
         {
             var frame = new VisualElement();
             frame.AddToClassList("face");
@@ -97,7 +109,7 @@ namespace ScalingLaws.UI
                 frame.style.borderRightColor = accent;
             }
 
-            var art = Get(candidate);
+            var art = Get(portraitSeed);
 
             if (art != null)
             {
@@ -105,7 +117,7 @@ namespace ScalingLaws.UI
                 return frame;
             }
 
-            var initials = new Label(InitialsOf(candidate?.Name));
+            var initials = new Label(InitialsOf(name));
             initials.AddToClassList("face__initials");
             frame.Add(initials);
             return frame;

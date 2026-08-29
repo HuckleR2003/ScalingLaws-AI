@@ -80,7 +80,9 @@ namespace ScalingLaws.Simulation
                 return;
             }
 
-            var available = GrantCatalog.OpenOn(State.Date)
+            // **Only what the company has climbed to.** A ministry funds a first safe model; an
+            // international consortium does not write to a lab that has never finished anything.
+            var available = GrantCatalog.OpenTo(State.GrantsCompleted)
                 .Where(definition => !IsGrantSpokenFor(definition.Id))
                 .ToList();
 
@@ -94,7 +96,7 @@ namespace ScalingLaws.Simulation
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.GrantOffered, State.Date,
-                Loc.T("grant.event.offered", Loc.T(picked.NameKey), Loc.T(picked.BodyKey)),
+                Loc.T("grant.event.offered", Loc.T(picked.NameKey), BodyOf(picked)),
                 picked.AdvanceUsd));
         }
 
@@ -212,6 +214,20 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Every award on the table today, newest last.</summary>
         public IReadOnlyList<GrantOffer> GrantOffers() => State.GrantOffers;
+
+        /// <summary>Which rung of the grant ladder the company has earned its way onto.</summary>
+        public int GrantTierReached() => GrantCatalog.ReachedTier(State.GrantsCompleted);
+
+        /// <summary>
+        /// Who is writing, with the player's own country in the letterhead where the programme is
+        /// a national one.
+        ///
+        /// The country is passed to every body key rather than only the national ones, because
+        /// `string.Format` ignores an argument a string has no placeholder for. One call site is
+        /// worth more here than a second table saying which programmes are national.
+        /// </summary>
+        public string BodyOf(GrantDefinition definition) =>
+            Loc.T(definition.BodyKey, State.Home.DisplayName);
 
         /// <summary>Every award the company is currently working off.</summary>
         public IReadOnlyList<Grant> HeldGrants() => State.Grants;

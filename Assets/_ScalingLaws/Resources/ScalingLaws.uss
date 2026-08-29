@@ -4758,10 +4758,9 @@
 /* Seventy percent transparent at rest. It sits over the office and is meant to be glanceable
    rather than read, so it comes up to full strength only on hover or when something lands. */
 .nb {
-    position: absolute;
-    top: 54px;
-    left: 20px;
-    width: 300px;
+    position: relative;
+    width: 100%;
+    margin-bottom: 10px;
     opacity: 0.3;
     background-color: rgba(10, 12, 18, 0.93);
     border-width: 1px;
@@ -10355,8 +10354,8 @@
 
 .phone {
     position: absolute;
-    right: 46px;
-    bottom: 40px;
+    right: 14px;
+    bottom: 12px;
     width: 330px;
     height: 660px;
     border-radius: 38px;
@@ -14025,9 +14024,9 @@
     border-radius: 10px;
     border-width: 1px;
     border-left-width: 3px;
-    border-color: rgba(126, 214, 164, 0.35);
+    border-color: rgba(126, 214, 164, 0.55);
     border-left-color: rgb(126, 214, 164);
-    background-color: rgba(126, 214, 164, 0.075);
+    background-color: rgba(96, 198, 140, 0.20);
     -unity-text-align: middle-left;
 }
 
@@ -14041,7 +14040,7 @@
 }
 
 .investbanner__mark {
-    font-size: 16px;
+    font-size: 24px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(126, 214, 164);
@@ -14057,7 +14056,7 @@
 }
 
 .investbanner__name {
-    font-size: 15px;
+    font-size: 22px;
     letter-spacing: 2px;
     color: rgb(226, 232, 244);
 }
@@ -14722,4 +14721,309 @@
 .invest__axis-to {
     top: 304px;
     right: 12px;
+}
+
+
+/* ---- one line of terms, and room for the tour ----------------------------------------------- */
+
+/* The inline variant keeps the chips and the page's own sentence on a single row. `wrap` is
+   deliberately off here: the strap is written short enough to fit, and letting it wrap would
+   quietly reintroduce the two bands this replaced. */
+.terms--inline {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.terms__strap {
+    font-size: 12px;
+    color: var(--ink-dim);
+    flex-shrink: 1;
+    overflow: hidden;
+    -unity-text-align: middle-left;
+}
+
+/* The tour strip floats at `bottom: 96px` over every page, so a page that runs to the foot of the
+   window had its last band underneath it. This is the clearance, applied only while the strip is
+   actually up. */
+.page-scroll--guided {
+    padding-bottom: 168px;
+}
+
+/* ---- the company card's three sections ------------------------------------------------------ */
+
+.rival__tabs {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 12px;
+}
+
+.rival__tab {
+    flex-grow: 1;
+    height: 34px;
+    margin: 0 6px 0 0;
+    padding: 0 10px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    -unity-text-align: middle-center;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.04);
+    color: rgb(150, 162, 186);
+}
+
+.rival__tab--on {
+    border-color: rgb(224, 132, 108);
+    background-color: rgba(224, 132, 108, 0.16);
+    color: rgb(238, 244, 255);
+}
+
+
+/* ---- the left column: the wire, then what the company owes a funding body -------------------- */
+
+/* The column is positioned; the banners inside it are not. That is the whole reason they cannot
+   land on top of each other however long a headline runs. It ignores picking so the empty space
+   below the banners does not eat clicks meant for the room behind it. */
+.leftstack {
+    position: absolute;
+    top: 54px;
+    left: 20px;
+    width: 300px;
+}
+
+.gb {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0.3;
+    background-color: rgba(10, 12, 18, 0.93);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    overflow: hidden;
+    transition-property: opacity, border-color;
+    transition-duration: 220ms;
+}
+
+.gb:hover {
+    opacity: 1;
+    border-color: rgba(240, 200, 88, 0.55);
+}
+
+/* Gold rather than the wire's red. The news desk reports things that happened to the company and
+   this reports what the company promised somebody, which is a different kind of urgent. */
+.gb__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px 7px 12px;
+    background-color: rgb(226, 178, 44);
+}
+
+.gb__masthead {
+    font-size: 11px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(28, 22, 6);
+}
+
+.gb__count {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: rgba(28, 22, 6, 0.75);
+}
+
+.gb__body {
+    padding: 10px 12px 11px 12px;
+}
+
+.gb__none {
+    font-size: 11px;
+    color: rgb(150, 162, 186);
+    white-space: normal;
+}
+
+.gb__row {
+    margin-bottom: 9px;
+}
+
+.gb__row--broken {
+    opacity: 0.6;
+}
+
+.gb__name {
+    font-size: 12px;
+    color: rgb(226, 232, 244);
+    white-space: normal;
+}
+
+.gb__status {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgb(150, 162, 186);
+    padding-top: 2px;
+}
+
+.gb__status--broken {
+    color: rgb(214, 126, 126);
+}
+
+.gb__track {
+    height: 3px;
+    margin-top: 5px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.gb__fill {
+    height: 3px;
+    border-radius: 2px;
+    background-color: rgb(226, 178, 44);
+}
+
+/* Which rung the company is on. Gold, because it belongs with the grant banner rather than with
+   the page's own grey furniture. */
+.grant__rung {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    color: rgb(226, 178, 44);
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+
+/* ---- the case for a membership, behind a button ---------------------------------------------- */
+
+.desk__benefits {
+    margin-top: 8px;
+}
+
+/* Quiet, because it sits under the button that actually costs money and must not compete with it. */
+.desk__seebenefits {
+    width: 100%;
+    height: 26px;
+    margin: 0;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    -unity-text-align: middle-center;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.04);
+    color: rgb(150, 162, 186);
+}
+
+.desk__benefitstext {
+    margin-top: 7px;
+    padding: 9px 11px;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgb(198, 210, 230);
+    white-space: normal;
+    border-left-width: 2px;
+    border-left-color: rgb(126, 176, 255);
+    background-color: rgba(126, 176, 255, 0.07);
+    border-radius: 4px;
+}
+
+
+/* The portrait needs air between it and the name it belongs to. Without this the face and the
+   first letter touch, which reads as one smudged element rather than a person and their name. */
+.person__head > .face {
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+
+/* ---- MOC: the bill on top, the two capacities side by side ----------------------------------- */
+
+/* A panel that is the page's header rather than one of its cards. Darker than the rest so the
+   figure the player opened the tab for is the first thing the eye lands on. */
+.panel--header {
+    background-color: rgba(4, 6, 11, 0.92);
+    border-left-width: 3px;
+    border-left-color: rgb(224, 132, 108);
+}
+
+.fleet-half {
+    width: 49%;
+    margin-right: 1%;
+}
+
+/* Three package cards used to have the whole page; they have half of it now, so they wrap to a
+   column instead of squeezing to a third of a half. */
+.fleet-half .pack-row {
+    flex-direction: column;
+}
+
+.fleet-half .pack {
+    width: 100%;
+    margin-right: 0;
+}
+
+
+/* ---- the phone's home screen ----------------------------------------------------------------- */
+
+.home__head {
+    padding: 14px 14px 10px 14px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.home__title {
+    font-size: 11px;
+    letter-spacing: 2.6px;
+    color: rgb(150, 162, 186);
+}
+
+/* The waiting step, at the top, where a phone puts a notification. Blue rather than the interface
+   accent, because it is a message from a person rather than a control. */
+.home__alert {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    height: auto;
+    margin: 12px 12px 6px 12px;
+    padding: 10px 12px;
+    border-width: 1px;
+    border-color: rgba(126, 176, 255, 0.45);
+    border-radius: 10px;
+    background-color: rgba(126, 176, 255, 0.14);
+}
+
+.home__alerttext {
+    flex-grow: 1;
+    margin-left: 10px;
+}
+
+.home__alertwho {
+    font-size: 13px;
+    color: rgb(232, 238, 250);
+}
+
+.home__alertnote {
+    font-size: 11px;
+    color: rgb(168, 190, 226);
+    white-space: normal;
+    padding-top: 2px;
+}
+
+.home__row {
+    width: auto;
+    height: 44px;
+    margin: 6px 12px 0 12px;
+    padding: 0 14px;
+    font-size: 13px;
+    -unity-text-align: middle-left;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgb(226, 232, 244);
+}
+
+.home__row:hover {
+    border-color: rgba(255, 255, 255, 0.26);
+    background-color: rgba(255, 255, 255, 0.09);
 }

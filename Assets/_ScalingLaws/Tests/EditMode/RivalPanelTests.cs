@@ -35,6 +35,20 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
+        /// The card with the roster section open.
+        ///
+        /// The three sections are tabs now, so the people are one click from the standing rather
+        /// than under it. A test has no panel and a click on a tab is never dispatched, which is
+        /// why the panel exposes the switch these call.
+        /// </summary>
+        private static VisualElement People(CompanySimulation simulation, CompetitorId lab)
+        {
+            var panel = new RivalPanel(() => simulation, () => { });
+            panel.ShowPeople();
+            return panel.Build(lab);
+        }
+
+        /// <summary>
         /// There is a way in: the roster is drawn and every person on it has a button.
         ///
         /// Counting the buttons rather than asserting one exists, because a roster that renders its
@@ -44,7 +58,7 @@ namespace ScalingLaws.Tests.EditMode
         public void ThePlayerCanSeeTheirStaffAndHasAWayToMakeAnOffer()
         {
             var simulation = Company();
-            var tree = Panel(simulation, CompetitorId.OpenAi);
+            var tree = People(simulation, CompetitorId.OpenAi);
 
             var people = tree.Query<VisualElement>(className: "person").ToList();
             var offers = tree.Query<Button>(className: "person__offer").ToList();
@@ -68,7 +82,7 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Company();
             var roster = simulation.RosterOf(CompetitorId.OpenAi);
-            var tree = Panel(simulation, CompetitorId.OpenAi);
+            var tree = People(simulation, CompetitorId.OpenAi);
 
             var drawn = tree.Query<Label>(className: "person__name").ToList()
                 .Select(label => label.text)

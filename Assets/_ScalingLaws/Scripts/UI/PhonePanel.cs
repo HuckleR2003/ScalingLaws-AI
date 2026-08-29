@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
+using ScalingLaws.Simulation;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -58,10 +59,20 @@ namespace ScalingLaws.UI
         private VisualElement chatList;
         private VisualElement choices;
 
-        public PhonePanel(VisualElement host, Action<bool> answered)
+        /// <summary>
+        /// The company, so the cousin can answer a question about his own.
+        ///
+        /// Read through a function rather than captured, because the phone outlives any one day and
+        /// a snapshot would have him reporting last year's business forever.
+        /// </summary>
+        private readonly Func<CompanySimulation> company;
+
+        public PhonePanel(VisualElement host, Action<bool> answered,
+            Func<CompanySimulation> company = null)
         {
             this.host = host;
             this.answered = answered;
+            this.company = company;
         }
 
         /// <summary>True while the phone is on screen and has not been answered.</summary>
@@ -85,6 +96,36 @@ namespace ScalingLaws.UI
             // the one thing this call is not.
             returning = callingBack;
 
+            BuildFrame();
+            frame.schedule.Execute(LightUp).ExecuteLater(WakeDelay);
+        }
+
+        /// <summary>
+        /// Picks the phone up.
+        ///
+        /// The other way in. `Ring` is the phone deciding to involve the player; this is the player
+        /// deciding to involve the phone, and it opens on the home screen rather than mid-call.
+        /// </summary>
+        public void OpenMenu()
+        {
+            Close();
+            returning = false;
+
+            BuildFrame();
+
+            // Straight past the app-opening theatre. That sequence exists to make the first call
+            // feel like something arriving, and replaying it every time somebody opens the menu
+            // would be four seconds of animation in front of a list of two items.
+            frame.schedule.Execute(() =>
+            {
+                screen.AddToClassList("phone__screen--on");
+                ShowHome();
+            }).ExecuteLater(WakeDelay / 2);
+        }
+
+        /// <summary>The handset and its dark screen. Shared, so the two entry points cannot drift.</summary>
+        private void BuildFrame()
+        {
             frame = new VisualElement();
             frame.AddToClassList("phone");
 
@@ -108,9 +149,195 @@ namespace ScalingLaws.UI
             frame.AddToClassList("phone--arriving");
             frame.schedule.Execute(() => frame.RemoveFromClassList("phone--arriving"))
                 .ExecuteLater(16);
-
-            frame.schedule.Execute(LightUp).ExecuteLater(WakeDelay);
         }
+
+        // ---- the home screen ----------------------------------------------------------------------
+
+        /// <summary>
+        /// What is on the phone: the tour if it is waiting, and the cousin's number.
+        ///
+        /// The notification sits at the top because that is where a phone puts one, and because a
+        /// player who paused the tour and came back an hour later needs the way in to be the first
+        /// thing they see rather than a menu item under a call button.
+        /// </summary>
+        private void ShowHome()
+        {
+            screen.Clear();
+
+            var head = new VisualElement();
+            head.AddToClassList("home__head");
+
+            var clock = new Label(Loc.T("phone.menu.title"));
+            clock.AddToClassList("home__title");
+            head.Add(clock);
+
+            screen.Add(head);
+
+            var guide = progressForMenu?.Invoke();
+            var waiting = guide != null
+                && (guide.Stage == GuideStage.Paused || guide.Stage == GuideStage.Unseen);
+
+            if (waiting)
+            {
+                var alert = new Button(ResumeTour);
+                alert.AddToClassList("home__alert");
+
+                alert.Add(Avatar(28));
+
+                var text = new VisualElement();
+                text.AddToClassList("home__alerttext");
+
+                var who = new Label(Loc.T("phone.menu.resume", GuideScript.CousinName));
+                who.AddToClassList("home__alertwho");
+                text.Add(who);
+
+                var note = new Label(Loc.T("phone.menu.resume.note"));
+                note.AddToClassList("home__alertnote");
+                text.Add(note);
+
+                alert.Add(text);
+                screen.Add(alert);
+            }
+
+            screen.Add(HomeRow(Loc.T("phone.menu.call", GuideScript.CousinName), CallCousin));
+            screen.Add(HomeRow(Loc.T("phone.menu.close"), () => Collapse(false)));
+        }
+
+        private Button HomeRow(string text, Action act)
+        {
+            var row = new Button(() => act?.Invoke()) { text = text };
+            row.AddToClassList("home__row");
+
+            return row;
+        }
+
+        /// <summary>
+        /// Resumes the tour: one line, the dots, and the phone leaves.
+        ///
+        /// It ends by going through `answered(true)`, which is the same door the opening call uses,
+        /// so there is one place that decides what accepting the tour does.
+        /// </summary>
+        private void ResumeTour()
+        {
+            OpenChat();
+
+            chatList.Add(Bubble(Loc.T("phone.emil.resume"), false));
+            ScrollDown();
+
+            screen.schedule.Execute(() => ShowTyping(true)).ExecuteLater(320);
+
+            screen.schedule.Execute(() =>
+            {
+                ShowTyping(false);
+                Collapse(true);
+            }).ExecuteLater(1500);
+        }
+
+        /// <summary>
+        /// Rings the cousin and asks how his own company is doing.
+        ///
+        /// **His answer is read off the board, never invented.** He is a lab on the same ranking as
+        /// everybody else, so what he says is his own share price against where it stood three
+        /// months ago, plus where he sits in the table. A cousin who reported a mood nobody could
+        /// check would be the one voice in this game that is not accountable to the simulation.
+        /// </summary>
+        private void CallCousin()
+        {
+            OpenChat();
+
+            chatList.Add(Bubble(Loc.T("phone.ask.business"), true));
+            ScrollDown();
+
+            screen.schedule.Execute(() => ShowTyping(true)).ExecuteLater(420);
+
+            screen.schedule.Execute(() =>
+            {
+                ShowTyping(false);
+                chatList.Add(Bubble(BusinessReport(), false));
+                ScrollDown();
+
+                var back = new Button(ShowHome) { text = Loc.T("phone.menu.back") };
+                back.AddToClassList("home__row");
+                screen.Add(back);
+            }).ExecuteLater(1700);
+        }
+
+        /// <summary>
+        /// The chat furniture, without the scripted backlog the opening call fills it with.
+        /// </summary>
+        private void OpenChat()
+        {
+            screen.Clear();
+
+            var header = new VisualElement();
+            header.AddToClassList("chat__header");
+            header.Add(Avatar(34));
+
+            var who = new VisualElement();
+            who.AddToClassList("chat__who");
+
+            var handle = new Label(GuideScript.CousinHandle);
+            handle.AddToClassList("chat__handle");
+            who.Add(handle);
+
+            var status = new Label("online");
+            status.AddToClassList("chat__status");
+            who.Add(status);
+
+            header.Add(who);
+            screen.Add(header);
+
+            chatList = new ScrollView();
+            chatList.AddToClassList("chat__list");
+            screen.Add(chatList);
+        }
+
+        /// <summary>
+        /// How the cousin's own company is doing, in his words, from his own share price.
+        ///
+        /// Ninety days because that is the window the investing chart draws, so a player who
+        /// checked the board and then rang him gets the same story twice rather than two.
+        /// </summary>
+        private string BusinessReport()
+        {
+            var simulation = company?.Invoke();
+
+            if (simulation == null)
+            {
+                return Loc.T("phone.emil.steady", "?");
+            }
+
+            var today = simulation.State.Date;
+            var now = ShareMarket.PriceOn(CompetitorId.ESolutions, today);
+            var before = ShareMarket.PriceOn(CompetitorId.ESolutions, today.AddDays(-90));
+
+            var move = before > 0.0 ? (now - before) / before : 0.0;
+
+            var place = 0;
+
+            foreach (var entry in simulation.Ranking())
+            {
+                if (entry.Competitor == CompetitorId.ESolutions)
+                {
+                    place = entry.Position;
+                    break;
+                }
+            }
+
+            var rank = place > 0 ? place.ToString() : "?";
+
+            if (move > 0.08)
+            {
+                return Loc.T("phone.emil.good", rank);
+            }
+
+            return move < -0.08
+                ? Loc.T("phone.emil.bad", rank)
+                : Loc.T("phone.emil.steady", rank);
+        }
+
+        /// <summary>Where the tour stands, so the home screen knows whether to show the alert.</summary>
+        public Func<GuideProgress> progressForMenu;
 
         /// <summary>The display coming on, then the app opening itself.</summary>
         private void LightUp()

@@ -115,6 +115,7 @@ namespace ScalingLaws.Simulation
                 GrantGoal.SustainHeadroom => SimUnits.Finite(utilisation),
                 GrantGoal.SustainReputation => state.Reputation,
                 GrantGoal.ShipProtected => BestDataProtectionOnSale(state),
+                GrantGoal.SustainOnSale => LiveModelCount(state),
                 _ => 0.0
             };
         }
@@ -145,6 +146,28 @@ namespace ScalingLaws.Simulation
             }
 
             return reading >= target;
+        }
+
+        /// <summary>
+        /// Products actually on sale today.
+        ///
+        /// Live rather than released: a company that has shipped nine models and retired all of
+        /// them is selling nothing, and a grant for keeping a service running has to mean the
+        /// service is running.
+        /// </summary>
+        private static int LiveModelCount(CompanyState state)
+        {
+            var live = 0;
+
+            foreach (var model in state.DeployedModels)
+            {
+                if (model.IsLiveOn(state.Date))
+                {
+                    live++;
+                }
+            }
+
+            return live;
         }
 
         /// <summary>The strongest data protection on anything the company currently sells.</summary>

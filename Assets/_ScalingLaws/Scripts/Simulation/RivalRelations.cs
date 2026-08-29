@@ -79,6 +79,20 @@ namespace ScalingLaws.Simulation
         /// <summary>Where every lab starts. Competitive, professional, no history.</summary>
         public const double Start = 0.0;
 
+        /// <summary>
+        /// Where the cousin starts, and where he returns to.
+        ///
+        /// **A baseline rather than a stored value, and the difference matters.** Relations drift
+        /// back toward where they belong, so a stored 70 would decay to indifference in about five
+        /// years and the one company in the game that is family would quietly become a stranger
+        /// without anybody doing anything. The player can still damage it, and it will heal.
+        /// </summary>
+        public const double CousinBaseline = 70.0;
+
+        /// <summary>Where this particular lab sits when nothing has happened with it.</summary>
+        public static double BaselineFor(CompetitorId lab) =>
+            lab == CompetitorId.ESolutions ? CousinBaseline : Start;
+
         /// <summary>How much a relation returns toward neutral each day.</summary>
         public const double DriftPerDay = 0.035;
 
@@ -99,7 +113,7 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Where a lab stands. Neutral for anybody nothing has happened with.</summary>
         public double With(CompetitorId lab) =>
-            standing.TryGetValue(lab, out var value) ? value : Start;
+            standing.TryGetValue(lab, out var value) ? value : BaselineFor(lab);
 
         public RelationBand BandWith(CompetitorId lab) => BandFor(With(lab));
 
@@ -194,14 +208,16 @@ namespace ScalingLaws.Simulation
             foreach (var lab in labs)
             {
                 var value = standing[lab];
+                var home = BaselineFor(lab);
+                var gap = value - home;
 
-                if (Math.Abs(value) <= DriftPerDay)
+                if (Math.Abs(gap) <= DriftPerDay)
                 {
-                    standing[lab] = 0.0;
+                    standing[lab] = home;
                     continue;
                 }
 
-                standing[lab] = value - Math.Sign(value) * DriftPerDay;
+                standing[lab] = value - Math.Sign(gap) * DriftPerDay;
             }
         }
 

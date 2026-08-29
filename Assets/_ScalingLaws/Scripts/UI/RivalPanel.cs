@@ -35,11 +35,42 @@ namespace ScalingLaws.UI
         /// <summary>Set when a refusal was reported, so the call can be answered.</summary>
         private CompetitorId? callFrom;
 
+        /// <summary>
+        /// Which half of the card is open.
+        ///
+        /// **Three sections stacked was four screens of scrolling in a card with a fixed height.**
+        /// The standing, the history, a roster of up to twelve people and the whole smear desk were
+        /// all mounted at once, so reading what a rival thought of you meant scrolling past a list
+        /// of their employees. They are the same three things, one at a time.
+        /// </summary>
+        private RivalTab tab = RivalTab.Standing;
+
+        /// <summary>The three things a player can do with a rival, in the order they think of them.</summary>
+        private enum RivalTab
+        {
+            Standing = 0,
+            People = 1,
+            Actions = 2
+        }
+
         public RivalPanel(Func<CompanySimulation> company, Action changed)
         {
             this.company = company;
             this.changed = changed;
         }
+
+        /// <summary>
+        /// Opens the roster.
+        ///
+        /// **For tooling rather than for the game**, the same reason `GameShell` carries
+        /// `OpenScreenByName`. A test has no panel, so a click on a tab is never dispatched, and a
+        /// fixture that could not reach the roster would either be deleted or quietly rewritten to
+        /// assert less. `ScreenProofTests` uses it to photograph the section as well.
+        /// </summary>
+        public void ShowPeople() => tab = RivalTab.People;
+
+        /// <summary>Opens the desk where a rival's name is damaged. Tooling, as above.</summary>
+        public void ShowActions() => tab = RivalTab.Actions;
 
         /// <summary>Forgets any open form. Called when the card is closed or another lab opened.</summary>
         public void Reset()
@@ -48,6 +79,7 @@ namespace ScalingLaws.UI
             bonusUsd = 0;
             outcomeNote = string.Empty;
             callFrom = null;
+            tab = RivalTab.Standing;
         }
 
         /// <summary>
@@ -59,7 +91,7 @@ namespace ScalingLaws.UI
         /// shipped once. The scroller is the floor against that, and every block inside states
         /// `flex-shrink: 0` for the same reason.
         /// </summary>
-        public VisualElement Build(CompetitorId lab)
+        public VisualElement Build(CompetitorId lab, Func<VisualElement> actions = null)
         {
             var simulation = company();
             var block = new ScrollView();
@@ -67,23 +99,76 @@ namespace ScalingLaws.UI
             block.verticalScrollerVisibility = ScrollerVisibility.Auto;
             block.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
 
-            block.Add(BuildStanding(simulation, lab));
+            block.Add(BuildTabs());
 
-            var history = simulation.State.Relations.HistoryWith(lab);
-
-            if (history.Count > 0)
+            switch (tab)
             {
-                block.Add(BuildHistory(history));
+                case RivalTab.People:
+                    block.Add(BuildRoster(simulation, lab));
+                    break;
+
+                case RivalTab.Actions:
+                    if (actions != null)
+                    {
+                        block.Add(actions());
+                    }
+
+                    break;
+
+                default:
+                    block.Add(BuildStanding(simulation, lab));
+
+                    var history = simulation.State.Relations.HistoryWith(lab);
+
+                    if (history.Count > 0)
+                    {
+                        block.Add(BuildHistory(history));
+                    }
+
+                    break;
             }
 
-            block.Add(BuildRoster(simulation, lab));
-
+            // The call belongs to whichever section is open: a refusal is an answer to an offer
+            // the player made, and hiding it behind a tab switch would lose it.
             if (callFrom.HasValue && callFrom.Value == lab)
             {
                 block.Add(BuildCall(simulation, lab));
             }
 
             return block;
+        }
+
+        /// <summary>The three buttons across the top of the card.</summary>
+        private VisualElement BuildTabs()
+        {
+            var strip = new VisualElement();
+            strip.AddToClassList("rival__tabs");
+
+            strip.Add(TabButton(RivalTab.Standing, Loc.T("relation.title")));
+            strip.Add(TabButton(RivalTab.People, Loc.T("poach.title")));
+            strip.Add(TabButton(RivalTab.Actions, Loc.T("smear.title")));
+
+            return strip;
+        }
+
+        private Button TabButton(RivalTab which, string text)
+        {
+            var button = new Button(() =>
+            {
+                tab = which;
+
+                // A half-typed offer belongs to the section it was typed in. Leaving it open across
+                // a tab switch would let a bonus meant for one person be sent from another screen.
+                openOffer = -1;
+                outcomeNote = string.Empty;
+                changed?.Invoke();
+            })
+            { text = text };
+
+            button.AddToClassList("rival__tab");
+            button.EnableInClassList("rival__tab--on", tab == which);
+
+            return button;
         }
 
         /// <summary>
@@ -191,10 +276,6 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("rival__roster");
 
-            var heading = new Label(Loc.T("poach.title"));
-            heading.AddToClassList("dossier__heading");
-            panel.Add(heading);
-
             var warning = new Label(Loc.T("poach.warning"));
             warning.AddToClassList("rival__warning");
             panel.Add(warning);
@@ -246,6 +327,10 @@ namespace ScalingLaws.UI
 
             var head = new VisualElement();
             head.AddToClassList("person__head");
+
+            // Seeded on the person's own id, so the same employee has the same face every time the
+            // card is opened, and falls back to initials on a clone without the character pack.
+            head.Add(CandidateFaces.Frame(member.Id, member.Name, 44, "#7E8AA0"));
 
             var name = new Label(member.Name);
             name.AddToClassList("person__name");

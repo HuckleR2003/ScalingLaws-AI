@@ -126,6 +126,7 @@ namespace ScalingLaws.UI
         private ManagementScreen management;
         private NewsScreen news;
         private NewsBanner newsBanner;
+        private GrantBanner grantBanner;
         private MailScreen mail;
         private OfficeChooser offices;
         private VisualElement bannerStack;
@@ -581,12 +582,10 @@ namespace ScalingLaws.UI
             }
             else
             {
-                // **Keep the reading position.** A day rolls over every second and a half at normal
-                // speed, and the page is rebuilt each time, so a player half way down the research
-                // tree was thrown back to the top before they could finish a sentence.
-                var wasAt = OpenScrollOffset();
+                // The reading position is kept by `Show` itself now, for every rebuild rather than
+                // only for this one. A day rolls over every second and a half at normal speed and a
+                // player half way down the research tree could not finish a sentence.
                 Show(current);
-                RestoreScrollOffset(wasAt);
             }
         }
 
@@ -650,7 +649,10 @@ namespace ScalingLaws.UI
             portals = new HiringPortals(() => state, simulation, () => Show(Screen.Hiring),
                 () => Show(Screen.Mail));
 
-            phone = new PhonePanel(root, AnswerTheCousin);
+            phone = new PhonePanel(root, AnswerTheCousin, () => simulation)
+            {
+                progressForMenu = () => state.Guide
+            };
 
             // The opening: dark room, headlights, the car reversing in, then the lamps one by one.
             // Only on a company that has never been played, and only when the office scene is
@@ -707,14 +709,14 @@ namespace ScalingLaws.UI
             // **He does not leave when the tour ends.** Pressing "I'll take it from here" in the
             // first minute used to skip the tutorial permanently with no way back to it, which is a
             // dead end reached by one click. The handset stays docked under the bar and rings him.
+            //
+            // **The handset opens the phone rather than replaying the call.** It used to ring him
+            // straight back, which meant the only thing a player could do with a phone was be
+            // talked at. The tour's next step is now one item on a home screen, beside his number.
             phoneDock = new PhoneDock(root, () => state.Guide, () =>
             {
                 phoneDock.Hide();
-
-                var resuming = state.Guide.Stage == GuideStage.Paused;
-
-                state.Guide.Stage = GuideStage.Talking;
-                phone.Ring(callingBack: resuming || state.Guide.Step > 0);
+                phone.OpenMenu();
             });
 
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
@@ -784,8 +786,20 @@ namespace ScalingLaws.UI
 
             // Read through a function rather than captured, same as the finance report: the feed
             // object survives a load but the state around it is replaced.
+            // **One column, so the two cannot overlap.** Both used to be positioned against the
+            // window and staying clear of each other meant guessing the taller one's height, which
+            // was wrong the moment a headline wrapped.
+            var leftStack = new VisualElement();
+            leftStack.AddToClassList("leftstack");
+            leftStack.pickingMode = PickingMode.Ignore;
+
             newsBanner = new NewsBanner(() => simulation.State.News, () => Show(Screen.News));
-            root.Add(newsBanner.Root);
+            leftStack.Add(newsBanner.Root);
+
+            grantBanner = new GrantBanner(() => simulation, () => Show(Screen.Funding));
+            leftStack.Add(grantBanner.Root);
+
+            root.Add(leftStack);
 
             // The corner is a stack now. One product on sale is one banner, because a company
             // running three lines is running three products and a single panel describing only the
@@ -1129,6 +1143,20 @@ namespace ScalingLaws.UI
         private void Show(Screen screen)
         {
             var changed = current != screen;
+
+            // **Keep the reading position whenever the same page is rebuilt.**
+            //
+            // This used to live only on the day-rollover path, so a day passing preserved the
+            // scroll and a click did not. Every control on every screen answers by calling
+            // `Show(current)`, which is a full rebuild, so ticking a staff benefit or nudging the
+            // rent slider threw the player back to the top of the page. Four tabs were unplayable
+            // for that reason and the cause was one missing line, not four bugs.
+            //
+            // Only when the screen has not changed: opening a different tab should start at its
+            // top, and carrying an offset across would land the player half way down a page they
+            // have never seen.
+            var wasAt = changed ? Vector2.zero : OpenScrollOffset();
+
             current = screen;
             contentHost.Clear();
 
@@ -1143,6 +1171,7 @@ namespace ScalingLaws.UI
             // rolls over, so both corner banners stayed on top of whatever tab had just been opened.
             modelBanner?.SetHidden(screen != Screen.Site);
             newsBanner?.SetHidden(screen != Screen.Site);
+            grantBanner?.SetHidden(screen != Screen.Site);
 
             foreach (var follower in followerBanners)
             {
@@ -1265,6 +1294,16 @@ namespace ScalingLaws.UI
             // is a query against the live tree, so it has to run after the page exists — refreshing
             // it before the rebuild rings elements that are about to be thrown away.
             guide?.Refresh();
+
+            // **Reserve the strip's height at the foot of the page rather than hiding the strip.**
+            //
+            // The tour bar floats over every screen at `bottom: 96px`, so the last band of a long
+            // page sat underneath it and could not be read. Hiding it outside the office was the
+            // other option and it is worse: half the steps say "open COMPUTE", and a tour whose
+            // instructions vanish on the tab it just told you to open is no tour at all.
+            scroller.EnableInClassList("page-scroll--guided", guide is { IsShowing: true });
+
+            RestoreScrollOffset(wasAt);
         }
 
         /// <summary>
@@ -1712,8 +1751,11 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildRankingScreen()
         {
-            var page = NewPage(Loc.T("page.ranking"), Loc.T("page.ranking.strap"));
-UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
+            // The strap is carried by the terms row rather than sitting above it, so the board
+            // opens on one line of explanation instead of two bands of small grey text.
+            var page = NewPage(Loc.T("page.ranking"), string.Empty);
+            UiParts.ExplainInline(page, Loc.T("page.ranking.strap"),
+                TechNotes.Capability, TechNotes.MarketShare);
 
             // The way in to the stock screen, at the top of the board rather than in the bottom
             // bar. This is the page where a player is already looking at a list of companies and
@@ -1763,9 +1805,16 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 score.AddToClassList("rank-row__score");
                 row.Add(score);
 
-                var detail = new Label(
-                    $"cap {UiFormat.Number(entry.Capability)}   "
-                    + $"share {UiFormat.Percent(entry.MarketShare, 2)}");
+                // **The share price rather than the capability score.** The score is already the
+                // large figure one column to the left, so printing the capability beside it said
+                // the same thing twice. What a player looking at a rival actually wants next is
+                // what buying a piece of them costs, which is the number the investing screen
+                // trades on and the one this board never showed.
+                var detail = new Label(entry.IsPlayer
+                    ? Loc.T("rank.share", UiFormat.Percent(entry.MarketShare, 2))
+                    : Loc.T("rank.price_and_share",
+                        UiFormat.SharePrice(simulation.SharePriceOf(entry.Competitor)),
+                        UiFormat.Percent(entry.MarketShare, 2)));
 
                 detail.AddToClassList("rank-row__detail");
                 row.Add(detail);
@@ -1874,12 +1923,11 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
                 labCard.Add(nothing);
             }
 
-            // Both blocks go inside the one scroller the rival panel owns. The card has a fixed
-            // top and bottom, so a second sibling beside the scroller would be squashed rather
-            // than scrolled, which is the deformation this stylesheet has already shipped once.
-            var rivalBlock = rivals.Build(lab);
-            rivalBlock.Add(rivalActs.Build(lab));
-            labCard.Add(rivalBlock);
+            // The actions desk is handed in rather than appended, because the panel decides which
+            // of its three sections is open and the smear desk is one of them. The card has a
+            // fixed top and bottom, so a second sibling beside the scroller would be squashed
+            // rather than scrolled, which is the deformation this stylesheet has shipped once.
+            labCard.Add(rivals.Build(lab, () => rivalActs.Build(lab)));
 
             shellRoot.Add(labCard);
         }
@@ -2424,7 +2472,6 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
             Screen.Upgrade => "background_upgrade",
             Screen.Research => "background_research",
             Screen.Family => "background_architecture",
-            Screen.Fleet => "background_compute",
             Screen.Team => "background_team",
             Screen.Marketing => "background_marketing",
             Screen.Mail => "background_mail",
@@ -2673,6 +2720,8 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
             // it would sit on top of the page rather than beside it.
             newsBanner?.SetHidden(current != Screen.Site);
             newsBanner?.Refresh();
+            grantBanner?.SetHidden(current != Screen.Site);
+            grantBanner?.Refresh();
 
             RefreshFollowerBanners();
 

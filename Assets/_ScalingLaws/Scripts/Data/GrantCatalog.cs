@@ -6,6 +6,10 @@ namespace ScalingLaws.Data
 {
     /// <summary>
     /// Which grant. Explicit values, written into saves, never renumbered.
+    ///
+    /// The first eight kept their numbers when the flat list became a ladder, because a campaign
+    /// saved before the rework stores these as ints and a renumbering would silently turn one
+    /// programme into another.
     /// </summary>
     public enum GrantId
     {
@@ -17,7 +21,13 @@ namespace ScalingLaws.Data
         ReliabilityPledge = 5,
         SafetyDisclosure = 6,
         ContinuityAward = 7,
-        StandardsStipend = 8
+        StandardsStipend = 8,
+
+        // Added with the ladder.
+        MinistrySafeStart = 9,
+        MinistryFirstLine = 10,
+        ContinuityTwoYears = 11,
+        FrontierProgramme = 12
     }
 
     /// <summary>
@@ -52,26 +62,45 @@ namespace ScalingLaws.Data
         SustainReputation = 6,
 
         /// <summary>Ship a model carrying at least this tier of data protection.</summary>
-        ShipProtected = 7
+        ShipProtected = 7,
+
+        /// <summary>
+        /// Keep this many products on sale, every day, for a long term.
+        ///
+        /// The low bar per day is the point. What makes it hard is the length: two years of staying
+        /// in business without retiring the thing that pays for it, through every incident and
+        /// every quarter where the money is tight.
+        /// </summary>
+        SustainOnSale = 8
     }
 
     /// <summary>One programme somebody is prepared to fund.</summary>
     public readonly struct GrantDefinition
     {
-        public GrantDefinition(GrantId id, GrantGoal goal, double target, int termDays,
-            long advanceUsd, long completionUsd, double researchPoints, int earliestYear)
+        public GrantDefinition(GrantId id, int tier, GrantGoal goal, double target, int termDays,
+            long advanceUsd, long completionUsd, double researchPoints)
         {
             Id = id;
+            Tier = Math.Clamp(tier, 1, GrantCatalog.TopTier);
             Goal = goal;
             Target = SimUnits.Finite(target);
             TermDays = Math.Clamp(termDays, 30, 2000);
             AdvanceUsd = Math.Max(0L, advanceUsd);
             CompletionUsd = Math.Max(0L, completionUsd);
             ResearchPoints = Math.Max(0.0, SimUnits.Finite(researchPoints));
-            EarliestYear = earliestYear;
         }
 
         public GrantId Id { get; }
+
+        /// <summary>
+        /// Which rung of the ladder.
+        ///
+        /// A body does not fund a company it has never heard of to do the hardest thing on the
+        /// list. Finishing anything on one rung is what puts the company on the next body's desk,
+        /// which is how a grant record actually works and it gives the run a spine to climb.
+        /// </summary>
+        public int Tier { get; }
+
         public GrantGoal Goal { get; }
 
         /// <summary>How many, how far, or how high, depending on the goal.</summary>
@@ -94,9 +123,6 @@ namespace ScalingLaws.Data
         /// </summary>
         public double ResearchPoints { get; }
 
-        /// <summary>Nobody funds work in a field that does not exist yet.</summary>
-        public int EarliestYear { get; }
-
         /// <summary>The phrase-book stem. Written out per entry, never built by concatenation.</summary>
         public string NameKey => KeyFor(Id, "name");
         public string BodyKey => KeyFor(Id, "body");
@@ -104,20 +130,24 @@ namespace ScalingLaws.Data
 
         private static string KeyFor(GrantId id, string part) => id switch
         {
+            GrantId.MinistrySafeStart => "grant.safestart." + part,
+            GrantId.MinistryFirstLine => "grant.firstline." + part,
+            GrantId.StandardsStipend => "grant.standards." + part,
             GrantId.ResearchFellowship => "grant.fellowship." + part,
             GrantId.OpenBenchmark => "grant.benchmark." + part,
-            GrantId.RegionalEmployment => "grant.employment." + part,
+            GrantId.ContinuityTwoYears => "grant.twoyears." + part,
             GrantId.PublicAccess => "grant.access." + part,
-            GrantId.ReliabilityPledge => "grant.reliability." + part,
-            GrantId.SafetyDisclosure => "grant.safety." + part,
             GrantId.ContinuityAward => "grant.continuity." + part,
-            GrantId.StandardsStipend => "grant.standards." + part,
+            GrantId.RegionalEmployment => "grant.employment." + part,
+            GrantId.ReliabilityPledge => "grant.reliability." + part,
+            GrantId.FrontierProgramme => "grant.frontier." + part,
+            GrantId.SafetyDisclosure => "grant.safety." + part,
             _ => "grant.unknown." + part
         };
     }
 
     /// <summary>
-    /// Money from outside, with a string attached.
+    /// Money from outside, with a string attached, arriving in a sequence the player climbs.
     ///
     /// **A grant is not income and it must never become income.** Every one of these pays an
     /// advance the company has to give back if it misses the term, so accepting is a bet rather
@@ -125,13 +155,19 @@ namespace ScalingLaws.Data
     /// revenue given away, and spare fleet headroom is capacity nobody is paying for. The body is
     /// paying the company to run itself their way, which is exactly what a grant is.
     ///
-    /// That framing is what keeps this off the wrong side of the spine at the top of `CLAUDE.md`.
-    /// Guaranteed income, or capital that skips a calendar gate, would be working against the
-    /// design. Sums are deliberately small against a company holding twelve million on day one.
+    /// **The ladder is what makes it a campaign rather than a noticeboard.** The first rung is the
+    /// company's own government asking for one safe model, which is a thing a two-person lab can
+    /// actually do. Finishing anything on a rung puts the company on the next body's list, and the
+    /// bodies get larger as the rungs do: a ministry, then a research council, then a continental
+    /// programme, then an international consortium. A player who works the ladder is being read
+    /// about by progressively more serious people, and that is the story.
     /// </summary>
     public static class GrantCatalog
     {
-        public const string CatalogVersion = "2026.08.29";
+        public const string CatalogVersion = "2026.08.30";
+
+        /// <summary>The highest rung. Nothing above this exists to be unlocked.</summary>
+        public const int TopTier = 5;
 
         /// <summary>How long an offer stays on the table before it lapses.</summary>
         public const int OfferOpenDays = 60;
@@ -139,29 +175,37 @@ namespace ScalingLaws.Data
         /// <summary>The most offers on the board at once. More than this is a to-do list.</summary>
         public const int MostOpenOffers = 3;
 
-        /// <summary>The most awards a company can be holding at once.</summary>
+        /// <summary>The most awards a company can be working off at once.</summary>
         public const int MostHeldAtOnce = 2;
 
         /// <summary>How long before a dismissed or lapsed programme comes round again.</summary>
-        public const int QuietDaysAfterDeclining = 420;
+        public const int QuietDaysAfterDeclining = 300;
 
         /// <summary>Chance per day that a body with something to fund gets in touch.</summary>
-        public const double ChancePerDay = 0.006;
+        public const double ChancePerDay = 0.010;
 
         /// <summary>What missing the term costs on top of repaying the advance.</summary>
         public const double ReputationCostOfFailing = -0.03;
 
         private static readonly GrantDefinition[] Entries =
         {
-            //                                   goal                          target term   advance   completion  points  from
-            new(GrantId.StandardsStipend,   GrantGoal.ReleaseModels,      3,     480,   100_000,    500_000,   40, 2022),
-            new(GrantId.ResearchFellowship, GrantGoal.FinishResearch,     2,     540,   120_000,    600_000,   90, 2022),
-            new(GrantId.ContinuityAward,    GrantGoal.SustainReputation,  0.45,  360,   140_000,    700_000,   45, 2022),
-            new(GrantId.OpenBenchmark,      GrantGoal.ReachCapability,    6,     450,   150_000,    900_000,   70, 2023),
-            new(GrantId.ReliabilityPledge,  GrantGoal.SustainHeadroom,    0.75,  300,   160_000,    800_000,   55, 2023),
-            new(GrantId.PublicAccess,       GrantGoal.SustainFreeTier,    0.60,  270,   180_000,    850_000,   60, 2023),
-            new(GrantId.RegionalEmployment, GrantGoal.EmployPeople,       6,     360,   200_000,    750_000,   30, 2024),
-            new(GrantId.SafetyDisclosure,   GrantGoal.ShipProtected,      1,     420,   220_000,  1_400_000,  160, 2024)
+            // tier                              goal                        target term   advance   completion  points
+            new(GrantId.MinistrySafeStart,   1, GrantGoal.ShipProtected,     0,     300,    90_000,    400_000,   60),
+            new(GrantId.MinistryFirstLine,   1, GrantGoal.ReleaseModels,     1,     240,    70_000,    300_000,   45),
+
+            new(GrantId.StandardsStipend,    2, GrantGoal.ReleaseModels,     3,     540,   120_000,    600_000,   75),
+            new(GrantId.ResearchFellowship,  2, GrantGoal.FinishResearch,    2,     540,   130_000,    650_000,   95),
+            new(GrantId.OpenBenchmark,       2, GrantGoal.ReachCapability,   6,     450,   140_000,    700_000,   80),
+
+            new(GrantId.ContinuityTwoYears,  3, GrantGoal.SustainOnSale,     1,     720,   200_000,  1_200_000,  120),
+            new(GrantId.PublicAccess,        3, GrantGoal.SustainFreeTier,   0.60,  540,   180_000,    900_000,   90),
+            new(GrantId.ContinuityAward,     3, GrantGoal.SustainReputation, 0.45,  480,   160_000,    800_000,   85),
+
+            new(GrantId.RegionalEmployment,  4, GrantGoal.EmployPeople,      8,     420,   220_000,  1_000_000,   70),
+            new(GrantId.ReliabilityPledge,   4, GrantGoal.SustainHeadroom,   0.75,  480,   200_000,  1_100_000,  100),
+
+            new(GrantId.FrontierProgramme,   5, GrantGoal.ReachCapability,  15,     600,   300_000,  1_900_000,  210),
+            new(GrantId.SafetyDisclosure,    5, GrantGoal.ShipProtected,     2,     540,   280_000,  1_700_000,  190)
         };
 
         public static IReadOnlyList<GrantDefinition> All => Entries;
@@ -184,12 +228,45 @@ namespace ScalingLaws.Data
         public static GrantDefinition Get(GrantId id) =>
             TryGet(id, out var definition) ? definition : Entries[0];
 
-        /// <summary>Programmes that exist yet on this date.</summary>
-        public static IEnumerable<GrantDefinition> OpenOn(GameDate date)
+        /// <summary>
+        /// The highest rung the company has earned its way onto.
+        ///
+        /// One above the best rung it has finished something on, capped at the top. A company that
+        /// has completed nothing is on rung one, which is where everybody starts and where the
+        /// national programmes are.
+        /// </summary>
+        public static int ReachedTier(ICollection<GrantId> completed)
         {
+            var best = 0;
+
+            if (completed != null)
+            {
+                foreach (var id in completed)
+                {
+                    if (TryGet(id, out var definition) && definition.Tier > best)
+                    {
+                        best = definition.Tier;
+                    }
+                }
+            }
+
+            return Math.Clamp(best + 1, 1, TopTier);
+        }
+
+        /// <summary>
+        /// Programmes the company could be offered today.
+        ///
+        /// **Everything at or below the rung reached**, not only the newest rung. A body two levels
+        /// down still funds work, and clearing a lower rung the player skipped should stay possible
+        /// rather than becoming permanently unreachable content.
+        /// </summary>
+        public static IEnumerable<GrantDefinition> OpenTo(ICollection<GrantId> completed)
+        {
+            var reached = ReachedTier(completed);
+
             foreach (var entry in Entries)
             {
-                if (date.Year >= entry.EarliestYear)
+                if (entry.Tier <= reached)
                 {
                     yield return entry;
                 }
@@ -207,6 +284,7 @@ namespace ScalingLaws.Data
             GrantGoal.SustainFreeTier => true,
             GrantGoal.SustainHeadroom => true,
             GrantGoal.SustainReputation => true,
+            GrantGoal.SustainOnSale => true,
             _ => false
         };
     }

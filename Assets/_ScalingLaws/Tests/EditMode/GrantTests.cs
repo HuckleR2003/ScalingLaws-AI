@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
@@ -69,21 +70,49 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
-        /// Nothing is on offer before the year its catalogue entry names, and the earliest ones are
-        /// reachable on day one. A board that is empty for the first two years is a system most
-        /// players never meet.
+        /// The ladder opens on the first rung and climbs when something is finished.
+        ///
+        /// Both halves matter. A board that starts empty is a system most players never meet, and a
+        /// board that offers everything on day one is a noticeboard rather than a campaign.
         /// </summary>
         [Test]
-        public void SomethingIsFundableInTheOpeningYear()
+        public void TheLadderStartsOnTheFirstRungAndClimbsWhenSomethingIsFinished()
         {
-            var openingYear = GrantCatalog.OpenOn(GameDate.Start).ToList();
+            var nothingDone = new HashSet<GrantId>();
+            var openAtStart = GrantCatalog.OpenTo(nothingDone).ToList();
 
-            Assert.That(openingYear, Is.Not.Empty,
-                "Nothing at all is fundable in 2022, so a player meets the grant desk years late.");
+            Assert.That(openAtStart, Is.Not.Empty,
+                "Nothing is fundable on day one, so a player meets the grant desk years late.");
 
-            Assert.That(GrantCatalog.OpenOn(GameDate.FromCalendar(2024, 6, 1)).Count(),
-                Is.GreaterThan(openingYear.Count),
-                "The board never grows, so the later entries are unreachable.");
+            Assert.That(openAtStart.All(definition => definition.Tier == 1), Is.True,
+                "A body four rungs up is writing to a company that has finished nothing.");
+
+            var firstRung = openAtStart[0];
+            var afterOne = new HashSet<GrantId> { firstRung.Id };
+
+            Assert.That(GrantCatalog.OpenTo(afterOne).Count(), Is.GreaterThan(openAtStart.Count),
+                "Finishing an award opened nothing, so the ladder never climbs.");
+        }
+
+        /// <summary>
+        /// Every rung is reachable and none is empty.
+        ///
+        /// A gap in the middle would stall the ladder permanently: nothing on rung three means
+        /// nothing can ever be finished there, so rung four never opens and half the catalogue is
+        /// unreachable content. That is the same failure class as a research node that opens before
+        /// its own prerequisite.
+        /// </summary>
+        [Test]
+        public void EveryRungOfTheLadderHasSomethingOnIt()
+        {
+            for (var tier = 1; tier <= GrantCatalog.TopTier; tier++)
+            {
+                var rung = tier;
+
+                Assert.That(GrantCatalog.All.Any(definition => definition.Tier == rung), Is.True,
+                    $"Tier {rung} is empty, so nothing there can be finished and the rung above it "
+                    + "can never open.");
+            }
         }
 
         // ---- what actually happens ----------------------------------------------------------------

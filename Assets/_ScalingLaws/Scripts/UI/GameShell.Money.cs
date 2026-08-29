@@ -28,13 +28,16 @@ namespace ScalingLaws.UI
 
             var page = NewPage(Loc.T("page.fleet"), string.Empty);
 
+            // **The bill where the photograph was.** The strip on this page was decoration over the
+            // one screen that is entirely about money going out, and the figure a player opens this
+            // tab to read was four panels down. It carries its own darker ground so it reads as the
+            // page's header rather than as the first of six identical cards.
+            var bill = BuildFleetBill(profile);
+            bill.AddToClassList("panel--header");
+            page.Add(bill);
+
             page.Add(BuildHostingSwitch());
             page.Add(BuildServicePanel());
-            page.Add(BuildPackagePanel());
-            page.Add(BuildFleetBill(profile));
-
-            var topRow = new VisualElement();
-            topRow.AddToClassList("panel-row");
 
             var rental = new VisualElement();
             rental.AddToClassList("panel");
@@ -76,7 +79,19 @@ namespace ScalingLaws.UI
             rental.Add(Hint(
                 "Contracted in petaflops, not boxes, so the bill does not move when the clouds change "
                 + "generation. It never ages and it bills every day it is held."));
-            topRow.Add(rental);
+
+            // Reserved beside rented, half the page each. They are the same question asked two ways,
+            // and reading them one under the other made the comparison a scroll rather than a look.
+            var capacityRow = new VisualElement();
+            capacityRow.AddToClassList("panel-row");
+
+            var reserved = BuildPackagePanel();
+            reserved.AddToClassList("fleet-half");
+            rental.AddToClassList("fleet-half");
+
+            capacityRow.Add(reserved);
+            capacityRow.Add(rental);
+            page.Add(capacityRow);
 
             var ladder = new VisualElement();
             ladder.AddToClassList("panel");
@@ -106,8 +121,7 @@ namespace ScalingLaws.UI
                 ladder.Add(row);
             }
 
-            topRow.Add(ladder);
-            page.Add(topRow);
+            page.Add(ladder);
 
             var bottomRow = new VisualElement();
             bottomRow.AddToClassList("panel-row");
