@@ -1209,6 +1209,52 @@ namespace ScalingLaws.UI
                 contentHost.Add(scroller);
             }
 
+            // **A screen that throws while it is being built leaves the player on nothing.**
+            //
+            // Half a page is worse than an error: the tab is lit, the bar still works, and the
+            // content area is empty, so the only reading available is that the game has hung. This
+            // catches, logs the whole exception so the console still carries the stack, and puts
+            // the screen's name and the first line of the fault on the page. A player can then
+            // report something actionable instead of "it went blank".
+            //
+            // It does not swallow anything. `Debug.LogException` keeps the full trace, and the
+            // panel says plainly that this is a fault rather than a state.
+            try
+            {
+                BuildScreenInto(host, screen);
+            }
+            catch (Exception error)
+            {
+                Debug.LogException(error);
+
+                host.Clear();
+                host.Add(BuildScreenFailure(screen, error));
+            }
+
+            // The tour is drawn last, over whatever the new screen turned out to be. Its highlight
+            // is a query against the live tree, so it has to run after the page exists — refreshing
+            // it before the rebuild rings elements that are about to be thrown away.
+            guide?.Refresh();
+
+            // **Reserve the strip's height at the foot of the page rather than hiding the strip.**
+            //
+            // The tour bar floats over every screen at `bottom: 96px`, so the last band of a long
+            // page sat underneath it and could not be read. Hiding it outside the office was the
+            // other option and it is worse: half the steps say "open COMPUTE", and a tour whose
+            // instructions vanish on the tab it just told you to open is no tour at all.
+            scroller.EnableInClassList("page-scroll--guided", guide is { IsShowing: true });
+
+            RestoreScrollOffset(wasAt);
+        }
+
+        /// <summary>
+        /// What each screen actually builds.
+        ///
+        /// Split out of `Show` so the whole switch sits inside one guard rather than each case
+        /// carrying its own, and so the guard's scope is obvious from the shape of the code.
+        /// </summary>
+        private void BuildScreenInto(VisualElement host, Screen screen)
+        {
             switch (screen)
             {
                 case Screen.Site:
@@ -1292,21 +1338,33 @@ namespace ScalingLaws.UI
                     host.Add(BuildFeedScreen());
                     break;
             }
+        }
 
-            // The tour is drawn last, over whatever the new screen turned out to be. Its highlight
-            // is a query against the live tree, so it has to run after the page exists — refreshing
-            // it before the rebuild rings elements that are about to be thrown away.
-            guide?.Refresh();
+        /// <summary>
+        /// The page a screen leaves behind when building it threw.
+        ///
+        /// Names the screen and quotes the first line of the fault, because "it went blank" is not
+        /// a report anybody can act on and this is going in front of players.
+        /// </summary>
+        private VisualElement BuildScreenFailure(Screen screen, Exception error)
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
 
-            // **Reserve the strip's height at the foot of the page rather than hiding the strip.**
-            //
-            // The tour bar floats over every screen at `bottom: 96px`, so the last band of a long
-            // page sat underneath it and could not be read. Hiding it outside the office was the
-            // other option and it is worse: half the steps say "open COMPUTE", and a tour whose
-            // instructions vanish on the tab it just told you to open is no tour at all.
-            scroller.EnableInClassList("page-scroll--guided", guide is { IsShowing: true });
+            var heading = new Label(Loc.T("shell.screen_failed"));
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
 
-            RestoreScrollOffset(wasAt);
+            var which = new Label(Loc.T("shell.screen_failed.where", screen.ToString()));
+            which.AddToClassList("page-subtitle");
+            panel.Add(which);
+
+            var what = new Label(error?.Message ?? string.Empty);
+            what.AddToClassList("gcard__terms");
+            panel.Add(what);
+
+            panel.Add(Hint(Loc.T("shell.screen_failed.note")));
+            return panel;
         }
 
         /// <summary>
