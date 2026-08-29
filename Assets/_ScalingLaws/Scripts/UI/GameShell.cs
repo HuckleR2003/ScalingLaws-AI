@@ -90,6 +90,12 @@ namespace ScalingLaws.UI
         /// </summary>
         private InvestingScreen investing;
 
+        /// <summary>The open offer to buy the company, or null.</summary>
+        private VisualElement buyoutBanner;
+
+        /// <summary>The day the offer banner was last built on, so it is not remade per frame.</summary>
+        private int buyoutDay = -1;
+
         /// <summary>The handset resting under the bottom bar once the tour is over.</summary>
         private PhoneDock phoneDock;
 
@@ -480,6 +486,7 @@ namespace ScalingLaws.UI
             // days happen and they take less of the player's evening.
             founder?.Refresh(state.Date.DayIndex);
             RefreshRegulatoryBanner();
+            RefreshBuyoutBanner();
             RefreshResearchBanner();
             RefreshApproachBanner();
             RefreshUpgradeBanner();
@@ -1046,13 +1053,24 @@ namespace ScalingLaws.UI
             Show(current);
         }
 
-        private void ShowGameOver()
+        /// <summary>
+        /// The end of a campaign, however it ended.
+        ///
+        /// **Two endings share this page and they are not the same event.** Running out of credit
+        /// and selling the company both stop the campaign, and the figures underneath are worth
+        /// reading either way, but printing INSOLVENT over a four billion dollar exit would be the
+        /// game misreading its own best outcome.
+        ///
+        /// Both headlines are keyed. The old ones were English literals on a page a Polish player
+        /// reaches at the end of every campaign they lose.
+        /// </summary>
+        private void ShowGameOver(string headline = null, string sentence = null)
         {
             contentHost.Clear();
 
-            var page = NewPage("INSOLVENT",
-                $"{state.CompanyName} ran out of credit on {state.Date}. "
-                + "The cluster kept billing after the revenue stopped, which is how this usually ends.");
+            var page = NewPage(
+                headline ?? Loc.T("ending.insolvent"),
+                sentence ?? Loc.T("ending.insolvent.note", state.CompanyName, state.Date.ToString()));
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
@@ -1975,6 +1993,105 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
 
             regulatoryBanner.Add(track);
             shellRoot.Add(regulatoryBanner);
+        }
+
+        /// <summary>
+        /// Somebody has offered to buy the company.
+        ///
+        /// **The largest single decision in the game, so it is a banner rather than a card.** A
+        /// player who never opens the stock screen would otherwise watch a nine or ten figure offer
+        /// arrive and expire without ever being told. `AcceptAcquisition` and `DeclineAcquisition`
+        /// were both written and called from nowhere until this existed.
+        ///
+        /// Rebuilt on the day count, never per frame, for the reason the regulatory banner is: it
+        /// carries a transition and remaking it sixty times a second is a still image.
+        /// </summary>
+        private void RefreshBuyoutBanner()
+        {
+            var offer = state.PendingAcquisition;
+
+            if (offer == null)
+            {
+                buyoutBanner?.RemoveFromHierarchy();
+                buyoutBanner = null;
+                buyoutDay = -1;
+                return;
+            }
+
+            if (buyoutBanner != null && buyoutDay == offer.DaysElapsed)
+            {
+                return;
+            }
+
+            buyoutDay = offer.DaysElapsed;
+            buyoutBanner?.RemoveFromHierarchy();
+
+            buyoutBanner = new VisualElement();
+            buyoutBanner.AddToClassList("buyout");
+
+            var from = CompetitorCatalog.NameOf(offer.From);
+
+            var headline = new Label(Loc.T("buyout.title"));
+            headline.AddToClassList("buyout__headline");
+            buyoutBanner.Add(headline);
+
+            var body = new Label(Loc.T("buyout.body", from));
+            body.AddToClassList("buyout__body");
+            buyoutBanner.Add(body);
+
+            var figures = new VisualElement();
+            figures.AddToClassList("buyout__figures");
+
+            figures.Add(UiParts.StatLine(Loc.T("buyout.offered"),
+                UiFormat.Money(offer.AmountUsd)));
+
+            figures.Add(UiParts.StatLine(Loc.T("buyout.book"),
+                UiFormat.Money(simulation.BookValueUsd())));
+
+            figures.Add(UiParts.StatLine(Loc.T("buyout.multiple"),
+                offer.ValuationMultiple.ToString("0.00x",
+                    System.Globalization.CultureInfo.InvariantCulture)));
+
+            figures.Add(UiParts.StatLine(Loc.T("buyout.expires"),
+                Loc.Counted(offer.DaysLeft, "noun.day")));
+
+            buyoutBanner.Add(figures);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("buyout__buttons");
+
+            var sell = new Button(() =>
+            {
+                if (simulation.AcceptAcquisition(out var amount))
+                {
+                    ShowGameOver(
+                        Loc.T("ending.sold"),
+                        Loc.T("ending.sold.note", from, UiFormat.Money(amount)));
+
+                    return;
+                }
+
+                Show(current);
+            })
+            { text = Loc.T("buyout.accept") };
+
+            sell.AddToClassList("button");
+            sell.AddToClassList("button--armed");
+            buttons.Add(sell);
+
+            var keep = new Button(() =>
+            {
+                simulation.DeclineAcquisition();
+                Show(current);
+            })
+            { text = Loc.T("buyout.decline") };
+
+            keep.AddToClassList("button");
+            keep.AddToClassList("button--primary");
+            buttons.Add(keep);
+
+            buyoutBanner.Add(buttons);
+            shellRoot.Add(buyoutBanner);
         }
 
         /// <summary>

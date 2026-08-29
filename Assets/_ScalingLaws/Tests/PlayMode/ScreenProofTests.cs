@@ -368,6 +368,58 @@ namespace ScalingLaws.Tests.PlayMode
             yield return Capture(screen.Root, "investing.png");
         }
 
+        /// <summary>
+        /// The cabinet, opened, with the drawn parts in it.
+        ///
+        /// **The one frame that cannot be replaced by a test.** Whether the sleds line up inside
+        /// the cabinet, whether the lights land on the indicator apertures rather than beside them,
+        /// and whether a fan reads as a fan at that size are all questions only a picture answers.
+        /// The geometry is a measured table and a measured table can still be measured wrong.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOpenedCabinetDraws()
+        {
+            var simulation = Campaign();
+            simulation.State.CashUsd = 4_000_000_000L;
+
+            simulation.TryOpenServerRoom(true, out _);
+
+            // Cards in the cabinet, and one fan, so the frame shows all three kinds of slot.
+            simulation.State.Pool.AddAsset(new HardwareAsset(
+                HardwareGenerationId.AcceleratorA100, ComputeTier.ColocatedServers, 9,
+                simulation.State.Date, 10_000, 0));
+
+            simulation.Advance(1);
+            simulation.TryFitFan(0, 0, out _);
+            simulation.Advance(1);
+
+            var panel = new RackEditorPanel(() => simulation, () => { });
+
+            yield return Capture(panel.Build(0, 0), "cabinet.png");
+        }
+
+        /// <summary>
+        /// The four cabinets, side by side, which is the comparison the screen exists for.
+        ///
+        /// Until this existed the room placed an enclosed rack and only ever an enclosed rack, so
+        /// the choice this frame is about could not be made at all.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheCabinetChooserDraws()
+        {
+            var simulation = Campaign();
+            simulation.State.CashUsd = 4_000_000_000L;
+            simulation.TryOpenServerRoom(true, out _);
+
+            var screen = new ServerRoomScreen(() => simulation, () => { });
+
+            // A test has no panel, so an event sent to a button is never dispatched. The screen
+            // carries an entry point for exactly this, the way GameShell carries OpenScreenByName.
+            screen.PickFor(1, 1);
+
+            yield return Capture(screen.Build(), "cabinets.png");
+        }
+
         [UnityTest]
         public IEnumerator TheOfficeChooserDraws()
         {

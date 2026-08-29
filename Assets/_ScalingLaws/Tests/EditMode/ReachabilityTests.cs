@@ -1,0 +1,169 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace ScalingLaws.Tests.EditMode
+{
+    /// <summary>
+    /// Content the simulation supports and the interface never offers.
+    ///
+    /// **This is the third distinct shape of the fault this project keeps shipping, and the one
+    /// nothing was watching.** `UiWiringTests` asks whether a method has a caller. That catches a
+    /// mechanism with no button. It cannot catch a mechanism whose button only ever passes one
+    /// value, which is how three of the four server cabinets stayed complete, tested and impossible
+    /// to buy for months: `TryPlaceRack` was called, correctly, with `ServerRack.Enclosed` and
+    /// nothing else, ever.
+    ///
+    /// The rule here is deliberately loose in one direction and strict in the other. A catalog may
+    /// be offered either by naming every member or by walking its `All`, because both are real
+    /// designs; what it may not do is offer some members and quietly drop the rest.
+    /// </summary>
+    public sealed class ReachabilityTests
+    {
+        private static string UiText()
+        {
+            var folder = Path.Combine(Application.dataPath, "_ScalingLaws", "Scripts", "UI");
+
+            return string.Concat(Directory
+                .GetFiles(folder, "*.cs", SearchOption.AllDirectories)
+                .Select(File.ReadAllText));
+        }
+
+        private static string SimulationText()
+        {
+            var folder = Path.Combine(Application.dataPath, "_ScalingLaws", "Scripts");
+
+            return string.Concat(Directory
+                .GetFiles(folder, "*.cs", SearchOption.AllDirectories)
+                .Select(File.ReadAllText));
+        }
+
+        /// <summary>
+        /// Everything a player picks between, and the catalog that would offer it whole.
+        ///
+        /// Adding a row here is how a new choice gets covered. Leaving one out is how the next one
+        /// ships unreachable.
+        /// </summary>
+        private static readonly (string Enum, string Catalog)[] Choices =
+        {
+            ("ServerRack", "ServerRackCatalog"),
+            ("HostingPackage", "HostingCatalog"),
+            ("LoanProduct", "LoanCatalog"),
+            ("MarketingChannel", "MarketingCatalog"),
+            ("StaffBenefit", "BenefitCatalog"),
+            ("SmearTier", "SmearCatalog"),
+        };
+
+        /// <summary>
+        /// Every option in a catalog can be chosen, by name or by the interface walking the whole
+        /// list.
+        ///
+        /// The failure this exists for: `ServerRoomScreen` placed an enclosed rack and only ever an
+        /// enclosed rack. Every test passed, the other three cabinets were correct, and the cooling
+        /// trade the entire rack system was tuned around could not be made by anybody.
+        /// </summary>
+        [Test]
+        public void EveryChoiceInACatalogCanActuallyBeChosen()
+        {
+            var ui = UiText();
+            var everything = SimulationText();
+            var unreachable = new List<string>();
+
+            foreach (var (name, catalog) in Choices)
+            {
+                // Walking the whole catalog offers all of it, which is the common and better design.
+                if (Regex.IsMatch(ui, Regex.Escape(catalog) + @"\.All\b"))
+                {
+                    continue;
+                }
+
+                var declaration = Regex.Match(
+                    everything, @"enum\s+" + Regex.Escape(name) + @"\s*\{(.*?)\}", RegexOptions.Singleline);
+
+                Assert.That(declaration.Success, Is.True, $"No enum named {name}.");
+
+                foreach (Match value in Regex.Matches(
+                    declaration.Groups[1].Value, @"^\s*([A-Z]\w*)", RegexOptions.Multiline))
+                {
+                    var member = value.Groups[1].Value;
+
+                    if (member is "None" or "Unknown")
+                    {
+                        continue;
+                    }
+
+                    if (!Regex.IsMatch(ui, @"\b" + Regex.Escape(name) + @"\." + Regex.Escape(member) + @"\b"))
+                    {
+                        unreachable.Add($"{name}.{member}  (offered by {catalog})");
+                    }
+                }
+            }
+
+            Assert.IsEmpty(unreachable,
+                "The simulation supports these and no control ever asks for them, so they are "
+                + "content nobody can reach:\n  " + string.Join("\n  ", unreachable)
+                + "\n\nOffer them by name, or walk the catalog.");
+        }
+
+        /// <summary>
+        /// The offer to buy the company can be answered.
+        ///
+        /// It arrives, it sits for forty five days and it expires. Both halves of the answer were
+        /// written and neither was called from anywhere, so a player watched a ten figure offer
+        /// come and go without ever being shown it.
+        /// </summary>
+        [Test]
+        public void AnOfferToBuyTheCompanyCanBeAcceptedAndRefused()
+        {
+            var ui = UiText();
+
+            Assert.That(Regex.IsMatch(ui, @"AcceptAcquisition\s*\("), Is.True,
+                "Nothing in the interface accepts an acquisition offer.");
+
+            Assert.That(Regex.IsMatch(ui, @"DeclineAcquisition\s*\("), Is.True,
+                "Nothing in the interface refuses an acquisition offer.");
+
+            Assert.That(Regex.IsMatch(ui, @"PendingAcquisition"), Is.True,
+                "Nothing in the interface ever looks at whether an offer is open, so one can "
+                + "arrive and expire without the player being told it existed.");
+        }
+
+        /// <summary>
+        /// Every screen the shell can draw is opened by something.
+        ///
+        /// A `Screen` member with a case in the switch and no `Show` call anywhere is a page that
+        /// exists, renders correctly and cannot be visited.
+        /// </summary>
+        [Test]
+        public void EveryScreenHasSomethingThatOpensIt()
+        {
+            var ui = UiText();
+
+            var declaration = Regex.Match(ui, @"enum Screen\s*\{(.*?)\n        \}",
+                RegexOptions.Singleline);
+
+            Assert.That(declaration.Success, Is.True, "No Screen enum found.");
+
+            var orphans = new List<string>();
+
+            foreach (Match value in Regex.Matches(
+                declaration.Groups[1].Value, @"^\s*([A-Z]\w*)", RegexOptions.Multiline))
+            {
+                var screen = value.Groups[1].Value;
+
+                if (!Regex.IsMatch(ui, @"Show\(\s*Screen\." + Regex.Escape(screen) + @"\s*\)")
+                    && !Regex.IsMatch(ui, @"OpenScreenByName"))
+                {
+                    orphans.Add(screen);
+                }
+            }
+
+            Assert.IsEmpty(orphans,
+                "These screens are built and nothing opens them:\n  " + string.Join("\n  ", orphans));
+        }
+    }
+}

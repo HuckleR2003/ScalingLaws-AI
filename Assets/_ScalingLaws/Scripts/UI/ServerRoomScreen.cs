@@ -33,6 +33,22 @@ namespace ScalingLaws.UI
         /// <summary>The square the player has open, or null when the floor is showing.</summary>
         private (int Column, int Row)? open;
 
+        /// <summary>Which empty square is waiting for a cabinet to be chosen for it.</summary>
+        private (int Column, int Row)? picking;
+
+        /// <summary>
+        /// Opens the cabinet chooser on a square, without a click.
+        ///
+        /// **For the proof render, and it earns its place.** A test has no panel, so an event sent
+        /// to a button is never dispatched, and the only frame worth taking of this screen is the
+        /// one with the chooser open. `GameShell` already carries `OpenScreenByName` for the same
+        /// reason: until it existed there was no way to look at a tab without opening the editor.
+        /// </summary>
+        public void PickFor(int column, int row)
+        {
+            picking = (column, row);
+        }
+
         public VisualElement Build()
         {
             var simulation = company();
@@ -62,6 +78,11 @@ namespace ScalingLaws.UI
 
             page.Add(BuildFloor(simulation));
 
+            if (picking.HasValue)
+            {
+                page.Add(BuildPicker(simulation, picking.Value.Column, picking.Value.Row));
+            }
+
             if (open.HasValue)
             {
                 editor ??= new RackEditorPanel(company, () =>
@@ -79,6 +100,96 @@ namespace ScalingLaws.UI
             }
 
             return page;
+        }
+
+        /// <summary>
+        /// Which cabinet goes on this square.
+        ///
+        /// **The four are not a ladder and the card has to say so.** More slots costs more to cool,
+        /// and the cheapest frame relies on the room while the dearest tank carries its own fluid.
+        /// A list sorted by price would read as a ladder and the whole trade would disappear into
+        /// "buy the best one you can afford", which is what the old behaviour did by force.
+        ///
+        /// Each card draws the actual cabinet, empty, at the size it will be on the floor.
+        /// </summary>
+        private VisualElement BuildPicker(CompanySimulation simulation, int column, int row)
+        {
+            var modal = new VisualElement();
+            modal.AddToClassList("rackpick");
+
+            var head = new VisualElement();
+            head.AddToClassList("rackpick__head");
+
+            var title = new Label(Loc.T("rack.pick.title"));
+            title.AddToClassList("rackpick__title");
+            head.Add(title);
+
+            var close = new Button(() =>
+            {
+                picking = null;
+                changed?.Invoke();
+            })
+            { text = Loc.T("common.close") };
+
+            close.AddToClassList("chip");
+            head.Add(close);
+
+            modal.Add(head);
+
+            var note = new Label(Loc.T("rack.pick.note"));
+            note.AddToClassList("rackpick__note");
+            modal.Add(note);
+
+            var cards = new VisualElement();
+            cards.AddToClassList("rackpick__cards");
+
+            foreach (var definition in ServerRackCatalog.All)
+            {
+                cards.Add(BuildPickCard(simulation, definition, column, row));
+            }
+
+            modal.Add(cards);
+            return modal;
+        }
+
+        private VisualElement BuildPickCard(CompanySimulation simulation,
+            ServerRackDefinition definition, int column, int row)
+        {
+            var affordable = simulation.State.CashUsd >= definition.PriceUsd;
+
+            var card = new Button(() =>
+            {
+                if (simulation.TryPlaceRack(column, row, definition.Id, out _))
+                {
+                    picking = null;
+                }
+
+                changed?.Invoke();
+            });
+
+            card.AddToClassList("rackpick__card");
+            card.SetEnabled(affordable);
+
+            var face = new RackFace();
+            face.AddToClassList("rackpick__face");
+            face.Show(definition.Id, null);
+            card.Add(face);
+
+            var name = new Label(definition.DisplayName.ToUpperInvariant());
+            name.AddToClassList("rackpick__name");
+            card.Add(name);
+
+            card.Add(UiParts.StatLine(Loc.T("rack.slots"), definition.Slots.ToString()));
+
+            card.Add(UiParts.StatLine(Loc.T("rack.cooling"),
+                UiFormat.Kilowatts(definition.CoolingCapacityKilowatts)));
+
+            card.Add(UiParts.StatLine(Loc.T("rack.price"), UiFormat.Money(definition.PriceUsd)));
+
+            card.Add(UiParts.StatLine(Loc.T("rack.upkeep"),
+                UiFormat.Money(definition.MonthlyUpkeepUsd)));
+
+            return card;
         }
 
         /// <summary>
@@ -179,14 +290,13 @@ namespace ScalingLaws.UI
             {
                 if (square.IsEmpty)
                 {
-                    // An empty square offers the cheapest cabinet, because a chooser here would be
-                    // a second shop and the rack cards already live on the compute screen.
-                    if (simulation.State.CashUsd >= ServerRackCatalog.Get(ServerRack.Enclosed).PriceUsd
-                        && simulation.TryPlaceRack(square.Column, square.Row, ServerRack.Enclosed,
-                            out _))
-                    {
-                        changed?.Invoke();
-                    }
+                    // **This used to place an enclosed rack and nothing else, ever.** The comment
+                    // that stood here said a chooser would be a second shop and that the rack cards
+                    // lived on the compute screen. They lived nowhere: three of the four cabinets
+                    // were complete, tested and impossible to buy, so the cooling trade the whole
+                    // system was tuned around could not be made by anybody.
+                    picking = at;
+                    changed?.Invoke();
 
                     return;
                 }

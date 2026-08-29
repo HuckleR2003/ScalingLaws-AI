@@ -616,6 +616,12 @@
 .button {
     height: 44px;
     min-width: 190px;
+
+    /* A Button with an explicit height does not centre its own label. Without this every styled
+       button in the game draws its text in the top left corner and long labels read as though
+       they are overflowing when they are starting at the edge. This project found that once
+       already and fixed it on individual classes rather than here. */
+    -unity-text-align: middle-center;
     background-color: rgba(0, 0, 0, 0);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.75);
@@ -14069,4 +14075,151 @@
     color: rgb(126, 214, 164);
     flex-shrink: 0;
     padding-left: 16px;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   The drawn cabinet, and the chooser for buying one.
+
+   The art is dark on purpose and every lit indicator is painted over it by the game, because heat
+   and occupancy are simulation state. A green LED baked into a texture is still lit on a cabinet
+   that has cooked.
+   --------------------------------------------------------------------------------------------- */
+
+.rackface {
+    flex-shrink: 0;
+    align-self: center;
+    width: 100%;
+    height: 560px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.rackslot {
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.rackmodal__uplink {
+    /* Fixed to the drawing's own 512x96. Stretched to the panel width it became a strip nearer
+       forty to one and the lit ports landed on bare faceplate. USS has no aspect-ratio, so the
+       size is stated. */
+    flex-shrink: 0;
+    align-self: center;
+    width: 384px;
+    height: 72px;
+    margin-bottom: 12px;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.rackpick {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 96px;
+    bottom: 96px;
+    padding: 20px 24px 20px 24px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(9, 11, 16, 0.985);
+}
+
+.rackpick__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.rackpick__title {
+    font-size: 18px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.rackpick__note {
+    font-size: 12.5px;
+    color: rgb(150, 162, 186);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-top: 8px;
+    padding-bottom: 14px;
+    max-width: 900px;
+}
+
+.rackpick__cards {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.rackpick__card {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    margin: 0 8px 0 0;
+    padding: 12px 14px 14px 14px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(255, 255, 255, 0.028);
+    -unity-text-align: upper-left;
+}
+
+.rackpick__face {
+    flex-shrink: 1;
+    flex-grow: 1;
+    width: 100%;
+    height: auto;
+    min-height: 140px;
+    margin-bottom: 10px;
+}
+
+.rackpick__name {
+    font-size: 13px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+    flex-shrink: 0;
+    padding-bottom: 8px;
+}
+
+/* Somebody has offered to buy the company. The largest decision in the game, so it sits across the
+   top of whatever the player is looking at rather than waiting on a screen they may never open. */
+
+.buyout {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 78px;
+    padding: 18px 22px 18px 22px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-left-width: 4px;
+    border-color: rgba(240, 196, 68, 0.45);
+    border-left-color: rgb(240, 196, 68);
+    background-color: rgba(20, 17, 10, 0.985);
+}
+
+.buyout__headline {
+    font-size: 17px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(240, 196, 68);
+}
+
+.buyout__body {
+    font-size: 13px;
+    color: rgb(214, 222, 238);
+    white-space: normal;
+    padding-top: 7px;
+    padding-bottom: 12px;
+}
+
+.buyout__figures {
+    flex-shrink: 0;
+    padding-bottom: 12px;
+}
+
+.buyout__buttons {
+    flex-direction: row;
+    flex-shrink: 0;
 }

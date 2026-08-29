@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine.UIElements;
@@ -52,7 +53,7 @@ namespace ScalingLaws.UI
             var definition = ServerRackCatalog.Get(square.Rack);
 
             card.Add(BuildHead(definition));
-            card.Add(BuildSlots(square, definition));
+            card.Add(BuildSlots(simulation, square, definition));
             card.Add(BuildStats(simulation, square, definition));
             card.Add(BuildActions(simulation, column, row, square));
 
@@ -81,7 +82,19 @@ namespace ScalingLaws.UI
         /// Accelerators first, then fans, which is how a rack is actually loaded and also what makes
         /// the trade visible: the fans sit at the top where the next card would have gone.
         /// </summary>
-        private static VisualElement BuildSlots(HallSquare square, ServerRackDefinition definition)
+        /// <summary>
+        /// The cabinet, drawn, with what is in it.
+        ///
+        /// **This was twelve coloured bars.** The bars answered "will the fan fit" and nothing
+        /// else; the drawing answers it just as directly and also says what is in there, which era
+        /// the silicon is from, and whether the heat has caught up with it.
+        ///
+        /// The lights are drawn by the game over dark art, never baked into it. Occupancy and
+        /// throttling are simulation state, and a lit indicator painted into a texture would still
+        /// be lit on a cabinet that had cooked.
+        /// </summary>
+        private static VisualElement BuildSlots(CompanySimulation simulation, HallSquare square,
+            ServerRackDefinition definition)
         {
             var block = new VisualElement();
             block.AddToClassList("rackmodal__slots");
@@ -96,28 +109,67 @@ namespace ScalingLaws.UI
             count.AddToClassList("field__hint");
             block.Add(count);
 
-            var stack = new VisualElement();
-            stack.AddToClassList("rackmodal__stack");
+            block.Add(BuildUplink(simulation, square, definition));
+
+            var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
+            var heat = known ? square.Accelerators * part.PowerKilowatts : 0.0;
+            var cooling = definition.CoolingCapacityKilowatts
+                + square.Fans * ServerRackCatalog.FanCoolingKilowatts;
+
+            var hot = ServerRackCatalog.ThrottleFactor(heat, cooling) < 1.0;
+            var era = simulation.State.Date.Year;
+
+            var fills = new List<SlotFill>(definition.Slots);
 
             for (var index = 0; index < definition.Slots; index++)
             {
-                var slot = new VisualElement();
-                slot.AddToClassList("rackmodal__slot");
-
                 if (index < square.Accelerators)
                 {
-                    slot.AddToClassList("rackmodal__slot--card");
+                    fills.Add(new SlotFill(RackArt.Sled(era), RackArt.SledLights, 1.0, hot));
                 }
                 else if (index < used)
                 {
-                    slot.AddToClassList("rackmodal__slot--fan");
+                    fills.Add(new SlotFill(RackArt.Fan(), RackArt.FanRings, 1.0, hot));
                 }
-
-                stack.Add(slot);
+                else
+                {
+                    fills.Add(new SlotFill(RackArt.Blank(), default, 0.0, false));
+                }
             }
 
-            block.Add(stack);
+            var face = new RackFace();
+            face.Show(square.Rack, fills);
+
+            block.Add(face);
             return block;
+        }
+
+        /// <summary>
+        /// The cabinet's own switch, lit by how much of the cabinet is actually plugged into it.
+        ///
+        /// **Not a slot and not for sale.** Every rack has a switch at the top of it; this one is
+        /// part of the cabinet the player already bought, which is why it sits above the slot count
+        /// rather than inside the stack. Drawing it as something purchasable would be a fourteenth
+        /// thing to buy that the simulation has no idea about.
+        ///
+        /// Thirty two ports, and the lit share is the cards in this cabinet against its slots. A
+        /// half-full cabinet has a half-lit switch, which is a fact about the company rather than
+        /// a decoration.
+        /// </summary>
+        private static VisualElement BuildUplink(CompanySimulation simulation, HallSquare square,
+            ServerRackDefinition definition)
+        {
+            var strip = new RackSlot();
+            strip.AddToClassList("rackmodal__uplink");
+
+            var share = definition.Slots > 0
+                ? square.Accelerators / (double)definition.Slots
+                : 0.0;
+
+            strip.Show(new SlotFill(
+                RackArt.Support(HardwareClass.Network), RackArt.FabricPorts, share, false));
+
+            return strip;
         }
 
         private static VisualElement BuildStats(CompanySimulation simulation, HallSquare square,
