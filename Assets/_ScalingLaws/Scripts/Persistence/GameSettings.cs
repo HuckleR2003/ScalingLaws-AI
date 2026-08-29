@@ -18,8 +18,21 @@ namespace ScalingLaws.Persistence
         private const string FullscreenKey = Prefix + "Fullscreen";
         private const string ReduceMotionKey = Prefix + "ReduceMotion";
         private const string LanguageKey = Prefix + "Language";
+        private const string AutosaveKey = Prefix + "AutosaveMinutes";
 
         public const float DefaultMasterVolume = 0.8f;
+
+        /// <summary>
+        /// The intervals the game offers, in minutes. Zero is off and it is the default.
+        ///
+        /// **Off by default on purpose.** Writing to disk on its own while somebody is halfway
+        /// through pricing a release is the game making a decision for them, and this one is cheap
+        /// to turn on once a player knows they want it.
+        /// </summary>
+        public static readonly int[] AutosaveChoices = { 0, 1, 5, 10 };
+
+        /// <summary>Minutes between automatic saves, or zero for never.</summary>
+        public static int AutosaveMinutes { get; private set; }
 
         public static float MasterVolume { get; private set; } = DefaultMasterVolume;
         public static bool Fullscreen { get; private set; }
@@ -63,6 +76,17 @@ namespace ScalingLaws.Persistence
 
             AudioListener.volume = MasterVolume;
             ApplyDisplayMode();
+
+            AutosaveMinutes = 0;
+
+            foreach (var choice in AutosaveChoices)
+            {
+                if (choice == PlayerPrefs.GetInt(AutosaveKey, 0))
+                {
+                    AutosaveMinutes = choice;
+                    break;
+                }
+            }
         }
 
         public static void SetMasterVolume(float value)
@@ -85,6 +109,31 @@ namespace ScalingLaws.Persistence
         {
             ReduceMotion = value;
             PlayerPrefs.SetInt(ReduceMotionKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// Sets the autosave interval, clamped to something the game actually offers.
+        ///
+        /// Clamped rather than trusted, because this reads back out of PlayerPrefs, which a player
+        /// can edit and a corrupt install can garble. An interval of minus four would be an
+        /// autosave on every frame.
+        /// </summary>
+        public static void SetAutosaveMinutes(int minutes)
+        {
+            var wanted = 0;
+
+            foreach (var choice in AutosaveChoices)
+            {
+                if (choice == minutes)
+                {
+                    wanted = choice;
+                    break;
+                }
+            }
+
+            AutosaveMinutes = wanted;
+            PlayerPrefs.SetInt(AutosaveKey, wanted);
             PlayerPrefs.Save();
         }
 

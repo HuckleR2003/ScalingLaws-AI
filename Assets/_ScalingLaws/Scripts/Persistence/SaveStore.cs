@@ -17,32 +17,105 @@ namespace ScalingLaws.Persistence
     /// </summary>
     public static class SaveStore
     {
+        /// <summary>
+        /// The first slot's key, and it is the one this game shipped with.
+        ///
+        /// **Slot one keeps the old name on purpose.** A campaign saved before slots existed lives
+        /// under this key, and renaming it would lose every save in existence to buy a tidier
+        /// string. Slots two upward are suffixed.
+        /// </summary>
         private const string SaveKey = "ScalingLaws.Campaign";
 
-        public static bool HasSave => PlayerPrefs.HasKey(SaveKey);
+        /// <summary>How many campaigns can be kept at once.</summary>
+        public const int SlotCount = 4;
 
-        public static void Clear()
+        /// <summary>Which slot the game reads and writes when nobody says otherwise.</summary>
+        public static int CurrentSlot { get; set; } = 1;
+
+        private static string KeyFor(int slot)
         {
-            PlayerPrefs.DeleteKey(SaveKey);
+            var safe = Math.Clamp(slot, 1, SlotCount);
+            return safe == 1 ? SaveKey : $"{SaveKey}.{safe}";
+        }
+
+        public static bool HasSave => HasSaveIn(CurrentSlot);
+
+        public static bool HasSaveIn(int slot) => PlayerPrefs.HasKey(KeyFor(slot));
+
+        public static void Clear() => ClearSlot(CurrentSlot);
+
+        public static void ClearSlot(int slot)
+        {
+            PlayerPrefs.DeleteKey(KeyFor(slot));
+            PlayerPrefs.DeleteKey(KeyFor(slot) + ".summary");
             PlayerPrefs.Save();
         }
 
-        public static void Save(CompanyState state)
+        public static void Save(CompanyState state) => SaveTo(CurrentSlot, state);
+
+        /// <summary>
+        /// Writes a campaign, and beside it a short line describing what is in there.
+        ///
+        /// **The summary is written on save, never derived on load.** A load screen listing four
+        /// slots would otherwise have to parse, migrate and rebuild four whole campaigns to print
+        /// four company names, which is most of a second of work to draw a menu.
+        /// </summary>
+        public static void SaveTo(int slot, CompanyState state)
         {
-            var data = Capture(state);
-            PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(data));
+            if (state == null)
+            {
+                return;
+            }
+
+            var key = KeyFor(slot);
+
+            PlayerPrefs.SetString(key, JsonUtility.ToJson(Capture(state)));
+            PlayerPrefs.SetString(key + ".summary", JsonUtility.ToJson(SlotSummary.Of(state)));
             PlayerPrefs.Save();
         }
 
-        /// <summary>Reads the stored campaign, or null when there is nothing readable there.</summary>
-        public static SaveData LoadData()
+        /// <summary>What is in a slot, without loading it. Null when the slot is empty.</summary>
+        public static SlotSummary SummaryOf(int slot)
         {
-            if (!PlayerPrefs.HasKey(SaveKey))
+            var key = KeyFor(slot);
+
+            if (!PlayerPrefs.HasKey(key))
             {
                 return null;
             }
 
-            return Parse(PlayerPrefs.GetString(SaveKey, string.Empty));
+            var raw = PlayerPrefs.GetString(key + ".summary", string.Empty);
+
+            if (string.IsNullOrEmpty(raw))
+            {
+                // Written before summaries existed, or written and then lost. The slot is real, so
+                // it says so rather than reading as empty, which would offer to overwrite it.
+                return new SlotSummary { companyName = "-", dateText = "-", day = 0 };
+            }
+
+            try
+            {
+                return JsonUtility.FromJson<SlotSummary>(raw);
+            }
+            catch (Exception)
+            {
+                return new SlotSummary { companyName = "-", dateText = "-", day = 0 };
+            }
+        }
+
+        /// <summary>Reads the stored campaign, or null when there is nothing readable there.</summary>
+        public static SaveData LoadData() => LoadDataFrom(CurrentSlot);
+
+        public static SaveData LoadDataFrom(int slot)
+        {
+            var key = KeyFor(slot);
+
+            if (!PlayerPrefs.HasKey(key))
+            {
+                return null;
+            }
+
+            return Parse(PlayerPrefs.GetString(key, string.Empty));
         }
 
         /// <summary>

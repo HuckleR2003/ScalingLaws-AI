@@ -14223,3 +14223,335 @@
     flex-direction: row;
     flex-shrink: 0;
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Escape: the pause menu, the four slots, and the report card.
+
+   Both sheets mount on the shell root rather than inside the page, so a day rolling over
+   underneath does not throw away the menu somebody is reading.
+   --------------------------------------------------------------------------------------------- */
+
+.pause {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.82);
+}
+
+.pause__card {
+    width: 620px;
+    max-height: 86%;
+    padding: 24px 28px 26px 28px;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(11, 14, 20, 0.99);
+}
+
+.pause__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-bottom: 18px;
+}
+
+.pause__title {
+    font-size: 22px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    color: rgb(238, 243, 252);
+}
+
+.pause__menu {
+    flex-shrink: 0;
+}
+
+.pause__row {
+    width: 100%;
+    height: 46px;
+    margin: 0 0 8px 0;
+    padding: 0 16px 0 16px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.03);
+    font-size: 14px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    color: rgb(226, 232, 244);
+}
+
+.pause__row:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.pause__note {
+    font-size: 12.5px;
+    color: rgb(226, 186, 112);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-top: 12px;
+}
+
+/* The slots. */
+
+.pause__slots {
+    flex-shrink: 0;
+}
+
+.slotcard {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+    padding: 12px 14px 14px 14px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.slotcard--empty {
+    background-color: rgba(255, 255, 255, 0.015);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.slotcard__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.slotcard__number {
+    width: 84px;
+    flex-shrink: 0;
+    font-size: 10px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    color: rgb(122, 134, 156);
+}
+
+.slotcard__name {
+    flex-grow: 1;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.slotcard__line {
+    font-size: 12px;
+    color: rgb(150, 162, 186);
+    padding-top: 4px;
+    padding-bottom: 10px;
+    padding-left: 84px;
+}
+
+/* Settings and statistics. */
+
+.pause__settings {
+    flex-shrink: 0;
+}
+
+.pause__setting {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.pause__label {
+    font-size: 14px;
+    color: rgb(226, 232, 244);
+}
+
+.pause__choices {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.pause__chip {
+    height: 32px;
+    min-width: 64px;
+    margin: 0 0 0 6px;
+    padding: 0 12px 0 12px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(255, 255, 255, 0.03);
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(178, 188, 206);
+}
+
+.pause__chip--on {
+    border-color: rgb(126, 214, 164);
+    background-color: rgba(126, 214, 164, 0.14);
+    color: rgb(126, 214, 164);
+}
+
+.pause__hint {
+    font-size: 11.5px;
+    color: rgb(140, 150, 172);
+    white-space: normal;
+    flex-shrink: 0;
+    padding-bottom: 14px;
+}
+
+.pause__stats {
+    flex-shrink: 0;
+}
+
+/* The one button on this menu that is a favour rather than a function. */
+
+.feedbutton {
+    width: 100%;
+    height: 52px;
+    margin: 6px 0 8px 0;
+    padding: 0 16px 0 16px;
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: rgb(240, 208, 96);
+    background-color: rgba(240, 208, 96, 0.10);
+    font-size: 15px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(248, 226, 140);
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.45s;
+}
+
+.feedbutton:hover {
+    background-color: rgba(255, 255, 255, 0.92);
+    border-color: rgb(255, 255, 255);
+    color: rgb(28, 24, 10);
+}
+
+/* The report card. */
+
+.report {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.88);
+}
+
+.report__card {
+    width: 660px;
+    padding: 26px 30px 24px 30px;
+    border-radius: 12px;
+    border-width: 1px;
+    border-top-width: 3px;
+    border-color: rgba(240, 208, 96, 0.40);
+    border-top-color: rgb(240, 208, 96);
+    background-color: rgba(13, 13, 16, 0.99);
+}
+
+.report__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.report__title {
+    font-size: 24px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    color: rgb(248, 226, 140);
+}
+
+.report__body {
+    font-size: 14.5px;
+    color: rgb(226, 232, 244);
+    white-space: normal;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.report__promise {
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    color: rgb(150, 200, 240);
+    white-space: normal;
+    padding: 10px 12px 10px 12px;
+    margin-bottom: 18px;
+    border-radius: 6px;
+    border-left-width: 2px;
+    border-left-color: rgb(150, 200, 240);
+    background-color: rgba(150, 200, 240, 0.07);
+}
+
+.report__row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.report__label {
+    width: 72px;
+    flex-shrink: 0;
+    font-size: 14px;
+    color: rgb(198, 208, 226);
+}
+
+.report__field {
+    flex-grow: 1;
+    max-width: none;
+    margin-right: 12px;
+}
+
+.report__link {
+    font-size: 11px;
+    color: rgb(112, 120, 138);
+    white-space: normal;
+    padding-top: 16px;
+}
+
+/* The report banner on the main menu. The subtitle types itself and everything else there is
+   still, so one slow white-to-yellow cycle catches an eye without competing with anything. */
+
+.menureport {
+    width: 100%;
+    height: 74px;
+    margin: 16px 0 8px 0;
+    padding: 0 18px 0 18px;
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgb(240, 208, 96);
+    background-color: rgba(240, 208, 96, 0.10);
+    -unity-text-align: middle-left;
+    transition-property: background-color, border-color;
+    transition-duration: 1.2s;
+}
+
+.menureport--lit {
+    border-color: rgb(255, 255, 255);
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+.menureport__headline {
+    font-size: 15px;
+    letter-spacing: 2.2px;
+    -unity-font-style: bold;
+    color: rgb(248, 226, 140);
+}
+
+.menureport__note {
+    font-size: 11.5px;
+    color: rgb(196, 190, 168);
+    white-space: normal;
+    padding-top: 4px;
+}

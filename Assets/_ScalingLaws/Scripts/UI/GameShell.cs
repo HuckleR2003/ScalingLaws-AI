@@ -90,6 +90,20 @@ namespace ScalingLaws.UI
         /// </summary>
         private InvestingScreen investing;
 
+        /// <summary>What Escape opens: settings, statistics, four slots and the report button.</summary>
+        private PauseMenu pause;
+
+        /// <summary>The card that asks for a name before opening the form.</summary>
+        private FeedbackDialog report;
+
+        /// <summary>The two sheets, held so they can be taken down without a full rebuild.</summary>
+        private VisualElement pauseSheet;
+
+        private VisualElement reportSheet;
+
+        /// <summary>Real seconds since the last automatic save. Not simulated time.</summary>
+        private float sinceAutosave;
+
         /// <summary>The open offer to buy the company, or null.</summary>
         private VisualElement buyoutBanner;
 
@@ -499,6 +513,16 @@ namespace ScalingLaws.UI
             {
                 founder.ComeBack();
                 Show(Screen.Ranking);
+            }
+
+            PollPauseKey();
+            PollAutosave();
+
+            // The clock does not advance while the pause menu is up. Pausing has to actually pause,
+            // or a player who opened the menu to save comes back to a company three days older.
+            if (pause is { IsOpen: true })
+            {
+                return;
             }
 
             var days = clock.Advance(Time.unscaledDeltaTime * (founder?.TimeScale ?? 1f));
@@ -1993,6 +2017,122 @@ UiParts.ExplainPage(page, TechNotes.Capability, TechNotes.MarketShare);
 
             regulatoryBanner.Add(track);
             shellRoot.Add(regulatoryBanner);
+        }
+
+        /// <summary>
+        /// Escape, and what it opens.
+        ///
+        /// **The game had no Escape at all.** `KeyboardShortcuts` bound space and the speeds; there
+        /// was no pause menu, no deliberate save, no way to load without leaving to the main menu
+        /// and no settings once a campaign had started.
+        ///
+        /// The key is read here rather than added to `KeyboardShortcuts.All`, because that table is
+        /// the one the interface prints as a list of speed controls and Escape is not one of those.
+        /// </summary>
+        private void PollPauseKey()
+        {
+            if (!Input.GetKeyDown(KeyCode.Escape))
+            {
+                return;
+            }
+
+            // A card over the menu closes first. Escape closing two things at once is how a player
+            // ends up back in the game when they meant to step back one screen.
+            if (report is { IsOpen: true })
+            {
+                report.Close();
+                return;
+            }
+
+            EnsurePauseMenu();
+            pause.Toggle();
+            RefreshSheets();
+        }
+
+        private void EnsurePauseMenu()
+        {
+            if (pause != null)
+            {
+                return;
+            }
+
+            pause = new PauseMenu(() => simulation, RefreshSheets)
+            {
+                Closed = RefreshSheets,
+                Quit = SceneFlow.LoadMainMenu
+            };
+
+            report = new FeedbackDialog(() => state.Date, RefreshSheets)
+            {
+                Closed = RefreshSheets
+            };
+
+            pause.Feedback = () =>
+            {
+                report.Open();
+                RefreshSheets();
+            };
+        }
+
+        /// <summary>
+        /// Puts the pause sheet and the report card up or takes them down.
+        ///
+        /// Both are mounted on the shell root rather than inside the page, so a day rolling over
+        /// underneath does not throw away the menu the player is reading. That is the same reason
+        /// the tutorial phone lives there.
+        /// </summary>
+        private void RefreshSheets()
+        {
+            EnsurePauseMenu();
+
+            pauseSheet?.RemoveFromHierarchy();
+            pauseSheet = null;
+
+            reportSheet?.RemoveFromHierarchy();
+            reportSheet = null;
+
+            if (pause.IsOpen)
+            {
+                pauseSheet = pause.Build();
+                shellRoot.Add(pauseSheet);
+            }
+
+            if (report.IsOpen)
+            {
+                reportSheet = report.Build(Application.version);
+                shellRoot.Add(reportSheet);
+            }
+        }
+
+        /// <summary>
+        /// The automatic save, on a real clock rather than a simulated one.
+        ///
+        /// **Real seconds, deliberately.** A player at x3 would otherwise be saved to disk three
+        /// times as often as one at x1 for asking to watch the same week go by faster, and the
+        /// setting says minutes.
+        ///
+        /// It does not fire while the pause menu is up. Writing over a slot underneath somebody who
+        /// is looking at that slot is the one moment this could do real harm.
+        /// </summary>
+        private void PollAutosave()
+        {
+            var minutes = GameSettings.AutosaveMinutes;
+
+            if (minutes <= 0 || state == null || pause is { IsOpen: true })
+            {
+                sinceAutosave = 0f;
+                return;
+            }
+
+            sinceAutosave += Time.unscaledDeltaTime;
+
+            if (sinceAutosave < minutes * 60f)
+            {
+                return;
+            }
+
+            sinceAutosave = 0f;
+            SaveStore.Save(state);
         }
 
         /// <summary>

@@ -308,7 +308,7 @@ namespace ScalingLaws.UI
 
             var newGame = new Button(OnNewGame)
             {
-                text = awaitingOverwriteConfirmation ? "CONFIRM: OVERWRITE" : "NEW COMPANY"
+                text = Loc.T(awaitingOverwriteConfirmation ? "menu.confirm_overwrite" : "menu.new")
             };
             newGame.AddToClassList("menu-button");
             if (awaitingOverwriteConfirmation)
@@ -318,13 +318,15 @@ namespace ScalingLaws.UI
 
             actions.Add(newGame);
 
-            var note = new Label(awaitingOverwriteConfirmation
-                ? "This deletes the saved campaign. Press again to confirm."
+            var note = new Label(Loc.T(awaitingOverwriteConfirmation
+                ? "menu.overwrite_note"
                 : SaveStore.HasSave
-                    ? "A saved campaign is on this machine."
-                    : "No saved campaign yet.");
+                    ? "menu.has_save"
+                    : "menu.no_save"));
             note.AddToClassList("menu-note");
             actions.Add(note);
+
+            actions.Add(BuildReportBanner());
 
             var settings = new Button(() =>
             {
@@ -551,6 +553,45 @@ namespace ScalingLaws.UI
             copy.Add(detail);
 
             return copy;
+        }
+
+        /// <summary>
+        /// The report banner: the second thing anybody should notice on this screen.
+        ///
+        /// **It shimmers rather than sits.** The subtitle types itself and everything else on the
+        /// menu is still, so one slow white-to-yellow cycle is enough to catch an eye without
+        /// competing with anything. USS has no keyframes, so the pulse is a transition driven from
+        /// the schedule, which is the same trick the regulatory banner uses.
+        ///
+        /// It opens the form directly rather than the card the pause menu shows. Nobody on the main
+        /// menu is in a campaign, so there is no day to report and no reason to ask twice.
+        /// </summary>
+        private VisualElement BuildReportBanner()
+        {
+            var banner = new Button(() =>
+                FeedbackLink.Open(default, Application.version, string.Empty));
+
+            banner.AddToClassList("menureport");
+
+            var headline = new Label(Loc.T("feedback.menu"));
+            headline.AddToClassList("menureport__headline");
+            banner.Add(headline);
+
+            var note = new Label(Loc.T("feedback.menu.note"));
+            note.AddToClassList("menureport__note");
+            banner.Add(note);
+
+            // Two states swapped on a slow schedule. A transition between them does the fade, so
+            // this fires twice a cycle rather than every frame.
+            var lit = false;
+
+            banner.schedule.Execute(() =>
+            {
+                lit = !lit;
+                banner.EnableInClassList("menureport--lit", lit);
+            }).Every(1400);
+
+            return banner;
         }
 
         private void OnNewGame()

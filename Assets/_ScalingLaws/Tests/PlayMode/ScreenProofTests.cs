@@ -4,6 +4,7 @@ using System.IO;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
+using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
 using ScalingLaws.UI;
 using UnityEngine;
@@ -418,6 +419,51 @@ namespace ScalingLaws.Tests.PlayMode
             screen.PickFor(1, 1);
 
             yield return Capture(screen.Build(), "cabinets.png");
+        }
+
+        /// <summary>The pause menu, which is what Escape opens.</summary>
+        [UnityTest]
+        public IEnumerator ThePauseMenuDraws()
+        {
+            var simulation = Campaign();
+            var pause = new PauseMenu(() => simulation, () => { });
+            pause.Open();
+
+            yield return Capture(pause.Build(), "pause.png");
+        }
+
+        /// <summary>
+        /// The four slots, with one of them holding a campaign.
+        ///
+        /// An empty list of four says nothing about what a full slot looks like, and the full one
+        /// is where the summary line, the two-click overwrite and the date all live.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheSaveSlotsDraw()
+        {
+            var simulation = Campaign();
+
+            SaveStore.SaveTo(2, simulation.State);
+
+            var pause = new PauseMenu(() => simulation, () => { });
+            pause.Open();
+            pause.OpenTab(PauseTab.Save);
+
+            yield return Capture(pause.Build(), "slots.png");
+
+            SaveStore.ClearSlot(2);
+        }
+
+        /// <summary>The card that asks for a name before it opens the form.</summary>
+        [UnityTest]
+        public IEnumerator TheReportCardDraws()
+        {
+            var simulation = Campaign();
+
+            var report = new FeedbackDialog(() => simulation.State.Date, () => { });
+            report.Open();
+
+            yield return Capture(report.Build("0.9.0"), "report.png");
         }
 
         [UnityTest]
