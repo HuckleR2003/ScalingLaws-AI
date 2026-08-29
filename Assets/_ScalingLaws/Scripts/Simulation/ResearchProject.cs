@@ -61,6 +61,39 @@ namespace ScalingLaws.Simulation
             && PetaflopDaysRequired > 0.0
             && PetaflopDaysCompleted < PetaflopDaysRequired;
 
+        /// <summary>
+        /// The cluster is falling behind the calendar, well before the calendar runs out.
+        ///
+        /// **`IsWaitingForCompute` only fires once the days are gone, and that is too late to be
+        /// useful.** Progress is the slower of the two halves, so a company with no spare fleet
+        /// watches the day counter run down beside a bar that never moves and a percentage stuck at
+        /// zero, with nothing on screen saying why. A playtest reported that as a broken loading
+        /// bar, which is a fair reading of it.
+        ///
+        /// The tolerance is there so a node that is merely a few days out of step does not raise an
+        /// alarm about nothing.
+        /// </summary>
+        public bool IsComputeStarved
+        {
+            get
+            {
+                if (IsComplete || PetaflopDaysRequired <= 0.0 || DurationDays <= 0)
+                {
+                    return false;
+                }
+
+                var onCalendar = DaysCompleted / (double)DurationDays;
+                var onCluster = PetaflopDaysCompleted / PetaflopDaysRequired;
+
+                return onCalendar - onCluster > 0.15;
+            }
+        }
+
+        /// <summary>How far the calendar alone has run, for a screen that wants to show both.</summary>
+        public double CalendarProgress => DurationDays <= 0
+            ? 1.0
+            : Math.Clamp(DaysCompleted / (double)DurationDays, 0.0, 1.0);
+
         /// <summary>Compute still owed, in petaflop-days. Zero once the cluster has paid it.</summary>
         public double PetaflopDaysRemaining =>
             Math.Max(0.0, PetaflopDaysRequired - PetaflopDaysCompleted);

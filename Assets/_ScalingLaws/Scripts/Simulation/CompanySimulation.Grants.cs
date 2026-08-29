@@ -25,7 +25,7 @@ namespace ScalingLaws.Simulation
         // ---- the daily tick -----------------------------------------------------------------------
 
         /// <summary>
-        /// Ages every offer and every award, and settles anything that reached its end today.
+        /// Ages every award and settles anything that reached its end today.
         ///
         /// Called after the market has been served, because `utilisation` and the flagship's
         /// capability are figures the day produced and reading them earlier would measure
@@ -33,92 +33,7 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private void AdvanceGrants(double utilisation)
         {
-            ExpireGrantOffers();
-            OfferAGrant();
             SettleGrants(utilisation);
-        }
-
-        private void ExpireGrantOffers()
-        {
-            for (var index = State.GrantOffers.Count - 1; index >= 0; index--)
-            {
-                var offer = State.GrantOffers[index];
-                offer.Advance();
-
-                if (!offer.HasLapsed)
-                {
-                    continue;
-                }
-
-                State.GrantOffers.RemoveAt(index);
-                State.GrantQuietUntil[offer.Id] =
-                    State.Date.AddDays(GrantCatalog.QuietDaysAfterDeclining).DayIndex;
-            }
-        }
-
-        /// <summary>
-        /// Somebody with a budget gets in touch.
-        ///
-        /// One at a time, and never a programme the company is already holding, already looking at,
-        /// or has recently turned down. A board that refilled itself the moment it emptied would be
-        /// a task list rather than an opportunity.
-        /// </summary>
-        private void OfferAGrant()
-        {
-            if (State.IsBankrupt || State.GrantOffers.Count >= GrantCatalog.MostOpenOffers)
-            {
-                return;
-            }
-
-            // **Its own stream.** Drawing from the shared one would shift every later roll in the
-            // campaign the moment a grant was considered, and the replay tests measure days years
-            // apart. Same reasoning as the rivalry desk.
-            var random = new DeterministicRandom(GrantMix(State.RosterSeed, (uint)State.Date.DayIndex));
-
-            if (random.NextDouble() > GrantCatalog.ChancePerDay)
-            {
-                return;
-            }
-
-            // **Only what the company has climbed to.** A ministry funds a first safe model; an
-            // international consortium does not write to a lab that has never finished anything.
-            var available = GrantCatalog.OpenTo(State.GrantsCompleted)
-                .Where(definition => !IsGrantSpokenFor(definition.Id))
-                .ToList();
-
-            if (available.Count == 0)
-            {
-                return;
-            }
-
-            var picked = available[random.NextInt(0, available.Count)];
-            State.GrantOffers.Add(new GrantOffer(picked.Id, State.Date));
-
-            State.RaiseEvent(new CompanyEvent(
-                CompanyEventType.GrantOffered, State.Date,
-                Loc.T("grant.event.offered", Loc.T(picked.NameKey), BodyOf(picked)),
-                picked.AdvanceUsd));
-        }
-
-        private bool IsGrantSpokenFor(GrantId id)
-        {
-            if (State.Grants.Any(grant => grant.Id == id))
-            {
-                return true;
-            }
-
-            if (State.GrantOffers.Any(offer => offer.Id == id))
-            {
-                return true;
-            }
-
-            if (State.GrantsCompleted.Contains(id))
-            {
-                return true;
-            }
-
-            return State.GrantQuietUntil.TryGetValue(id, out var until)
-                && State.Date.DayIndex < until;
         }
 
         /// <summary>
@@ -212,8 +127,49 @@ namespace ScalingLaws.Simulation
 
         // ---- what the player does -----------------------------------------------------------------
 
-        /// <summary>Every award on the table today, newest last.</summary>
-        public IReadOnlyList<GrantOffer> GrantOffers() => State.GrantOffers;
+        /// <summary>
+        /// Every programme the company could apply to today.
+        ///
+        /// **A board, not an inbox.** This was a one per cent daily roll that put the first offer a
+        /// hundred days out on average, so most players spent their opening months looking at an
+        /// empty panel that said nobody was funding anything. A grant register is a list you read
+        /// and apply to, and the rung you have climbed to is what decides how long the list is.
+        /// </summary>
+        public List<GrantDefinition> AvailableGrants()
+        {
+            var open = new List<GrantDefinition>();
+
+            foreach (var definition in GrantCatalog.OpenTo(State.GrantsCompleted))
+            {
+                if (IsGrantSpokenFor(definition.Id))
+                {
+                    continue;
+                }
+
+                open.Add(definition);
+            }
+
+            return open;
+        }
+
+        private bool IsGrantSpokenFor(GrantId id)
+        {
+            if (State.Grants.Any(grant => grant.Id == id))
+            {
+                return true;
+            }
+
+            if (State.GrantsCompleted.Contains(id))
+            {
+                return true;
+            }
+
+            return State.GrantQuietUntil.TryGetValue(id, out var until)
+                && State.Date.DayIndex < until;
+        }
+
+        /// <summary>Every award the company is currently working off.</summary>
+        public IReadOnlyList<Grant> HeldGrants() => State.Grants;
 
         /// <summary>Which rung of the grant ladder the company has earned its way onto.</summary>
         public int GrantTierReached() => GrantCatalog.ReachedTier(State.GrantsCompleted);
@@ -228,9 +184,6 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public string BodyOf(GrantDefinition definition) =>
             Loc.T(definition.BodyKey, State.Home.DisplayName);
-
-        /// <summary>Every award the company is currently working off.</summary>
-        public IReadOnlyList<Grant> HeldGrants() => State.Grants;
 
         /// <summary>
         /// Where the measured quantity stands today, so a screen can draw the progress rather than
@@ -262,7 +215,7 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Signs for an award. Pays the advance and captures the baseline.
+        /// Applies for a programme. Pays the advance and captures the baseline.
         ///
         /// The baseline is recorded here and nowhere else, because this is the only moment at which
         /// "where the company stood when it signed" is a fact rather than a reconstruction.
@@ -276,15 +229,13 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            var offer = State.GrantOffers.FirstOrDefault(entry => entry.Id == id);
-
-            if (offer == null)
+            if (!GrantCatalog.TryGet(id, out var definition) || IsGrantSpokenFor(id))
             {
                 failureReason = Loc.T("grant.why.not_offered");
                 return false;
             }
 
-            if (!GrantCatalog.TryGet(id, out var definition))
+            if (definition.Tier > GrantTierReached())
             {
                 failureReason = Loc.T("grant.why.not_offered");
                 return false;
@@ -294,7 +245,6 @@ namespace ScalingLaws.Simulation
                 definition.Goal, State, Flagship()?.Capability ?? 0.0,
                 State.LastQuality.Utilisation);
 
-            State.GrantOffers.Remove(offer);
             State.Grants.Add(new Grant(id, State.Date, baseline));
             State.PostCash(LedgerLine.GrantAward, definition.AdvanceUsd);
 
@@ -307,47 +257,23 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Turns one down and puts it away.
+        /// Takes one off the board for a while.
         ///
         /// Asked for by name: a board the player cannot clear is a board they stop reading. It
-        /// comes back eventually rather than being deleted from the campaign, because content that
-        /// disappears on one click is content most players never see twice.
+        /// comes back rather than being deleted from the campaign, because content that disappears
+        /// on one click is content most players never see twice.
         /// </summary>
         public bool TryDismissGrant(GrantId id)
         {
-            var offer = State.GrantOffers.FirstOrDefault(entry => entry.Id == id);
-
-            if (offer == null)
+            if (!GrantCatalog.TryGet(id, out _) || IsGrantSpokenFor(id))
             {
                 return false;
             }
 
-            State.GrantOffers.Remove(offer);
             State.GrantQuietUntil[id] =
                 State.Date.AddDays(GrantCatalog.QuietDaysAfterDeclining).DayIndex;
 
             return true;
-        }
-
-        /// <summary>
-        /// One seed per day for the grant desk, mixed so it shares no sequence with anything else.
-        ///
-        /// The salt is what keeps this stream apart from the rivalry desk's, which uses the same
-        /// avalanche on the same company seed.
-        /// </summary>
-        private static uint GrantMix(uint seed, uint day)
-        {
-            unchecked
-            {
-                var value = seed ^ (day * 2246822519u) ^ 0x6D2B79F5u;
-                value ^= value >> 15;
-                value *= 2654435761u;
-                value ^= value >> 13;
-                value *= 3266489917u;
-                value ^= value >> 16;
-
-                return value == 0 ? 0x9E3779B9u : value;
-            }
         }
     }
 }

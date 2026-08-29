@@ -236,6 +236,10 @@ namespace ScalingLaws.UI
             var width = host.resolvedStyle.width;
             var height = host.resolvedStyle.height;
 
+            // Cleared every time, because a card that was flipped below once would keep its `top`
+            // and fight the `bottom` set by the next control it opens for.
+            card.style.top = StyleKeyword.Auto;
+
             if (placement == Placement.LeftOf)
             {
                 card.style.left = StyleKeyword.Auto;
@@ -256,6 +260,45 @@ namespace ScalingLaws.UI
             card.style.right = StyleKeyword.Auto;
             card.style.left = left;
             card.style.bottom = height - bounds.yMin + Gap;
+
+            KeepInsideTheWindow(bounds, height);
+        }
+
+        /// <summary>
+        /// Flips the card below its control when there is not room above.
+        ///
+        /// **A card above a control near the top of the window opens off the screen.** The
+        /// horizontal clamp has been here since the bottom bar pushed one off the side; the same
+        /// thing happens vertically on every panel heading in the top band, and there the card does
+        /// not merely shift, it is drawn entirely outside the panel and reads as a badge that does
+        /// nothing.
+        ///
+        /// Deferred a frame on purpose: the card has just been filled and has no measured height
+        /// until it has been laid out, so deciding this immediately would decide it against zero.
+        /// </summary>
+        private static void KeepInsideTheWindow(Rect bounds, float height)
+        {
+            var placing = card;
+
+            placing.schedule.Execute(() =>
+            {
+                if (placing == null || placing.parent == null || placing != card)
+                {
+                    return;
+                }
+
+                var box = placing.worldBound;
+
+                if (box.height <= 0f || box.yMin >= Gap)
+                {
+                    return;
+                }
+
+                // Below instead, anchored by its own top edge so it grows downward away from the
+                // control, which is the mirror of what the default placement does upward.
+                placing.style.bottom = StyleKeyword.Auto;
+                placing.style.top = Mathf.Min(bounds.yMax + Gap, Mathf.Max(Gap, height - box.height - Gap));
+            }).ExecuteLater(1);
         }
 
         private static void Build()

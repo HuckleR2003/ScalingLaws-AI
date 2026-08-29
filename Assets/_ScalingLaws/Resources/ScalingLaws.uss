@@ -1095,7 +1095,7 @@
 .trait-card__badge {
     padding-top: 3px;
     padding-bottom: 3px;
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(14, 20, 30);
@@ -1248,7 +1248,7 @@
 .world-map__pick {
     margin: 0;
     padding: 0;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgba(180, 205, 240, 0.55);
@@ -1334,7 +1334,7 @@
 }
 
 .region-tile__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: rgb(130, 144, 164);
 }
@@ -1356,7 +1356,7 @@
 }
 
 .region-tile__note {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(112, 124, 142);
     white-space: normal;
 }
@@ -1520,7 +1520,7 @@
 }
 
 .hud-slot__label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.6px;
     color: rgb(118, 130, 150);
     margin-bottom: 7px;
@@ -1740,7 +1740,7 @@
 
 
 .effect-figure__note {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(116, 128, 148);
     white-space: normal;
 }
@@ -1891,7 +1891,7 @@
     padding-bottom: 2px;
     padding-left: 8px;
     padding-right: 8px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1px;
     -unity-font-style: bold;
     color: rgb(24, 20, 34);
@@ -1930,7 +1930,7 @@
 }
 
 .site-figure__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: rgb(126, 140, 160);
 }
@@ -2122,7 +2122,7 @@
 }
 
 .load-bar__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: rgb(130, 144, 164);
 }
@@ -2374,7 +2374,7 @@
 }
 
 .research-card__status {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     -unity-font-style: bold;
     color: rgb(140, 154, 176);
@@ -2420,7 +2420,7 @@
     padding-left: 6px;
     padding-right: 6px;
     margin-right: 8px;
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1px;
     -unity-font-style: bold;
     color: rgb(18, 24, 20);
@@ -2448,7 +2448,7 @@
 }
 
 .cost-figure__label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(126, 140, 160);
 }
@@ -2521,7 +2521,7 @@
 }
 
 .demographics__caption {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(122, 134, 154);
     white-space: normal;
     -unity-text-align: middle-center;
@@ -2576,7 +2576,7 @@
 }
 
 .demo-row__head {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(108, 120, 140);
 }
@@ -2620,7 +2620,7 @@
 }
 
 .laptop-console__line {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(96, 178, 140);
 }
@@ -2680,14 +2680,14 @@
 }
 
 .pulse__mood {
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(196, 208, 226);
 }
 
 .pulse__caption {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(112, 124, 144);
 }
@@ -2736,7 +2736,7 @@
 }
 
 .belt-block__title {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(126, 138, 158);
 }
@@ -2750,7 +2750,7 @@
 }
 
 .belt-block__badge {
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     padding-top: 2px;
@@ -2783,7 +2783,7 @@
 }
 
 .belt-zone {
-    font-size: 7px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(104, 114, 132);
 }
@@ -2849,7 +2849,7 @@
 
 .scale-memory {
     margin-top: 6px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(158, 170, 190);
 }
 
@@ -2859,7 +2859,7 @@
 }
 
 .scale-note {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(150, 162, 182);
     white-space: normal;
     margin-bottom: 4px;
@@ -2920,7 +2920,7 @@
 }
 
 .type-tile__name {
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(216, 226, 240);
@@ -2929,7 +2929,7 @@
 
 .type-tile__note {
     margin-top: 3px;
-    font-size: 8px;
+    font-size: 10px;
     color: rgb(126, 138, 158);
     white-space: normal;
 }
@@ -3070,7 +3070,7 @@
     padding-bottom: 3px;
     padding-left: 10px;
     padding-right: 10px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1px;
     background-color: rgba(255, 255, 255, 0.05);
     border-width: 1px;
@@ -3096,7 +3096,7 @@
     color: rgb(226, 116, 108); }
 
 .finance__caption {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(132, 144, 164);
     margin-bottom: 10px;
 }
@@ -3114,7 +3114,7 @@
 .finance__group {
     margin-top: 8px;
     margin-bottom: 4px;
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 2px;
     color: rgb(112, 124, 144);
 }
@@ -3135,7 +3135,7 @@
 }
 
 .finance-row__tag {
-    font-size: 7px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(120, 132, 152);
     margin-right: 8px;
@@ -3192,7 +3192,7 @@
     width: 16px;
     height: 16px;
     margin-right: 7px;
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     color: rgb(150, 162, 180);
@@ -3218,7 +3218,7 @@
 }
 
 .effect-figure__label {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(126, 140, 160);
 }
@@ -3276,7 +3276,7 @@
 
 .demo-row__leader {
     width: 24%;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     -unity-text-align: middle-right;
 }
@@ -3337,14 +3337,14 @@
 }
 
 .fleet-key__label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(168, 180, 198);
 }
 
 .fleet-bill__power {
     margin-top: 8px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(148, 160, 180);
 }
 
@@ -3383,7 +3383,7 @@
     border-width: 1px;
     border-color: rgb(92, 132, 196);
     color: rgb(212, 228, 250);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
 }
 
@@ -3482,7 +3482,7 @@
 }
 
 .mb-meter__label {
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(28, 30, 36);
@@ -3510,7 +3510,7 @@
 
 .mb-meter__word {
     margin-left: 5px;
-    font-size: 7px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(96, 100, 110);
 }
@@ -3536,7 +3536,7 @@
 }
 
 .mb-cell__label {
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(28, 30, 36);
@@ -3545,7 +3545,7 @@
 
 .mb-cell__value {
     flex-grow: 1;
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     padding-top: 2px;
@@ -3632,7 +3632,7 @@
 
 .mb__training-days {
     margin-top: 3px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(226, 208, 214);
     letter-spacing: 1px;
 }
@@ -3716,7 +3716,7 @@
 
 .service__caption {
     margin-top: 4px;
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(140, 148, 164);
 }
 
@@ -3727,7 +3727,7 @@
 }
 
 .gauge-scale__word {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(150, 156, 170);
 }
 
@@ -3774,7 +3774,7 @@
 
 .service__effect {
     margin-top: 4px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(132, 144, 164);
     white-space: normal;
 }
@@ -3835,20 +3835,20 @@
 
 .pack__size {
     margin-top: 9px;
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(150, 200, 250);
 }
 
 .pack__pitch {
     margin-top: 5px;
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(146, 156, 174);
     white-space: normal;
 }
 
 .pack__price {
     margin-top: 6px;
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     color: rgb(198, 208, 224);
 }
@@ -3882,7 +3882,7 @@
 
 .pack__total {
     margin-top: 5px;
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(120, 200, 250);
 }
 
@@ -3973,7 +3973,7 @@
 }
 
 .rnow__under {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(137, 135, 129);
 }
 
@@ -4002,12 +4002,12 @@
 }
 
 .rnow-stat__name {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(150, 154, 162);
 }
 
 .rnow-stat__value {
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     color: rgb(226, 234, 248);
 }
@@ -4045,7 +4045,7 @@
 }
 
 .chart-block__foot {
-    font-size: 8px;
+    font-size: 10px;
     color: rgb(160, 164, 172);
     -unity-text-align: middle-center;
 }
@@ -4142,7 +4142,7 @@
 
 .rcard__badge {
     margin-top: 3px;
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(140, 152, 172);
 }
@@ -4161,14 +4161,14 @@
 
 .rcard__cost {
     margin-top: 8px;
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     color: rgb(210, 222, 240);
 }
 
 .rcard__blocked {
     margin-top: 5px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(226, 150, 110);
     white-space: normal;
 }
@@ -4483,7 +4483,7 @@
 }
 
 .mg-hero__who {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.6px;
     color: rgb(206, 178, 180);
 }
@@ -4537,7 +4537,7 @@
 
 .mg-status__detail {
     flex-grow: 1;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(150, 162, 182);
 }
 
@@ -4566,7 +4566,7 @@
 }
 
 .mg-plan__name {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(160, 172, 190);
@@ -4580,7 +4580,7 @@
 }
 
 .mg-plan__per {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(150, 162, 182);
     margin-bottom: 10px;
 }
@@ -4594,7 +4594,7 @@
 
 .mg-plan__tag {
     margin-top: 10px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.2px;
     -unity-font-style: bold;
     color: rgb(240, 190, 182);
@@ -4618,7 +4618,7 @@
 }
 
 .mg-review__who {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     -unity-font-style: bold;
     color: rgb(160, 172, 190);
@@ -4650,7 +4650,7 @@
 }
 
 .mg-kpi__label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.2px;
     -unity-font-style: bold;
     color: rgb(150, 162, 182);
@@ -4665,7 +4665,7 @@
 }
 
 .mg-kpi__foot {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(150, 162, 182);
     margin-top: 3px;
     white-space: normal;
@@ -4694,7 +4694,7 @@
 }
 
 .mg-row--head .mg-cell {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.1px;
     -unity-font-style: bold;
     color: rgb(150, 162, 182);
@@ -4809,7 +4809,7 @@
     border-radius: 9px;
     background-color: rgb(252, 244, 242);
     color: rgb(184, 46, 34);
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
 }
@@ -4844,7 +4844,7 @@
 }
 
 .nb__kicker {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(226, 120, 104);
@@ -4859,7 +4859,7 @@
 }
 
 .nb__dateline {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(128, 140, 158);
     margin-top: 4px;
 }
@@ -4868,7 +4868,7 @@
     margin: 0;
     padding-top: 8px;
     padding-bottom: 8px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgb(226, 236, 250);
@@ -4930,7 +4930,7 @@
 }
 
 .news__spend {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     margin-top: 3px;
 }
@@ -5048,7 +5048,7 @@
 }
 
 .wire-row__meta {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(118, 130, 150);
     margin-top: 2px;
 }
@@ -5069,7 +5069,7 @@
 }
 
 .lead__kicker {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgb(140, 152, 172);
@@ -5095,7 +5095,7 @@
 }
 
 .lead__date {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(118, 130, 150);
     margin-top: 7px;
 }
@@ -5120,7 +5120,7 @@
 }
 
 .small__meta {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(118, 130, 150);
     margin-top: 2px;
 }
@@ -5168,7 +5168,7 @@
 }
 
 .desk__outlet {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.8px;
     color: rgb(140, 152, 172);
 }
@@ -5189,7 +5189,7 @@
 }
 
 .desk__second {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     white-space: normal;
     margin-top: 8px;
@@ -5201,7 +5201,7 @@
     padding-top: 8px;
     padding-bottom: 8px;
     width: 100%;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     -unity-font-style: bold;
     color: rgb(240, 232, 238);
@@ -5281,7 +5281,7 @@
 .mcb__gone {
     width: 34%;
     -unity-text-align: middle-center;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(110, 120, 138);
@@ -5321,7 +5321,7 @@
 }
 
 .mcb__caption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(122, 116, 104);
@@ -5386,7 +5386,7 @@
 }
 
 .arch__line {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     margin-top: 3px;
     white-space: normal;
@@ -5400,7 +5400,7 @@
     padding-top: 3px;
     padding-bottom: 3px;
     border-radius: 3px;
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
 }
@@ -5432,7 +5432,7 @@
 }
 
 .arch-figure__label {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(140, 152, 172);
@@ -5446,7 +5446,7 @@
 }
 
 .arch-figure__foot {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(128, 140, 158);
     margin-top: 2px;
     white-space: normal;
@@ -5622,7 +5622,7 @@
 }
 
 .mail-row__date {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(118, 130, 150);
     flex-shrink: 0;
     padding-left: 8px;
@@ -5641,7 +5641,7 @@
 }
 
 .mail-row__wants {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     margin-top: 3px;
     white-space: normal;
@@ -5696,7 +5696,7 @@
 }
 
 .mail-read__date {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     margin-top: 2px;
 }
@@ -5747,7 +5747,7 @@
 }
 
 .mail-amount__label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(150, 162, 182);
@@ -5761,7 +5761,7 @@
 }
 
 .mail-amount__foot {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     margin-top: 2px;
 }
@@ -5842,7 +5842,7 @@
     border-radius: 8px;
     background-color: rgb(226, 78, 62);
     color: rgb(255, 250, 248);
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
 }
@@ -5975,7 +5975,7 @@
 }
 
 .rank-row__model {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     margin-top: 1px;
 }
@@ -6031,7 +6031,7 @@
    anywhere, so clicking a node moved a ring and told the player nothing. */
 
 .rcard__opens {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(140, 154, 176);
@@ -6061,7 +6061,7 @@
 }
 
 .rcard-figure__label {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(140, 154, 176);
@@ -6081,7 +6081,7 @@
 }
 
 .rcard__have {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(140, 152, 172);
     margin-top: 8px;
 }
@@ -6158,7 +6158,7 @@
 }
 
 .offices__kicker {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 3.4px;
     -unity-font-style: bold;
     color: rgb(128, 140, 162);
@@ -6236,7 +6236,7 @@
 }
 
 .office-row__kicker {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(122, 134, 156);
@@ -6272,7 +6272,7 @@
 }
 
 .office-figure__label {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.2px;
     -unity-font-style: bold;
     color: rgb(112, 124, 146);
@@ -6316,7 +6316,7 @@
     align-self: flex-start;
     margin: 14px 0 0 0;
     padding: 9px 20px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgb(232, 238, 250);
@@ -6364,7 +6364,7 @@
 }
 
 .office-row__pending {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.4px;
     -unity-font-style: bold;
     color: rgb(84, 94, 112);
@@ -6386,7 +6386,7 @@
     border-radius: 41px;
     background-color: rgba(10, 12, 18, 0.75);
     -unity-background-scale-mode: scale-to-fit;
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(226, 236, 250);
@@ -6663,7 +6663,7 @@
     padding-bottom: 9px;
     padding-left: 14px;
     padding-right: 14px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     -unity-font-style: bold;
     color: rgb(206, 218, 236);
@@ -6854,7 +6854,7 @@
 }
 
 .scale-lock__label {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -6880,7 +6880,7 @@
 }
 
 .deepening__heading {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(122, 134, 156);
@@ -6941,7 +6941,7 @@
 }
 
 .dossier__meta {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.4px;
     -unity-font-style: bold;
     color: rgb(126, 138, 160);
@@ -6965,7 +6965,7 @@
 }
 
 .dossier__heading {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(122, 134, 156);
@@ -7007,7 +7007,7 @@
 }
 
 .chapter__when {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgb(112, 124, 146);
@@ -7043,7 +7043,7 @@
 }
 
 .researching__why {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(150, 162, 182);
     white-space: normal;
     margin-top: 3px;
@@ -7082,7 +7082,7 @@
 }
 
 .portrait__why {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(120, 132, 152);
     white-space: normal;
     -unity-text-align: middle-center;
@@ -7122,7 +7122,7 @@
 }
 
 .portrait-pick__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(150, 162, 184);
@@ -7182,7 +7182,7 @@
 }
 
 .tier-plate__locked {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -7223,7 +7223,7 @@
 }
 
 .tier-bill {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(184, 196, 218);
@@ -7320,7 +7320,7 @@
 }
 
 .regulatory__status {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgb(196, 156, 150);
@@ -7387,7 +7387,7 @@
 }
 
 .rb__kicker {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(120, 168, 232);
@@ -7403,7 +7403,7 @@
 
 .rb__track {
     width: 100%;
-    height: 3px;
+    height: 5px;
     margin-top: 9px;
     border-radius: 2px;
     background-color: rgba(255, 255, 255, 0.10);
@@ -7411,12 +7411,12 @@
 }
 
 .rb__fill {
-    height: 3px;
+    height: 5px;
     background-color: rgb(96, 150, 226);
 }
 
 .rb__days {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.6px;
     color: rgb(150, 174, 208);
     margin-top: 5px;
@@ -7760,7 +7760,7 @@
 /* The one thing worth seeing at a glance: how much of the company is the cheap kind. */
 .crew__tag {
     width: 84px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -7794,7 +7794,7 @@
 .crew__release {
     width: 80px;
     height: 26px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: rgb(198, 150, 150);
     background-color: rgba(150, 70, 70, 0.22);
@@ -7833,7 +7833,7 @@
 }
 
 .hirechoice__url {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.6px;
     color: rgb(130, 142, 162);
 }
@@ -8018,7 +8018,7 @@
 }
 
 .ithand__badge {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     padding: 6px 14px;
@@ -8130,7 +8130,7 @@
 
 .register__footer {
     margin: 14px 16px 12px 16px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(120, 114, 96);
     white-space: normal;
 }
@@ -8168,7 +8168,7 @@
 }
 
 .getadmin__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(184, 156, 84);
@@ -8308,7 +8308,7 @@
 }
 
 .applicant__source {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     margin-top: 8px;
@@ -8327,7 +8327,7 @@
 }
 
 .applicant__cellcaption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     color: rgb(126, 138, 158);
 }
@@ -8362,7 +8362,7 @@
 }
 
 .haggle__heading {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(196, 168, 108);
@@ -8476,7 +8476,7 @@
 }
 
 .hb__kicker {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(110, 200, 142);
@@ -8505,7 +8505,7 @@
 }
 
 .hb__days {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.6px;
     color: rgb(146, 178, 158);
     margin-top: 5px;
@@ -8685,7 +8685,7 @@
 
 .modelhub__heading {
     align-self: flex-start;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(150, 162, 182);
@@ -8720,7 +8720,7 @@
 }
 
 .loadbar__caption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     color: rgb(130, 142, 162);
 }
@@ -8782,7 +8782,7 @@
 .mrow--head .mrow__subs,
 .mrow--head .mrow__income,
 .mrow--head .mrow__name {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgb(130, 142, 162);
@@ -8816,7 +8816,7 @@
 }
 
 .mrow__under {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(134, 146, 166);
     margin-top: 2px;
 }
@@ -8926,7 +8926,7 @@
 
 .rmap__reading {
     width: 44px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     -unity-text-align: middle-center;
     color: rgb(150, 162, 182);
@@ -8952,7 +8952,7 @@
     height: 24px;
     margin-left: 6px;
     padding: 0 12px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     border-width: 0;
@@ -9113,14 +9113,14 @@
 }
 
 .utile__level {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     color: rgb(186, 198, 218);
     margin-top: 2px;
 }
 
 .utile__next {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(226, 190, 44);
     margin-top: 2px;
 }
@@ -9130,7 +9130,7 @@
     left: 10px;
     top: 10px;
     -unity-text-align: middle-center;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     padding: 3px 9px;
@@ -9186,7 +9186,7 @@
 }
 
 .udet__kicker {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(140, 152, 174);
@@ -9287,7 +9287,7 @@
 }
 
 .udrow__caption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     color: rgb(130, 142, 162);
 }
@@ -9365,7 +9365,7 @@
 }
 
 .udet__cellcaption {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     color: rgb(126, 138, 158);
 }
@@ -9500,7 +9500,7 @@
 }
 
 .relcard__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(238, 176, 190);
@@ -9536,7 +9536,7 @@
 }
 
 .relrow__caption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgb(226, 186, 196);
@@ -9582,7 +9582,7 @@
     margin-top: 0;
     margin-right: 0;
     margin-bottom: 0;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     border-width: 1px;
@@ -9605,7 +9605,7 @@
     margin-top: 0;
     margin-right: 6px;
     margin-bottom: 0;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     border-width: 0;
@@ -9622,7 +9622,7 @@
     margin-top: 0;
     margin-right: 0;
     margin-bottom: 0;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.6px;
     border-width: 0;
     border-radius: 4px;
@@ -9638,7 +9638,7 @@
 }
 
 .relships__heading {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(146, 158, 180);
@@ -9729,7 +9729,7 @@
 }
 
 .vlist__heading {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(146, 158, 180);
@@ -9783,7 +9783,7 @@
 }
 
 .vrow__when {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.8px;
     color: rgb(140, 152, 174);
     margin-top: 2px;
@@ -9816,7 +9816,7 @@
 }
 
 .vcharts__heading {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(146, 158, 180);
@@ -9834,7 +9834,7 @@
 }
 
 .vgauge__caption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     color: rgb(130, 142, 162);
 }
@@ -9874,7 +9874,7 @@
 }
 
 .vcharts__caption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     color: rgb(130, 142, 162);
     margin-top: 6px;
@@ -9917,7 +9917,7 @@
 }
 
 .ub__kicker {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(226, 176, 234);
@@ -9955,7 +9955,7 @@
 }
 
 .ub__days {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.6px;
     color: rgb(178, 160, 200);
     margin-top: 5px;
@@ -10094,7 +10094,7 @@
 
 .rperson__tag {
     width: 84px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -10126,7 +10126,7 @@
     width: 92px;
     height: 30px;
     margin-right: 8px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     border-width: 0;
     border-radius: 3px;
@@ -10143,7 +10143,7 @@
 .rperson__release {
     width: 84px;
     height: 30px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     border-width: 0;
     border-radius: 3px;
@@ -10192,7 +10192,7 @@
     height: 24px;
     padding: 0 9px;
     margin: 0 4px 4px 0;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.8px;
 }
 
@@ -10211,7 +10211,7 @@
 }
 
 .mkrow__caption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     color: rgb(128, 140, 160);
     flex-shrink: 0;
@@ -10239,7 +10239,7 @@
 }
 
 .mkbook__why {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(126, 138, 158);
     margin-top: 6px;
     white-space: normal;
@@ -10293,7 +10293,7 @@
 }
 
 .run-row__who {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(136, 148, 168);
     margin-top: 2px;
 }
@@ -10316,7 +10316,7 @@
 
 .run-row__left {
     width: 120px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     -unity-text-align: middle-right;
     color: rgb(150, 162, 182);
@@ -10335,7 +10335,7 @@
 .run-row__stop {
     width: 72px;
     height: 28px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     border-width: 0;
     border-radius: 3px;
@@ -10540,7 +10540,7 @@
 }
 
 .chat__status {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(110, 200, 140);
     margin-top: 1px;
 }
@@ -10815,7 +10815,7 @@
 }
 
 .taskbar__kicker {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.4px;
     -unity-font-style: bold;
     color: rgb(226, 190, 44);
@@ -10856,7 +10856,7 @@
 }
 
 .taskbar__tick {
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     color: rgb(12, 26, 16);
 }
@@ -10969,7 +10969,7 @@
 }
 
 .insight__bandhead {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2px;
     -unity-font-style: bold;
 }
@@ -11063,7 +11063,7 @@
 }
 
 .arx__cardhead {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(146, 158, 180);
@@ -11071,7 +11071,7 @@
 }
 
 .arx__subhead {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2.4px;
     -unity-font-style: bold;
     color: rgb(132, 144, 166);
@@ -11099,7 +11099,7 @@
 }
 
 .arx__fieldlabel {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     color: rgb(130, 142, 162);
     margin-bottom: 5px;
@@ -11199,7 +11199,7 @@
 }
 
 .dlock__word {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgba(232, 168, 150, 0.85);
@@ -11215,7 +11215,7 @@
 
 .dlock__amount {
     margin-left: 6px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgba(206, 156, 142, 0.78);
 }
 
@@ -11242,7 +11242,7 @@
 }
 
 .agauge__caption {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     color: rgb(126, 138, 158);
     margin-top: 1px;
@@ -11273,7 +11273,7 @@
 }
 
 .aband__caption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     color: rgb(130, 142, 162);
 }
@@ -11320,7 +11320,7 @@
 }
 
 .aband__end {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(112, 124, 146);
 }
 
@@ -11338,7 +11338,7 @@
 }
 
 .arx__cellcaption {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.4px;
     color: rgb(126, 138, 158);
 }
@@ -11431,7 +11431,7 @@
 }
 
 .afam__stats {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(138, 150, 172);
     margin-top: 3px;
 }
@@ -11456,7 +11456,7 @@
     margin-top: 9px;
     margin-right: 0;
     margin-bottom: 0;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -11619,7 +11619,7 @@
 }
 
 .hcard__figurelabel {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.6px;
     color: rgb(126, 138, 158);
 }
@@ -11695,7 +11695,7 @@
 }
 
 .dcard__action {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgb(150, 164, 188);
@@ -11742,7 +11742,7 @@
 }
 
 .loanbill__caption {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1.6px;
     color: rgb(126, 138, 158);
 }
@@ -11809,7 +11809,7 @@
 }
 
 .ltile__kicker {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 2.4px;
     -unity-font-style: bold;
     color: rgb(140, 152, 174);
@@ -11840,7 +11840,7 @@
 }
 
 .ltile__terms {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(134, 148, 170);
     white-space: normal;
     margin-top: 8px;
@@ -11871,7 +11871,7 @@
    "5% cheaper to run" is the same number needing no explanation. */
 
 .aband__versus {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(126, 216, 158);
     white-space: normal;
     margin-top: 3px;
@@ -11921,7 +11921,7 @@
 
 .terms__word {
     -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: rgb(122, 136, 160);
     margin-right: 5px;
@@ -11970,7 +11970,7 @@
 }
 
 .ustrip__kicker {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(178, 158, 235);
 }
@@ -12124,7 +12124,7 @@
 }
 
 .wb__url {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(126, 140, 166);
 }
 
@@ -12146,7 +12146,7 @@
 }
 
 .wb__house {
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 1.3px;
     color: rgb(190, 202, 224);
@@ -12201,13 +12201,13 @@
 }
 
 .wb__founder {
-    font-size: 10px;
+    font-size: 12px;
     -unity-font-style: bold;
     color: rgb(214, 222, 238);
 }
 
 .wb__role {
-    font-size: 8px;
+    font-size: 10px;
     color: rgb(104, 118, 142);
 }
 
@@ -12281,7 +12281,7 @@
 }
 
 .wb__ask {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(96, 108, 130);
 }
 
@@ -12338,7 +12338,7 @@
 }
 
 .die__stamp {
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 1px;
     color: rgb(126, 140, 166);
     margin-top: 5px;
@@ -12376,7 +12376,7 @@
 }
 
 .die--row .mark--die > .mark__letter {
-    font-size: 10px;
+    font-size: 12px;
 }
 
 /* ---- the stage that holds all of it ---- */
@@ -12393,7 +12393,7 @@
 }
 
 .brand-stage__caption {
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(112, 126, 150);
     white-space: normal;
     margin-top: 8px;
@@ -12461,7 +12461,7 @@
    the playtest said it had no idea how far in it was. */
 
 .guide__counter {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2px;
     color: rgb(150, 166, 194);
     margin-bottom: 7px;
@@ -12654,7 +12654,7 @@
 .sfig__block:last-child { margin-right: 0; }
 
 .sfig__caption {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.3px;
     color: rgb(118, 132, 156);
 }
@@ -12736,7 +12736,7 @@
 .room__square--cooking { border-left-color: rgb(216, 78, 68); }
 
 .room__name {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.2px;
     color: rgb(160, 174, 196);
     white-space: normal;
@@ -12750,7 +12750,7 @@
 }
 
 .room__fans {
-    font-size: 9px;
+    font-size: 11px;
     color: rgb(126, 168, 210);
     margin-top: 2px;
 }
@@ -12948,7 +12948,7 @@
 }
 
 .rmeters__caption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     color: rgb(126, 140, 164);
 }
@@ -12982,7 +12982,7 @@
 
 .rmeters__note {
     margin-top: 5px;
-    font-size: 10px;
+    font-size: 12px;
     color: rgb(118, 132, 156);
     white-space: normal;
 }
@@ -12997,7 +12997,7 @@
 }
 
 .rband__caption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.5px;
     color: rgb(150, 178, 216);
 }
@@ -13045,7 +13045,7 @@
     position: absolute;
     /* Over INTELLIGENCE and MARKETING, which is where the author asked for it. The slot row is
        centred, so this is measured from the middle rather than from either edge. */
-    left: 62%;
+    left: 87%;
     width: 132px;
     height: 208px;
     padding: 0;
@@ -13081,7 +13081,7 @@
 
 .phonedock__caption {
     margin-top: 12px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.2px;
     -unity-text-align: middle-center;
     color: rgb(150, 166, 192);
@@ -13116,7 +13116,7 @@
 }
 
 .benefits__caption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.3px;
     color: rgb(126, 140, 164);
 }
@@ -13213,7 +13213,7 @@
 
 .benefit__gain {
     margin-top: 4px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.8px;
     color: rgb(150, 178, 216);
 }
@@ -13409,7 +13409,7 @@
 .person__loyalty {
     width: 96px;
     flex-shrink: 0;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
 }
@@ -13428,7 +13428,7 @@
     margin-right: 0;
     margin-bottom: 0;
     padding: 0;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     -unity-text-align: middle-center;
     border-radius: 4px;
@@ -13502,7 +13502,7 @@
 .soonrow__kicker {
     width: 86px;
     flex-shrink: 0;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgb(110, 120, 142);
@@ -13628,7 +13628,7 @@
 }
 
 .pair__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(122, 134, 156);
@@ -14328,7 +14328,7 @@
 .slotcard__number {
     width: 84px;
     flex-shrink: 0;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2.4px;
     -unity-font-style: bold;
     color: rgb(122, 134, 156);
@@ -14828,7 +14828,7 @@
 }
 
 .gb__count {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.2px;
     color: rgba(28, 22, 6, 0.75);
 }
@@ -14858,7 +14858,7 @@
 }
 
 .gb__status {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: rgb(150, 162, 186);
     padding-top: 2px;
@@ -14904,7 +14904,7 @@
     height: 26px;
     margin: 0;
     padding: 0 8px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     -unity-text-align: middle-center;
     border-width: 1px;
@@ -15079,4 +15079,86 @@
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(238, 244, 254);
+}
+
+/* ---- something long has just begun ----------------------------------------------------------- */
+
+/* Across the top, over whatever screen the player was moved to. It ignores the mouse, because a
+   notice that eats a click is worse than no notice at all. */
+.started {
+    position: absolute;
+    top: 64px;
+    left: 12%;
+    right: 12%;
+    padding: 18px 26px 20px 26px;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: rgba(150, 130, 255, 0.45);
+    background-color: rgba(10, 12, 22, 0.96);
+    opacity: 0;
+    translate: 0 -14px;
+    transition-property: opacity, translate;
+    transition-duration: 0.28s;
+}
+
+.started--in {
+    opacity: 1;
+    translate: 0 0;
+}
+
+.started__title {
+    font-size: 26px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: rgb(238, 242, 255);
+    -unity-text-align: middle-center;
+}
+
+.started__note {
+    font-size: 13px;
+    color: rgb(168, 176, 206);
+    white-space: normal;
+    padding-top: 6px;
+    -unity-text-align: middle-center;
+}
+
+.started__track {
+    height: 6px;
+    margin-top: 14px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Blue to violet. USS has no gradients, so the colour is transitioned on the fill itself while its
+   width runs: two properties on one transition, which reads as the bar warming as it fills. */
+.started__fill {
+    width: 2%;
+    height: 6px;
+    border-radius: 3px;
+    background-color: rgb(96, 156, 255);
+    transition-property: width, background-color;
+    transition-duration: 2.2s;
+}
+
+.started__fill--run {
+    width: 100%;
+    background-color: rgb(168, 106, 255);
+}
+
+/* The ghost of the calendar behind the real progress. A node needs days and compute, and the bar
+   shows the slower of the two, so without this a busy cluster looks like a bar that is broken. */
+.rb__calendar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 3px;
+    background-color: rgba(126, 176, 255, 0.22);
+}
+
+/* When the cluster is what is holding it up, the fill says so in its own colour rather than only
+   in the caption underneath. */
+.rb__fill--starved {
+    background-color: rgb(226, 178, 44);
 }

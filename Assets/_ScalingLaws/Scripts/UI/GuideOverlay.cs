@@ -237,15 +237,20 @@ namespace ScalingLaws.UI
             strip?.RemoveFromHierarchy();
 
             strip = new VisualElement();
+
+            // Starts at rest rather than solid, so the strip looks the same before the pointer has
+            // ever been near it as it does after. Setting it only from the move handler left the
+            // very first strip of a campaign a shade brighter than every one after it.
+            strip.style.opacity = RestingOpacity;
             strip.AddToClassList("guide");
 
             // Ignores the mouse everywhere except its own buttons, so the player can keep clicking
             // the screens underneath while he talks.
             strip.pickingMode = PickingMode.Ignore;
 
-            // **He gets out of the way when you look behind him.** Resting the cursor over the strip
-            // fades it, because he sits across the bottom of a screen the player is being asked to
-            // read and there is no way to move him.
+            // **He comes forward when you look at him.** Resting the cursor over the strip brings it
+            // to full opacity, which is the opposite of what this did until a playtest reported the
+            // instruction fading out exactly while it was being read.
             //
             // Driven from the host's mouse position rather than from MouseEnter on the strip: the
             // strip is `PickingMode.Ignore` on purpose, so it never receives a mouse event of its
@@ -419,11 +424,22 @@ namespace ScalingLaws.UI
                 step.WaitForClick && step.Target != GuideTarget.None ? step.Target : null);
         }
 
-        /// <summary>How much of him is left when the cursor is resting on top of him.</summary>
-        public const float FadedOpacity = 0.2f;
+        /// <summary>
+        /// How solid the strip is when nobody is looking at it.
+        ///
+        /// **This used to be the other way round and it was backwards.** The strip dropped to a
+        /// fifth of its opacity while the cursor rested on it, so the one moment a player was
+        /// deliberately reading the instruction was the one moment it faded out from under them.
+        /// The intent was to keep it from covering the page; the page reserves its height now, so
+        /// there is nothing left to uncover and only the reading was being harmed.
+        ///
+        /// Not fully solid at rest, because a strip that never changes is a strip the eye stops
+        /// treating as live. Readable at rest, certain under the cursor.
+        /// </summary>
+        public const float RestingOpacity = 0.86f;
 
         /// <summary>
-        /// Fades the strip while the pointer is over it, and restores it the moment it leaves.
+        /// Brings the strip fully forward while the pointer is over it.
         ///
         /// Registered once per build on the host rather than on the strip, because the strip ignores
         /// the mouse and would never hear about it. Cheap: one rectangle test per mouse move, and it
@@ -444,7 +460,7 @@ namespace ScalingLaws.UI
             }
 
             faded = over;
-            strip.style.opacity = over ? FadedOpacity : 1f;
+            strip.style.opacity = over ? 1f : RestingOpacity;
         }
 
         private bool faded;

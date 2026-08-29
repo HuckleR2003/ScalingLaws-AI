@@ -117,13 +117,13 @@ namespace ScalingLaws.UI
 
         private void BuildOfferedGrants(VisualElement panel)
         {
-            var offers = simulation.GrantOffers();
+            var open = simulation.AvailableGrants();
 
             var title = new Label(Loc.T("grant.open"));
             title.AddToClassList("grant__section");
             panel.Add(title);
 
-            if (offers.Count == 0)
+            if (open.Count == 0)
             {
                 panel.Add(Hint(Loc.T("grant.none_open")));
                 return;
@@ -131,18 +131,16 @@ namespace ScalingLaws.UI
 
             var canAccept = simulation.CanAcceptGrant(out var why);
 
-            foreach (var offer in offers)
+            foreach (var definition in open)
             {
-                panel.Add(BuildOfferCard(offer, canAccept, why));
+                panel.Add(BuildOfferCard(definition, canAccept, why));
             }
 
             panel.Add(Hint(Loc.T("grant.warning")));
         }
 
-        private VisualElement BuildOfferCard(GrantOffer offer, bool canAccept, string why)
+        private VisualElement BuildOfferCard(GrantDefinition definition, bool canAccept, string why)
         {
-            var definition = GrantCatalog.Get(offer.Id);
-
             var card = new VisualElement();
             card.AddToClassList("gcard");
             card.AddToClassList("gcard--offer");
@@ -154,9 +152,11 @@ namespace ScalingLaws.UI
             name.AddToClassList("gcard__name");
             head.Add(name);
 
-            var lapses = new Label(Loc.T("grant.lapses", offer.DaysLeft));
-            lapses.AddToClassList("gcard__status");
-            head.Add(lapses);
+            // The rung rather than a countdown. A programme on the board does not expire: it is
+            // there until it is taken, finished, or put away, which is what a register is.
+            var rung = new Label(Loc.T("grant.tier", definition.Tier));
+            rung.AddToClassList("gcard__status");
+            head.Add(rung);
 
             card.Add(head);
 
@@ -194,7 +194,7 @@ namespace ScalingLaws.UI
 
             var sign = new Button(() =>
             {
-                simulation.TryAcceptGrant(offer.Id, out _);
+                simulation.TryAcceptGrant(definition.Id, out _);
                 Show(Screen.Funding);
             })
             { text = Loc.T("grant.accept") };
@@ -209,7 +209,7 @@ namespace ScalingLaws.UI
             // Asked for by name: a board the player cannot clear is a board they stop reading.
             var dismiss = new Button(() =>
             {
-                simulation.TryDismissGrant(offer.Id);
+                simulation.TryDismissGrant(definition.Id);
                 Show(Screen.Funding);
             })
             { text = Loc.T("grant.dismiss") };

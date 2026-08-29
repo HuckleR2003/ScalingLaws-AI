@@ -643,8 +643,6 @@ namespace ScalingLaws.Simulation
         /// any of them would let a reload change an outcome, which is the mistake this project has
         /// now made six times and caught with the save replay test every time.
         /// </summary>
-        public List<GrantOffer> GrantOffers { get; } = new();
-
         public List<Grant> Grants { get; } = new();
 
         /// <summary>Programmes already seen through. A body does not fund the same work twice.</summary>

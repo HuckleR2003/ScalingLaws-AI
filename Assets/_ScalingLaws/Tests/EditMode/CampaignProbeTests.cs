@@ -595,9 +595,9 @@ namespace ScalingLaws.Tests.EditMode
                 return;
             }
 
-            foreach (var offer in simulation.GrantOffers().ToList())
+            foreach (var definition in simulation.AvailableGrants())
             {
-                if (simulation.TryAcceptGrant(offer.Id, out var why))
+                if (simulation.TryAcceptGrant(definition.Id, out var why))
                 {
                     probe.GrantsTaken++;
                 }

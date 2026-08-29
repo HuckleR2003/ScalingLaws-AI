@@ -127,6 +127,7 @@ namespace ScalingLaws.UI
         private NewsScreen news;
         private NewsBanner newsBanner;
         private GrantBanner grantBanner;
+        private StartedNotice startedNotice;
         private MailScreen mail;
         private OfficeChooser offices;
         private VisualElement bannerStack;
@@ -800,6 +801,8 @@ namespace ScalingLaws.UI
             leftStack.Add(grantBanner.Root);
 
             root.Add(leftStack);
+
+            startedNotice = new StartedNotice(root);
 
             // The corner is a stack now. One product on sale is one banner, because a company
             // running three lines is running three products and a single panel describing only the
@@ -1544,6 +1547,18 @@ namespace ScalingLaws.UI
             }
 
             RefreshChrome();
+
+            // **Say that the work started.** The money leaves, the version publishes and the player
+            // lands on the official page, where the progress banner does not draw. Without this the
+            // whole thing reads as an upgrade that completed the instant it was paid for, which is
+            // exactly how a playtest reported it.
+            if (releasePlan.Basket.Count > 0 && refused.Count == 0)
+            {
+                startedNotice?.Show(
+                    Loc.T("upgrade.started.title"),
+                    Loc.T("upgrade.started.note", model.Name));
+            }
+
             Show(Screen.Management);
         }
 
@@ -2325,7 +2340,9 @@ namespace ScalingLaws.UI
             researchBanner = new Button(() => Show(Screen.Research));
             researchBanner.AddToClassList("rb");
 
-            var kicker = new Label(project.IsWaitingForCompute ? "RESEARCH WAITING" : "RESEARCHING");
+            var starved = project.IsWaitingForCompute || project.IsComputeStarved;
+
+            var kicker = new Label(Loc.T(starved ? "research.waiting" : "research.running"));
             kicker.AddToClassList("rb__kicker");
             researchBanner.Add(kicker);
 
@@ -2336,18 +2353,29 @@ namespace ScalingLaws.UI
             var track = new VisualElement();
             track.AddToClassList("rb__track");
 
+            // **Two marks, because a node needs two things and only one of them passes on its own.**
+            // The bar is the true progress, which is the slower half. Behind it sits a ghost of how
+            // far the calendar alone has run, so a player whose cluster is busy can see the gap
+            // rather than a bar that simply refuses to move.
+            var calendar = new VisualElement();
+            calendar.AddToClassList("rb__calendar");
+            calendar.style.width = Length.Percent((float)(project.CalendarProgress * 100.0));
+            track.Add(calendar);
+
             var fill = new VisualElement();
             fill.AddToClassList("rb__fill");
+            fill.EnableInClassList("rb__fill--starved", starved);
             fill.style.width = Length.Percent((float)(project.Progress * 100.0));
             track.Add(fill);
 
             researchBanner.Add(track);
 
             var left = Math.Max(0, project.DurationDays - project.DaysCompleted);
-            var days = new Label(project.IsWaitingForCompute
-                ? $"{UiFormat.Number(project.PetaflopDaysRemaining, 0)} PF-days owed"
-                : (left == 1 ? "1 day left" : $"{left:N0} days left")
-                  + $"   ({project.Progress:P0})");
+
+            var days = new Label(starved
+                ? Loc.T("research.owed", UiFormat.Number(project.PetaflopDaysRemaining, 0))
+                : Loc.T("research.days_left", Loc.Counted(left, "noun.day"),
+                    UiFormat.Percent(project.Progress, 0)));
 
             days.AddToClassList("rb__days");
             researchBanner.Add(days);

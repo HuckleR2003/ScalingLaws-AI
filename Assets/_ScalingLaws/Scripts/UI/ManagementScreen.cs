@@ -54,7 +54,16 @@ namespace ScalingLaws.UI
         {
             Page,
             Desk,
-            Archive
+            Archive,
+
+            /// <summary>
+            /// Which versions of the product people are running.
+            ///
+            /// Asked for after a playtest, and it belongs here: the other three tabs are what a
+            /// stranger sees, what the desk sees and what the company used to sell, and "what are
+            /// my users actually on" is the fourth question about the same product.
+            /// </summary>
+            Versions
         }
 
         public ManagementScreen(CompanySimulation simulation, Action openRelease,
@@ -82,6 +91,9 @@ namespace ScalingLaws.UI
         /// <summary>Opens the archive. Named so a test and a button reach it the same way.</summary>
         public void ShowArchive() => Open(Tab.Archive);
 
+        /// <summary>Opens the version list. Tooling and the tab reach it the same way.</summary>
+        public void ShowVersions() => Open(Tab.Versions);
+
         private void Open(Tab tab)
         {
             showing = tab;
@@ -100,6 +112,7 @@ namespace ScalingLaws.UI
             {
                 Tab.Desk => Loc.T("mg.management"),
                 Tab.Archive => Loc.T("mg.archive"),
+                Tab.Versions => Loc.T("mg.versions"),
                 _ => Loc.T("mg.official_page")
             });
 
@@ -109,6 +122,7 @@ namespace ScalingLaws.UI
             var subtitle = new Label(showing switch
             {
                 Tab.Desk => "What the numbers say. Held users, what they think, what it costs to keep them.",
+                Tab.Versions => Loc.T("mg.versions.strap"),
                 Tab.Archive => "Every model the company ever put on sale, newest first. What each one "
                     + "scored, what it earned, and whether anyone is still using it.",
                 _ => Loc.T("mg.stranger_sees")
@@ -143,6 +157,20 @@ namespace ScalingLaws.UI
                 return;
             }
 
+            if (showing == Tab.Versions)
+            {
+                // The flagship rather than the standing, because the version list belongs to a
+                // product line and the standing is a reading taken off one.
+                var flagship = simulation.Flagship();
+
+                if (flagship != null)
+                {
+                    Root.Add(UiParts.VersionList(flagship));
+                }
+
+                return;
+            }
+
             if (showing == Tab.Desk)
             {
                 BuildDesk(product);
@@ -160,6 +188,7 @@ namespace ScalingLaws.UI
 
             tabs.Add(TabButton(Loc.T("mg.official_page"), showing == Tab.Page, () => Open(Tab.Page)));
             tabs.Add(TabButton(Loc.T("mg.management"), showing == Tab.Desk, () => Open(Tab.Desk)));
+            tabs.Add(TabButton(Loc.T("mg.versions"), showing == Tab.Versions, () => Open(Tab.Versions)));
             tabs.Add(TabButton(Loc.T("mg.archive"), showing == Tab.Archive, () => Open(Tab.Archive)));
 
             return tabs;

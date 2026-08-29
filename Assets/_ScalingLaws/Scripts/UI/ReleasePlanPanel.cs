@@ -473,7 +473,7 @@ namespace ScalingLaws.UI
             var column = new VisualElement();
             column.AddToClassList("rel__right");
 
-            column.Add(BuildVersionList(model));
+            column.Add(UiParts.VersionList(model));
             column.Add(BuildCharts(model));
 
             return column;
@@ -487,76 +487,6 @@ namespace ScalingLaws.UI
         /// seeing at a glance is whether the newest release is actually where people are — and two
         /// columns of percentages do not answer that as fast as two bars of different lengths.
         /// </summary>
-        private VisualElement BuildVersionList(DeployedModel model)
-        {
-            var panel = new VisualElement();
-            panel.AddToClassList("vlist");
-
-            var heading = new Label(Loc.T("release.in_use"));
-            heading.AddToClassList("vlist__heading");
-            panel.Add(heading);
-
-            var versions = model.Line.Versions;
-
-            for (var index = versions.Count - 1; index >= 0; index--)
-            {
-                var version = versions[index];
-                var current = index == versions.Count - 1;
-
-                var row = new VisualElement();
-                row.AddToClassList("vrow");
-                row.EnableInClassList("vrow--current", current);
-
-                // The share, drawn behind the words.
-                var fill = new VisualElement();
-                fill.AddToClassList("vrow__fill");
-                fill.style.width = Length.Percent((float)(version.Adoption * 100.0));
-                fill.pickingMode = PickingMode.Ignore;
-                row.Add(fill);
-
-                var words = new VisualElement();
-                words.AddToClassList("vrow__words");
-                words.pickingMode = PickingMode.Ignore;
-
-                var name = new Label(version.Name);
-                name.AddToClassList("vrow__name");
-                words.Add(name);
-
-                var when = new Label(current
-                    ? $"{Loc.T("release.current")}   ·   {version.ReleasedOn}"
-                    : version.ReleasedOn.ToString());
-
-                when.AddToClassList("vrow__when");
-                words.Add(when);
-
-                row.Add(words);
-
-                var share = new Label($"{version.Adoption:P0}");
-                share.AddToClassList("vrow__share");
-                share.pickingMode = PickingMode.Ignore;
-                row.Add(share);
-
-                panel.Add(row);
-            }
-
-            if (versions.Count > 1)
-            {
-                var best = versions.OrderByDescending(version => version.Adoption).First();
-                var newest = versions[^1];
-
-                if (!ReferenceEquals(best, newest))
-                {
-                    // The one sentence this screen exists to be able to say.
-                    var note = new Label(Loc.T("release.older_holds", best.Name));
-
-                    note.AddToClassList("vlist__note");
-                    panel.Add(note);
-                }
-            }
-
-            return panel;
-        }
-
         /// <summary>
         /// Two readings, drawn: what the market actually sees, and what the average user pays.
         ///

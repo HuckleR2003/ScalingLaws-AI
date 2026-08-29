@@ -335,12 +335,6 @@ namespace ScalingLaws.Persistence
                 data.lawsuitAwarded.Add(suit.AwardedUsd);
             }
 
-            foreach (var grantOffer in state.GrantOffers)
-            {
-                data.grantOfferIds.Add((int)grantOffer.Id);
-                data.grantOfferDays.Add(grantOffer.DaysElapsed);
-            }
-
             foreach (var grant in state.Grants)
             {
                 data.grantHeldIds.Add((int)grant.Id);
@@ -943,25 +937,10 @@ namespace ScalingLaws.Persistence
                 state.Lawsuits.Add(suit);
             }
 
-            state.GrantOffers.Clear();
             state.Grants.Clear();
             state.GrantsCompleted.Clear();
             state.GrantQuietUntil.Clear();
 
-            for (var index = 0; index < safe.grantOfferIds.Count; index++)
-            {
-                if (index >= safe.grantOfferDays.Count
-                    || !Enum.IsDefined(typeof(GrantId), safe.grantOfferIds[index]))
-                {
-                    continue;
-                }
-
-                var offer = new GrantOffer(
-                    (GrantId)safe.grantOfferIds[index], state.Date);
-
-                offer.Restore(safe.grantOfferDays[index]);
-                state.GrantOffers.Add(offer);
-            }
 
             for (var index = 0; index < safe.grantHeldIds.Count; index++)
             {

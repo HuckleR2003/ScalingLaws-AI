@@ -23,7 +23,14 @@ namespace ScalingLaws.UI
     public sealed class PhoneDock
     {
         /// <summary>How much of the handset sits above the bar when it is resting.</summary>
-        public const int RestingPeek = 26;
+        /// <summary>
+        /// How far the handset shows above the bar when nobody is pointing at it.
+        ///
+        /// Lowered from 26 after a playtest: at that height the phone sat over the captions of the
+        /// two tabs behind it, so the thing meant to be a quiet reminder was covering the names of
+        /// two screens.
+        /// </summary>
+        public const int RestingPeek = 12;
 
         /// <summary>And how much when the cursor is on it. Enough to read as a phone.</summary>
         public const int HoveredPeek = 76;

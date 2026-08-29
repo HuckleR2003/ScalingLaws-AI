@@ -4,30 +4,6 @@ using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
-    /// <summary>An award on the table, waiting for an answer.</summary>
-    public sealed class GrantOffer
-    {
-        public GrantOffer(GrantId id, GameDate offeredOn)
-        {
-            Id = id;
-            OfferedOn = offeredOn;
-        }
-
-        public GrantId Id { get; }
-        public GameDate OfferedOn { get; }
-
-        public int DaysElapsed { get; private set; }
-
-        public bool HasLapsed => DaysElapsed >= GrantCatalog.OfferOpenDays;
-        public int DaysLeft => Math.Max(0, GrantCatalog.OfferOpenDays - DaysElapsed);
-
-        public void Advance() =>
-            DaysElapsed = Math.Min(GrantCatalog.OfferOpenDays, DaysElapsed + 1);
-
-        public void Restore(int daysElapsed) =>
-            DaysElapsed = Math.Clamp(daysElapsed, 0, GrantCatalog.OfferOpenDays);
-    }
-
     /// <summary>
     /// An award the company has accepted and is now working off.
     ///

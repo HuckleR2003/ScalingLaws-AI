@@ -1,4 +1,5 @@
 using System;
+using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine.UIElements;
@@ -21,8 +22,49 @@ namespace ScalingLaws.UI
     /// </summary>
     public static class RentReadout
     {
-        /// <summary>The top of each meter's scale, which is where the slider itself ends.</summary>
+        /// <summary>
+        /// The largest fleet the interface will ever offer. One billion ordinary accounts.
+        ///
+        /// This used to be the slider's range on day one as well as its absolute ceiling, which is
+        /// the fault this class now exists to fix. It is the cap, not the scale.
+        /// </summary>
         public const double FullScalePetaflops = 40_000.0;
+
+        /// <summary>
+        /// What the slider offers a company that holds nobody: about fifty million accounts.
+        ///
+        /// Enough to be generous for a first product and small enough that the control has useful
+        /// resolution. At the old range a single pixel was seven hundred thousand accounts.
+        /// </summary>
+        public const double OpeningCeilingPetaflops = 2_000.0;
+
+        /// <summary>How many times today's audience the slider will let the player buy for.</summary>
+        public const double Headroom = 4.0;
+
+        /// <summary>
+        /// The top of the slider for this company, today.
+        ///
+        /// **It ratchets and never falls.** `current` is passed in and taken as a floor, because a
+        /// ceiling that dropped when an audience shrank would clamp the player's own setting down
+        /// without being asked, change the daily bill they had chosen, and do it on the worst day
+        /// they were having. A ceiling that only ever rises cannot surprise anybody.
+        /// </summary>
+        public static double CeilingPetaflops(double heldUsers, double current)
+        {
+            var forAudience = Math.Max(0.0, SimUnits.Finite(heldUsers)) * Headroom
+                / 1_000_000.0 * HostingCatalog.PetaflopsPerMillionConsumers;
+
+            var ceiling = Math.Max(OpeningCeilingPetaflops, forAudience);
+
+            ceiling = Math.Max(ceiling, Math.Max(0.0, SimUnits.Finite(current)));
+
+            // Rounded up to a readable step, so the end of the travel is a number rather than the
+            // arithmetic that produced it.
+            var step = ceiling <= 5_000.0 ? 250.0 : 1_000.0;
+            ceiling = Math.Ceiling(ceiling / step) * step;
+
+            return Math.Clamp(ceiling, OpeningCeilingPetaflops, FullScalePetaflops);
+        }
 
         /// <summary>A day's rent at which the bar is full. Above the point most companies survive.</summary>
         public const double FullScaleDailyUsd = 1_000_000.0;
@@ -34,8 +76,13 @@ namespace ScalingLaws.UI
         /// from, so the strip cannot claim a capacity the simulation does not deliver.
         /// </summary>
         public static VisualElement Meters(ComputeProfile profile, MarketConditions market,
-            double rentedPetaflops)
+            double rentedPetaflops, double scalePetaflops = FullScalePetaflops)
         {
+            // The bars answer "is this a lot" and the answer depends on what this company could
+            // sensibly hold, not on the largest fleet in the game. A meter measured against a
+            // billion accounts reads as empty for every company that is not one.
+            var scale = Math.Max(1.0, scalePetaflops);
+
             var strip = new VisualElement();
             strip.AddToClassList("rmeters");
 
@@ -46,7 +93,7 @@ namespace ScalingLaws.UI
                 UiFormat.Petaflops(rentedPetaflops),
                 Loc.T("rent.meter.capacity_note",
                     HardwareCatalog.Get(market.RentableGeneration).DisplayName),
-                rentedPetaflops / FullScalePetaflops,
+                rentedPetaflops / scale,
                 "rmeters__fill--capacity"));
 
             strip.Add(Meter(
@@ -63,7 +110,7 @@ namespace ScalingLaws.UI
                 Loc.T("rent.meter.delivered"),
                 UiFormat.Petaflops(profile.EffectivePetaflops),
                 Loc.T("rent.meter.delivered_note", UiFormat.Percent(profile.RealizedEfficiency)),
-                profile.EffectivePetaflops / FullScalePetaflops,
+                profile.EffectivePetaflops / scale,
                 "rmeters__fill--delivered"));
 
             return strip;

@@ -1567,7 +1567,12 @@ namespace ScalingLaws.UI
             // sizing a run here was deciding the same thing with fewer of the figures.
             panel.Add(rentMeters);
 
-            ConfigureSlider(rentedSlider, 0f, 25000f, 150f);
+            // Sized from the company rather than fixed, the same way the compute tab's is. A fixed
+            // twenty five thousand is six hundred million accounts, which is not a decision a lab
+            // with no product is making.
+            ConfigureSlider(rentedSlider, 0f,
+                (float)RentReadout.CeilingPetaflops(HeldUsers(), simulation.State.Pool.RentedPetaflops),
+                150f);
             panel.Add(rentedSlider);
 
             // What the day costs, with a mark at what he tells you to stay under. The one control
@@ -2120,6 +2125,13 @@ namespace ScalingLaws.UI
             tokenSlider.value = (float)Math.Log10(tokensBillions);
         }
 
+        /// <summary>How many people the company holds today, which is what sizes the rent slider.</summary>
+        private double HeldUsers()
+        {
+            var audience = simulation.MarketByType();
+            return audience.TotalUsersOverall * audience.OverallShareOf(0);
+        }
+
         private void Reprice()
         {
             simulation.SetRentedPetaflops(rentedSlider.value);
@@ -2148,9 +2160,14 @@ namespace ScalingLaws.UI
 
             RefreshSpend(SimUnitsToDaily(profile));
 
+            var rentCeiling = RentReadout.CeilingPetaflops(
+                HeldUsers(), simulation.State.Pool.RentedPetaflops);
+
+            rentedSlider.highValue = (float)rentCeiling;
+
             rentMeters.Clear();
             rentMeters.Add(RentReadout.Meters(
-                profile, simulation.Market, simulation.State.Pool.RentedPetaflops));
+                profile, simulation.Market, simulation.State.Pool.RentedPetaflops, rentCeiling));
 
             BeginReadouts();
             AddReadout("Projected capability", UiFormat.Number(projection.ProjectedCapability), Tone.Neutral);

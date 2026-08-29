@@ -53,9 +53,16 @@ namespace ScalingLaws.UI
             // **Three meters instead of one sentence.** The capacity, the daily bill and what the
             // pool actually delivers were run together in a line of prose over a bare slider, so the
             // number the player is deciding was a fragment in the middle of it.
-            rental.Add(RentReadout.Meters(profile, market, state.Pool.RentedPetaflops));
+            // The question the slider is really being asked, so the ceiling is sized from it.
+            var audience = simulation.MarketByType();
+            var heldUsers = audience.TotalUsersOverall * audience.OverallShareOf(0);
 
-            var rentedSlider = new Slider(0f, (float)RentReadout.FullScalePetaflops)
+            var ceiling = RentReadout.CeilingPetaflops(heldUsers, state.Pool.RentedPetaflops);
+
+            rental.Add(RentReadout.Meters(
+                profile, market, state.Pool.RentedPetaflops, ceiling));
+
+            var rentedSlider = new Slider(0f, (float)ceiling)
             {
                 value = (float)state.Pool.RentedPetaflops
             };
@@ -70,11 +77,7 @@ namespace ScalingLaws.UI
             rental.Add(rentedSlider);
 
             // And the question the slider is really being asked, in the largest type on the panel.
-            var breakdown = simulation.MarketByType();
-
-            rental.Add(RentReadout.CapacityBand(
-                state.Pool.RentedPetaflops,
-                breakdown.TotalUsersOverall * breakdown.OverallShareOf(0)));
+            rental.Add(RentReadout.CapacityBand(state.Pool.RentedPetaflops, heldUsers));
 
             rental.Add(Hint(
                 "Contracted in petaflops, not boxes, so the bill does not move when the clouds change "

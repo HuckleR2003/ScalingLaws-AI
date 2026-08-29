@@ -22,13 +22,33 @@ namespace ScalingLaws.Tests.EditMode
             return new CompanySimulation(state);
         }
 
+        /// <summary>
+        /// Puts the company on whatever rung a programme sits on, then signs for it.
+        ///
+        /// **Climbs rather than cheats.** The ladder is the mechanic under test elsewhere in this
+        /// file, so a fixture that wanted a tier-three award marks a tier-one and a tier-two as
+        /// finished, which is exactly what a player does to get there. Reaching in and lowering the
+        /// programme's own tier would test a catalogue that does not ship.
+        /// </summary>
         private static Grant Sign(CompanySimulation simulation, GrantId id)
         {
-            simulation.State.GrantOffers.Add(new GrantOffer(id, simulation.State.Date));
+            ClimbTo(simulation, GrantCatalog.Get(id).Tier);
 
             Assert.That(simulation.TryAcceptGrant(id, out var why), Is.True, why);
 
             return simulation.HeldGrants().Single(grant => grant.Id == id);
+        }
+
+        /// <summary>Marks one programme finished on every rung below this one.</summary>
+        private static void ClimbTo(CompanySimulation simulation, int tier)
+        {
+            for (var rung = 1; rung < tier; rung++)
+            {
+                var step = rung;
+
+                var below = GrantCatalog.All.First(entry => entry.Tier == step);
+                simulation.State.GrantsCompleted.Add(below.Id);
+            }
         }
 
         // ---- the balance rules --------------------------------------------------------------------
@@ -113,6 +133,27 @@ namespace ScalingLaws.Tests.EditMode
                     $"Tier {rung} is empty, so nothing there can be finished and the rung above it "
                     + "can never open.");
             }
+        }
+
+        /// <summary>
+        /// The board is never empty for a company that has taken nothing.
+        ///
+        /// **This is the failure the rebuild exists to fix.** Grants were offered by a one per cent
+        /// daily roll, so the first one arrived a hundred days out on average and three quarters of
+        /// players spent their opening month reading a panel that said nobody was funding anything.
+        /// A register is a list you can apply to on the day you open it.
+        /// </summary>
+        [Test]
+        public void ThereIsSomethingToApplyForOnDayOne()
+        {
+            var simulation = Fresh();
+            var board = simulation.AvailableGrants();
+
+            Assert.That(board, Is.Not.Empty,
+                "A new company opens the grants panel and finds nothing on it.");
+
+            Assert.That(board.All(entry => entry.Tier == 1), Is.True,
+                "A body four rungs up is writing to a company that has finished nothing.");
         }
 
         // ---- what actually happens ----------------------------------------------------------------
@@ -233,18 +274,23 @@ namespace ScalingLaws.Tests.EditMode
         public void DismissingAnOfferPutsItAwayForAWhile()
         {
             var simulation = Fresh();
-            var state = simulation.State;
 
-            state.GrantOffers.Add(new GrantOffer(GrantId.StandardsStipend, state.Date));
+            Assert.That(
+                simulation.AvailableGrants().Any(entry => entry.Id == GrantId.MinistryFirstLine),
+                Is.True, "The programme was not on the board to begin with.");
 
-            Assert.That(simulation.TryDismissGrant(GrantId.StandardsStipend), Is.True);
-            Assert.That(simulation.GrantOffers(), Is.Empty);
+            Assert.That(simulation.TryDismissGrant(GrantId.MinistryFirstLine), Is.True);
+
+            Assert.That(
+                simulation.AvailableGrants().Any(entry => entry.Id == GrantId.MinistryFirstLine),
+                Is.False, "Putting one away left it on the board.");
 
             simulation.Advance(60);
 
-            Assert.That(simulation.GrantOffers().Any(offer => offer.Id == GrantId.StandardsStipend),
+            Assert.That(
+                simulation.AvailableGrants().Any(entry => entry.Id == GrantId.MinistryFirstLine),
                 Is.False,
-                "A programme the player turned down wrote again inside two months.");
+                "A programme the player put away came back inside two months.");
         }
 
         /// <summary>
@@ -258,13 +304,10 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Fresh();
 
-            Sign(simulation, GrantId.StandardsStipend);
-            Sign(simulation, GrantId.ResearchFellowship);
+            Sign(simulation, GrantId.MinistrySafeStart);
+            Sign(simulation, GrantId.MinistryFirstLine);
 
-            simulation.State.GrantOffers.Add(
-                new GrantOffer(GrantId.ContinuityAward, simulation.State.Date));
-
-            Assert.That(simulation.TryAcceptGrant(GrantId.ContinuityAward, out var why), Is.False);
+            Assert.That(simulation.TryAcceptGrant(GrantId.StandardsStipend, out var why), Is.False);
             Assert.That(why, Is.Not.Empty, "Refused without saying why.");
         }
 
