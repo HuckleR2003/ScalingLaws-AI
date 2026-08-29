@@ -172,6 +172,43 @@ namespace ScalingLaws.UI
             return row;
         }
 
+        /// <summary>
+        /// A tick box, drawn rather than themed.
+        ///
+        /// The runtime theme renders a `Toggle` as a base field, so its input carries the same
+        /// bordered plate a text box does and stretches across the row. That put a white slab on
+        /// the premises page, and styling the theme's internals to fix it hid the checkmark
+        /// instead. Two elements and one class swap cannot do either.
+        /// </summary>
+        public static Button Tick(string label, bool value, System.Action<bool> changed)
+        {
+            var row = new Button();
+            row.AddToClassList("tick");
+            row.EnableInClassList("tick--on", value);
+
+            var box = new VisualElement();
+            box.AddToClassList("tick__box");
+
+            if (value)
+            {
+                // A filled block rather than a glyph. A tick character depends on the font having
+                // one, and the fallback for a missing glyph is an empty rectangle that reads as an
+                // unticked box, which is the one thing this control must never do.
+                var mark = new VisualElement();
+                mark.AddToClassList("tick__mark");
+                box.Add(mark);
+            }
+
+            row.Add(box);
+
+            var caption = new Label(label);
+            caption.AddToClassList("tick__label");
+            row.Add(caption);
+
+            row.clicked += () => changed?.Invoke(!value);
+            return row;
+        }
+
         public static void ExplainPage(VisualElement page, params TechNotes.Note[] notes)
         {
             if (page == null || notes == null || notes.Length == 0)

@@ -15027,3 +15027,56 @@
     border-color: rgba(255, 255, 255, 0.26);
     background-color: rgba(255, 255, 255, 0.09);
 }
+
+/* ---- the furnishings tick ------------------------------------------------------------------- */
+
+/* Hand drawn rather than a themed Toggle.
+   The theme draws a Toggle's input with the same bordered plate a text field gets, stretched
+   across the row, which put a white slab on the premises page. Styling the theme's own internals
+   removed the slab and took the checkmark with it, and chasing that further is the mistake this
+   project already made four times over a slider's dragger border. A button with a box in it is
+   two elements and cannot surprise anybody. */
+
+.tick {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    height: 34px;
+    margin: 0;
+    padding: 0 12px 0 8px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-text-align: middle-left;
+}
+
+.tick__box {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.30);
+    border-radius: 4px;
+    background-color: rgba(8, 10, 16, 0.75);
+    justify-content: center;
+    align-items: center;
+}
+
+.tick--on > .tick__box {
+    border-color: rgb(226, 190, 44);
+    background-color: rgba(226, 190, 44, 0.20);
+}
+
+.tick__mark {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background-color: rgb(226, 190, 44);
+}
+
+.tick__label {
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 254);
+}

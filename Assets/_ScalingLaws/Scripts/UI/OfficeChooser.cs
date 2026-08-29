@@ -181,15 +181,11 @@ namespace ScalingLaws.UI
             var block = new VisualElement();
             block.AddToClassList("offices__furnish");
 
-            var toggle = new Toggle(Loc.T("offices.furnished")) { value = Furnished };
-            toggle.AddToClassList("offices__furnishbox");
-            toggle.RegisterValueChangedCallback(change =>
+            block.Add(UiParts.Tick(Loc.T("offices.furnished"), Furnished, picked =>
             {
-                Furnished = change.newValue;
+                Furnished = picked;
                 Refresh();
-            });
-
-            block.Add(toggle);
+            }));
 
             var saving = OfficeCatalog.FurnishedPackListUsd - OfficeCatalog.FurnishedPackUsd;
 
