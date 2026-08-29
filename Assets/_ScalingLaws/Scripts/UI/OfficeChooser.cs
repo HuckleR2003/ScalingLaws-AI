@@ -181,7 +181,7 @@ namespace ScalingLaws.UI
             var block = new VisualElement();
             block.AddToClassList("offices__furnish");
 
-            var toggle = new Toggle("WITH FURNISHINGS") { value = Furnished };
+            var toggle = new Toggle(Loc.T("offices.furnished")) { value = Furnished };
             toggle.AddToClassList("offices__furnishbox");
             toggle.RegisterValueChangedCallback(change =>
             {
@@ -248,19 +248,20 @@ namespace ScalingLaws.UI
             figures.AddToClassList("office-row__figures");
             var owned = company.Staff.Owns(place.Tier);
 
-            figures.Add(Figure("RENT", owned
-                ? "owned outright"
+            figures.Add(Figure(Loc.T("offices.rent"), owned
+                ? Loc.T("offices.owned")
                 : $"{UiFormat.Money(place.MonthlyRentUsd)} / mo"));
 
             if (place.CanBeBought)
             {
-                figures.Add(Figure("TO BUY", owned
+                figures.Add(Figure(Loc.T("offices.to_buy"), owned
                     ? "yours"
                     : UiFormat.Money(place.PurchasePriceUsd)));
             }
-            figures.Add(Figure("DESKS", place.Desks == 0 ? "none" : place.Desks.ToString()));
-            figures.Add(Figure("FIT-OUT", moveBill == 0
-                ? "nothing"
+            figures.Add(Figure(Loc.T("offices.desks"),
+                place.Desks == 0 ? Loc.T("offices.none") : place.Desks.ToString()));
+            figures.Add(Figure(Loc.T("offices.fitout"), moveBill == 0
+                ? Loc.T("offices.nothing")
                 : UiFormat.Money(moveBill)));
 
             body.Add(figures);
@@ -377,8 +378,8 @@ namespace ScalingLaws.UI
             var buy = new Button(() => Buy(place.Tier))
             {
                 text = isArmed
-                    ? "CONFIRM THE PURCHASE"
-                    : (here ? "BUY THIS PLACE   " : "BUY OUTRIGHT   ") + UiFormat.Money(owed)
+                    ? Loc.T("offices.confirm_buy")
+                    : (here ? Loc.T("offices.buy_here") : Loc.T("offices.buy_outright")) + UiFormat.Money(owed)
             };
 
             buy.AddToClassList("office-row__move");
@@ -439,7 +440,7 @@ namespace ScalingLaws.UI
             var move = new Button(() => Move(place.Tier))
             {
                 text = isArmed
-                    ? "CONFIRM THE MOVE"
+                    ? Loc.T("offices.confirm_move")
                     : $"MOVE HERE   {UiFormat.Money(bill)} TO FIT OUT"
             };
 

@@ -49,8 +49,8 @@ namespace ScalingLaws.Data
             string art = "")
         {
             Tier = tier;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? tier.ToString() : displayName;
-            Description = description ?? string.Empty;
+            NameKey = string.IsNullOrWhiteSpace(displayName) ? tier.ToString() : displayName;
+            DescriptionKey = description ?? string.Empty;
             Level = Math.Max(0, level);
             Art = art ?? string.Empty;
 
@@ -66,7 +66,17 @@ namespace ScalingLaws.Data
         }
 
         public OfficeTier Tier { get; }
-        public string DisplayName { get; }
+        /// <summary>The phrase-book key, kept so the name can be read in today's language.</summary>
+        public string NameKey { get; }
+
+        /// <summary>
+        /// The name, resolved on every read.
+        ///
+        /// **Never a stored string.** The language is a setting that can change mid-campaign, and a
+        /// name captured when the catalog was built leaves six English headings on a Polish
+        /// premises page. Same rule `ResearchNode` and `ModelTraitDefinition` already follow.
+        /// </summary>
+        public string DisplayName => Loc.T(NameKey);
 
         /// <summary>
         /// Where it sits on the ladder, shown as LVL 0, LVL 1 and so on.
@@ -89,7 +99,9 @@ namespace ScalingLaws.Data
 
         /// <summary>True once there is a place to move into. Tiers without one stay off the screen.</summary>
         public bool HasPlace => Art.Length > 0;
-        public string Description { get; }
+        public string DescriptionKey { get; }
+
+        public string Description => Loc.T(DescriptionKey);
 
         /// <summary>Hard cap on headcount. No desk, no hire.</summary>
         public int Desks { get; }
@@ -167,9 +179,8 @@ namespace ScalingLaws.Data
             // figures from the chooser mock, not derived: a house with nowhere to sit, then two
             // hubs that cost real money for a modest number of desks. Rent per desk is deliberately
             // steep, because what the move buys is the right to have anybody at all.
-            new(OfficeTier.Garage, "House",
-                "The room you started in. There is nowhere for a second person to sit, so everything "
-                + "that gets built here gets built by you.",
+            new(OfficeTier.Garage, "office.house.name",
+                "office.house.desc",
                 desks: 0,
                 monthlyRentUsd: 4_000,
                 fitOutCostUsd: 0,
@@ -180,9 +191,8 @@ namespace ScalingLaws.Data
                 level: 0,
                 art: "office_house"),
 
-            new(OfficeTier.Loft, "Small office hub",
-                "Ten desks and a lease. The first month the company is somewhere rather than "
-                + "somebody.",
+            new(OfficeTier.Loft, "office.loft.name",
+                "office.loft.desc",
                 desks: 10,
                 monthlyRentUsd: 210_000,
                 fitOutCostUsd: 350_000,
@@ -193,9 +203,8 @@ namespace ScalingLaws.Data
                 level: 1,
                 art: "office_smallhub"),
 
-            new(OfficeTier.Floor, "Big company hub",
-                "Twenty desks, a proper server closet, and the first month anybody has to ask who "
-                + "owns something.",
+            new(OfficeTier.Floor, "office.floor.name",
+                "office.floor.desc",
                 desks: 20,
                 monthlyRentUsd: 300_000,
                 fitOutCostUsd: 2_400_000,
@@ -208,9 +217,8 @@ namespace ScalingLaws.Data
 
             // Still in the catalog and not yet on the chooser: no place has been built for either,
             // and offering a move to somewhere with no picture is offering a move to nowhere.
-            new(OfficeTier.Campus, "Campus",
-                "Purpose built, well equipped, and expensive enough that the rent shows up in the "
-                + "monthly numbers whether or not the desks are full.",
+            new(OfficeTier.Campus, "office.campus.name",
+                "office.campus.desc",
                 desks: 50,
                 monthlyRentUsd: 620_000,
                 fitOutCostUsd: 18_000_000,
@@ -220,9 +228,8 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.FromCalendar(2023, 6, 1),
                 level: 3),
 
-            new(OfficeTier.Tower, "Tower floor",
-                "Two floors of a building with your name in the lobby. The rent is a number the "
-                + "board asks about, and the desks fill faster than anybody plans for.",
+            new(OfficeTier.Tower, "office.tower.name",
+                "office.tower.desc",
                 desks: 125,
                 monthlyRentUsd: 1_450_000,
                 fitOutCostUsd: 34_000_000,
@@ -232,9 +239,8 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.FromCalendar(2024, 1, 1),
                 level: 4),
 
-            new(OfficeTier.MultiSite, "Multiple sites",
-                "Three time zones and a travel budget. More people than any one room can hold, at the "
-                + "price of nobody being in the same room.",
+            new(OfficeTier.MultiSite, "office.multisite.name",
+                "office.multisite.desc",
                 desks: 200,
                 monthlyRentUsd: 2_400_000,
                 fitOutCostUsd: 70_000_000,

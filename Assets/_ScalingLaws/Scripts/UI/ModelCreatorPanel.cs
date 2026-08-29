@@ -92,6 +92,16 @@ namespace ScalingLaws.UI
         private BrowserPreview browser;
         private VisualElement chipHost;
         private readonly SpendMeter spendMeter = new();
+
+        /// <summary>
+        /// Holds the three rent meters, refilled on every repricing.
+        ///
+        /// A container rather than the meters themselves, because `RentReadout.Meters` builds a
+        /// fresh block each time and the panel needs somewhere stable to put it. Same reading as
+        /// the compute tab, from the same function, so the creator cannot quote a different daily
+        /// bill from the screen the player checks it against.
+        /// </summary>
+        private readonly VisualElement rentMeters = new();
         private readonly Label spendCaption = new();
         private Label laptopName;
         private Label laptopStatus;
@@ -1551,6 +1561,12 @@ namespace ScalingLaws.UI
 
             rentedLabel.AddToClassList("field__label");
             panel.Add(rentedLabel);
+
+            // What is contracted, what it costs a day and what actually arrives, above the control
+            // that changes all three. This is the block the compute tab leads with, and a player
+            // sizing a run here was deciding the same thing with fewer of the figures.
+            panel.Add(rentMeters);
+
             ConfigureSlider(rentedSlider, 0f, 25000f, 150f);
             panel.Add(rentedSlider);
 
@@ -2131,6 +2147,10 @@ namespace ScalingLaws.UI
                 + $"{UiFormat.Money(SimUnitsToDaily(profile))}/day)";
 
             RefreshSpend(SimUnitsToDaily(profile));
+
+            rentMeters.Clear();
+            rentMeters.Add(RentReadout.Meters(
+                profile, simulation.Market, simulation.State.Pool.RentedPetaflops));
 
             BeginReadouts();
             AddReadout("Projected capability", UiFormat.Number(projection.ProjectedCapability), Tone.Neutral);

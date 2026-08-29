@@ -80,6 +80,30 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
+            // **A room with nothing to put in it is a money trap, and the game let you buy one.**
+            //
+            // Cabinets house accelerators the company already owns, and owning any is gated behind
+            // a released model and five million dollars. So a player could pay seventy thousand for
+            // a basement, stand four cabinets in it, and discover months later that not one card
+            // could ever go in them. Measured: the campaign probe's frugal style placed twelve
+            // racks and bought nothing, for fourteen years.
+            //
+            // The gift is exempt. It costs nothing, it arrives with the tour, and showing somebody
+            // the room they will fill later is an introduction rather than a bill.
+            if (!asGift)
+            {
+                var tier = ComputeTierCatalog.Get(ComputeTier.ColocatedServers);
+
+                var status = tier.Evaluate(State.Date, State.CashUsd, State.ReleasedModelCount,
+                    State.LifetimeRevenueUsd);
+
+                if (!status.IsUnlocked)
+                {
+                    failureReason = Loc.T("room.needs_hardware", status.LockReason);
+                    return false;
+                }
+            }
+
             if (!asGift && State.CashUsd < BasementPriceUsd)
             {
                 failureReason = Loc.T("room.cannot_afford", UiMoney(BasementPriceUsd));

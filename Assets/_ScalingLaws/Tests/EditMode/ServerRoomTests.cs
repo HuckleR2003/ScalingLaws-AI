@@ -50,10 +50,29 @@ namespace ScalingLaws.Tests.EditMode
                 "Four cabinets, which is what he says are down there.");
         }
 
+        /// <summary>
+        /// A company that could actually use a room: one product shipped and the money for the
+        /// hardware that would stand in it.
+        ///
+        /// Added when buying the room was gated on being able to own accelerators. The gate is the
+        /// point of the rule, so the fixture meets it rather than the rule being loosened to suit
+        /// a fixture that was written before it existed.
+        /// </summary>
+        private static CompanySimulation CompanyReadyToOwnHardware()
+        {
+            var simulation = Company(cash: 30_000_000);
+            var state = simulation.State;
+
+            state.AddDeployedModel(new DeployedModel(
+                "Shipped", ArchitectureId.DenseTransformer, 12.0, state.Date, 20.0, 1.0));
+
+            return simulation;
+        }
+
         [Test]
         public void BuyingItCostsTheAskingPriceAndGivesTheSameRoom()
         {
-            var simulation = Company();
+            var simulation = CompanyReadyToOwnHardware();
             var before = simulation.State.CashUsd;
 
             Assert.IsTrue(simulation.TryOpenServerRoom(false, out var why), why);
@@ -66,6 +85,38 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(simulation.State.Hall.RackCount,
                 Is.EqualTo(CompanySimulation.BasementRacks));
             Assert.IsFalse(simulation.State.ServerRoomWasAGift);
+        }
+
+        /// <summary>
+        /// The room cannot be bought before there is anything to put in it.
+        ///
+        /// **Measured, not imagined.** The campaign probe's frugal style opened a basement, stood
+        /// twelve cabinets in it and bought not one accelerator in fourteen years, because owning
+        /// hardware needs a released model and five million dollars. Seventy thousand for a room
+        /// that can never hold anything is a trap, and a new player is exactly who walks into it.
+        /// </summary>
+        [Test]
+        public void ItCannotBeBoughtBeforeTheCompanyCanOwnHardware()
+        {
+            var simulation = Company(cash: 30_000_000);
+            var before = simulation.State.CashUsd;
+
+            Assert.IsFalse(simulation.TryOpenServerRoom(false, out var why),
+                "A company that has shipped nothing was sold a room it can never fill.");
+
+            Assert.That(why, Is.Not.Empty, "Refused without saying why.");
+            Assert.That(simulation.State.CashUsd, Is.EqualTo(before), "Refused and charged anyway.");
+            Assert.IsFalse(simulation.State.HasServerRoom);
+        }
+
+        /// <summary>The gift is exempt: it costs nothing and it arrives with the tour.</summary>
+        [Test]
+        public void TheGiftStillArrivesBeforeTheCompanyCanOwnHardware()
+        {
+            var simulation = Company();
+
+            Assert.IsTrue(simulation.TryOpenServerRoom(true, out var why), why);
+            Assert.IsTrue(simulation.State.HasServerRoom);
         }
 
         [Test]
