@@ -21,7 +21,15 @@ namespace ScalingLaws.UI
     public static class FeedbackLink
     {
         /// <summary>The form. A page the author controls rather than a third-party host.</summary>
-        public const string BaseUrl = "https://pcworkman.dev/hck-labs/scaling-laws/";
+        /// <summary>
+        /// The form, on a page of its own.
+        ///
+        /// **Not the game's overview page**, which is where this pointed first. That page exists,
+        /// looks finished and has no form on it, so the button would have opened something
+        /// plausible and useless. A dedicated page is also the address Web3Forms is registered
+        /// against, and those two have to be the same string.
+        /// </summary>
+        public const string BaseUrl = "https://pcworkman.dev/hck-labs/scaling-laws/feedback/";
 
         /// <summary>Where to send somebody when there is no form to send them to yet.</summary>
         public const string FallbackUrl =

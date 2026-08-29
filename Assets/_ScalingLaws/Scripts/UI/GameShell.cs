@@ -64,6 +64,13 @@ namespace ScalingLaws.UI
             }
 
             Show(screen);
+
+            // **The chrome too, and this is not decoration.** A proof fixture builds a campaign
+            // straight onto the simulation without ticking a day, and only the day rollover
+            // refreshes the top bar. Without this the frame shows a 2024 page under a day-one
+            // money figure, which reads exactly like a bug in the top bar and is not one. It cost
+            // a full investigation once.
+            RefreshChrome();
             return true;
         }
 

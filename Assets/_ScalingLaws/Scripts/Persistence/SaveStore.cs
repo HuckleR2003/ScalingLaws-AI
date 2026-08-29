@@ -335,6 +335,32 @@ namespace ScalingLaws.Persistence
                 data.lawsuitAwarded.Add(suit.AwardedUsd);
             }
 
+            foreach (var grantOffer in state.GrantOffers)
+            {
+                data.grantOfferIds.Add((int)grantOffer.Id);
+                data.grantOfferDays.Add(grantOffer.DaysElapsed);
+            }
+
+            foreach (var grant in state.Grants)
+            {
+                data.grantHeldIds.Add((int)grant.Id);
+                data.grantHeldStartDays.Add(grant.StartedOn.DayIndex);
+                data.grantHeldBaselines.Add(grant.Baseline);
+                data.grantHeldDaysElapsed.Add(grant.DaysElapsed);
+                data.grantHeldBroken.Add(grant.IsBroken);
+            }
+
+            foreach (var id in state.GrantsCompleted)
+            {
+                data.grantsCompleted.Add((int)id);
+            }
+
+            foreach (var pair in state.GrantQuietUntil)
+            {
+                data.grantQuietIds.Add((int)pair.Key);
+                data.grantQuietUntilDays.Add(pair.Value);
+            }
+
             if (state.PendingAcquisition != null)
             {
                 data.acquisitionFrom = (int)state.PendingAcquisition.From;
@@ -915,6 +941,70 @@ namespace ScalingLaws.Persistence
 
                 suit.Restore(safe.lawsuitDaysElapsed[index], verdict, safe.lawsuitAwarded[index]);
                 state.Lawsuits.Add(suit);
+            }
+
+            state.GrantOffers.Clear();
+            state.Grants.Clear();
+            state.GrantsCompleted.Clear();
+            state.GrantQuietUntil.Clear();
+
+            for (var index = 0; index < safe.grantOfferIds.Count; index++)
+            {
+                if (index >= safe.grantOfferDays.Count
+                    || !Enum.IsDefined(typeof(GrantId), safe.grantOfferIds[index]))
+                {
+                    continue;
+                }
+
+                var offer = new GrantOffer(
+                    (GrantId)safe.grantOfferIds[index], state.Date);
+
+                offer.Restore(safe.grantOfferDays[index]);
+                state.GrantOffers.Add(offer);
+            }
+
+            for (var index = 0; index < safe.grantHeldIds.Count; index++)
+            {
+                if (index >= safe.grantHeldStartDays.Count
+                    || index >= safe.grantHeldBaselines.Count
+                    || index >= safe.grantHeldDaysElapsed.Count
+                    || index >= safe.grantHeldBroken.Count)
+                {
+                    break;
+                }
+
+                if (!Enum.IsDefined(typeof(GrantId), safe.grantHeldIds[index]))
+                {
+                    continue;
+                }
+
+                var grant = new Grant(
+                    (GrantId)safe.grantHeldIds[index],
+                    new GameDate(safe.grantHeldStartDays[index]),
+                    safe.grantHeldBaselines[index]);
+
+                grant.Restore(safe.grantHeldDaysElapsed[index], safe.grantHeldBroken[index]);
+                state.Grants.Add(grant);
+            }
+
+            foreach (var id in safe.grantsCompleted)
+            {
+                if (Enum.IsDefined(typeof(GrantId), id))
+                {
+                    state.GrantsCompleted.Add((GrantId)id);
+                }
+            }
+
+            for (var index = 0; index < safe.grantQuietIds.Count; index++)
+            {
+                if (index >= safe.grantQuietUntilDays.Count
+                    || !Enum.IsDefined(typeof(GrantId), safe.grantQuietIds[index]))
+                {
+                    continue;
+                }
+
+                state.GrantQuietUntil[(GrantId)safe.grantQuietIds[index]] =
+                    safe.grantQuietUntilDays[index];
             }
 
             if (safe.acquisitionFrom >= 0
@@ -1684,6 +1774,16 @@ namespace ScalingLaws.Persistence
             safe.lawsuitDaysElapsed ??= new List<int>();
             safe.lawsuitVerdicts ??= new List<int>();
             safe.lawsuitAwarded ??= new List<long>();
+            safe.grantOfferIds ??= new List<int>();
+            safe.grantOfferDays ??= new List<int>();
+            safe.grantHeldIds ??= new List<int>();
+            safe.grantHeldStartDays ??= new List<int>();
+            safe.grantHeldBaselines ??= new List<double>();
+            safe.grantHeldDaysElapsed ??= new List<int>();
+            safe.grantHeldBroken ??= new List<bool>();
+            safe.grantsCompleted ??= new List<int>();
+            safe.grantQuietIds ??= new List<int>();
+            safe.grantQuietUntilDays ??= new List<int>();
             safe.relationLabs ??= new List<int>();
             safe.relationValues ??= new List<double>();
             safe.relationHistoryLabs ??= new List<int>();

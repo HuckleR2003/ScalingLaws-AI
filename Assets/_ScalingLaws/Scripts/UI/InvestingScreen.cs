@@ -207,6 +207,14 @@ namespace ScalingLaws.UI
             return column;
         }
 
+        /// <summary>
+        /// Ninety days of price, with the numbers that make it a chart rather than a shape.
+        ///
+        /// **The line on its own says nothing.** It was drawn with no scale and no dates, so a rise
+        /// across the frame could have been four percent or four hundred, over a fortnight or a
+        /// year, and there was no way to tell which. A price chart whose axis is missing is
+        /// decoration wearing the costume of a figure.
+        /// </summary>
         private VisualElement BuildChart(CompanySimulation simulation)
         {
             var days = new List<double>(ChartDays);
@@ -216,10 +224,51 @@ namespace ScalingLaws.UI
                 days.Add(PriceOn(simulation, selected, simulation.State.Date.AddDays(-back)));
             }
 
+            var frame = new VisualElement();
+            frame.AddToClassList("invest__chartframe");
+
             var chart = new PriceChart(days);
             chart.AddToClassList("invest__chart");
+            frame.Add(chart);
 
-            return chart;
+            var high = double.MinValue;
+            var low = double.MaxValue;
+
+            foreach (var price in days)
+            {
+                high = Math.Max(high, price);
+                low = Math.Min(low, price);
+            }
+
+            // The band down the left, high at the top, the way every price chart is read.
+            var scale = new VisualElement();
+            scale.AddToClassList("invest__scale");
+            scale.Add(ChartNote(UiFormat.SharePrice(high), "invest__scale-high"));
+            scale.Add(ChartNote(UiFormat.SharePrice(low), "invest__scale-low"));
+            frame.Add(scale);
+
+            // And what the width is worth, because ninety days is not obvious from a line.
+            var axis = new VisualElement();
+            axis.AddToClassList("invest__axis");
+            axis.Add(ChartNote(
+                simulation.State.Date.AddDays(-(ChartDays - 1)).ToString(), "invest__axis-from"));
+
+            axis.Add(ChartNote(
+                Loc.T("invest.window", ChartDays), "invest__axis-window"));
+
+            axis.Add(ChartNote(simulation.State.Date.ToString(), "invest__axis-to"));
+            frame.Add(axis);
+
+            return frame;
+        }
+
+        private static Label ChartNote(string text, string className)
+        {
+            var label = new Label(text);
+            label.AddToClassList("invest__note");
+            label.AddToClassList(className);
+
+            return label;
         }
 
         /// <summary>

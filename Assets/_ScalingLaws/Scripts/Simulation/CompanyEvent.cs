@@ -90,7 +90,19 @@ namespace ScalingLaws.Simulation
         DividendPaid = 47,
 
         /// <summary>A rival was bought outright.</summary>
-        LabAcquired = 48
+        LabAcquired = 48,
+
+        /// <summary>A body with a budget has written to the company.</summary>
+        GrantOffered = 49,
+
+        /// <summary>The company signed for one and took the advance.</summary>
+        GrantAccepted = 50,
+
+        /// <summary>The condition was met and the balance was paid.</summary>
+        GrantCompleted = 51,
+
+        /// <summary>The condition was broken or the term ran out, so the advance goes back.</summary>
+        GrantLost = 52
     }
 
     /// <summary>

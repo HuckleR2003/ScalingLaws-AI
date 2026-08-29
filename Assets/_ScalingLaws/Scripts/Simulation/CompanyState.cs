@@ -634,6 +634,25 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public List<Lawsuit> Lawsuits { get; } = new();
 
+        /// <summary>
+        /// Grants on the table, awards being worked off, and who has been turned down.
+        ///
+        /// **All four are causal rather than derived.** The baseline inside a held award records
+        /// where the company stood on the day it signed, an offer's age decides when it lapses, and
+        /// the quiet list is why a body the player refused does not write again next week. Dropping
+        /// any of them would let a reload change an outcome, which is the mistake this project has
+        /// now made six times and caught with the save replay test every time.
+        /// </summary>
+        public List<GrantOffer> GrantOffers { get; } = new();
+
+        public List<Grant> Grants { get; } = new();
+
+        /// <summary>Programmes already seen through. A body does not fund the same work twice.</summary>
+        public HashSet<GrantId> GrantsCompleted { get; } = new();
+
+        /// <summary>Programme to the day index before which it will not be offered again.</summary>
+        public Dictionary<GrantId, int> GrantQuietUntil { get; } = new();
+
         /// <summary>An offer to buy the company, or null. At most one at a time.</summary>
         public AcquisitionOffer PendingAcquisition { get; set; }
 

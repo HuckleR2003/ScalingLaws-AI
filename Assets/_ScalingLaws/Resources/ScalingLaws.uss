@@ -14555,3 +14555,171 @@
     white-space: normal;
     padding-top: 4px;
 }
+
+/* ---- grants and donations -------------------------------------------------------------------
+   Rows rather than tiles, because a grant is read as a paragraph with a deadline on it and the
+   loan tiles beside them are read as a shelf. Making them look the same would say they are the
+   same kind of decision, and they are not: a facility is a product you pick, a grant is a letter
+   you answer. */
+
+.panel__strap {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: rgb(126, 138, 160);
+    margin-bottom: 12px;
+}
+
+.grant__section {
+    font-size: 11px;
+    letter-spacing: 2.2px;
+    color: rgb(150, 162, 186);
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+.gcard {
+    padding: 13px 15px;
+    margin-bottom: 9px;
+    border-left-width: 3px;
+    border-left-color: rgb(224, 132, 108);
+    border-radius: 6px;
+    background-color: rgba(10, 13, 20, 0.72);
+    flex-shrink: 0;
+}
+
+.gcard--offer {
+    border-left-color: rgb(240, 208, 96);
+}
+
+.gcard--broken {
+    border-left-color: rgb(150, 84, 84);
+    opacity: 0.72;
+}
+
+.gcard__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.gcard__name {
+    font-size: 15px;
+    color: rgb(232, 238, 250);
+}
+
+.gcard__status {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    color: rgb(126, 138, 160);
+}
+
+.gcard__status--broken {
+    color: rgb(214, 126, 126);
+}
+
+.gcard__body {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: rgb(150, 162, 186);
+    margin-bottom: 7px;
+}
+
+.gcard__goal {
+    font-size: 13px;
+    color: rgb(214, 224, 240);
+    white-space: normal;
+    margin-bottom: 5px;
+}
+
+.gcard__terms {
+    font-size: 12px;
+    color: rgb(150, 162, 186);
+    white-space: normal;
+    margin-bottom: 9px;
+}
+
+.gcard__figures {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.gcard__buttons {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* The quiet twin of the primary button, for the answer that costs nothing. Stated margins,
+   because the runtime theme puts its own on every button and inheriting it has already broken
+   one grid in this project. */
+.button--quiet {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: rgb(150, 162, 186);
+}
+
+/* The chart's own scale. Absolutely positioned over the frame rather than laid out beside it,
+   because the line is drawn to the full width of its box and giving the axis a column of its own
+   would shrink the only thing on the panel worth looking at. */
+
+.invest__chartframe {
+    flex-shrink: 0;
+    margin-bottom: 16px;
+}
+
+.invest__chartframe > .invest__chart {
+    margin-bottom: 0;
+}
+
+/* Both are full-bleed overlays rather than laid-out rows, so the readings sit on the chart
+   without taking width from it. Named from C#, so the stylesheet has to carry them: the guard
+   that caught their absence is the same one that has now paid for itself several times. */
+
+.invest__scale {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.invest__axis {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.invest__note {
+    position: absolute;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    color: rgb(126, 138, 160);
+}
+
+.invest__scale-high {
+    top: 8px;
+    left: 12px;
+}
+
+.invest__scale-low {
+    top: 276px;
+    left: 12px;
+}
+
+.invest__axis-from {
+    top: 304px;
+    left: 12px;
+}
+
+.invest__axis-window {
+    top: 304px;
+    left: 47%;
+}
+
+.invest__axis-to {
+    top: 304px;
+    right: 12px;
+}

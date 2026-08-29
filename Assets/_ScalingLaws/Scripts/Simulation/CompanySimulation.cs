@@ -312,6 +312,7 @@ namespace ScalingLaws.Simulation
             ConsiderAcquisitionOffer();
             ReportRivalExpansion();
             RunTheScandalDesk(State.LastQuality.Utilisation, market.PricePerMillionTokensUsd);
+            AdvanceGrants(State.LastQuality.Utilisation);
 
             CheckSolvency();
 

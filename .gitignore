@@ -98,6 +98,14 @@ CityProof~/
 ScreenProof~/
 CityFlight~/
 TabProof~/
+
+# Measured reports and per-fixture result files. Written by test runs, regenerated on demand,
+# and never a source of truth: the fixture that writes them is.
+CampaignProbe~/
+ProbeResults*.xml
+Alone.xml
+Base.xml
+Store.xml
 UiFlight~/
 Videos~/
 

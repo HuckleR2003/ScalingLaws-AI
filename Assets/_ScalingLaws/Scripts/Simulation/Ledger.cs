@@ -15,6 +15,16 @@ namespace ScalingLaws.Simulation
         AssetSales = 2,
         Funding = 3,
 
+        /// <summary>
+        /// Grant money coming in.
+        ///
+        /// Its own line rather than folded into Funding for the same reason Investment is: an
+        /// advance that has to be handed back if a condition is missed is a different fact from a
+        /// round that never does, and a books page that merges them cannot answer how much of the
+        /// company's capital is actually at risk.
+        /// </summary>
+        GrantAward = 4,
+
         // What goes out.
         CloudRent = 10,
         ServingFree = 11,
@@ -40,7 +50,10 @@ namespace ScalingLaws.Simulation
         /// asset and money coming in from a lender are opposite facts and a books page that
         /// nets them says nothing about either.
         /// </summary>
-        Investment = 26
+        Investment = 26,
+
+        /// <summary>An advance given back because the term was missed.</summary>
+        GrantRepaid = 27
     }
 
     /// <summary>What a line is called and which side of the report it sits on.</summary>
@@ -115,7 +128,9 @@ namespace ScalingLaws.Simulation
             new(LedgerLine.Tax, "Corporate tax", "Company", false, true),
             new(LedgerLine.Depreciation, "Depreciation", "Capital", false, false),
             new(LedgerLine.Fines, "Fines and incidents", "Company", false, true),
-            new(LedgerLine.Investment, "Shares and acquisitions", "Capital", false, false)
+            new(LedgerLine.Investment, "Shares and acquisitions", "Capital", false, false),
+            new(LedgerLine.GrantAward, "Grants awarded", "Capital", true, true),
+            new(LedgerLine.GrantRepaid, "Grant advances returned", "Capital", false, true)
         };
 
         /// <summary>month index (year * 12 + month - 1) to the totals for that month.</summary>

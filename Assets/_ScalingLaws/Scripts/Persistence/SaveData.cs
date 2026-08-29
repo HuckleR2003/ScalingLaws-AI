@@ -407,7 +407,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 43;
+        public const int CurrentVersion = 44;
 
         public int version = CurrentVersion;
 
@@ -754,6 +754,33 @@ namespace ScalingLaws.Persistence
         public List<int> lawsuitDaysElapsed = new();
         public List<int> lawsuitVerdicts = new();
         public List<long> lawsuitAwarded = new();
+
+        /// <summary>
+        /// Grants: what is on the table, what is being worked off, and who has been turned away.
+        ///
+        /// **Causal, not a record.** A held award carries the baseline captured on the day it was
+        /// signed and, for the sustained ones, whether it has already been broken. Both decide an
+        /// outcome that has not happened yet, so a file that dropped them would let a reload change
+        /// the answer. That is the same hole `actionOpen` and the open lawsuits were built to close,
+        /// and this project has now made the mistake six times.
+        /// </summary>
+        public List<int> grantOfferIds = new();
+
+        public List<int> grantOfferDays = new();
+
+        public List<int> grantHeldIds = new();
+        public List<int> grantHeldStartDays = new();
+        public List<double> grantHeldBaselines = new();
+        public List<int> grantHeldDaysElapsed = new();
+        public List<bool> grantHeldBroken = new();
+
+        /// <summary>Programmes already seen through, so a body does not fund the same work twice.</summary>
+        public List<int> grantsCompleted = new();
+
+        /// <summary>Programme id to the day index before which it will not be offered again.</summary>
+        public List<int> grantQuietIds = new();
+
+        public List<int> grantQuietUntilDays = new();
 
         /// <summary>An open offer to buy the company. Negative bidder means none.</summary>
         public int acquisitionFrom = -1;

@@ -144,6 +144,7 @@ namespace ScalingLaws.Persistence
                     40 => UpgradeV40ToV41(current),
                     41 => UpgradeV41ToV42(current),
                     42 => UpgradeV42ToV43(current),
+                    43 => UpgradeV43ToV44(current),
                     _ => current
                 };
             }
@@ -1703,6 +1704,40 @@ namespace ScalingLaws.Persistence
         /// stored: prices are derived from each lab's standing on a date, so a v42 file opened in
         /// v43 sees exactly the same board a new campaign would.
         /// </summary>
+        /// <summary>
+        /// v43 to v44: grants.
+        ///
+        /// Empty, and that is the only true reading. A v43 campaign was played in a build where no
+        /// body was funding anything, so it holds no award, has turned nobody down and has finished
+        /// no programme.
+        ///
+        /// **The quiet list starts empty rather than being seeded with a cooling-off period.** A
+        /// company that has never been offered a grant has not refused one, and inventing a refusal
+        /// so that the first offer arrives later would be a reconstruction nobody could check.
+        /// </summary>
+        public static SaveData UpgradeV43ToV44(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 44;
+
+            data.grantOfferIds = new List<int>();
+            data.grantOfferDays = new List<int>();
+            data.grantHeldIds = new List<int>();
+            data.grantHeldStartDays = new List<int>();
+            data.grantHeldBaselines = new List<double>();
+            data.grantHeldDaysElapsed = new List<int>();
+            data.grantHeldBroken = new List<bool>();
+            data.grantsCompleted = new List<int>();
+            data.grantQuietIds = new List<int>();
+            data.grantQuietUntilDays = new List<int>();
+
+            return data;
+        }
+
         public static SaveData UpgradeV42ToV43(SaveData data)
         {
             if (data == null)

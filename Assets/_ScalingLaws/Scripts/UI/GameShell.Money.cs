@@ -594,6 +594,10 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
                 }
             }
 
+            // Grants before borrowing, smallest commitment first. They were under five loan
+            // tiles on the first render and fell straight off the bottom of the page, on a tab
+            // now named after them.
+            page.Add(BuildGrantsPanel());
             page.Add(BuildDebtPanel());
             return page;
         }
