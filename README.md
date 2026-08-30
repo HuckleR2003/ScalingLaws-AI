@@ -10,7 +10,7 @@ one you can pay for. Decide whether three weeks of safety evaluation is worth de
 find out later that a regulator judges you on what you had switched on the day you shipped.
 
 [![Build](https://img.shields.io/badge/build-v0.1.0-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
-[![Tests](https://img.shields.io/badge/tests-793%20EditMode%20%2B%2013%20PlayMode-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-888%20EditMode%20%2B%2021%20PlayMode-brightgreen)](#testing)
 [![Unity](https://img.shields.io/badge/Unity-6000.5.8f1-black)](#running-it)
 [![Languages](https://img.shields.io/badge/languages-EN%20%2F%20PL-lightgrey)](#)
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial-orange)](LICENSE.md)
@@ -134,7 +134,7 @@ switchable at any time including mid-conversation.
 The art is partial. Several screens are still plain. The world map in character creation is a
 placeholder. There are mechanics that are built and not yet reachable, and that is a measured number
 rather than a feeling: a sweep lists every public method in the simulation layer and searches the
-interface layer for a caller. It has found **eight** so far, one of them an entire progression system
+interface layer for a caller. It has found **twelve** so far, one of them an entire progression system
 the player paid research points, cash and four months of in-game calendar for and never received.
 
 The build exists now anyway, and the reason is narrow: the economy has to be judged from a player's
@@ -187,7 +187,7 @@ clicking.
 |---|---|
 | `Assets/_ScalingLaws/Scripts/` | 225 C# files across the five layers above |
 | `Assets/_ScalingLaws/Editor/` | Scene generation, rig setup, the city flyover |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 887 tests across 88 fixtures. None load a scene. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 888 tests across 88 fixtures. None load a scene. |
 | `Assets/_ScalingLaws/Tests/PlayMode/` | 21 tests that do load a scene, and render pages to PNG |
 | `Docs/` | The mechanism map, the art brief, the world map plan |
 

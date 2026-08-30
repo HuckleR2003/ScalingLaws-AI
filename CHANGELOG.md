@@ -90,7 +90,7 @@ version will carry a migration step, and a campaign started here will keep openi
 
 ### Under the hood
 
-- 887 EditMode tests and 21 PlayMode tests, across 88 and 7 fixtures.
+- 888 EditMode tests and 21 PlayMode tests, across 88 and 7 fixtures.
 - Unity 6000.5.8f1. Earlier 6000.4 editors cannot open the project.
 - 225 C# files under `Scripts/`, and 337 counting the tests and the editor tooling.
   `Simulation/` imports no UnityEngine, which is why the suite runs without loading a scene.
