@@ -6,7 +6,10 @@ How to open the project, run it, and play the first hour.
 
 ## 1. What you need
 
-- Unity **6000.4.11f1**. Other 6000.x versions will probably work but nothing else has been tried.
+- Unity **6000.5.8f1**, and it has to be that or newer. The manifest carries
+  `com.unity.modules.physicscore2d`, which does not exist before 6000.5, so an older editor
+  dies on package resolution and reports `Aborting batchmode` with no test results at all.
+  That failure looks exactly like your new test file not being picked up.
 - Nothing else. No packages to install by hand, no art to import, no scene to assemble.
 
 ## 2. Open it
@@ -77,10 +80,10 @@ BEGIN.
 From a terminal, with Unity closed:
 
 ```
-"C:\Program Files\Unity\Hub\Editor\6000.4.11f1\Editor\Unity.exe" -batchmode -nographics -projectPath "<project>" -runTests -testPlatform EditMode -testResults TestResults.xml
+"C:\Program Files\Unity\Hub\Editor\6000.5.8f1\Editor\Unity.exe" -batchmode -nographics -projectPath "<project>" -runTests -testPlatform EditMode -testResults TestResults.xml
 ```
 
-158 tests, under two seconds. Exit code 0 means everything passed, 2 means something failed and
+887 tests, about a minute including the import. Exit code 0 means everything passed, 2 means something failed and
 `TestResults.xml` says what.
 
 **Do not add `-quit` to `-runTests`.** Unity finishes the import, never runs the tests, and exits 0,
@@ -89,7 +92,7 @@ which looks like success and is not.
 To rebuild the scenes from a terminal:
 
 ```
-"C:\Program Files\Unity\Hub\Editor\6000.4.11f1\Editor\Unity.exe" -batchmode -nographics -projectPath "<project>" -executeMethod ScalingLaws.Editor.ScalingLawsSceneBuilder.BuildAll -quit
+"C:\Program Files\Unity\Hub\Editor\6000.5.8f1\Editor\Unity.exe" -batchmode -nographics -projectPath "<project>" -executeMethod ScalingLaws.Editor.ScalingLawsSceneBuilder.BuildAll -quit
 ```
 
 ## 6. Where things are

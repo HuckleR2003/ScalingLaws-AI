@@ -44,16 +44,16 @@ looks.
   board, intelligence, marketing, news and mail.
 - **A model creator in eight stages.** Branding, foundation, scale, data, compute, safety, review,
   and what happens after training. Each page explains the trade it is asking about.
-- **The tutorial.** Emil, the founder's cousin, walks through the opening hour in 55 steps across
+- **The tutorial.** Emil, the founder's cousin, walks through the opening hour in 53 steps across
   six acts. He can be skipped at any point, he can be asked to call back later, and the tour resumes
   from where it stopped rather than from the beginning.
 - **A server room.** Four cabinets in a basement, a floor of sixteen squares, and cooling that costs
   a slot. It is the first compute the company physically owns.
-- **Fifty research nodes** across four eras and four tracks. Every architecture, corpus, upgrade line
+- **Fifty research nodes** across four eras and three tracks. Every architecture, corpus, upgrade line
   and compute tier sits behind one.
 - **Fourteen rival labs**, each with a dated history. Three of them come apart during the campaign,
   over the same exposures that can end the player's company.
-- **Two languages.** Polish and English, 957 phrases, switchable from settings at any time including
+- **Two languages.** Polish and English, 1,321 phrases, switchable from settings at any time including
   mid-conversation.
 - **Interface audio.** Synthesised at runtime rather than sampled, so the build carries no licensed
   audio and a missing file cannot break a screen.
@@ -85,15 +85,15 @@ looks.
 
 ### Save compatibility
 
-Save format **v40**. This is the first public build, so there is nothing older to load. Every future
+Save format **v44**. This is the first public build, so there is nothing older to load. Every future
 version will carry a migration step, and a campaign started here will keep opening.
 
 ### Under the hood
 
-- 793 EditMode tests and 12 PlayMode tests, across 78 and 6 fixtures.
+- 887 EditMode tests and 21 PlayMode tests, across 88 and 7 fixtures.
 - Unity 6000.5.8f1. Earlier 6000.4 editors cannot open the project.
-- 188 C# files. `Simulation/` imports no UnityEngine, which is why the suite runs without loading a
-  scene.
-- 150 commits since 2 August 2026.
+- 225 C# files under `Scripts/`, and 337 counting the tests and the editor tooling.
+  `Simulation/` imports no UnityEngine, which is why the suite runs without loading a scene.
+- 170 commits since 2 August 2026.
 
 [0.1.0]: https://github.com/HuckleR2003/ScalingLaws-AI/releases/tag/v0.1.0

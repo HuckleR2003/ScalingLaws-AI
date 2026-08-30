@@ -2974,9 +2974,13 @@
     margin-right: 8px;
 }
 
-.panel-row > .panel:last-child {
-    margin-right: 0;
-}
+/* UI Toolkit has no :last-child, :first-child or :nth-child. Five rules here used to try,
+   and the parser dropped every one of them while warning about it in the player log on
+   every launch. Each was cancelling the trailing gap after the last item in a row:
+   .panel-row > .panel 8px, .pack 14px, .chart-block 8px, .sfig__block 30px,
+   .rmeters__block 20px. Those gaps are still there. Closing one means either a negative
+   margin of the same size on the container, or clearing marginRight on the last child
+   from C# after the row is filled. It cannot be done with a selector. */
 
 /* A stage is allowed to scroll rather than deform. This is a floor against the
    clipping, not the layout plan: if a stage needs the scroller, it is too tall. */
@@ -3807,8 +3811,6 @@
     overflow: hidden;
 }
 
-.pack:last-child { margin-right: 0; }
-
 .pack--on {
     background-color: rgba(120, 176, 250, 0.12);
     border-color: rgb(120, 176, 250);
@@ -4030,8 +4032,6 @@
     flex-basis: 0;
     margin-right: 8px;
 }
-
-.chart-block:last-child { margin-right: 0; }
 
 .chart-block__title {
     font-size: 11px;
@@ -12651,8 +12651,6 @@
     margin-right: 30px;
 }
 
-.sfig__block:last-child { margin-right: 0; }
-
 .sfig__caption {
     font-size: 11px;
     letter-spacing: 1.3px;
@@ -12938,8 +12936,6 @@
     flex-basis: 0;
     margin-right: 20px;
 }
-
-.rmeters__block:last-child { margin-right: 0; }
 
 .rmeters__head {
     flex-direction: row;

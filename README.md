@@ -44,8 +44,9 @@ successor that ships after it, so capital committed too early sits in an asset t
 every month. Token prices fall by roughly half a year, permanently. The frontier moves whether or not
 you do.
 
-There is no guaranteed profit anywhere in the design. A company that ships one model and coasts is
-insolvent inside three years, and an automated test fails the build if that stops being true.
+There is no guaranteed profit anywhere in the design. A company that ships one model and then makes
+no further decision goes under, and an automated test fails the build if it is still trading eight
+years later.
 
 ---
 
@@ -184,16 +185,16 @@ clicking.
 
 | Folder | Role |
 |---|---|
-| `Assets/_ScalingLaws/Scripts/` | 188 C# files across the five layers above |
+| `Assets/_ScalingLaws/Scripts/` | 225 C# files across the five layers above |
 | `Assets/_ScalingLaws/Editor/` | Scene generation, rig setup, the city flyover |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 793 tests across 78 fixtures. None load a scene. |
-| `Assets/_ScalingLaws/Tests/PlayMode/` | 12 tests that do load a scene, and render pages to PNG |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 887 tests across 88 fixtures. None load a scene. |
+| `Assets/_ScalingLaws/Tests/PlayMode/` | 21 tests that do load a scene, and render pages to PNG |
 | `Docs/` | The mechanism map, the art brief, the world map plan |
 
 [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) is the mechanism map. Read it before adding anything,
 and extend an existing catalog rather than starting a second one.
 
-Saves carry a version and **one migration step per version**, currently at v40. Old shapes are kept
+Saves carry a version and **one migration step per version**, currently at v44. Old shapes are kept
 verbatim so the upgrade path reads a real historical structure instead of guessing. Where a migration
 has to invent a value the old format never stored, it picks the least flattering assumption that is
 still defensible and records what it did.

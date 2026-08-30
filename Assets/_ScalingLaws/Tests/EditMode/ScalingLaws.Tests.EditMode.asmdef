@@ -2,7 +2,8 @@
   "name": "ScalingLaws.Tests.EditMode",
   "rootNamespace": "ScalingLaws.Tests.EditMode",
   "references": [
-    "ScalingLaws.Runtime"
+    "ScalingLaws.Runtime",
+    "ScalingLaws.Editor"
   ],
   "includePlatforms": [
     "Editor"

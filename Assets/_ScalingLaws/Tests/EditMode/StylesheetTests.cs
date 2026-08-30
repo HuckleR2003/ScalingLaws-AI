@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
@@ -140,6 +141,36 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsEmpty(missing,
                 "Named from C# and absent from the stylesheet, so it takes default flex and quietly "
                 + "collapses what it is on:\n  " + string.Join("\n  ", missing));
+        }
+
+        /// <summary>
+        /// No rule is written with a selector UI Toolkit does not implement.
+        ///
+        /// **Found in the first built player's log, not by a test.** Five rules used `:last-child`
+        /// to close the trailing gap after the last item in a row. USS has no positional pseudo
+        /// classes at all: the parser drops the rule, warns once per occurrence into the log of
+        /// every launch on every player's machine, and the styling silently never applies. All
+        /// five had been dead since the day they were written.
+        ///
+        /// This is the same failure as a class named from C# and never written into the sheet,
+        /// which the test above already guards, arriving from the other direction: a rule that
+        /// looks correct, reads correctly, and is never applied to anything.
+        /// </summary>
+        [Test]
+        public void NoRuleUsesASelectorUiToolkitCannotRead()
+        {
+            var sheet = Sheet;
+
+            // Only the selector halves. The note recording why these cannot be used is prose in a
+            // comment, and a guard that fails on its own explanation is a guard nobody keeps.
+            var found = Regex.Matches(sheet, @"^[^\n/]*(:(?:last|first|nth|only)-[a-z-]+)[^\n]*\{",
+                    RegexOptions.Multiline)
+                .Select(match => match.Value.Trim())
+                .ToList();
+
+            Assert.IsEmpty(found,
+                "UI Toolkit has no positional pseudo classes. These rules parse, warn in every "
+                + "player's log and style nothing:\n  " + string.Join("\n  ", found));
         }
     }
 }

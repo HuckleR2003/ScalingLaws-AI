@@ -34,8 +34,42 @@ namespace ScalingLaws.Persistence
         /// <summary>Minutes between automatic saves, or zero for never.</summary>
         public static int AutosaveMinutes { get; private set; }
 
+        /// <summary>
+        /// The window the game opens in when it is not fullscreen, expressed against the reference.
+        ///
+        /// The panel scales to 1920x1080, so a window of that shape is the one the interface was
+        /// laid out in. Anything larger is scaled up rather than given more room.
+        /// </summary>
+        public const int DesignWidth = 1920;
+
+        private const float DesignAspect = 16f / 9f;
+
+        /// <summary>
+        /// Pixels down the display that a window may not use: the title bar above it and the
+        /// taskbar below. Generous, because a bottom bar half under the taskbar is unusable and a
+        /// window forty pixels shorter than it could be is not.
+        /// </summary>
+        private const int VerticalChrome = 96;
+
+        /// <summary>How much of the display's width a window may take.</summary>
+        private const float SideFraction = 0.94f;
+
+        /// <summary>Below this the bottom bar's fifteen slots stop being clickable targets.</summary>
+        private const int SmallestUsableWidth = 960;
+
         public static float MasterVolume { get; private set; } = DefaultMasterVolume;
-        public static bool Fullscreen { get; private set; }
+
+        /// <summary>
+        /// Whether the game fills the screen. **Defaults to true, and that is a fix.**
+        ///
+        /// It defaulted to false, so `ApplyDisplayMode` put every first launch into a window at
+        /// `defaultScreenWidth` x `defaultScreenHeight`, which is 1920x1080. On the commonest
+        /// monitor there is that means a window exactly the size of the display: the title bar
+        /// above the top of the screen and the game's own bottom bar behind the taskbar. The
+        /// player's clock, speed controls and every category slot were under Windows' own
+        /// furniture on the first screen they ever saw, and the window could not be resized.
+        /// </summary>
+        public static bool Fullscreen { get; private set; } = true;
 
         /// <summary>
         /// Shortens or removes the opening sequence and any drift on the office camera. This is an
@@ -61,7 +95,7 @@ namespace ScalingLaws.Persistence
         public static void Reload()
         {
             MasterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MasterVolumeKey, DefaultMasterVolume));
-            Fullscreen = PlayerPrefs.GetInt(FullscreenKey, 0) == 1;
+            Fullscreen = PlayerPrefs.GetInt(FullscreenKey, 1) == 1;
             ReduceMotion = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
 
             // Defaults to the machine's own language on a first run, so somebody in Poland does not
@@ -149,6 +183,42 @@ namespace ScalingLaws.Persistence
         private static Language DetectLanguage() =>
             Application.systemLanguage == SystemLanguage.Polish ? Language.Polish : Language.English;
 
+        /// <summary>
+        /// The size of the windowed game on a display of the given size.
+        ///
+        /// **Setting the mode is not enough and that was the bug.** `Screen.fullScreenMode` changes
+        /// how the window is presented and leaves its resolution alone, so leaving fullscreen at
+        /// 1920x1080 produced a 1920x1080 window on a 1920x1080 desktop. A size has to be chosen.
+        ///
+        /// The largest 16:9 box that fits with the desktop's own furniture left clear. Sixteen by
+        /// nine because that is what the panel scales against, and a window of another shape gets
+        /// letterboxed by the scaler rather than showing more of anything.
+        ///
+        /// Pure and separate from <see cref="ApplyDisplayMode"/> so it can be tested: `Screen`
+        /// cannot be driven from a test, and the half worth testing is the arithmetic. Same split
+        /// as `KeyboardShortcuts.Resolve`.
+        /// </summary>
+        public static Vector2Int WindowedSize(int displayWidth, int displayHeight)
+        {
+            // Clamped before the arithmetic rather than after it. A display driver reporting
+            // something absurd would otherwise overflow the multiply below, and a float that does
+            // not fit an int converts to a value nothing here should be reasoning about.
+            var wide = Mathf.Clamp(displayWidth, 1, 32_000);
+            var tall = Mathf.Clamp(displayHeight, 1, 32_000);
+
+            var roomAcross = Mathf.FloorToInt(wide * SideFraction);
+            var roomDown = tall - VerticalChrome;
+
+            var width = Mathf.Min(roomAcross, Mathf.FloorToInt(roomDown * DesignAspect));
+
+            // The floor wins over the fit on a display too small for either. A window of six
+            // hundred pixels is not a smaller game, it is an unreadable one, and every display the
+            // game will meet is large enough for this to be moot.
+            width = Mathf.Clamp(width, SmallestUsableWidth, DesignWidth);
+
+            return new Vector2Int(width, Mathf.RoundToInt(width / DesignAspect));
+        }
+
         private static void ApplyDisplayMode()
         {
             // Changing the window while the editor or a batch run owns it does nothing useful and
@@ -158,7 +228,18 @@ namespace ScalingLaws.Persistence
                 return;
             }
 
-            Screen.fullScreenMode = Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            var display = Screen.currentResolution;
+
+            if (Fullscreen)
+            {
+                Screen.SetResolution(display.width, display.height, FullScreenMode.FullScreenWindow);
+
+                return;
+            }
+
+            var window = WindowedSize(display.width, display.height);
+
+            Screen.SetResolution(window.x, window.y, FullScreenMode.Windowed);
         }
     }
 }
