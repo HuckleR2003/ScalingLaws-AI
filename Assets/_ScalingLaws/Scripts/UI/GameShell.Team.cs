@@ -91,9 +91,9 @@ namespace ScalingLaws.UI
             var current = state.Staff.OfficeDefinition;
 
             var where = new Label(
-                $"LVL {current.Level}  ·  {current.DisplayName}  ·  "
-                + $"{state.Staff.SeatedHeadcount} of {current.Desks} desks  ·  "
-                + $"{UiFormat.Money(current.MonthlyRentUsd)} a month");
+                Loc.T("team.office_line", current.Level, current.DisplayName,
+                state.Staff.SeatedHeadcount, current.Desks,
+                UiFormat.Money(current.MonthlyRentUsd)));
 
             where.AddToClassList("office-now");
             offices.Add(where);
@@ -495,8 +495,7 @@ namespace ScalingLaws.UI
             card.Add(title);
 
             var body = new Label(
-                "Both routes take two to four days to come back, and both end in the inbox with a "
-                + "wage to agree. What differs is who answers.");
+                Loc.T("team.both_routes"));
 
             body.AddToClassList("notice__body");
             card.Add(body);

@@ -79,8 +79,7 @@ namespace ScalingLaws.UI
             title.AddToClassList("news__title");
             left.Add(title);
 
-            var strap = new Label("Everything that happened, and what somebody will sell you about "
-                + "what happens next.");
+            var strap = new Label(Loc.T("news.strap"));
 
             strap.AddToClassList("news__strap");
             left.Add(strap);
@@ -342,9 +341,8 @@ namespace ScalingLaws.UI
 
             if (desk.NeedsTwo && !hasFirst)
             {
-                var second = new Label($"And then {NewsCatalog.OutletName(desk.AlsoRequires)} on top "
-                    + $"of it, at {UiFormat.Money(IntelligenceService.MonthlyRetainerUsd(desk.AlsoRequires))} "
-                    + "a month.");
+                var second = new Label(Loc.T("news.also_requires", NewsCatalog.OutletName(desk.AlsoRequires),
+                    UiFormat.Money(IntelligenceService.MonthlyRetainerUsd(desk.AlsoRequires))));
 
                 second.AddToClassList("desk__second");
                 panel.Add(second);

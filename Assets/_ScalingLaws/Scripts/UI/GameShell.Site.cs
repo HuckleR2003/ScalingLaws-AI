@@ -69,8 +69,7 @@ namespace ScalingLaws.UI
                 pending.AddToClassList("site-stage__title");
                 stage.Add(pending);
 
-                var note = new Label("The room exists but the scene has not been rebuilt since it was "
-                    + "wired up. Run Scaling Laws, Rebuild scenes.");
+                var note = new Label(Loc.T("site.scene_stale"));
                 note.AddToClassList("site-stage__note");
                 stage.Add(note);
             }
@@ -85,8 +84,8 @@ namespace ScalingLaws.UI
                 overlay.Add(title);
 
                 var subtitle = new Label(
-                    $"{state.FounderName}, {WorldRegionCatalog.Get(state.HomeCountry).DisplayName}. "
-                    + "Everything the company owns is in this room.");
+                    Loc.T("site.founder_line", state.FounderName,
+                    WorldRegionCatalog.Get(state.HomeCountry).DisplayName));
                 subtitle.AddToClassList("page-subtitle");
                 overlay.Add(subtitle);
 
@@ -238,10 +237,8 @@ namespace ScalingLaws.UI
             var room = RoomCatalog.For(state.Staff.Office);
 
             var subtitle = new Label(
-                $"{state.Staff.Headcount} of {state.Staff.Desks} desks taken. "
-                + $"{decor.Placed.Count()} pieces on the floor, "
-                + $"{UiFormat.Money((long)decor.InvestedUsd)} spent on them. "
-                + "Only what is standing up counts.");
+                Loc.T("site.desks_and_decor", state.Staff.Headcount, state.Staff.Desks,
+                decor.Placed.Count(), UiFormat.Money((long)decor.InvestedUsd)));
 
             subtitle.AddToClassList("page-subtitle");
             panel.Add(subtitle);
@@ -256,9 +253,7 @@ namespace ScalingLaws.UI
             if (!room.AllowsFurniture)
             {
                 var closed = new Label(
-                    "There is no floor to spare here. The sofa, the bench, the rack and the stairs "
-                    + "are already touching, and anything else would be standing in the middle of "
-                    + "them. Rent a floor and the shop opens.");
+                    Loc.T("site.no_floor_spare"));
 
                 closed.AddToClassList("decor__empty");
                 panel.Add(closed);

@@ -374,8 +374,8 @@ namespace ScalingLaws.UI
             card.Add(body);
 
             var size = new Label(
-                $"{UiFormat.Petaflops(definition.Petaflops)}  "
-                + $"about {UiFormat.Count(HostingCatalog.CoversAccounts(definition.Petaflops))} accounts");
+                Loc.T("compute.pf_accounts", UiFormat.Petaflops(definition.Petaflops),
+                UiFormat.Count(HostingCatalog.CoversAccounts(definition.Petaflops))));
 
             size.AddToClassList("pack__size");
             body.Add(size);
@@ -384,7 +384,7 @@ namespace ScalingLaws.UI
             pitch.AddToClassList("pack__pitch");
             body.Add(pitch);
 
-            var price = new Label($"{UiFormat.Money(definition.MonthlyCostUsd)} a month each");
+            var price = new Label(Loc.T("compute.a_month_each", UiFormat.Money(definition.MonthlyCostUsd)));
             price.AddToClassList("pack__price");
             body.Add(price);
 
@@ -410,8 +410,8 @@ namespace ScalingLaws.UI
             if (held > 0)
             {
                 var total = new Label(
-                    $"{UiFormat.Petaflops(definition.Petaflops * held)} for "
-                    + $"{UiFormat.Money(definition.MonthlyCostUsd * held)} a month");
+                    Loc.T("compute.held_for", UiFormat.Petaflops(definition.Petaflops * held),
+                    UiFormat.Money(definition.MonthlyCostUsd * held)));
 
                 total.AddToClassList("pack__total");
                 body.Add(total);
@@ -461,8 +461,9 @@ namespace ScalingLaws.UI
 
             // Power is the one that can stop the fleet rather than only cost money.
             var power = new Label(
-                $"Drawing {profile.PowerDrawKilowatts:N0} kW of {profile.PowerCapacityKilowatts:N0} kW available."
-                + (profile.IsOverPowerBudget ? "  OVER BUDGET: capacity is being wasted." : string.Empty));
+                Loc.T("compute.power_draw", UiFormat.Number(profile.PowerDrawKilowatts, 0),
+                    UiFormat.Number(profile.PowerCapacityKilowatts, 0))
+                + (profile.IsOverPowerBudget ? Loc.T("compute.over_budget") : string.Empty));
 
             power.AddToClassList("fleet-bill__power");
             power.EnableInClassList("fleet-bill__power--over", profile.IsOverPowerBudget);

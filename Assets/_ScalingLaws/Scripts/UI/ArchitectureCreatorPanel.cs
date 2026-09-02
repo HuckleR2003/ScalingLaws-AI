@@ -851,8 +851,8 @@ namespace ScalingLaws.UI
                 running.Add(name);
 
                 var progress = new Label(
-                    $"{UiFormat.Percent(project.Progress, 0)}  ·  day {project.DaysCompleted} "
-                    + $"of {project.DurationDays}");
+                    Loc.T("arch.progress_day", UiFormat.Percent(project.Progress, 0),
+                    project.DaysCompleted, project.DurationDays));
 
                 progress.AddToClassList("afam__stats");
                 running.Add(progress);

@@ -202,8 +202,8 @@ namespace ScalingLaws.UI
 
             if (breakdown == null || breakdown.Types.Count == 0)
             {
-                headline.text = "NO MARKET YET";
-                caption.text = "Nobody is serving anyone.";
+                headline.text = Loc.T("demo.no_market");
+                caption.text = Loc.T("demo.nobody_served");
                 pie.Set(Array.Empty<double>(), 1.0);
                 return;
             }
@@ -230,8 +230,8 @@ namespace ScalingLaws.UI
             {
                 pie.Set(standing.OwnerUsers, 0.0);
                 headline.text = UiFormat.Count(standing.TotalUsers);
-                caption.text = $"users in {ModelTypeCatalog.Get(selected).DisplayName.ToLowerInvariant()}. "
-                    + $"Led by {standing.LeaderName} at {UiFormat.Percent(standing.ShareOf(standing.LeaderIndex))}.";
+                caption.text = Loc.T("demo.users_led_by", ModelTypeCatalog.Get(selected).DisplayName.ToLowerInvariant(),
+                    standing.LeaderName, UiFormat.Percent(standing.ShareOf(standing.LeaderIndex)));
             }
 
             foreach (var standing in breakdown.Types)

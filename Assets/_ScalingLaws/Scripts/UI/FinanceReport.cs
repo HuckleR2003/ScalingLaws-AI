@@ -190,7 +190,7 @@ namespace ScalingLaws.UI
             if (recorded.Count == 0)
             {
                 headline.text = "NOTHING RECORDED YET";
-                caption.text = "The books start the first day the company spends or earns anything.";
+                caption.text = Loc.T("finance.books_start");
                 chart.Set(Array.Empty<long>(), -1);
                 return;
             }

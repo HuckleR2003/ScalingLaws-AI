@@ -124,8 +124,7 @@ namespace ScalingLaws.UI
             freshTitle.AddToClassList("door__title");
             fresh.Add(freshTitle);
 
-            var freshNote = new Label("Design a training run from nothing. Months, and the biggest "
-                + "bill the company pays.");
+            var freshNote = new Label(Loc.T("model.design_run"));
 
             freshNote.AddToClassList("door__note");
             fresh.Add(freshNote);
@@ -367,8 +366,8 @@ namespace ScalingLaws.UI
             name.Add(title);
 
             var under = new Label(
-                $"{ModelTypeCatalog.Get(model.Type).DisplayName}  ·  capability "
-                + $"{UiFormat.Number(model.Capability, 1)}  ·  {model.DaysOnSale} days on sale");
+                Loc.T("model.row_line", ModelTypeCatalog.Get(model.Type).DisplayName,
+                UiFormat.Number(model.Capability, 1), model.DaysOnSale));
 
             under.AddToClassList("mrow__under");
             name.Add(under);

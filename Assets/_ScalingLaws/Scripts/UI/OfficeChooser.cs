@@ -37,7 +37,7 @@ namespace ScalingLaws.UI
         {
             this.state = state;
             this.tryMove = tryMove;
-            this.tryBuy = tryBuy ?? ((_, _) => "Buying is not wired up.");
+            this.tryBuy = tryBuy ?? ((_, _) => Loc.T("offices.buy_unwired"));
             this.closed = closed;
 
             Root = new VisualElement();
@@ -82,9 +82,8 @@ namespace ScalingLaws.UI
             title.AddToClassList("offices__title");
             left.Add(title);
 
-            var strap = new Label(
-                $"{company.Staff.Headcount} of {company.Staff.OfficeDefinition.Desks} desks taken. "
-                + "Rent is paid whether or not they are full, and desks are what caps hiring.");
+            var strap = new Label(Loc.T("offices.strap",
+                company.Staff.Headcount, company.Staff.OfficeDefinition.Desks));
 
             strap.AddToClassList("offices__strap");
             left.Add(strap);
@@ -189,13 +188,10 @@ namespace ScalingLaws.UI
 
             var saving = OfficeCatalog.FurnishedPackListUsd - OfficeCatalog.FurnishedPackUsd;
 
-            var note = new Label(
-                $"{UiFormat.Money(OfficeCatalog.FurnishedPackUsd)} on top of the fit-out. An espresso "
-                + "bar, a sofa, a shelf, a whiteboard and two plants, standing up on the day you "
-                + $"move in. Bought one at a time they come to "
-                + $"{UiFormat.Money((long)OfficeCatalog.FurnishedPackListUsd)}, so this saves "
-                + $"{UiFormat.Money((long)saving)} for letting somebody else choose. No desks: "
-                + "those are what caps hiring and they stay a decision.");
+            var note = new Label(Loc.T("offices.furnish_note",
+                UiFormat.Money(OfficeCatalog.FurnishedPackUsd),
+                UiFormat.Money((long)OfficeCatalog.FurnishedPackListUsd),
+                UiFormat.Money((long)saving)));
 
             note.AddToClassList("offices__furnishnote");
             block.Add(note);
@@ -227,7 +223,9 @@ namespace ScalingLaws.UI
             var body = new VisualElement();
             body.AddToClassList("office-row__body");
 
-            var kicker = new Label(here ? $"LVL {place.Level}   ·   YOU ARE HERE" : $"LVL {place.Level}");
+            var kicker = new Label(here
+                ? Loc.T("offices.level_here", place.Level)
+                : Loc.T("offices.level", place.Level));
             kicker.AddToClassList("office-row__kicker");
             kicker.EnableInClassList("office-row__kicker--here", here);
             body.Add(kicker);
@@ -246,7 +244,7 @@ namespace ScalingLaws.UI
 
             figures.Add(Figure(Loc.T("offices.rent"), owned
                 ? Loc.T("offices.owned")
-                : $"{UiFormat.Money(place.MonthlyRentUsd)} / mo"));
+                : Loc.T("offices.per_month", UiFormat.Money(place.MonthlyRentUsd))));
 
             if (place.CanBeBought)
             {
@@ -325,7 +323,7 @@ namespace ScalingLaws.UI
 
             if (!openYet)
             {
-                var blocked = new Label($"Not available until {place.EarliestDate}.");
+                var blocked = new Label(Loc.T("offices.not_until", place.EarliestDate));
                 blocked.AddToClassList("office-row__blocked");
                 return blocked;
             }
@@ -347,7 +345,7 @@ namespace ScalingLaws.UI
             else
             {
                 var staying = new Label(
-                    $"{UiFormat.Money(place.DailyRentUsd)} a day, whatever happens.");
+                    Loc.T("offices.a_day", UiFormat.Money(place.DailyRentUsd)));
 
                 staying.AddToClassList("office-row__here");
                 row.Add(staying);
@@ -385,7 +383,7 @@ namespace ScalingLaws.UI
 
             if (!canAfford)
             {
-                buy.text = $"NEEDS {UiFormat.Money(owed)} TO BUY";
+                buy.text = Loc.T("offices.needs_to_buy", UiFormat.Money(owed));
             }
 
             return buy;
@@ -416,7 +414,7 @@ namespace ScalingLaws.UI
                 // The kicker already says it. This line says what it costs to stay, which is the
                 // number the other rows are being compared against.
                 var label = new Label(
-                    $"{UiFormat.Money(place.DailyRentUsd)} a day, whatever happens.");
+                    Loc.T("offices.a_day", UiFormat.Money(place.DailyRentUsd)));
 
                 label.AddToClassList("office-row__here");
                 return label;
@@ -424,7 +422,7 @@ namespace ScalingLaws.UI
 
             if (!openYet)
             {
-                var label = new Label($"Not available until {place.EarliestDate}.");
+                var label = new Label(Loc.T("offices.not_until", place.EarliestDate));
                 label.AddToClassList("office-row__blocked");
                 return label;
             }
@@ -437,7 +435,7 @@ namespace ScalingLaws.UI
             {
                 text = isArmed
                     ? Loc.T("offices.confirm_move")
-                    : $"MOVE HERE   {UiFormat.Money(bill)} TO FIT OUT"
+                    : Loc.T("offices.move_here", UiFormat.Money(bill))
             };
 
             move.AddToClassList("office-row__move");
@@ -447,8 +445,8 @@ namespace ScalingLaws.UI
             if (!affordable)
             {
                 move.text = place.RequiredCashUsd > company.CashUsd
-                    ? $"NEEDS {UiFormat.Money(place.RequiredCashUsd)} IN THE BANK"
-                    : $"NEEDS {UiFormat.Money(bill)} TO FIT OUT";
+                    ? Loc.T("offices.needs_in_bank", UiFormat.Money(place.RequiredCashUsd))
+                    : Loc.T("offices.needs_fit_out", UiFormat.Money(bill));
             }
 
             return move;

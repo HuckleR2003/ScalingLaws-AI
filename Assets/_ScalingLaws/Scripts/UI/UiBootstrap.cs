@@ -1,4 +1,5 @@
 using System;
+using ScalingLaws.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -173,7 +174,7 @@ namespace ScalingLaws.UI
                 root.style.unityFont = new StyleFont(font);
             }
 
-            var heading = new Label($"{where} could not be built");
+            var heading = new Label(Loc.T("boot.could_not_build", where));
             heading.style.fontSize = 24;
             heading.style.unityFontStyleAndWeight = FontStyle.Bold;
             heading.style.color = Color.white;

@@ -285,8 +285,8 @@ namespace ScalingLaws.UI
             }
 
             var standing = new Label(
-                $"Scores {UiFormat.Number(product.Capability)} against a frontier of "
-                + $"{UiFormat.Number(product.Frontier)}. {product.Freshness}.");
+                Loc.T("manage.scores_against", UiFormat.Number(product.Capability),
+                UiFormat.Number(product.Frontier), product.Freshness));
 
             standing.AddToClassList("mg-hero__line");
             left.Add(standing);
@@ -362,8 +362,8 @@ namespace ScalingLaws.UI
             strip.Add(text);
 
             var detail = new Label(
-                $"{UiFormat.Number(quality.ResponseMilliseconds, 0)} ms typical response  ·  "
-                + $"{UiFormat.Percent(quality.Utilisation, 0)} of the fleet in use");
+                Loc.T("manage.response_line", UiFormat.Number(quality.ResponseMilliseconds, 0),
+                UiFormat.Percent(quality.Utilisation, 0)));
 
             detail.AddToClassList("mg-status__detail");
             strip.Add(detail);
@@ -423,9 +423,7 @@ namespace ScalingLaws.UI
 
             panel.Add(row);
 
-            var note = new Label("Price moves standing both ways and it moves it in log space, so "
-                + "halving is liked about as much as doubling is resented. The lever is on the "
-                + "business screen.");
+            var note = new Label(Loc.T("manage.price_note"));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
@@ -593,8 +591,7 @@ namespace ScalingLaws.UI
                 heading.AddToClassList("panel__heading");
                 panel.Add(heading);
 
-                var line = new Label("The archive fills the first time a model reaches the market. "
-                    + "Runs still on the shelf are not in it, because they were never on sale.");
+                var line = new Label(Loc.T("manage.archive_empty"));
 
                 line.AddToClassList("field__hint");
                 panel.Add(line);
@@ -827,15 +824,14 @@ namespace ScalingLaws.UI
                 var panel = new VisualElement();
                 panel.AddToClassList("panel");
 
-                var heading = new Label("ON SALE NOW: " + flagship.Name.ToUpperInvariant());
+                var heading = new Label(Loc.T("manage.on_sale_now", flagship.Name.ToUpperInvariant()));
                 heading.AddToClassList("panel__heading");
                 panel.Add(heading);
 
                 panel.Add(ModelControlBar.Build(record, () => Shutdown(flagship), openUpgrade,
                     ReferenceEquals(armed, flagship)));
 
-                var note = new Label("Withdrawing it is permanent. The line stops competing, and "
-                    + "whatever fleet it was using goes back to everything else.");
+                var note = new Label(Loc.T("manage.withdraw_note"));
 
                 note.AddToClassList("field__hint");
                 panel.Add(note);
@@ -870,9 +866,7 @@ namespace ScalingLaws.UI
             panel.Add(UiParts.StatLine("Fans", UiFormat.Count(state.Fans)));
             panel.Add(UiParts.StatLine("Campaigns running", state.Campaigns.Count.ToString()));
 
-            var note = new Label($"Today the biggest mover was {state.LastStandingChange.Headline}. "
-                + "Reputation is an opinion and fans are a stock: a bad month can halve the first and "
-                + "barely touch the second.");
+            var note = new Label(Loc.T("manage.biggest_mover", state.LastStandingChange.Headline));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
@@ -1030,8 +1024,7 @@ namespace ScalingLaws.UI
             }
 
             var unserved = new Label(
-                $"{UiFormat.Percent(breakdown.UnservedShare, 0)} of the addressable market is using "
-                + "nothing at all. That is room to grow into rather than share to take off somebody.");
+                Loc.T("manage.unserved", UiFormat.Percent(breakdown.UnservedShare, 0)));
 
             unserved.AddToClassList("field__hint");
             panel.Add(unserved);

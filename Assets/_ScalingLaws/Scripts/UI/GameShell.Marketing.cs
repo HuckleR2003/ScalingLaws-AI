@@ -100,8 +100,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             }
 
             var note = new Label(
-                "Being used counts as being known. A company people already have on the service does "
-                + "not become anonymous, so this floor rises with the audience you hold.");
+                Loc.T("marketing.floor_note"));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
@@ -256,8 +255,8 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                 if (draft.IsOpenEnded)
                 {
                     var why = new Label(
-                        $"An open contract costs {MarketingCatalog.OpenEndedSurcharge:P0} of the "
-                        + "committed rate. Nobody sells one at the price of a booked one.");
+                        Loc.T("marketing.open_contract",
+                        UiFormat.Percent(MarketingCatalog.OpenEndedSurcharge, 0)));
 
                     why.AddToClassList("mkbook__why");
                     panel.Add(why);
@@ -317,8 +316,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
 
             if (state.Campaigns.Count == 0)
             {
-                var none = new Label("Nothing booked. Only the people already using the service have "
-                    + "heard of you.");
+                var none = new Label(Loc.T("marketing.nothing_booked"));
 
                 none.AddToClassList("field__hint");
                 panel.Add(none);
@@ -343,7 +341,7 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                 what.AddToClassList("run-row__what");
                 words.Add(what);
 
-                var who = new Label($"to {AudienceCatalog.Get(campaign.Target).DisplayName}");
+                var who = new Label(Loc.T("marketing.to_audience", AudienceCatalog.Get(campaign.Target).DisplayName));
                 who.AddToClassList("run-row__who");
                 words.Add(who);
 

@@ -161,7 +161,8 @@ namespace ScalingLaws.UI
                     right.style.flexDirection = FlexDirection.Row;
                     right.style.alignItems = Align.Center;
 
-                    var worth = new Label($"{UiFormat.Money(residual)} of {UiFormat.Money(paid)}  ({UiFormat.Percent(kept, 0)})");
+                    var worth = new Label(Loc.T("money.residual_of_paid", UiFormat.Money(residual), UiFormat.Money(paid),
+                UiFormat.Percent(kept, 0)));
                     worth.AddToClassList("readout__value");
                     worth.AddToClassList(kept < 0.4 ? "readout__value--bad" : "readout__value--good");
                     worth.style.marginRight = 10;
@@ -305,8 +306,8 @@ namespace ScalingLaws.UI
             if (policy.Model == PricingModel.PayPerToken)
             {
                 var priceLabel = new Label(
-                    $"Your rate: x{UiFormat.Number(policy.PaidPriceMultiplier, 2)} of market "
-                    + $"({UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))} per billion)");
+                    Loc.T("money.your_rate", UiFormat.Number(policy.PaidPriceMultiplier, 2),
+                    UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))));
                 priceLabel.AddToClassList("field__label");
                 priceLabel.style.marginTop = 12;
                 pricing.Add(priceLabel);
@@ -325,8 +326,8 @@ namespace ScalingLaws.UI
             else if (policy.Model == PricingModel.Subscription)
             {
                 var subLabel = new Label(
-                    $"Monthly fee: {UiFormat.Money((long)policy.SubscriptionPriceUsdPerMonth)} "
-                    + $"(works out at {UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))} per billion tokens)");
+                    Loc.T("money.monthly_fee", UiFormat.Money((long)policy.SubscriptionPriceUsdPerMonth),
+                    UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))));
                 subLabel.AddToClassList("field__label");
                 subLabel.style.marginTop = 12;
                 pricing.Add(subLabel);
@@ -358,7 +359,7 @@ namespace ScalingLaws.UI
             free.Add(freeHeading);
 
             var freeLabel = new Label(
-                $"{UiFormat.Count(policy.FreeTierTokensPerUserPerDay)} tokens per free account per day");
+                Loc.T("money.free_tokens", UiFormat.Count(policy.FreeTierTokensPerUserPerDay)));
             freeLabel.AddToClassList("field__label");
             free.Add(freeLabel);
 
@@ -542,12 +543,14 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
                 card.Add(title);
 
                 var scoreLine = new Label(
-                    $"SHIPS AT {UiFormat.Number(shelved.CapabilityIfReleasedOn(state.Date))}  (was {UiFormat.Number(shelved.Capability)})");
+                    Loc.T("money.ships_at", UiFormat.Number(shelved.CapabilityIfReleasedOn(state.Date)),
+                UiFormat.Number(shelved.Capability)));
                 scoreLine.AddToClassList("card__line");
                 card.Add(scoreLine);
 
                 var waitLine = new Label(
-                    $"{shelved.DaysOnShelf(state.Date)} days on the shelf, frontier {UiFormat.Number(simulation.Market.FrontierCapability)}");
+                    Loc.T("money.days_on_shelf", shelved.DaysOnShelf(state.Date),
+                UiFormat.Number(simulation.Market.FrontierCapability)));
                 waitLine.AddToClassList("card__line");
                 card.Add(waitLine);
 

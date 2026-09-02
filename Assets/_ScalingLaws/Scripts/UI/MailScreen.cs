@@ -419,7 +419,7 @@ namespace ScalingLaws.UI
             figure.AddToClassList("mail-amount__value");
             block.Add(figure);
 
-            var against = new Label($"{UiFormat.Money(simulation.State.CashUsd)} in the account");
+            var against = new Label(Loc.T("mail.in_account", UiFormat.Money(simulation.State.CashUsd)));
             against.AddToClassList("mail-amount__foot");
             block.Add(against);
 
@@ -553,9 +553,9 @@ namespace ScalingLaws.UI
             panel.Add(read);
 
             var worth = new Label(
-                $"Worth ${offerHourly + Negotiation.HourlyValueOfBonus((long)offerBonus):N2} an hour "
-                + $"to them, or {UiFormat.Money((long)Math.Round(offerHourly * PositionCatalog.PaidHoursPerYear))} "
-                + "a year plus the bonus.");
+                Loc.T("mail.worth_hourly",
+                UiFormat.Number(offerHourly + Negotiation.HourlyValueOfBonus((long)offerBonus), 2),
+                UiFormat.Money((long)Math.Round(offerHourly * PositionCatalog.PaidHoursPerYear))));
 
             worth.AddToClassList("haggle__worth");
             panel.Add(worth);

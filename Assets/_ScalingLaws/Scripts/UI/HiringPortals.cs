@@ -103,9 +103,7 @@ namespace ScalingLaws.UI
             page.Add(title);
 
             var strap = new Label(
-                "Three ways to find somebody, and none of them is best. Contract work is cheap and "
-                + "shallow, the register is slow and free, and a specialist search is expensive and "
-                + "finds exactly who you asked for.");
+                Loc.T("hiring.three_ways"));
 
             strap.AddToClassList("hchoose__strap");
             page.Add(strap);
@@ -200,7 +198,7 @@ namespace ScalingLaws.UI
             var bar = new VisualElement();
             bar.AddToClassList("ithand__bar");
 
-            var count = new Label($"{used} of {seats} contracts running");
+            var count = new Label(Loc.T("hiring.contracts_running", used, seats));
             count.AddToClassList("ithand__count");
             bar.Add(count);
 
@@ -212,16 +210,15 @@ namespace ScalingLaws.UI
                     refresh();
                 })
                 {
-                    text = $"BECOME A PARTNER   {UiFormat.Money(HiringChannels.PartnershipCostUsd)}"
+                    text = Loc.T("hiring.become_partner", UiFormat.Money(HiringChannels.PartnershipCostUsd))
                 };
 
                 partner.AddToClassList("ithand__partner");
                 bar.Add(partner);
 
                 var why = new Label(
-                    $"Partners may run {HiringChannels.PartneredRemoteSeats} contracts instead of "
-                    + $"{HiringChannels.FreeRemoteSeats}. Nothing else changes: remote people are "
-                    + "still remote people.");
+                    Loc.T("hiring.partner_note", HiringChannels.PartneredRemoteSeats,
+                    HiringChannels.FreeRemoteSeats));
 
                 why.AddToClassList("ithand__why");
                 page.Add(bar);
@@ -257,16 +254,13 @@ namespace ScalingLaws.UI
             // The whole character of this screen is that it was built by somebody who had to,
             // twenty years ago, and has been maintained by nobody since.
             var masthead = new Label(
-                "REGIONAL EMPLOYMENT REGISTER  //  DEPARTMENT OF LABOUR AND SOCIAL AFFAIRS\n"
-                + "SECTION IV - PLACEMENT SERVICES FOR TECHNICAL OCCUPATIONS");
+                Loc.T("hiring.register_header"));
 
             masthead.AddToClassList("register__masthead");
             page.Add(masthead);
 
             var notice = new Label(
-                "NOTICE: Candidate assessments are self-declared under Form E-11/b and have not "
-                + "been independently verified. The Department accepts no liability arising from "
-                + "placement. Processing times of 2-4 working days apply.");
+                Loc.T("hiring.register_notice"));
 
             notice.AddToClassList("register__notice");
             page.Add(notice);
@@ -276,8 +270,7 @@ namespace ScalingLaws.UI
             page.Add(Results(HireSource.Agency));
 
             var footer = new Label(
-                "This service is provided free of charge. Standard wages apply. "
-                + "Last updated: 14/03/2009.");
+                Loc.T("hiring.register_footer"));
 
             footer.AddToClassList("register__footer");
             page.Add(footer);
@@ -316,9 +309,9 @@ namespace ScalingLaws.UI
             band.Add(slider);
 
             var reading = new Label(
-                $"{minimumLevel}  ·  arrives at about {(int)Math.Round(minimumLevel * channel.QualityMultiplier)} "
-                + $"after the specialist uplift  ·  fee "
-                + $"{UiFormat.Money(CompanySimulation.SpecialistFeeUsd(chosen, minimumLevel))}");
+                Loc.T("hiring.specialist_line", minimumLevel,
+                (int)Math.Round(minimumLevel * channel.QualityMultiplier),
+                UiFormat.Money(CompanySimulation.SpecialistFeeUsd(chosen, minimumLevel))));
 
             reading.AddToClassList("getadmin__reading");
             band.Add(reading);
@@ -346,7 +339,7 @@ namespace ScalingLaws.UI
                 problem = string.Empty;
                 refresh();
             })
-            { text = $"COMMISSION THE SEARCH   {UiFormat.Money(fee)}" };
+            { text = Loc.T("hiring.commission_search", UiFormat.Money(fee)) };
 
             commission.AddToClassList("getadmin__go");
             commission.SetEnabled(company.CashUsd >= fee);
@@ -483,8 +476,8 @@ namespace ScalingLaws.UI
             line.AddToClassList("candidate__line");
             text.Add(line);
 
-            var asking = new Label($"asking ${candidate.AskingHourlyUsd:N2} an hour "
-                + $"({UiFormat.Money(candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd))} a year)");
+            var asking = new Label(Loc.T("hiring.asking_hourly", UiFormat.Number(candidate.AskingHourlyUsd, 2),
+                UiFormat.Money(candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd))));
 
             asking.AddToClassList("candidate__asking");
             text.Add(asking);

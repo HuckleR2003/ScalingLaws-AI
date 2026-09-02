@@ -244,8 +244,7 @@ namespace ScalingLaws.UI
             if (active.IsWaitingForCompute)
             {
                 var why = new Label(
-                    "Research shares the fleet with training, upgrades and family programmes. Free "
-                    + "some capacity or rent more and this finishes on its own.");
+                    Loc.T("research.shares_fleet"));
 
                 why.AddToClassList("researching__why");
                 text.Add(why);
@@ -318,7 +317,7 @@ namespace ScalingLaws.UI
 
             if (state.ResearchFunding == ResearchFundingMode.Fixed)
             {
-                var label = new Label($"{UiFormat.Money(state.ResearchMonthlyUsd)} a month");
+                var label = new Label(Loc.T("research.a_month", UiFormat.Money(state.ResearchMonthlyUsd)));
                 label.AddToClassList("field__label");
                 panel.Add(label);
 
@@ -346,9 +345,9 @@ namespace ScalingLaws.UI
                 var revenue = simulation.MonthlyRevenueUsd();
 
                 var label = new Label(
-                    $"{UiFormat.Percent(state.ResearchRevenueShare, 0)} of "
-                    + $"{UiFormat.Money(revenue)} a month, which is "
-                    + $"{UiFormat.Money((long)Math.Round(revenue * state.ResearchRevenueShare))}");
+                    Loc.T("research.share_of", UiFormat.Percent(state.ResearchRevenueShare, 0),
+                    UiFormat.Money(revenue),
+                    UiFormat.Money((long)Math.Round(revenue * state.ResearchRevenueShare))));
 
                 label.AddToClassList("field__label");
                 panel.Add(label);
@@ -483,8 +482,8 @@ namespace ScalingLaws.UI
             researchCard.Add(cost);
 
             var have = new Label(
-                $"You have {simulation.State.ResearchPoints:N0} points and "
-                + $"{UiFormat.Money(simulation.State.CashUsd)}.");
+                Loc.T("research.you_have", UiFormat.Count(simulation.State.ResearchPoints),
+                UiFormat.Money(simulation.State.CashUsd)));
 
             have.AddToClassList("rcard__have");
             researchCard.Add(have);
@@ -522,7 +521,7 @@ namespace ScalingLaws.UI
                     Show(Screen.Site);
                 })
                 {
-                    text = $"BEGIN  ·  {points:N0} POINTS AND {UiFormat.Money(cash)}"
+                    text = Loc.T("research.begin_cost", UiFormat.Count(points), UiFormat.Money(cash))
                 };
 
                 start.AddToClassList("button");

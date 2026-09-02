@@ -739,7 +739,7 @@ namespace ScalingLaws.UI
             if (!commercialise)
             {
                 var note = new Label(
-                    "Nothing else to set. The release screen will be waiting when you want it.");
+                    Loc.T("create.nothing_else"));
                 note.AddToClassList("field__hint");
                 page.Add(note);
                 return page;
@@ -821,9 +821,7 @@ namespace ScalingLaws.UI
                 }));
 
             var paidNote = new Label(
-                "A subscription ignores the market rate, which protects a good position and traps a "
-                + "bad one. Price it high and fewer people ever sign up; price it low and you are "
-                + "serving tokens at a loss the moment the frontier moves.");
+                Loc.T("create.subscription_note"));
             paidNote.AddToClassList("field__hint");
             paid.Add(paidNote);
             page.Add(paid);
@@ -1146,12 +1144,10 @@ namespace ScalingLaws.UI
             beltProfile.EnableInClassList("belt-block__badge--bad",
                 profile.IsEstimated && profile.Profile == ShapeProfile.Oversized);
 
-            tokenBytesLabel.text = $"About {TokenBytes(blueprint.TrainingTokensBillions)} of text, "
-                + "at roughly four bytes a token.";
+            tokenBytesLabel.text = Loc.T("create.text_bytes", TokenBytes(blueprint.TrainingTokensBillions));
 
-            memoryLabel.text = $"Estimated memory need: "
-                + $"{UiFormat.Number(projection.MemoryRequiredGigabytes, 0)} GB of "
-                + $"{UiFormat.Number(projection.MemoryAvailableGigabytes, 0)} GB available";
+            memoryLabel.text = Loc.T("create.memory_need", UiFormat.Number(projection.MemoryRequiredGigabytes, 0),
+                UiFormat.Number(projection.MemoryAvailableGigabytes, 0));
             memoryLabel.EnableInClassList("scale-memory--over", !profile.Fits);
 
             scaleReadout.Clear();
@@ -1319,8 +1315,7 @@ namespace ScalingLaws.UI
 
             panel.Add(row);
 
-            var note = new Label("Narrower numbers move more of them through the same cluster. What "
-                + "that costs is not a worse model, it is a less predictable one.");
+            var note = new Label(Loc.T("create.precision_note"));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
@@ -1351,8 +1346,7 @@ namespace ScalingLaws.UI
 
             panel.Add(row);
 
-            var note = new Label("Depth is sequential and width is parallel, so the same parameters "
-                + "arranged deep think better and cost more per token, every day, forever.");
+            var note = new Label(Loc.T("create.depth_note"));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
@@ -1484,9 +1478,7 @@ namespace ScalingLaws.UI
 
             panel.Add(row);
 
-            var note = new Label("It lands in both terms at once: fewer tokens, worth more each. "
-                + "Whether that pays depends on whether the run had tokens to spare, which the belt "
-                + "on the last stage already answered.");
+            var note = new Label(Loc.T("create.quality_note"));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
@@ -1539,9 +1531,8 @@ namespace ScalingLaws.UI
             else if (!blend.IsSufficient)
             {
                 var short_ = new Label(
-                    $"This mix holds {UiFormat.Billions(blend.AvailableTokensBillions)} and the run "
-                    + $"wants {UiFormat.Billions(blueprint.TrainingTokensBillions)}. Add a source or "
-                    + "train on fewer tokens.");
+                    Loc.T("create.mix_holds", UiFormat.Billions(blend.AvailableTokensBillions),
+                    UiFormat.Billions(blueprint.TrainingTokensBillions)));
 
                 short_.AddToClassList("scale-note");
                 short_.AddToClassList("scale-note--bad");
@@ -1549,7 +1540,7 @@ namespace ScalingLaws.UI
             }
             else
             {
-                var ok = new Label($"{blend.SourceCount} sources, enough for this run.");
+                var ok = new Label(Loc.T("create.sources_enough", blend.SourceCount));
                 ok.AddToClassList("scale-note");
                 dataReadout.Add(ok);
             }
@@ -1583,9 +1574,7 @@ namespace ScalingLaws.UI
             panel.Add(spendCaption);
 
             var hint = new Label(
-                "Rented capacity is contracted in petaflops, not in boxes, so the bill does not move on "
-                + "its own when the clouds change generation. It never ages, and it bills every day it "
-                + "is held whether or not it is doing anything.");
+                Loc.T("create.rent_note"));
             hint.AddToClassList("field__hint");
             panel.Add(hint);
 
@@ -1810,10 +1799,7 @@ namespace ScalingLaws.UI
             panel.Add(Row("Added to the bill", UiFormat.Money(plan.ExtraCostUsd)));
 
             var note = new Label(
-                "Modules stack on what is left rather than adding up, so two at half strength are "
-                + "not one at full. Nothing here can reach certainty, and the protection travels "
-                + "with this model rather than with the company: researching a tier next year does "
-                + "not harden a model shipped today.");
+                Loc.T("create.safety_note"));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
@@ -2153,10 +2139,10 @@ namespace ScalingLaws.UI
             parameterLabel.text = $"Parameters: {UiFormat.Billions(blueprint.ParameterCountBillions)}";
             tokenLabel.text = $"Training tokens: {UiFormat.Billions(blueprint.TrainingTokensBillions)}";
             rentedLabel.text =
-                $"Rented capacity: {UiFormat.Petaflops(rentedSlider.value)}  "
-                + $"({profile.RentedAcceleratorCount:N0} units of today's part, "
-                + $"{UiFormat.Petaflops(profile.EffectivePetaflops)} usable, "
-                + $"{UiFormat.Money(SimUnitsToDaily(profile))}/day)";
+                Loc.T("create.rented_line", UiFormat.Petaflops(rentedSlider.value),
+                UiFormat.Count(profile.RentedAcceleratorCount),
+                UiFormat.Petaflops(profile.EffectivePetaflops),
+                UiFormat.Money(SimUnitsToDaily(profile)));
 
             RefreshSpend(SimUnitsToDaily(profile));
 
@@ -2225,9 +2211,8 @@ namespace ScalingLaws.UI
             if (running != null)
             {
                 var elapsed = running.DaysElapsed(simulation.State.Date);
-                verdict.text = $"{running.Blueprint.Name} is in flight: "
-                    + $"{UiFormat.Percent(running.Progress, 0)} done after {elapsed} days. "
-                    + "One at a time.";
+                verdict.text = Loc.T("create.in_flight", running.Blueprint.Name,
+                    UiFormat.Percent(running.Progress, 0), elapsed);
 
                 abandonButton.text = abandonArmed
                     ? "CONFIRM, THE RUN IS LOST"
@@ -2473,7 +2458,7 @@ namespace ScalingLaws.UI
 
             unblockButton.style.display = DisplayStyle.Flex;
             unblockButton.text =
-                $"RENT {UiFormat.Petaflops(needed)} TO MAKE THIS POSSIBLE  ({UiFormat.Money(daily)} A DAY)";
+                Loc.T("create.rent_to_enable", UiFormat.Petaflops(needed), UiFormat.Money(daily));
 
             unblockCapacity = needed;
         }

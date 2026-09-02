@@ -1338,7 +1338,7 @@ namespace ScalingLaws.UI
 
             var custom = new Button(() => Choose(CompanyArchetype.Custom))
             {
-                text = "CREATE YOUR OWN COMPANY"
+                text = Loc.T("menu.create_company")
             };
             custom.AddToClassList("lab-banner");
             custom.EnableInClassList("lab-banner--on",

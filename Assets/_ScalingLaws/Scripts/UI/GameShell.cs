@@ -2005,8 +2005,7 @@ namespace ScalingLaws.UI
             else
             {
                 var nothing = new Label(
-                    "Nothing has happened to them yet that anybody outside the company would know "
-                    + "about.");
+                    Loc.T("labs.nothing_known"));
 
                 nothing.AddToClassList("dossier__story");
                 labCard.Add(nothing);
@@ -2145,8 +2144,8 @@ namespace ScalingLaws.UI
 
             // The caption sits on the bar rather than above it, because they are one object: the
             // sentence is what the bar is measuring.
-            var status = new Label($"Inspection and clarification underway...   {action.DaysLeft} "
-                + (action.DaysLeft == 1 ? "day left" : "days left"));
+            var status = new Label(Loc.T("regulatory.underway",
+                Loc.Counted(action.DaysLeft, "noun.day")));
 
             status.AddToClassList("regulatory__status");
             regulatoryBanner.Add(status);
@@ -2761,8 +2760,7 @@ namespace ScalingLaws.UI
             body.AddToClassList("notice__body");
             card.Add(body);
 
-            var note = new Label("It scores what it scores from today. Waiting costs nothing "
-                + "directly and costs position every day, because par keeps rising under it.");
+            var note = new Label(Loc.T("shelf.scores_today"));
 
             note.AddToClassList("notice__note");
             card.Add(note);

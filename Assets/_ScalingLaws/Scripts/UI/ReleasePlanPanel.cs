@@ -442,7 +442,7 @@ namespace ScalingLaws.UI
             var days = standings.Sum(entry => simulation.ScaleResearchDuration(entry.UpgradeDays));
             var cash = standings.Sum(entry => entry.UpgradeCostUsd);
 
-            var bill = new Label($"{UiFormat.Money(cash)}   ·   about {UiFormat.Days(days)}");
+            var bill = new Label(Loc.T("release.cash_days", UiFormat.Money(cash), UiFormat.Days(days)));
             bill.AddToClassList("relships__bill");
             panel.Add(bill);
 
