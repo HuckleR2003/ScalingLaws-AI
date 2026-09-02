@@ -36,11 +36,13 @@ sysinfo.txt
 TestResults*.xml
 *.log
 PlayResults*.xml
+stake.xml
 
 CLAUDE.md
 
 # Generated previews and one-off build logs
 office_preview.png
+basement_preview.png
 room.log
 snap.log
 

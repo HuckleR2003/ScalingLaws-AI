@@ -407,7 +407,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 44;
+        public const int CurrentVersion = 45;
 
         public int version = CurrentVersion;
 
@@ -830,6 +830,17 @@ namespace ScalingLaws.Persistence
         public List<int> hallRacks = new();
         public List<int> hallAccelerators = new();
         public List<int> hallFans = new();
+
+        /// <summary>
+        /// The store room: cabinets bought and not standing, by kind, and loose fans.
+        ///
+        /// Separate from the hall lists because it is a different fact. The hall says what is on
+        /// the floor; this says what the company owns and has not put anywhere, which is the state
+        /// that made buying and placing two decisions instead of one.
+        /// </summary>
+        public List<int> storeRackKinds = new();
+        public List<int> storeRackCounts = new();
+        public int storeFans;
 
         public bool actionOpen;
 

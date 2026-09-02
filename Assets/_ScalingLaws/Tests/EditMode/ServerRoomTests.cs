@@ -153,7 +153,8 @@ namespace ScalingLaws.Tests.EditMode
             var before = simulation.State.CashUsd;
             var price = ServerRackCatalog.Get(ServerRack.HighDensity).PriceUsd;
 
-            Assert.IsTrue(simulation.TryPlaceRack(0, 3, ServerRack.HighDensity, out var why), why);
+            Assert.IsTrue(simulation.TryBuyRack(ServerRack.HighDensity, out var why), why);
+            Assert.IsTrue(simulation.TryStandRack(0, 3, ServerRack.HighDensity, out why), why);
 
             Assert.That(simulation.State.CashUsd, Is.EqualTo(before - price));
             Assert.That(simulation.State.Hall.At(0, 3).Rack, Is.EqualTo(ServerRack.HighDensity));
@@ -166,7 +167,7 @@ namespace ScalingLaws.Tests.EditMode
             simulation.TryOpenServerRoom(true, out _);
             simulation.State.CashUsd = 10;
 
-            Assert.IsFalse(simulation.TryPlaceRack(0, 3, ServerRack.Immersion, out var why));
+            Assert.IsFalse(simulation.TryBuyRack(ServerRack.Immersion, out var why));
             Assert.That(why, Is.Not.Empty);
             Assert.IsTrue(simulation.State.Hall.At(0, 3).IsEmpty,
                 "The hall must never gain a cabinet nobody paid for.");
@@ -249,7 +250,8 @@ namespace ScalingLaws.Tests.EditMode
             // a slot; an H100 draws 0.7 and never troubles it. Cabinets do not age, chips get
             // hotter, so the cheap frame that was fine in 2022 is throttling by 2027 without the
             // player having changed anything. That is the spine applied to the one thing they own.
-            Assert.IsTrue(simulation.TryPlaceRack(3, 3, ServerRack.OpenFrame, out _));
+            Assert.IsTrue(simulation.TryBuyRack(ServerRack.OpenFrame, out _));
+            Assert.IsTrue(simulation.TryStandRack(3, 3, ServerRack.OpenFrame, out _));
 
             // Full, which is what a player does first and what makes the cabinet hot.
             hall.Stock(hall.TotalSlots);
@@ -387,7 +389,8 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Company(cash: 50_000_000);
             simulation.TryOpenServerRoom(true, out _);
-            simulation.TryPlaceRack(2, 2, ServerRack.Immersion, out _);
+            simulation.TryBuyRack(ServerRack.Immersion, out _);
+            simulation.TryStandRack(2, 2, ServerRack.Immersion, out _);
             simulation.TryFitFan(2, 2, out _);
             simulation.TryFitFan(2, 2, out _);
             simulation.State.Hall.Stock(20);

@@ -241,7 +241,9 @@ namespace ScalingLaws.UI
             {
                 var pull = new Button(() =>
                 {
-                    if (simulation.State.Hall.TryPullFan(column, row))
+                    // Through the simulation rather than straight at the hall, so the fan lands in
+                    // the store room instead of being destroyed on the way out of the cabinet.
+                    if (simulation.TryStoreFan(column, row))
                     {
                         changed?.Invoke();
                     }

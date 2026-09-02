@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
@@ -107,6 +108,46 @@ namespace ScalingLaws.Tests.EditMode
                 "The simulation supports these and no control ever asks for them, so they are "
                 + "content nobody can reach:\n  " + string.Join("\n  ", unreachable)
                 + "\n\nOffer them by name, or walk the catalog.");
+        }
+
+        /// <summary>
+        /// Every cabinet and fan operation is named somewhere in the interface.
+        ///
+        /// **This caught two things on the day it was written**, which is why it is here rather
+        /// than in the fixture that tests the store room. `TrySellFan` was complete, tested and
+        /// called from nowhere, and would have been the eighth mechanism in this project finished
+        /// in the simulation and impossible for a player to reach. Then it caught `TryPlaceRack`,
+        /// which was the opposite fault: not a missing button but a **second way to pay for a
+        /// cabinet**, left behind when buying and placing were split, exercised only by tests.
+        ///
+        /// It proves a name appears, not that a click arrives. Worth stating plainly: a button
+        /// wired to the wrong square would pass this. It is the cheap half of the check, and it is
+        /// the half that keeps catching things.
+        /// </summary>
+        [Test]
+        public void EveryCabinetOperationIsReachableFromTheInterface()
+        {
+            var ui = UiText();
+
+            var operations = typeof(Simulation.CompanySimulation)
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Select(method => method.Name)
+                .Where(name => name.StartsWith("Try")
+                               && (name.Contains("Rack") || name.Contains("Fan")))
+                .Distinct()
+                .ToList();
+
+            Assert.IsNotEmpty(operations, "the sweep found nothing to sweep, which is not a pass");
+
+            var unreachable = operations
+                .Where(name => !Regex.IsMatch(ui, @"\." + Regex.Escape(name) + @"\s*\("))
+                .ToList();
+
+            Assert.IsEmpty(unreachable,
+                "These are complete in the simulation and no screen calls them:\n  "
+                + string.Join("\n  ", unreachable)
+                + "\n\nEither wire a control to them, or delete them. A green suite does not prove "
+                + "a player can reach the feature.");
         }
 
         /// <summary>

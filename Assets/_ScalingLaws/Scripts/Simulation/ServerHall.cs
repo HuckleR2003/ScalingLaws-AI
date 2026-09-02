@@ -197,6 +197,86 @@ namespace ScalingLaws.Simulation
 
             racks[index] = ServerRack.None;
             accelerators[index] = 0;
+            fans[index] = 0;
+            return true;
+        }
+
+        /// <summary>
+        /// Takes a rack off the floor and hands back everything that was fitted to it.
+        ///
+        /// **The fans were being destroyed.** `TryRemove` reported the accelerators and silently
+        /// zeroed the fan count, which cost nothing while nothing could remove a rack and costs
+        /// real money the moment a player can pick one up and put it down two squares along. A
+        /// build mode where moving a cabinet quietly burns $2,600 of cooling is a build mode
+        /// nobody experiments in.
+        /// </summary>
+        public bool TryLift(int column, int row, out ServerRack removed, out int freedFans,
+            out string failureReason)
+        {
+            removed = ServerRack.None;
+            freedFans = 0;
+
+            if (!Contains(column, row))
+            {
+                failureReason = "That square is not on the floor.";
+                return false;
+            }
+
+            freedFans = fans[IndexOf(column, row)];
+
+            return TryRemove(column, row, out removed, out _, out failureReason);
+        }
+
+        /// <summary>
+        /// Slides a cabinet to another square with everything in it.
+        ///
+        /// One call rather than lift-then-place, because a lift that succeeds followed by a place
+        /// that fails leaves the rack nowhere, and the interface would have to know how to undo
+        /// half a move. Here the target is checked before anything leaves the first square.
+        ///
+        /// The accelerators are not carried: `Stock` redistributes the whole fleet across the floor
+        /// on every tick, so what is in a cabinet is an arrangement rather than a possession. The
+        /// fans are carried, because those were bought for that cabinet.
+        /// </summary>
+        public bool TryMove(int fromColumn, int fromRow, int toColumn, int toRow,
+            out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!Contains(fromColumn, fromRow) || !Contains(toColumn, toRow))
+            {
+                failureReason = "That square is not on the floor.";
+                return false;
+            }
+
+            if (fromColumn == toColumn && fromRow == toRow)
+            {
+                return true;
+            }
+
+            var from = IndexOf(fromColumn, fromRow);
+            var to = IndexOf(toColumn, toRow);
+
+            if (racks[from] == ServerRack.None)
+            {
+                failureReason = "Nothing is standing there.";
+                return false;
+            }
+
+            if (racks[to] != ServerRack.None)
+            {
+                failureReason = "Something is already standing there.";
+                return false;
+            }
+
+            racks[to] = racks[from];
+            fans[to] = fans[from];
+            accelerators[to] = accelerators[from];
+
+            racks[from] = ServerRack.None;
+            fans[from] = 0;
+            accelerators[from] = 0;
+
             return true;
         }
 
@@ -259,6 +339,46 @@ namespace ScalingLaws.Simulation
             fans[IndexOf(column, row)]--;
             return true;
         }
+
+        /// <summary>
+        /// How hard one cabinet is being asked to work, as a fraction of what it can shed.
+        ///
+        /// **One computation, read by everything that draws this room.** The floor tile, the 3D
+        /// room, the cabinet panel and the corner banner all colour the same square, and the tile
+        /// used to work its own ratio out inline. Two formulas for one quantity is the disagreement
+        /// with a date on it that this project keeps rediscovering, and here it would show as a
+        /// green cabinet next to a panel saying it is throttling.
+        ///
+        /// Zero for an empty square and for one with nothing in it: a cabinet holding no silicon is
+        /// not running cool, it is not running.
+        /// </summary>
+        public double HeatRatio(int column, int row, double kilowattsPerAccelerator)
+        {
+            if (!Contains(column, row))
+            {
+                return 0.0;
+            }
+
+            var index = IndexOf(column, row);
+
+            if (racks[index] == ServerRack.None || accelerators[index] <= 0)
+            {
+                return 0.0;
+            }
+
+            var definition = ServerRackCatalog.Get(racks[index]);
+            var heat = accelerators[index] * Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator));
+
+            var cooling = definition.CoolingCapacityKilowatts
+                          + fans[index] * ServerRackCatalog.FanCoolingKilowatts;
+
+            return heat / Math.Max(0.1, cooling);
+        }
+
+        /// <summary>The same reading as a colour. See <see cref="ServerRackCatalog.HeatOf"/>.</summary>
+        public ServerRackCatalog.RackHeat HeatAt(int column, int row,
+            double kilowattsPerAccelerator) =>
+            ServerRackCatalog.HeatOf(HeatRatio(column, row, kilowattsPerAccelerator));
 
         /// <summary>Every fan on the floor.</summary>
         public int FanCount

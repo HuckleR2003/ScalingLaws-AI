@@ -12753,12 +12753,176 @@
     margin-top: 2px;
 }
 
+/* ---- the basement, as a room rather than a table ---- */
+
+.roomfloor {
+    flex-direction: row;
+    margin-top: 10px;
+
+    /* Fills what is left of the page. Without this the row was its own content height, the
+       stage sat at its 480px minimum, and the tab render came back with the basement cropped
+       across the middle and a band of empty page under it. */
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.roomstage {
+    flex-grow: 1;
+
+    /* The texture is 16:9 and the background is drawn scale-and-crop, so an element much wider
+       than that crops the top and bottom off the room. This is a floor, not the layout: the row
+       above it is what gives the stage its real height. */
+    min-height: 520px;
+    margin-right: 14px;
+    background-color: rgb(11, 13, 18);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    border-radius: 5px;
+    overflow: hidden;
+
+    /* The hint sits at the top. At the bottom it was half under the clock dial, which overhangs
+       the page's bottom left corner by about 170px on every screen. */
+    justify-content: flex-start;
+}
+
+.roomstage--live {
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.roomstage__hint {
+    font-size: 12px;
+    color: rgb(186, 203, 226);
+    background-color: rgba(8, 10, 15, 0.82);
+    padding: 8px 12px 8px 12px;
+    white-space: normal;
+}
+
+.roombuild {
+    width: 306px;
+    flex-shrink: 0;
+    padding: 14px;
+    background-color: rgb(14, 17, 23);
+    border-width: 1px;
+    border-color: rgb(40, 48, 64);
+    border-radius: 6px;
+}
+
+.roombuild__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.roombuild__title {
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: rgb(226, 235, 248);
+}
+
+.roombuild__section {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    color: rgb(124, 141, 166);
+    margin-top: 14px;
+    margin-bottom: 6px;
+}
+
+.roombuild__card {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 8px;
+    padding: 10px;
+    background-color: rgb(19, 23, 31);
+    border-width: 1px;
+    border-color: rgb(44, 53, 70);
+    border-radius: 5px;
+
+    /* Stretch, not flex-start. A stat row is a name at one edge and a figure at the other, and
+       flex-start sizes each row to its own text, so the two labels touched: `SLOTY4`. */
+    align-items: stretch;
+    -unity-text-align: middle-left;
+}
+
+.roombuild__card:hover {
+    border-color: rgb(196, 96, 88);
+}
+
+/* UI Toolkit shrinks children by default, and this card is a Button with six of them.
+   Without this the picture grows, the name and the four stat rows are squeezed onto each
+   other, and the shop reads as overlapping text. Same fault the creator pages hit twice. */
+.roombuild__card > * {
+    flex-shrink: 0;
+}
+
+.roombuild__scroll {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+/* Its own picture rule rather than .rackpick__face, which was sized for a wide modal card
+   and grows to fill whatever it is put in. In a 306px rail that is the whole card.
+   
+   **Two classes, and the second one is load bearing.** RackFace adds `.rackface` itself, and
+   that rule sets `height: 560px` and sits *later* in this sheet. At equal specificity the
+   later rule wins, so a single-class override here lost silently and the first render came
+   back with four cabinet pictures the height of the window. Matching both classes outranks
+   it wherever either rule happens to sit. */
+.rackface.roombuild__face {
+    width: 100%;
+    height: 58px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-bottom: 6px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.roombuild__card--held {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px 8px 10px;
+    margin-bottom: 5px;
+}
+
+.roombuild__name {
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    color: rgb(232, 239, 250);
+    margin-bottom: 4px;
+}
+
+.roombuild__count {
+    font-size: 13px;
+    color: rgb(196, 96, 88);
+    margin-bottom: 0;
+}
+
+.roombuild__hint {
+    font-size: 11px;
+    color: rgb(124, 141, 166);
+    white-space: normal;
+    margin-top: 4px;
+}
+
+.roombuild__sell {
+    align-self: flex-end;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
 /* ---- the corner ---- */
 
 .rbanner {
     position: absolute;
     top: 96px;
-    right: 22px;
+
+    /* Clear of the build rail. It used to sit at 22px, which was the page's right edge and is
+       now the middle of the shop, so the two drew on top of each other. Still the corner of
+       the room, which is the whole idea; the room just does not reach the window any more. */
+    right: 344px;
     width: 336px;
     padding: 20px 22px 18px 22px;
     border-radius: 10px;

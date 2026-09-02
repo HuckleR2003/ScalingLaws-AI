@@ -157,20 +157,12 @@ namespace ScalingLaws.UI
         {
             var worst = 0.0;
 
+            // The ratio comes from the hall, which is the one place it is worked out. This was a
+            // third copy of the same three lines, alongside the floor tile and the cabinet panel.
             foreach (var square in hall.Occupied())
             {
-                if (square.Accelerators <= 0)
-                {
-                    continue;
-                }
-
-                var definition = ServerRackCatalog.Get(square.Rack);
-                var cooling = definition.CoolingCapacityKilowatts
-                    + square.Fans * ServerRackCatalog.FanCoolingKilowatts;
-
-                var heat = square.Accelerators * part.PowerKilowatts;
-
-                worst = Math.Max(worst, heat / Math.Max(0.1, cooling));
+                worst = Math.Max(worst,
+                    hall.HeatRatio(square.Column, square.Row, part.PowerKilowatts));
             }
 
             // Reported against the point where throttling begins, so 100% is exactly the edge and

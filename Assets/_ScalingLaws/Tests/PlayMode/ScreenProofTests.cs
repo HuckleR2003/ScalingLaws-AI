@@ -405,10 +405,13 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
-        /// The four cabinets, side by side, which is the comparison the screen exists for.
+        /// The room in build mode: the floor on the left, the shop and the store room on the right.
         ///
-        /// Until this existed the room placed an enclosed rack and only ever an enclosed rack, so
-        /// the choice this frame is about could not be made at all.
+        /// Until the four cabinets could all be bought, the room placed an enclosed rack and only
+        /// ever an enclosed rack, so the choice this frame is about could not be made at all. The
+        /// frame is also the only way to see whether the 3D room actually arrives behind the
+        /// controls, because a render texture nobody drew into and a dark panel look identical to
+        /// every assertion.
         /// </summary>
         [UnityTest]
         public IEnumerator TheCabinetChooserDraws()
@@ -416,6 +419,13 @@ namespace ScalingLaws.Tests.PlayMode
             var simulation = Campaign();
             simulation.State.CashUsd = 4_000_000_000L;
             simulation.TryOpenServerRoom(true, out _);
+
+            // Something in the store room, or half the rail is an empty-state message. A player
+            // who has just bought a cabinet is the state this screen is for.
+            simulation.TryBuyRack(ServerRack.Immersion, out _);
+            simulation.TryBuyRack(ServerRack.HighDensity, out _);
+            simulation.TryFitFan(0, 0, out _);
+            simulation.TryStoreFan(0, 0);
 
             var screen = new ServerRoomScreen(() => simulation, () => { });
 

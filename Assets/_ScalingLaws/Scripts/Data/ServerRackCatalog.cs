@@ -231,6 +231,60 @@ namespace ScalingLaws.Data
         }
 
         /// <summary>
+        /// How a cabinet is doing, in the four words the room is coloured with.
+        ///
+        /// Green, amber, red. <see cref="Throttling"/> and <see cref="Cooking"/> are both red on the
+        /// floor and are kept apart because the panel that opens on one cabinet has room to say
+        /// which, and "over its rating" and "half speed" are different problems with different
+        /// fixes.
+        /// </summary>
+        public enum RackHeat
+        {
+            /// <summary>Inside its rating. Nothing to do.</summary>
+            Comfortable = 0,
+
+            /// <summary>Near the top of what it can shed. Still full output, no headroom left.</summary>
+            Warm = 1,
+
+            /// <summary>Past the headroom, losing throughput. A fan buys it back.</summary>
+            Throttling = 2,
+
+            /// <summary>Far past it. The power is still being paid for and the work is not done.</summary>
+            Cooking = 3
+        }
+
+        /// <summary>Where the room turns amber, and where it turns red.</summary>
+        public const double WarmAbove = 0.85;
+
+        /// <inheritdoc cref="WarmAbove"/>
+        public const double CookingAbove = 1.15;
+
+        /// <summary>
+        /// The heat ratio turned into a colour, and it is the only place that mapping is made.
+        ///
+        /// **Two copies of this is the failure the author's own guide calls SF-07.** The floor tile,
+        /// the cabinet panel, the corner banner and the room in 3D all show the same cabinet, and a
+        /// tile that is green beside a panel saying the rack is throttling is a disagreement with no
+        /// owner and no assertion.
+        /// </summary>
+        public static RackHeat HeatOf(double ratio)
+        {
+            var heat = SimUnits.Finite(ratio);
+
+            if (heat > CookingAbove)
+            {
+                return RackHeat.Cooking;
+            }
+
+            if (heat > ThrottleFreeHeadroom)
+            {
+                return RackHeat.Throttling;
+            }
+
+            return heat > WarmAbove ? RackHeat.Warm : RackHeat.Comfortable;
+        }
+
+        /// <summary>
         /// What a rack actually delivers when it is asked to shed more heat than it can.
         ///
         /// Linear from full output at its rating down to <see cref="WorstThrottle"/> at twice it.

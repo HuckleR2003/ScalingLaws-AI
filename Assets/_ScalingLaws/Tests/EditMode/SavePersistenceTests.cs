@@ -363,6 +363,85 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(safe.ownedDataSources, Is.EqualTo(knownSources), "Unknown data flags are stripped.");
         }
 
+        /// <summary>
+        /// v44 to v45: the store room opens empty, and that is the only true reading.
+        ///
+        /// In v44 a cabinet was bought and stood on a square in one call, so there was no way to
+        /// own one that was not already on the floor. Every rack a v44 company paid for is in
+        /// `hallRacks` and none of them is anywhere else.
+        ///
+        /// **The loose fan count starts at zero rather than being reconstructed from the hall.**
+        /// A v44 fan could be fitted and pulled out but never stored, so a company that pulled one
+        /// had already lost it. Handing those back would be inventing a refund for a decision the
+        /// player made in a game that did not offer one, which is the reconstruction rule this
+        /// project has held since v1: the least flattering assumption that is still defensible.
+        /// </summary>
+        [Test]
+        public void AV44SaveOpensWithAnEmptyStoreRoomAndKeepsWhatIsOnTheFloor()
+        {
+            var campaign = BuildCampaign();
+            campaign.HasServerRoom = true;
+            campaign.Hall.TryPlace(0, 0, ServerRack.Immersion, out _);
+            campaign.Hall.TryPlace(1, 0, ServerRack.OpenFrame, out _);
+            campaign.Hall.TryFitFan(1, 0, out _);
+
+            var data = SaveStore.Capture(campaign);
+            data.version = 44;
+
+            // A file written by v44 has no idea these fields exist.
+            data.storeRackKinds = null;
+            data.storeRackCounts = null;
+            data.storeFans = 0;
+
+            var upgraded = SaveMigration.UpgradeV44ToV45(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(45),
+                "Each step stamps its own number, never whatever happens to be newest today.");
+
+            Assert.That(upgraded.storeRackKinds, Is.Empty);
+            Assert.That(upgraded.storeRackCounts, Is.Empty);
+            Assert.That(upgraded.storeFans, Is.Zero);
+
+            var state = SaveStore.Restore(SaveStore.Sanitize(upgraded));
+
+            Assert.That(state.Warehouse.IsEmpty, Is.True,
+                "A v44 company could not own a cabinet it had not stood up, so it owns none.");
+
+            Assert.That(state.Hall.At(0, 0).Rack, Is.EqualTo(ServerRack.Immersion),
+                "What was on the floor stays on the floor.");
+
+            Assert.That(state.Hall.At(1, 0).Fans, Is.EqualTo(1),
+                "A fan fitted to a cabinet is part of that cabinet and travels with the hall.");
+        }
+
+        /// <summary>
+        /// The store room is causal, not decoration, so it has to survive a round trip.
+        ///
+        /// Cabinets in it are capital the company has already paid for. Dropping them on load is
+        /// the player opening their save to find a quarter of a million dollars of hardware gone,
+        /// and it would look exactly like a balance change rather than like data loss.
+        /// </summary>
+        [Test]
+        public void WhatIsWaitingInTheStoreRoomSurvivesASave()
+        {
+            var campaign = BuildCampaign();
+            campaign.HasServerRoom = true;
+            campaign.Warehouse.Add(ServerRack.HighDensity, 3);
+            campaign.Warehouse.Add(ServerRack.OpenFrame);
+            campaign.Warehouse.AddFans(4);
+
+            var worth = campaign.Warehouse.ValueUsd;
+
+            var read = SaveStore.Restore(
+                SaveStore.Sanitize(SaveStore.Parse(JsonUtility.ToJson(SaveStore.Capture(campaign)))));
+
+            Assert.That(read.Warehouse.CountOf(ServerRack.HighDensity), Is.EqualTo(3));
+            Assert.That(read.Warehouse.CountOf(ServerRack.OpenFrame), Is.EqualTo(1));
+            Assert.That(read.Warehouse.CountOf(ServerRack.Enclosed), Is.Zero);
+            Assert.That(read.Warehouse.Fans, Is.EqualTo(4));
+            Assert.That(read.Warehouse.ValueUsd, Is.EqualTo(worth));
+        }
+
         [Test]
         public void SanitizeSurvivesANullPayload()
         {

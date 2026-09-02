@@ -1160,6 +1160,14 @@ namespace ScalingLaws.UI
             // have never seen.
             var wasAt = changed ? Vector2.zero : OpenScrollOffset();
 
+            // The basement runs a second camera into a render texture. Leaving it on behind every
+            // other tab is a room nobody is looking at, drawn sixty times a second, for the whole
+            // campaign.
+            if (changed && current == Screen.Room)
+            {
+                serverRoom?.Hide();
+            }
+
             current = screen;
             contentHost.Clear();
 
@@ -1201,10 +1209,18 @@ namespace ScalingLaws.UI
             scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
             scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
 
-            // The office is the exception: it is a room that fills the window, not a document, and
-            // putting it in a scroller gives it a scrollbar's worth of nothing to slide.
-            var host = screen == Screen.Site ? contentHost : scroller;
-            if (screen != Screen.Site)
+            // The two rooms are the exception: they fill the window rather than being documents,
+            // and putting one in a scroller gives it a scrollbar's worth of nothing to slide.
+            //
+            // **The basement joined this list because of a render.** A ScrollView's content
+            // container sizes to its content, so `flex-grow` inside one does nothing: the room
+            // sat at its minimum height with the floor cropped across the middle and a band of
+            // empty page underneath. The build rail carries its own scroller, which is the part
+            // of that screen that is a document.
+            var fillsTheWindow = screen is Screen.Site or Screen.Room;
+
+            var host = fillsTheWindow ? contentHost : scroller;
+            if (!fillsTheWindow)
             {
                 contentHost.Add(scroller);
             }

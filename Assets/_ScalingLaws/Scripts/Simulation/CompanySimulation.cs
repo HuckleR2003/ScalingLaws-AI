@@ -138,13 +138,13 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Buys a cabinet and stands it on a square.
+        /// Buys a cabinet into the warehouse without deciding where it goes.
         ///
-        /// **Here rather than in the screen**, because this is where money moves and the hall must
-        /// never be able to gain a rack nobody paid for. The hall keeps the placement rules; the
-        /// simulation keeps the till.
+        /// **The only place a rack can be paid for.** `TryStandRack` never charges and
+        /// <see cref="ServerStock"/> never touches money, so a cabinet on the floor can always be
+        /// traced back to exactly one purchase however many times it has been moved.
         /// </summary>
-        public bool TryPlaceRack(int column, int row, ServerRack rack, out string failureReason)
+        public bool TryBuyRack(ServerRack rack, out string failureReason)
         {
             failureReason = string.Empty;
 
@@ -154,29 +154,154 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            var price = ServerRackCatalog.Get(rack).PriceUsd;
-
-            if (State.CashUsd < price)
+            if (!ServerRackCatalog.TryGet(rack, out var definition))
             {
-                failureReason = Loc.T("room.cannot_afford", UiMoney(price));
+                failureReason = Loc.T("room.no_such_rack");
                 return false;
             }
 
-            if (!State.Hall.TryPlace(column, row, rack, out failureReason))
+            if (State.CashUsd < definition.PriceUsd)
             {
+                failureReason = Loc.T("room.cannot_afford", UiMoney(definition.PriceUsd));
                 return false;
             }
 
-            State.PostCash(LedgerLine.Hardware, price);
+            State.PostCash(LedgerLine.Hardware, definition.PriceUsd);
+            State.Warehouse.Add(rack);
             return true;
         }
 
-        /// <summary>Buys a fan and fits it. Same reason this is not in the panel.</summary>
+        /// <summary>
+        /// Stands a cabinet the company already owns on an empty square.
+        ///
+        /// **Takes from the warehouse before it touches the floor**, and puts it back if the square
+        /// refuses, so a rejected placement can never lose a rack the player paid for.
+        /// </summary>
+        public bool TryStandRack(int column, int row, ServerRack rack, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.locked.title");
+                return false;
+            }
+
+            if (!State.Warehouse.TryTake(rack))
+            {
+                failureReason = Loc.T("room.none_in_store");
+                return false;
+            }
+
+            if (State.Hall.TryPlace(column, row, rack, out failureReason))
+            {
+                return true;
+            }
+
+            State.Warehouse.Add(rack);
+            return false;
+        }
+
+        /// <summary>
+        /// Takes a cabinet off the floor and back into the warehouse, fans and all.
+        ///
+        /// No money moves in either direction. Picking a rack up is not selling it, and refunding
+        /// here would make the floor a place to launder cabinets back into cash at list price.
+        /// </summary>
+        public bool TryStoreRack(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.Hall.TryLift(column, row, out var lifted, out var fans, out failureReason))
+            {
+                return false;
+            }
+
+            State.Warehouse.Add(lifted);
+            State.Warehouse.AddFans(fans);
+            return true;
+        }
+
+        /// <summary>
+        /// What a cabinet fetches second hand, as a share of what it cost new.
+        ///
+        /// **Under sixty per cent on the author's call, and the gap is the point.** A store room you
+        /// can empty at list price is a place to park capital, and buying the wrong cabinet stops
+        /// being a mistake because it can always be undone for nothing. At 0.55 a change of mind
+        /// costs about the same as it does anywhere else in this game: real, survivable, and worth
+        /// avoiding by thinking first.
+        ///
+        /// It is deliberately **not** the accelerator's <c>ScrapValueFraction</c> of 0.08. A rack is
+        /// a steel box with a fan in it and does not go out of date; the silicon inside it is the
+        /// thing the frontier makes worthless, and that asset already has its own curve.
+        /// </summary>
+        public const double RackResaleFraction = 0.55;
+
+        /// <summary>What one cabinet in the store room would fetch today.</summary>
+        public static long RackResaleUsd(ServerRack rack) =>
+            (long)(ServerRackCatalog.Get(rack).PriceUsd * RackResaleFraction);
+
+        /// <summary>
+        /// Sells a cabinet out of the store room.
+        ///
+        /// **Only from the store room, never off the floor.** Selling something a player is looking
+        /// at in the room is one misclick away from deleting a working cabinet and the silicon
+        /// arrangement around it, and the extra step of picking it up first is the confirmation
+        /// dialog this does not need.
+        /// </summary>
+        public bool TrySellRack(ServerRack rack, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.Warehouse.TryTake(rack))
+            {
+                failureReason = Loc.T("room.none_in_store");
+                return false;
+            }
+
+            // AssetSales, not a negative Hardware cost. `PostCash` takes the absolute value and
+            // reads the direction off the line, so a minus sign here would have **spent** the
+            // proceeds. The same note is written beside the office refund thirty lines further
+            // down, which is where this convention was learned the first time.
+            State.PostCash(LedgerLine.AssetSales, RackResaleUsd(rack));
+            return true;
+        }
+
+        /// <summary>Sells one loose fan, on the same terms.</summary>
+        public bool TrySellFan()
+        {
+            if (!State.Warehouse.TryTakeFan())
+            {
+                return false;
+            }
+
+            State.PostCash(LedgerLine.AssetSales,
+                (long)(ServerRackCatalog.FanPriceUsd * RackResaleFraction));
+
+            return true;
+        }
+
+        /// <summary>Slides a standing cabinet to another square. Free, and it keeps its fans.</summary>
+        public bool TryMoveRack(int fromColumn, int fromRow, int toColumn, int toRow,
+            out string failureReason)
+        {
+            return State.Hall.TryMove(fromColumn, fromRow, toColumn, toRow, out failureReason);
+        }
+
+        /// <summary>
+        /// Fits a fan, from the warehouse when there is one there and from the shop otherwise.
+        ///
+        /// **The warehouse is tried first or moving a rack would cost money twice.** Storing a
+        /// cabinet returns its fans to stock; charging again to refit them would make rearranging
+        /// the room a purchase, which is the opposite of what a build mode is for.
+        /// </summary>
         public bool TryFitFan(int column, int row, out string failureReason)
         {
             failureReason = string.Empty;
 
-            if (State.CashUsd < ServerRackCatalog.FanPriceUsd)
+            var fromStore = State.Warehouse.Fans > 0;
+
+            if (!fromStore && State.CashUsd < ServerRackCatalog.FanPriceUsd)
             {
                 failureReason = Loc.T("room.cannot_afford",
                     UiMoney(ServerRackCatalog.FanPriceUsd));
@@ -189,7 +314,27 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.PostCash(LedgerLine.Hardware, ServerRackCatalog.FanPriceUsd);
+            if (fromStore)
+            {
+                State.Warehouse.TryTakeFan();
+            }
+            else
+            {
+                State.PostCash(LedgerLine.Hardware, ServerRackCatalog.FanPriceUsd);
+            }
+
+            return true;
+        }
+
+        /// <summary>Pulls a fan out of a cabinet. It goes back to the warehouse, not to the bin.</summary>
+        public bool TryStoreFan(int column, int row)
+        {
+            if (!State.Hall.TryPullFan(column, row))
+            {
+                return false;
+            }
+
+            State.Warehouse.AddFans(1);
             return true;
         }
 

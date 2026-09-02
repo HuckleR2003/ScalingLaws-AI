@@ -372,7 +372,8 @@ namespace ScalingLaws.Tests.EditMode
                 {
                     for (var row = 0; row < 4; row++)
                     {
-                        if (simulation.TryPlaceRack(column, row, ServerRack.Enclosed, out _))
+                        if (simulation.TryBuyRack(ServerRack.Enclosed, out _)
+                            && simulation.TryStandRack(column, row, ServerRack.Enclosed, out _))
                         {
                             probe.RacksPlaced++;
                             break;

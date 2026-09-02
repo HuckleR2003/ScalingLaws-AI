@@ -106,14 +106,24 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public ServerHall Hall { get; } = new(BasementColumns, BasementRows);
 
+        /// <summary>
+        /// Cabinets and fans the company has paid for and not stood up.
+        ///
+        /// The other half of the floor. See <see cref="ServerStock"/> for why buying and placing
+        /// had to stop being one action.
+        /// </summary>
+        public ServerStock Warehouse { get; } = new();
+
         /// <summary>True once there is somewhere to stand a rack.</summary>
         public bool HasServerRoom { get; set; }
 
         /// <summary>True when the room came from the cousin rather than from a purchase.</summary>
         public bool ServerRoomWasAGift { get; set; }
 
-        public const int BasementColumns = 4;
-        public const int BasementRows = 4;
+        // The floor's shape is stated once, in Data, because the editor builder, the runtime stage
+        // and the interface all have to agree with the simulation about where a square is.
+        public const int BasementColumns = BasementFloor.Columns;
+        public const int BasementRows = BasementFloor.Rows;
 
         /// <summary>
         /// Which model walks around the office, by prefab name, and whether they wear glasses.

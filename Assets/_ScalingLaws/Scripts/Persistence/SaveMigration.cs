@@ -145,6 +145,7 @@ namespace ScalingLaws.Persistence
                     41 => UpgradeV41ToV42(current),
                     42 => UpgradeV42ToV43(current),
                     43 => UpgradeV43ToV44(current),
+                    44 => UpgradeV44ToV45(current),
                     _ => current
                 };
             }
@@ -1715,6 +1716,35 @@ namespace ScalingLaws.Persistence
         /// company that has never been offered a grant has not refused one, and inventing a refusal
         /// so that the first offer arrives later would be a reconstruction nobody could check.
         /// </summary>
+        /// <summary>
+        /// v44 to v45: the store room.
+        ///
+        /// Empty, and that is the only true reading. In v44 a cabinet was bought and stood on a
+        /// square in the same call, so there was no way to own one that was not already on the
+        /// floor: every rack a v44 company paid for is in <c>hallRacks</c> and none of them is
+        /// anywhere else.
+        ///
+        /// **The loose fan count starts at zero rather than being reconstructed from the hall.**
+        /// Fans in v44 were fitted to a cabinet and could only be pulled out, never stored, so a
+        /// company that pulled one had already lost it. Handing those back now would be inventing
+        /// a refund for a decision the player made in a game that did not offer one.
+        /// </summary>
+        public static SaveData UpgradeV44ToV45(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 45;
+
+            data.storeRackKinds = new List<int>();
+            data.storeRackCounts = new List<int>();
+            data.storeFans = 0;
+
+            return data;
+        }
+
         public static SaveData UpgradeV43ToV44(SaveData data)
         {
             if (data == null)
