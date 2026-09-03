@@ -490,6 +490,12 @@ namespace ScalingLaws.Tests.PlayMode
             chooser.Refresh();
 
             yield return Capture(chooser.Root, "offices.png");
+
+            // And the deal card, which is the half a list of rows cannot show. Opened through the
+            // same method the row's button calls, because an EditMode or PlayMode proof dispatches
+            // no pointer events into a detached panel.
+            chooser.Open(OfficeTier.Loft);
+            yield return Capture(chooser.Root, "offices_deal.png");
         }
 
         [UnityTest]

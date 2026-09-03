@@ -28,8 +28,12 @@ namespace ScalingLaws.UI
 
         // Nullable rather than a None member, because OfficeTier values live in saves
         // and Garage is legitimately zero.
-        private OfficeTier? armed;
-        private OfficeTier? armedPurchase;
+        //
+        // **One card rather than two armed buttons.** Both actions used to arm on the first click
+        // and fire on the second, which tells the player to press again without telling them what
+        // they are about to spend. The card names the rent, the fit-out, the desks and the price
+        // to own it, which is the comparison this screen exists to put side by side.
+        private OfficeTier? deal;
         private string problem = string.Empty;
 
         public OfficeChooser(Func<CompanyState> state, Func<OfficeTier, bool, string> tryMove,
@@ -130,6 +134,127 @@ namespace ScalingLaws.UI
             {
                 Root.Add(BuildAnnouncedRow(soon));
             }
+
+            // Last, so it paints over the list. An absolutely positioned element in UI Toolkit
+            // still paints in document order, which this project learned the hard way when the
+            // server room's corner banner came out underneath the floor.
+            if (deal.HasValue && OfficeCatalog.TryGet(deal.Value, out var open))
+            {
+                Root.Add(BuildDeal(open, company));
+            }
+        }
+
+        /// <summary>
+        /// What signing for a place actually costs, before signing for it.
+        ///
+        /// **Four numbers, because four numbers decide it**, and until now the screen showed two of
+        /// them on two buttons that each had to be pressed twice. The rent runs for the rest of the
+        /// campaign. The fit-out is never refunded. The desks are the only thing in the game that
+        /// caps hiring. The purchase price is about ten years of the rent, which is the comparison
+        /// the whole screen exists to put side by side.
+        ///
+        /// Both ways out are on the card and neither is the default. A dialog with one obvious
+        /// button is a confirmation; this is a decision.
+        /// </summary>
+        private VisualElement BuildDeal(OfficeDefinition place, CompanyState company)
+        {
+            var here = company.Staff.Office == place.Tier;
+            var fitOut = here ? 0L : place.FitOutCostUsd + FurnishingOn(place.Tier);
+            var owed = place.PurchasePriceUsd + fitOut;
+
+            var scrim = new VisualElement();
+            scrim.AddToClassList("deal-scrim");
+
+            // Clicking away closes it. A modal with only a small X is a modal people feel trapped
+            // in, and there is nothing here that a stray click can spend.
+            scrim.RegisterCallback<ClickEvent>(_ => Open(null));
+
+            var card = new VisualElement();
+            card.AddToClassList("deal");
+
+            // The card swallows its own clicks, or pressing RENT would also hit the scrim behind it
+            // and close the card before the button ran.
+            card.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+
+            var kicker = new Label(Loc.T("offices.deal_kicker"));
+            kicker.AddToClassList("deal__kicker");
+            card.Add(kicker);
+
+            var name = new Label(place.DisplayName.ToUpperInvariant());
+            name.AddToClassList("deal__name");
+            card.Add(name);
+
+            card.Add(DealRow(Loc.T("offices.deal_rent"),
+                Loc.T("offices.deal_a_month", UiFormat.Money(place.MonthlyRentUsd))));
+
+            card.Add(DealRow(Loc.T("offices.deal_fitout"),
+                here ? Loc.T("offices.deal_none") : UiFormat.Money(fitOut)));
+
+            card.Add(DealRow(Loc.T("offices.deal_desks"), place.Desks.ToString()));
+
+            card.Add(DealRow(Loc.T("offices.deal_price"),
+                place.CanBeBought ? UiFormat.Money(place.PurchasePriceUsd)
+                    : Loc.T("offices.deal_not_for_sale")));
+
+            var note = new Label(Loc.T("offices.deal_note"));
+            note.AddToClassList("deal__note");
+            card.Add(note);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("deal__buttons");
+
+            if (!here)
+            {
+                var rentable = company.CashUsd >= place.RequiredCashUsd
+                    && company.CashUsd >= fitOut;
+
+                var rent = new Button(() => Move(place.Tier))
+                {
+                    text = Loc.T("offices.deal_rent_it", UiFormat.Money(fitOut))
+                };
+
+                rent.AddToClassList("deal__button");
+                rent.SetEnabled(rentable);
+                buttons.Add(rent);
+            }
+
+            if (place.CanBeBought && !company.Staff.Owns(place.Tier))
+            {
+                var buy = new Button(() => Buy(place.Tier))
+                {
+                    text = Loc.T("offices.deal_buy_it", UiFormat.Money(owed))
+                };
+
+                buy.AddToClassList("deal__button");
+                buy.AddToClassList("deal__button--buy");
+                buy.SetEnabled(company.CashUsd >= owed);
+                buttons.Add(buy);
+            }
+
+            var cancel = new Button(() => Open(null)) { text = Loc.T("common.not_now") };
+            cancel.AddToClassList("deal__button");
+            cancel.AddToClassList("deal__button--quiet");
+            buttons.Add(cancel);
+
+            card.Add(buttons);
+            scrim.Add(card);
+            return scrim;
+        }
+
+        private static VisualElement DealRow(string label, string value)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("deal__row");
+
+            var caption = new Label(label);
+            caption.AddToClassList("deal__label");
+            row.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("deal__value");
+            row.Add(amount);
+
+            return row;
         }
 
         /// <summary>
@@ -367,18 +492,15 @@ namespace ScalingLaws.UI
             var owed = place.PurchasePriceUsd
                 + (here ? 0L : place.FitOutCostUsd + FurnishingOn(place.Tier));
             var canAfford = company.CashUsd >= owed;
-            var isArmed = armedPurchase == place.Tier;
 
-            var buy = new Button(() => Buy(place.Tier))
+            var buy = new Button(() => Open(place.Tier))
             {
-                text = isArmed
-                    ? Loc.T("offices.confirm_buy")
-                    : (here ? Loc.T("offices.buy_here") : Loc.T("offices.buy_outright")) + UiFormat.Money(owed)
+                text = (here ? Loc.T("offices.buy_here") : Loc.T("offices.buy_outright"))
+                    + UiFormat.Money(owed)
             };
 
             buy.AddToClassList("office-row__move");
             buy.AddToClassList("office-row__buy");
-            buy.EnableInClassList("office-row__move--armed", isArmed);
             buy.SetEnabled(canAfford);
 
             if (!canAfford)
@@ -389,19 +511,27 @@ namespace ScalingLaws.UI
             return buy;
         }
 
-        /// <summary>Two clicks, because a purchase is capital that never comes back.</summary>
+        /// <summary>
+        /// Opens the deal card for a place, or closes it when it is already open on that place.
+        ///
+        /// Public so a test can reach the card without a panel to click into: an EditMode test
+        /// dispatches no pointer events, and a card that could only be opened by pressing a button
+        /// would make both decisions on this screen untestable.
+        /// </summary>
+        public void Open(OfficeTier? tier)
+        {
+            deal = deal == tier ? null : tier;
+            problem = string.Empty;
+            Refresh();
+        }
+
+        /// <summary>Which place's deal card is open, or null when none is.</summary>
+        public OfficeTier? OpenDeal => deal;
+
+        /// <summary>Signs for the place outright. The card is the confirmation.</summary>
         public void Buy(OfficeTier tier)
         {
-            if (armedPurchase != tier)
-            {
-                armedPurchase = tier;
-                armed = null;
-                problem = string.Empty;
-                Refresh();
-                return;
-            }
-
-            armedPurchase = null;
+            deal = null;
             problem = tryBuy(tier, Furnished && CanBeFurnished(tier)) ?? string.Empty;
             Refresh();
         }
@@ -427,19 +557,14 @@ namespace ScalingLaws.UI
                 return label;
             }
 
-            var isArmed = armed == place.Tier;
-
             var bill = place.FitOutCostUsd + FurnishingOn(place.Tier);
 
-            var move = new Button(() => Move(place.Tier))
+            var move = new Button(() => Open(place.Tier))
             {
-                text = isArmed
-                    ? Loc.T("offices.confirm_move")
-                    : Loc.T("offices.move_here", UiFormat.Money(bill))
+                text = Loc.T("offices.move_here", UiFormat.Money(bill))
             };
 
             move.AddToClassList("office-row__move");
-            move.EnableInClassList("office-row__move--armed", isArmed);
             move.SetEnabled(affordable);
 
             if (!affordable)
@@ -453,20 +578,12 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// Two clicks, because a move costs a fit out that is not refunded and changes the rent for
-        /// the rest of the campaign.
+        /// Takes the place on rent. The card is the confirmation: it has already named the fit-out
+        /// that is not refunded and the rent that runs for the rest of the campaign.
         /// </summary>
         public void Move(OfficeTier tier)
         {
-            if (armed != tier)
-            {
-                armed = tier;
-                problem = string.Empty;
-                Refresh();
-                return;
-            }
-
-            armed = null;
+            deal = null;
             problem = tryMove(tier, Furnished && CanBeFurnished(tier)) ?? string.Empty;
             Refresh();
         }

@@ -12197,6 +12197,123 @@
    refusal went into a discarded `out`. Amber rather than red, because none of
    these is a fault; they are all "not yet". */
 
+/* ---- the premises deal card ----
+
+   Four numbers and two ways to sign, over a scrim. It replaced two buttons that
+   each had to be pressed twice and neither of which said what the other cost;
+   an arm tells you to press again, a card tells you what you are about to
+   spend. Neither button is the default, because this is a decision rather than
+   a confirmation. */
+
+.deal-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 7, 14, 0.72);
+}
+
+.deal {
+    width: 520px;
+    padding: 26px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    background-color: rgb(15, 21, 34);
+}
+
+.deal__kicker {
+    font-size: 10px;
+    letter-spacing: 2.4px;
+    color: rgb(226, 78, 62);
+    margin-bottom: 6px;
+}
+
+.deal__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 22px;
+    letter-spacing: 1.4px;
+    color: rgb(242, 247, 255);
+    margin-bottom: 16px;
+}
+
+.deal__row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.deal__label {
+    font-size: 12.5px;
+    color: rgb(150, 162, 182);
+}
+
+.deal__value {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.deal__note {
+    margin-top: 14px;
+    font-size: 11.5px;
+    white-space: normal;
+    color: rgb(126, 138, 158);
+}
+
+.deal__buttons {
+    flex-direction: row;
+    margin-top: 18px;
+}
+
+.deal__button {
+    flex-grow: 1;
+    height: 38px;
+    margin: 0;
+    margin-right: 8px;
+    padding: 0;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.8px;
+    -unity-text-align: middle-center;
+    color: rgb(240, 246, 255);
+    background-color: rgba(255, 255, 255, 0.07);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+}
+
+.deal__button:hover {
+    background-color: rgba(255, 255, 255, 0.13);
+}
+
+.deal__button--buy {
+    background-color: rgba(94, 22, 40, 0.85);
+    border-color: rgba(226, 78, 62, 0.55);
+}
+
+.deal__button--buy:hover {
+    background-color: rgb(120, 28, 50);
+}
+
+/* Cancel is present and quiet. A card you can only leave by spending is a trap. */
+
+.deal__button--quiet {
+    flex-grow: 0;
+    width: 96px;
+    margin-right: 0;
+    color: rgb(140, 152, 172);
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(255, 255, 255, 0.09);
+}
+
 .emptystate__blocked {
     margin-top: 10px;
     max-width: 620px;
