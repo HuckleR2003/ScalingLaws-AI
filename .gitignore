@@ -132,3 +132,7 @@ Assets/InitTestScene*.unity
 Assets/InitTestScene*.unity.meta
 smoke.log
 icon.log
+
+# Unity writes a .meta beside any stray file that lands under Assets/. A batchmode run
+# started from the wrong directory drops its log there, and the meta is not ignored by *.log.
+*.log.meta
