@@ -111,9 +111,20 @@ the split between building and serving, and the whole own-datacenter tier.
   and says there is something coming that will get you off renting, which is the basement he hands
   over at the end. The rent slider is the one control in the game that bills every day whether or not
   anything is training, and a figure is easier to hold onto than a warning.
+- **The phone keeps what was said.** Opening it and choosing Emil used to fire a question and he
+  answered it, every time, with nothing kept. Now there is a Messager dIn with the whole thread in
+  it, each message stamped with the campaign day it was sent on, and a Write / Call button under it
+  rather than a conversation that has already happened without you.
+- **Emil's guides live in the messenger.** Under the composer is what he can walk you through, so a
+  walkthrough waved away in the corner is still somewhere you can go and find it. He describes it
+  and asks whether to do it now, because starting one holds the interface shut and doing that to
+  somebody who tapped a list item to read what it was is the trap the lock exists to prevent.
 
 ### Changed
 
+- **The green guide card pulls the phone out** rather than starting the walkthrough on its own. A
+  tutorial that begins because your cousin rang is a favour; one that begins because a panel
+  appeared is a feature.
 - **A backlash after a safety penalty runs four to thirteen months, drawn on the day it starts.** It
   was 63 to 113 days and derived from the severity, so a player who had seen one severe incident
   knew exactly how long the next one would last and could plan the release calendar around it.
@@ -141,6 +152,12 @@ the split between building and serving, and the whole own-datacenter tier.
 
 ### Fixed
 
+- **The task strip drew on top of the basement's build rail**, and so did the new guide card. That
+  screen owns its right edge, which is why the room's own corner banner already sat clear of it;
+  nothing had ever told the two strips that live outside the screen.
+- **A long conversation pushed the phone's buttons off the bottom** instead of scrolling.
+- **The day beside a message was one grey on two colours of bubble**, and disappeared into the blue
+  ones entirely.
 - **The basement could not be bought.** The button was enabled on cash alone, at $70,000, while the
   operation also requires the colocation tier: a released model and $5M. A player with the money
   pressed a live button and nothing happened at all, because the refusal went into a discarded
@@ -168,12 +185,13 @@ the split between building and serving, and the whole own-datacenter tier.
 
 ### Save compatibility
 
-Save format **v47**. A campaign started on 0.1.0 or on v46 opens here and keeps everything in it.
+Save format **v48**. A campaign started on 0.1.0, v46 or v47 opens here and keeps everything in it.
 
-One thing is new: which walkthroughs you have finished, and which you have waved away. An older file
-has taken none of them, because it was played in a game that had none, so the offer appears for an
-existing campaign exactly as it does for a new one. Marking them complete would have quietly
-withheld a tutorial from everybody already playing.
+Two things are new. Which walkthroughs you have finished, and which you have waved away: an older
+file has taken none, because it was played in a game that had none, so the offer appears for an
+existing campaign exactly as it does for a new one. And the thread with Emil, which arrives empty,
+because there is no honest way to invent a backlog - every line in it is what he said about a
+company as it stood on one particular day, and those figures are gone.
 
 Being part-way through a walkthrough is deliberately not saved. Quitting during one and coming back
 to it half done, with the interface still held shut and no memory of why, is worse than starting the
@@ -189,8 +207,8 @@ on all along.
 
 ### Under the hood
 
-- 955 EditMode tests across 94 fixtures, and 23 PlayMode across 7.
-- 1,861 phrases in the book, both languages complete.
+- 960 EditMode tests across 95 fixtures, and 24 PlayMode across 7.
+- 1,871 phrases in the book, both languages complete.
 - `CompetitorStrategy.FastFollower` is assigned to no lab, so nothing in the game runs that brief.
   Found by a guard that asks whether every rival trait can actually occur.
 - The unreachable-mechanism sweep was run again over every public mutator on the simulation and the
@@ -213,6 +231,14 @@ on all along.
 - A guard fails the build if any step that waits for the player names an action no screen ever
   reports. Because a walkthrough holds the bottom bar shut, that particular gap would not be a
   cosmetic fault: it would be a player sealed inside one screen.
+- The conversation stores its text rather than a phrase key. What he says about his own company is
+  read off the board on the day he says it, so resolving a key on load would replay a first-year
+  message as a tenth-year opinion, and nothing would report it.
+- Four faults found by rendering the screens and looking at them, none of which any test could see:
+  a proof render photographing the page before the one under test, because a panel's scheduler does
+  not tick until the element is in a panel; a flex child that grew but never shrank; a container
+  sizing to its own widest label on a screen that centres its children; and three absolutely
+  positioned strips sharing one corner.
 
 ---
 
