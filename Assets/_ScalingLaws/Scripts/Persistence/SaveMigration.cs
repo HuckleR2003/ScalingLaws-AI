@@ -147,6 +147,7 @@ namespace ScalingLaws.Persistence
                     43 => UpgradeV43ToV44(current),
                     44 => UpgradeV44ToV45(current),
                     45 => UpgradeV45ToV46(current),
+                    46 => UpgradeV46ToV47(current),
                     _ => current
                 };
             }
@@ -1741,6 +1742,29 @@ namespace ScalingLaws.Persistence
         /// implicitly been running, because it is the default the game will now write on a new
         /// hire. A v45 company is not moved, it is described.
         /// </summary>
+        /// <summary>
+        /// v46 to v47: walkthroughs, none of them taken.
+        ///
+        /// **Empty rather than marked done.** A v46 company was played in a game with no
+        /// walkthroughs in it, so nobody has been shown anything, and the chip offering the server
+        /// room appears for them the same way it does for a new company. Marking them complete
+        /// would silently withhold a tutorial from every existing save.
+        /// </summary>
+        public static SaveData UpgradeV46ToV47(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 47;
+
+            data.walkthroughsDone = new List<string>();
+            data.walkthroughsDismissed = new List<string>();
+
+            return data;
+        }
+
         public static SaveData UpgradeV45ToV46(SaveData data)
         {
             if (data == null)

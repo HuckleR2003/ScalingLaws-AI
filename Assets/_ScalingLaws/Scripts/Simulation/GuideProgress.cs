@@ -89,6 +89,33 @@ namespace ScalingLaws.Simulation
         public bool FavourGranted { get; set; }
 
         /// <summary>
+        /// Walkthroughs the player has finished, by id.
+        ///
+        /// **Stored, because nothing reconstructs it.** A room with cabinets in it looks the same
+        /// whether they were placed during a walkthrough or a year later, so there is no state of
+        /// the company that answers "has this been explained". Ids rather than a bitfield, so
+        /// adding one is a row in the catalog and never a renumbering.
+        /// </summary>
+        public HashSet<string> WalkthroughsDone { get; } = new();
+
+        /// <summary>Prompts the player has waved away. Offered once, not forever.</summary>
+        public HashSet<string> WalkthroughsDismissed { get; } = new();
+
+        /// <summary>Has this one been finished.</summary>
+        public bool HasWalked(string id) => WalkthroughsDone.Contains(id);
+
+        /// <summary>
+        /// Should the chip offering this walkthrough be on screen.
+        ///
+        /// Offered only once the opening tour is out of the way, because two tutorials competing
+        /// for the same corner is how a player learns to ignore both.
+        /// </summary>
+        public bool IsOffering(string id) =>
+            Stage == GuideStage.Finished
+            && !WalkthroughsDone.Contains(id)
+            && !WalkthroughsDismissed.Contains(id);
+
+        /// <summary>
         /// Hands over anything the tour owes by the step it has reached.
         ///
         /// Derived from the step index rather than fired by an event, so arriving at the step by any
@@ -213,8 +240,35 @@ namespace ScalingLaws.Simulation
         public bool AllTasksDone(CompanyState state) => CurrentTask(state) == null;
 
         public void Restore(GuideStage stage, int step, long startingCash, bool dismissed,
-            bool freeResearchOwed = false, bool favourGranted = false)
+            bool freeResearchOwed = false, bool favourGranted = false,
+            IEnumerable<string> walkthroughsDone = null,
+            IEnumerable<string> walkthroughsDismissed = null)
         {
+            WalkthroughsDone.Clear();
+            WalkthroughsDismissed.Clear();
+
+            if (walkthroughsDone != null)
+            {
+                foreach (var id in walkthroughsDone)
+                {
+                    if (!string.IsNullOrWhiteSpace(id))
+                    {
+                        WalkthroughsDone.Add(id);
+                    }
+                }
+            }
+
+            if (walkthroughsDismissed != null)
+            {
+                foreach (var id in walkthroughsDismissed)
+                {
+                    if (!string.IsNullOrWhiteSpace(id))
+                    {
+                        WalkthroughsDismissed.Add(id);
+                    }
+                }
+            }
+
             Stage = Enum.IsDefined(typeof(GuideStage), stage) ? stage : GuideStage.Unseen;
             Step = Math.Max(0, step);
             StartingCashUsd = Math.Max(0L, startingCash);

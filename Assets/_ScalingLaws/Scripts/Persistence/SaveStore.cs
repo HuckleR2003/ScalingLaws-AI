@@ -296,6 +296,9 @@ namespace ScalingLaws.Persistence
             data.guideBannerDismissed = state.Guide.BannerDismissed;
             data.guideFreeResearchOwed = state.Guide.FreeResearchOwed;
             data.guideFavourGranted = state.Guide.FavourGranted;
+
+            data.walkthroughsDone = new List<string>(state.Guide.WalkthroughsDone);
+            data.walkthroughsDismissed = new List<string>(state.Guide.WalkthroughsDismissed);
             data.feedbackLetterSent = state.FeedbackLetterSent;
 
             data.lastTroubleDayIndex = state.LastTroubleDayIndex;
@@ -1208,7 +1211,9 @@ namespace ScalingLaws.Persistence
                 safe.guideStartingCashUsd,
                 safe.guideBannerDismissed,
                 safe.guideFreeResearchOwed,
-                safe.guideFavourGranted);
+                safe.guideFavourGranted,
+                safe.walkthroughsDone,
+                safe.walkthroughsDismissed);
 
             foreach (var incident in safe.incidents)
             {

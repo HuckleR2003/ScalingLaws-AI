@@ -109,6 +109,13 @@ namespace ScalingLaws.UI
             }
 
             WearGlasses(spawned, company?.FounderGlasses ?? 0);
+
+            // **The name over their head.** The room has had a person walking around it for weeks
+            // and nothing saying who that is, which is the same gap the team page had: the game
+            // knew and never said. Added here rather than in the prefab because the founder is
+            // named at the creator and the prefab is shared with the portrait studio, where a
+            // floating name over a headshot would be absurd.
+            spawned.AddComponent<NamePlate>().Set(company?.FounderName);
         }
 
         /// <summary>

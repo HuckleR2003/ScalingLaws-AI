@@ -102,15 +102,121 @@ namespace ScalingLaws.UI
             this.changed = changed;
             this.tabFor = tabFor;
             this.lockToTab = lockToTab;
+
+            // The screens report through the static; there is one shell and this is the one overlay.
+            Reached = WalkthroughDid;
         }
 
         public bool IsShowing => strip != null && strip.parent != null;
+
+        // ---- walkthroughs -----------------------------------------------------------------------
+
+        /// <summary>
+        /// The walkthrough being run, or null when the opening tour is what is on screen.
+        ///
+        /// **Not saved.** Which walkthroughs are *finished* is a fact about the player and lives in
+        /// `GuideProgress`; being three steps into one is a fact about this minute. A player who
+        /// quits during a two minute tutorial and comes back to it half done, with the interface
+        /// still locked and no memory of why, is worse off than one who starts it again.
+        /// </summary>
+        private Walkthrough running;
+
+        private int runningStep;
+
+        /// <summary>
+        /// Told when the player does the thing a walkthrough step is waiting for.
+        ///
+        /// **Static, the way `InsightTip.Host` is**, and for the same reason: the screens that know a
+        /// cabinet was bought are four constructors away from the overlay, and threading a callback
+        /// through each of them would put a parameter about tutorials on classes that have no other
+        /// business with one. There is exactly one shell.
+        /// </summary>
+        public static Action<string> Reached;
+
+        /// <summary>Is a walkthrough on screen right now.</summary>
+        public bool IsWalking => running != null;
+
+        /// <summary>
+        /// Starts a walkthrough, from the phone or from the chip that offers it.
+        ///
+        /// Opens the screen it happens on first, because every step after this rings something that
+        /// has to already be in the tree.
+        /// </summary>
+        public void StartWalkthrough(Walkthrough walkthrough)
+        {
+            if (walkthrough == null || walkthrough.Steps.Count == 0)
+            {
+                return;
+            }
+
+            running = walkthrough;
+            runningStep = 0;
+            builtFor = -1;
+
+            goTo?.Invoke(walkthrough.OpensOn);
+
+            Refresh();
+        }
+
+        /// <summary>
+        /// The player did the thing the current step was waiting for.
+        ///
+        /// Matched on the step's own id rather than on a position, so re-ordering the catalog cannot
+        /// silently make a walkthrough advance on the wrong action. An id that is not the current
+        /// step is ignored, which is what makes it safe to call from a screen unconditionally.
+        /// </summary>
+        public void WalkthroughDid(string stepId)
+        {
+            if (running == null || string.IsNullOrEmpty(stepId))
+            {
+                return;
+            }
+
+            var step = Current;
+
+            if (step == null || step.Id != stepId)
+            {
+                return;
+            }
+
+            Advance();
+        }
+
+        /// <summary>
+        /// Puts a walkthrough down, finished or abandoned.
+        ///
+        /// **The lock is lifted here and nowhere else.** A walkthrough holds the bottom bar shut for
+        /// its whole length, so every way out of one has to come through this method or the player is
+        /// left in a game they cannot navigate.
+        /// </summary>
+        private void EndWalkthrough(bool finished)
+        {
+            var walkthrough = running;
+
+            running = null;
+            runningStep = 0;
+
+            if (finished && walkthrough != null)
+            {
+                progress().WalkthroughsDone.Add(walkthrough.Id);
+            }
+
+            Hide();
+            changed?.Invoke();
+        }
 
         /// <summary>The step being shown, or null when the tour is over.</summary>
         public GuideStep Current
         {
             get
             {
+                if (running != null)
+                {
+                    return runningStep >= 0 && runningStep < running.Steps.Count
+                        ? running.Steps[runningStep]
+                        : null;
+                }
+
                 var state = progress();
 
                 return state.Step >= 0 && state.Step < GuideScript.Steps.Count
@@ -128,6 +234,15 @@ namespace ScalingLaws.UI
         public void Refresh()
         {
             var state = progress();
+
+            // **A walkthrough is not part of the tour and does not read its stage.** The tour is
+            // finished by the time any of these are offered, so gating on `Touring` would mean no
+            // walkthrough could ever draw.
+            if (running != null)
+            {
+                RefreshWalkthrough();
+                return;
+            }
 
             if (state.Stage != GuideStage.Touring)
             {
@@ -189,6 +304,40 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
+        /// The same pass, for a walkthrough.
+        ///
+        /// Two differences from the tour and both are the point of the thing. The interface is held
+        /// on this screen for **every** step rather than only the ones waiting for a click, because a
+        /// player who wanders off in the middle is the failure a walkthrough exists to prevent. And
+        /// running off the end finishes it rather than ending the tour, which is already over.
+        /// </summary>
+        private void RefreshWalkthrough()
+        {
+            var step = Current;
+
+            if (step == null)
+            {
+                EndWalkthrough(finished: true);
+                return;
+            }
+
+            if (builtFor != runningStep || strip == null || strip.parent == null)
+            {
+                Build(step);
+                builtFor = runningStep;
+            }
+            else
+            {
+                Retext(step);
+            }
+
+            ApplyHighlight(step);
+
+            // Held on the screen the walkthrough happens on, whatever the step is doing.
+            lockToTab?.Invoke(running.OpensOn);
+        }
+
+        /// <summary>
         /// Repoints the existing strip at the current step's words, touching no elements.
         /// </summary>
         private void Retext(GuideStep step)
@@ -200,7 +349,7 @@ namespace ScalingLaws.UI
 
             if (counter != null)
             {
-                counter.text = $"{progress().Step + 1} / {GuideScript.Steps.Count}";
+                counter.text = CounterText();
             }
 
             if (next != null)
@@ -211,7 +360,7 @@ namespace ScalingLaws.UI
 
             if (skip != null)
             {
-                skip.text = Loc.T("guide.skip");
+                skip.text = running != null ? Loc.T("walk.stop") : Loc.T("guide.skip");
             }
 
             if (later != null)
@@ -294,7 +443,7 @@ namespace ScalingLaws.UI
             // **Where the player is in the tour.** The playtest reported not knowing what stage it
             // was at, which is fair: a conversation with no shape to it could be two steps from the
             // end or twenty.
-            counter = new Label($"{progress().Step + 1} / {GuideScript.Steps.Count}");
+            counter = new Label(CounterText());
             counter.AddToClassList("guide__counter");
             bar.Add(counter);
 
@@ -305,7 +454,15 @@ namespace ScalingLaws.UI
             var buttons = new VisualElement();
             buttons.AddToClassList("guide__buttons");
 
-            if (step.WaitForClick)
+            if (running != null && step.WaitForClick)
+            {
+                // **A waiting step in a walkthrough has no button at all.** The whole claim of one
+                // is that the player did the thing, and a NEXT beside "click the cabinet" is a way
+                // to finish without ever clicking a cabinet. The screen calls `WalkthroughDid` when
+                // it happens; until then there is nothing here to press.
+                next = null;
+            }
+            else if (step.WaitForClick)
             {
                 // A step that waits gets a button that takes you there rather than one that says
                 // Next. Being told to press something and then being handed a Next is the single
@@ -326,7 +483,10 @@ namespace ScalingLaws.UI
                 next.AddToClassList("guide__next");
             }
 
-            buttons.Add(next);
+            if (next != null)
+            {
+                buttons.Add(next);
+            }
 
             // **Only on the step that asks.** A step can offer one extra thing, and this is the
             // mechanism for it: the shell decides what the offer does, the tour only draws it.
@@ -347,11 +507,25 @@ namespace ScalingLaws.UI
             // player who does not want a tutorial. "I'll come back later" is one who does and has
             // something else on, and telling them there is something waiting at the end is the
             // cheapest possible reason to return.
-            later = new Button(Later) { text = Loc.T("guide.later") };
-            later.AddToClassList("guide__later");
-            buttons.Add(later);
+            // **No "come back later" on a walkthrough.** It is three minutes long and it is on one
+            // screen; pausing it would mean saving a half-finished position and a lock, which is the
+            // state this deliberately does not keep.
+            if (running == null)
+            {
+                later = new Button(Later) { text = Loc.T("guide.later") };
+                later.AddToClassList("guide__later");
+                buttons.Add(later);
+            }
+            else
+            {
+                later = null;
+            }
 
-            skip = new Button(Skip) { text = Loc.T("guide.skip") };
+            skip = new Button(Skip)
+            {
+                text = running != null ? Loc.T("walk.stop") : Loc.T("guide.skip")
+            };
+
             skip.AddToClassList("guide__skip");
             buttons.Add(skip);
 
@@ -379,7 +553,9 @@ namespace ScalingLaws.UI
         {
             ClearHighlight();
 
-            if (step.WaitForClick && step.Target != GuideTarget.None)
+            // **Not during a walkthrough.** There, "waits for a click" means a click on the screen
+            // rather than on the bar, and the player is already standing on the tab this would ring.
+            if (running == null && step.WaitForClick && step.Target != GuideTarget.None)
             {
                 var tab = tabFor?.Invoke(step.Target);
 
@@ -475,8 +651,29 @@ namespace ScalingLaws.UI
             }
         }
 
+        /// <summary>Where the player is, in whichever track is running.</summary>
+        private string CounterText() =>
+            running != null
+                ? $"{runningStep + 1} / {running.Steps.Count}"
+                : $"{progress().Step + 1} / {GuideScript.Steps.Count}";
+
         private void Advance()
         {
+            if (running != null)
+            {
+                runningStep++;
+
+                if (runningStep >= running.Steps.Count)
+                {
+                    EndWalkthrough(finished: true);
+                    return;
+                }
+
+                changed?.Invoke();
+                Refresh();
+                return;
+            }
+
             var state = progress();
 
             state.Step++;
@@ -547,7 +744,9 @@ namespace ScalingLaws.UI
         {
             var state = progress();
 
-            if (state.Stage != GuideStage.Touring || target == GuideTarget.None)
+            // A walkthrough already sits on its own screen, so "the player got here on their own" is
+            // true of every step in one and would skip the whole thing on the first repaint.
+            if (running != null || state.Stage != GuideStage.Touring || target == GuideTarget.None)
             {
                 return;
             }
@@ -575,6 +774,17 @@ namespace ScalingLaws.UI
 
         private void Skip()
         {
+            // **A walkthrough keeps one way out and this is it.** The author asked for a forced run,
+            // and the lock delivers that: the bottom bar is shut for the whole length of one. A run
+            // with no exit at all is a different thing, though — one mis-wired step and the player is
+            // in a game they cannot navigate and cannot leave, with no way back but deleting a save.
+            // Nothing here is marked done, so the chip stays and the phone still offers it.
+            if (running != null)
+            {
+                EndWalkthrough(finished: false);
+                return;
+            }
+
             var state = progress();
 
             state.Stage = GuideStage.Finished;

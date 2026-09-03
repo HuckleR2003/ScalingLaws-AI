@@ -224,6 +224,8 @@ namespace ScalingLaws.UI
             {
                 if (simulation.TryFitFan(column, row, out _))
                 {
+                    GuideOverlay.Reached?.Invoke("walk_room_fit");
+
                     changed?.Invoke();
                 }
             })

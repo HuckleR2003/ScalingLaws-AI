@@ -196,6 +196,9 @@ namespace ScalingLaws.UI
         /// <summary>The quiet strip under the corner banners with the next task on it.</summary>
         private TaskBanner tasks;
 
+        /// <summary>The corner where walkthroughs wait to be taken. See <see cref="PromptChips"/>.</summary>
+        private PromptChips prompts;
+
         /// <summary>The opening drive-in, while it is running. Null afterwards.</summary>
         private ArrivalSequence arrival;
 
@@ -524,6 +527,7 @@ namespace ScalingLaws.UI
             RefreshApproachBanner();
             RefreshUpgradeBanner();
             tasks.Refresh();
+            prompts?.Refresh();
             RingTheCousinIfThisIsDayOne();
 
             // They reached the car. This is where the loading screen and the world map go once the
@@ -731,6 +735,13 @@ namespace ScalingLaws.UI
             });
 
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
+
+            // **Above the task strip and separate from it.** The chip that offers a walkthrough is
+            // not one of the five opening tasks, and hanging it off that list would have made its
+            // counter read 4/5 over something that is not one of the five.
+            prompts = new PromptChips(root, () => state, () => state.Guide,
+                walkthrough => guide?.StartWalkthrough(walkthrough), RefreshChrome,
+                () => guide is { IsWalking: true });
 
             modelHub = new ModelDashboard(() => simulation, () => Show(Screen.Create),
                 () => Show(Screen.Upgrade), () => Show(Screen.Release));

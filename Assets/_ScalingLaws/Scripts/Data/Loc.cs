@@ -2056,6 +2056,20 @@ namespace ScalingLaws.Data
             ["call.apologise"] = "Apologise. It was a misunderstanding.",
             ["call.hangup"] = "Hang up.",
 
+            ["walk.stop"] = "Stop the walkthrough",
+            ["walk.room.title"] = "The server room",
+            ["walk.room.blurb"] = "Buying a cabinet, standing it on the floor and putting cards in it.",
+            ["walk.room.open"] = "Right, the basement. Everything you need is on this rail down the side. Nothing here bills you until you buy something, so have a look first.",
+            ["walk.room.shop"] = "These are the cabinets. The cheap one is an open frame: fine now, and it cooks the moment the cards get hot. The dearer ones take more heat before they start throttling.",
+            ["walk.room.buy"] = "Pick one and buy it. It goes into the store room, not onto the floor, so you can still change your mind about where it stands.",
+            ["walk.room.carry"] = "You are carrying it now. The squares that will take it are lit up.",
+            ["walk.room.stand"] = "Put it down anywhere. You can slide it later for nothing, so do not agonise over it.",
+            ["walk.room.open_rack"] = "Now click the cabinet itself. That opens it up so you can see what is inside.",
+            ["walk.room.fit"] = "Every slot takes a card or a fan. Cards make compute, fans stop it throttling. Put something in.",
+            ["walk.room.done"] = "That is it. It is your own machine now, so no rent on this bit ever again. Watch the heat, and come back when the cards start getting old.",
+            ["guide.step.compute_cap"] = "Listen, for now keep the server rent under $80,000. Seriously, write it down. And once we are through the business side, I have something for you that will get you off renting altogether.",
+            ["walk.chip.kicker"] = "GUIDE",
+            ["walk.chip.call"] = "call Emil",
         };
 
         // ==========================================================================================
@@ -3993,6 +4007,20 @@ namespace ScalingLaws.Data
             ["call.apologise"] = "Przeproś. To nieporozumienie.",
             ["call.hangup"] = "Rozłącz się.",
 
+            ["walk.stop"] = "Przerwij poradnik",
+            ["walk.room.title"] = "Serwerownia",
+            ["walk.room.blurb"] = "Zakup szafy, postawienie jej na podłodze i zamontowanie kart.",
+            ["walk.room.open"] = "No dobra, piwnica. Wszystko czego potrzebujesz jest na tym pasku z boku. Nic tu nie kosztuje, dopóki czegoś nie kupisz, więc najpierw się rozejrzyj.",
+            ["walk.room.shop"] = "To są szafy. Ta tania to otwarta rama: teraz w porządku, a ugotuje się w chwili, gdy karty się zagrzeją. Droższe zniosą więcej ciepła, zanim zaczną się dławić.",
+            ["walk.room.buy"] = "Wybierz jedną i ją kup. Trafi do magazynu, nie na podłogę, więc wciąż możesz zmienić zdanie, gdzie ma stanąć.",
+            ["walk.room.carry"] = "Teraz ją niesiesz. Pola, które ją przyjmą, są podświetlone.",
+            ["walk.room.stand"] = "Postaw ją gdziekolwiek. Później przesuniesz ją za darmo, więc się nie zastanawiaj.",
+            ["walk.room.open_rack"] = "Teraz kliknij samą szafę. To ją otworzy, żebyś zobaczył, co jest w środku.",
+            ["walk.room.fit"] = "Każdy slot przyjmuje kartę albo wentylator. Karty dają moc, wentylatory nie pozwalają jej się dławić. Włóż coś.",
+            ["walk.room.done"] = "I to tyle. To teraz twoja własna maszyna, więc za tę część już nigdy nie płacisz wynajmu. Pilnuj temperatury i wróć, gdy karty zaczną się starzeć.",
+            ["guide.step.compute_cap"] = "Słuchaj, póki co trzymaj się kwoty przy wynajmie serwerów do 80 tysięcy. Serio, zapisz sobie. A gdy skończymy zaraz cię wprowadzać w biznes, mam dla ciebie prezent, który uwolni cię od wynajmów.",
+            ["walk.chip.kicker"] = "PORADNIK",
+            ["walk.chip.call"] = "zadzwoń do Emila",
         };
 
         /// <summary>

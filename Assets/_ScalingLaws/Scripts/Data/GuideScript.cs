@@ -263,6 +263,15 @@ namespace ScalingLaws.Data
             new("compute_rent", "guide.step.compute_rent", GuideTarget.Compute, "fleet-panel"),
             new("compute_dial", "guide.step.compute_dial", GuideTarget.Compute, "service__dial"),
 
+            // **A number, and a reason to remember it.** The rent slider is the one control in the
+            // game that bills every day whether or not anything is training, and it has cost real
+            // campaigns real money. A figure is easier to hold onto than a warning, so he gives one.
+            //
+            // The tease is the same promise "I'll come back later" already makes, moved to the front
+            // of the tour where it can do some work: it is the reason to sit through the rest of it,
+            // and it names what the cap is temporary *for*.
+            new("compute_cap", "guide.step.compute_cap", GuideTarget.Compute, "fleet-panel"),
+
             // ---- where the money comes from before the company earns any --------------------
             //
             // Directly after the burn, because that is the question the burn raises and leaving it

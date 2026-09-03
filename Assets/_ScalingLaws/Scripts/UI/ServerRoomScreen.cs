@@ -315,6 +315,9 @@ namespace ScalingLaws.UI
             }
 
             open = (column, row);
+
+            GuideOverlay.Reached?.Invoke("walk_room_open_rack");
+
             changed?.Invoke();
         }
 
@@ -362,6 +365,8 @@ namespace ScalingLaws.UI
 
             carrying = ServerRack.None;
             liftedFrom = null;
+
+            GuideOverlay.Reached?.Invoke("walk_room_stand");
 
             stage.HideGhost();
             changed?.Invoke();
@@ -504,6 +509,11 @@ namespace ScalingLaws.UI
 
                 carrying = definition.Id;
                 liftedFrom = null;
+
+                // A walkthrough step may be waiting on exactly this. Unconditional, and
+                // ignored when nothing is running, so this screen never has to ask
+                // whether a tutorial is on.
+                GuideOverlay.Reached?.Invoke("walk_room_buy");
 
                 changed?.Invoke();
             });

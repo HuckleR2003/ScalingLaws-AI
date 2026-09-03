@@ -409,7 +409,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 46;
+        public const int CurrentVersion = 47;
 
         public int version = CurrentVersion;
 
@@ -570,6 +570,14 @@ namespace ScalingLaws.Persistence
 
         public int officeTier;
         public List<HireData> staff = new();
+
+        // ---- added in v47, when walkthroughs arrived ------------------------------------------
+
+        /// <summary>Walkthroughs finished, by catalog id. Never renumbered, so ids are safe.</summary>
+        public List<string> walkthroughsDone = new();
+
+        /// <summary>And the ones whose offer the player waved away.</summary>
+        public List<string> walkthroughsDismissed = new();
         public List<IncidentData> incidents = new();
         public long lifetimeFinesUsd;
 
