@@ -136,3 +136,8 @@ icon.log
 # Unity writes a .meta beside any stray file that lands under Assets/. A batchmode run
 # started from the wrong directory drops its log there, and the meta is not ignored by *.log.
 *.log.meta
+
+# And the folder Unity creates for a package-manager log when it is started from the
+# wrong directory. Neither belongs under Assets/.
+Assets/_ScalingLaws/Logs/
+Assets/_ScalingLaws/Logs.meta
