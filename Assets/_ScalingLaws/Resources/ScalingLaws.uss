@@ -16155,3 +16155,128 @@
     color: rgba(196, 216, 202, 0.78);
     white-space: normal;
 }
+
+/* ---- the messenger: day stamps, and the composer under the thread ------------------------------
+ *
+ * The thread is the screen and the composer is a bar under it, which is the shape of every messenger
+ * anybody has used. What is unusual is that the guides sit in the composer rather than in a menu:
+ * asking somebody to walk you through a screen is a thing you say to them, not a settings page.
+ */
+.chat__when {
+    margin-top: 3px;
+    font-size: 9.5px;
+    letter-spacing: 0.4px;
+    color: rgba(196, 206, 224, 0.42);
+    -unity-text-align: middle-right;
+}
+
+.chat__bubble--me .chat__when {
+    -unity-text-align: middle-right;
+}
+
+.chat__bubble--them .chat__when {
+    -unity-text-align: middle-left;
+}
+
+.chat__empty {
+    margin-top: 24px;
+    font-size: 12px;
+    color: rgba(196, 206, 224, 0.42);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.compose {
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+}
+
+.compose__send {
+    height: 34px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 6px;
+    padding: 0;
+    font-size: 12.5px;
+    letter-spacing: 1.1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(16, 20, 28);
+    background-color: rgb(120, 206, 156);
+    border-width: 0;
+    border-radius: 17px;
+}
+
+.compose__send:hover {
+    background-color: rgb(146, 222, 178);
+}
+
+.compose__heading {
+    margin-top: 4px;
+    margin-bottom: 5px;
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgba(196, 206, 224, 0.45);
+}
+
+.compose__guide {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 5px;
+    padding: 7px 9px 8px 9px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 0;
+    border-left-width: 2px;
+    border-left-color: rgba(120, 206, 156, 0.75);
+    border-radius: 5px;
+    align-items: stretch;
+    -unity-text-align: upper-left;
+}
+
+.compose__guide:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.compose__guide--done {
+    border-left-color: rgba(196, 206, 224, 0.3);
+}
+
+.compose__guidename {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(226, 234, 246);
+    white-space: normal;
+}
+
+.compose__guideblurb {
+    margin-top: 2px;
+    font-size: 10px;
+    color: rgba(196, 206, 224, 0.6);
+    white-space: normal;
+}
+
+.compose__back {
+    width: 100%;
+    height: 28px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 2px;
+    margin-bottom: 0;
+    padding: 0;
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    color: rgba(196, 206, 224, 0.62);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.compose__back:hover {
+    color: rgb(226, 234, 246);
+}

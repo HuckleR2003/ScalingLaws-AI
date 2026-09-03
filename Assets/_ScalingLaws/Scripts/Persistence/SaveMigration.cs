@@ -148,6 +148,7 @@ namespace ScalingLaws.Persistence
                     44 => UpgradeV44ToV45(current),
                     45 => UpgradeV45ToV46(current),
                     46 => UpgradeV46ToV47(current),
+                    47 => UpgradeV47ToV48(current),
                     _ => current
                 };
             }
@@ -1750,6 +1751,27 @@ namespace ScalingLaws.Persistence
         /// room appears for them the same way it does for a new company. Marking them complete
         /// would silently withhold a tutorial from every existing save.
         /// </summary>
+        /// <summary>
+        /// v47 to v48: the phone keeps its thread, and an older file has none.
+        ///
+        /// **Empty rather than reconstructed.** Every line in this thread is what he said on a
+        /// particular day about a company as it stood that day. There is no honest way to invent a
+        /// backlog for a campaign that has been running four years: the numbers those messages would
+        /// have quoted are gone. An empty thread is the true reading.
+        /// </summary>
+        public static SaveData UpgradeV47ToV48(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 48;
+            data.messages = new List<ChatLineData>();
+
+            return data;
+        }
+
         public static SaveData UpgradeV46ToV47(SaveData data)
         {
             if (data == null)

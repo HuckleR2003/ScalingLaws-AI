@@ -117,6 +117,12 @@ namespace ScalingLaws.Simulation
         /// <summary>True once there is somewhere to stand a rack.</summary>
         public bool HasServerRoom { get; set; }
 
+        /// <summary>
+        /// The saved thread with Emil. See <see cref="Messenger"/> for why it is a transcript rather
+        /// than something the phone works out again each time it is opened.
+        /// </summary>
+        public Messenger Messages { get; } = new();
+
         /// <summary>True when the room came from the cousin rather than from a purchase.</summary>
         public bool ServerRoomWasAGift { get; set; }
 

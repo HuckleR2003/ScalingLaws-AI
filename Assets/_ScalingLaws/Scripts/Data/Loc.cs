@@ -2070,6 +2070,16 @@ namespace ScalingLaws.Data
             ["guide.step.compute_cap"] = "Listen, for now keep the server rent under $80,000. Seriously, write it down. And once we are through the business side, I have something for you that will get you off renting altogether.",
             ["walk.chip.kicker"] = "GUIDE",
             ["walk.chip.call"] = "call Emil",
+            ["phone.menu.messenger"] = "Messager dIn",
+            ["phone.day"] = "Day {0}",
+            ["phone.thread.empty"] = "Nothing here yet. Write to him.",
+            ["phone.compose.write"] = "Write / Call",
+            ["phone.compose.guides"] = "HE CAN WALK YOU THROUGH",
+            ["phone.ask.guide"] = "Can you walk me through it? {0}",
+            ["phone.guide.now"] = "I can show you now if you have a minute. Say the word and we go through it together, step by step.",
+            ["phone.guide.yes"] = "Yes, show me now",
+            ["phone.guide.later"] = "Not right now",
+            ["phone.guide.no"] = "Not right now, I'll get back to you.",
         };
 
         // ==========================================================================================
@@ -4021,6 +4031,16 @@ namespace ScalingLaws.Data
             ["guide.step.compute_cap"] = "Słuchaj, póki co trzymaj się kwoty przy wynajmie serwerów do 80 tysięcy. Serio, zapisz sobie. A gdy skończymy zaraz cię wprowadzać w biznes, mam dla ciebie prezent, który uwolni cię od wynajmów.",
             ["walk.chip.kicker"] = "PORADNIK",
             ["walk.chip.call"] = "zadzwoń do Emila",
+            ["phone.menu.messenger"] = "Messager dIn",
+            ["phone.day"] = "Dzień {0}",
+            ["phone.thread.empty"] = "Jeszcze nic tu nie ma. Napisz do niego.",
+            ["phone.compose.write"] = "Napisz / Zadzwoń",
+            ["phone.compose.guides"] = "MOŻE CIĘ PRZEPROWADZIĆ PRZEZ",
+            ["phone.ask.guide"] = "Przeprowadzisz mnie przez to? {0}",
+            ["phone.guide.now"] = "Mogę ci pokazać teraz, jeśli masz chwilę. Powiedz słowo i przejdziemy przez to razem, krok po kroku.",
+            ["phone.guide.yes"] = "Tak, pokaż mi teraz",
+            ["phone.guide.later"] = "Nie teraz",
+            ["phone.guide.no"] = "Nie teraz, odezwę się.",
         };
 
         /// <summary>

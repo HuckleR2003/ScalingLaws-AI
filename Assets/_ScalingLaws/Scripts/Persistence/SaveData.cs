@@ -409,7 +409,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 47;
+        public const int CurrentVersion = 48;
 
         public int version = CurrentVersion;
 
@@ -578,6 +578,11 @@ namespace ScalingLaws.Persistence
 
         /// <summary>And the ones whose offer the player waved away.</summary>
         public List<string> walkthroughsDismissed = new();
+
+        // ---- added in v48, when the phone kept its thread ---------------------------------------
+
+        /// <summary>The saved conversation with Emil, oldest first.</summary>
+        public List<ChatLineData> messages = new();
         public List<IncidentData> incidents = new();
         public long lifetimeFinesUsd;
 
@@ -917,6 +922,21 @@ namespace ScalingLaws.Persistence
     }
 
     /// <summary>One person on the payroll. Added in v8.</summary>
+    /// <summary>
+    /// One message in the phone's thread.
+    ///
+    /// The text is stored rather than a key, because most of these lines are assembled from the
+    /// company's own figures on the day they were sent. A key would replay a 2023 message with 2027
+    /// numbers in it.
+    /// </summary>
+    [Serializable]
+    public sealed class ChatLineData
+    {
+        public int day;
+        public bool mine;
+        public string text = string.Empty;
+    }
+
     [Serializable]
     public sealed class HireData
     {

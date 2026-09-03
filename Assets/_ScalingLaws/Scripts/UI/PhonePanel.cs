@@ -123,6 +123,52 @@ namespace ScalingLaws.UI
             }).ExecuteLater(WakeDelay / 2);
         }
 
+        /// <summary>
+        /// Opens straight into him offering one particular walkthrough.
+        ///
+        /// **The third way in, and it is the corner card's.** Tapping the green card is already the
+        /// decision, so this does not ask again: the phone comes out, he says what it is, and it
+        /// begins. What the phone adds over starting the strip on its own is that the walkthrough
+        /// arrives from somebody rather than from the interface, which is the whole reason he exists.
+        /// </summary>
+        public void OpenGuide(Walkthrough walkthrough)
+        {
+            if (walkthrough == null)
+            {
+                return;
+            }
+
+            Close();
+            returning = false;
+
+            BuildFrame();
+
+            frame.schedule.Execute(() =>
+            {
+                screen.AddToClassList("phone__screen--on");
+
+                OpenChat();
+                ReplayThread();
+
+                Send(Loc.T("phone.ask.guide", walkthrough.Title), true);
+                ShowTyping(true);
+
+                screen.schedule.Execute(() =>
+                {
+                    ShowTyping(false);
+                    Send(walkthrough.Blurb, false);
+
+                    // Long enough to read the line he just sent, short enough that nobody is waiting
+                    // on a phone they did not ask to look at.
+                    screen.schedule.Execute(() =>
+                    {
+                        Collapse(false);
+                        startWalkthrough?.Invoke(walkthrough);
+                    }).ExecuteLater(1400);
+                }).ExecuteLater(1300);
+            }).ExecuteLater(WakeDelay / 2);
+        }
+
         /// <summary>The handset and its dark screen. Shared, so the two entry points cannot drift.</summary>
         private void BuildFrame()
         {
@@ -199,7 +245,7 @@ namespace ScalingLaws.UI
                 screen.Add(alert);
             }
 
-            screen.Add(HomeRow(Loc.T("phone.menu.call", GuideScript.CousinName), CallCousin));
+            screen.Add(HomeRow(Loc.T("phone.menu.messenger"), OpenMessenger));
             screen.Add(HomeRow(Loc.T("phone.menu.close"), () => Collapse(false)));
         }
 
@@ -234,33 +280,186 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// Rings the cousin and asks how his own company is doing.
+        /// Opens the thread with him, and sends nothing.
+        ///
+        /// **This used to fire a question the moment it opened**, and he answered it. The player was
+        /// a spectator at their own conversation: there was nothing to read, nothing to choose, and
+        /// the one thing a messenger is for, going back over what was said, did not exist because
+        /// nothing was kept.
+        ///
+        /// Now the thread is the screen. What is under it is a composer: one button that writes to
+        /// him, and the guides he can walk you through, which is where a short tutorial is asked for
+        /// rather than waited for.
+        /// </summary>
+        private void OpenMessenger()
+        {
+            OpenChat();
+            ReplayThread();
+            ShowComposer();
+        }
+
+        /// <summary>
+        /// The bar under the thread: write to him, then the guides.
+        ///
+        /// Rebuilt rather than toggled, because what it offers depends on what has been walked
+        /// already and that changes while the phone is open.
+        /// </summary>
+        private void ShowComposer()
+        {
+            composer?.RemoveFromHierarchy();
+
+            composer = new VisualElement();
+            composer.AddToClassList("compose");
+
+            var write = new Button(AskHowHeIsDoing) { text = Loc.T("phone.compose.write") };
+            write.AddToClassList("compose__send");
+            composer.Add(write);
+
+            var guide = progressForMenu?.Invoke();
+            var state = company?.Invoke()?.State;
+
+            if (guide != null && state != null)
+            {
+                var offered = false;
+
+                foreach (var walkthrough in WalkthroughCatalog.All)
+                {
+                    // **Everything he can still teach, not only what is being offered in the corner.**
+                    // Waving the chip away is a decision about the corner; the phone is where a
+                    // player goes looking for the thing they dismissed. Finished ones stay on the
+                    // list too, because a walkthrough is worth taking twice.
+                    if (walkthrough.Id == WalkthroughCatalog.ServerRoomId && !state.HasServerRoom)
+                    {
+                        continue;
+                    }
+
+                    if (!offered)
+                    {
+                        var heading = new Label(Loc.T("phone.compose.guides"));
+                        heading.AddToClassList("compose__heading");
+                        composer.Add(heading);
+
+                        offered = true;
+                    }
+
+                    composer.Add(GuideRow(walkthrough, guide));
+                }
+            }
+
+            var back = new Button(ShowHome) { text = Loc.T("phone.menu.back") };
+            back.AddToClassList("compose__back");
+            composer.Add(back);
+
+            screen.Add(composer);
+        }
+
+        private VisualElement composer;
+
+        /// <summary>One guide on the list, with a tick when it has been taken.</summary>
+        private Button GuideRow(Walkthrough walkthrough, GuideProgress guide)
+        {
+            var taken = walkthrough;
+
+            var row = new Button(() => OfferWalkthrough(taken));
+            row.AddToClassList("compose__guide");
+            row.EnableInClassList("compose__guide--done", guide.HasWalked(walkthrough.Id));
+
+            var name = new Label(walkthrough.Title);
+            name.AddToClassList("compose__guidename");
+            row.Add(name);
+
+            var blurb = new Label(walkthrough.Blurb);
+            blurb.AddToClassList("compose__guideblurb");
+            row.Add(blurb);
+
+            return row;
+        }
+
+        /// <summary>
+        /// Asks him about his own company, which is the one thing he answers off the board.
         ///
         /// **His answer is read off the board, never invented.** He is a lab on the same ranking as
         /// everybody else, so what he says is his own share price against where it stood three
         /// months ago, plus where he sits in the table. A cousin who reported a mood nobody could
         /// check would be the one voice in this game that is not accountable to the simulation.
         /// </summary>
-        private void CallCousin()
+        private void AskHowHeIsDoing()
         {
-            OpenChat();
+            composer?.RemoveFromHierarchy();
+            composer = null;
 
-            chatList.Add(Bubble(Loc.T("phone.ask.business"), true));
-            ScrollDown();
+            Send(Loc.T("phone.ask.business"), true);
 
             screen.schedule.Execute(() => ShowTyping(true)).ExecuteLater(420);
 
             screen.schedule.Execute(() =>
             {
                 ShowTyping(false);
-                chatList.Add(Bubble(BusinessReport(), false));
-                ScrollDown();
-
-                var back = new Button(ShowHome) { text = Loc.T("phone.menu.back") };
-                back.AddToClassList("home__row");
-                screen.Add(back);
+                Send(BusinessReport(), false);
+                ShowComposer();
             }).ExecuteLater(1700);
         }
+
+        /// <summary>
+        /// He describes a guide and asks whether to do it now.
+        ///
+        /// **The question is asked here rather than assumed**, because starting a walkthrough holds
+        /// the interface shut for its whole length, and doing that to somebody who tapped a list item
+        /// to read what it was is exactly the trap the lock is supposed to prevent.
+        /// </summary>
+        private void OfferWalkthrough(Walkthrough walkthrough)
+        {
+            composer?.RemoveFromHierarchy();
+            composer = null;
+
+            Send(Loc.T("phone.ask.guide", walkthrough.Title), true);
+
+            screen.schedule.Execute(() => ShowTyping(true)).ExecuteLater(380);
+
+            screen.schedule.Execute(() =>
+            {
+                ShowTyping(false);
+                Send(walkthrough.Blurb, false);
+                Send(Loc.T("phone.guide.now"), false);
+
+                var pair = new VisualElement();
+                pair.AddToClassList("compose");
+
+                var yes = new Button(() =>
+                {
+                    Send(Loc.T("phone.guide.yes"), true);
+
+                    // The phone leaves before the walkthrough starts, or the strip would come up
+                    // behind a handset covering a quarter of the screen.
+                    Collapse(false);
+                    startWalkthrough?.Invoke(walkthrough);
+                })
+                { text = Loc.T("phone.guide.yes") };
+
+                yes.AddToClassList("compose__send");
+                pair.Add(yes);
+
+                var no = new Button(() =>
+                {
+                    Send(Loc.T("phone.guide.no"), true);
+
+                    pair.RemoveFromHierarchy();
+                    ShowComposer();
+                })
+                { text = Loc.T("phone.guide.later") };
+
+                no.AddToClassList("compose__back");
+                pair.Add(no);
+
+                composer = pair;
+                screen.Add(pair);
+            }).ExecuteLater(1500);
+        }
+
+        /// <summary>
+        /// Runs a walkthrough. Assigned by the shell, which owns the tour overlay that draws it.
+        /// </summary>
+        public Action<Walkthrough> startWalkthrough;
 
         /// <summary>
         /// The chat furniture, without the scripted backlog the opening call fills it with.
@@ -703,7 +902,17 @@ namespace ScalingLaws.UI
             return cousinFace;
         }
 
-        private static VisualElement Bubble(string text, bool mine)
+        /// <summary>
+        /// One message, with the day it was said in small grey type beside it.
+        ///
+        /// **The campaign day rather than a date.** A player tracks how far in they are in days, the
+        /// clock in the bottom bar counts days, and "Day 412" places a message in a way "12 March
+        /// 2023" does not until somebody works out when the campaign started.
+        ///
+        /// `day` of zero means the line is being sent right now and the caller has no company to ask,
+        /// which happens in the opening call before a campaign exists.
+        /// </summary>
+        private static VisualElement Bubble(string text, bool mine, int day = 0)
         {
             var bubble = new VisualElement();
             bubble.AddToClassList("chat__bubble");
@@ -713,12 +922,70 @@ namespace ScalingLaws.UI
             label.AddToClassList("chat__text");
             bubble.Add(label);
 
+            if (day > 0)
+            {
+                var when = new Label(Loc.T("phone.day", day.ToString()));
+                when.AddToClassList("chat__when");
+                bubble.Add(when);
+            }
+
             // Born flat and released a frame later, so each message arrives rather than appearing.
             bubble.AddToClassList("chat__bubble--arriving");
             bubble.schedule.Execute(() => bubble.RemoveFromClassList("chat__bubble--arriving"))
                 .ExecuteLater(16);
 
             return bubble;
+        }
+
+        /// <summary>
+        /// Puts a line on screen **and** into the saved thread.
+        ///
+        /// One door, so a message cannot be shown without being kept. The opening call goes around
+        /// it deliberately: those lines are the tutorial's script and replaying them into a thread
+        /// the player scrolls back through would make the game's first conversation arrive twice.
+        /// </summary>
+        private void Send(string text, bool mine)
+        {
+            var state = company?.Invoke()?.State;
+
+            if (state != null)
+            {
+                state.Messages.Say(state.Date, mine, text);
+            }
+
+            var day = state != null ? state.Date.DayIndex + 1 : 0;
+
+            chatList.Add(Bubble(text, mine, day));
+            ScrollDown();
+        }
+
+        /// <summary>
+        /// Lays the saved thread out, oldest at the top.
+        ///
+        /// Nothing is animated in: `Bubble` releases its arriving class a frame later, which is right
+        /// for a message that has just been sent and wrong for forty of them at once.
+        /// </summary>
+        private void ReplayThread()
+        {
+            var state = company?.Invoke()?.State;
+
+            if (state == null || state.Messages.IsEmpty)
+            {
+                var empty = new Label(Loc.T("phone.thread.empty"));
+                empty.AddToClassList("chat__empty");
+                chatList.Add(empty);
+
+                return;
+            }
+
+            foreach (var line in state.Messages.Lines)
+            {
+                var bubble = Bubble(line.Text, line.Mine, line.Day);
+                bubble.RemoveFromClassList("chat__bubble--arriving");
+                chatList.Add(bubble);
+            }
+
+            ScrollDown();
         }
 
         private void ScrollDown()

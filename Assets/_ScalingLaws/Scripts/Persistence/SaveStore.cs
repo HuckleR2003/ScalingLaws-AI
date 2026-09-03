@@ -299,6 +299,18 @@ namespace ScalingLaws.Persistence
 
             data.walkthroughsDone = new List<string>(state.Guide.WalkthroughsDone);
             data.walkthroughsDismissed = new List<string>(state.Guide.WalkthroughsDismissed);
+
+            data.messages = new List<ChatLineData>();
+
+            foreach (var line in state.Messages.Lines)
+            {
+                data.messages.Add(new ChatLineData
+                {
+                    day = line.Day,
+                    mine = line.Mine,
+                    text = line.Text
+                });
+            }
             data.feedbackLetterSent = state.FeedbackLetterSent;
 
             data.lastTroubleDayIndex = state.LastTroubleDayIndex;
@@ -1214,6 +1226,15 @@ namespace ScalingLaws.Persistence
                 safe.guideFavourGranted,
                 safe.walkthroughsDone,
                 safe.walkthroughsDismissed);
+
+            var thread = new List<Messenger.Line>();
+
+            foreach (var line in safe.messages)
+            {
+                thread.Add(new Messenger.Line(line.day, line.mine, line.text));
+            }
+
+            state.Messages.Restore(thread);
 
             foreach (var incident in safe.incidents)
             {

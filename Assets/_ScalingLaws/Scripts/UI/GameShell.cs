@@ -734,13 +734,21 @@ namespace ScalingLaws.UI
                 phone.OpenMenu();
             });
 
+            // **The phone can start a walkthrough too**, which is where a player goes looking for
+            // one they waved away in the corner. Same door as the chip: the overlay owns the strip.
+            phone.startWalkthrough = walkthrough => guide?.StartWalkthrough(walkthrough);
+
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
 
             // **Above the task strip and separate from it.** The chip that offers a walkthrough is
             // not one of the five opening tasks, and hanging it off that list would have made its
             // counter read 4/5 over something that is not one of the five.
             prompts = new PromptChips(root, () => state, () => state.Guide,
-                walkthrough => guide?.StartWalkthrough(walkthrough), RefreshChrome,
+                // **Through the phone, not straight to the strip.** The author asked for the card
+                // to pull the handset out, and it is the right call: a walkthrough that begins
+                // because Emil rang is a favour, and one that begins because a panel appeared is a
+                // feature. Same door either way, so the two cannot drift.
+                walkthrough => phone.OpenGuide(walkthrough), RefreshChrome,
                 () => guide is { IsWalking: true });
 
             modelHub = new ModelDashboard(() => simulation, () => Show(Screen.Create),
