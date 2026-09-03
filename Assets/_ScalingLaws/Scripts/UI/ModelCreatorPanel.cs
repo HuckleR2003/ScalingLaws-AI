@@ -163,19 +163,28 @@ namespace ScalingLaws.UI
             Loc.T("create.stage.after")
         };
 
+        /// <summary>
+        /// What each stage is for, as the card that opens when the cursor rests on its pip.
+        ///
+        /// **This was a `static readonly` array of English sentences that nothing read.** Seven
+        /// entries against eight stages, so it had gone stale as well as dead, and no guard in this
+        /// project looks at fields: `UiWiringTests` sweeps methods. The copy was good, so it is
+        /// wired up rather than deleted.
+        ///
+        /// A hover card rather than a line under the rail, because the creator pages are budgeted
+        /// to fit one screen without scrolling and anything added here has to take its height from
+        /// somewhere.
+        /// </summary>
         private static readonly string[] StageBlurbs =
         {
-            "What the model is built on, and what it is called. The family sets the ceiling for "
-            + "everything chosen after it.",
-            "How big it is, and how much it reads. This single trade decides most of the result.",
-            "What it learns from. The run draws from the best corpus first, so one good archive "
-            + "lifts the whole mix.",
-            "How much throughput to rent. This buys time and never quality, which is the point.",
-            "What happens when this goes wrong, and how much of the calendar to spend making that "
-            + "less likely. None of it makes a better model.",
-            "What the run is projected to produce, and what it costs to find out.",
-            "What happens the day it finishes. This can be changed later, and the market will have "
-            + "moved by then."
+            "create.blurb.branding",
+            "create.blurb.foundation",
+            "create.blurb.scale",
+            "create.blurb.data",
+            "create.blurb.compute",
+            "create.blurb.safety",
+            "create.blurb.review",
+            "create.blurb.after"
         };
 
         /// <summary>Sliders move in log space so one drag covers a billion to a hundred trillion.</summary>
@@ -329,6 +338,13 @@ namespace ScalingLaws.UI
                 name.AddToClassList("stage-pip__name");
                 pip.Add(name);
 
+                // Keyed, so the card resolves in whatever language is current when the cursor
+                // arrives rather than in whichever one the rail happened to be built in.
+                if (index < StageBlurbs.Length)
+                {
+                    InsightTip.AttachKeyed(pip, StageNames[index], StageBlurbs[index]);
+                }
+
                 stageRail.Add(pip);
             }
 
@@ -347,7 +363,9 @@ namespace ScalingLaws.UI
             });
 
             backButton.SetEnabled(stage > 0);
-            nextButton.text = stage >= StageNames.Length - 1 ? "START TRAINING" : "NEXT";
+            nextButton.text = stage >= StageNames.Length - 1
+                ? Loc.T("create.start_training")
+                : Loc.T("create.next");
 
             Reprice();
         }
@@ -600,11 +618,12 @@ namespace ScalingLaws.UI
             }
 
             familyField.tooltip = ChosenFamily().Length == 0
-                ? "A new line stands on its own and starts with nobody using it."
-                : $"This supersedes whatever {ChosenFamily()} currently sells. One line is one product, "
-                    + "so the older model stops competing the day this one ships.";
+                ? Loc.T("create.new_line_note")
+                : Loc.T("create.supersedes_note", ChosenFamily());
 
-            familyHint.text = ChosenFamily().Length == 0 ? "New line" : "Supersedes " + ChosenFamily();
+            familyHint.text = ChosenFamily().Length == 0
+                ? Loc.T("create.line_new")
+                : Loc.T("create.supersedes", ChosenFamily());
         }
 
         /// <summary>Empty for a new line, otherwise the line the player picked.</summary>
@@ -685,15 +704,17 @@ namespace ScalingLaws.UI
                 // What it costs to serve, because that is the part a player forgets until the bill
                 // arrives months later.
                 var serving = new Label(definition.ServingCostMultiplier <= 1.0
-                    ? "Cheap to serve"
-                    : $"{UiFormat.Number(definition.ServingCostMultiplier, 2)}x to serve");
+                    ? Loc.T("create.cheap_to_serve")
+                    : Loc.T("create.times_to_serve",
+                        UiFormat.Number(definition.ServingCostMultiplier, 2)));
 
                 serving.AddToClassList("type-tile__note");
                 tile.Add(serving);
             }
             else
             {
-                var gate = new Label($"Needs {ResearchTree.Get(definition.Requires).DisplayName}");
+                var gate = new Label(
+                    Loc.T("create.needs", ResearchTree.Get(definition.Requires).DisplayName));
                 gate.AddToClassList("type-tile__note");
                 gate.AddToClassList("type-tile__note--locked");
                 tile.Add(gate);
@@ -721,17 +742,15 @@ namespace ScalingLaws.UI
 
             var tiles = new VisualElement();
             tiles.AddToClassList("deploy-tiles");
-            tiles.Add(DeployTile("KEEP IT LOCAL",
-                "It finishes onto the shelf and stays there. Train on it, upgrade it, release it the "
-                + "day the market looks right. Holding costs nothing but time.",
+            tiles.Add(DeployTile(Loc.T("create.keep_local"),
+                Loc.T("create.keep_local_note"),
                 // ShowStage, not Reprice. Reprice recalculates the numbers and leaves the page as it
                 // is, so choosing COMMERCIALISE set the flag and the pricing panels it is supposed to
                 // reveal were never built. The tile looked dead because nothing it did was visible.
                 !commercialise, () => { commercialise = false; ShowStage(); }));
 
-            tiles.Add(DeployTile("COMMERCIALISE",
-                "It ships the day it finishes. You decide now what a free account gets and what a "
-                + "paid one costs, and both of those decide how many people ever try it.",
+            tiles.Add(DeployTile(Loc.T("create.commercialise"),
+                Loc.T("create.commercialise_note"),
                 commercialise, () => { commercialise = true; ShowStage(); }));
 
             page.Add(tiles);
@@ -800,10 +819,10 @@ namespace ScalingLaws.UI
             var costPerFreeUserMonth = policy.FreeTierTokensPerUserPerDay / 1_000_000.0
                 * market.PricePerMillionTokensUsd * 30.0;
 
-            free.Add(LoadBar("REACH BOUGHT",
+            free.Add(LoadBar(Loc.T("create.reach_bought"),
                 (policy.ReachMultiplier - 1.0) / MonetizationCatalog.FreeTierReachBonus,
-                $"A free account costs you about {UiFormat.Money((long)Math.Round(costPerFreeUserMonth))} "
-                + "a month to serve, every month, whether or not it ever pays."));
+                Loc.T("create.free_account_cost",
+                    UiFormat.Money((long)Math.Round(costPerFreeUserMonth)))));
 
             page.Add(free);
 
@@ -976,9 +995,7 @@ namespace ScalingLaws.UI
             // The sentence lives in the tooltip rather than on the page. The same rule the founder
             // skills follow: a full sentence at this column width wraps to two lines and the panel
             // below it falls off the bottom of the screen.
-            architectureField.tooltip =
-                "A sparse mixture costs a quarter of the FLOPs per token and a little quality per "
-                + "parameter. On a fixed budget that trade is usually worth taking.";
+            architectureField.tooltip = Loc.T("create.sparse_note");
 
             return panel;
         }
@@ -1134,9 +1151,10 @@ namespace ScalingLaws.UI
             // produce one, and printing "optimum 0.0" beside a confident OVERSIZED badge was the screen
             // asserting something it had failed to work out.
             beltRatio.text = profile.IsEstimated
-                ? $"{UiFormat.Number(projection.TokensPerParameter)} : 1"
-                    + $"   (optimum {UiFormat.Number(projection.OptimalTokensPerParameter)})"
-                : $"{UiFormat.Number(projection.TokensPerParameter)} : 1   (no optimum until you have compute)";
+                ? Loc.T("create.belt_ratio", UiFormat.Number(projection.TokensPerParameter),
+                    UiFormat.Number(projection.OptimalTokensPerParameter))
+                : Loc.T("create.belt_no_optimum",
+                    UiFormat.Number(projection.TokensPerParameter));
 
             beltProfile.text = profile.ProfileName;
             beltProfile.EnableInClassList("belt-block__badge--good",
@@ -1157,17 +1175,17 @@ namespace ScalingLaws.UI
             // maximum, so the bar means the same thing here as it does on the rankings screen.
             scaleReadout.Add(ThinBar("Expected capability",
                 UiFormat.Number(projection.ProjectedCapability), projection.ProjectedCapability / 100.0));
-            scaleReadout.Add(ThinBar("Training efficiency",
+            scaleReadout.Add(ThinBar(Loc.T("create.training_efficiency"),
                 UiFormat.Percent(profile.TrainingEfficiency), profile.TrainingEfficiency));
-            scaleReadout.Add(ThinBar("Budget efficiency",
+            scaleReadout.Add(ThinBar(Loc.T("create.budget_efficiency"),
                 UiFormat.Percent(profile.BudgetEfficiency), profile.BudgetEfficiency));
             // Relative to a twenty billion parameter model, so one is neutral. Capped at three on the
             // bar because past that the exact figure matters less than the fact it is bad.
-            scaleReadout.Add(ThinBar("Cost to serve",
-                $"{UiFormat.Number(profile.ServingBurden, 2)}x",
+            scaleReadout.Add(ThinBar(Loc.T("create.cost_to_serve"),
+                Loc.T("create.times", UiFormat.Number(profile.ServingBurden, 2)),
                 Math.Clamp(profile.ServingBurden / 3.0, 0.0, 1.0)));
 
-            scaleReadout.Add(ThinBar("Memory used",
+            scaleReadout.Add(ThinBar(Loc.T("create.memory_used"),
                 UiFormat.Percent(Math.Min(1.0, profile.MemoryPressure)),
                 Math.Min(1.0, profile.MemoryPressure)));
 
@@ -1306,8 +1324,11 @@ namespace ScalingLaws.UI
                     definition.Pitch,
                     blueprintPrecision == captured,
                     open,
-                    open ? $"{definition.Throughput:0.00}x compute, {definition.Instability:0.0}x spread"
-                         : $"needs {definition.Earliest} silicon",
+                    open
+                        ? Loc.T("create.precision_card",
+                            UiFormat.Number(definition.Throughput, 2),
+                            UiFormat.Number(definition.Instability, 1))
+                        : Loc.T("create.needs_silicon", definition.Earliest.ToString()),
                     () => { blueprintPrecision = captured; RepriceAndRebuild(); });
 
                 row.Add(card);
@@ -1340,7 +1361,9 @@ namespace ScalingLaws.UI
                     definition.Pitch,
                     blueprintShape == captured,
                     true,
-                    $"{definition.Capability:0.00}x capability, {definition.ServingBurden:0.00}x to serve",
+                    Loc.T("create.shape_note",
+                        UiFormat.Number(definition.Capability, 2),
+                        UiFormat.Number(definition.ServingBurden, 2)),
                     () => { blueprintShape = captured; RepriceAndRebuild(); }));
             }
 
@@ -1417,7 +1440,7 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BuildCutoffPanel()
         {
-            var panel = NewPanel("KNOWLEDGE CUTOFF");
+            var panel = NewPanel(Loc.T("create.knowledge_cutoff"));
 
             var row = new VisualElement();
             row.AddToClassList("choice-row");
@@ -1426,24 +1449,25 @@ namespace ScalingLaws.UI
             {
                 var captured = months;
                 var pipeline = simulation.State.HasResearch(ResearchNodeId.ContinuousDataPipeline);
-                var title = months == 0 ? "TODAY" : $"{months} MONTHS BACK";
+                var title = months == 0
+                    ? Loc.T("create.cutoff_today")
+                    : Loc.T("create.cutoff_back", Loc.Counted(months, "noun.month"));
 
                 var pitch = months == 0
-                    ? "Everything up to the day the run starts. Dearest, messiest, and right about "
-                      + "the present."
+                    ? Loc.T("create.cutoff_today_note")
                     : months >= 24
-                        ? "Two years back. Cheap, clean, thoroughly studied, and wrong about "
-                          + "anything that has happened since."
-                        : "A compromise. Most of the saving, some of the staleness.";
+                        ? Loc.T("create.cutoff_old_note")
+                        : Loc.T("create.cutoff_mid_note");
 
                 row.Add(NewChoiceCard(
                     title,
                     pitch,
                     blueprintCutoffMonths == captured,
                     true,
-                    $"{TrainingChoiceCatalog.CutoffCapabilityMultiplier(months):0.00}x capability, "
-                    + $"{TrainingChoiceCatalog.CutoffCostMultiplier(months, pipeline):0.00}x the data bill"
-                    + (pipeline && months < 12 ? "  (pipeline)" : string.Empty),
+                    Loc.T("create.cutoff_note",
+                        UiFormat.Number(TrainingChoiceCatalog.CutoffCapabilityMultiplier(months), 2),
+                        UiFormat.Number(TrainingChoiceCatalog.CutoffCostMultiplier(months, pipeline), 2))
+                    + (pipeline && months < 12 ? "  " + Loc.T("create.pipeline") : string.Empty),
                     () => { blueprintCutoffMonths = captured; RepriceAndRebuild(); }));
             }
 
@@ -1471,8 +1495,10 @@ namespace ScalingLaws.UI
                     blueprintDedup == captured,
                     open,
                     open
-                        ? $"{definition.TokensKept:P0} of the tokens, {definition.Quality:0.00}x each"
-                        : $"needs {ResearchTree.Get(gate).DisplayName}",
+                        ? Loc.T("create.dedup_note",
+                            UiFormat.Percent(definition.TokensKept, 0),
+                            UiFormat.Number(definition.Quality, 2))
+                        : Loc.T("create.needs", ResearchTree.Get(gate).DisplayName),
                     () => { blueprintDedup = captured; RepriceAndRebuild(); }));
             }
 
@@ -1506,18 +1532,18 @@ namespace ScalingLaws.UI
 
             // Quality is a multiplier around one, so it is shown against a band rather than as a
             // percentage of nothing. Below one actively hurts the run.
-            dataReadout.Add(ThinBar("Corpus quality",
-                $"{UiFormat.Number(blend.QualityMultiplier, 2)}x",
+            dataReadout.Add(ThinBar(Loc.T("create.corpus_quality"),
+                Loc.T("create.times", UiFormat.Number(blend.QualityMultiplier, 2)),
                 Math.Clamp((blend.QualityMultiplier - 0.5) / 1.0, 0.0, 1.0)));
 
             var needed = Math.Max(1.0, blueprint.TrainingTokensBillions);
-            dataReadout.Add(ThinBar("Tokens available",
-                $"{UiFormat.Billions(blend.AvailableTokensBillions)}",
+            dataReadout.Add(ThinBar(Loc.T("create.tokens_available"),
+                UiFormat.Billions(blend.AvailableTokensBillions),
                 Math.Clamp(blend.AvailableTokensBillions / needed, 0.0, 1.0)));
 
             var costRow = new Label(blend.AcquisitionCostUsd > 0L
-                ? $"Licensing this mix costs {UiFormat.Money(blend.AcquisitionCostUsd)}."
-                : "Nothing in this mix has to be paid for.");
+                ? Loc.T("create.licensing_costs", UiFormat.Money(blend.AcquisitionCostUsd))
+                : Loc.T("create.nothing_to_pay"));
             costRow.AddToClassList("scale-note");
             dataReadout.Add(costRow);
 
@@ -1698,9 +1724,12 @@ namespace ScalingLaws.UI
             body.AddToClassList("tier-body");
             panel.Add(body);
 
+            var days = "+" + Loc.Counted(tier.ExtraDays, "noun.day");
+
             var bill = new Label(open
-                ? $"+{tier.ExtraDays} days   ·   {UiFormat.Money(tier.ExtraCostUsd)}"
-                : $"+{tier.ExtraDays} days   ·   {UiFormat.Money(tier.ExtraCostUsd)}   ·   NOT AVAILABLE");
+                ? days + "   ·   " + UiFormat.Money(tier.ExtraCostUsd)
+                : days + "   ·   " + UiFormat.Money(tier.ExtraCostUsd)
+                    + "   ·   " + Loc.T("create.not_available"));
 
             bill.AddToClassList("tier-bill");
             bill.EnableInClassList("tier-bill--locked", !open);
@@ -1716,18 +1745,22 @@ namespace ScalingLaws.UI
 
             if (tier.RiskReduction > 0.0)
             {
-                parts.Add($"-{tier.RiskReduction:P1} incident risk");
+                parts.Add(Loc.T("create.less_risk", UiFormat.Percent(tier.RiskReduction, 1)));
             }
 
             if (tier.SaveChance > 0.0)
             {
-                parts.Add($"{tier.SaveChance:P1} to avoid a penalty");
+                parts.Add(Loc.T("create.avoid_penalty", UiFormat.Percent(tier.SaveChance, 1)));
             }
 
             if (tier.PerModelBonus > 0.0)
             {
-                var what = module == SafetyModule.RedTeam ? "to avoid" : "risk";
-                parts.Add($"+{tier.PerModelBonus:P1} {what} per live model, up to {tier.PerModelCap}");
+                parts.Add(Loc.T(
+                    module == SafetyModule.RedTeam
+                        ? "create.per_model_avoid"
+                        : "create.per_model_risk",
+                    UiFormat.Percent(tier.PerModelBonus, 1),
+                    tier.PerModelCap.ToString()));
             }
 
             return string.Join("   ·   ", parts);
@@ -1771,9 +1804,10 @@ namespace ScalingLaws.UI
 
             var chosen = SafetyModuleCatalog.EffortOf(safetyEffort);
             var reading = new Label(chosen.Multiplier == 1
-                ? "The stage takes exactly as long as the modules cost."
-                : $"Safety work takes {chosen.TimeMultiplier:0.0}x as long. Every safety figure "
-                  + $"gains {chosen.StatBonus:P1}.");
+                ? Loc.T("create.effort_neutral")
+                : Loc.T("create.effort_raised",
+                    UiFormat.Number(chosen.TimeMultiplier, 1),
+                    UiFormat.Percent(chosen.StatBonus, 1)));
 
             reading.AddToClassList("tier-effect");
             panel.Add(reading);
@@ -1784,7 +1818,7 @@ namespace ScalingLaws.UI
         /// <summary>What all of it adds up to, which is the only number that decides anything.</summary>
         private VisualElement BuildSafetySummary()
         {
-            var panel = NewPanel("WHAT THIS BUYS");
+            var panel = NewPanel(Loc.T("create.what_this_buys"));
 
             var plan = new SafetyPlan(
                 AllowedTier(SafetyModule.Assa, assaTier),
@@ -1793,10 +1827,13 @@ namespace ScalingLaws.UI
                 safetyEffort,
                 simulation.State.DeployedModels.Count);
 
-            panel.Add(Row("Incident risk", $"-{plan.RiskReduction:P1}"));
-            panel.Add(Row("Chance a penalty is dropped", $"{plan.SaveChance:P1}"));
-            panel.Add(Row("Added to the run", $"{plan.ExtraDays} days"));
-            panel.Add(Row("Added to the bill", UiFormat.Money(plan.ExtraCostUsd)));
+            panel.Add(Row(Loc.T("create.incident_risk"),
+                "-" + UiFormat.Percent(plan.RiskReduction, 1)));
+            panel.Add(Row(Loc.T("create.penalty_dropped"),
+                UiFormat.Percent(plan.SaveChance, 1)));
+            panel.Add(Row(Loc.T("create.added_to_run"),
+                Loc.Counted(plan.ExtraDays, "noun.day")));
+            panel.Add(Row(Loc.T("create.added_to_bill"), UiFormat.Money(plan.ExtraCostUsd)));
 
             var note = new Label(
                 Loc.T("create.safety_note"));

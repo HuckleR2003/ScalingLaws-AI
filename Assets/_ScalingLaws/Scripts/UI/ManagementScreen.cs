@@ -121,10 +121,9 @@ namespace ScalingLaws.UI
 
             var subtitle = new Label(showing switch
             {
-                Tab.Desk => "What the numbers say. Held users, what they think, what it costs to keep them.",
+                Tab.Desk => Loc.T("mg.desk.strap"),
                 Tab.Versions => Loc.T("mg.versions.strap"),
-                Tab.Archive => "Every model the company ever put on sale, newest first. What each one "
-                    + "scored, what it earned, and whether anyone is still using it.",
+                Tab.Archive => Loc.T("mg.archive.strap"),
                 _ => Loc.T("mg.stranger_sees")
             });
 
@@ -213,11 +212,9 @@ namespace ScalingLaws.UI
             panel.Add(heading);
 
             var line = new Label(simulation.State.Shelf.Count > 0
-                ? $"{simulation.State.Shelf.Count} finished run"
-                    + (simulation.State.Shelf.Count == 1 ? " is" : "s are")
-                    + " waiting on the shelf. A page needs something to put on it."
-                : "No model has been released. Train one, then release it, and this becomes the page "
-                    + "people land on.");
+                ? Loc.T("mg.on_the_shelf",
+                    Loc.Counted(simulation.State.Shelf.Count, "noun.finished_run"))
+                : Loc.T("mg.nothing_released"));
 
             line.AddToClassList("field__hint");
             panel.Add(line);
@@ -276,9 +273,10 @@ namespace ScalingLaws.UI
 
             if (flagship != null)
             {
-                var line = new Label(
-                    $"{ModelTypeCatalog.Get(flagship.Type).DisplayName} model  ·  {flagship.Family} line  "
-                    + $"·  released {UiFormat.Days(product.DaysOld)} ago");
+                var line = new Label(Loc.T("mg.flagship_line",
+                    ModelTypeCatalog.Get(flagship.Type).DisplayName,
+                    flagship.Family,
+                    UiFormat.Days(product.DaysOld)));
 
                 line.AddToClassList("mg-hero__line");
                 left.Add(line);
@@ -302,7 +300,7 @@ namespace ScalingLaws.UI
             score.AddToClassList("mg-hero__score");
             right.Add(score);
 
-            var who = new Label(UiFormat.Count(product.Subscribers) + " people use it");
+            var who = new Label(Loc.T("mg.people_use_it", UiFormat.Count(product.Subscribers)));
             who.AddToClassList("mg-hero__who");
             right.Add(who);
 
@@ -395,29 +393,33 @@ namespace ScalingLaws.UI
                 freeTokens <= 0.0
                     ? new[]
                     {
-                        "No free tier.",
-                        "Everyone who tries it pays first.",
-                        "Cheapest to serve, hardest to be discovered."
+                        Loc.T("mg.no_free_tier"),
+                        Loc.T("mg.everyone_pays"),
+                        Loc.T("mg.cheapest_hardest")
                     }
                     : new[]
                     {
-                        $"{UiFormat.Number(freeTokens / 1000.0, 0)}k tokens a day",
-                        "No commitment",
-                        "Costs you to serve, buys you goodwill"
+                        Loc.T("mg.k_tokens_a_day", UiFormat.Number(freeTokens / 1000.0, 0)),
+                        Loc.T("mg.no_commitment"),
+                        Loc.T("mg.costs_buys_goodwill")
                     },
                 money.FreeShareOfTokens > 0.5));
 
-            row.Add(Plan("PAID", UiFormat.Money((long)Math.Round(money.SubscriptionPriceUsdPerMonth)),
-                "a month",
+            row.Add(Plan(Loc.T("mg.paid"),
+                UiFormat.Money((long)Math.Round(money.SubscriptionPriceUsdPerMonth)),
+                Loc.T("mg.a_month"),
                 new[]
                 {
-                    "Everything, no daily ceiling",
+                    Loc.T("mg.no_daily_ceiling"),
                     money.PaidPriceMultiplier > 1.05
-                        ? $"{UiFormat.Percent(money.PaidPriceMultiplier - 1.0, 0)} above the going rate"
+                        ? Loc.T("mg.above_rate",
+                            UiFormat.Percent(money.PaidPriceMultiplier - 1.0, 0))
                         : money.PaidPriceMultiplier < 0.95
-                            ? $"{UiFormat.Percent(1.0 - money.PaidPriceMultiplier, 0)} under the going rate"
-                            : "Priced at the going rate",
-                    $"{UiFormat.Count(simulation.Product().Subscribers * PaidShare())} on it"
+                            ? Loc.T("mg.under_rate",
+                                UiFormat.Percent(1.0 - money.PaidPriceMultiplier, 0))
+                            : Loc.T("mg.at_rate"),
+                    Loc.T("mg.on_it",
+                        UiFormat.Count(simulation.Product().Subscribers * PaidShare()))
                 },
                 money.FreeShareOfTokens <= 0.5));
 
@@ -500,36 +502,35 @@ namespace ScalingLaws.UI
 
             // Service, price, freshness and capability. Four facts, each one either a complaint or a
             // compliment depending on where it actually sits.
-            panel.Add(Review("On the speed",
+            var milliseconds = UiFormat.Number(quality.ResponseMilliseconds, 0);
+
+            panel.Add(Review(Loc.T("mg.on_speed"),
                 quality.Status == ServiceStatus.Critical
-                    ? $"Timed out three times this morning. {UiFormat.Number(quality.ResponseMilliseconds, 0)} ms "
-                        + "when it answers at all."
+                    ? Loc.T("mg.speed_critical", milliseconds)
                     : quality.Status == ServiceStatus.Unstable
-                        ? $"Noticeably slower than it was. {UiFormat.Number(quality.ResponseMilliseconds, 0)} ms "
-                            + "and climbing at busy hours."
-                        : $"Answers straight away, {UiFormat.Number(quality.ResponseMilliseconds, 0)} ms, "
-                            + "never seen it queue.",
+                        ? Loc.T("mg.speed_unstable", milliseconds)
+                        : Loc.T("mg.speed_stable", milliseconds),
                 quality.Reliability));
 
-            panel.Add(Review("On the price",
+            panel.Add(Review(Loc.T("mg.on_price"),
                 money.PaidPriceMultiplier > 1.2
-                    ? "Good, but they know it. Costs well over what the others charge."
+                    ? Loc.T("mg.price_dear")
                     : money.PaidPriceMultiplier < 0.85
-                        ? "Cheaper than everything comparable. Hard to argue with."
-                        : "About what everyone charges. Fine.",
+                        ? Loc.T("mg.price_cheap")
+                        : Loc.T("mg.price_normal"),
                 Math.Clamp(1.3 - money.PaidPriceMultiplier * 0.6, 0.0, 1.0)));
 
-            panel.Add(Review("On how current it is",
+            panel.Add(Review(Loc.T("mg.on_current"),
                 product.Topicality >= 0.8
-                    ? "Newest thing available. Nothing else touches it right now."
+                    ? Loc.T("mg.current_newest")
                     : product.Topicality >= 0.55
-                        ? $"Still good. {UiFormat.Days(product.DaysOld)} old and holding up."
-                        : $"Feels dated. {UiFormat.Days(product.DaysOld)} old and the frontier is at "
-                            + $"{UiFormat.Number(product.Frontier)} now.",
+                        ? Loc.T("mg.current_good", UiFormat.Days(product.DaysOld))
+                        : Loc.T("mg.current_dated", UiFormat.Days(product.DaysOld),
+                            UiFormat.Number(product.Frontier)),
                 product.Topicality));
 
-            panel.Add(Review("Overall",
-                $"{simulation.State.LastStandingChange.Headline}, and it shows.",
+            panel.Add(Review(Loc.T("mg.overall"),
+                Loc.T("mg.overall_line", simulation.State.LastStandingChange.Headline),
                 product.Happiness));
 
             return panel;
@@ -635,10 +636,13 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("mg-kpis");
 
-            row.Add(Kpi("SHIPPED", history.Count.ToString(), live + " still on sale", null));
-            row.Add(Kpi("EARNED ALL TIME", UiFormat.Money(earned), "across every model", null));
-            row.Add(Kpi("BEST EVER", UiFormat.Number(best),
-                $"frontier is {UiFormat.Number(simulation.Market.FrontierCapability)}", null));
+            row.Add(Kpi(Loc.T("mg.kpi_shipped"), history.Count.ToString(),
+                Loc.T("mg.still_on_sale", live.ToString()), null));
+            row.Add(Kpi(Loc.T("mg.kpi_earned_ever"), UiFormat.Money(earned),
+                Loc.T("mg.across_every_model"), null));
+            row.Add(Kpi(Loc.T("mg.kpi_best_ever"), UiFormat.Number(best),
+                Loc.T("mg.frontier_is",
+                    UiFormat.Number(simulation.Market.FrontierCapability)), null));
 
             return row;
         }
@@ -662,9 +666,13 @@ namespace ScalingLaws.UI
             left.Add(name);
 
             var line = new Label(
-                $"{ModelTypeCatalog.Get(model.Type).DisplayName}  ·  {model.Family} line  ·  "
-                + $"released {model.ReleaseDate}"
-                + (record.IsLive ? string.Empty : $", withdrawn {model.RetiredOn}"));
+                Loc.T("mg.archive_line",
+                    ModelTypeCatalog.Get(model.Type).DisplayName,
+                    model.Family,
+                    model.ReleaseDate.ToString())
+                + (record.IsLive
+                    ? string.Empty
+                    : Loc.T("mg.withdrawn_on", model.RetiredOn.ToString())));
 
             line.AddToClassList("arch__line");
             left.Add(line);
@@ -683,17 +691,20 @@ namespace ScalingLaws.UI
             var figures = new VisualElement();
             figures.AddToClassList("arch__figures");
 
-            figures.Add(ArchFigure("SCORED", UiFormat.Number(record.CapabilityToday),
+            figures.Add(ArchFigure(Loc.T("mg.fig_scored"),
+                UiFormat.Number(record.CapabilityToday),
                 Math.Abs(record.CapabilityToday - model.Capability) > 0.05
-                    ? $"shipped at {UiFormat.Number(model.Capability)}"
-                    : "unchanged since release"));
+                    ? Loc.T("mg.shipped_at", UiFormat.Number(model.Capability))
+                    : Loc.T("mg.unchanged")));
 
-            figures.Add(ArchFigure("EARNED", UiFormat.Money(model.LifetimeRevenueUsd),
+            figures.Add(ArchFigure(Loc.T("mg.fig_earned"),
+                UiFormat.Money(model.LifetimeRevenueUsd),
                 model.DaysOnSale > 0
-                    ? $"over {UiFormat.Days(model.DaysOnSale)} on sale"
-                    : "never sold a token"));
+                    ? Loc.T("mg.over_on_sale", UiFormat.Days(model.DaysOnSale))
+                    : Loc.T("mg.never_sold")));
 
-            figures.Add(ArchFigure("PEAK", UiFormat.Count(model.PeakUsers), "most it ever held"));
+            figures.Add(ArchFigure(Loc.T("mg.fig_peak"), UiFormat.Count(model.PeakUsers),
+                Loc.T("mg.most_ever_held")));
 
             card.Add(figures);
 
@@ -756,18 +767,19 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("mg-kpis");
 
-            row.Add(Kpi("REGISTERED", UiFormat.Count(product.Subscribers),
-                UiFormat.Count(Concurrency.OnlineAt(product.Subscribers, hour)) + " on at midday",
+            row.Add(Kpi(Loc.T("mg.kpi_registered"), UiFormat.Count(product.Subscribers),
+                Loc.T("mg.on_at_midday",
+                    UiFormat.Count(Concurrency.OnlineAt(product.Subscribers, hour))),
                 null));
 
-            row.Add(Kpi("PAYING", UiFormat.Count(product.Subscribers * PaidShare()),
-                UiFormat.Percent(PaidShare(), 0) + " of them", null));
+            row.Add(Kpi(Loc.T("mg.kpi_paying"), UiFormat.Count(product.Subscribers * PaidShare()),
+                Loc.T("mg.of_them", UiFormat.Percent(PaidShare(), 0)), null));
 
-            row.Add(Kpi("EARNED THIS MONTH", UiFormat.Money(product.MonthEarningsUsd),
-                "against " + UiFormat.Money(spent) + " spent", null));
+            row.Add(Kpi(Loc.T("mg.kpi_earned_month"), UiFormat.Money(product.MonthEarningsUsd),
+                Loc.T("mg.against_spent", UiFormat.Money(spent)), null));
 
-            row.Add(Kpi("NET THIS MONTH", UiFormat.Money(product.MonthNetUsd),
-                product.IsProfitable ? "in the black" : "burning cash",
+            row.Add(Kpi(Loc.T("mg.kpi_net_month"), UiFormat.Money(product.MonthNetUsd),
+                product.IsProfitable ? Loc.T("mg.in_the_black") : Loc.T("mg.burning_cash"),
                 product.IsProfitable));
 
             return row;

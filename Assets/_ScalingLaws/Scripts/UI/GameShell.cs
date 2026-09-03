@@ -864,8 +864,8 @@ namespace ScalingLaws.UI
             cashArrows.EnableInClassList("topbar__arrows--flat", arrows == 0);
 
             cashButton.tooltip = flow >= 0
-                ? $"This month is up {UiFormat.Money(flow)} so far. Click for the books."
-                : $"This month is down {UiFormat.Money(Math.Abs(flow))} so far. Click for the books.";
+                ? Loc.T("shell.month_up", UiFormat.Money(flow))
+                : Loc.T("shell.month_down", UiFormat.Money(Math.Abs(flow)));
         }
 
         /// <summary>
@@ -889,13 +889,11 @@ namespace ScalingLaws.UI
             reputationLabel.EnableInClassList("topbar__standing--down", change.Total < 0.0);
 
             reputationLabel.tooltip = change.Total >= 0.0
-                ? $"Rising, mostly on {change.Headline}."
-                : $"Falling, mostly on {change.Headline}.";
+                ? Loc.T("shell.rep_rising", change.Headline)
+                : Loc.T("shell.rep_falling", change.Headline);
 
-            fansLabel.text = UiFormat.Count(state.Fans) + " FANS";
-            fansLabel.tooltip =
-                "People who follow the company rather than the product. They arrive slowly, they "
-                + "leave slowly, and they are still here between releases.";
+            fansLabel.text = UiFormat.Count(state.Fans) + " " + Loc.T("shell.fans");
+            fansLabel.tooltip = Loc.T("shell.fans_note");
         }
 
         /// <summary>Opens the books over whatever screen is showing, or closes them.</summary>
@@ -1116,15 +1114,19 @@ namespace ScalingLaws.UI
             panel.AddToClassList("panel");
             page.Add(panel);
 
-            panel.Add(Row("Survived", UiFormat.Days(state.Date.DayIndex)));
-            panel.Add(Row("Models shipped", state.ReleasedModelCount.ToString()));
-            panel.Add(Row("Best capability reached", UiFormat.Number(state.BestCapability)));
-            panel.Add(Row("Frontier at the end", UiFormat.Number(simulation.Market.FrontierCapability)));
-            panel.Add(Row("Lifetime revenue", UiFormat.Money(state.LifetimeRevenueUsd)));
-            panel.Add(Row("Lifetime operating cost", UiFormat.Money(state.LifetimeOperatingCostUsd)));
-            panel.Add(Row("Capital spent on hardware", UiFormat.Money(state.LifetimeCapitalSpentUsd)));
-            panel.Add(Row("Raised from investors", UiFormat.Money(state.CapTable.TotalRaisedUsd)));
-            panel.Add(Row("Founders held", UiFormat.Percent(state.CapTable.FounderEquity)));
+            panel.Add(Row(Loc.T("over.survived"), UiFormat.Days(state.Date.DayIndex)));
+            panel.Add(Row(Loc.T("over.models_shipped"), state.ReleasedModelCount.ToString()));
+            panel.Add(Row(Loc.T("over.best_capability"), UiFormat.Number(state.BestCapability)));
+            panel.Add(Row(Loc.T("over.frontier_end"),
+                UiFormat.Number(simulation.Market.FrontierCapability)));
+            panel.Add(Row(Loc.T("over.lifetime_revenue"), UiFormat.Money(state.LifetimeRevenueUsd)));
+            panel.Add(Row(Loc.T("over.lifetime_cost"),
+                UiFormat.Money(state.LifetimeOperatingCostUsd)));
+            panel.Add(Row(Loc.T("over.capital_spent"),
+                UiFormat.Money(state.LifetimeCapitalSpentUsd)));
+            panel.Add(Row(Loc.T("over.raised"), UiFormat.Money(state.CapTable.TotalRaisedUsd)));
+            panel.Add(Row(Loc.T("over.founders_held"),
+                UiFormat.Percent(state.CapTable.FounderEquity)));
 
             var back = new Button(SceneFlow.LoadMainMenu) { text = Loc.T("menu.back_to_menu") };
             back.AddToClassList("button");
@@ -1446,8 +1448,8 @@ namespace ScalingLaws.UI
             banner.AddToClassList(UpgradeTintClass(upgradeBannerTint));
 
             var kicker = new Label(projects.Count > 1
-                ? $"WORKING ON UPGRADE  ({projects.Count})"
-                : "WORKING ON UPGRADE");
+                ? Loc.T("shell.upgrading_many", projects.Count.ToString())
+                : Loc.T("shell.upgrading"));
 
             kicker.AddToClassList("ub__kicker");
             banner.Add(kicker);
@@ -1476,8 +1478,8 @@ namespace ScalingLaws.UI
 
             var left = slowest.DaysRemaining;
             var days = new Label(left <= 0
-                ? "finishing today"
-                : left == 1 ? "1 day left" : $"{left} days left");
+                ? Loc.T("shell.finishing_today")
+                : Loc.T("shell.days_left", Loc.Counted(left, "noun.day")));
 
             days.AddToClassList("ub__days");
             banner.Add(days);
@@ -1615,8 +1617,9 @@ namespace ScalingLaws.UI
             simulation.State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ModelReleased, state.Date,
                 refused.Count == 0
-                    ? $"{model.Name} {versionName} shipped."
-                    : $"{model.Name} {versionName} shipped, but {string.Join("  ", refused)}",
+                    ? Loc.T("shell.version_shipped", model.Name + " " + versionName)
+                    : Loc.T("shell.version_shipped_but", model.Name + " " + versionName,
+                        string.Join("  ", refused)),
                 0L));
 
             if (refused.Count == 0)
@@ -1744,8 +1747,8 @@ namespace ScalingLaws.UI
             banner.AddToClassList("hb");
 
             var kicker = new Label(state.Hiring.OpenCount > 1
-                ? $"ARRANGING  ({state.Hiring.OpenCount})"
-                : "ARRANGING");
+                ? Loc.T("shell.arranging_many", state.Hiring.OpenCount.ToString())
+                : Loc.T("shell.arranging"));
 
             kicker.AddToClassList("hb__kicker");
             banner.Add(kicker);
@@ -1766,8 +1769,8 @@ namespace ScalingLaws.UI
 
             var left = soonest.DaysLeft;
             var days = new Label(left <= 0
-                ? "answering today"
-                : left == 1 ? "1 day until they answer" : $"{left} days until they answer");
+                ? Loc.T("shell.answering_today")
+                : Loc.T("shell.days_until_answer", Loc.Counted(left, "noun.day")));
 
             days.AddToClassList("hb__days");
             banner.Add(days);
@@ -1968,7 +1971,8 @@ namespace ScalingLaws.UI
             titles.Add(name);
 
             var founded = new Label(
-                $"FOUNDED {dossier.Founded.Year}  ·  {dossier.Home.ToUpperInvariant()}  ·  "
+                Loc.T("shell.founded_in", dossier.Founded.Year.ToString())
+                + "  ·  " + dossier.Home.ToUpperInvariant() + "  ·  "
                 + FateWord(dossier, state.Date));
 
             founded.AddToClassList("dossier__meta");
@@ -2504,11 +2508,13 @@ namespace ScalingLaws.UI
                 pitch.AddToClassList("dcard__pitch");
                 card.Add(pitch);
 
-                var price = new Label($"{UiFormat.Money(monthly)} / month");
+                var price = new Label(Loc.T("shell.per_month", UiFormat.Money(monthly)));
                 price.AddToClassList("dcard__price");
                 card.Add(price);
 
-                var action = new Label(held ? "ON RETAINER  ·  CLICK TO CANCEL" : "JOIN");
+                var action = new Label(held
+                    ? Loc.T("shell.on_retainer")
+                    : Loc.T("shell.join_desk"));
                 action.AddToClassList("dcard__action");
                 card.Add(action);
 
@@ -2522,7 +2528,7 @@ namespace ScalingLaws.UI
             var signals = state.Signals;
             if (signals.Count == 0)
             {
-                feed.Add(Hint("No notes yet. A desk on retainer files its first one within a few weeks."));
+                feed.Add(Hint(Loc.T("shell.no_notes")));
                 return page;
             }
 
@@ -2537,7 +2543,8 @@ namespace ScalingLaws.UI
                 detail.AddToClassList("field__hint");
                 row.Add(detail);
 
-                var meta = new Label($"{signal.Tier}, desk confidence {UiFormat.Percent(signal.Confidence, 0)}");
+                var meta = new Label(Loc.T("shell.desk_confidence",
+                    signal.Tier.ToString(), UiFormat.Percent(signal.Confidence, 0)));
                 meta.AddToClassList("field__hint");
                 row.Add(meta);
 
@@ -2762,7 +2769,7 @@ namespace ScalingLaws.UI
             card.Add(title);
 
             var body = new Label(string.IsNullOrWhiteSpace(message)
-                ? "A training run has completed and is waiting on the shelf."
+                ? Loc.T("shell.run_on_shelf")
                 : message);
 
             body.AddToClassList("notice__body");
@@ -2818,8 +2825,8 @@ namespace ScalingLaws.UI
 
             pointsLabel.text = UiFormat.Number(state.ResearchPoints, 0);
             pointsButton.tooltip = state.ResearchPointsToday > 0.0
-                ? $"Earning {state.ResearchPointsToday:N1} a day. Click to spend them."
-                : "Nothing is being built and no funding is set, so nothing is being learned.";
+                ? Loc.T("shell.earning_points", UiFormat.Number(state.ResearchPointsToday, 1))
+                : Loc.T("shell.learning_nothing");
             // Only on the site screen. It sat on top of the model creator and the research tree,
             // which is the same mistake the counter it replaced made.
             modelBanner?.SetHidden(current != Screen.Site);
@@ -2857,7 +2864,8 @@ namespace ScalingLaws.UI
 
             hud?.SetBadge(Screen.Mail, waiting);
             modelBanner?.Refresh();
-            valuationLabel.text = $"valued {UiFormat.Money(simulation.CurrentValuationUsd())}";
+            valuationLabel.text = Loc.T("shell.valued_at",
+                UiFormat.Money(simulation.CurrentValuationUsd()));
             companyLabel.text = state.CompanyName;
             dateLabel.text = state.Date.ToString();
 
