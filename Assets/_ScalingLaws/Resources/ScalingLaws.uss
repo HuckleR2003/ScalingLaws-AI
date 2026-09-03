@@ -10717,6 +10717,11 @@
 
 .chat__list {
     flex-grow: 1;
+    /* **And shrink.** A flex child's floor is its content, so without these the thread pushes the
+     * composer off the bottom of the handset instead of scrolling. Invisible until somebody has a
+     * conversation long enough to need it, which is every campaign past the first hour. */
+    flex-shrink: 1;
+    min-height: 0;
     width: 100%;
     padding: 10px 12px;
 }
@@ -16166,15 +16171,18 @@
     margin-top: 3px;
     font-size: 9.5px;
     letter-spacing: 0.4px;
-    color: rgba(196, 206, 224, 0.42);
     -unity-text-align: middle-right;
 }
 
+/* **Two colours, because the two bubbles are two grounds.** The first pass used one grey for both
+ * and it vanished into the blue: a timestamp nobody can read is a timestamp that is not there. */
 .chat__bubble--me .chat__when {
+    color: rgba(233, 240, 255, 0.62);
     -unity-text-align: middle-right;
 }
 
 .chat__bubble--them .chat__when {
+    color: rgba(196, 206, 224, 0.45);
     -unity-text-align: middle-left;
 }
 
@@ -16187,7 +16195,17 @@
 }
 
 .compose {
+    /* **The screen centres its children**, and everything else on it escapes that by stating its
+     * own width. Without this the composer sizes to its widest label and sits as a narrow column,
+     * which made BACK's centred text look left-aligned inside a box nobody could see. */
+    align-self: stretch;
+    align-items: stretch;
     margin-top: 6px;
+    /* Its own gutter. The handset's rounded screen ends here and a button touching that edge reads
+     * as clipped rather than as placed. */
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
     padding-top: 8px;
     border-top-width: 1px;
     border-top-color: rgba(255, 255, 255, 0.07);
@@ -16279,4 +16297,23 @@
 
 .compose__back:hover {
     color: rgb(226, 234, 246);
+}
+
+/* ---- screens that own the right edge ------------------------------------------------------------
+ *
+ * The basement runs its build rail down the right side of the window. Anything living on the panel
+ * root rather than inside a screen has to step aside for it, at the same 344 the room's own corner
+ * banner already uses. One number, three tenants.
+ */
+.has-right-rail .prompts {
+    /* Under the room's own corner banner, which already holds 344 to 680 from y 145 to 635. The
+       right side of this screen is fully spoken for: the build rail owns the edge and the banner
+       owns the lane inside it, so the only free space is the strip below the banner. */
+    right: 344px;
+    top: 656px;
+}
+
+.has-right-rail .taskbar {
+    right: 344px;
+    top: 792px;
 }

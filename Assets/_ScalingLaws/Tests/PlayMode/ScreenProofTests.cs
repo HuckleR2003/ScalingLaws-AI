@@ -573,5 +573,47 @@ namespace ScalingLaws.Tests.PlayMode
 
             yield return Capture(planner.Root, "release_plan.png");
         }
+
+        /// <summary>
+        /// The messenger with a thread in it, the day stamps, and the guide list under it.
+        ///
+        /// **Loaded with a conversation on purpose.** An empty thread is one line of grey text and
+        /// tells nobody whether the bubbles read, whether the day stamp fights the words, or whether
+        /// the composer has room under forty messages. The proof render exists to answer the
+        /// questions a test cannot, and it can only answer them about a screen with something on it.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheMessengerDraws()
+        {
+            var simulation = Campaign();
+            simulation.TryOpenServerRoom(true, out _);
+
+            var state = simulation.State;
+            state.Guide.Stage = GuideStage.Finished;
+
+            state.Messages.Say(state.Date.AddDays(-380), true, "How is it going over there?");
+            state.Messages.Say(state.Date.AddDays(-380), false,
+                "Steady. Share price is about where it was, we are ninth. Nobody is writing about "
+                + "us, which at our size is the good outcome.");
+
+            state.Messages.Say(state.Date.AddDays(-40), true, "How is business?");
+            state.Messages.Say(state.Date.AddDays(-40), false,
+                "Up 12% on the quarter. Two of the regional firms renewed, so that is the year "
+                + "covered.");
+
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            var phone = new PhonePanel(host, _ => { }, () => simulation)
+            {
+                progressForMenu = () => state.Guide
+            };
+
+            // Straight to the screen, with no wake sequence in front of it. See the note on
+            // `OpenMessengerForProof`: waiting for the animation photographs the page before it.
+            phone.OpenMessengerForProof();
+
+            yield return Capture(host, "messenger.png");
+        }
     }
 }

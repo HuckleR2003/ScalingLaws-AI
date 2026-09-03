@@ -291,6 +291,30 @@ namespace ScalingLaws.UI
         /// him, and the guides he can walk you through, which is where a short tutorial is asked for
         /// rather than waited for.
         /// </summary>
+        /// <summary>
+        /// The messenger, opened for a proof render, with no wake animation in front of it.
+        ///
+        /// Two reasons this is not a call to `OpenMenu` followed by the row's own action. A test
+        /// dispatches no clicks, so the row can never be pressed. And **the panel's scheduler does
+        /// not tick until the phone is inside a panel**: every `ExecuteLater` the wake sequence
+        /// queues fires the moment the host is mounted, which put `ShowHome` on screen *after* the
+        /// messenger had been opened, and the first render came back a photograph of the home
+        /// screen. Found by looking at it, which is the only thing that finds this class of fault.
+        ///
+        /// Everything past the wake is the real path, so a picture cannot be of a screen the player
+        /// does not get.
+        /// </summary>
+        public void OpenMessengerForProof()
+        {
+            Close();
+            returning = false;
+
+            BuildFrame();
+
+            screen.AddToClassList("phone__screen--on");
+            OpenMessenger();
+        }
+
         private void OpenMessenger()
         {
             OpenChat();

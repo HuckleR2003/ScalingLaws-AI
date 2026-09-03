@@ -1201,6 +1201,14 @@ namespace ScalingLaws.UI
             }
 
             current = screen;
+
+            // **The right corner is not free on every screen.** The basement runs a build rail down
+            // that edge, which is why the room's own corner banner already sits at 344 rather than
+            // 22. The task strip and the prompt cards live on the panel root, outside any screen, so
+            // nothing told them: all three drew on top of each other there. One class, set here
+            // because this is where the shell already knows what is open.
+            contentHost?.panel?.visualTree?.EnableInClassList("has-right-rail", screen == Screen.Room);
+
             contentHost.Clear();
 
             // A floating card belongs to the screen that opened it. Leaving it up over a different
