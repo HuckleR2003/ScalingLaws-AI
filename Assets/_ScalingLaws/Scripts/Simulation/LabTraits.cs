@@ -48,7 +48,22 @@ namespace ScalingLaws.Simulation
         Absorbed = 10,
 
         /// <summary>Competing against your interests on purpose.</summary>
-        Hostile = 11
+        Hostile = 11,
+
+        /// <summary>Old enough to have been here before any of this was fashionable.</summary>
+        Veteran = 12,
+
+        /// <summary>Started after the race did. Everything it has, it built in public.</summary>
+        Newcomer = 13,
+
+        /// <summary>Has been through something public and is still here.</summary>
+        Scarred = 14,
+
+        /// <summary>In front on capability today, whoever was in front last year.</summary>
+        Leading = 15,
+
+        /// <summary>Has not shipped anything in a long time.</summary>
+        Quiet = 16
     }
 
     /// <summary>
@@ -84,6 +99,23 @@ namespace ScalingLaws.Simulation
 
         /// <summary>A live model at or under this share of the going rate is undercutting.</summary>
         public const double UndercuttingAtOrBelow = 0.5;
+
+        /// <summary>
+        /// Founded this many years before the campaign opens to count as a veteran.
+        ///
+        /// Three years. The game starts in 2022, so this is everybody who was working on it before
+        /// there was a market to work on it for.
+        /// </summary>
+        public const int VeteranFoundedBefore = 2019;
+
+        /// <summary>And founded in the opening year or later to count as a newcomer.</summary>
+        public const int NewcomerFoundedFrom = 2021;
+
+        /// <summary>Days without a release past which a lab has gone quiet.</summary>
+        public const int QuietAfterDays = 540;
+
+        /// <summary>How far ahead of the second-best a lab has to be to be called leading.</summary>
+        public const double LeadingBy = 1.5;
 
         /// <summary>
         /// Everything true about a lab today, most distinctive first, capped at
@@ -140,6 +172,22 @@ namespace ScalingLaws.Simulation
                 Take(found, LabTrait.DeepPockets);
             }
 
+            // Who is actually in front today. Ahead of everything else about a lab except that it
+            // is falling apart or has decided it is against you.
+            if (IsLeading(lab, state, date))
+            {
+                Take(found, LabTrait.Leading);
+            }
+
+            // Been through something public and still trading. Not the same as wobbling: this is a
+            // company that took the hit and is still on the board.
+            if (known && dossier.Fate != LabFate.Struggling && dossier.Fate != LabFate.Absorbed
+                && (HasLanded(dossier, LabChapterKind.Scandal, date)
+                    || HasLanded(dossier, LabChapterKind.Setback, date)))
+            {
+                Take(found, LabTrait.Scarred);
+            }
+
             // Price before strategy, because a lab selling at a quarter of the rate is a fact about
             // this month rather than about its founding brief.
             if (IsUndercutting(lab, state, date))
@@ -147,7 +195,27 @@ namespace ScalingLaws.Simulation
                 Take(found, LabTrait.Undercutting);
             }
 
+            if (HasGoneQuiet(lab, state, date))
+            {
+                Take(found, LabTrait.Quiet);
+            }
+
             Take(found, FromStrategy(lab, state));
+
+            // How long they have been at it, last, because it is the least surprising thing about
+            // anybody and it should never crowd out what they are doing now.
+            if (known)
+            {
+                if (dossier.Founded.Year < VeteranFoundedBefore)
+                {
+                    Take(found, LabTrait.Veteran);
+                }
+                else if (dossier.Founded.Year >= NewcomerFoundedFrom)
+                {
+                    Take(found, LabTrait.Newcomer);
+                }
+            }
+
             return found;
         }
 
@@ -171,6 +239,58 @@ namespace ScalingLaws.Simulation
                 // FastFollower has no lab, so it has no badge. See the gap at 6 above.
                 _ => LabTrait.None
             };
+        }
+
+        /// <summary>
+        /// Are they ahead of everybody else on capability today, and clearly enough to say so.
+        ///
+        /// The margin matters. Two labs a tenth of a point apart are level, and a badge that
+        /// changed hands every fortnight would be noise on a card a player opens twice a year.
+        /// </summary>
+        private static bool IsLeading(CompetitorId lab, CompanyState state, GameDate date)
+        {
+            if (state.Rivals == null)
+            {
+                return false;
+            }
+
+            var best = 0.0;
+            var second = 0.0;
+            var leader = CompetitorId.None;
+
+            foreach (var model in state.Rivals.LiveModels(date))
+            {
+                if (model.Capability > best)
+                {
+                    second = best;
+                    best = model.Capability;
+                    leader = model.Competitor;
+                }
+                else if (model.Capability > second)
+                {
+                    second = model.Capability;
+                }
+            }
+
+            return leader == lab && best - second >= LeadingBy;
+        }
+
+        /// <summary>
+        /// Have they shipped nothing for a long time.
+        ///
+        /// Read from the live model's release date rather than from a counter, so a lab that goes
+        /// quiet and then ships loses this the same day, without anything having to be reset.
+        /// </summary>
+        private static bool HasGoneQuiet(CompetitorId lab, CompanyState state, GameDate date)
+        {
+            var agent = state.Rivals?.Find(lab);
+
+            if (agent == null || !agent.HasShipped)
+            {
+                return false;
+            }
+
+            return date.DayIndex - agent.LiveReleaseDate.DayIndex > QuietAfterDays;
         }
 
         /// <summary>Is what they have on sale today priced well under the going rate.</summary>
@@ -235,7 +355,7 @@ namespace ScalingLaws.Simulation
 
         /// <summary>True when this one is a warning rather than a description.</summary>
         public static bool IsWarning(LabTrait trait) =>
-            trait is LabTrait.Wobbling or LabTrait.Absorbed or LabTrait.Hostile;
+            trait is LabTrait.Wobbling or LabTrait.Absorbed or LabTrait.Hostile or LabTrait.Leading;
 
         /// <summary>
         /// The phrase-book key, written out whole.
@@ -256,6 +376,11 @@ namespace ScalingLaws.Simulation
             LabTrait.Wobbling => "labtrait.wobbling",
             LabTrait.Absorbed => "labtrait.absorbed",
             LabTrait.Hostile => "labtrait.hostile",
+            LabTrait.Veteran => "labtrait.veteran",
+            LabTrait.Newcomer => "labtrait.newcomer",
+            LabTrait.Scarred => "labtrait.scarred",
+            LabTrait.Leading => "labtrait.leading",
+            LabTrait.Quiet => "labtrait.quiet",
             _ => string.Empty
         };
     }

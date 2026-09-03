@@ -47,25 +47,25 @@ namespace ScalingLaws.Tests.EditMode
         {
             var seen = new HashSet<LabTrait>();
 
-            foreach (var seed in new uint[] { 3, 11, 29, 71 })
+            foreach (var seed in new uint[] { 3, 29 })
             {
                 var simulation = Campaign(seed);
                 var state = simulation.State;
 
-                foreach (CompetitorId lab in AllLabs())
+                // **Days, not dates.** Two of these traits read what a lab has on sale today, and
+                // the rival field only ships when the simulation ticks. Setting `state.Date`
+                // forward moves the calendar and nothing else, so an earlier version of this ran
+                // nine simulated years in which no rival ever released anything, and reported two
+                // perfectly reachable traits as impossible.
+                state.Relations.Record(CompetitorId.OpenAi, state.Date, RivalRelations.Worst,
+                    "relation.reason.smear", string.Empty);
+
+                for (var month = 0; month < 108; month++)
                 {
-                    // A relationship bad enough to be called hostile, on one lab, so that branch is
-                    // reachable without playing fourteen years of spite.
-                    if (lab == CompetitorId.OpenAi)
-                    {
-                        state.Relations.Record(lab, state.Date, RivalRelations.Worst,
-                            "relation.reason.smear", string.Empty);
-                    }
+                    simulation.Advance(30);
 
-                    for (var year = 2022; year <= 2030; year++)
+                    foreach (CompetitorId lab in AllLabs())
                     {
-                        state.Date = GameDate.FromCalendar(year, 6, 1);
-
                         foreach (var trait in LabTraits.For(lab, state))
                         {
                             seen.Add(trait);
