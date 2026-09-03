@@ -110,12 +110,25 @@ namespace ScalingLaws.UI
             var quality = state.LastQuality;
 
             // ---- capacity -----------------------------------------------------------------------
-            var housed = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part)
-                ? hall.Output(part.PetaflopsPerUnit, part.PowerKilowatts)
-                : new HallOutput(0.0, 0.0, 0);
+            //
+            // **From the cards the company owns, not from whatever the clouds are renting.** This
+            // used to price the floor with `Market.RentableGeneration`, so a company running two
+            // year old accelerators was shown this year's figures and the number on this bar was
+            // not the number the market was served from. `BasementOutput` is the same arithmetic
+            // the compute profile does.
+            var housed = simulation.BasementOutput();
+
+            // The heat figures still need a reference card for the per-unit draw, and the rentable
+            // generation is the right one for that: it is what the room is rated against.
+            HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
 
             capacity.text = UiFormat.Petaflops(housed.Petaflops);
-            capacityNote.text = $"{hall.HousedAccelerators} / {hall.TotalSlots}";
+
+            // "32 / 32" under a heading reading CAPACITY invited exactly the wrong reading, which
+            // is that the room supplies compute. It houses it. A company that owns no accelerators
+            // gets nothing out of a full basement except the upkeep and the idle draw.
+            capacityNote.text = Loc.T("room.banner.housed",
+                hall.HousedAccelerators.ToString(), hall.TotalSlots.ToString());
 
             // ---- heat ----------------------------------------------------------------------------
             //
@@ -128,9 +141,13 @@ namespace ScalingLaws.UI
             temperature.style.color = HeatTone(hottest);
 
             // ---- power ---------------------------------------------------------------------------
+            // The tariff comes from the pool, which is where the bill is actually raised. It was a
+            // second copy of 0.19 sitting in a display string, which is how a rate ends up being
+            // changed in one place and quoted from the other.
             power.text = UiFormat.Kilowatts(housed.DrawKilowatts);
             powerNote.text = UiFormat.Money(
-                (long)(housed.DrawKilowatts * 24.0 * 0.19)) + " " + Loc.T("common.a_day");
+                    (long)(housed.DrawKilowatts * 24.0 * ComputePool.DomesticTariffUsd))
+                + " " + Loc.T("common.a_day");
 
             // ---- load ----------------------------------------------------------------------------
             var load = Mathf.Clamp01((float)quality.Utilisation);

@@ -29,6 +29,57 @@ namespace ScalingLaws.Tests.EditMode
             return simulation;
         }
 
+        /// <summary>
+        /// The room houses accelerators. It does not produce any.
+        ///
+        /// **This is the question the screen invited and never answered.** The banner printed
+        /// CAPACITY over a petaflop figure worked out from `Market.RentableGeneration`, which is
+        /// whatever the clouds happen to be renting this month, while the compute profile credits
+        /// the room using the average of what the company actually owns. Two cards, one number, and
+        /// a player running two year old accelerators was shown this year's figures.
+        ///
+        /// Both halves are held here: a full basement with an empty fleet delivers nothing, and a
+        /// stocked one delivers what its own cards are worth.
+        /// </summary>
+        [Test]
+        public void TheBasementHousesTheFleetRatherThanProducingComputeOfItsOwn()
+        {
+            var simulation = Started(400_000_000);
+
+            Assert.That(simulation.State.Hall.TotalSlots, Is.GreaterThan(0),
+                "The room came without cabinets, so this is measuring nothing.");
+
+            Assert.That(simulation.BasementOutput().Petaflops, Is.EqualTo(0.0),
+                "Four empty cabinets and no accelerators owned. A room that produced compute on "
+                + "its own would be free money and the tier ladder would mean nothing.");
+
+            // Put the fleet in directly rather than through `TryBuyHardware`. Owning anything at
+            // all is gated behind a released model, and that gate is not what is being measured
+            // here; a company can perfectly well have hardware and an empty shelf.
+            simulation.State.Pool.AddAsset(new HardwareAsset(
+                HardwareGenerationId.AcceleratorH100,
+                ComputeTier.ColocatedServers,
+                16,
+                simulation.State.Date,
+                30_000L,
+                leadTimeDays: 0));
+
+            var output = simulation.BasementOutput();
+
+            Assert.That(output.Petaflops, Is.GreaterThan(0.0),
+                "Sixteen accelerators are owned and the floor has slots, so the room is delivering "
+                + "something.");
+
+            var generation = HardwareCatalog.Get(HardwareGenerationId.AcceleratorH100);
+            var housed = simulation.State.Hall.HousedAccelerators;
+
+            Assert.That(housed, Is.GreaterThan(0));
+            Assert.That(output.Petaflops,
+                Is.LessThanOrEqualTo(housed * generation.PetaflopsPerUnit + 0.001),
+                "The room cannot deliver more than the cards standing in it are rated for. Anything "
+                + "above this means it is being priced from a card the company does not own.");
+        }
+
         // ---- the floor's geometry ---------------------------------------------------------------
         //
         // The editor builder writes a marker per square, the runtime stage stands a cabinet on

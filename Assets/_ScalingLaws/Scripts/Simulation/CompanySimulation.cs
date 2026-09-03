@@ -56,6 +56,56 @@ namespace ScalingLaws.Simulation
         public ComputeProfile Profile =>
             State.Pool.BuildProfile(State.Date, Market, State.HasServerRoom ? State.Hall : null);
 
+        /// <summary>
+        /// What the basement is delivering today, from the cards that are actually in it.
+        ///
+        /// **The room's own banner was quoting a different card from the one the fleet is made of.**
+        /// It priced the floor with `Market.RentableGeneration`, which is whatever the clouds are
+        /// renting this month, while `ComputePool.BuildProfile` uses the average of what the company
+        /// owns. A player running two year old accelerators was shown this year's numbers, and the
+        /// figure on the room screen was not the figure the market was served from.
+        ///
+        /// This is the same arithmetic `BuildProfile` does, in one place both can read. Which is
+        /// also the honest answer to what the room is: it houses accelerators, it does not produce
+        /// them. A company that owns none gets nothing out of a full basement except the upkeep.
+        /// </summary>
+        public HallOutput BasementOutput()
+        {
+            var hall = State.HasServerRoom ? State.Hall : null;
+
+            if (hall == null)
+            {
+                return new HallOutput(0.0, 0.0, 0);
+            }
+
+            var units = 0;
+            var petaflops = 0.0;
+            var kilowatts = 0.0;
+
+            foreach (var asset in State.Pool.Assets)
+            {
+                if (asset.Units <= 0
+                    || !asset.IsOnline(State.Date)
+                    || !HardwareCatalog.TryGet(asset.GenerationId, out var generation)
+                    || generation.Class != HardwareClass.Accelerator)
+                {
+                    continue;
+                }
+
+                units += asset.Units;
+                petaflops += generation.PetaflopsPerUnit * asset.Units;
+                kilowatts += generation.PowerKilowatts * asset.Units;
+            }
+
+            // Stocked the same way the profile stocks it. `Stock` clears and refills front to back,
+            // so calling it twice with the same fleet is the same as calling it once.
+            hall.Stock(units);
+
+            return units <= 0
+                ? hall.Output(0.0, 0.0)
+                : hall.Output(petaflops / units, kilowatts / units);
+        }
+
         /// <summary>What the basement costs anybody who did not take the tour.</summary>
         public const long BasementPriceUsd = 70_000;
 
