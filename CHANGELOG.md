@@ -26,6 +26,89 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ---
 
+## [Unreleased]
+
+**The interface stopped saying two things about the same number.** Six places in the game stated
+something that could not also be true: the inbox described one letter three different ways, the
+business page blamed a slider for a giveaway it could not move, the model creator printed a
+confident zero before anything was chosen, and the cluster was quietly doing 170 per cent of its own
+work. Every one of them is now read from a single source, with a test that fails if a second reading
+appears.
+
+Two mechanisms that were finished in the simulation and impossible to reach also got their controls:
+the split between building and serving, and the whole own-datacenter tier.
+
+### Added
+
+- **The cluster split, on COMPUTE.** How much of the fleet goes to training, upgrades, architecture
+  programmes and research, and how much is left for the people paying. The number has existed and
+  been saved since the beginning, was set once by a test fixture, and no screen had ever offered it.
+- **Commissioning your own datacenter.** $80M, 300 days from signature to the first token, its own
+  power contract at a third of what a colocation charges, and 40MW of capacity. All of it existed,
+  gated and costed, with no button anywhere in the game.
+- **Status badges in the header.** Small squares saying what is temporarily true about the company:
+  a viral window, the clean slate a new lab gets, a year with nothing going wrong, a backlash after
+  a penalty, a campaign running. These have been multiplying demand by between 0.15x and 4.0x every
+  day since they were written, and nothing has ever told the player they existed. Each says how many
+  days are left and what it is pulling right now.
+- **A card on every stage of the model creator**, saying what that page decides.
+- **A 24-hour clock in the bottom bar** on every screen that is a page rather than a room.
+
+### Changed
+
+- **The clock disc is for rooms now.** It overhangs the bar by about 170px and no page reserved for
+  it, so it covered the bottom-left corner of every document screen: the brand line on TEAM, the end
+  of the marketing sentence on BUSINESS, a cabinet hint in the basement. The office and the server
+  room keep it; everything else gets the rectangular reading in the bar.
+- **The research map opens showing the whole era.** It has claimed to since it was written, and FIT
+  set the zoom to 100 per cent, which is a default rather than a fit.
+- **Research node captions are sized from the longest word in the tree.** In Polish about a third of
+  era one was breaking inside the word: `SPECJALIZACJ / A KODOWA`.
+- **The map's zoom controls sit beside the era heading** instead of on top of the last node of the
+  row, which was clickable in about half its area.
+- **The server room says it houses cards rather than producing compute.** A full basement with an
+  empty fleet delivers nothing but its upkeep, and the caption invited the opposite reading.
+- **The founder must be named.** Leaving the field empty used to sign the company's public page
+  "Anonymous".
+- **Polish reaches three more screens**: the model creator, the official page and the archive, and
+  the shell's own headers, banners and tooltips.
+
+### Fixed
+
+- **The fleet was doing 170 per cent of its work.** Serving took the whole cluster whenever no
+  training run was in flight, while a research node, an upgrade programme or an architecture
+  programme went on taking the training share regardless.
+- **The inbox said "No reply needed" over a letter with two answer buttons on it**, and counted the
+  same letter under NEEDS AN ANSWER in the filter above.
+- **BUSINESS showed 8 per cent of tokens given away over a free tier set to zero.** The figure was
+  right: that is what trials cost a company offering no free tier at all. The screen now names it
+  separately from the part the slider controls.
+- **The model creator printed PROJECTED CAPABILITY 0.0 beside FRONTIER TODAY 45.0** before anything
+  was chosen, along with a run that would apparently take no time and cost nothing.
+- **The server room's capacity figure was worked out from a card the company does not own** —
+  whatever the clouds happened to be renting that month, rather than the fleet actually in the room.
+- **The bottom bar kept whatever language it was built in.**
+- **Eighteen readings printed with a comma on a Polish machine** (`0,70x`, `$20,00`, `1 234`), across
+  the model creator, the inbox, the team page and the office.
+
+### Save compatibility
+
+Save format **v45**, unchanged. A campaign started on 0.1.0 opens here and keeps everything in it.
+The cluster split was already saved, so an older campaign arrives at the setting it has been running
+on all along.
+
+### Under the hood
+
+- 922 EditMode tests across 90 fixtures, and 22 PlayMode across 7.
+- 1,685 phrases in the book, both languages complete.
+- Two operations moved out of `CompanySimulation` into the test assembly. Neither had a caller
+  outside a fixture, and a unit-count entry point beside a capacity-denominated contract is one edit
+  away from acquiring a slider.
+- New guards: every compute tier has a way in, every letter's three readings agree, every effect has
+  words in both languages, and the interface actually draws the effects.
+
+---
+
 ## [0.1.0] - 2026-08-30
 
 **The first public build.** Everything before this was source only: you needed Unity and a

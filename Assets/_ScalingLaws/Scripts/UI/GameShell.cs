@@ -234,6 +234,7 @@ namespace ScalingLaws.UI
         private ResearchBubbles bubbles;
         private Label pointsLabel;
         private Label fansLabel;
+        private EffectBadges effectBadges;
         private ModelBanner modelBanner;
 
         /// <summary>
@@ -966,6 +967,15 @@ namespace ScalingLaws.UI
             fansLabel.AddToClassList("topbar__standing");
             fansLabel.AddToClassList("topbar__standing--fans");
             left.Add(fansLabel);
+
+            // **What is temporarily true about the company, which nothing has ever shown.**
+            //
+            // `EffectBook` multiplies demand between 0.15x and 4.0x every day and the player was
+            // never told any of it existed. Beside the standing because that is what these move:
+            // a viral window and a backlash are both statements about how many people are looking.
+            effectBadges = new EffectBadges();
+            left.Add(effectBadges.Root);
+
             bar.Add(left);
 
             var right = new VisualElement();
@@ -2822,6 +2832,7 @@ namespace ScalingLaws.UI
             cashLabel.text = UiFormat.Money(state.CashUsd);
             RefreshCashArrows(state);
             RefreshStanding(state);
+            effectBadges?.Refresh(state);
 
             pointsLabel.text = UiFormat.Number(state.ResearchPoints, 0);
             pointsButton.tooltip = state.ResearchPointsToday > 0.0

@@ -77,6 +77,18 @@ namespace ScalingLaws.Tests.PlayMode
                 "Kestrel", ArchitectureId.DenseTransformer, 41.0,
                 GameDate.FromCalendar(2023, 2, 14), 2e10, 0.8));
 
+            // **Two temporary effects, because an empty header proves nothing about the badges.**
+            //
+            // The strip hides itself when nothing is running, which is right in the game and means
+            // a design review of the header sees exactly the state that needed no work. One good
+            // and one bad, so both colours are in the frame and so the cap can be seen not to be
+            // reached.
+            state.Effects.Add(
+                new ModelEffect(ModelEffectKind.Viral, state.Date, 70, 0.28), state.Date);
+
+            state.Effects.Add(
+                new ModelEffect(ModelEffectKind.Backlash, state.Date, 120, -0.16), state.Date);
+
             // One tick so everything derived from the above actually exists: market standing, the
             // books, awareness, service quality. Without it half the screens read zero, and the top
             // bar keeps printing the boot values it was built with: the chrome is refreshed on a

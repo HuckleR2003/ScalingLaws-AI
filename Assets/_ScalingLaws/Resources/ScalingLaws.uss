@@ -3445,6 +3445,73 @@
     color: rgb(214, 116, 108);
 }
 
+/* ---- the temporary-effect badges ----
+
+   Small squares beside the standing, because that is what these move: a viral
+   window and a backlash are both statements about how many people are looking.
+   Square rather than round, so they read as status rather than as another
+   figure in a row of figures, and small enough that five of them at once do not
+   turn the header into a second interface. */
+
+.fx {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 16px;
+}
+
+/* 34 wide and 30 tall in a 46px bar. Wider than square because the glyph is
+   letters rather than an icon and BACK is four of them; the first render had
+   them touching both edges of a 30px box and spilling out of the bar, because
+   the two labels inside carry the runtime theme's own margins. Everything here
+   states its margins, which is the rule this stylesheet already learned from
+   four trait cards measuring 1352px against a 1340px page. */
+
+.fx__badge {
+    width: 34px;
+    height: 30px;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 5px;
+    padding: 0;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(140, 200, 168, 0.45);
+    background-color: rgba(46, 92, 72, 0.42);
+}
+
+.fx__badge--bad {
+    border-color: rgba(226, 108, 96, 0.55);
+    background-color: rgba(96, 38, 34, 0.48);
+}
+
+.fx__glyph {
+    margin: 0;
+    padding: 0;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 0.2px;
+    color: rgb(226, 240, 232);
+}
+
+.fx__badge--bad > .fx__glyph {
+    color: rgb(246, 224, 220);
+}
+
+/* The days left, small and under the glyph. "How long does this last" is the
+   only follow-up question a temporary effect ever produces. */
+
+.fx__days {
+    margin: 0;
+    padding: 0;
+    font-size: 8px;
+    letter-spacing: 0.2px;
+    color: rgba(226, 240, 232, 0.62);
+}
+
 /* The way out of the dead end on REVIEW. Deliberately not the primary colour:
    it is a suggestion with a daily bill attached, not the action the stage is for. */
 
