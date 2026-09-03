@@ -56,6 +56,20 @@ the split between building and serving, and the whole own-datacenter tier.
   counted down exactly would turn a story into a timer. The guess is fixed for the life of the
   effect, so it counts down smoothly and cannot be averaged out over a week, and the badge
   disappears when the effect really ends rather than when the guess runs out.
+- **The world happens to everybody, on the dates it actually happened.** Twenty three events across
+  the campaign: the invasion that closed a neon supply line, the Shanghai lockdown, export controls
+  on the best accelerators, the day a chat assistant went public, the search race, the price cuts,
+  the weights leak, the copyright suit, the first comprehensive regime, the day the company selling
+  the shovels became the most valuable in the world, reasoning models, a datacenter restarting a
+  nuclear plant, and the cheap model that took a third off the going rate. Each one moves one of the
+  four curves the market already computes, arrives on the wire the day it starts, and cannot be
+  prevented, delayed or caused. Everything dated 2026 or later is the game's guess and says so in
+  its own news item.
+- **Rivals say what kind of company they are.** Up to three badges on a lab's card: fearless,
+  patient, undercutting, open handed, institutional, deep pockets, expanding, wobbling, absorbed,
+  hostile. Every one is worked out from what the lab has actually done rather than written on it,
+  so a badge cannot contradict the behaviour it describes, and none of them can mention something
+  that has not happened yet.
 - **A card on every stage of the model creator**, saying what that page decides.
 - **A 24-hour clock in the bottom bar** on every screen that is a page rather than a room.
 
@@ -112,8 +126,10 @@ on all along.
 
 ### Under the hood
 
-- 926 EditMode tests across 90 fixtures, and 22 PlayMode across 7.
-- 1,689 phrases in the book, both languages complete.
+- 938 EditMode tests across 92 fixtures, and 22 PlayMode across 7.
+- 1,758 phrases in the book, both languages complete.
+- `CompetitorStrategy.FastFollower` is assigned to no lab, so nothing in the game runs that brief.
+  Found by a guard that asks whether every rival trait can actually occur.
 - The unreachable-mechanism sweep was run again over every public mutator on the simulation and the
   company. Nothing player-facing is left without a control, and two methods with no caller anywhere
   in the repository were deleted.
@@ -121,7 +137,13 @@ on all along.
   outside a fixture, and a unit-count entry point beside a capacity-denominated contract is one edit
   away from acquiring a slider.
 - New guards: every compute tier has a way in, every letter's three readings agree, every effect has
-  words in both languages, and the interface actually draws the effects.
+  words in both languages, the interface actually draws the effects, every rival trait can occur,
+  no trait gives away how a lab ends, every world event has a headline in both languages and reaches
+  the wire, everything past the record is marked as a guess, and no two shocks compound a curve past
+  the band the balance was measured over.
+- `MarketModel` now separates the published trend from the world acting on it, for scarcity and for
+  algorithmic efficiency. A test that pins the doubling law reads the law; one that asks what
+  efficiency is today reads the law plus the calendar.
 
 ---
 

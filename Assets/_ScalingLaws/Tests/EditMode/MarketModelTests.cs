@@ -98,13 +98,25 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void BetterRecipesMakeTheSameFlopsGoFurther()
         {
-            var atStart = MarketModel.AlgorithmicEfficiencyOn(GameDate.Start);
-            var fourYearsOn = MarketModel.AlgorithmicEfficiencyOn(GameDate.FromCalendar(2026, 1, 1));
+            // **The published trend, measured on its own.** What efficiency actually is on a given
+            // day is the trend plus whatever the world is doing to it, and this assertion is about
+            // the doubling law rather than about the weather in 2026.
+            var atStart = MarketModel.BaseAlgorithmicEfficiencyOn(GameDate.Start);
+            var fourYearsOn = MarketModel.BaseAlgorithmicEfficiencyOn(GameDate.FromCalendar(2026, 1, 1));
 
             Assert.That(atStart, Is.EqualTo(1.0).Within(0.001));
             Assert.That(fourYearsOn, Is.EqualTo(16.0).Within(0.5));
             Assert.That(MarketModel.AlgorithmicEfficiencyOn(GameDate.FromCalendar(2040, 1, 1)),
                 Is.LessThanOrEqualTo(MarketModel.MaximumAlgorithmicEfficiency));
+
+            // And the world does reach it, or splitting the two would have quietly disconnected
+            // the calendar from the one curve nobody would notice going missing. Reasoning models
+            // land in September 2024 and are worth thirty per cent while the window is open.
+            var during = GameDate.FromCalendar(2024, 11, 1);
+
+            Assert.That(MarketModel.AlgorithmicEfficiencyOn(during),
+                Is.GreaterThan(MarketModel.BaseAlgorithmicEfficiencyOn(during)),
+                "The world calendar no longer reaches algorithmic efficiency.");
         }
 
         [Test]

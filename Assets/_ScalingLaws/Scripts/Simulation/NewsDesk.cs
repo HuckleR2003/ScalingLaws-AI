@@ -186,6 +186,32 @@ namespace ScalingLaws.Simulation
                 lab.Name, isAboutPlayer: false, weight);
         }
 
+        /// <summary>
+        /// A world event, on the day it starts.
+        ///
+        /// **The loudest thing on the wire, because it is the only kind of story that happens to
+        /// everybody.** A rival's collapse is about one company; a shortage or a price war is about
+        /// the market the player is standing in, and it will be moving their numbers for months
+        /// after the headline scrolls away.
+        ///
+        /// The desk still only translates. The date is in the catalog, the magnitude is in the
+        /// catalog, and nothing here rolls anything or changes a number.
+        /// </summary>
+        public static NewsItem FromWorldEvent(in WorldEvent world)
+        {
+            var body = Loc.T(world.Key + ".body");
+
+            if (world.IsProjection)
+            {
+                // The honesty flag, where a player will actually read it. Everything in this game
+                // dated past the record has to say which side of that line it is on.
+                body += "\n\n" + Loc.T("world.projection");
+            }
+
+            return new NewsItem(world.On, NewsSection.Wire, Loc.T(world.Key + ".head"), body,
+                Loc.T("world.source"), isAboutPlayer: false, NewsWeight.Loud);
+        }
+
         public static NewsItem FromSignal(in IntelSignal signal)
         {
             var section = signal.Tier switch

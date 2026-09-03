@@ -83,19 +83,35 @@ namespace ScalingLaws.Simulation
                 AlgorithmicEfficiencyOn(date));
         }
 
-        /// <summary>Total tokens served across the market that day, in billions.</summary>
+        /// <summary>
+        /// Total tokens served across the market that day, in billions.
+        ///
+        /// The smooth curve is the industry growing; the multiplier is the world happening to it.
+        /// Applied here rather than at each reader, because there has to be exactly one place a
+        /// world event can reach the economy.
+        /// </summary>
         public static double DemandOn(GameDate date)
         {
             var days = date.DayIndex;
             var exponent = -DemandShape * Math.Exp(-DemandRatePerDay * days);
-            return DemandCeilingBillionTokensPerDay * Math.Exp(exponent);
+
+            return DemandCeilingBillionTokensPerDay * Math.Exp(exponent)
+                * WorldEventCatalog.MultiplierOn(WorldLever.Demand, date);
         }
 
-        /// <summary>Average price per million tokens that day.</summary>
+        /// <summary>
+        /// Average price per million tokens that day.
+        ///
+        /// The floor is applied last, after the world has had its say, so a price war can never
+        /// take the rate below what anybody could serve at.
+        /// </summary>
         public static double PriceOn(GameDate date)
         {
             var years = GameDate.Start.YearsUntil(date);
-            var price = InitialPricePerMillionTokensUsd * Math.Exp(-PriceDecayPerYear * years);
+
+            var price = InitialPricePerMillionTokensUsd * Math.Exp(-PriceDecayPerYear * years)
+                * WorldEventCatalog.MultiplierOn(WorldLever.TokenPrice, date);
+
             return Math.Max(PriceFloorPerMillionTokensUsd, price);
         }
 
@@ -106,12 +122,49 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public static double AlgorithmicEfficiencyOn(GameDate date)
         {
-            var years = Math.Max(0.0, GameDate.Start.YearsUntil(date));
-            var efficiency = Math.Pow(2.0, years / AlgorithmicEfficiencyDoublingYears);
+            var efficiency = BaseAlgorithmicEfficiencyOn(date)
+                * WorldEventCatalog.MultiplierOn(WorldLever.Efficiency, date);
+
+            // Never below 1.0, whatever the world does. This is measured against 2022, and a
+            // regime that costs a lab a month of paperwork has not made 2022's recipes better than
+            // today's.
             return Math.Clamp(efficiency, 1.0, MaximumAlgorithmicEfficiency);
         }
 
-        public static double ScarcityOn(GameDate date)
+        /// <summary>
+        /// The doubling law on its own, before the world touches it.
+        ///
+        /// **Two different questions and both are worth asking.** "What does the published trend
+        /// say" is a fact about the scaling literature this game is built on; "what is efficiency
+        /// today" is that plus a regime costing a lab a month of paperwork, or reasoning models
+        /// arriving. A test that pins the law has to be able to read the law, and one that reads
+        /// the sum would go red every time the calendar changed for reasons that have nothing to
+        /// do with the trend it names.
+        /// </summary>
+        public static double BaseAlgorithmicEfficiencyOn(GameDate date)
+        {
+            var years = Math.Max(0.0, GameDate.Start.YearsUntil(date));
+            var efficiency = Math.Pow(2.0, years / AlgorithmicEfficiencyDoublingYears);
+
+            return Math.Clamp(efficiency, 1.0, MaximumAlgorithmicEfficiency);
+        }
+
+        /// <summary>
+        /// Accelerator supply pressure today, keyframes plus whatever the world is doing to them.
+        ///
+        /// **The one number that pays for itself twice.** It drives the purchase price at a 0.35
+        /// markup and the rental price at 1.4, so a shortage reaches a cloud tenant four times
+        /// harder than it reaches somebody who already bought. A hardware shock therefore needs one
+        /// entry in the calendar, not two, and the two prices can never disagree about it.
+        /// </summary>
+        public static double ScarcityOn(GameDate date) =>
+            Math.Clamp(
+                BaseScarcityOn(date) * WorldEventCatalog.MultiplierOn(WorldLever.Scarcity, date),
+                0.0,
+                1.0);
+
+        /// <summary>The keyframed curve on its own, before the world touches it.</summary>
+        private static double BaseScarcityOn(GameDate date)
         {
             var first = ScarcityKeyframes[0];
             if (date <= first.Date)

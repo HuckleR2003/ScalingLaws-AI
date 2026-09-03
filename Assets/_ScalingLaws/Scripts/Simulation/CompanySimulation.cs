@@ -4707,6 +4707,17 @@ namespace ScalingLaws.Simulation
             {
                 State.News.Add(NewsDesk.FromLabChapter(lab, chapter));
             }
+
+            // **The world, on the day it happens to everybody.**
+            //
+            // Filed beside the labs' own history because it is the same kind of thing: a dated
+            // public fact the player had no part in and cannot prevent. The difference is that this
+            // one is already moving their supply costs, their price and their demand by the time
+            // they read it, which is exactly how a shortage feels from inside a small company.
+            foreach (var world in WorldEventCatalog.StartingOn(State.Date))
+            {
+                State.News.Add(NewsDesk.FromWorldEvent(world));
+            }
         }
 
         /// <summary>

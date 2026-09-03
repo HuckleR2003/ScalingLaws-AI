@@ -77,12 +77,24 @@ namespace ScalingLaws.Tests.EditMode
             var shelved = simulation.State.Shelf[0];
             var shipNow = shelved.CapabilityIfReleasedOn(simulation.State.Date);
 
+            // **Hand the cluster back now the run is finished.**
+            //
+            // This test is about what a shelf costs, and holding five hundred rented accelerators
+            // for another eighteen months while earning nothing is a different mistake. It used to
+            // survive that anyway; it stopped when the 2022 supply shocks reached the rental price,
+            // and the company ran out of money thirteen days before this assertion. Insolvency is
+            // the correct outcome for that company and the wrong subject for this test, so the
+            // operator does what any player does the day a run lands.
+            simulation.SetRentedPetaflops(0.0);
+
             simulation.Advance(500);
             var shipLater = shelved.CapabilityIfReleasedOn(simulation.State.Date);
 
             Assert.That(shelved.Capability, Is.EqualTo(shipNow).Within(0.001),
                 "On the day it finishes there is no slippage yet.");
             Assert.That(shipLater, Is.LessThan(shipNow), "Par rises under a model that is not shipped.");
+            Assert.That(simulation.State.IsBankrupt, Is.False,
+                "With the cluster handed back there is nothing left to go bankrupt on.");
             Assert.That(shelved.DaysOnShelf(simulation.State.Date), Is.GreaterThan(400));
         }
 
