@@ -235,6 +235,15 @@ namespace ScalingLaws.UI
         private Label pointsLabel;
         private Label fansLabel;
         private EffectBadges effectBadges;
+
+        /// <summary>
+        /// One person, opened.
+        ///
+        /// Held by the shell rather than by the team screen, because the same card has to open
+        /// from a row on that page and from clicking somebody in the office. Two panels would be
+        /// two places to fix the next thing that is wrong with it.
+        /// </summary>
+        private PersonPanel personPanel;
         private ModelBanner modelBanner;
 
         /// <summary>
@@ -1181,6 +1190,8 @@ namespace ScalingLaws.UI
 
             hud.SetActiveSlot(screen);
 
+            personPanel ??= new PersonPanel(() => simulation, () => Show(current));
+
             // The bar re-reads its own words here, because `Show` already rebuilds the whole page
             // and the bar is the one piece of the interface that survives that. Twenty one
             // dictionary lookups against a full page rebuild is nothing, and it is what stops the
@@ -1270,6 +1281,14 @@ namespace ScalingLaws.UI
             // The tour is drawn last, over whatever the new screen turned out to be. Its highlight
             // is a query against the live tree, so it has to run after the page exists — refreshing
             // it before the rebuild rings elements that are about to be thrown away.
+            // The person card goes on last, over whatever the page turned out to be, because an
+            // absolutely positioned element in UI Toolkit still paints in document order. This
+            // project learned that when the server room's corner banner came out under the floor.
+            if (personPanel is { IsOpen: true })
+            {
+                contentHost.Add(personPanel.Build());
+            }
+
             guide?.Refresh();
 
             // **Reserve the strip's height at the foot of the page rather than hiding the strip.**

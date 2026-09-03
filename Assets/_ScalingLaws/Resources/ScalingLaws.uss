@@ -12197,6 +12197,394 @@
    refusal went into a discarded `out`. Amber rather than red, because none of
    these is a fault; they are all "not yet". */
 
+/* ============================================================================================
+   ONE PERSON, OPENED
+
+   Three tabs over two columns. The left column is who they are and the right is
+   what they asked for, because those are the two halves of the only question a
+   manager actually has: are they going to stay.
+
+   Wide rather than tall. The card sits over a page, and a modal taller than the
+   window is one that scrolls inside a scroll, which this project has been
+   caught by before.
+   ============================================================================================ */
+
+.pp-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 7, 14, 0.74);
+}
+
+.pp {
+    width: 860px;
+    padding: 24px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    background-color: rgb(15, 21, 34);
+}
+
+/* ---- head ---- */
+
+.pp__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+.pp__who {
+    flex-shrink: 1;
+}
+
+.pp__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 26px;
+    letter-spacing: 0.6px;
+    color: rgb(242, 247, 255);
+}
+
+.pp__job {
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    color: rgb(140, 154, 176);
+    margin-top: 3px;
+}
+
+.pp__actions {
+    flex-direction: row;
+    align-items: center;
+}
+
+.pp__action {
+    height: 30px;
+    margin: 0;
+    margin-left: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(214, 226, 244);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+.pp__action:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Drawn and disabled on purpose. Showing where something is going to live is
+   the difference between a player who knows it is coming and one who never
+   finds out. */
+
+.pp__action--soon {
+    color: rgb(104, 114, 132);
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.pp__action--go {
+    color: rgb(238, 206, 200);
+    background-color: rgba(94, 22, 40, 0.55);
+    border-color: rgba(226, 78, 62, 0.42);
+}
+
+.pp__action--armed {
+    background-color: rgb(150, 32, 54);
+    border-color: rgb(226, 78, 62);
+}
+
+.pp__action--close {
+    width: 30px;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 12px;
+}
+
+/* ---- tabs ---- */
+
+.pp__tabs {
+    flex-direction: row;
+    margin-top: 18px;
+    margin-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.pp__tab {
+    height: 34px;
+    margin: 0;
+    margin-right: 4px;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-size: 10.5px;
+    -unity-font-style: bold;
+    letter-spacing: 1.6px;
+    -unity-text-align: middle-center;
+    color: rgb(126, 138, 158);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+}
+
+.pp__tab:hover {
+    color: rgb(206, 218, 236);
+}
+
+.pp__tab--on {
+    color: rgb(242, 247, 255);
+    border-bottom-color: rgb(226, 78, 62);
+}
+
+/* ---- body ---- */
+
+.pp__body {
+    flex-direction: row;
+    margin-top: 16px;
+}
+
+.pp__body--single {
+    flex-direction: column;
+}
+
+.pp__left {
+    width: 46%;
+    flex-shrink: 0;
+    padding-right: 26px;
+}
+
+.pp__right {
+    flex-grow: 1;
+    padding-left: 26px;
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.07);
+}
+
+.pp__portrait {
+    margin-bottom: 14px;
+}
+
+.pp__stat {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.045);
+}
+
+.pp__stat-label {
+    font-size: 12px;
+    color: rgb(146, 158, 178);
+}
+
+.pp__stat-value {
+    font-size: 13.5px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+/* Loyalty last and largest, because it is the one figure that decides whether
+   somebody takes a rival's call. */
+
+.pp__loyalty {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.pp__loyalty-band {
+    font-size: 16px;
+    -unity-font-style: bold;
+    letter-spacing: 0.6px;
+    color: rgb(232, 240, 252);
+}
+
+.pp__loyalty-band--committed { color: rgb(120, 200, 148); }
+.pp__loyalty-band--settled { color: rgb(150, 198, 226); }
+.pp__loyalty-band--open { color: rgb(226, 190, 110); }
+.pp__loyalty-band--loose { color: rgb(226, 116, 106); }
+
+.pp__track {
+    height: 5px;
+    margin-top: 8px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+}
+
+.pp__fill {
+    height: 5px;
+    background-color: rgb(120, 176, 250);
+}
+
+/* ---- bonus ---- */
+
+.pp__bonus {
+    flex-direction: row;
+    margin-top: 18px;
+}
+
+.pp__bonusbutton {
+    flex-grow: 1;
+    height: 34px;
+    margin: 0;
+    margin-right: 8px;
+    padding: 0;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 0.8px;
+    -unity-text-align: middle-center;
+    color: rgb(226, 236, 250);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+.pp__bonusbutton:hover {
+    background-color: rgba(255, 255, 255, 0.13);
+}
+
+/* ---- what they asked for ---- */
+
+.pp__section {
+    font-size: 10px;
+    letter-spacing: 2.2px;
+    color: rgb(120, 132, 152);
+    margin-bottom: 10px;
+}
+
+.pp__want {
+    flex-direction: row;
+    align-items: center;
+    padding: 9px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: rgba(226, 116, 106, 0.75);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.pp__want--met {
+    border-left-color: rgba(120, 200, 148, 0.85);
+}
+
+.pp__want-name {
+    flex-grow: 1;
+    font-size: 13px;
+    color: rgb(228, 236, 250);
+}
+
+.pp__want-state {
+    font-size: 10.5px;
+    letter-spacing: 0.6px;
+    color: rgb(226, 116, 106);
+    margin-right: 12px;
+}
+
+.pp__want--met > .pp__want-state {
+    color: rgb(120, 200, 148);
+}
+
+.pp__want-cost {
+    font-size: 11px;
+    color: rgb(132, 144, 164);
+}
+
+.pp__note {
+    margin-top: 10px;
+    font-size: 11.5px;
+    white-space: normal;
+    color: rgb(140, 152, 172);
+}
+
+.pp__note--quiet {
+    color: rgb(108, 118, 138);
+}
+
+.pp__problem {
+    margin-top: 14px;
+    font-size: 12px;
+    white-space: normal;
+    color: rgb(226, 176, 118);
+}
+
+/* ---- schedule ---- */
+
+.pp__hours {
+    font-size: 30px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(242, 247, 255);
+}
+
+/* Twenty four cells rather than two numbers. A span is a fact; a bar is a shape,
+   and somebody comparing two people reads the bars. */
+
+.pp__day {
+    flex-direction: row;
+    height: 26px;
+    margin-top: 16px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.pp__hour {
+    flex-grow: 1;
+    margin-right: 1px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.pp__hour--on {
+    background-color: rgb(96, 148, 220);
+}
+
+.pp__hourbuttons {
+    flex-direction: row;
+    margin-top: 16px;
+}
+
+.pp__hourbutton {
+    flex-grow: 1;
+    height: 32px;
+    margin: 0;
+    margin-right: 8px;
+    padding: 0;
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(214, 226, 244);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+.pp__hourbutton:hover {
+    background-color: rgba(255, 255, 255, 0.13);
+}
+
+.pp__rolename {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 20px;
+    color: rgb(238, 244, 255);
+    margin-bottom: 8px;
+}
+
 /* ---- the premises deal card ----
 
    Four numbers and two ways to sign, over a scrim. It replaced two buttons that

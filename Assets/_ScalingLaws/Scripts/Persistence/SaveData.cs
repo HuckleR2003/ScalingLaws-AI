@@ -2,6 +2,8 @@
 using ScalingLaws.Data;
 using System.Collections.Generic;
 
+using ScalingLaws.Simulation;
+
 namespace ScalingLaws.Persistence
 {
     /// <summary>Read first to find out what shape the rest of the file is in.</summary>
@@ -407,7 +409,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 45;
+        public const int CurrentVersion = 46;
 
         public int version = CurrentVersion;
 
@@ -927,6 +929,16 @@ namespace ScalingLaws.Persistence
 
         /// <summary>What was agreed. Zero means fall back to the catalog salary.</summary>
         public double hourlyWageUsd;
+
+        // ---- added in v46, when people got bonuses and hours ---------------------------------
+
+        /// <summary>Settling-in bought with money. Loyalty reads it, so it is causal.</summary>
+        public int bonusDays;
+
+        /// <summary>The working day. Eight to four on anybody nobody has moved.</summary>
+        public int startHour = Hire.DefaultStartHour;
+
+        public int endHour = Hire.DefaultEndHour;
     }
 
     /// <summary>An approach still waiting for an answer. Added in v31.</summary>

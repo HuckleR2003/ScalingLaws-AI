@@ -127,14 +127,21 @@ namespace ScalingLaws.UI
             var bill = new VisualElement();
             bill.AddToClassList("benefit__bill");
 
-            var each = new Label(UiFormat.Money(definition.MonthlyCostPerHeadUsd));
+            // **Both figures say what they are.** The tile used to print two bare amounts, a
+            // per-head price and a payroll total, one above the other with nothing naming either.
+            // Reported from a playtest as "it gives an amount per employee but does not say that
+            // is what it is", which is exactly what two unlabelled numbers look like.
+            var each = new Label(Loc.T("benefits.per_head",
+                UiFormat.Money(definition.MonthlyCostPerHeadUsd)));
+
             each.AddToClassList("benefit__each");
             bill.Add(each);
 
             // What it would cost across the payroll as it stands, which is the number that decides
             // this and the one a per-person price hides.
-            var total = new Label(UiFormat.Money(
-                definition.MonthlyCostPerHeadUsd * Math.Max(0, state.Staff.Headcount)));
+            var total = new Label(Loc.T("benefits.everybody",
+                UiFormat.Money(definition.MonthlyCostPerHeadUsd * Math.Max(0, state.Staff.Headcount)),
+                Loc.Counted(Math.Max(0, state.Staff.Headcount), "noun.person")));
 
             total.AddToClassList("benefit__total");
             total.EnableInClassList("benefit__total--on", on);

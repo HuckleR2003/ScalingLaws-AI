@@ -220,6 +220,37 @@ namespace ScalingLaws.Tests.EditMode
             {
                 var character = source[index];
 
+                // **Comments first, and that is not fussiness.** An apostrophe in a comment, and
+                // this codebase is full of them, opened a character literal that then swallowed
+                // every brace until the next apostrophe, and the scan reported that the method
+                // never closed. Found the day such a comment was added to `Show`.
+                if (character == '/' && index + 1 < source.Length)
+                {
+                    if (source[index + 1] == '/')
+                    {
+                        while (index < source.Length && source[index] != '\n')
+                        {
+                            index++;
+                        }
+
+                        continue;
+                    }
+
+                    if (source[index + 1] == '*')
+                    {
+                        index += 2;
+
+                        while (index + 1 < source.Length
+                            && !(source[index] == '*' && source[index + 1] == '/'))
+                        {
+                            index++;
+                        }
+
+                        index++;
+                        continue;
+                    }
+                }
+
                 if (character == '"' || character == '\'')
                 {
                     var quote = character;

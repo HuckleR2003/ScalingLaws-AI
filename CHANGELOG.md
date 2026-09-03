@@ -70,6 +70,22 @@ the split between building and serving, and the whole own-datacenter tier.
   hostile. Every one is worked out from what the lab has actually done rather than written on it,
   so a badge cannot contradict the behaviour it describes, and none of them can mention something
   that has not happened yet.
+- **One person, opened.** Clicking somebody on the team page opens a card with three tabs: who
+  they are, when they work, and what the job is. Portrait, tenure, wage, skill, where they were
+  found, and a loyalty band with a bar. DISMISS, BONUS, and TALK drawn and disabled because
+  conversations are their own thing and are coming later.
+- **People arrive with expectations.** Most want nothing in particular; the rest asked for one or
+  two of the benefits the company can already offer, decided the moment they were hired and never
+  changing. Meeting all of them makes somebody settle in **a quarter faster**; asking for something
+  and not getting it costs a little loyalty every month. It means the same payroll buys more
+  loyalty at one company than another, and it is the reason a person is worth reading rather than
+  a row.
+- **A bonus buys time.** One month or three of somebody's salary, credited as tenure, capped at two
+  years across a career. Money can shorten how long somebody takes to settle in and can never
+  replace it; past the cap the payment is refused rather than quietly taken.
+- **A working day per person**, eight to four by default, drawn as twenty four cells so two people
+  can be compared at a glance. Recorded before anything reads it, so the day a role earns its own
+  mechanic there is a schedule waiting rather than a field to add and migrate.
 - **A confirmation card for a premises deal.** The rent, the fit-out that is never refunded, the
   desks that cap hiring, and the price to own it outright, with RENT and BUY OUTRIGHT side by side.
   It replaces two buttons that each had to be pressed twice and neither of which said what the
@@ -112,6 +128,8 @@ the split between building and serving, and the whole own-datacenter tier.
   operation also requires the colocation tier: a released model and $5M. A player with the money
   pressed a live button and nothing happened at all, because the refusal went into a discarded
   argument. The screen and the operation ask the same question now, and the answer is on screen.
+- **The benefits on BUSINESS printed two unlabelled amounts**, a per-head price and a payroll
+  total, one above the other with nothing naming either. Both say what they are now.
 - **Nine lab logos were exported with the transparency checkerboard baked into the pixels.** Over a
   dark card that reads as a grey plate behind the mark, on the founding screen, the ranking board
   and every rival card.
@@ -133,14 +151,20 @@ the split between building and serving, and the whole own-datacenter tier.
 
 ### Save compatibility
 
-Save format **v45**, unchanged. A campaign started on 0.1.0 opens here and keeps everything in it.
+Save format **v46**. A campaign started on 0.1.0 opens here and keeps everything in it.
+
+Two facts per person are new: a bonus paid, and the hours they work. Nobody has ever been paid a
+bonus, so nobody is credited one; handing every existing employee two years of settling-in would
+rewrite the loyalty of a whole payroll on load. The hours arrive at eight to four, which is not a
+guess but the shift every campaign has implicitly been running.
+
 The cluster split was already saved, so an older campaign arrives at the setting it has been running
 on all along.
 
 ### Under the hood
 
-- 939 EditMode tests across 92 fixtures, and 22 PlayMode across 7.
-- 1,799 phrases in the book, both languages complete.
+- 946 EditMode tests across 93 fixtures, and 23 PlayMode across 7.
+- 1,845 phrases in the book, both languages complete.
 - `CompetitorStrategy.FastFollower` is assigned to no lab, so nothing in the game runs that brief.
   Found by a guard that asks whether every rival trait can actually occur.
 - The unreachable-mechanism sweep was run again over every public mutator on the simulation and the

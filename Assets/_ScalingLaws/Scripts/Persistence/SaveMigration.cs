@@ -146,6 +146,7 @@ namespace ScalingLaws.Persistence
                     42 => UpgradeV42ToV43(current),
                     43 => UpgradeV43ToV44(current),
                     44 => UpgradeV44ToV45(current),
+                    45 => UpgradeV45ToV46(current),
                     _ => current
                 };
             }
@@ -1729,6 +1730,44 @@ namespace ScalingLaws.Persistence
         /// company that pulled one had already lost it. Handing those back now would be inventing
         /// a refund for a decision the player made in a game that did not offer one.
         /// </summary>
+        /// <summary>
+        /// v45 to v46: a bonus paid and a working day, per person.
+        ///
+        /// **Nobody has ever been paid a bonus, so nobody is credited one.** The feature did not
+        /// exist, and handing every existing employee two years of settling-in would rewrite the
+        /// loyalty of a whole payroll on load. Zero is the only true reading.
+        ///
+        /// The hours are eight to four, which is not a guess: it is the shift every campaign has
+        /// implicitly been running, because it is the default the game will now write on a new
+        /// hire. A v45 company is not moved, it is described.
+        /// </summary>
+        public static SaveData UpgradeV45ToV46(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 46;
+
+            if (data.staff != null)
+            {
+                foreach (var hire in data.staff)
+                {
+                    if (hire == null)
+                    {
+                        continue;
+                    }
+
+                    hire.bonusDays = 0;
+                    hire.startHour = Hire.DefaultStartHour;
+                    hire.endHour = Hire.DefaultEndHour;
+                }
+            }
+
+            return data;
+        }
+
         public static SaveData UpgradeV44ToV45(SaveData data)
         {
             if (data == null)

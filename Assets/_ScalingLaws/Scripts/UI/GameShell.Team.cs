@@ -409,7 +409,10 @@ namespace ScalingLaws.UI
                 var slot = index;
                 var hire = roster.Hires[index];
 
-                var row = new VisualElement();
+                // **The row is the way in.** A list of people with no way to look at any of them
+                // is a spreadsheet, and everything that makes somebody a person rather than a row
+                // was already in the simulation with nowhere to appear.
+                var row = new Button(() => personPanel.Show(slot));
                 row.AddToClassList("crew__row");
 
                 if (hire.Position != PlayerSkill.None)
@@ -459,6 +462,10 @@ namespace ScalingLaws.UI
                     Show(Screen.Team);
                 })
                 { text = Loc.T("team.let_go") };
+
+                // Or letting somebody go would also open their card, on somebody who no longer
+                // works here, and the panel would draw whoever slid into that index.
+                release.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
 
                 release.AddToClassList("crew__release");
                 row.Add(release);

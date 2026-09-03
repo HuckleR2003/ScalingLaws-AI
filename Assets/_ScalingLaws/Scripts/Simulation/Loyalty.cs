@@ -48,6 +48,15 @@ namespace ScalingLaws.Simulation
         /// <summary>How far pay can move it either way, at half or double the going rate.</summary>
         public const double PaySwing = 16.0;
 
+        /// <summary>
+        /// How much settling-in one month of somebody's salary buys, in days.
+        ///
+        /// Denominated in their own salary rather than in dollars, so the same gesture costs more
+        /// for a senior and is worth the same to both. A flat figure would make bonuses a way to
+        /// buy junior loyalty for nothing.
+        /// </summary>
+        public const double BonusDaysPerMonthOfSalary = 55.0;
+
         // ---- the bands ---------------------------------------------------------------------------
         //
         // Named rather than numbered on screen, because "Loyalty 61" tells a player nothing and
@@ -64,13 +73,41 @@ namespace ScalingLaws.Simulation
         /// means unknown, and the pay term simply drops out rather than being guessed at.
         /// </summary>
         public static double For(Hire hire, GameDate today, double benefitPoints,
-            long marketSalaryUsd)
+            long marketSalaryUsd) =>
+            For(hire, today, benefitPoints, marketSalaryUsd, null);
+
+        /// <summary>
+        /// The same reading, knowing what the company actually offers.
+        ///
+        /// **What a benefit is worth depends on who is receiving it.** Everybody values a gym card
+        /// a little; the person who asked for one values it a great deal, and the person who asked
+        /// and did not get one notices every month. That difference is the reason the person panel
+        /// is worth opening, and it is why the same payroll buys more loyalty at one company than
+        /// at another.
+        ///
+        /// <paramref name="offered"/> may be null, which means the caller does not know or does not
+        /// care, and then this behaves exactly as it always did.
+        /// </summary>
+        public static double For(Hire hire, GameDate today, double benefitPoints,
+            long marketSalaryUsd, IReadOnlyCollection<StaffBenefit> offered)
         {
-            var years = Math.Max(0, today.DayIndex - hire.StartedOn.DayIndex) / 365.0;
+            // A bonus counts as time served. Money buys the settling-in that months would have
+            // bought, which is the only shape that lets a payment matter without letting it buy
+            // somebody's loyalty outright: it is capped, and past the cap only time works.
+            var days = Math.Max(0, today.DayIndex - hire.StartedOn.DayIndex) + hire.BonusDays;
+            var years = days / 365.0;
 
             // Saturating rather than linear. The difference between six months and eighteen is
             // most of the effect; the difference between four years and five is almost none.
             var tenure = TenureCeiling * (1.0 - Math.Exp(-years / (TenureYearsToFull / 3.0)));
+
+            // **A quarter faster, on the tenure term rather than on the total.** Somebody getting
+            // what they asked for settles in sooner; they do not walk in already attached. Applied
+            // here so the effect grows with the months, which is what "settles in" means.
+            if (offered != null && StaffExpectations.IsLookedAfter(hire, offered))
+            {
+                tenure *= 1.0 + StaffExpectations.MetTenureBonus;
+            }
 
             var pay = 0.0;
 
@@ -86,6 +123,12 @@ namespace ScalingLaws.Simulation
 
             var total = Base + tenure + Math.Clamp(benefitPoints, 0.0, BenefitCatalog.MaximumPoints)
                 + pay;
+
+            // And what they asked for and did not get, which is a drag rather than an absence.
+            if (offered != null)
+            {
+                total += StaffExpectations.PointsFor(hire, offered);
+            }
 
             return Math.Clamp(SimUnits.Finite(total, Base), 0.0, 100.0);
         }

@@ -2177,6 +2177,116 @@ namespace ScalingLaws.Simulation
 
         // ------------------------------------------------------------------ staff and offices
 
+        /// <summary>
+        /// What a bonus of a given size would be worth to one person, in days of settling in.
+        ///
+        /// Public and separate from paying it, because the panel has to be able to say what the
+        /// money buys **before** the money leaves. A button that spends first and reports after is
+        /// the shape of every complaint about this game's own upgrade screen.
+        /// </summary>
+        public int BonusDaysFor(int index, long usd)
+        {
+            if (index < 0 || index >= State.Staff.Headcount || usd <= 0L)
+            {
+                return 0;
+            }
+
+            var hire = State.Staff.Hires[index];
+            var monthly = hire.SalaryPerYearUsd / 12.0;
+
+            if (monthly <= 0.0)
+            {
+                return 0;
+            }
+
+            var days = usd / monthly * Loyalty.BonusDaysPerMonthOfSalary;
+            var room = Hire.MostBonusDays - hire.BonusDays;
+
+            return (int)Math.Clamp(Math.Round(days), 0, Math.Max(0, room));
+        }
+
+        /// <summary>
+        /// Pays somebody a one-off bonus.
+        ///
+        /// **It buys time, not affection.** The payment is credited as tenure, capped at two years'
+        /// worth across a whole career, so money can shorten how long somebody takes to settle in
+        /// and can never replace the settling in. Past the cap the only thing that earns loyalty is
+        /// having been there.
+        ///
+        /// Refused rather than clamped when there is no headroom left, because silently taking the
+        /// money for nothing is worse than saying no.
+        /// </summary>
+        public bool TryPayBonus(int index, long usd, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (index < 0 || index >= State.Staff.Headcount)
+            {
+                failureReason = Loc.T("person.no_such");
+                return false;
+            }
+
+            if (usd <= 0L)
+            {
+                failureReason = Loc.T("person.bonus_nothing");
+                return false;
+            }
+
+            if (State.CashUsd < usd)
+            {
+                failureReason = Loc.T("room.cannot_afford", UiMoney(usd));
+                return false;
+            }
+
+            var days = BonusDaysFor(index, usd);
+
+            if (days <= 0)
+            {
+                failureReason = Loc.T("person.bonus_capped");
+                return false;
+            }
+
+            var hire = State.Staff.Hires[index];
+
+            State.PostCash(LedgerLine.Salaries, usd);
+            State.Staff.ReplaceAt(index, hire.WithBonusDays(days));
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.StaffHired,
+                State.Date,
+                Loc.T("person.bonus_paid", hire.Label, UiMoney(usd)),
+                usd));
+
+            return true;
+        }
+
+        /// <summary>
+        /// Moves somebody's hours.
+        ///
+        /// Nothing reads them yet beyond the payroll's own day, and that is deliberate: the hours
+        /// are recorded before anything depends on them, so the day a role earns its own mechanic
+        /// there is already a schedule for it to read rather than a field to add and migrate.
+        /// </summary>
+        public bool TrySetHours(int index, int startHour, int endHour, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (index < 0 || index >= State.Staff.Headcount)
+            {
+                failureReason = Loc.T("person.no_such");
+                return false;
+            }
+
+            if (endHour <= startHour)
+            {
+                failureReason = Loc.T("person.hours_backwards");
+                return false;
+            }
+
+            State.Staff.ReplaceAt(index, State.Staff.Hires[index].WithHours(startHour, endHour));
+            return true;
+        }
+
         /// <summary>Lets somebody go. No severance, and the desk frees up immediately.</summary>
         public bool TryLetGo(int index, out string failureReason)
         {

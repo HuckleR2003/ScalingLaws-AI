@@ -279,7 +279,10 @@ namespace ScalingLaws.Persistence
                     name = hire.Name,
                     position = (int)hire.Position,
                     source = (int)hire.Source,
-                    hourlyWageUsd = hire.HourlyWageUsd
+                    hourlyWageUsd = hire.HourlyWageUsd,
+                    bonusDays = hire.BonusDays,
+                    startHour = hire.StartHour,
+                    endHour = hire.EndHour
                 });
             }
 
@@ -1163,7 +1166,8 @@ namespace ScalingLaws.Persistence
 
                 restoredHires.Add(new Hire(
                     (StaffRole)hire.role, hire.skill, new GameDate(hire.startedDayIndex),
-                    hire.name, position, source, hire.hourlyWageUsd));
+                    hire.name, position, source, hire.hourlyWageUsd,
+                    hire.bonusDays, hire.startHour, hire.endHour));
             }
 
             state.Staff.Restore((OfficeTier)safe.officeTier, restoredHires);

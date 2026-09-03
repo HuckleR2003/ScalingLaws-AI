@@ -481,6 +481,71 @@ namespace ScalingLaws.Tests.PlayMode
             yield return Capture(report.Build("0.9.0"), "report.png");
         }
 
+        /// <summary>
+        /// One person, opened, on all three tabs.
+        ///
+        /// The card is where everything the simulation knew about somebody finally appears, and a
+        /// list of rows cannot show any of it. Three frames because three tabs, and the schedule is
+        /// the one whose bar has to be looked at rather than measured.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ThePersonCardDraws()
+        {
+            var simulation = Campaign();
+
+            simulation.State.Staff.SetOffice(OfficeTier.Floor);
+
+            // **Somebody who actually asked for something.** Most people want nothing in
+            // particular, which is the right rule and a useless frame: a review of this card needs
+            // the case where the right-hand column has work to do. The names are walked until one
+            // of them has expectations rather than hard-coding a name that a change to the hash
+            // would quietly turn into the boring case again.
+            var names = new[]
+            {
+                "Ada Kowalska", "Marek Nowak", "Ola Zielinska", "Piotr Lis", "Iga Wrona",
+                "Jan Debski", "Zofia Mazur", "Kamil Sowa"
+            };
+
+            var chosen = names[0];
+
+            foreach (var name in names)
+            {
+                var candidate = new Hire(StaffRole.ResearchScientist, 4,
+                    simulation.State.Date.AddDays(-430), name,
+                    PlayerSkill.Concept, HireSource.Specialist, 128.0);
+
+                if (StaffExpectations.For(candidate).Count >= 1)
+                {
+                    chosen = name;
+                    break;
+                }
+            }
+
+            simulation.State.Staff.Add(new Hire(StaffRole.ResearchScientist, 4,
+                simulation.State.Date.AddDays(-430), chosen,
+                PlayerSkill.Concept, HireSource.Specialist, 128.0));
+
+            // One benefit offered and the rest not, so the card shows a met expectation beside an
+            // unmet one. Both halves have to be legible or the colour coding proves nothing.
+            var wanted = StaffExpectations.For(simulation.State.Staff.Hires[^1]);
+
+            if (wanted.Count > 0)
+            {
+                simulation.State.Benefits.Add(wanted[0]);
+            }
+
+            var panel = new PersonPanel(() => simulation, () => { });
+            panel.Show(simulation.State.Staff.Headcount - 1);
+
+            yield return Capture(panel.Build(), "person.png");
+
+            panel.ShowSchedule();
+            yield return Capture(panel.Build(), "person_schedule.png");
+
+            panel.ShowRole();
+            yield return Capture(panel.Build(), "person_role.png");
+        }
+
         [UnityTest]
         public IEnumerator TheOfficeChooserDraws()
         {

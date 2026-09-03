@@ -23,6 +23,14 @@ namespace ScalingLaws.Simulation
 
         public Hire(StaffRole role, int skill, GameDate startedOn, string name,
             PlayerSkill position, HireSource source, double hourlyWageUsd)
+            : this(role, skill, startedOn, name, position, source, hourlyWageUsd,
+                0, DefaultStartHour, DefaultEndHour)
+        {
+        }
+
+        public Hire(StaffRole role, int skill, GameDate startedOn, string name,
+            PlayerSkill position, HireSource source, double hourlyWageUsd,
+            int bonusDays, int startHour, int endHour)
         {
             Role = role;
             Skill = Math.Clamp(skill, 1, StaffLimits.MaximumSkill);
@@ -31,7 +39,26 @@ namespace ScalingLaws.Simulation
             Position = position;
             Source = source;
             HourlyWageUsd = Math.Max(0.0, hourlyWageUsd);
+            BonusDays = Math.Clamp(bonusDays, 0, MostBonusDays);
+
+            // Clamped into a legal day and forced to be at least an hour long, because a schedule
+            // that ends before it starts is a division by zero waiting somewhere downstream.
+            StartHour = Math.Clamp(startHour, 0, 22);
+            EndHour = Math.Clamp(endHour, StartHour + 1, 24);
         }
+
+        /// <summary>The hours a new hire works unless somebody changes them.</summary>
+        public const int DefaultStartHour = 8;
+
+        public const int DefaultEndHour = 16;
+
+        /// <summary>
+        /// Most tenure a bonus can ever be worth, in days.
+        ///
+        /// Two years. Money buys the settling-in that months would have bought, and it must not buy
+        /// a five year veteran: past this the only thing that earns loyalty is time.
+        /// </summary>
+        public const int MostBonusDays = 730;
 
         public StaffRole Role { get; }
 
@@ -57,6 +84,34 @@ namespace ScalingLaws.Simulation
         /// thing the new hiring flow exists to make matter.
         /// </summary>
         public double HourlyWageUsd { get; }
+
+        /// <summary>
+        /// Settling-in bought with money rather than earned with months.
+        ///
+        /// **Causal, so it is saved.** Loyalty counts it as tenure, so a campaign reloaded without
+        /// it replays differently. That is the fifth time in this project that something which
+        /// looked like a display value turned out to decide something.
+        /// </summary>
+        public int BonusDays { get; }
+
+        /// <summary>When they start, on a 24 hour clock. Eight unless somebody changed it.</summary>
+        public int StartHour { get; }
+
+        /// <summary>And when they finish.</summary>
+        public int EndHour { get; }
+
+        /// <summary>Hours a day, which is what the payroll and the schedule tab both read.</summary>
+        public int HoursPerDay => Math.Max(1, EndHour - StartHour);
+
+        /// <summary>A copy with more tenure bought. Structs are values, so this returns a new one.</summary>
+        public Hire WithBonusDays(int days) =>
+            new(Role, Skill, StartedOn, Name, Position, Source, HourlyWageUsd,
+                BonusDays + Math.Max(0, days), StartHour, EndHour);
+
+        /// <summary>A copy working different hours.</summary>
+        public Hire WithHours(int startHour, int endHour) =>
+            new(Role, Skill, StartedOn, Name, Position, Source, HourlyWageUsd,
+                BonusDays, startHour, endHour);
 
         public long SalaryPerYearUsd => HourlyWageUsd > 0.0
             ? (long)Math.Round(HourlyWageUsd * PositionCatalog.PaidHoursPerYear)
@@ -206,6 +261,23 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>Lets one person go. Returns false when the index does not exist.</summary>
+        /// <summary>
+        /// Writes one person back after a change.
+        ///
+        /// `Hire` is a readonly struct, so paying a bonus or moving somebody's hours produces a new
+        /// value rather than mutating the old one, and the list has to be told.
+        /// </summary>
+        public bool ReplaceAt(int index, Hire hire)
+        {
+            if (index < 0 || index >= hires.Count)
+            {
+                return false;
+            }
+
+            hires[index] = hire;
+            return true;
+        }
+
         public bool RemoveAt(int index)
         {
             if (index < 0 || index >= hires.Count)
