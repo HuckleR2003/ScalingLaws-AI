@@ -32,8 +32,15 @@ inside three years. That is intentional.
 | `Assets/_ScalingLaws/Scripts/Data/` | Pure data libraries plus lookups. No economics, no state. |
 | `Assets/_ScalingLaws/Scripts/Simulation/` | The rules. Also no UnityEngine, so tests run in milliseconds. |
 | `Assets/_ScalingLaws/Scripts/Persistence/` | Save format, migration, PlayerPrefs I/O. The only folder that imports UnityEngine. |
-| `Assets/_ScalingLaws/Scripts/UI/` | Empty on purpose. Nothing here until the simulation is settled. |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 60 tests. No scene is loaded by any of them. |
+| `Assets/_ScalingLaws/Scripts/UI/` | 81 files. UI Toolkit panels, consumers only: nothing here decides anything. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 926 tests across 90 fixtures. No scene is loaded by any of them. |
+| `Assets/_ScalingLaws/Tests/PlayMode/` | 22 tests across 7 fixtures. These load a scene, which is the point: they are the only ones that can see a layout fault. |
+
+**These counts were wrong for a long time and it mattered.** This table said `UI/` was
+empty on purpose against 81 files, and 60 tests against 926, and both figures were quoted
+out of here into decisions about what was covered. Measured 2026-09-03. Count before
+quoting: `ls Assets/_ScalingLaws/Scripts/UI/*.cs | wc -l`, and the totals come off
+`TestResults.xml` rather than off memory.
 
 Two assemblies: `ScalingLaws.Runtime` and `ScalingLaws.Tests.EditMode`. The test
 assembly is Editor only and constrained on `UNITY_INCLUDE_TESTS`, same setup as
