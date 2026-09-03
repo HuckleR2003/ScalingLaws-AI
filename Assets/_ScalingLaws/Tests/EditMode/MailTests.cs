@@ -458,6 +458,65 @@ namespace ScalingLaws.Tests.EditMode
                 "The accrual is causal: January reads it. Dropping it changes the next bill.");
         }
 
+        /// <summary>
+        /// The row, the filter and the buttons say the same thing about the same letter.
+        ///
+        /// **They did not.** A feedback letter carries OPEN and DISMISS, so `Actions` was not empty,
+        /// so the filter counted it under NEEDS AN ANSWER and the reader drew two buttons under it.
+        /// The row printed "No reply needed", because it fell through to that whenever a letter had
+        /// no money on it and was not a job offer, which is every feedback letter in the game.
+        ///
+        /// The reading lives on the letter now. This walks every kind of letter the game can
+        /// produce and holds that a letter with buttons is never described as needing nothing,
+        /// which is the assertion that was missing rather than the code.
+        /// </summary>
+        [Test]
+        public void TheRowNeverSaysNoReplyNeededOverALetterWithButtonsOnIt()
+        {
+            var simulation = Fresh(1044);
+            var today = simulation.State.Date;
+            var box = simulation.State.Mail;
+
+            // One of each kind, so a kind added later is covered by the loop rather than forgotten.
+            foreach (MailKind kind in System.Enum.GetValues(typeof(MailKind)))
+            {
+                var letter = box.Add(kind, today, "Somebody", "A subject", "A body.");
+
+                if (kind is MailKind.TaxDemand or MailKind.Fine)
+                {
+                    letter.AmountUsd = 40_000L;
+                    letter.DueDayIndex = today.DayIndex + 14;
+                }
+
+                if (kind == MailKind.JobOffer)
+                {
+                    letter.AskingSalaryUsd = 180_000L;
+                }
+            }
+
+            var nothing = Loc.T("mail.wants_nothing");
+            var wrong = new List<string>();
+
+            foreach (var letter in box.All)
+            {
+                var line = MailScreen.WantsLine(letter, today);
+
+                if (letter.NeedsAnswer && line == nothing)
+                {
+                    wrong.Add($"{letter.Kind}: {letter.Actions.Count} buttons under \"{line}\"");
+                }
+
+                if (!letter.NeedsAnswer && !letter.IsClosed && letter.Actions.Count > 0)
+                {
+                    wrong.Add($"{letter.Kind}: NeedsAnswer disagrees with its own Actions list");
+                }
+            }
+
+            Assert.IsEmpty(wrong,
+                "The list, the filter and the reader are three readings of one state and they have "
+                + "to agree:\n  " + string.Join("\n  ", wrong));
+        }
+
         [Test]
         public void AnOlderSaveStartsWithAnEmptyInboxAndNoAccrual()
         {

@@ -1,3 +1,4 @@
+using ScalingLaws.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -78,6 +79,35 @@ namespace ScalingLaws.UI
 
             target.RegisterCallback<MouseEnterEvent>(_ =>
                 Show(target, title, body, default, placement));
+
+            target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
+            target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
+        }
+
+        /// <summary>
+        /// The same card, resolved when the cursor arrives rather than when the control was built.
+        ///
+        /// **Copy captured at build time freezes in the language `Build` ran in.** That is now the
+        /// shape of nine separate faults in this project: the tutorial line, the guide's name plate,
+        /// the cold open, and the bottom bar's own labels. A card holding phrase-book keys instead
+        /// of sentences cannot go stale, and it needs no retexting pass of its own.
+        ///
+        /// Both arguments are keys. A missing key renders as itself rather than throwing, and
+        /// `LocalisationTests` can only read literals, so passing one here keeps it visible to that
+        /// guard.
+        /// </summary>
+        public static void AttachKeyed(VisualElement target, string titleKey, string bodyKey,
+            Placement placement = Placement.Above)
+        {
+            if (target == null || string.IsNullOrEmpty(titleKey))
+            {
+                return;
+            }
+
+            target.tooltip = string.Empty;
+
+            target.RegisterCallback<MouseEnterEvent>(_ => Show(target, Loc.T(titleKey),
+                string.IsNullOrEmpty(bodyKey) ? string.Empty : Loc.T(bodyKey), default, placement));
 
             target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
             target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));

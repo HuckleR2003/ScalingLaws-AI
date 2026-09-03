@@ -29,12 +29,15 @@ namespace ScalingLaws.UI
             ("X3", SimSpeed.Fast)
         };
 
-        /// <summary>What each speed is for, in the order the buttons are built.</summary>
+        /// <summary>
+        /// What each speed is for, in the order the buttons are built. Phrase-book keys, not
+        /// sentences, so the card resolves in whatever language is current when the cursor arrives.
+        /// </summary>
         private static readonly string[] SpeedWords =
         {
-            "A day at a time, for a week that matters.",
-            "The pace the game is balanced around.",
-            "For the months between decisions."
+            "hud.speed_x1_note",
+            "hud.speed_x2_note",
+            "hud.speed_x3_note"
         };
 
         private readonly Action<SimSpeed> onSpeed;
@@ -45,9 +48,14 @@ namespace ScalingLaws.UI
         private readonly List<Button> slots = new();
 
         private HudTimeDial dial;
+        private VisualElement overhang;
+        private VisualElement plate;
         private Label dateLabel;
         private Label clockLabel;
+        private Label plateDateLabel;
+        private Label plateClockLabel;
         private Button pauseButton;
+        private Button skipButton;
         private Button infoButton;
         private VisualElement dayFill;
 
@@ -85,9 +93,23 @@ namespace ScalingLaws.UI
             badge.style.display = count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        public void AddSlot(string label, object key, Action onClick, string iconName = null,
-            string insight = null)
+        /// <summary>
+        /// Every slot caption, against the phrase-book key it came from.
+        ///
+        /// **The label used to be set once in <see cref="AddSlot"/> and never looked at again.** The
+        /// keys were translated, so a Polish proof frame still showed SITE, MODEL, RESEARCH along
+        /// the bottom of a Polish game. It was not reachable then, because the language could only
+        /// be changed from the main menu, and it would have become real the day that setting reached
+        /// the pause menu. This project has now been bitten nine times by something set once in a
+        /// `Build` and never re-set.
+        /// </summary>
+        private readonly List<(Label Caption, string Key)> captions = new();
+
+        public void AddSlot(string labelKey, object key, Action onClick, string iconName = null,
+            string insightKey = null)
         {
+            var label = Loc.T(labelKey);
+
             var slot = new Button(onClick) { userData = key };
             slot.AddToClassList("hud-slot");
 
@@ -108,6 +130,7 @@ namespace ScalingLaws.UI
             var caption = new Label(label);
             caption.AddToClassList("hud-slot__label");
             slot.Add(caption);
+            captions.Add((caption, labelKey));
 
             var underline = new VisualElement();
             underline.AddToClassList("hud-slot__underline");
@@ -123,7 +146,10 @@ namespace ScalingLaws.UI
 
             // What the tab is for, above the bar, on the line where the screen meets it. Fourteen
             // nouns along the bottom of a window is a lot to learn from nouns alone.
-            InsightTip.Attach(slot, label, insight);
+            //
+            // Keyed rather than resolved, so the card cannot be left behind by a language change
+            // the way the caption above it was.
+            InsightTip.AttachKeyed(slot, labelKey, insightKey);
 
             slots.Add(slot);
             SlotHost.Add(slot);
@@ -192,11 +218,69 @@ namespace ScalingLaws.UI
             }
         }
 
+        /// <summary>
+        /// Re-reads every word on the bar from the phrase book.
+        ///
+        /// Nothing is rebuilt: the same `Label` and the same `Button` instances get new text, so
+        /// nothing the player's cursor is resting on leaves the tree. That distinction is not
+        /// theoretical here. The tutorial's strip was rebuilt on every refresh and the click landed
+        /// on an element that had already been destroyed, which read as four separate bugs.
+        ///
+        /// The insight cards need no pass of their own: they hold keys and resolve on hover.
+        /// </summary>
+        public void Retext()
+        {
+            foreach (var (caption, key) in captions)
+            {
+                caption.text = Loc.T(key);
+            }
+
+            if (skipButton != null)
+            {
+                skipButton.text = Loc.T("hud.skip_day");
+            }
+
+            if (infoButton != null)
+            {
+                infoButton.text = Loc.T("hud.company_info");
+            }
+        }
+
+        /// <summary>
+        /// Whether this screen is a room the player is standing in, or a page they are reading.
+        ///
+        /// **The disc overhangs the bar by about 170px and no page reserves for it**, so on every
+        /// document screen it sat over the bottom-left corner and ate whatever was written there:
+        /// the brand line on TEAM, the end of the marketing sentence on BUSINESS, the cabinet hint
+        /// in the basement until that one was moved out of its way.
+        ///
+        /// The fix is not a global margin. A room fills the window and has nothing in that corner
+        /// to lose, and the disc is the nicer object, so the disc stays there and a document gets
+        /// a rectangular 24-hour plate in the bar instead. Same reading, in the flow of the row,
+        /// taking its own space rather than borrowing the page's.
+        ///
+        /// Both are built once and toggled. Rebuilding the dial per screen change would restart
+        /// its arc, and it is the one element here that draws itself.
+        /// </summary>
+        public void ShowDial(bool inARoom)
+        {
+            overhang.style.display = inARoom ? DisplayStyle.Flex : DisplayStyle.None;
+            plate.style.display = inARoom ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
         /// <summary>Pushes the clock into the interface. Called every tick and after every action.</summary>
         public void Refresh(GameDate date, SimSpeed speed, double dayProgress)
         {
-            dateLabel.text = date.ToString().ToUpperInvariant();
-            clockLabel.text = HudTimeDial.ClockText(dayProgress);
+            // Both readings are set whichever is on screen. Two labels are two strings; branching
+            // on the visible one is how the hidden half drifts and then appears already wrong.
+            var stamp = date.ToString().ToUpperInvariant();
+            var reading = HudTimeDial.ClockText(dayProgress);
+
+            dateLabel.text = stamp;
+            clockLabel.text = reading;
+            plateDateLabel.text = stamp;
+            plateClockLabel.text = reading;
+
             dial.Progress = (float)dayProgress;
 
             dayFill.style.width = Length.Percent((float)(dayProgress * 100.0));
@@ -235,6 +319,10 @@ namespace ScalingLaws.UI
             day.Add(dayFill);
 
             hud.Add(day);
+
+            // The state the shell will immediately correct on its first `Show`. Set here so the
+            // bar is never briefly carrying both readings, or neither.
+            ShowDial(true);
             return hud;
         }
 
@@ -245,7 +333,7 @@ namespace ScalingLaws.UI
 
             // The disc overhangs the top of the bar, so it lives in a zero height host and is
             // positioned out of flow. Nothing else in the bar has to make room for it.
-            var overhang = new VisualElement();
+            overhang = new VisualElement();
             overhang.AddToClassList("hud-time__overhang");
 
             dial = new HudTimeDial();
@@ -264,10 +352,30 @@ namespace ScalingLaws.UI
             var controls = new VisualElement();
             controls.AddToClassList("hud-time__controls");
 
+            // The reading a document screen gets instead of the disc. In the flow of the row, the
+            // same height as the speed buttons, so it takes bar space rather than page space.
+            plate = new VisualElement();
+            plate.AddToClassList("hud-clock");
+
+            plateDateLabel = new Label("2022-01-01");
+            plateDateLabel.AddToClassList("hud-clock__date");
+            plate.Add(plateDateLabel);
+
+            var divider = new VisualElement();
+            divider.AddToClassList("hud-clock__rule");
+            plate.Add(divider);
+
+            plateClockLabel = new Label("00:00");
+            plateClockLabel.AddToClassList("hud-clock__time");
+            plate.Add(plateClockLabel);
+
+            InsightTip.Attach(plate, Loc.T("hud.clock"), Loc.T("hud.clock_note"));
+            controls.Add(plate);
+
             pauseButton = new Button(() => onSpeed?.Invoke(SimSpeed.Paused)) { text = "II" };
             pauseButton.AddToClassList("hud-speed");
             pauseButton.AddToClassList("hud-speed--pause");
-            InsightTip.Attach(pauseButton, "PAUSE", "Stops the clock. Space does the same thing.");
+            InsightTip.AttachKeyed(pauseButton, "hud.pause", "hud.pause_note");
             controls.Add(pauseButton);
 
             // The key is named on the card rather than printed on the button, because the buttons
@@ -279,24 +387,24 @@ namespace ScalingLaws.UI
                 var button = new Button(() => onSpeed?.Invoke(speed)) { text = label };
                 button.AddToClassList("hud-speed");
 
-                InsightTip.Attach(button, label,
-                    $"{SpeedWords[index]} Press {index + 1}.");
+                // The label is the key: X1, X2 and X3 are the same word in every language, and the
+                // sentence under them is not. `SpeedWords` holds the key rather than the sentence.
+                InsightTip.AttachKeyed(button, "hud.speed_" + label.ToLowerInvariant(),
+                    SpeedWords[index]);
 
                 speedButtons.Add(button);
                 controls.Add(button);
             }
 
-            var skip = new Button(() => onSkipDay?.Invoke()) { text = Loc.T("hud.skip_day") };
-            skip.AddToClassList("hud-skip");
-            InsightTip.Attach(skip, "SKIP DAY",
-                "Runs exactly one day and stops, which is what makes it useful while paused.");
-            controls.Add(skip);
+            skipButton = new Button(() => onSkipDay?.Invoke()) { text = Loc.T("hud.skip_day") };
+            skipButton.AddToClassList("hud-skip");
+            InsightTip.AttachKeyed(skipButton, "hud.skip_day", "hud.skip_day_note");
+            controls.Add(skipButton);
 
             infoButton = new Button(() => onCompanyInfo?.Invoke()) { text = Loc.T("hud.company_info") };
             infoButton.AddToClassList("hud-skip");
             infoButton.AddToClassList("hud-info");
-            InsightTip.Attach(infoButton, "COMPANY INFO",
-                "Who you are, what you own and what the day has cost, over the room.");
+            InsightTip.AttachKeyed(infoButton, "hud.company_info", "hud.company_info_note");
             controls.Add(infoButton);
 
             module.Add(controls);

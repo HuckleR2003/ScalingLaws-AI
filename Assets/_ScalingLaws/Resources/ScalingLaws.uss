@@ -1436,6 +1436,47 @@
     flex-shrink: 0;
 }
 
+/* ---- the rectangular reading a document screen gets ----
+   The disc hangs 170px above the bar and no page reserves for it, so on every
+   screen that is a document rather than a room it covered the bottom-left
+   corner. This is the same reading in the flow of the row: it takes its own
+   space instead of borrowing the page's. Same height as the speed buttons so
+   the whole control group sits on one line. */
+
+.hud-clock {
+    flex-direction: row;
+    align-items: center;
+    height: 30px;
+    margin-right: 10px;
+    padding-left: 11px;
+    padding-right: 11px;
+    background-color: rgba(255, 255, 255, 0.035);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    border-radius: 3px;
+}
+
+.hud-clock__date {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: rgb(150, 160, 178);
+}
+
+.hud-clock__rule {
+    width: 1px;
+    height: 14px;
+    margin-left: 10px;
+    margin-right: 10px;
+    background-color: rgba(255, 255, 255, 0.13);
+}
+
+.hud-clock__time {
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    color: rgb(232, 238, 248);
+}
+
 .hud-speed {
     width: 42px;
     height: 30px;
@@ -2264,6 +2305,20 @@
     margin-bottom: 7px;
 }
 
+/* The era title and the map's own zoom controls on one line.
+
+   The controls used to sit inside the map, out of flow at its top right, which put them on top of
+   the last node of the row: era one's final node was half covered by 100% - + FIT and clickable in
+   about half its area. Out of flow is right for something that must not move with what it controls;
+   it is wrong when the thing it is over is a button. Beside the heading it cannot cover anything. */
+
+.era__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
 .tree-track {
     flex-direction: row;
     align-items: center;
@@ -2286,8 +2341,18 @@
 
 
 
+/* 96 to 128. The caption under a node is as wide as the node, and UI Toolkit breaks *inside a
+   word* when a single word is wider than its container: the Polish tree read SPECJALIZACJ / A
+   KODOWA, DEDUPLIKACJ / A KORPUSU, ROZPROSZON / Y STAN OPTYMALIZAT / ORA. About a third of era
+   one was in that state and English never showed it, because English node names are shorter.
+
+   The longest word in the Polish tree is "superinteligencja", seventeen characters. At the type
+   size below that is about 105px, so the column is sized from the worst case with room over it
+   rather than from what happens to fit today. The map pans and has a FIT button, so a wider
+   track costs nothing. */
+
 .tree-node {
-    width: 96px;
+    width: 128px;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
@@ -2334,10 +2399,13 @@
     border-radius: 5px;
 }
 
+/* The letter spacing went 1px to 0.2px in the same pass. At seventeen characters a full pixel
+   between every letter is sixteen pixels of nothing, spent on the exact names that did not fit. */
+
 .tree-node__label {
     margin-top: 6px;
-    font-size: 11.5px;
-    letter-spacing: 1px;
+    font-size: 11px;
+    letter-spacing: 0.2px;
     color: rgb(150, 164, 186);
     white-space: normal;
     -unity-text-align: middle-center;
@@ -8912,7 +8980,9 @@
     top: 0;
 }
 
-/* Out of flow in the corner, so it never moves with the thing it is controlling. */
+/* Out of flow in the corner, so it never moves with the thing it is controlling. This is where it
+   sits when a map is used on its own; the research page lifts it out beside the era heading with
+   the modifier below, because inside the frame it covered the last node of the row. */
 .rmap__bar {
     position: absolute;
     right: 10px;
@@ -8922,6 +8992,14 @@
     padding: 4px 6px;
     border-radius: 4px;
     background-color: rgba(8, 11, 18, 0.86);
+}
+
+.rmap__bar--inline {
+    position: relative;
+    right: auto;
+    top: auto;
+    margin-bottom: 7px;
+    background-color: rgba(255, 255, 255, 0.04);
 }
 
 .rmap__reading {

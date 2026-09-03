@@ -60,6 +60,7 @@ namespace ScalingLaws.Tests.EditMode
 
             private void Decide()
             {
+                BalanceTheCluster();
                 ShipAnythingFinished();
                 SizeTheFleet();
                 RaiseWhenOffered();
@@ -68,6 +69,35 @@ namespace ScalingLaws.Tests.EditMode
                 BuyDataWhenAffordable();
                 KeepOptimising();
                 StartARunWhenIdle();
+            }
+
+            /// <summary>
+            /// Move the cluster split when the service is falling over, and move it back when it
+            /// is not.
+            ///
+            /// **This is an operator change, not a softened assertion, and the distinction matters
+            /// because the same move can be either.** Serving used to take the whole fleet whenever
+            /// no training run was in flight, while research went on taking its share regardless,
+            /// so the cluster did a hundred and seventy per cent of its own work. Making the halves
+            /// add to one is a fix; it also means a company can now genuinely starve its customers
+            /// by researching, which this operator did, for five years, without noticing.
+            ///
+            /// A player watching the service dial go red gives the customers more of the fleet.
+            /// That is one slider on the COMPUTE screen and it is exactly as available to them as
+            /// it is here. The same reasoning as `OptimalBlueprintForBudget` meeting the scale
+            /// ceiling: model the player who can see the control, not the one who cannot.
+            ///
+            /// Deliberately dumb. It reads yesterday's status, nothing else, and it never goes past
+            /// the bounds a slider offers.
+            /// </summary>
+            private void BalanceTheCluster()
+            {
+                state.TrainingComputeShare = state.LastQuality.Status switch
+                {
+                    ServiceStatus.Critical => 0.30,
+                    ServiceStatus.Unstable => 0.42,
+                    _ => 0.55
+                };
             }
 
             /// <summary>Ship the day it is done. Holding is an advanced move and this player is not.</summary>

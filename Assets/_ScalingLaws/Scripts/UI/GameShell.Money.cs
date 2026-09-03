@@ -39,6 +39,11 @@ namespace ScalingLaws.UI
             page.Add(BuildHostingSwitch());
             page.Add(BuildServicePanel());
 
+            // Directly under the service dial, because it is the control that moves it. The dial
+            // says how hard the fleet is working; this says how much of the fleet the customers
+            // were given in the first place.
+            page.Add(BuildClusterSplitPanel());
+
             var rental = new VisualElement();
             rental.AddToClassList("panel");
 
@@ -111,7 +116,20 @@ namespace ScalingLaws.UI
                 row.AddToClassList("readout");
                 row.Add(new Label(definition.DisplayName));
 
-                var value = new Label(status.IsUnlocked ? "OPEN" : status.LockReason);
+                // **The third tier had no door.**
+                //
+                // `TryOrderDatacenter` was written in full, with a gate, a capex, a lead time and
+                // its own power tariff, and no screen in the game ever called it. The ladder showed
+                // the row, said OPEN once the gate cleared, and offered nothing to press: an entire
+                // layer of the infrastructure game was visible, unlocked and unreachable.
+                if (status.Tier == ComputeTier.OwnDatacenter && status.IsUnlocked)
+                {
+                    row.Add(BuildDatacenterControl(definition));
+                    ladder.Add(row);
+                    continue;
+                }
+
+                var value = new Label(status.IsUnlocked ? Loc.T("fleet.tier_open") : status.LockReason);
                 value.AddToClassList("readout__value");
                 value.style.whiteSpace = WhiteSpace.Normal;
                 value.style.maxWidth = 620;
@@ -208,6 +226,77 @@ namespace ScalingLaws.UI
             bottomRow.Add(buy);
             page.Add(bottomRow);
             return page;
+        }
+
+        /// <summary>
+        /// The right-hand end of the own-datacenter row: what it costs, or how long until it opens.
+        ///
+        /// Three states and no fourth. Not commissioned yet, so there is a button; commissioned and
+        /// being built, so there is a date and a countdown; open, so there is nothing to do here and
+        /// the tier is simply available to buy hardware into.
+        ///
+        /// **The button is disabled with the money on it rather than hidden.** Eighty million
+        /// dollars three hundred days before it produces a token is the largest single decision in
+        /// the game, and a player who cannot afford it yet should be able to see what they are
+        /// saving for. A control that appears only once it is affordable teaches nothing.
+        /// </summary>
+        private VisualElement BuildDatacenterControl(ComputeTierDefinition definition)
+        {
+            var side = new VisualElement();
+            side.style.flexDirection = FlexDirection.Row;
+            side.style.alignItems = Align.Center;
+
+            if (state.IsDatacenterOnline)
+            {
+                var open = new Label(Loc.T("fleet.tier_open"));
+                open.AddToClassList("readout__value");
+                open.AddToClassList("readout__value--good");
+                side.Add(open);
+                return side;
+            }
+
+            if (state.DatacenterOrdered)
+            {
+                var days = Math.Max(0, state.DatacenterReadyDate.DayIndex - state.Date.DayIndex);
+
+                var building = new Label(Loc.T("fleet.dc_building",
+                    state.DatacenterReadyDate.ToString(), Loc.Counted(days, "noun.day")));
+
+                building.AddToClassList("readout__value");
+                building.AddToClassList("readout__value--warn");
+                side.Add(building);
+                return side;
+            }
+
+            var affordable = state.CashUsd >= definition.FacilityCapexUsd;
+
+            var order = new Button(() =>
+            {
+                simulation.TryOrderDatacenter(out _);
+                Show(Screen.Fleet);
+            })
+            {
+                text = Loc.T("fleet.dc_commission", UiFormat.Money(definition.FacilityCapexUsd))
+            };
+
+            order.AddToClassList("chip");
+            order.SetEnabled(affordable);
+
+            InsightTip.AttachKeyed(order, "fleet.dc_commission_title", "fleet.dc_commission_note");
+
+            if (!affordable)
+            {
+                var short_ = new Label(Loc.T("fleet.dc_short",
+                    UiFormat.Money(definition.FacilityCapexUsd - state.CashUsd)));
+
+                short_.AddToClassList("readout__value");
+                short_.AddToClassList("readout__value--warn");
+                short_.style.marginRight = 10;
+                side.Add(short_);
+            }
+
+            side.Add(order);
+            return side;
         }
 
         private VisualElement BuildHardwareCard(HardwareGeneration generation, ComputeTier tier)
@@ -340,13 +429,11 @@ namespace ScalingLaws.UI
                     Show(Screen.Business);
                 });
                 pricing.Add(subSlider);
-                pricing.Add(Hint("A fee you set, decoupled from the market. It protects a good position "
-                    + "when prices fall and traps a bad one when they do not."));
+                pricing.Add(Hint(Loc.T("money.subscription_hint")));
             }
             else
             {
-                pricing.Add(Hint("Nobody pays. Reach is the highest it can be and revenue is zero. "
-                    + "The serving bill is not."));
+                pricing.Add(Hint(Loc.T("money.free_only_hint")));
             }
 
             priceRow.Add(pricing);
@@ -376,7 +463,8 @@ namespace ScalingLaws.UI
             });
             free.Add(freeSlider);
 
-            free.Add(Row("Reach", $"x{UiFormat.Number(policy.ReachMultiplier, 2)} of your normal share"));
+            free.Add(Row(Loc.T("money.reach"),
+                Loc.T("money.reach_value", UiFormat.Number(policy.ReachMultiplier, 2))));
 
             var givenAway = new VisualElement();
             givenAway.AddToClassList("readout");
@@ -387,14 +475,30 @@ namespace ScalingLaws.UI
             givenAway.Add(givenValue);
             free.Add(givenAway);
 
-            free.Add(Row("Given away yesterday",
-                $"{UiFormat.Billions(state.FreeTokensServedBillions)} tokens"));
-            free.Add(Row("Given away in total",
-                $"{UiFormat.Billions(state.LifetimeFreeTokensBillions)} tokens"));
+            // **The slider does not control all of that figure, and the screen never said so.**
+            //
+            // With the tier at zero the readout still printed eight per cent given away, beside a
+            // control reading "0 tokens per free account per day", and there was no way to tell
+            // which of the two was wrong. Neither was: `MonetizationCatalog.BaseFreeShare` is what
+            // trials and evaluation cost a company that offers no free tier at all, and it is only
+            // a floor. Split rather than hidden, because the player is entitled to know which part
+            // of the giveaway their slider can actually take back.
+            if (policy.Model != PricingModel.FreeOnly)
+            {
+                free.Add(Row(Loc.T("money.free_floor"),
+                    UiFormat.Percent(MonetizationCatalog.BaseFreeShare)));
 
-            free.Add(Hint("Serving capacity does not care which kind of token it is producing and "
-                + "neither does the bill. A generous tier widens the funnel and can quietly turn most "
-                + "of the fleet into a cost centre."));
+                free.Add(Row(Loc.T("money.free_from_tier"),
+                    UiFormat.Percent(Math.Max(0.0,
+                        policy.FreeShareOfTokens - MonetizationCatalog.BaseFreeShare))));
+            }
+
+            free.Add(Row(Loc.T("money.given_yesterday"),
+                Loc.T("money.tokens_value", UiFormat.Billions(state.FreeTokensServedBillions))));
+            free.Add(Row(Loc.T("money.given_total"),
+                Loc.T("money.tokens_value", UiFormat.Billions(state.LifetimeFreeTokensBillions))));
+
+            free.Add(Hint(Loc.T("money.free_hint")));
             free.AddToClassList("price-row__half");
             priceRow.Add(free);
             page.Add(priceRow);

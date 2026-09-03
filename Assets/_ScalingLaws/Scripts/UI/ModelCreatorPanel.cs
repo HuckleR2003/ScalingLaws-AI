@@ -2241,27 +2241,56 @@ namespace ScalingLaws.UI
         /// </summary>
         private void RenderEffectBanner(TrainingProjection projection)
         {
-            var delta = previousCapability > 0.0
+            // **A blocked projection has not measured anything, and this banner used to say it had.**
+            //
+            // `TrainingProjection.Blocked` fills every figure with zero, so on the opening stage of
+            // the creator a confident `0.0` sat beside `FRONTIER TODAY 45.0` and read as "your model
+            // is worthless" rather than "nothing is set yet". The same three figures also said the
+            // run would take no time and cost nothing.
+            //
+            // This is the fault `TrainingProfile.IsEstimated` was added for on the scale belt: a
+            // panel asserting a fact it never measured. Here the flag already exists.
+            var measured = projection.IsFeasible;
+
+            // Only a measured projection moves the delta. Recording a blocked zero here made the
+            // first real repricing report the whole capability as though the last change had bought
+            // it, which is the same lie one step later.
+            var delta = measured && previousCapability > 0.0
                 ? projection.ProjectedCapability - previousCapability
                 : 0.0;
-            previousCapability = projection.ProjectedCapability;
 
-            effectBanner.EnableInClassList("effect-banner--blocked", !projection.IsFeasible);
+            if (measured)
+            {
+                previousCapability = projection.ProjectedCapability;
+            }
+
+            effectBanner.EnableInClassList("effect-banner--blocked", !measured);
 
             var bill = projection.ComputeCashCostUsd;
             var frontier = Math.Max(1.0, simulation.Market.FrontierCapability);
             var cash = Math.Max(1.0, simulation.State.CashUsd);
+            var pending = Loc.T("common.not_yet");
 
             // Each figure carries a bar rather than a sentence. The bar is measured against the thing
             // that makes the number mean something: capability against the frontier it has to beat,
             // the bill against the money actually in the account.
-            SetFigure(0, "PROJECTED CAPABILITY", UiFormat.Number(projection.ProjectedCapability),
-                projection.ProjectedCapability / frontier, FigureTone.Cool, delta);
-            SetFigure(1, "FRONTIER TODAY", UiFormat.Number(simulation.Market.FrontierCapability),
+            SetFigure(0, Loc.T("create.fig_capability"),
+                measured ? UiFormat.Number(projection.ProjectedCapability) : pending,
+                measured ? projection.ProjectedCapability / frontier : 0.0, FigureTone.Cool, delta);
+
+            // The frontier is a market fact and is known whether or not a run has been shaped, so it
+            // keeps its number while the other three go quiet.
+            SetFigure(1, Loc.T("create.fig_frontier"),
+                UiFormat.Number(simulation.Market.FrontierCapability),
                 simulation.Market.FrontierCapability / 100.0, FigureTone.Cool, 0.0);
-            SetFigure(2, "TIME TO TRAIN", UiFormat.Days(projection.TrainingDays),
-                projection.TrainingDays / 365.0, FigureTone.Warm, 0.0);
-            SetFigure(3, "CASH IT BURNS", UiFormat.Money(bill), bill / cash, FigureTone.Warm, 0.0);
+
+            SetFigure(2, Loc.T("create.fig_time"),
+                measured ? UiFormat.Days(projection.TrainingDays) : pending,
+                measured ? projection.TrainingDays / 365.0 : 0.0, FigureTone.Warm, 0.0);
+
+            SetFigure(3, Loc.T("create.fig_cash"),
+                measured ? UiFormat.Money(bill) : pending,
+                measured ? bill / cash : 0.0, FigureTone.Warm, 0.0);
 
             if (blockedLabel.parent == null)
             {

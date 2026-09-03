@@ -140,6 +140,19 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public int DeferredDays { get; set; }
 
+        /// <summary>
+        /// Whether this letter is waiting on the player.
+        ///
+        /// **One reading, because the screen had three.** The list row said "No reply needed", the
+        /// filter above it counted the same letter under NEEDS AN ANSWER, and the reader drew TELL
+        /// HIM and NOT NOW underneath. The row was falling through to a default whenever a letter
+        /// carried no money and was not a job offer, which is every feedback letter in the game.
+        ///
+        /// <see cref="Actions"/> is already what the buttons are built from, so this is the same
+        /// fact the reader uses rather than a second opinion about it.
+        /// </summary>
+        public bool NeedsAnswer => !IsClosed && Actions.Count > 0;
+
         public bool IsOverdue(GameDate today) =>
             !IsClosed && DueDayIndex > 0 && today.DayIndex > DueDayIndex;
 

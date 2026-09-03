@@ -38,6 +38,7 @@ namespace ScalingLaws.UI
         public const float DragThreshold = 4f;
 
         private readonly VisualElement content;
+        private readonly VisualElement bar;
         private readonly Label reading;
 
         private Vector2 pan;
@@ -64,7 +65,7 @@ namespace ScalingLaws.UI
             content.style.transformOrigin = new TransformOrigin(0f, 0f);
             Add(content);
 
-            var bar = new VisualElement();
+            bar = new VisualElement();
             bar.AddToClassList("rmap__bar");
 
             reading = new Label("100%");
@@ -93,6 +94,17 @@ namespace ScalingLaws.UI
 
         /// <summary>Where the tree goes. Callers add nodes here, not to the map itself.</summary>
         public VisualElement Surface => content;
+
+        /// <summary>
+        /// The zoom reading and its three buttons, so a caller with a better place for them can
+        /// take them.
+        ///
+        /// They live in the map's own top right corner by default, which is correct for a map used
+        /// on its own and was wrong on the research page: the track is centred in the frame and its
+        /// last node ended up underneath them, clickable in about half its area. Adding this
+        /// element to another parent moves it, and `rmap__bar--inline` puts it back in flow.
+        /// </summary>
+        public VisualElement Controls => bar;
 
         public float Zoom => zoom;
 

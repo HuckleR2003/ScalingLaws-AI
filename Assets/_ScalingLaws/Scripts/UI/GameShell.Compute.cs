@@ -101,6 +101,66 @@ namespace ScalingLaws.UI
         /// This is the readout for the mechanic that decides whether users stay. It sits directly
         /// under the rent controls because those two things are one decision.
         /// </summary>
+        /// <summary>
+        /// How the cluster is divided between building things and serving customers.
+        ///
+        /// **The ninth mechanism in this project that was complete in the simulation and had no
+        /// control.** `CompanyState.TrainingComputeShare` decides how much of the fleet a training
+        /// run, an upgrade programme, an architecture programme or a research node gets, and how
+        /// much is left for the people paying. It is persisted, it is read in four places, one test
+        /// fixture sets it to 0.55, and nothing else in the game has ever touched it: every
+        /// campaign ever played ran at the constructor's 0.7 forever.
+        ///
+        /// It was found by fixing something else. Serving used to take the whole fleet whenever no
+        /// training run was in flight, while research went on taking its share regardless, so the
+        /// cluster did a hundred and seventy per cent of its own work. Making the two halves add to
+        /// one turns this number into a real cost, and a real cost the player cannot touch is not a
+        /// decision, it is a tax.
+        ///
+        /// The reading below the slider says what is actually happening today, not what the split
+        /// would be: with nothing being built there is nothing to divide, and a panel insisting on
+        /// thirty per cent while the dial above it reads a hundred is the contradiction this whole
+        /// pass was about.
+        /// </summary>
+        private VisualElement BuildClusterSplitPanel()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+
+            var heading = new Label(Loc.T("panel.cluster_split"));
+            heading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(heading, TechNotes.ClusterSplit);
+            panel.Add(heading);
+
+            var share = state.TrainingComputeShare;
+
+            var reading = new Label(Loc.T("fleet.split_reading",
+                UiFormat.Percent(share, 0), UiFormat.Percent(1.0 - share, 0)));
+
+            reading.AddToClassList("field__label");
+            panel.Add(reading);
+
+            var slider = new Slider(10f, 90f) { value = (float)(share * 100.0) };
+            slider.AddToClassList("field");
+            slider.RegisterValueChangedCallback(evt =>
+            {
+                state.TrainingComputeShare = evt.newValue / 100.0;
+                Show(Screen.Fleet);
+            });
+
+            panel.Add(slider);
+
+            // What the split is doing right now, which is not always what it says. Read from the
+            // simulation rather than worked out here, so the two cannot disagree.
+            panel.Add(Row(Loc.T("fleet.split_today"),
+                simulation.ClusterIsBuildingSomething()
+                    ? Loc.T("fleet.split_claimed", UiFormat.Percent(1.0 - share, 0))
+                    : Loc.T("fleet.split_idle")));
+
+            panel.Add(Hint(Loc.T("fleet.split_hint")));
+            return panel;
+        }
+
         private VisualElement BuildServicePanel()
         {
             var quality = simulation.State.LastQuality;

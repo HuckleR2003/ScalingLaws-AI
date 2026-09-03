@@ -1357,15 +1357,28 @@ namespace ScalingLaws.UI
                 opening.style.marginTop = 14;
                 opening.Add(Hint(identity.Opening));
 
-                var nameField = new TextField("Company name") { value = companyName };
+                var nameField = new TextField(Loc.T("menu.company_name")) { value = companyName };
                 nameField.AddToClassList("field");
                 nameField.RegisterValueChangedCallback(evt => companyName = evt.newValue);
                 opening.Add(nameField);
                 page.Add(opening);
             }
 
-            page.Add(Footer("BEGIN, JANUARY 2022", Begin, () => Show(Stage.Founder),
-                CompanyIsChosen, "Pick a lab first."));
+            // **The founder has to have a name, and the game must not invent one.**
+            //
+            // The field shipped pre-filled with the word "Anonymous", which reads exactly like a
+            // greyed-out placeholder, and a playtester left it alone and found their own product
+            // page signed by somebody called Anonymous. Emptying the field moved the invention here
+            // instead of removing it: `Begin` substituted the same word on the way out.
+            //
+            // Gated rather than defaulted. This person walks around the office for fifteen years of
+            // game time and signs the company's public page; there is no honest name for them that
+            // the player did not choose.
+            var named = !string.IsNullOrWhiteSpace(founderName);
+
+            page.Add(Footer(Loc.T("menu.begin_january"), Begin, () => Show(Stage.Founder),
+                CompanyIsChosen && named,
+                CompanyIsChosen ? Loc.T("menu.needs_a_name") : Loc.T("menu.pick_a_lab")));
 
             return page;
         }
@@ -1595,8 +1608,9 @@ namespace ScalingLaws.UI
 
         private void Begin()
         {
-            SceneFlow.RequestedFounderName =
-                string.IsNullOrWhiteSpace(founderName) ? "Anonymous" : founderName.Trim();
+            // The button that reaches here is disabled without a name, so the fall-back is a guard
+            // against a second caller rather than a state a player can produce.
+            SceneFlow.RequestedFounderName = founderName.Trim();
             SceneFlow.RequestedSkillLevels = skills.LevelsToArray();
             SceneFlow.RequestedRegion = (int)chosenRegion;
             SceneFlow.RequestedCountry = (int)chosenCountry;

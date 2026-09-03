@@ -263,6 +263,59 @@ namespace ScalingLaws.Tests.EditMode
                 "A model released today sits exactly at market par, so its effective capability is its measured one.");
         }
 
+        /// <summary>
+        /// One cluster cannot both research at seventy per cent and serve at a hundred.
+        ///
+        /// **It could.** Serving asked only whether a training run was in flight, and took the
+        /// whole fleet when there was not one, while `AdvanceResearch` takes the training share for
+        /// a research node, an upgrade programme or an architecture programme regardless. A company
+        /// researching with nothing in training did a hundred and seventy per cent of its own work.
+        ///
+        /// Measured through serving capacity rather than asserted on a share, because a share is
+        /// the thing that was wrong and capacity is what the player feels.
+        /// </summary>
+        [Test]
+        public void ResearchAndServingCannotBothHaveTheWholeCluster()
+        {
+            static CompanySimulation Serving(bool researching)
+            {
+                var simulation = NewCompany(600, 4242);
+
+                simulation.State.AddDeployedModel(new DeployedModel("Atlas One",
+                    ArchitectureId.DenseTransformer, 46.0, simulation.State.Date, 2e10, 1.0,
+                    ModelType.General));
+
+                if (researching)
+                {
+                    // Points first: the node has to actually start, or both arms of this test
+                    // measure the same company and it passes on nothing.
+                    simulation.State.ResearchPoints = 50_000.0;
+                    Assert.That(
+                        simulation.TryStartResearch(ResearchNodeId.CuratedCorpora, out var why),
+                        Is.True, why);
+                }
+
+                simulation.Advance(30);
+                return simulation;
+            }
+
+            var quiet = Serving(false);
+            var busy = Serving(true);
+
+            Assert.That(busy.State.ActiveRun, Is.Null,
+                "The point of this case is that nothing is training. With a run in flight it was "
+                + "already correct.");
+
+            Assert.That(busy.State.ActiveResearch, Is.Not.Null,
+                "The node never started, so both arms are the same company.");
+
+            Assert.That(busy.State.LastQuality.Capacity,
+                Is.LessThan(quiet.State.LastQuality.Capacity),
+                "A node is running on the same cluster the customers are served from, so serving "
+                + "capacity has to fall. Equal capacity means the fleet is doing the research for "
+                + "free.");
+        }
+
         [Test]
         public void ABankruptCompanyStopsSimulating()
         {

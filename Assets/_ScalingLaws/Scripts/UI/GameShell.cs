@@ -1006,61 +1006,53 @@ namespace ScalingLaws.UI
 
         private void AddHudSlots()
         {
-            // The third argument on each of these is what the card over the bar says. Written to
-            // answer "why would I go there", never to repeat the word already printed on the slot.
-            hud.AddSlot(Loc.T("hud.site"), Screen.Site, () => Show(Screen.Site), "hud_site",
-                "The room, and everything the company owns in it. Where the day is watched from.");
+            // Every argument here is a phrase-book key. The card over the bar answers
+            // "why would I go there", never repeating the word printed on the slot itself.
 
-            hud.AddSlot(Loc.T("hud.model"), Screen.Model, () => Show(Screen.Model), "hud_model",
-                "What the company sells, what it earns, and the two ways to change it: build a new "
-                + "one, or improve one already out there.");
+            hud.AddSlot("hud.site", Screen.Site, () => Show(Screen.Site), "hud_site",
+                "insight.site");
 
-            hud.AddSlot(Loc.T("hud.research"), Screen.Research, () => Show(Screen.Research), "hud_research",
-                "Buy the understanding that unlocks everything else. Points come from work you are "
-                + "already doing, and money alone will not keep pace.");
+            hud.AddSlot("hud.model", Screen.Model, () => Show(Screen.Model), "hud_model",
+                "insight.model");
 
-            hud.AddSlot(Loc.T("hud.architecture"), Screen.Family, () => Show(Screen.Family), "hud_architecture",
-                "Which family of model you build. A sparse mixture is cheap to serve for its size; "
-                + "that is the whole reason to own one.");
+            hud.AddSlot("hud.research", Screen.Research, () => Show(Screen.Research), "hud_research",
+                "insight.research");
 
-            hud.AddSlot(Loc.T("hud.upgrade"), Screen.Upgrade, () => Show(Screen.Upgrade), "hud_upgrade",
-                "Programmes that improve a model already on sale, without training it again.");
+            hud.AddSlot("hud.architecture", Screen.Family, () => Show(Screen.Family), "hud_architecture",
+                "insight.architecture");
 
-            hud.AddSlot(Loc.T("hud.team"), Screen.Team, () => Show(Screen.Team), "hud_team",
-                "Hire, and see what the payroll costs. Desks cap the headcount, so this is also "
-                + "where the office starts to matter.");
+            hud.AddSlot("hud.upgrade", Screen.Upgrade, () => Show(Screen.Upgrade), "hud_upgrade",
+                "insight.upgrade");
 
-            hud.AddSlot(Loc.T("hud.compute"), Screen.Fleet, () => Show(Screen.Fleet), "hud_fleet",
-                "Rent it or buy it. Buy too early and you own a depreciating asset; buy too late "
-                + "and somebody else already has the customers.");
+            hud.AddSlot("hud.team", Screen.Team, () => Show(Screen.Team), "hud_team",
+                "insight.team");
 
-            hud.AddSlot(Loc.T("hud.business"), Screen.Business, () => Show(Screen.Business), "hud_business",
-                "The books. Revenue, burn, tax accruing, and what the company is actually worth.");
+            hud.AddSlot("hud.compute", Screen.Fleet, () => Show(Screen.Fleet), "hud_fleet",
+                "insight.compute");
 
-            hud.AddSlot(Loc.T("hud.release"), Screen.Release, () => Show(Screen.Release), "hud_release",
-                "Put a finished model on sale, set its price, or take one off the market.");
+            hud.AddSlot("hud.business", Screen.Business, () => Show(Screen.Business), "hud_business",
+                "insight.business");
 
-            hud.AddSlot(Loc.T("hud.capital"), Screen.Funding, () => Show(Screen.Funding), "hud_funding",
-                "Raise money and service what you owe. Debt is cheaper than equity right up to the "
-                + "month you cannot pay it.");
+            hud.AddSlot("hud.release", Screen.Release, () => Show(Screen.Release), "hud_release",
+                "insight.release");
 
-            hud.AddSlot(Loc.T("hud.ranking"), Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking",
-                "Every rival on the same capability scale as you, and what they have shipped.");
+            hud.AddSlot("hud.capital", Screen.Funding, () => Show(Screen.Funding), "hud_funding",
+                "insight.capital");
 
-            hud.AddSlot(Loc.T("hud.intel"), Screen.Feed, () => Show(Screen.Feed), "hud_intelligence",
-                "Advance warning, bought. The cheap desk is wrong about one thing in three and "
-                + "sounds exactly as confident as the expensive one.");
+            hud.AddSlot("hud.ranking", Screen.Ranking, () => Show(Screen.Ranking), "hud_ranking",
+                "insight.ranking");
 
-            hud.AddSlot(Loc.T("hud.marketing"), Screen.Marketing, () => Show(Screen.Marketing), "hud_marketing",
-                "Campaigns buy attention and never quality. A bad model advertised hard gets tried "
-                + "and abandoned, which costs you twice.");
+            hud.AddSlot("hud.intel", Screen.Feed, () => Show(Screen.Feed), "hud_intelligence",
+                "insight.intel");
 
-            hud.AddSlot(Loc.T("hud.news"), Screen.News, () => Show(Screen.News), "hud_news",
-                "The wire. Launches, scandals, regulators, and what is being said about you.");
+            hud.AddSlot("hud.marketing", Screen.Marketing, () => Show(Screen.Marketing), "hud_marketing",
+                "insight.marketing");
 
-            hud.AddSlot(Loc.T("hud.mail"), Screen.Mail, () => Show(Screen.Mail), "hud_mail",
-                "Letters that need an answer: salary negotiations, the tax bill, and any fine the "
-                + "company has earned.");
+            hud.AddSlot("hud.news", Screen.News, () => Show(Screen.News), "hud_news",
+                "insight.news");
+
+            hud.AddSlot("hud.mail", Screen.Mail, () => Show(Screen.Mail), "hud_mail",
+                "insight.mail");
         }
 
         private void ToggleCompanyInfo()
@@ -1177,6 +1169,18 @@ namespace ScalingLaws.UI
 
             hud.SetActiveSlot(screen);
 
+            // **Is this a room the player is standing in, or a page they are reading?**
+            //
+            // One fact with three consequences: whether the page goes in a scroller, and now which
+            // clock the bar carries. Computed once, here, because a second reading of it is how the
+            // room ends up scrolled and the disc ends up over a document at the same time.
+            var fillsTheWindow = screen is Screen.Site or Screen.Room;
+
+            // The disc hangs about 170px above the bar and no page reserves for it, so it was
+            // covering the bottom-left corner of every document screen. A room has nothing there
+            // to lose and keeps it; a document gets the rectangular 24-hour plate in the bar.
+            hud.ShowDial(fillsTheWindow);
+
             // Hidden here rather than only in RefreshChrome, which runs when a day rolls over. While
             // the game is paused, which is most of the time a player spends reading a screen, no day
             // rolls over, so both corner banners stayed on top of whatever tab had just been opened.
@@ -1217,8 +1221,6 @@ namespace ScalingLaws.UI
             // sat at its minimum height with the floor cropped across the middle and a band of
             // empty page underneath. The build rail carries its own scroller, which is the part
             // of that screen that is a document.
-            var fillsTheWindow = screen is Screen.Site or Screen.Room;
-
             var host = fillsTheWindow ? contentHost : scroller;
             if (!fillsTheWindow)
             {

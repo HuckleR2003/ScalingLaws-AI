@@ -104,9 +104,13 @@ namespace ScalingLaws.UI
                 var section = new VisualElement();
                 section.AddToClassList("era");
 
+                var head = new VisualElement();
+                head.AddToClassList("era__head");
+
                 var heading = new Label(EraTitle(era));
                 heading.AddToClassList("era__heading");
-                section.Add(heading);
+                head.Add(heading);
+                section.Add(head);
 
                 if (nodes.Count > 0)
                 {
@@ -114,6 +118,13 @@ namespace ScalingLaws.UI
                     // era, because a map that starts zoomed in hides the thing the player came for;
                     // the wheel and the drag are for leaning closer, not for finding your way back.
                     var map = new ResearchMap();
+
+                    // The zoom controls come out of the frame and sit beside the era title. Inside
+                    // it they were absolutely positioned at the top right, which is directly over
+                    // the last node of the row: era one's final node was half covered and clickable
+                    // in about half its area. Adding the element here re-parents it.
+                    map.Controls.AddToClassList("rmap__bar--inline");
+                    head.Add(map.Controls);
 
                     var track = new VisualElement();
                     track.AddToClassList("tree-track");

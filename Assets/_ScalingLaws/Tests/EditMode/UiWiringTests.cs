@@ -187,7 +187,13 @@ namespace ScalingLaws.Tests.EditMode
             var show = shell.IndexOf("private void Show(Screen screen)", System.StringComparison.Ordinal);
             Assert.Greater(show, 0, "Show(Screen) is gone, so this test is checking nothing.");
 
-            var body = shell.Substring(show, System.Math.Min(2200, shell.Length - show));
+            // **The whole method, matched brace to brace, not the first 2,200 characters of it.**
+            //
+            // The window was a fixed byte count, so this went red the day a comment was added near
+            // the top of `Show` and the line it looks for slid past the end of the window. Nothing
+            // about the game had changed. A test that fails on comment length is measuring the
+            // wrong thing, and widening the number would only move the day it happens again.
+            var body = MethodBody(shell, show);
 
             Assert.IsTrue(body.Contains("newsBanner?.SetHidden"),
                 "The news banner is not hidden inside Show, so it stays over the new screen until a "
@@ -195,6 +201,55 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.IsTrue(body.Contains("modelBanner?.SetHidden"),
                 "Same for the product banner.");
+        }
+
+        /// <summary>
+        /// One method's source, from its signature to the brace that closes it.
+        ///
+        /// Braces inside strings and character literals are skipped, because `"{0}"` appears in this
+        /// codebase constantly and one of them would end the method early and silently.
+        /// </summary>
+        private static string MethodBody(string source, int signatureAt)
+        {
+            var open = source.IndexOf('{', signatureAt);
+            Assert.Greater(open, signatureAt, "No body found after the signature.");
+
+            var depth = 0;
+
+            for (var index = open; index < source.Length; index++)
+            {
+                var character = source[index];
+
+                if (character == '"' || character == '\'')
+                {
+                    var quote = character;
+                    index++;
+
+                    while (index < source.Length && source[index] != quote)
+                    {
+                        index += source[index] == '\\' ? 2 : 1;
+                    }
+
+                    continue;
+                }
+
+                if (character == '{')
+                {
+                    depth++;
+                }
+                else if (character == '}')
+                {
+                    depth--;
+
+                    if (depth == 0)
+                    {
+                        return source.Substring(signatureAt, index - signatureAt + 1);
+                    }
+                }
+            }
+
+            Assert.Fail("The method never closed, so the source did not parse the way this expects.");
+            return string.Empty;
         }
     }
 }

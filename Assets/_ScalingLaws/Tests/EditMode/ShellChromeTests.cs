@@ -5,6 +5,7 @@ using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.UI;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace ScalingLaws.Tests.EditMode
 {
@@ -225,6 +226,54 @@ namespace ScalingLaws.Tests.EditMode
             Assert.LessOrEqual(row, NarrowestVirtualWidth - TimeModule - BarPadding,
                 $"{slots} categories want {row}px. The clock and the speed controls need the rest, "
                 + "and when they do not get it the row prints over them.");
+        }
+
+        /// <summary>
+        /// A room keeps the disc; a document gets the rectangular plate.
+        ///
+        /// **The disc overhangs the bar by about 170px and no page reserves for it.** On TEAM it
+        /// covered the brand line, on BUSINESS the end of the marketing sentence, in the basement a
+        /// hint that had to be moved out of its way. A global bottom margin would have paid for it
+        /// on twenty screens to keep an ornament on two.
+        ///
+        /// Both readings are pushed on every refresh, whichever is on screen, because branching on
+        /// the visible one is how the hidden half drifts and then appears already wrong.
+        /// </summary>
+        [Test]
+        public void ADocumentGetsTheRectangularClockAndARoomKeepsTheDisc()
+        {
+            var hud = new GameHud(_ => { }, () => { });
+
+            var disc = hud.Root.Q(className: "hud-time__overhang");
+            var plate = hud.Root.Q(className: "hud-clock");
+
+            Assert.IsNotNull(disc, "The disc is gone, so this is checking nothing.");
+            Assert.IsNotNull(plate, "There is no rectangular clock for a document screen.");
+
+            hud.ShowDial(false);
+            Assert.AreEqual(DisplayStyle.None, disc.style.display.value);
+            Assert.AreEqual(DisplayStyle.Flex, plate.style.display.value);
+
+            hud.ShowDial(true);
+            Assert.AreEqual(DisplayStyle.Flex, disc.style.display.value);
+            Assert.AreEqual(DisplayStyle.None, plate.style.display.value);
+
+            // Half past midday, so a reading that silently stayed at its built value is visible.
+            hud.Refresh(GameDate.FromCalendar(2024, 3, 18), SimSpeed.Normal, 0.5);
+
+            var readings = hud.Root.Query<Label>()
+                .Where(label => label.ClassListContains("hud-time__clock")
+                                || label.ClassListContains("hud-clock__time"))
+                .ToList();
+
+            Assert.AreEqual(2, readings.Count, "There should be exactly two clock readings.");
+            Assert.AreEqual(readings[0].text, readings[1].text,
+                "The disc and the plate are two views of one day. Letting the hidden one fall "
+                + "behind is how it appears already wrong the moment it is shown.");
+
+            Assert.IsTrue(Source("GameShell.cs").Contains("hud.ShowDial("),
+                "Nothing tells the bar which kind of screen it is on, so the disc is back over "
+                + "the bottom-left corner of every page.");
         }
 
         [Test]

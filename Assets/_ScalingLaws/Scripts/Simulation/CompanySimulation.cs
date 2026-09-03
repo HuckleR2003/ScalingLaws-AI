@@ -971,12 +971,11 @@ namespace ScalingLaws.Simulation
         /// <summary>Contracts for a given throughput. Billed daily, cancellable daily.</summary>
         public void SetRentedPetaflops(double petaflops) => State.Pool.SetRentedPetaflops(petaflops);
 
-        /// <summary>
-        /// Same thing expressed in units of whatever the clouds are renting today. Convenient for a
-        /// slider; the contract underneath is still capacity.
-        /// </summary>
-        public void SetRentedAccelerators(int units) =>
-            State.Pool.SetRentedAcceleratorEquivalent(units, Market.RentableGeneration);
+        // `SetRentedAccelerators` used to sit here, expressing the same contract in units of
+        // whatever the clouds rent today. Nothing but a fixture ever called it, and a unit-count
+        // entry point next to a capacity-denominated contract is one edit away from acquiring a
+        // slider, which is exactly the surprise renting exists not to have. It is an extension
+        // method in the test assembly now: `Tests/EditMode/SimulationOperators.cs`.
 
         /// <summary>
         /// Buys hardware into a tier. Charges cash immediately; the units arrive after the tier's
@@ -1115,7 +1114,7 @@ namespace ScalingLaws.Simulation
 
             if (State.DatacenterOrdered)
             {
-                failureReason = "A datacenter is already commissioned.";
+                failureReason = Loc.T("fleet.dc_already");
                 return false;
             }
 
@@ -1129,7 +1128,9 @@ namespace ScalingLaws.Simulation
 
             if (State.CashUsd < definition.FacilityCapexUsd)
             {
-                failureReason = $"Needs ${definition.FacilityCapexUsd:N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("fleet.dc_needs",
+                    UiMoney(definition.FacilityCapexUsd), UiMoney(State.CashUsd));
+
                 return false;
             }
 
@@ -1141,7 +1142,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.HardwareOrdered,
                 State.Date,
-                $"Datacenter commissioned. First power on {State.DatacenterReadyDate}.",
+                Loc.T("fleet.dc_commissioned", State.DatacenterReadyDate.ToString()),
                 definition.FacilityCapexUsd));
 
             return true;
@@ -1448,17 +1449,14 @@ namespace ScalingLaws.Simulation
             return records;
         }
 
-        /// <summary>
-        /// Commissions post-training work on one model.
-        ///
-        /// **`onShelf` is the whole reason a finished model can be improved before it ships.** A run
-        /// that has completed and not been released is exactly when a real lab does its evaluation
-        /// work, and until this argument existed the UPGRADE screen simply had nothing to show for
-        /// a company whose only model was sitting on the shelf.
-        /// </summary>
-        public bool TryStartUpgrade(int modelIndex, ModelTrait trait, out string failureReason,
-            bool onShelf = false) =>
-            TryStartUpgrades(modelIndex, new[] { trait }, out failureReason, onShelf);
+        // `TryStartUpgrade`, the single-trait form, used to sit here. The player commissions a
+        // basket and always has, so this had no caller outside the fixtures. Moved to
+        // `Tests/EditMode/SimulationOperators.cs` rather than kept as a second commissioning path.
+        //
+        // **`onShelf` is the whole reason a finished model can be improved before it ships.** A run
+        // that has completed and not been released is exactly when a real lab does its evaluation
+        // work, and until that argument existed the UPGRADE screen had nothing to show for a
+        // company whose only model was sitting on the shelf.
 
         /// <summary>
         /// Commissions a whole basket of post-training work as **one** programme.
@@ -3127,6 +3125,17 @@ namespace ScalingLaws.Simulation
         ///
         /// Returns false when nothing is running, in which case the slices are meaningless.
         /// </summary>
+        /// <summary>
+        /// Is anything claiming the building half of the cluster today?
+        ///
+        /// Public because the interface has to say so. The COMPUTE screen shows the split, and a
+        /// panel that insists on thirty per cent for customers while the service dial above it
+        /// reads a hundred is exactly the kind of two-readings-of-one-state this codebase keeps
+        /// getting caught by.
+        /// </summary>
+        public bool ClusterIsBuildingSomething() =>
+            TrySliceCluster(out _, out _, out _, out _);
+
         private bool TrySliceCluster(out double run, out double upgrades, out double architecture,
             out double node)
         {
@@ -3838,7 +3847,20 @@ namespace ScalingLaws.Simulation
 
             // Serving is embarrassingly parallel, so the fabric tax that hurts training does not
             // apply here. What does apply is the low utilization of memory-bound inference.
-            var servingShare = State.ActiveRun != null ? 1.0 - State.TrainingComputeShare : 1.0;
+            //
+            // **The fleet was doing a hundred and seventy per cent of its work.** This asked only
+            // whether a training run was in flight, and gave serving the whole cluster when there
+            // was not one. But `AdvanceResearch` takes `TrainingComputeShare` of the fleet for a
+            // research node, an upgrade programme or an architecture programme too, whether or not
+            // anything is training. A company researching with nothing in training therefore served
+            // at full capacity *and* researched at seventy per cent of it, out of one cluster.
+            //
+            // `TrySliceCluster` is already the one place that knows whether anything is claiming
+            // that slice, and it answers false when nothing is. Reading it here is what makes the
+            // two halves add to one.
+            var servingShare = ClusterIsBuildingSomething()
+                ? 1.0 - State.TrainingComputeShare
+                : 1.0;
             var servingPetaflops = profile.RawPetaflops * InferenceUtilization * Math.Clamp(servingShare, 0.0, 1.0);
 
             // Optimisation levels above market par make every token cheaper to produce, which turns

@@ -151,6 +151,52 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
+        /// Every tier on the compute ladder can actually be entered.
+        ///
+        /// **The third one could not, for months.** `TryOrderDatacenter` is complete: a gate on
+        /// date, cash, models shipped and lifetime revenue, an eighty million dollar capex, a three
+        /// hundred day lead time, its own power tariff and forty megawatts of capacity. Nothing in
+        /// the interface ever called it. The ladder drew the row, said OPEN when the gate cleared,
+        /// and offered nothing to press, so a whole layer of the infrastructure game was visible,
+        /// unlocked, and unreachable.
+        ///
+        /// Written as a sweep over the entry points rather than as one assertion about the
+        /// datacenter, because the next tier added will be added to the catalog and not to this
+        /// list, and a test that names one tier would not notice.
+        /// </summary>
+        [Test]
+        public void EveryComputeTierHasAWayIn()
+        {
+            var ui = UiText();
+            var missing = new List<string>();
+
+            foreach (var definition in Data.ComputeTierCatalog.All)
+            {
+                var tier = definition.Tier;
+
+                // Rented capacity is contracted with a slider rather than entered, and a tier the
+                // player is put into on day one needs no door at all.
+                if (definition.IsRented || definition.FacilityCapexUsd <= 0L)
+                {
+                    continue;
+                }
+
+                if (!Regex.IsMatch(ui, @"\bComputeTier\." + Regex.Escape(tier.ToString()) + @"\b"))
+                {
+                    missing.Add($"{tier} is never named in Scripts/UI");
+                }
+            }
+
+            Assert.IsEmpty(missing,
+                "A tier with a capex is a thing the player signs for, so something has to offer "
+                + "it:\n  " + string.Join("\n  ", missing));
+
+            Assert.That(Regex.IsMatch(ui, @"TryOrderDatacenter\s*\("), Is.True,
+                "Nothing in the interface commissions a datacenter, so the cheapest compute in the "
+                + "game is unlocked and unreachable.");
+        }
+
+        /// <summary>
         /// The offer to buy the company can be answered.
         ///
         /// It arrives, it sits for forty five days and it expires. Both halves of the answer were

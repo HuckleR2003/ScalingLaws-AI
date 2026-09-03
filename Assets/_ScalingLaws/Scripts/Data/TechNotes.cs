@@ -112,6 +112,8 @@ namespace ScalingLaws.Data
 
         public static Note ReservedCapacity => From("tech.reserved");
 
+        public static Note ClusterSplit => From("tech.split");
+
         public static Note Positions => From("tech.headcount");
 
         public static Note Wage => From("tech.wage");

@@ -112,7 +112,7 @@ namespace ScalingLaws.UI
                 var keep = filter switch
                 {
                     Filter.Unread => !letter.IsRead,
-                    Filter.NeedsAnswer => !letter.IsClosed && letter.Actions.Count > 0,
+                    Filter.NeedsAnswer => letter.NeedsAnswer,
                     _ => true
                 };
 
@@ -140,9 +140,9 @@ namespace ScalingLaws.UI
 
             var owed = box.OwedUsd;
             var strap = new Label(owed > 0L
-                ? $"{UiFormat.Money(owed)} owed across {box.Open} open letter"
-                    + (box.Open == 1 ? string.Empty : "s") + "."
-                : "Nothing owed. Applications, notices and the occasional demand land here.");
+                ? Loc.T("mail.owed_across", UiFormat.Money(owed),
+                    Loc.Counted(box.Open, "noun.open_letter"))
+                : Loc.T("mail.nothing_owed"));
 
             strap.AddToClassList("mail__strap");
             strap.EnableInClassList("mail__strap--owing", owed > 0L);
@@ -153,9 +153,9 @@ namespace ScalingLaws.UI
             var filters = new VisualElement();
             filters.AddToClassList("mail__filters");
 
-            filters.Add(FilterChip("ALL", Filter.All, box.All.Count));
-            filters.Add(FilterChip("UNREAD", Filter.Unread, box.Unread));
-            filters.Add(FilterChip("NEEDS AN ANSWER", Filter.NeedsAnswer, NeedingAnswer()));
+            filters.Add(FilterChip(Loc.T("mail.filter_all"), Filter.All, box.All.Count));
+            filters.Add(FilterChip(Loc.T("mail.filter_unread"), Filter.Unread, box.Unread));
+            filters.Add(FilterChip(Loc.T("mail.filter_answer"), Filter.NeedsAnswer, NeedingAnswer()));
 
             bar.Add(filters);
             return bar;
@@ -166,7 +166,7 @@ namespace ScalingLaws.UI
             var count = 0;
             foreach (var letter in simulation.State.Mail.All)
             {
-                if (!letter.IsClosed && letter.Actions.Count > 0)
+                if (letter.NeedsAnswer)
                 {
                     count++;
                 }
@@ -200,8 +200,8 @@ namespace ScalingLaws.UI
             if (letters.Count == 0)
             {
                 var none = new Label(filter == Filter.All
-                    ? "Nothing yet. The first thing to arrive is usually somebody looking for work."
-                    : "Nothing under this filter.");
+                    ? Loc.T("mail.empty_box")
+                    : Loc.T("mail.empty_filter"));
 
                 none.AddToClassList("mail-empty");
                 column.Add(none);
@@ -277,26 +277,41 @@ namespace ScalingLaws.UI
                         _ => "mail-row__dot--plain"
                     };
 
-        private static string WantsLine(MailItem letter, GameDate today)
+        /// <summary>
+        /// The one line on the row that says what a letter wants, without opening it.
+        ///
+        /// **Public so the agreement can be tested.** This line, the NEEDS AN ANSWER count above it
+        /// and the buttons in the reader were three separate readings of one state, and they
+        /// disagreed: a feedback letter said "No reply needed" on the row, was counted as needing
+        /// one by the filter, and carried two answer buttons in the body. An EditMode test has no
+        /// panel to dispatch a click into, so the only way to hold the three together is to call
+        /// this the way the row does.
+        /// </summary>
+        public static string WantsLine(MailItem letter, GameDate today)
         {
             if (letter.IsClosed)
             {
-                return letter.Outcome.Length > 0 ? letter.Outcome : "Closed.";
+                return letter.Outcome.Length > 0 ? letter.Outcome : Loc.T("mail.closed");
             }
 
             if (letter.AmountUsd > 0L)
             {
                 return letter.IsOverdue(today)
-                    ? $"{UiFormat.Money(letter.AmountUsd)} overdue and growing"
-                    : $"{UiFormat.Money(letter.AmountUsd)} due in {letter.DaysLeft(today)} days";
+                    ? Loc.T("mail.wants_overdue", UiFormat.Money(letter.AmountUsd))
+                    : Loc.T("mail.wants_due", UiFormat.Money(letter.AmountUsd),
+                        Loc.Counted(letter.DaysLeft(today), "noun.day"));
             }
 
             if (letter.Kind == MailKind.JobOffer)
             {
-                return $"Asking {UiFormat.Money(letter.AskingSalaryUsd)} a year";
+                return Loc.T("mail.wants_salary", UiFormat.Money(letter.AskingSalaryUsd));
             }
 
-            return "No reply needed.";
+            // Checked before the fall-through rather than after it. A letter with buttons under it
+            // is waiting on an answer whatever else it does or does not carry.
+            return letter.NeedsAnswer
+                ? Loc.T("mail.wants_answer")
+                : Loc.T("mail.wants_nothing");
         }
 
         // ---- the letter ----------------------------------------------------------------------------
@@ -348,7 +363,7 @@ namespace ScalingLaws.UI
 
             var when = new Label(letter.Arrived.ToString()
                 + (letter.DueDayIndex > 0 && !letter.IsClosed
-                    ? $"   ·   due {new GameDate(letter.DueDayIndex)}"
+                    ? "   ·   " + Loc.T("mail.due_on", new GameDate(letter.DueDayIndex).ToString())
                     : string.Empty));
 
             when.AddToClassList("mail-read__date");
@@ -375,7 +390,7 @@ namespace ScalingLaws.UI
 
             if (letter.IsClosed)
             {
-                var done = new Label(letter.Outcome.Length > 0 ? letter.Outcome : "Closed.");
+                var done = new Label(letter.Outcome.Length > 0 ? letter.Outcome : Loc.T("mail.closed"));
                 done.AddToClassList("mail-read__closed");
                 pane.Add(done);
                 return pane;
@@ -467,18 +482,19 @@ namespace ScalingLaws.UI
 
             var grid = new VisualElement();
             grid.AddToClassList("applicant__grid");
-            grid.Add(Fact("PROFILE SAYS", candidate.AdvertisedLevel.ToString()));
-            grid.Add(Fact("ASSESSED AT", candidate.TrueLevel.ToString()));
-            grid.Add(Fact("ASKING", $"${candidate.AskingHourlyUsd:N2}/h"));
-            grid.Add(Fact("A YEAR",
+            grid.Add(Fact(Loc.T("mail.profile_says"), candidate.AdvertisedLevel.ToString()));
+            grid.Add(Fact(Loc.T("mail.assessed_at"), candidate.TrueLevel.ToString()));
+            grid.Add(Fact(Loc.T("mail.asking"), Loc.T("mail.per_hour",
+                UiFormat.Number(candidate.AskingHourlyUsd, 2))));
+            grid.Add(Fact(Loc.T("mail.a_year"),
                 UiFormat.Money(candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd))));
 
             facts.Add(grid);
 
             var rounds = Negotiation.Patience - letter.NegotiationRounds;
             var patience = new Label(rounds <= 1
-                ? "They are close to walking away."
-                : $"{rounds} offers before they lose patience.");
+                ? Loc.T("mail.close_to_walking")
+                : Loc.T("mail.offers_left", Loc.Counted(rounds, "noun.offer")));
 
             patience.AddToClassList("applicant__patience");
             patience.EnableInClassList("applicant__patience--thin", rounds <= 1);
@@ -521,13 +537,13 @@ namespace ScalingLaws.UI
             heading.AddToClassList("haggle__heading");
             panel.Add(heading);
 
-            panel.Add(Field("Hourly wage", offerHourly, value =>
+            panel.Add(Field(Loc.T("mail.hourly_wage"), offerHourly, value =>
             {
                 offerHourly = Math.Max(0.0, value);
                 Refresh();
             }, 5.0, "$"));
 
-            panel.Add(Field("Signing bonus", offerBonus, value =>
+            panel.Add(Field(Loc.T("mail.signing_bonus"), offerBonus, value =>
             {
                 offerBonus = Math.Max(0.0, value);
                 Refresh();
@@ -597,7 +613,7 @@ namespace ScalingLaws.UI
             down.AddToClassList("haggle__step");
             row.Add(down);
 
-            var reading = new Label($"{prefix}{value:N2}");
+            var reading = new Label(prefix + UiFormat.Number(value, 2));
             reading.AddToClassList("haggle__value");
             row.Add(reading);
 
@@ -706,20 +722,26 @@ namespace ScalingLaws.UI
 
         private static string Caption(MailAction action, MailItem letter) => action switch
         {
-            MailAction.Pay => "PAY  " + UiFormat.Money(letter.AmountUsd),
+            MailAction.Pay => Loc.T("mail.act_pay", UiFormat.Money(letter.AmountUsd)),
             MailAction.Accept => letter.Candidate != null
-                ? $"ACCEPT  ${letter.Candidate.AskingHourlyUsd:N2}/H"
-                : "HIRE AT  " + UiFormat.Money(letter.AskingSalaryUsd),
+                ? Loc.T("mail.act_accept_hourly",
+                    UiFormat.Number(letter.Candidate.AskingHourlyUsd, 2))
+                : Loc.T("mail.act_hire_at", UiFormat.Money(letter.AskingSalaryUsd)),
 
-            MailAction.Haggle => letter.Candidate != null ? "NEGOTIATE" : "OFFER LESS",
-            MailAction.Defer =>
-                $"DEFER {CompanySimulation.DeferralStepDays} DAYS  +{CompanySimulation.DeferralInterest:P1}",
+            MailAction.Haggle => letter.Candidate != null
+                ? Loc.T("mail.act_negotiate")
+                : Loc.T("mail.act_offer_less"),
+            MailAction.Defer => Loc.T("mail.act_defer",
+                Loc.Counted(CompanySimulation.DeferralStepDays, "noun.day"),
+                UiFormat.Percent(CompanySimulation.DeferralInterest, 1)),
 
             MailAction.OpenLink => Loc.T("feedback.open"),
 
             // A feedback letter is not being turned down, it is being put away, and a button
             // reading DECLINE over a request for help is a small unkindness.
-            _ => letter.Kind == MailKind.Feedback ? Loc.T("feedback.dismiss") : "DECLINE"
+            _ => letter.Kind == MailKind.Feedback
+                ? Loc.T("feedback.dismiss")
+                : Loc.T("mail.act_decline")
         };
 
         /// <summary>Public so a test can drive the button without a panel to dispatch clicks into.</summary>
