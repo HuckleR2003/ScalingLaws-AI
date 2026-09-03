@@ -94,6 +94,23 @@ the split between building and serving, and the whole own-datacenter tier.
   badges that are actually about it rather than one label.
 - **A card on every stage of the model creator**, saying what that page decides.
 - **A 24-hour clock in the bottom bar** on every screen that is a page rather than a room.
+- **The person walking around your office has their name over their head.** One line, no plate
+  behind it, no border. The room is grey boxes and low-poly furniture, and a label with a background
+  would be the loudest thing in the frame.
+- **Tutorials you can ask for again.** Short walkthroughs of one screen, offered from a green card in
+  the corner rather than being part of the opening. The first walks the server room: buy a cabinet,
+  stand it on the floor, open it, put a fan in it. While one is running the bottom bar is held on
+  that screen, because a three-minute walkthrough somebody wanders out of halfway is worse than none
+  at all. STOP is always there and marks nothing finished, so the offer comes back.
+- **A step that asks you to do something has no button to skip it with.** "Click the cabinet" is
+  finished by clicking the cabinet. A NEXT beside it would be a way to complete a tutorial without
+  ever touching the thing it is about.
+- **A corner for things waiting on you**, above the task list and separate from it. Today it holds
+  the one walkthrough offer. Clicking the card starts it, clicking the x puts it away for good.
+- **Emil names a number.** During the compute act he asks you to keep the server rent under $80,000
+  and says there is something coming that will get you off renting, which is the basement he hands
+  over at the end. The rent slider is the one control in the game that bills every day whether or not
+  anything is training, and a figure is easier to hold onto than a warning.
 
 ### Changed
 
@@ -151,7 +168,16 @@ the split between building and serving, and the whole own-datacenter tier.
 
 ### Save compatibility
 
-Save format **v46**. A campaign started on 0.1.0 opens here and keeps everything in it.
+Save format **v47**. A campaign started on 0.1.0 or on v46 opens here and keeps everything in it.
+
+One thing is new: which walkthroughs you have finished, and which you have waved away. An older file
+has taken none of them, because it was played in a game that had none, so the offer appears for an
+existing campaign exactly as it does for a new one. Marking them complete would have quietly
+withheld a tutorial from everybody already playing.
+
+Being part-way through a walkthrough is deliberately not saved. Quitting during one and coming back
+to it half done, with the interface still held shut and no memory of why, is worse than starting the
+two minutes again.
 
 Two facts per person are new: a bonus paid, and the hours they work. Nobody has ever been paid a
 bonus, so nobody is credited one; handing every existing employee two years of settling-in would
@@ -163,8 +189,8 @@ on all along.
 
 ### Under the hood
 
-- 946 EditMode tests across 93 fixtures, and 23 PlayMode across 7.
-- 1,845 phrases in the book, both languages complete.
+- 955 EditMode tests across 94 fixtures, and 23 PlayMode across 7.
+- 1,861 phrases in the book, both languages complete.
 - `CompetitorStrategy.FastFollower` is assigned to no lab, so nothing in the game runs that brief.
   Found by a guard that asks whether every rival trait can actually occur.
 - The unreachable-mechanism sweep was run again over every public mutator on the simulation and the
@@ -181,6 +207,12 @@ on all along.
 - `MarketModel` now separates the published trend from the world acting on it, for scarcity and for
   algorithmic efficiency. A test that pins the doubling law reads the law; one that asks what
   efficiency is today reads the law plus the calendar.
+- One tutorial system, not two. A walkthrough is a different list of the same steps the opening tour
+  is built from, fed to the same strip, the same highlight and the same lock. A second system would
+  have been a second place to fix the bug that ate four playtest clicks.
+- A guard fails the build if any step that waits for the player names an action no screen ever
+  reports. Because a walkthrough holds the bottom bar shut, that particular gap would not be a
+  cosmetic fault: it would be a player sealed inside one screen.
 
 ---
 
