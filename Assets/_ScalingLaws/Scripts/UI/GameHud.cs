@@ -52,7 +52,6 @@ namespace ScalingLaws.UI
         private VisualElement plate;
         private Label dateLabel;
         private Label clockLabel;
-        private Label plateDateLabel;
         private Label plateClockLabel;
         private Button pauseButton;
         private Button skipButton;
@@ -273,12 +272,10 @@ namespace ScalingLaws.UI
         {
             // Both readings are set whichever is on screen. Two labels are two strings; branching
             // on the visible one is how the hidden half drifts and then appears already wrong.
-            var stamp = date.ToString().ToUpperInvariant();
             var reading = HudTimeDial.ClockText(dayProgress);
 
-            dateLabel.text = stamp;
+            dateLabel.text = date.ToString().ToUpperInvariant();
             clockLabel.text = reading;
-            plateDateLabel.text = stamp;
             plateClockLabel.text = reading;
 
             dial.Progress = (float)dayProgress;
@@ -352,24 +349,21 @@ namespace ScalingLaws.UI
             var controls = new VisualElement();
             controls.AddToClassList("hud-time__controls");
 
-            // The reading a document screen gets instead of the disc. In the flow of the row, the
-            // same height as the speed buttons, so it takes bar space rather than page space.
+            // The reading a document screen gets instead of the disc.
+            //
+            // **The hour and nothing else.** The disc carries the date as well, and so did the
+            // first version of this, which cost about 150px of a row that had 22px of slack at
+            // 16:10: the Polish frame came back with the first category clipped to IEDZIBA. The
+            // date is already in the top bar beside SAVE and MENU on every screen in the game, so
+            // the plate was printing it twice and charging the categories for it.
             plate = new VisualElement();
             plate.AddToClassList("hud-clock");
-
-            plateDateLabel = new Label("2022-01-01");
-            plateDateLabel.AddToClassList("hud-clock__date");
-            plate.Add(plateDateLabel);
-
-            var divider = new VisualElement();
-            divider.AddToClassList("hud-clock__rule");
-            plate.Add(divider);
 
             plateClockLabel = new Label("00:00");
             plateClockLabel.AddToClassList("hud-clock__time");
             plate.Add(plateClockLabel);
 
-            InsightTip.Attach(plate, Loc.T("hud.clock"), Loc.T("hud.clock_note"));
+            InsightTip.AttachKeyed(plate, "hud.clock", "hud.clock_note");
             controls.Add(plate);
 
             pauseButton = new Button(() => onSpeed?.Invoke(SimSpeed.Paused)) { text = "II" };

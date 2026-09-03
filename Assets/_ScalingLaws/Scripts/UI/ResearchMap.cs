@@ -45,6 +45,7 @@ namespace ScalingLaws.UI
         private float zoom = 1f;
 
         private bool dragging;
+        private bool fitted;
         private Vector2 grabbedAt;
         private Vector2 panWhenGrabbed;
 
@@ -86,6 +87,10 @@ namespace ScalingLaws.UI
 
             Add(bar);
 
+            // Fit once, as soon as there is a layout to measure. A map cannot size itself in its
+            // own constructor: nothing has been laid out yet, so both widths read NaN.
+            RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+
             RegisterCallback<WheelEvent>(OnWheel);
             RegisterCallback<PointerDownEvent>(OnPointerDown);
             RegisterCallback<PointerMoveEvent>(OnPointerMove);
@@ -108,12 +113,69 @@ namespace ScalingLaws.UI
 
         public float Zoom => zoom;
 
-        /// <summary>Back to everything visible, which is where it started.</summary>
+        /// <summary>
+        /// Back to everything visible.
+        ///
+        /// **It said that and it did not do it.** `Reset` set the zoom to 1.0, which is not a fit,
+        /// it is a default; the class comment above has claimed since it was written that the map
+        /// "opens showing everything", and an era whose track is wider than the frame opened
+        /// cropped with a button labelled FIT that cropped it again. On the research page the first
+        /// era shares its row with the funding panel, so it is the narrowest frame in the game and
+        /// the one where this shows.
+        ///
+        /// Never zooms in past 1.0. A short era filling a wide frame is a row of enormous circles,
+        /// and fitting is about seeing all of it rather than about using all the space.
+        /// </summary>
         public void Reset()
         {
+            if (TryFit())
+            {
+                return;
+            }
+
             zoom = 1f;
             pan = Vector2.zero;
             Apply();
+        }
+
+        private void OnGeometryChanged(GeometryChangedEvent _)
+        {
+            // Once. After that the zoom belongs to the player, and refitting on every layout pass
+            // would undo a drag the moment anything else on the page moved.
+            if (!fitted)
+            {
+                fitted = TryFit();
+            }
+        }
+
+        /// <summary>
+        /// Sizes the view to the content, or answers false when there is nothing to measure yet.
+        /// </summary>
+        private bool TryFit()
+        {
+            var frame = resolvedStyle.width;
+            var frameHeight = resolvedStyle.height;
+            var wide = content.layout.width;
+            var tall = content.layout.height;
+
+            if (float.IsNaN(frame) || float.IsNaN(wide) || frame <= 1f || wide <= 1f)
+            {
+                return false;
+            }
+
+            const float Margin = 10f;
+
+            zoom = Mathf.Clamp(
+                Mathf.Min(1f, (frame - Margin * 2f) / wide), MinimumZoom, MaximumZoom);
+
+            // Centred in both directions, because a fitted track pinned to the top left of a
+            // two hundred pixel frame reads as a rendering fault rather than as a fit.
+            pan = new Vector2(
+                Mathf.Max(Margin, (frame - wide * zoom) / 2f),
+                float.IsNaN(tall) ? 0f : Mathf.Max(0f, (frameHeight - tall * zoom) / 2f));
+
+            Apply();
+            return true;
         }
 
         private void OnWheel(WheelEvent wheel)

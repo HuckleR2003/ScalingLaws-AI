@@ -1437,41 +1437,34 @@
 }
 
 /* ---- the rectangular reading a document screen gets ----
+
    The disc hangs 170px above the bar and no page reserves for it, so on every
    screen that is a document rather than a room it covered the bottom-left
-   corner. This is the same reading in the flow of the row: it takes its own
-   space instead of borrowing the page's. Same height as the speed buttons so
-   the whole control group sits on one line. */
+   corner. This is the same reading, inside the bar and in the flow of the row.
+
+   **The hour only, because the date is already on screen.** The first version
+   carried both and cost about 150px of a row that had 22px of slack at 16:10;
+   the Polish frame came back with the first category clipped to IEDZIBA. The
+   date sits in the top bar beside SAVE and MENU on every screen in the game,
+   so the plate was printing it a second time and charging the category row for
+   the privilege. Sixty five pixels now, and the slot margins below paid the
+   rest. */
 
 .hud-clock {
     flex-direction: row;
     align-items: center;
     height: 30px;
-    margin-right: 10px;
-    padding-left: 11px;
-    padding-right: 11px;
+    margin-right: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     background-color: rgba(255, 255, 255, 0.035);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.09);
     border-radius: 3px;
 }
 
-.hud-clock__date {
-    font-size: 11px;
-    letter-spacing: 1.6px;
-    color: rgb(150, 160, 178);
-}
-
-.hud-clock__rule {
-    width: 1px;
-    height: 14px;
-    margin-left: 10px;
-    margin-right: 10px;
-    background-color: rgba(255, 255, 255, 0.13);
-}
-
 .hud-clock__time {
-    font-size: 17px;
+    font-size: 15px;
     -unity-font-style: bold;
     letter-spacing: 0.5px;
     color: rgb(232, 238, 248);
@@ -1630,19 +1623,24 @@
 /* Wider spacing between categories, and the icons carry real art now, so they
    are the thing you read and the label is the caption. */
 
+/* Margins 3px to 1px, and that is what pays for the clock plate at the other
+   end of the bar. Fifteen slots at four pixels each is sixty pixels, against a
+   65px plate; the slots themselves keep their 88px, because a Polish label
+   ("ARCHITEKTURA") needs every one of them and `.hud-slot` clips. */
+
 .hud-slot {
     width: 88px;
     height: 76px;
     margin: 0;
     overflow: hidden;
-    margin-left: 3px;
+    margin-left: 1px;
     padding: 0;
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     border-radius: 4px;
     align-items: center;
     justify-content: flex-end;
-    margin-right: 3px;
+    margin-right: 1px;
     transition-property: background-color;
     transition-duration: 120ms;
 }

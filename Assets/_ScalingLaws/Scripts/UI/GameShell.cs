@@ -1169,6 +1169,12 @@ namespace ScalingLaws.UI
 
             hud.SetActiveSlot(screen);
 
+            // The bar re-reads its own words here, because `Show` already rebuilds the whole page
+            // and the bar is the one piece of the interface that survives that. Twenty one
+            // dictionary lookups against a full page rebuild is nothing, and it is what stops the
+            // bottom of the screen being the only part of the game still in the old language.
+            hud.Retext();
+
             // **Is this a room the player is standing in, or a page they are reading?**
             //
             // One fact with three consequences: whether the page goes in a scroller, and now which

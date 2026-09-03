@@ -223,9 +223,19 @@ namespace ScalingLaws.Tests.EditMode
             const int TimeModule = 360;
             const int BarPadding = 28;
 
-            Assert.LessOrEqual(row, NarrowestVirtualWidth - TimeModule - BarPadding,
-                $"{slots} categories want {row}px. The clock and the speed controls need the rest, "
-                + "and when they do not get it the row prints over them.");
+            // The rectangular clock a document screen gets, which is in the control row and
+            // therefore costs the categories. Named rather than folded into TimeModule so that
+            // shrinking it is visibly the thing that buys a sixteenth category.
+            var clock = Number(uss, @"\.hud-clock \{[^}]*?height:\s*(\d+)px") > 0
+                ? Number(uss, @"\.hud-clock \{[^}]*?padding-left:\s*(\d+)px")
+                  + Number(uss, @"\.hud-clock \{[^}]*?padding-right:\s*(\d+)px")
+                  + Number(uss, @"\.hud-clock \{[^}]*?margin-right:\s*(\d+)px")
+                  + 45
+                : 0;
+
+            Assert.LessOrEqual(row, NarrowestVirtualWidth - TimeModule - clock - BarPadding,
+                $"{slots} categories want {row}px and the clock wants {clock}px. The speed "
+                + "controls need the rest, and when they do not get it the row prints over them.");
         }
 
         /// <summary>
@@ -244,11 +254,19 @@ namespace ScalingLaws.Tests.EditMode
         {
             var hud = new GameHud(_ => { }, () => { });
 
+            // The host rather than the disc itself: the disc hangs out of flow inside it, and it is
+            // the host that comes and goes.
             var disc = hud.Root.Q(className: "hud-time__overhang");
             var plate = hud.Root.Q(className: "hud-clock");
 
             Assert.IsNotNull(disc, "The disc is gone, so this is checking nothing.");
             Assert.IsNotNull(plate, "There is no rectangular clock for a document screen.");
+
+            // The plate carries the hour and not the date. The date is in the top bar on every
+            // screen, and printing it twice cost about 150px of a row with 22px of slack: the
+            // Polish frame came back with the first category clipped to IEDZIBA.
+            Assert.AreEqual(1, plate.childCount,
+                "The plate has grown a second reading, and the category row is paying for it.");
 
             hud.ShowDial(false);
             Assert.AreEqual(DisplayStyle.None, disc.style.display.value);
