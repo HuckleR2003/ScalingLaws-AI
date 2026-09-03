@@ -84,6 +84,65 @@ namespace ScalingLaws.Simulation
         /// <summary>What to multiply demand by while this is running.</summary>
         public double Multiplier(GameDate today) => 1.0 + Magnitude * Strength(today);
 
+        /// <summary>
+        /// How far the company's guess at the remaining time can be from the truth, either way.
+        ///
+        /// The author's call, and it is a design decision rather than a rounding: **nobody inside a
+        /// company knows how long a wave of attention or a bad week is going to last.** A badge that
+        /// counted down exactly would turn a story into a timer, and a player would plan around the
+        /// last day of it the way they plan around a training run.
+        /// </summary>
+        public const double EstimateTolerance = 0.40;
+
+        /// <summary>
+        /// What the company thinks is left, which is not what is left.
+        ///
+        /// **The skew is fixed for the life of the effect, not rolled per repaint.** A figure that
+        /// re-randomised every frame would read as a broken counter rather than as an estimate, and
+        /// one that re-randomised per day would let a player average it out over a week and recover
+        /// the true number. Derived from what makes this effect this effect, so it is the same guess
+        /// every time anything asks, survives a save, and replays identically.
+        ///
+        /// Not `string.GetHashCode` and not `DeterministicRandom`: the first is randomised per
+        /// process, so the same window would read differently after a restart, and the second is a
+        /// stream whose position would then depend on how often the interface asked.
+        ///
+        /// Because the skew is a multiplier, the guess converges on the truth as the window closes
+        /// and the badge disappears when the effect really ends. A player told ninety days and cut
+        /// off at sixty five has learned something true about estimates.
+        /// </summary>
+        public int EstimatedDaysLeft(GameDate today)
+        {
+            var left = DaysLeft(today);
+
+            if (left <= 0)
+            {
+                return 0;
+            }
+
+            return Math.Max(1, (int)Math.Round(left * (1.0 + Skew)));
+        }
+
+        /// <summary>Between -EstimateTolerance and +EstimateTolerance, fixed for this effect.</summary>
+        private double Skew
+        {
+            get
+            {
+                unchecked
+                {
+                    var seed = (uint)((int)Kind + 1) * 2654435761u
+                        + (uint)(StartedOn.DayIndex + 1) * 40503u;
+
+                    seed ^= seed >> 13;
+                    seed *= 2246822519u;
+                    seed ^= seed >> 15;
+
+                    var unit = seed % 10_000u / 10_000.0;
+                    return (unit * 2.0 - 1.0) * EstimateTolerance;
+                }
+            }
+        }
+
         public override string ToString() =>
             $"{Kind} {Magnitude:+0.0%;-0.0%} for {Days}d from {StartedOn}";
     }
@@ -107,6 +166,41 @@ namespace ScalingLaws.Simulation
         public const int FirstReleaseDaysLow = 60;
         public const int FirstReleaseDaysHigh = 180;
         public const double FirstReleaseMagnitude = 0.20;
+
+        /// <summary>
+        /// How long a backlash runs: four months to thirteen, drawn on the day it starts.
+        ///
+        /// **The spread is the point.** It used to be a function of severity alone, so a player who
+        /// had seen one severe incident knew exactly how long the next one would last and could plan
+        /// the release calendar around it. A regulator's decision is not a countdown you can read
+        /// off a table, and the whole reason `EstimatedDaysLeft` exists is that the company does not
+        /// get to know either.
+        ///
+        /// Author's call, 2026-09-03. It was 63 to 113 days.
+        /// </summary>
+        public const int BacklashDaysLow = 122;
+
+        public const int BacklashDaysHigh = 396;
+
+        /// <summary>
+        /// How much of the fan base the worst backlash can take, as a share of what they would
+        /// otherwise be.
+        ///
+        /// **It moves the target, not the stock, and that distinction is the whole feature.** Taking
+        /// fans directly would be a fine the player pays and cannot answer. Lowering what the fan
+        /// base is pulling toward means the ordinary things that earn a following — serving people
+        /// well, being liked, shipping something worth talking about — genuinely fight it, and a
+        /// company that works through a bad year keeps more of its people than one that sulks.
+        ///
+        /// Fans drift down at `Standing.FanDecayPerDay`, so a quarter off the target is not a
+        /// quarter off the count on day one. Over four months it is about a seventh of the way
+        /// there, over thirteen most of it: the length drawn above decides how much of the damage
+        /// actually lands.
+        /// </summary>
+        public const double BacklashFanLoss = 0.25;
+
+        /// <summary>The magnitude a backlash reaches at the worst severity, for scaling the above.</summary>
+        public const double BacklashWorstMagnitude = 0.34;
 
         private readonly List<ModelEffect> effects = new();
 
@@ -206,6 +300,31 @@ namespace ScalingLaws.Simulation
             }
 
             return Math.Clamp(SimUnits.Finite(total, 1.0), 0.15, 4.0);
+        }
+
+        /// <summary>
+        /// How much of the fan base a live backlash is holding down, 0 to
+        /// <see cref="BacklashFanLoss"/>.
+        ///
+        /// Applied to `Standing.FanTarget` rather than to the count, so the player's own work pulls
+        /// against it every day. Scaled by how bad the incident was and tapered by the effect's own
+        /// `Strength`, so it fades out on the same curve the demand penalty does rather than ending
+        /// on a Tuesday.
+        /// </summary>
+        public double FanPressure(GameDate today)
+        {
+            var backlash = Find(ModelEffectKind.Backlash, today);
+
+            if (backlash == null)
+            {
+                return 0.0;
+            }
+
+            var severity = Math.Clamp(
+                Math.Abs(backlash.Magnitude) / BacklashWorstMagnitude, 0.0, 1.0);
+
+            return Math.Clamp(
+                BacklashFanLoss * severity * backlash.Strength(today), 0.0, BacklashFanLoss);
         }
 
         /// <summary>Restores a loaded campaign.</summary>

@@ -847,7 +847,9 @@ namespace ScalingLaws.Simulation
             }
         }
 
-        public void ClearDeployedModels() => deployedModels.Clear();
+        // `ClearDeployedModels` used to sit here and nothing anywhere called it. A save
+        // restores into a fresh state rather than emptying an old one, so there was never a
+        // second caller coming. Deleted 2026-09-03 by the reachability sweep.
 
         /// <summary>
         /// Records something that happened, and files it as news in the same breath.
@@ -880,7 +882,8 @@ namespace ScalingLaws.Simulation
 
         public int PendingEventCount => events.Count;
 
-        public void ClearEvents() => events.Clear();
+        // Same for `ClearEvents`: the queue is drained by `TryDequeueEvent` every tick, and
+        // a method that empties it wholesale would lose a day of news rather than report it.
 
         /// <summary>The compute tier ladder with every gate evaluated against the company right now.</summary>
         public List<ComputeTierStatus> ComputeTierLadder()

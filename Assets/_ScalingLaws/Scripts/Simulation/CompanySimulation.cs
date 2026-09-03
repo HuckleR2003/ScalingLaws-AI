@@ -2828,9 +2828,16 @@ namespace ScalingLaws.Simulation
                 : incident.Severity == IncidentSeverity.Major ? 0.20
                 : 0.09;
 
+            // **The length is drawn, not derived from the severity.** It used to be
+            // `45 + weight * 200`, so a player who had seen one severe incident knew the next one
+            // would last 113 days and could plan the release calendar around it. Four months to
+            // thirteen, and the company's own badge only ever shows an estimate of it.
+            var runsFor = EffectBook.BacklashDaysLow
+                + (int)(State.Random.NextDouble()
+                    * (EffectBook.BacklashDaysHigh - EffectBook.BacklashDaysLow));
+
             State.Effects.Add(
-                new ModelEffect(ModelEffectKind.Backlash, State.Date, 45 + (int)(weight * 200),
-                    -weight),
+                new ModelEffect(ModelEffectKind.Backlash, State.Date, runsFor, -weight),
                 State.Date);
 
             // The penalty arrives as a letter rather than vanishing from the account. A fine the
@@ -4829,8 +4836,16 @@ namespace ScalingLaws.Simulation
             var breakdown = MarketByType();
             var users = breakdown.TotalUsersOverall * breakdown.OverallShareOf(0);
 
-            State.Fans = Standing.AdvanceFans(
-                State.Fans, Standing.FanTarget(users, State.Reputation));
+            // **A backlash holds the fan base down as well as the demand.** It presses on the target
+            // rather than on the count, so serving people well and being liked pull against it every
+            // day: a company that works through a bad year keeps more of its following than one that
+            // waits it out. Fans drift at 0.0012 a day, so a quarter off the target is nothing like
+            // a quarter off the count on day one, and how much of it lands depends on the length the
+            // incident drew.
+            var fanTarget = Standing.FanTarget(users, State.Reputation)
+                * (1.0 - State.Effects.FanPressure(State.Date));
+
+            State.Fans = Standing.AdvanceFans(State.Fans, fanTarget);
 
             // One number a day, written by the code that already worked it out. A chart built from a
             // second calculation would eventually disagree with the counter beside it.

@@ -49,13 +49,26 @@ the split between building and serving, and the whole own-datacenter tier.
 - **Status badges in the header.** Small squares saying what is temporarily true about the company:
   a viral window, the clean slate a new lab gets, a year with nothing going wrong, a backlash after
   a penalty, a campaign running. These have been multiplying demand by between 0.15x and 4.0x every
-  day since they were written, and nothing has ever told the player they existed. Each says how many
-  days are left and what it is pulling right now.
+  day since they were written, and nothing has ever told the player they existed. Each carries what
+  it is pulling right now and **an estimate** of how long is left.
+- **The remaining time on a badge is a guess, wrong by up to 40 per cent either way.** Nobody inside
+  a company knows how long a wave of attention or a bad quarter is going to last, and a badge that
+  counted down exactly would turn a story into a timer. The guess is fixed for the life of the
+  effect, so it counts down smoothly and cannot be averaged out over a week, and the badge
+  disappears when the effect really ends rather than when the guess runs out.
 - **A card on every stage of the model creator**, saying what that page decides.
 - **A 24-hour clock in the bottom bar** on every screen that is a page rather than a room.
 
 ### Changed
 
+- **A backlash after a safety penalty runs four to thirteen months, drawn on the day it starts.** It
+  was 63 to 113 days and derived from the severity, so a player who had seen one severe incident
+  knew exactly how long the next one would last and could plan the release calendar around it.
+- **A backlash takes the fan base as well as the demand**, up to a quarter of it at the worst
+  severity. It presses on what the fan base is pulling toward rather than on the count, so the
+  ordinary things that earn a following genuinely fight it: a company that works through a bad year
+  keeps more of its people than one that waits it out. Fans drift at 0.12 per cent a day, so how
+  much of the damage actually lands depends on the length the incident drew.
 - **The clock disc is for rooms now.** It overhangs the bar by about 170px and no page reserved for
   it, so it covered the bottom-left corner of every document screen: the brand line on TEAM, the end
   of the marketing sentence on BUSINESS, a cabinet hint in the basement. The office and the server
@@ -99,8 +112,11 @@ on all along.
 
 ### Under the hood
 
-- 922 EditMode tests across 90 fixtures, and 22 PlayMode across 7.
-- 1,685 phrases in the book, both languages complete.
+- 926 EditMode tests across 90 fixtures, and 22 PlayMode across 7.
+- 1,689 phrases in the book, both languages complete.
+- The unreachable-mechanism sweep was run again over every public mutator on the simulation and the
+  company. Nothing player-facing is left without a control, and two methods with no caller anywhere
+  in the repository were deleted.
 - Two operations moved out of `CompanySimulation` into the test assembly. Neither had a caller
   outside a fixture, and a unit-count entry point beside a capacity-denominated contract is one edit
   away from acquiring a slider.

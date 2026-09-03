@@ -68,14 +68,89 @@ namespace ScalingLaws.UI
             Root.Clear();
             pool.Clear();
 
-            Root.style.display = live.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
-
             for (var index = 0; index < live.Count && index < MostShown; index++)
             {
                 var badge = Build(live[index], state.Date);
                 pool.Add(badge);
                 Root.Add(badge);
             }
+
+            // **The campaign badge is drawn from the campaigns, not from the book.**
+            //
+            // `ModelEffectKind.Campaign` has a name, a note, a glyph and a rule excluding it from
+            // the demand multiplier, and nothing has ever raised it. That is correct rather than an
+            // oversight: `EffectBook`'s first line is that everything in it expires, and an
+            // open-ended campaign never does. Booking one is also not a thing that happens to the
+            // company, it is a standing order the player placed and can cancel.
+            //
+            // So it is read where it lives. The shortest remaining term is what the badge counts
+            // down, and an open-ended booking shows no number at all rather than a made-up one.
+            if (pool.Count < MostShown)
+            {
+                var running = ShortestCampaign(state);
+
+                if (running >= 0)
+                {
+                    var badge = BuildCampaign(running);
+                    pool.Add(badge);
+                    Root.Add(badge);
+                }
+            }
+
+            Root.style.display = pool.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
+        /// <summary>
+        /// Days left on the campaign that ends soonest, `int.MaxValue` when one is open ended, and
+        /// -1 when nothing is running.
+        /// </summary>
+        private static int ShortestCampaign(CompanyState state)
+        {
+            var soonest = -1;
+
+            foreach (var campaign in state.Campaigns)
+            {
+                if (campaign.HasFinished(state.Date))
+                {
+                    continue;
+                }
+
+                var left = campaign.DaysLeft(state.Date);
+
+                if (soonest < 0 || left < soonest)
+                {
+                    soonest = left;
+                }
+            }
+
+            return soonest;
+        }
+
+        private static VisualElement BuildCampaign(int daysLeft)
+        {
+            var badge = new VisualElement();
+            badge.AddToClassList("fx__badge");
+
+            var glyph = new Label(Loc.T(GlyphKeyOf(ModelEffectKind.Campaign)));
+            glyph.AddToClassList("fx__glyph");
+            badge.Add(glyph);
+
+            // A booked term counts down honestly: the player wrote the length on the contract, so
+            // there is nothing for the company to be wrong about. An open-ended booking has no end
+            // to show and says so with a symbol rather than with a number nobody chose.
+            var open = daysLeft == int.MaxValue;
+
+            var left = new Label(open ? "∞" : daysLeft.ToString());
+            left.AddToClassList("fx__days");
+            badge.Add(left);
+
+            InsightTip.Attach(badge, EffectBook.NameOf(ModelEffectKind.Campaign),
+                EffectBook.NoteFor(ModelEffectKind.Campaign) + "\n\n"
+                + (open
+                    ? Loc.T("effect.open_ended")
+                    : Loc.T("effect.booked_left", Loc.Counted(daysLeft, "noun.day"))));
+
+            return badge;
         }
 
         /// <summary>How many badges are on screen. For the tests, which have no panel to look at.</summary>
@@ -94,9 +169,14 @@ namespace ScalingLaws.UI
             glyph.AddToClassList("fx__glyph");
             badge.Add(glyph);
 
-            // The days left, under the glyph, because "how long is this going to last" is the only
-            // follow-up question a temporary effect ever produces.
-            var left = new Label(effect.DaysLeft(today).ToString());
+            // **The company's estimate, not the truth, and the tilde says so.**
+            //
+            // Nobody inside a company knows how long a wave of attention or a bad quarter is going
+            // to last. `EstimatedDaysLeft` is off by up to forty per cent either way, fixed for the
+            // life of the effect so it counts down smoothly instead of reading as a broken counter,
+            // and the badge disappears when the effect really ends rather than when the guess runs
+            // out.
+            var left = new Label(Loc.T("effect.about", effect.EstimatedDaysLeft(today).ToString()));
             left.AddToClassList("fx__days");
             badge.Add(left);
 
@@ -110,8 +190,9 @@ namespace ScalingLaws.UI
                 EffectBook.NoteFor(effect.Kind) + "\n\n"
                 + Loc.T("effect.pulling",
                     UiFormat.Percent(effect.Multiplier(today) - 1.0, 0))
-                + "   ·   "
-                + Loc.T("effect.days_left", effect.DaysLeft(today).ToString()));
+                + "\n"
+                + Loc.T("effect.roughly_left",
+                    Loc.Counted(effect.EstimatedDaysLeft(today), "noun.day")));
 
             return badge;
         }
