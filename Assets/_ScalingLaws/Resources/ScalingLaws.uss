@@ -3466,24 +3466,36 @@
    states its margins, which is the rule this stylesheet already learned from
    four trait cards measuring 1352px against a 1340px page. */
 
+/* **No plate under a drawn icon.**
+   The art is a self-contained circular badge with its own coloured ring: red
+   for a backlash, green for a viral window, purple for safe harbour. A second
+   frame around it fought the first one and said the same thing twice. The plate
+   is only drawn behind the lettered fallback, where a bare two-letter word in
+   the header would read as debris. */
+
 .fx__badge {
-    width: 34px;
-    height: 30px;
+    width: 30px;
+    height: 34px;
     margin-top: 0;
     margin-bottom: 0;
     margin-left: 0;
-    margin-right: 5px;
+    margin-right: 4px;
     padding: 0;
-    overflow: hidden;
     align-items: center;
     justify-content: center;
+}
+
+.fx__badge--lettered {
+    width: 34px;
+    height: 30px;
+    overflow: hidden;
     border-radius: 4px;
     border-width: 1px;
     border-color: rgba(140, 200, 168, 0.45);
     background-color: rgba(46, 92, 72, 0.42);
 }
 
-.fx__badge--bad {
+.fx__badge--lettered.fx__badge--bad {
     border-color: rgba(226, 108, 96, 0.55);
     background-color: rgba(96, 38, 34, 0.48);
 }
@@ -3502,8 +3514,8 @@
    at any square size lands right. */
 
 .fx__icon {
-    width: 17px;
-    height: 17px;
+    width: 23px;
+    height: 23px;
     margin: 0;
     padding: 0;
     -unity-background-scale-mode: scale-to-fit;
@@ -3516,12 +3528,15 @@
 /* The days left, small and under the glyph. "How long does this last" is the
    only follow-up question a temporary effect ever produces. */
 
+/* Under the icon rather than inside a plate with it. The art fills its own
+   circle to the edge, so a number laid over it would sit on the ring. */
+
 .fx__days {
     margin: 0;
     padding: 0;
     font-size: 8px;
     letter-spacing: 0.2px;
-    color: rgba(226, 240, 232, 0.62);
+    color: rgba(206, 220, 240, 0.70);
 }
 
 /* The way out of the dead end on REVIEW. Deliberately not the primary colour:

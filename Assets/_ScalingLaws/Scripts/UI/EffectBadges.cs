@@ -158,8 +158,15 @@ namespace ScalingLaws.UI
 
         private static VisualElement Build(ModelEffect effect, GameDate today)
         {
+            var art = PageArt.Effect(ArtNameOf(effect.Kind));
+
             var badge = new VisualElement();
             badge.AddToClassList("fx__badge");
+
+            // The plate belongs to the lettered fallback only. Each drawn icon is already a
+            // circular badge with its own coloured ring, and a second frame around it said the
+            // same thing twice.
+            badge.EnableInClassList("fx__badge--lettered", art == null);
             badge.EnableInClassList("fx__badge--bad", EffectBook.IsBad(effect.Kind));
 
             // **The drawn icon when there is one, the initials when there is not.**
@@ -169,8 +176,6 @@ namespace ScalingLaws.UI
             // unfinished one. Dropping `effect_viral.png` and friends into `Resources/Effects/` is
             // the whole change: nothing here has to be edited and nothing else knows the
             // difference.
-            var art = PageArt.Effect(ArtNameOf(effect.Kind));
-
             if (art != null)
             {
                 var icon = new VisualElement();
