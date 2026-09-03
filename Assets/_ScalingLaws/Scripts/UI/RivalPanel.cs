@@ -226,7 +226,56 @@ namespace ScalingLaws.UI
             note.AddToClassList("rival__note");
             panel.Add(note);
 
+            // **What kind of company this is, which the board has never said.** It says who is
+            // ahead, and a player had no way of knowing whether the lab above them is the one that
+            // ships recklessly, the one that has state money behind it, or the one that is about to
+            // fall over. All of that was in the dossier, in prose, which is what a player skims.
+            panel.Add(BuildTraits(simulation, lab));
+
             return panel;
+        }
+
+        /// <summary>
+        /// The badges under the relationship: what this lab is like, worked out from what it has
+        /// done rather than from a field somebody has to remember to update.
+        ///
+        /// Three at most, most distinctive first. Seven of these is not a character, it is a table.
+        /// </summary>
+        private static VisualElement BuildTraits(CompanySimulation simulation, CompetitorId lab)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("rival__traits");
+
+            var traits = LabTraits.For(lab, simulation.State);
+
+            if (traits.Count == 0)
+            {
+                block.style.display = DisplayStyle.None;
+                return block;
+            }
+
+            var heading = new Label(Loc.T("labtrait.title"));
+            heading.AddToClassList("rival__traitshead");
+            block.Add(heading);
+
+            var row = new VisualElement();
+            row.AddToClassList("rival__traitrow");
+
+            foreach (var trait in traits)
+            {
+                var chip = new Label(LabTraits.NameOf(trait));
+                chip.AddToClassList("rival__trait");
+                chip.EnableInClassList("rival__trait--warn", LabTraits.IsWarning(trait));
+
+                // The word is the headline and the sentence is why it is there, which is the half a
+                // single word cannot carry: "fearless" is a compliment until it is an obituary.
+                InsightTip.Attach(chip, LabTraits.NameOf(trait), LabTraits.NoteFor(trait));
+
+                row.Add(chip);
+            }
+
+            block.Add(row);
+            return block;
         }
 
         private static VisualElement BuildHistory(IReadOnlyList<RelationEntry> history)
