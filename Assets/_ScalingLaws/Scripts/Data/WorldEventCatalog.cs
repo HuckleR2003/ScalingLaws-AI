@@ -121,7 +121,19 @@ namespace ScalingLaws.Data
     /// </summary>
     public static class WorldEventCatalog
     {
-        /// <summary>Bump when the table changes enough that a saved campaign would read differently.</summary>
+        /// <summary>
+        /// **The price war is already in `MarketModel.PriceOn` and must not be paid for twice.**
+        ///
+        /// That curve decays about fifty five per cent a year on its own, and the reason it does is
+        /// exactly the thing the price entries below describe: an industry that cut the rate for a
+        /// token by an order of magnitude in three years. The first version of this file added the
+        /// cuts again on top, the five year balance campaign lost the market entirely, and it was
+        /// right to. What belongs here is the **step** a player can feel in a given quarter, not the
+        /// slope, which the model already draws.
+        ///
+        /// Bump the version below when the table changes enough that a saved campaign would read
+        /// differently.
+        /// </summary>
         public const string CatalogVersion = "2026.09.03";
 
         /// <summary>
@@ -146,9 +158,14 @@ namespace ScalingLaws.Data
             // electronics. The lead times in this game are the thing it lengthens.
             new(GameDate.FromCalendar(2022, 3, 28), 240, WorldLever.Scarcity, 0.22, "world.shanghai"),
 
+            // Fifty two billion of public money aimed at domestic fabrication. It does nothing this
+            // year and a great deal by 2025, which is why the window is four years and the sign is
+            // the other way from every other supply entry.
+            new(GameDate.FromCalendar(2022, 8, 9), 1400, WorldLever.Scarcity, -0.10, "world.chipsact"),
+
             // Open weights arrive in public for the first time. The going rate for a token has a
             // free alternative underneath it from this day on.
-            new(GameDate.FromCalendar(2022, 8, 22), 700, WorldLever.TokenPrice, -0.10, "world.openweights"),
+            new(GameDate.FromCalendar(2022, 8, 22), 700, WorldLever.TokenPrice, -0.05, "world.openweights"),
 
             // Export controls on advanced accelerators. This one never really ends, which is what
             // the long window is for.
@@ -165,17 +182,41 @@ namespace ScalingLaws.Data
             new(GameDate.FromCalendar(2023, 2, 7), 300, WorldLever.Scarcity, 0.18, "world.searchrace"),
 
             // An order of magnitude off the API rate, in one announcement.
-            new(GameDate.FromCalendar(2023, 3, 1), 540, WorldLever.TokenPrice, -0.22, "world.apicut"),
+            new(GameDate.FromCalendar(2023, 3, 1), 540, WorldLever.TokenPrice, -0.08, "world.apicut"),
+
+            // Handed to researchers on a form, a week before it was handed to everybody.
+            new(GameDate.FromCalendar(2023, 2, 24), 400, WorldLever.TokenPrice, -0.03, "world.researchweights"),
 
             // A frontier model's weights escape onto the open internet. The floor under the price
             // stops being theoretical.
-            new(GameDate.FromCalendar(2023, 3, 3), 620, WorldLever.TokenPrice, -0.14, "world.weightsleak"),
+            new(GameDate.FromCalendar(2023, 3, 3), 620, WorldLever.TokenPrice, -0.06, "world.weightsleak"),
+
+            // The model that made everybody upgrade. Not a price event: a reason for people who
+            // had tried this once to come back and try it properly.
+            new(GameDate.FromCalendar(2023, 3, 14), 500, WorldLever.Demand, 0.12, "world.frontierjump"),
+
+            // Thousands of signatures asking for a six month stop. Nothing stopped, and for a
+            // season every buyer wanted to know whether they were buying something reckless.
+            new(GameDate.FromCalendar(2023, 3, 22), 200, WorldLever.Demand, -0.05, "world.pauseletter"),
+
+            // A national regulator switches an assistant off inside its borders. The first time
+            // anybody found out that this could simply be taken away.
+            new(GameDate.FromCalendar(2023, 3, 31), 120, WorldLever.Demand, -0.06, "world.nationalblock"),
 
             // Open weights with a commercial licence. The same again, on purpose this time.
-            new(GameDate.FromCalendar(2023, 7, 18), 700, WorldLever.TokenPrice, -0.12, "world.openlicence"),
+            new(GameDate.FromCalendar(2023, 7, 18), 700, WorldLever.TokenPrice, -0.05, "world.openlicence"),
 
             // Safety becomes a procurement requirement rather than a research interest.
             new(GameDate.FromCalendar(2023, 11, 1), 500, WorldLever.Efficiency, -0.06, "world.summit"),
+
+            // The second big cut in a year, this one from a stage. Whatever margin was left on a
+            // token after March went here.
+            new(GameDate.FromCalendar(2023, 11, 6), 500, WorldLever.TokenPrice, -0.06, "world.devday"),
+
+            // A board removes its chief executive and takes him back inside five days. Nothing
+            // about the technology changed and everybody buying it spent a week wondering who they
+            // were actually buying from.
+            new(GameDate.FromCalendar(2023, 11, 17), 90, WorldLever.Demand, -0.07, "world.boardcrisis"),
 
             // A newspaper sues over training data, and every corpus in the industry becomes a
             // question somebody might have to answer in court.
@@ -186,6 +227,9 @@ namespace ScalingLaws.Data
             // The first comprehensive regime. Compliance is time before a release, and time is the
             // one thing this game charges for.
             new(GameDate.FromCalendar(2024, 3, 13), 520, WorldLever.Efficiency, -0.08, "world.aiact"),
+
+            // Stronger open weights again, and by now nobody is surprised. The floor keeps sinking.
+            new(GameDate.FromCalendar(2024, 4, 18), 600, WorldLever.TokenPrice, -0.04, "world.openagain"),
 
             // The company selling the shovels becomes the most valuable in the world. If the player
             // has not worked out who is winning this gold rush, this is the day it is spelt out.
@@ -198,6 +242,13 @@ namespace ScalingLaws.Data
             // who the grid is being rebuilt for.
             new(GameDate.FromCalendar(2024, 9, 20), 800, WorldLever.Scarcity, 0.14, "world.nuclear"),
 
+            // **A regime that did not land.** A state safety bill passes both houses and is vetoed,
+            // and the paperwork everybody had started budgeting for does not arrive. Worth a place
+            // in the calendar precisely because every other regulatory entry here goes the other
+            // way, and a world where regulation only ever tightens is a world with no decision in
+            // it.
+            new(GameDate.FromCalendar(2024, 9, 29), 400, WorldLever.Efficiency, 0.06, "world.vetoed"),
+
             // ---- 2025: the cheap model, and the half-trillion answer to it -------------------
 
             // **The stolen quarter.** A model trained for a fraction of the going rate matches the
@@ -208,6 +259,10 @@ namespace ScalingLaws.Data
 
             // The market works out that efficiency is not the same as demand, violently, in a day.
             new(GameDate.FromCalendar(2025, 1, 27), 260, WorldLever.Demand, -0.12, "world.selloff"),
+
+            // The third summit, and the word "safety" is not in its name any more. The room has
+            // decided the risk it is managing is falling behind.
+            new(GameDate.FromCalendar(2025, 2, 10), 400, WorldLever.Efficiency, 0.05, "world.parissummit"),
 
             // General-purpose model obligations start to bite.
             new(GameDate.FromCalendar(2025, 8, 2), 620, WorldLever.Efficiency, -0.07, "world.gpai"),

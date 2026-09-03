@@ -120,6 +120,48 @@ namespace ScalingLaws.Simulation
         /// cabinets, the same floor, the same bills from the next tick. Two methods here would be
         /// two places to get the starting racks wrong.
         /// </summary>
+        /// <summary>
+        /// Whether the room can be bought today, and why not when it cannot.
+        ///
+        /// **The screen and the click have to be the same answer.** They were not: the button was
+        /// enabled on cash alone, at seventy thousand, while the operation also requires the
+        /// colocation tier, which needs a released model and five million. So a player with the
+        /// money clicked a live button, the reason went into a discarded `out`, and nothing
+        /// happened at all. Reported from a playtest as "the basement button does not work", and
+        /// that is exactly what it looked like.
+        ///
+        /// One body, asked by both. A second copy of these gates is how they drift apart again.
+        /// </summary>
+        public bool CanOpenServerRoom(out string reason)
+        {
+            reason = string.Empty;
+
+            if (State.HasServerRoom)
+            {
+                reason = Loc.T("room.already");
+                return false;
+            }
+
+            var tier = ComputeTierCatalog.Get(ComputeTier.ColocatedServers);
+
+            var status = tier.Evaluate(State.Date, State.CashUsd, State.ReleasedModelCount,
+                State.LifetimeRevenueUsd);
+
+            if (!status.IsUnlocked)
+            {
+                reason = Loc.T("room.needs_hardware", status.LockReason);
+                return false;
+            }
+
+            if (State.CashUsd < BasementPriceUsd)
+            {
+                reason = Loc.T("room.cannot_afford", UiMoney(BasementPriceUsd));
+                return false;
+            }
+
+            return true;
+        }
+
         public bool TryOpenServerRoom(bool asGift, out string failureReason)
         {
             failureReason = string.Empty;

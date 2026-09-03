@@ -3497,6 +3497,18 @@
     color: rgb(226, 240, 232);
 }
 
+/* The drawn icon, when there is one. Sized to leave the day count room under it
+   inside a 30px badge, and scaled to fit rather than cropped, so an icon drawn
+   at any square size lands right. */
+
+.fx__icon {
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    padding: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .fx__badge--bad > .fx__glyph {
     color: rgb(246, 224, 220);
 }
@@ -12160,6 +12172,21 @@
 .emptystate__go {
     margin-left: 0;
     margin-top: 0;
+}
+
+/* Why the button above it is off.
+
+   A disabled control with no explanation is indistinguishable from a broken
+   one, which is exactly how the basement was reported: the button was live on
+   cash alone while the operation also wanted the colocation tier, and the
+   refusal went into a discarded `out`. Amber rather than red, because none of
+   these is a fault; they are all "not yet". */
+
+.emptystate__blocked {
+    margin-top: 10px;
+    max-width: 620px;
+    white-space: normal;
+    color: rgb(214, 176, 118);
 }
 
 /* ============================================================================================

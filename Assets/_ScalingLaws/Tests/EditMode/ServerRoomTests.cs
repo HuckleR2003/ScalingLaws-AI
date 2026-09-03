@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Data;
@@ -442,6 +443,61 @@ namespace ScalingLaws.Tests.EditMode
             {
                 Loc.Current = was;
             }
+        }
+
+        /// <summary>
+        /// What the screen offers and what the operation accepts are the same answer.
+        ///
+        /// **They were not, and a playtest found it as "the basement button does not work".** The
+        /// button was enabled on cash alone, at seventy thousand dollars, while opening the room
+        /// also requires the colocation tier: a released model and five million. A player with the
+        /// money pressed a live button, `TryOpenServerRoom` refused into a discarded `out`, and
+        /// nothing happened at all. No exception, no message, no change.
+        ///
+        /// Swept across a campaign rather than asserted at one moment, because the two answers only
+        /// have to disagree on one day for the button to be dead on that day.
+        /// </summary>
+        [Test]
+        public void TheOfferAndTheOperationNeverDisagreeAboutTheBasement()
+        {
+            var disagreed = new List<string>();
+
+            foreach (var cash in new long[] { 50_000, 90_000, 6_000_000, 400_000_000 })
+            {
+                foreach (var shipped in new[] { 0, 1, 3 })
+                {
+                    var simulation = new CompanySimulation(new CompanyState("Adco", 31));
+                    var state = simulation.State;
+
+                    state.CashUsd = cash;
+
+                    for (var index = 0; index < shipped; index++)
+                    {
+                        state.AddDeployedModel(new DeployedModel($"M{index}",
+                            ArchitectureId.DenseTransformer, 30.0, state.Date, 2e10, 1.0));
+                    }
+
+                    var offered = simulation.CanOpenServerRoom(out var why);
+                    var accepted = simulation.TryOpenServerRoom(false, out var refused);
+
+                    if (offered != accepted)
+                    {
+                        disagreed.Add(
+                            $"cash {cash}, {shipped} shipped: screen says {offered} (\"{why}\"), "
+                            + $"operation says {accepted} (\"{refused}\")");
+                    }
+
+                    // A refusal has to say something. A blank one is what made this invisible.
+                    if (!offered && string.IsNullOrWhiteSpace(why))
+                    {
+                        disagreed.Add($"cash {cash}, {shipped} shipped: refused without a reason");
+                    }
+                }
+            }
+
+            Assert.IsEmpty(disagreed,
+                "An enabled button that the simulation then refuses is a dead control: "
+                + string.Join("   ", disagreed));
         }
     }
 }

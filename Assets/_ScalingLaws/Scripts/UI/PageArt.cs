@@ -26,6 +26,15 @@ namespace ScalingLaws.UI
 
         public static Texture2D Banner(string name) => Load("Banners/" + name);
 
+        /// <summary>
+        /// The glyph on a status badge, or null while it is still a couple of letters.
+        ///
+        /// Null is a normal answer here. The badges shipped with initials because there was no art
+        /// yet, and the loader is written so that dropping a file into `Resources/Effects/` is the
+        /// entire change: no code, no catalog entry, no rebuild of the strip.
+        /// </summary>
+        public static Texture2D Effect(string name) => Load("Effects/" + name);
+
         /// <summary>The picture beside a creator stage. Null when there is not one for that stage.</summary>
         public static Texture2D Page(string name) => Load("Pages/" + name);
 

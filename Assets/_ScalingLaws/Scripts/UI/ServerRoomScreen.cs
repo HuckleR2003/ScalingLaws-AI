@@ -39,6 +39,9 @@ namespace ScalingLaws.UI
         private readonly System.Func<CompanySimulation> company;
         private readonly System.Action changed;
 
+        /// <summary>Why the last attempt was refused. Empty when nothing has been refused.</summary>
+        private string problem = string.Empty;
+
         private readonly ServerRoomBanner banner = new();
         private readonly BasementStage stage = new();
         private RackEditorPanel editor;
@@ -660,12 +663,25 @@ namespace ScalingLaws.UI
             body.AddToClassList("emptystate__body");
             panel.Add(body);
 
+            // **Asked, rather than guessed at.** This used to enable the button on cash alone while
+            // the operation also required the colocation tier, so a player with the seventy
+            // thousand pressed a live button and nothing happened, with the reason thrown away into
+            // a discarded `out`. One question, one answer, and the answer is on screen.
+            var open = simulation.CanOpenServerRoom(out var why);
+
             var buy = new Button(() =>
             {
-                if (simulation.TryOpenServerRoom(false, out _))
+                if (simulation.TryOpenServerRoom(false, out var refused))
                 {
                     changed?.Invoke();
+                    return;
                 }
+
+                // A guard rather than a state a player can produce, since the button is disabled
+                // whenever this would fail. It exists because the last version of this line
+                // discarded the reason and that is precisely how the fault stayed invisible.
+                problem = refused;
+                changed?.Invoke();
             })
             {
                 text = Loc.T("room.locked.buy",
@@ -675,8 +691,24 @@ namespace ScalingLaws.UI
             buy.AddToClassList("button");
             buy.AddToClassList("button--primary");
             buy.AddToClassList("emptystate__go");
-            buy.SetEnabled(simulation.State.CashUsd >= CompanySimulation.BasementPriceUsd);
+            buy.SetEnabled(open);
             panel.Add(buy);
+
+            if (!open)
+            {
+                var blocked = new Label(why);
+                blocked.AddToClassList("field__hint");
+                blocked.AddToClassList("emptystate__blocked");
+                panel.Add(blocked);
+            }
+
+            if (!string.IsNullOrEmpty(problem))
+            {
+                var refusedLabel = new Label(problem);
+                refusedLabel.AddToClassList("field__hint");
+                refusedLabel.AddToClassList("emptystate__blocked");
+                panel.Add(refusedLabel);
+            }
 
             var gift = new Label(Loc.T("room.locked.gift"));
             gift.AddToClassList("field__hint");

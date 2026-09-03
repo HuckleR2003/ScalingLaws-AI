@@ -162,12 +162,28 @@ namespace ScalingLaws.UI
             badge.AddToClassList("fx__badge");
             badge.EnableInClassList("fx__badge--bad", EffectBook.IsBad(effect.Kind));
 
-            // Two letters rather than an icon, because there is no art for these yet and a blank
-            // square in the top bar reads as a broken image rather than as an unfinished one. The
-            // glyph comes from the phrase book, so it can be initials in either language.
-            var glyph = new Label(Loc.T(GlyphKeyOf(effect.Kind)));
-            glyph.AddToClassList("fx__glyph");
-            badge.Add(glyph);
+            // **The drawn icon when there is one, the initials when there is not.**
+            //
+            // The letters were never the plan; they were what a badge could say before any art
+            // existed, and a blank square in the top bar reads as a broken image rather than as an
+            // unfinished one. Dropping `effect_viral.png` and friends into `Resources/Effects/` is
+            // the whole change: nothing here has to be edited and nothing else knows the
+            // difference.
+            var art = PageArt.Effect(ArtNameOf(effect.Kind));
+
+            if (art != null)
+            {
+                var icon = new VisualElement();
+                icon.AddToClassList("fx__icon");
+                icon.style.backgroundImage = new StyleBackground(art);
+                badge.Add(icon);
+            }
+            else
+            {
+                var glyph = new Label(Loc.T(GlyphKeyOf(effect.Kind)));
+                glyph.AddToClassList("fx__glyph");
+                badge.Add(glyph);
+            }
 
             // **The company's estimate, not the truth, and the tilde says so.**
             //
@@ -209,6 +225,23 @@ namespace ScalingLaws.UI
         /// Public so a test can ask the same question the badge does rather than rebuilding the
         /// mapping beside it.
         /// </summary>
+        /// <summary>
+        /// The file under `Resources/Effects/` for a kind's icon.
+        ///
+        /// Written out beside the phrase-book key rather than derived from it, for the same reason
+        /// that one is written out: a name assembled at runtime is invisible to every guard that
+        /// reads literals, and this project has shipped a screen of raw keys that way.
+        /// </summary>
+        public static string ArtNameOf(ModelEffectKind kind) => kind switch
+        {
+            ModelEffectKind.Viral => "effect_viral",
+            ModelEffectKind.FirstRelease => "effect_first",
+            ModelEffectKind.SafeHarbour => "effect_harbour",
+            ModelEffectKind.Backlash => "effect_backlash",
+            ModelEffectKind.Campaign => "effect_campaign",
+            _ => "effect_none"
+        };
+
         public static string GlyphKeyOf(ModelEffectKind kind) => kind switch
         {
             ModelEffectKind.Viral => "effect.glyph.viral",
