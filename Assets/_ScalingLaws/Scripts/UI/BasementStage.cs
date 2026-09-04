@@ -28,10 +28,14 @@ namespace ScalingLaws.UI
         /// <summary>Where the builder writes the room.</summary>
         public const string RoomResource = "Rooms/Basement";
 
-        /// <summary>Groups the builder writes, looked up by name rather than by index.</summary>
-        public const string RackGroup = "Racks";
-
-        /// <inheritdoc cref="RackGroup"/>
+        /// <summary>
+        /// Where the builder writes one marker per floor square.
+        ///
+        /// Cabinets are parented to these markers rather than to a group of their own, which is
+        /// what makes a placement one local position. The builder also writes a `Racks` group that
+        /// nothing here uses; it is left alone because it is the builder's file, and reading it was
+        /// the bug that made the floor never empty.
+        /// </summary>
         public const string SquareGroup = "Squares";
 
         /// <summary>
@@ -49,7 +53,6 @@ namespace ScalingLaws.UI
         private MeshRenderer ghostOutline;
         private MeshRenderer ghostBody;
         private Camera camera;
-        private Transform racks;
         private RenderTexture target;
 
         private readonly Dictionary<(int Column, int Row), Transform> squares = new();
@@ -85,7 +88,6 @@ namespace ScalingLaws.UI
             room.name = "Basement";
             room.transform.position = Anchor;
 
-            racks = FindOrMake(room.transform, RackGroup);
             IndexSquares();
 
             target = new RenderTexture(1280, 720, 24) { name = "BasementView" };
@@ -128,15 +130,7 @@ namespace ScalingLaws.UI
         /// </summary>
         public void Dress(ServerHall hall, double kilowattsPerAccelerator)
         {
-            if (racks == null)
-            {
-                return;
-            }
-
-            for (var index = racks.childCount - 1; index >= 0; index--)
-            {
-                Object.Destroy(racks.GetChild(index).gameObject);
-            }
+            ClearRacks();
 
             if (hall == null)
             {
@@ -362,7 +356,6 @@ namespace ScalingLaws.UI
             }
 
             squares.Clear();
-            racks = null;
             camera = null;
         }
 
@@ -415,6 +408,56 @@ namespace ScalingLaws.UI
             new(BasementFloor.SquareSize * 0.56f, RackHeight(rack),
                 BasementFloor.SquareSize * 0.78f);
 
+        /// <summary>
+        /// Takes every cabinet off the floor.
+        ///
+        /// **Walks the square markers, because that is where cabinets live.** `Stand` parents each
+        /// one to its marker, which is what makes its placement a single local position. The clear
+        /// this replaced destroyed the children of a `Racks` group that nothing is ever parented
+        /// to, so it destroyed nothing: every cabinet ever stood stayed on the floor for the life
+        /// of the scene, and since the room re-dresses on repaint they also stacked on their own
+        /// squares dozens deep.
+        ///
+        /// The visible symptom was a cabinet left behind after a move, on a square the hall
+        /// correctly reported as empty, so it refused every click. The picture and the simulation
+        /// disagreed and only the picture was wrong.
+        ///
+        /// **Detached before destroyed.** `Object.Destroy` is deferred to the end of the frame, so
+        /// a second dress in the same frame would find them still parented and stand duplicates
+        /// over the top.
+        /// </summary>
+        private void ClearRacks()
+        {
+            foreach (var marker in squares.Values)
+            {
+                if (marker == null)
+                {
+                    continue;
+                }
+
+                for (var index = marker.childCount - 1; index >= 0; index--)
+                {
+                    var child = marker.GetChild(index);
+
+                    if (child == null || !child.name.StartsWith(RackPrefix, System.StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    child.SetParent(null, false);
+                    Object.Destroy(child.gameObject);
+                }
+            }
+        }
+
+        /// <summary>
+        /// What a cabinet in the scene is called.
+        ///
+        /// The clear matches on it, so it is a constant rather than a literal in two places: a
+        /// rename in one of them is a floor that never empties, which is the bug this replaced.
+        /// </summary>
+        public const string RackPrefix = "Rack_";
+
         private static void Stand(Transform marker, HallSquare square,
             ServerRackCatalog.RackHeat heat)
         {
@@ -423,7 +466,7 @@ namespace ScalingLaws.UI
             var height = RackHeight(square.Rack);
 
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            body.name = $"Rack_{square.Column}_{square.Row}";
+            body.name = $"{RackPrefix}{square.Column}_{square.Row}";
             body.transform.SetParent(marker, false);
             body.transform.localPosition = new Vector3(0f, height / 2f, 0f);
             body.transform.localScale = RackScale(square.Rack);
@@ -504,20 +547,6 @@ namespace ScalingLaws.UI
 
             Paints[key] = material;
             return material;
-        }
-
-        private static Transform FindOrMake(Transform parent, string name)
-        {
-            var found = parent.Find(name);
-
-            if (found != null)
-            {
-                return found;
-            }
-
-            var made = new GameObject(name);
-            made.transform.SetParent(parent, false);
-            return made.transform;
         }
     }
 }

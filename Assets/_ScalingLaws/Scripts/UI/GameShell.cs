@@ -759,7 +759,8 @@ namespace ScalingLaws.UI
 
             // The basement. Built here rather than lazily, because the corner banner in it reads the
             // live simulation and a screen constructed on first open would miss the day it opened.
-            serverRoom = new ServerRoomScreen(() => simulation, () => Show(Screen.Room));
+            serverRoom = new ServerRoomScreen(() => simulation, () => Show(Screen.Room),
+                () => Show(Screen.Site));
 
             officeStage = new OfficeStage(GameObject.Find(OfficeStageRoot));
             officeStage.Show(state.Staff.Office, state.Decor);

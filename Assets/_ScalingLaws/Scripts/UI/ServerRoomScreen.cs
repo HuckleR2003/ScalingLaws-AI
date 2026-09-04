@@ -46,11 +46,22 @@ namespace ScalingLaws.UI
         private readonly BasementStage stage = new();
         private RackEditorPanel editor;
 
-        public ServerRoomScreen(System.Func<CompanySimulation> company, System.Action changed)
+        public ServerRoomScreen(System.Func<CompanySimulation> company, System.Action changed,
+            System.Action leave = null)
         {
             this.company = company;
             this.changed = changed;
+            this.leave = leave;
         }
+
+        /// <summary>
+        /// The way out, back to the office.
+        ///
+        /// Optional, so the proof renders that build this screen on its own do not have to invent
+        /// a shell to leave to. The button simply does nothing there, which is the right answer for
+        /// a screenshot.
+        /// </summary>
+        private readonly System.Action leave;
 
         /// <summary>The square the player has open, or null when the floor is showing.</summary>
         private (int Column, int Row)? open;
@@ -102,9 +113,22 @@ namespace ScalingLaws.UI
             page.AddToClassList("content");
             page.AddToClassList("room");
 
+            // The name and the way out, on one line. The basement is a room rather than a page,
+            // and every other screen is left through the bottom bar it is standing on: a room needs
+            // a door somebody can see.
+            var head = new VisualElement();
+            head.AddToClassList("room__head");
+
+            var back = new Button(() => leave?.Invoke()) { text = Loc.T("room.back") };
+            back.AddToClassList("room__back");
+            head.Add(back);
+
             var title = new Label(Loc.T("room.title"));
             title.AddToClassList("page-title");
-            page.Add(title);
+            title.AddToClassList("room__title");
+            head.Add(title);
+
+            page.Add(head);
 
             if (!state.HasServerRoom)
             {

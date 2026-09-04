@@ -147,8 +147,19 @@ namespace ScalingLaws.UI
             /// <summary>What a low setting gives, and what it costs.</summary>
             public string Low { get; }
 
-            public bool IsEmpty => What.Length == 0 && Affects.Length == 0
-                && High.Length == 0 && Low.Length == 0;
+            /// <summary>
+            /// Nothing to say, so the card is drawn short.
+            ///
+            /// **Reads the fields defensively, because a struct's constructor is not a guarantee.**
+            /// The constructor above coalesces every null to an empty string and `default(Reading)`
+            /// never runs it, so the four properties are null on exactly the value `AttachKeyed`
+            /// passes for a short card. Every hover on a keyed tooltip threw here.
+            ///
+            /// The clamp-in-constructors rule this project follows protects a value somebody
+            /// constructed. It says nothing about the one the language hands out for free.
+            /// </summary>
+            public bool IsEmpty => string.IsNullOrEmpty(What) && string.IsNullOrEmpty(Affects)
+                && string.IsNullOrEmpty(High) && string.IsNullOrEmpty(Low);
         }
 
         /// <summary>Attaches a long-form card to any control.</summary>

@@ -13379,6 +13379,49 @@
 
 .room {
     position: relative;
+
+    /* **No page blue under a room.** Every other screen is a document on the game's own ground and
+       this one is a place: the blue was a border around a picture, and taking it out gives the
+       basement most of the window back. Near-black rather than transparent, because the panel
+       paints its clear colour behind whatever does not cover it. */
+    background-color: rgb(8, 10, 14);
+    padding: 14px 16px 10px 16px;
+}
+
+.room__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+}
+
+/* Larger than a page title, because it is the name of a place rather than the heading of a list. */
+.room__title {
+    font-size: 34px;
+    letter-spacing: 5px;
+    margin-bottom: 0;
+}
+
+.room__back {
+    height: 30px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 16px;
+    padding: 0 16px;
+    font-size: 10.5px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgba(206, 214, 230, 0.75);
+    background-color: rgba(255, 255, 255, 0.07);
+    border-width: 0;
+    border-radius: 5px;
+}
+
+.room__back:hover {
+    color: rgb(232, 240, 252);
+    background-color: rgba(255, 255, 255, 0.13);
 }
 
 .room__grid {
