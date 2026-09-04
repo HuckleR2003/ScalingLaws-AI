@@ -150,18 +150,96 @@ namespace ScalingLaws.UI
 
             point = new Vector2((local.x - offset.x) / scale, (local.y - offset.y) / scale);
 
+            // Against the whole map rather than the view: leaning in crops the picture and a click
+            // in the letterboxed margin is still a click on the world behind it.
             return point.x >= 0f && point.x <= 1f
                 && point.y >= 0f && point.y <= WorldShapes.Aspect;
         }
 
-        /// <summary>How many pixels one unit of map space is, and where the map's origin sits.</summary>
-        private static float Fit(Rect rect, out Vector2 offset)
+        /// <summary>
+        /// How much room is left around a region when the map leans in on it.
+        ///
+        /// A tenth of the region's own size on each side. Tight enough that the region fills the
+        /// frame and loose enough that a country on its edge is not against the glass.
+        /// </summary>
+        public const float ZoomPadding = 0.55f;
+
+        /// <summary>
+        /// What part of the map is on screen, in map space.
+        ///
+        /// The whole world until a region is chosen, then that region's own bounds. **A rectangle
+        /// rather than a scale and an offset**, because every other thing this element does is in
+        /// map space - the outlines, the markers and the hit test all read the same coordinates -
+        /// and a second way of saying where we are looking is how a click lands one country from
+        /// the cursor with the picture right and every test green.
+        /// </summary>
+        public Rect View
         {
-            var scale = Mathf.Min(rect.width, rect.height / WorldShapes.Aspect);
+            get
+            {
+                if (region == WorldRegion.None)
+                {
+                    return new Rect(0f, 0f, 1f, WorldShapes.Aspect);
+                }
+
+                var lowX = float.MaxValue;
+                var lowY = float.MaxValue;
+                var highX = float.MinValue;
+                var highY = float.MinValue;
+
+                foreach (var shape in WorldShapes.All)
+                {
+                    // **The countries that can be picked, not every country in the region.** Natural
+                    // Earth files Russia under Europe, so a box around everything the source calls
+                    // European runs from Ireland to the Bering Strait and leaning in on it barely
+                    // changes the picture. The point of leaning in is to make the sixteen big enough
+                    // to click, and the padding above is generous so their neighbours still frame
+                    // them.
+                    if (shape.Region != region || shape.Member == Country.None)
+                    {
+                        continue;
+                    }
+
+                    foreach (var ring in shape.Rings)
+                    {
+                        foreach (var point in ring)
+                        {
+                            lowX = Mathf.Min(lowX, point.x);
+                            lowY = Mathf.Min(lowY, point.y);
+                            highX = Mathf.Max(highX, point.x);
+                            highY = Mathf.Max(highY, point.y);
+                        }
+                    }
+                }
+
+                if (highX <= lowX || highY <= lowY)
+                {
+                    return new Rect(0f, 0f, 1f, WorldShapes.Aspect);
+                }
+
+                var padX = (highX - lowX) * ZoomPadding;
+                var padY = (highY - lowY) * ZoomPadding;
+
+                return new Rect(lowX - padX, lowY - padY,
+                    highX - lowX + padX * 2f, highY - lowY + padY * 2f);
+            }
+        }
+
+        /// <summary>
+        /// How many pixels one unit of map space is, and where the view's origin sits.
+        ///
+        /// Fits the view rectangle rather than the whole map, so leaning in on a region is one
+        /// change in one place and the drawing, the markers and the cursor all follow it.
+        /// </summary>
+        private float Fit(Rect rect, out Vector2 offset)
+        {
+            var view = View;
+
+            var scale = Mathf.Min(rect.width / view.width, rect.height / view.height);
 
             offset = new Vector2(
-                (rect.width - scale) * 0.5f,
-                (rect.height - scale * WorldShapes.Aspect) * 0.5f);
+                (rect.width - view.width * scale) * 0.5f - view.x * scale,
+                (rect.height - view.height * scale) * 0.5f - view.y * scale);
 
             return scale;
         }
@@ -215,6 +293,24 @@ namespace ScalingLaws.UI
         /// </summary>
         private void OnDown(MouseDownEvent down)
         {
+            // **Right button steps back out**, which is the only way back to the three regions once
+            // the map has leaned in on one. Handled before the hit test, because backing out of a
+            // region is not a click on anything.
+            if (down.button == 1)
+            {
+                if (region != WorldRegion.None)
+                {
+                    region = WorldRegion.None;
+                    country = Country.None;
+
+                    onRegion?.Invoke(WorldRegion.None);
+                    MarkDirtyRepaint();
+                }
+
+                down.StopPropagation();
+                return;
+            }
+
             if (down.button != 0 || !ToMap(down.localMousePosition, out var point))
             {
                 return;
@@ -232,17 +328,29 @@ namespace ScalingLaws.UI
                 // cleared and once with it set, and the first rebuild has already thrown away this
                 // element. Picking a country carries its region with it, which is what
                 // `PickCountry` does, so there is nothing to say twice.
-                if (shape.Member != Country.None)
-                {
-                    region = shape.Region;
-                    country = shape.Member;
-                    onCountry?.Invoke(shape.Member);
-                }
-                else if (shape.Region != region)
+                //
+                // **And which of the two a click means depends on how far in the map is.** From the
+                // whole world it means the region, and the map leans in on it; once it has leaned
+                // in, it means the country. Choosing a country off a world map means hunting for
+                // Switzerland at four pixels across, which is what this replaced.
+                if (region == WorldRegion.None)
                 {
                     region = shape.Region;
                     country = Country.None;
                     onRegion?.Invoke(shape.Region);
+                }
+                else if (shape.Region != region)
+                {
+                    // A click outside the region we are looking at is a change of mind about the
+                    // region, not a country in another one.
+                    region = shape.Region;
+                    country = Country.None;
+                    onRegion?.Invoke(shape.Region);
+                }
+                else if (shape.Member != Country.None)
+                {
+                    country = shape.Member;
+                    onCountry?.Invoke(shape.Member);
                 }
 
                 MarkDirtyRepaint();

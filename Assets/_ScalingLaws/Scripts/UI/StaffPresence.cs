@@ -137,7 +137,10 @@ namespace ScalingLaws.UI
                 0f,
                 -2.0f - index / PerRow * Spacing);
 
-            person.AddComponent<NamePlate>().Set(hire.Name);
+            person.AddComponent<NamePlate>().Set(
+                hire.Name,
+                NamePlate.TitleFor(hire.Role),
+                NamePlate.ColourFor(hire.Role));
 
             // **What makes them clickable.** The character packs ship with no collider at all, so a
             // ray through the office camera passed straight through every person in the room. One

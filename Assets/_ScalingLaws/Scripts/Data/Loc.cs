@@ -2149,6 +2149,7 @@ namespace ScalingLaws.Data
             ["biz.close"] = "CLOSE",
             ["common.the_founder"] = "The founder",
             ["room.back"] = "BACK TO THE OFFICE",
+            ["plate.ceo_of"] = "CEO of {0}",
         };
 
         // ==========================================================================================
@@ -4179,6 +4180,7 @@ namespace ScalingLaws.Data
             ["biz.close"] = "ZAMKNIJ",
             ["common.the_founder"] = "Założyciel",
             ["room.back"] = "WRÓĆ DO BIURA",
+            ["plate.ceo_of"] = "Prezes {0}",
         };
 
         /// <summary>

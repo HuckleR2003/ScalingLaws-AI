@@ -1319,8 +1319,9 @@ namespace ScalingLaws.UI
             heading.AddToClassList("page-title");
             page.Add(heading);
 
-            page.Add(Hint("Four companies that could have existed in 2022, and one country to run "
-                + "whichever you take from."));
+            // **No strap here.** It was an English sentence restating what four labelled tiles and a
+            // map already say, and it pushed the START button below the fold on a 900px window, so
+            // the page a new player meets ended in a scroll to find the only way forward.
 
             // Tiles and the custom banner are one block with no gap between them, so the fifth
             // option reads as part of the same choice rather than as an afterthought below it.

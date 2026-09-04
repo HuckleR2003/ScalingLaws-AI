@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
 
@@ -115,7 +116,12 @@ namespace ScalingLaws.UI
             // knew and never said. Added here rather than in the prefab because the founder is
             // named at the creator and the prefab is shared with the portrait studio, where a
             // floating name over a headshot would be absurd.
-            spawned.AddComponent<NamePlate>().Set(company?.FounderName);
+            // The founder's own colour, deliberately none of the five staff colours: they are not
+            // on the payroll and the room should say so without a word.
+            spawned.AddComponent<NamePlate>().Set(
+                company?.FounderName,
+                company == null ? null : Loc.T("plate.ceo_of", company.CompanyName),
+                NamePlate.FounderColour);
         }
 
         /// <summary>
