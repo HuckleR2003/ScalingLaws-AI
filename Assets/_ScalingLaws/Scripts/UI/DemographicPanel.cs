@@ -280,13 +280,15 @@ namespace ScalingLaws.UI
             share.EnableInClassList("demo-row__share--held", standing.PlayerUsers > 0.0);
             row.Add(share);
 
-            var leader = new Label(standing.TotalUsers > 0.0 ? standing.LeaderName : "nobody");
+            var leader = new Label(standing.TotalUsers > 0.0
+                ? standing.LeaderName
+                : Loc.T("demo.leader_nobody"));
             leader.AddToClassList("demo-row__leader");
             leader.EnableInClassList("demo-row__leader--you", standing.LeaderIndex <= 0);
             row.Add(leader);
 
-            row.tooltip = $"{definition.Description}\n\nYou hold {UiFormat.Count(standing.PlayerUsers)} "
-                + $"of {UiFormat.Count(standing.TotalUsers)} users here.";
+            row.tooltip = Loc.T("demo.row_note", definition.Description,
+                UiFormat.Count(standing.PlayerUsers), UiFormat.Count(standing.TotalUsers));
 
             return row;
         }

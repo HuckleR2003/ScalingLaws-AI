@@ -241,7 +241,7 @@ namespace ScalingLaws.UI
             var footer = new VisualElement();
             footer.AddToClassList("stage-footer");
 
-            backButton.text = Loc.T("create.back");
+            backButton.text = Loc.T("common.back");
             backButton.AddToClassList("menu-button");
             backButton.AddToClassList("menu-button--quiet");
             backButton.style.width = 130;
@@ -532,7 +532,7 @@ namespace ScalingLaws.UI
                 }
 
                 dots = (dots + 1) % 4;
-                laptopStatus.text = "PREPARING" + new string('.', dots);
+                laptopStatus.text = Loc.T("creator.preparing") + new string('.', dots);
             }).Every(420);
 
             return screen;
@@ -1883,7 +1883,7 @@ namespace ScalingLaws.UI
             unblockButton.style.display = DisplayStyle.None;
             panel.Add(unblockButton);
 
-            startButton.text = "START TRAINING";
+            startButton.text = Loc.T("creator.start_training");
             startButton.AddToClassList("button");
             startButton.AddToClassList("button--primary");
             startButton.style.marginTop = 14;
@@ -2270,8 +2270,11 @@ namespace ScalingLaws.UI
             var projection = simulation.Project(blueprint);
             var profile = simulation.Profile;
 
-            parameterLabel.text = $"Parameters: {UiFormat.Billions(blueprint.ParameterCountBillions)}";
-            tokenLabel.text = $"Training tokens: {UiFormat.Billions(blueprint.TrainingTokensBillions)}";
+            parameterLabel.text = Loc.T("creator.parameters",
+                UiFormat.Billions(blueprint.ParameterCountBillions));
+
+            tokenLabel.text = Loc.T("creator.training_tokens",
+                UiFormat.Billions(blueprint.TrainingTokensBillions));
             rentedLabel.text =
                 Loc.T("create.rented_line", UiFormat.Petaflops(rentedSlider.value),
                 UiFormat.Count(profile.RentedAcceleratorCount),

@@ -62,7 +62,7 @@ namespace ScalingLaws.UI
                 Loc.T("benefits.per_head", UiFormat.Money(perHead)),
                 Loc.T("benefits.total",
                     UiFormat.Money(perHead * Math.Max(0, state.Staff.Headcount)),
-                    state.Staff.Headcount)));
+                    Loc.Counted(state.Staff.Headcount, "noun.person"))));
 
             panel.Add(summary);
 

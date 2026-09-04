@@ -164,6 +164,24 @@ namespace ScalingLaws.Simulation
         public List<PlayerSkill> SkillsLevelledToday { get; } = new();
 
         /// <summary>
+        /// Things that happened today which an achievement is about, by their catalog id.
+        ///
+        /// **Not persisted, and that is the point.** Three achievements describe a moment rather
+        /// than a total: coming through an inspection, a cabinet of seven beating a cabinet of
+        /// eight, a month under water at load. The simulation knows each of them at the instant it
+        /// happens and has no reason to keep it afterwards, so writing it down would mean a new
+        /// field in the save, a version bump and a migration for something already written to
+        /// `PlayerPrefs` by the end of the same tick.
+        ///
+        /// A list of ints rather than of `AchievementId`, because that enum lives in `Data/` beside
+        /// the catalog and nothing in the rules should have an opinion about achievements. The
+        /// shell reads these and hands them to the store; no rule ever reads them back.
+        ///
+        /// Cleared each tick, exactly like `SkillsLevelledToday`.
+        /// </summary>
+        public List<int> AchievementMomentsToday { get; } = new();
+
+        /// <summary>
         /// Grants experience and raises an event on a level up. Every call site names a real action:
         /// experience is never awarded for the passage of time alone, because that would reward
         /// leaving the game running.

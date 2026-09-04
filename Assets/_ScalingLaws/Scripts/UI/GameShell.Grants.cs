@@ -323,16 +323,16 @@ namespace ScalingLaws.UI
             definition.Goal switch
             {
                 GrantGoal.ReleaseModels => Loc.T("grant.goal.release",
-                    (int)Math.Round(definition.Target)),
+                    Loc.Counted((int)Math.Round(definition.Target), "noun.model")),
 
                 GrantGoal.ReachCapability => Loc.T("grant.goal.capability",
                     UiFormat.Number(definition.Target, 0)),
 
                 GrantGoal.FinishResearch => Loc.T("grant.goal.research",
-                    (int)Math.Round(definition.Target)),
+                    Loc.Counted((int)Math.Round(definition.Target), "noun.node")),
 
                 GrantGoal.EmployPeople => Loc.T("grant.goal.employ",
-                    (int)Math.Round(definition.Target)),
+                    Loc.Counted((int)Math.Round(definition.Target), "noun.person")),
 
                 GrantGoal.SustainFreeTier => Loc.T("grant.goal.freetier",
                     UiFormat.Percent(definition.Target, 0)),

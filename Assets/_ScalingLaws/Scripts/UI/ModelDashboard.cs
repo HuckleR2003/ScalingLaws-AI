@@ -188,7 +188,7 @@ namespace ScalingLaws.UI
 
             panel.Add(dial);
 
-            var latency = new Label($"Response {quality.ResponseMilliseconds:N0}ms");
+            var latency = new Label(Loc.T("mg.response_ms", UiFormat.Number(quality.ResponseMilliseconds, 0)));
             latency.AddToClassList("modelhub__latency");
             panel.Add(latency);
 
@@ -420,7 +420,7 @@ namespace ScalingLaws.UI
 
             veil.schedule.Execute(() =>
             {
-                line.text = "Let's create.";
+                line.text = Loc.T("mg.lets_create");
                 line.AddToClassList("flourish__line--go");
             }).ExecuteLater(ThinkMilliseconds);
 

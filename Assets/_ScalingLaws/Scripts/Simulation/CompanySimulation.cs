@@ -468,6 +468,7 @@ namespace ScalingLaws.Simulation
                 State.Date, market, State.HasServerRoom ? State.Hall : null, Room);
 
             State.SkillsLevelledToday.Clear();
+            State.AchievementMomentsToday.Clear();
 
 
             State.Staff.SaturationMultiplier = State.Skills.TeamSaturationMultiplier();
@@ -869,7 +870,7 @@ namespace ScalingLaws.Simulation
                 State.Date,
                 Loc.T("feedback.sender"),
                 Loc.T("feedback.subject"),
-                Loc.T("feedback.body"));
+                Loc.T("feedback.mail.body"));
         }
 
         /// <summary>
@@ -3162,6 +3163,11 @@ namespace ScalingLaws.Simulation
             var saviour = safety.Saviour(State.Random.NextDouble());
             if (saviour.HasValue)
             {
+                // Five days open and no penalty at the end of them. The moment is here and nowhere
+                // else: `PendingAction` is null a line above and the state keeps no record that an
+                // inspection was ever survived.
+                State.AchievementMomentsToday.Add(AchievementMoments.RegulatorHeld);
+
                 SafetyWasSaved(saviour.Value, action.Incident, safety);
                 return;
             }

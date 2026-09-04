@@ -330,9 +330,7 @@ namespace ScalingLaws.UI
             stop.AddToClassList("researching__stop");
             stop.EnableInClassList("researching__stop--armed", cancelArmed);
 
-            stop.tooltip = "Abandons the programme. The cash and the points were spent on the day it "
-                + "started and none of it comes back; what you get is the right to start something "
-                + "else today rather than in four months.";
+            stop.tooltip = Loc.T("research.abandon.note");
 
             strip.Add(stop);
             return strip;

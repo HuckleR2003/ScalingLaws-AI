@@ -503,7 +503,7 @@ namespace ScalingLaws.UI
             handle.AddToClassList("chat__handle");
             who.Add(handle);
 
-            var status = new Label("online");
+            var status = new Label(Loc.T("phone.online"));
             status.AddToClassList("chat__status");
             who.Add(status);
 
@@ -685,7 +685,7 @@ namespace ScalingLaws.UI
             handle.AddToClassList("chat__handle");
             who.Add(handle);
 
-            var status = new Label("online");
+            var status = new Label(Loc.T("phone.online"));
             status.AddToClassList("chat__status");
             who.Add(status);
 

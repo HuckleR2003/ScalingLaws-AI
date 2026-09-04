@@ -250,7 +250,7 @@ namespace ScalingLaws.UI
             var copy = new VisualElement();
             copy.AddToClassList("menu-copy");
 
-            var eyebrow = new Label("HCK LABS PRESENTS");
+            var eyebrow = new Label(Loc.T("menu.presents"));
             eyebrow.AddToClassList("menu-eyebrow");
             copy.Add(eyebrow);
 
@@ -929,7 +929,7 @@ namespace ScalingLaws.UI
             toggle.SetEnabled(!pickedIsHidden || showAllTraits);
             if (pickedIsHidden && !showAllTraits)
             {
-                toggle.tooltip = "One of your picks is in this half.";
+                toggle.tooltip = Loc.T("create.pick_in_half");
             }
 
             block.Add(toggle);
@@ -1054,7 +1054,7 @@ namespace ScalingLaws.UI
             title.AddToClassList("panel__heading");
             header.Add(title);
 
-            var budget = new Label($"{remaining} POINTS LEFT");
+            var budget = new Label(Loc.T("create.points_left", remaining));
             budget.AddToClassList("skills-budget");
             budget.EnableInClassList("skills-budget--spent", remaining <= 0);
             header.Add(budget);
@@ -1177,7 +1177,7 @@ namespace ScalingLaws.UI
             controls.Add(buttons);
             row.Add(controls);
 
-            row.tooltip = $"{definition.Description}  At 100: {definition.EffectAtFull}.";
+            row.tooltip = Loc.T("create.skill_at_full", definition.Description, definition.EffectAtFull);
             return row;
         }
 

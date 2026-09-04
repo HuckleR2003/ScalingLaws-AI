@@ -337,6 +337,14 @@ namespace ScalingLaws.UI
         private Label trainingDays;
         private readonly List<CompanyEvent> recentEvents = new();
 
+        /// <summary>
+        /// Whether this company folding has already been counted.
+        ///
+        /// <c>IsBankrupt</c> stays true once it is true, so an unguarded call would count the same
+        /// failure every morning the player sat on the ending screen.
+        /// </summary>
+        private bool bankruptcyCounted;
+
         private Screen current = Screen.Site;
 
         private enum Screen
@@ -424,6 +432,10 @@ namespace ScalingLaws.UI
                     (CompanyArchetype)SceneFlow.RequestedArchetype,
                     (FounderTrait)SceneFlow.RequestedTraitA,
                     (FounderTrait)SceneFlow.RequestedTraitB);
+
+            // A campaign resumed after it had already folded was counted on the day it folded.
+            // Starting the guard from what the save says stops a reload counting it a second time.
+            bankruptcyCounted = state.IsBankrupt;
 
             if (!SceneFlow.ResumeSavedCampaign)
             {
@@ -926,7 +938,7 @@ namespace ScalingLaws.UI
 
             var change = state.LastStandingChange;
 
-            reputationLabel.text = "REP " + UiFormat.Percent(state.Reputation, 0);
+            reputationLabel.text = Loc.T("hud.rep", UiFormat.Percent(state.Reputation, 0));
             reputationLabel.EnableInClassList("topbar__standing--up", change.Total > 0.0);
             reputationLabel.EnableInClassList("topbar__standing--down", change.Total < 0.0);
 
@@ -2814,6 +2826,46 @@ namespace ScalingLaws.UI
                     recentEvents.RemoveAt(0);
                 }
             }
+
+            SyncAchievements();
+        }
+
+        /// <summary>
+        /// Brings the achievement record up to date once per drained tick.
+        ///
+        /// **Here rather than beside `AdvanceDay`** because both paths that move the clock, the
+        /// speed control and the single-day skip, already come through `DrainEvents`, and loading a
+        /// save comes through it too. One call site covers all three, and a campaign restored from
+        /// an old file catches up on what it had already earned instead of pretending it had not.
+        ///
+        /// Nothing here can change the campaign: <c>AchievementEvaluator</c> only reads, and the
+        /// record lives in PlayerPrefs rather than in the save.
+        /// </summary>
+        private void SyncAchievements()
+        {
+            if (state == null)
+            {
+                return;
+            }
+
+            var earned = state.IsBankrupt && !bankruptcyCounted
+                ? CountThisFailure()
+                : AchievementStore.Sync(state);
+
+            // Anything the rules announced today that no metric could have seen. The list is
+            // cleared at the top of the next tick, so this is the only chance to read it.
+            earned.AddRange(AchievementStore.Claim(state.AchievementMomentsToday));
+
+            if (earned.Count > 0)
+            {
+                AudioDirector.Positive();
+            }
+        }
+
+        private List<AchievementDefinition> CountThisFailure()
+        {
+            bankruptcyCounted = true;
+            return AchievementStore.RecordBankruptcy(state);
         }
 
         /// <summary>

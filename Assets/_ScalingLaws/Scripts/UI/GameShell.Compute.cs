@@ -61,14 +61,13 @@ namespace ScalingLaws.UI
             // is where the fleet controls already are, so the half that is live says so and scrolls
             // to them instead of pretending to be a mode switch that has nothing to switch to.
             var renting = new Button(() => Show(Screen.Fleet)) { text = Loc.T("fleet.renting") };
-            renting.tooltip = "The fleet you rent. Everything below this bar is it.";
+            renting.tooltip = Loc.T("compute.renting.note");
             renting.AddToClassList("hswitch__half");
             renting.AddToClassList("hswitch__half--on");
             strip.Add(renting);
 
             var owning = new Button(() => { }) { text = Loc.T("fleet.own_datacenter") };
-            owning.tooltip = "Locked until the Datacenter programme research lands. Renting is the "
-                + "only way to buy compute until then.";
+            owning.tooltip = Loc.T("compute.owning.locked");
             owning.AddToClassList("hswitch__half");
             owning.AddToClassList("hswitch__half--locked");
             owning.SetEnabled(false);
@@ -200,7 +199,8 @@ namespace ScalingLaws.UI
             var words = new VisualElement();
             words.AddToClassList("service__words");
 
-            var response = new Label($"Response Time: {quality.ResponseMilliseconds:N0}ms");
+            var response = new Label(Loc.T("compute.response_time",
+                UiFormat.Number(quality.ResponseMilliseconds, 0)));
             response.AddToClassList("service__response");
             response.style.color = ServiceGauge.ColourFor(quality.Status);
             words.Add(response);

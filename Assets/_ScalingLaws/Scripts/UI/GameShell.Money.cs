@@ -177,8 +177,11 @@ namespace ScalingLaws.UI
 
                     var row = new VisualElement();
                     row.AddToClassList("readout");
-                    row.Add(new Label($"{asset.Units:N0}x {generation.DisplayName}, bought {asset.PurchaseDate}"
-                        + (asset.IsOnline(state.Date) ? string.Empty : $" (arrives in {asset.DaysUntilOnline(state.Date)}d)")));
+                    row.Add(new Label(Loc.T("money.asset_line",
+                            UiFormat.Number(asset.Units, 0), generation.DisplayName, asset.PurchaseDate)
+                        + (asset.IsOnline(state.Date)
+                            ? string.Empty
+                            : Loc.T("money.asset_arrives", asset.DaysUntilOnline(state.Date)))));
 
                     var right = new VisualElement();
                     right.style.flexDirection = FlexDirection.Row;
@@ -330,7 +333,8 @@ namespace ScalingLaws.UI
             spec.AddToClassList("card__line");
             card.Add(spec);
 
-            var price = new Label($"BUY {batch}   {UiFormat.Money(generation.LaunchPriceUsd * batch)} at list");
+            var price = new Label(Loc.T("money.buy_batch", batch,
+                UiFormat.Money(generation.LaunchPriceUsd * batch)));
             price.AddToClassList("card__line");
             card.Add(price);
 
@@ -692,8 +696,8 @@ namespace ScalingLaws.UI
                 title.AddToClassList("card__title");
                 card.Add(title);
 
-                var cost = new Label($"{UiFormat.Money(campaign.DailyBudgetUsd)}/day   "
-                    + $"{UiFormat.Money(campaign.MonthlyBudgetUsd)}/month");
+                var cost = new Label(Loc.T("release.per_day", UiFormat.Money(campaign.DailyBudgetUsd))
+                    + "   " + Loc.T("release.per_month", UiFormat.Money(campaign.MonthlyBudgetUsd)));
                 cost.AddToClassList("card__line");
                 card.Add(cost);
 

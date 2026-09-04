@@ -13,7 +13,16 @@ namespace ScalingLaws.UI
         Save = 1,
         Load = 2,
         Settings = 3,
-        Stats = 4
+        Stats = 4,
+
+        /// <summary>
+        /// The forty seven, and which of them are earned.
+        ///
+        /// Appended rather than inserted. Nothing writes a `PauseTab` to disk today, but the enums
+        /// in this project are written out and never renumbered as a habit, and a habit that only
+        /// holds for the enums somebody remembered to check is not a habit.
+        /// </summary>
+        Achievements = 5
     }
 
     /// <summary>
@@ -41,6 +50,14 @@ namespace ScalingLaws.UI
         private int armed = -1;
 
         private string note = string.Empty;
+
+        /// <summary>
+        /// The achievements page.
+        ///
+        /// Held rather than made per open, because it holds nothing: it reads the catalog and the
+        /// store every time it is built, so one instance and a fresh one draw the same thing.
+        /// </summary>
+        private readonly AchievementsPage achievements = new();
 
         public PauseMenu(Func<CompanySimulation> company, Action changed)
         {
@@ -127,6 +144,9 @@ namespace ScalingLaws.UI
                 case PauseTab.Stats:
                     card.Add(BuildStats());
                     break;
+                case PauseTab.Achievements:
+                    card.Add(achievements.Build());
+                    break;
                 default:
                     card.Add(BuildMenu());
                     break;
@@ -154,6 +174,7 @@ namespace ScalingLaws.UI
                 PauseTab.Load => "pause.load",
                 PauseTab.Settings => "pause.settings",
                 PauseTab.Stats => "pause.stats",
+                PauseTab.Achievements => "pause.achievements",
                 _ => "pause.title"
             }));
 
@@ -202,6 +223,7 @@ namespace ScalingLaws.UI
             block.Add(Row("pause.load", () => Go(PauseTab.Load)));
             block.Add(Row("pause.settings", () => Go(PauseTab.Settings)));
             block.Add(Row("pause.stats", () => Go(PauseTab.Stats)));
+            block.Add(Row("pause.achievements", () => Go(PauseTab.Achievements)));
 
             // **The feedback button is deliberately not one of these rows.** It is the one thing on
             // this menu that is a favour rather than a function, and a row identical to the other

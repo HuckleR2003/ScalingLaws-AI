@@ -178,6 +178,16 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 - **Grant cards read like grants.** The name on torn white, who is offering it with weight, and the
   four terms on their own coloured plates: what arrives now, what arrives on completion, the
   research points money cannot buy, and how long there is.
+- **Forty seven achievements, and a page in the Escape menu that shows them.** Ten groups, from
+  the first hundred million to the year 2036, and they are about this game rather than about
+  tycoons in general: one is for a cabinet where seven cards and a fan out-deliver eight cards.
+
+  They live with the player rather than with the company, in the same place as the settings, so
+  deleting a campaign does not take them back and the count of companies you have run into the
+  ground survives the company running into the ground. **The save format does not change.**
+
+  Each one carries the identifier Steam would use, so connecting it later is one line beside the
+  line that writes it today.
 - **Research about the building, not the model.** A fourth track, OPERATIONS, with four nodes for
   the server room, on its own row under each era. Every node in this game had been about the model:
   bigger, cheaper, safer, better shaped. The room you actually stand in, click on and pay for had
@@ -203,6 +213,11 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Changed
 
+- **The Polish build stops addressing every hire as a man.** Three of the five first names in the
+  candidate pool are female or unisex, and the notes said *dostał*, *przyjął*, *odszedł* for all of
+  them. Present tense carries no gender in Polish, so this needed no gender field and no migration.
+- **Counted nouns take the right form.** Polish has three and these printed the genitive at every
+  count, so a two-desk piece of furniture read as *2 biurek* and a grant asked for *1 modeli*.
 - **BANK opens on one screen.** It was three full-width panels stacked and the grants began most of
   a screen below the fold.
 - **The world map picks a region first, then leans in on it.** Choosing a country off a whole world
@@ -254,6 +269,13 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Fixed
 
+- **The letter asking where you got stuck was never in the game.** Two different texts were filed
+  under one phrase key: the letter, and the body of the report window. The second silently replaced
+  the first, so the mail from HCK Labs showed the report window's text and the letter reached
+  nobody. It has its own key now.
+- **Twenty seven strings the interface drew without the phrase book**, including `START TRAINING` on
+  the busiest button in the game, `QUIET` on the news screen, and `online` twice in the tutorial
+  phone. Two of them already had a translation nothing was calling.
 - **Every node in era five was called "Fine-tuning and prompting".** All five Statecraft nodes - the
   end of the game and the most expensive research in it - drew with era one's name and era one's
   description, on the tree, in the completion event and in the news item that announces one. They
@@ -367,8 +389,19 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1024 EditMode tests across 104 fixtures, and 28 PlayMode across 7.
-- 2,175 phrases in the book, both languages complete, none written twice.
+- 1035 EditMode tests across 105 fixtures, and 29 PlayMode across 7.
+- 2,310 phrases in the book, both languages complete, none written twice.
+- Achievements are three files and one call site: a table in `Data/`, a pure function over the
+  campaign in `Simulation/`, and `PlayerPrefs` in `Persistence/`. No rule reads any of them, so a
+  change there can move what a player is told and cannot move what a player is charged.
+- **Two thresholds are not verified.** The top two cash achievements ask for $50B and $250B, and the
+  fan achievement asks for a million. Nobody has finished a campaign to see whether those are
+  reachable. Each is one number, and the name and the Steam id stay whatever happens to it.
+- Two of the three achievements that arrived unwired turned out to be readable rather than moments:
+  a cabinet where the fan beats the card it displaced is a fact about the floor, and a month under
+  water at load is the debt counter next to yesterday's utilisation. The third, coming through an
+  inspection, genuinely leaves no trace, so the rules announce it into a list the shell drains on
+  the same tick. That list is not saved: by the end of the tick it is already in `PlayerPrefs`.
 - 59 research nodes across five eras and four tracks; 33 world events.
 - The map is a 43 kB binary baked from public-domain data by `Tools/bake_world_map.py`, rather than
   parsed at runtime: the source is 725 kB of JSON whose coordinates nest four deep, which Unity's

@@ -380,7 +380,7 @@ namespace ScalingLaws.UI
 
             if (piece.DeskSeats > 0)
             {
-                var seats = new Label(Loc.T("build.seats", piece.DeskSeats.ToString()));
+                var seats = new Label(Loc.Counted(piece.DeskSeats, "noun.desk"));
                 seats.AddToClassList("obuild__seats");
                 card.Add(seats);
             }

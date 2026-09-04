@@ -212,6 +212,20 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The achievements page, which nobody has looked at.
+        ///
+        /// Forty seven rows in ten groups inside a 620px pause card is the one thing here that could
+        /// plausibly not fit, and no assertion can tell me whether it reads. The page is drawn on a
+        /// fresh machine, so every row is locked: that is the state a new player opens it in and the
+        /// one where a locked row has to look deliberate rather than broken.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheAchievementsPageDraws()
+        {
+            yield return Capture(new AchievementsPage().Build(), "achievements.png");
+        }
+
+        /// <summary>
         /// The DATA stage, with the corpora the company does not own listed under the ones it does.
         ///
         /// **Neither of the two existing contact sheets reaches this page.** `TabProofTests` opens

@@ -315,7 +315,7 @@ namespace ScalingLaws.UI
             var open = new Button { text = Loc.T("common.details") };
             open.AddToClassList("rperson__open");
             open.SetEnabled(false);
-            open.tooltip = "Their own page is not built yet.";
+            open.tooltip = Loc.T("team.page_not_built");
             row.Add(open);
 
             var release = new Button(() =>

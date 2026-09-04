@@ -109,8 +109,8 @@ namespace ScalingLaws.UI
             var news = feed();
             if (news == null || !news.TryGetHeadline(out var story))
             {
-                kicker.text = "QUIET";
-                headline.text = "Nothing has happened yet.";
+                kicker.text = Loc.T("news.quiet");
+                headline.text = Loc.T("news.quiet.note");
                 dateline.text = string.Empty;
                 badge.text = string.Empty;
                 badge.style.display = DisplayStyle.None;

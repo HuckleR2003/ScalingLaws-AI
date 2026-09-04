@@ -338,7 +338,7 @@ namespace ScalingLaws.UI
             caption.AddToClassList("relrow__caption");
             head.Add(caption);
 
-            var reading = new Label($"{UiFormat.Count(freeTokens)}/day");
+            var reading = new Label(Loc.T("release.per_day", UiFormat.Count(freeTokens)));
             reading.AddToClassList("relrow__value");
             head.Add(reading);
 
