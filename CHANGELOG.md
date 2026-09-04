@@ -167,9 +167,22 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
   under the name. The founder gets their own colour and "CEO of <company>".
 - **Research nodes you can start now look like it.** A node that is ready and one that needs two
   others first were a hue apart, which is not a distinction anybody makes across fifty of them.
+- **The office has its own desks in it.** Every tier already carried a desk count, it is what caps
+  hiring, the rent pays for it, and nothing drew it: LVL 1 said ten desks over an empty floor.
+- **People keep the hours you give them.** Set somebody to 8 to 16 and after 16 their figure goes,
+  leaving a dimmed marker with their job and the time they are back; at 8 they are in again. The
+  schedule control existed and had never been visible anywhere.
+- **BANK says what the company owns**: cash, hardware at what it would fetch today, property owned
+  outright, furniture at resale, and a band that carries the valuation with the book value beside
+  it. The band's green covers the share of the price your own assets actually cover.
+- **Grant cards read like grants.** The name on torn white, who is offering it with weight, and the
+  four terms on their own coloured plates: what arrives now, what arrives on completion, the
+  research points money cannot buy, and how long there is.
 
 ### Changed
 
+- **BANK opens on one screen.** It was three full-width panels stacked and the grants began most of
+  a screen below the fold.
 - **The world map picks a region first, then leans in on it.** Choosing a country off a whole world
   map means hunting for Switzerland at four pixels across. Right click steps back out.
 - **COMPUTE fits more on a line.** The user charts moved up beside the load dial at a third of the
@@ -304,8 +317,8 @@ on all along.
 
 ### Under the hood
 
-- 998 EditMode tests across 101 fixtures, and 27 PlayMode across 7.
-- 1,953 phrases in the book, both languages complete.
+- 1004 EditMode tests across 102 fixtures, and 27 PlayMode across 7.
+- 1,963 phrases in the book, both languages complete.
 - 55 research nodes across five eras; 33 world events.
 - The map is a 43 kB binary baked from public-domain data by `Tools/bake_world_map.py`, rather than
   parsed at runtime: the source is 725 kB of JSON whose coordinates nest four deep, which Unity's

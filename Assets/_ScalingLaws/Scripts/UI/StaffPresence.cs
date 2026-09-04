@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
 
@@ -228,7 +229,10 @@ namespace ScalingLaws.UI
 
                 if (plate != null)
                 {
-                    plate.SetOnDuty(onDuty);
+                    plate.SetOnDuty(onDuty, Loc.T("plate.off_duty",
+                        NamePlate.TitleFor(hire.Role),
+                        hire.StartHour.ToString("00"),
+                        hire.EndHour.ToString("00")));
                 }
             }
         }

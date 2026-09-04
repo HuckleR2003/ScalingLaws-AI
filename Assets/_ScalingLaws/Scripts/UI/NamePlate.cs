@@ -68,6 +68,9 @@ namespace ScalingLaws.UI
         private static readonly Color Ink = new(0.92f, 0.95f, 1f, 0.94f);
         private static readonly Color TitleInk = new(0.78f, 0.83f, 0.92f, 0.82f);
 
+        /// <summary>What the second line says while they are in. Kept so it can be put back.</summary>
+        private string dutyTitle = string.Empty;
+
         private Transform plate;
         private TextMesh nameMesh;
         private TextMesh titleMesh;
@@ -100,9 +103,11 @@ namespace ScalingLaws.UI
                 nameMesh.text = name;
             }
 
+            dutyTitle = title ?? string.Empty;
+
             if (titleMesh != null)
             {
-                titleMesh.text = title ?? string.Empty;
+                titleMesh.text = dutyTitle;
             }
 
             if (rule != null)
@@ -156,7 +161,7 @@ namespace ScalingLaws.UI
         /// than the name of the person: at this size two lines of dim text is a smudge and the job
         /// is the half that says what the room is short of right now.
         /// </summary>
-        public void SetOnDuty(bool onDuty)
+        public void SetOnDuty(bool onDuty, string offDutyTitle = null)
         {
             if (plate == null)
             {
@@ -174,6 +179,11 @@ namespace ScalingLaws.UI
             {
                 var ink = TitleInk;
                 titleMesh.color = new Color(ink.r, ink.g, ink.b, ink.a * fade);
+
+                // **The marker says when they are back.** A day starts at midnight and loading a
+                // save starts one, so a campaign opens with a correctly empty office that a player
+                // who has just hired somebody reads as the hire not working.
+                titleMesh.text = onDuty || offDutyTitle == null ? dutyTitle : offDutyTitle;
             }
 
             if (rule != null)

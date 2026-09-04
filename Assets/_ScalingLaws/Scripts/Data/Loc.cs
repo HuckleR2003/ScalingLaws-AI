@@ -2171,6 +2171,7 @@ namespace ScalingLaws.Data
             ["bank.book_value"] = "{0} of that is things you own. The rest is what somebody thinks you will build.",
             ["bank.run_rate"] = "Annual revenue run rate",
             ["bank.founder_stake"] = "Founder stake worth",
+            ["plate.off_duty"] = "{0}, in at {1}:00",
         };
 
         // ==========================================================================================
@@ -4223,6 +4224,7 @@ namespace ScalingLaws.Data
             ["bank.book_value"] = "{0} z tego to rzeczy, które masz. Reszta to to, w co ktoś wierzy, że zbudujesz.",
             ["bank.run_rate"] = "Roczne tempo przychodów",
             ["bank.founder_stake"] = "Wartość udziału założyciela",
+            ["plate.off_duty"] = "{0}, przychodzi {1}:00",
         };
 
         /// <summary>
