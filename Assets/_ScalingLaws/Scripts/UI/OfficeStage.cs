@@ -162,6 +162,10 @@ namespace ScalingLaws.UI
                 shownTier = tier;
             }
 
+            // The tier's own desks, read from the catalog the hiring cap reads. One source, so the
+            // room can never show a different number of desks than the company is allowed to fill.
+            deskCount = OfficeCatalog.Get(tier).Desks;
+
             Dress(decor);
         }
 
@@ -239,6 +243,80 @@ namespace ScalingLaws.UI
         /// Cleared and refilled rather than diffed. The list is a dozen boxes on a screen that is
         /// already rendering a room, and a diff would be code that can disagree with the plan.
         /// </summary>
+        /// <summary>
+        /// How far apart the room's own desks stand, in metres.
+        ///
+        /// Wider than the furniture grid, because a desk is a place somebody sits rather than a
+        /// thing standing against a wall, and two people at arm's length read as a call centre.
+        /// </summary>
+        public const float DeskSpacing = 2.4f;
+
+        /// <summary>Desks per row before the block steps back. The camera looks along z.</summary>
+        public const int DesksPerRow = 5;
+
+        /// <summary>What a desk in the room is called, so the clear can match on it.</summary>
+        public const string DeskName = "TierDesk";
+
+        /// <summary>
+        /// Stands the desks the office tier itself pays for.
+        ///
+        /// **Not furniture, and that distinction is the whole reason this is here rather than in the
+        /// plan.** Every tier carries a desk count, it is what caps hiring, the rent pays for it, and
+        /// until now nothing drew it: LVL 1 said ten desks over an empty floor, which reads as an
+        /// office nobody has furnished. These cannot be bought, moved or sold, they add nothing to
+        /// `ExtraDesks`, and no number in the game moves because they exist. They are what the office
+        /// is, the same way its walls are.
+        /// </summary>
+        private void StandTierDesks(int desks)
+        {
+            var room = CurrentRoom;
+
+            if (room == null || desks <= 0)
+            {
+                return;
+            }
+
+            var group = room.Find(FurnitureGroup);
+
+            if (group == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < desks; index++)
+            {
+                var desk = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                desk.name = DeskName + index;
+                desk.transform.SetParent(group, false);
+
+                // A block back and to one side of where the founder works, so the room reads as an
+                // office with people in it rather than a showroom.
+                desk.transform.localPosition = new Vector3(
+                    (index % DesksPerRow - (DesksPerRow - 1) * 0.5f) * DeskSpacing,
+                    0.36f,
+                    -1.2f - index / DesksPerRow * DeskSpacing);
+
+                desk.transform.localScale = new Vector3(1.5f, 0.72f, 0.75f);
+
+                // A collider here would eat the click meant for whoever is sitting at it, and the
+                // room has exactly one interaction.
+                var collider = desk.GetComponent<BoxCollider>();
+
+                if (collider != null)
+                {
+                    Object.Destroy(collider);
+                }
+
+                var renderer = desk.GetComponent<MeshRenderer>();
+
+                if (renderer != null)
+                {
+                    renderer.sharedMaterial = MaterialFor("desk");
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+            }
+        }
+
         private void Dress(DecorPlan decor)
         {
             var room = CurrentRoom;
@@ -269,7 +347,17 @@ namespace ScalingLaws.UI
             {
                 Stand(group, item);
             }
+
+            StandTierDesks(deskCount);
         }
+
+        /// <summary>
+        /// How many desks the tier pays for, remembered between dresses.
+        ///
+        /// A field rather than a parameter on `Dress`, because `Dress` is called from `Show` with the
+        /// decor and the tier's desks are a property of the tier `Show` was already given.
+        /// </summary>
+        private int deskCount;
 
         private static void Stand(Transform group, DecorItem item)
         {

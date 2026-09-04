@@ -148,6 +148,50 @@ namespace ScalingLaws.UI
         /// <summary>The founder's own colour. Deliberately none of the five: they are not staff.</summary>
         public static Color FounderColour => new(0.98f, 0.84f, 0.42f);
 
+        /// <summary>
+        /// Off the clock: the name goes, the job stays, and both fade.
+        ///
+        /// **The plate is what is left of somebody who has gone home.** Their figure is hidden and
+        /// this is the marker that says whose desk it is, so it drops to the name of the job rather
+        /// than the name of the person: at this size two lines of dim text is a smudge and the job
+        /// is the half that says what the room is short of right now.
+        /// </summary>
+        public void SetOnDuty(bool onDuty)
+        {
+            if (plate == null)
+            {
+                return;
+            }
+
+            var fade = onDuty ? 1f : OffDutyOpacity;
+
+            if (nameMesh != null)
+            {
+                nameMesh.gameObject.SetActive(onDuty);
+            }
+
+            if (titleMesh != null)
+            {
+                var ink = TitleInk;
+                titleMesh.color = new Color(ink.r, ink.g, ink.b, ink.a * fade);
+            }
+
+            if (rule != null)
+            {
+                rule.gameObject.SetActive(true);
+                rule.localScale = new Vector3(
+                    rule.localScale.x, RuleHeight * (onDuty ? 1f : 0.7f), 1f);
+            }
+        }
+
+        /// <summary>
+        /// How solid the marker is once somebody has gone home.
+        ///
+        /// Sixty per cent, as asked. Present enough to say the desk belongs to somebody, quiet
+        /// enough that a room after hours reads as empty at a glance.
+        /// </summary>
+        public const float OffDutyOpacity = 0.6f;
+
         public void Clear()
         {
             if (plate == null)

@@ -97,6 +97,10 @@ namespace ScalingLaws.UI
             {
                 Spawn(group.transform, hires[index], index);
             }
+
+            // A fresh set of people has nobody hidden yet, so the next `SetHour` has to do the work
+            // even if the hour has not moved.
+            shownHour = -1;
         }
 
         /// <summary>
@@ -157,6 +161,80 @@ namespace ScalingLaws.UI
 
             spawned.Add(person);
         }
+
+        /// <summary>
+        /// Shows the people whose shift it is and hides the rest.
+        ///
+        /// **The first thing in the game that makes the schedule control visible.** Hours were
+        /// already saved and already read by loyalty, and the only place they appeared was a panel
+        /// nobody opened twice. A control whose effect cannot be seen is a control people set once
+        /// and forget about.
+        ///
+        /// Presentation only, and deliberately: the day still pays a full salary and still does a
+        /// full day's work whatever the clock says. Hours are a loyalty and expectation mechanic,
+        /// and turning them into a productivity dial is a different design that would have to be
+        /// balanced rather than a side effect of drawing somebody.
+        ///
+        /// Cheap enough for every frame: it compares the hour it last drew and returns.
+        /// </summary>
+        public void SetHour(double hour)
+        {
+            var company = state?.Invoke();
+
+            if (company == null || spawned.Count == 0)
+            {
+                return;
+            }
+
+            // Whole hours. The clock sweeps continuously and a person cannot half arrive, so
+            // anything finer is work done for a difference nobody can see.
+            var now = (int)System.Math.Floor(System.Math.Clamp(hour, 0.0, 23.999));
+
+            if (now == shownHour)
+            {
+                return;
+            }
+
+            shownHour = now;
+
+            var hires = company.Staff.Hires;
+
+            for (var index = 0; index < spawned.Count && index < hires.Count; index++)
+            {
+                var person = spawned[index];
+
+                if (person == null)
+                {
+                    continue;
+                }
+
+                var hire = hires[index];
+                var onDuty = now >= hire.StartHour && now < hire.EndHour;
+
+                // The renderers rather than the object, so the name plate stays up: the plate is
+                // what is left of somebody who has gone home and it is the point of the whole
+                // arrangement.
+                foreach (var renderer in person.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (renderer.transform.name is "Line" or "Rule")
+                    {
+                        continue;
+                    }
+
+                    renderer.enabled = onDuty;
+                }
+
+                var plate = person.GetComponent<NamePlate>();
+
+                if (plate != null)
+                {
+                    plate.SetOnDuty(onDuty);
+                }
+            }
+        }
+
+        /// <summary>The hour last drawn, so a frame that changes nothing touches nothing.</summary>
+        private int shownHour = -1;
 
         /// <summary>Takes everybody out, for a rebuild or a move.</summary>
         public void Clear()

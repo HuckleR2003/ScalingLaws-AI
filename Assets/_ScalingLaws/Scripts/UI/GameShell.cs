@@ -524,6 +524,11 @@ namespace ScalingLaws.UI
             // times faster while they are asleep upstairs. Presentation, not simulation. The same
             // days happen and they take less of the player's evening.
             founder?.Refresh(state.Date.DayIndex);
+
+            // **The office empties at the end of the shift and fills again in the morning.** The
+            // clock's own day progress, which is the same reading the dial in the bottom bar shows,
+            // so the room and the clock can never disagree about what time it is.
+            staff?.SetHour(clock.DayProgress * 24.0);
             RefreshRegulatoryBanner();
             RefreshBuyoutBanner();
             RefreshResearchBanner();
