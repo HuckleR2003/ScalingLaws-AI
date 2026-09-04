@@ -37,7 +37,8 @@ namespace ScalingLaws.Data
             double dataQualityBonusPerHead = 0.0,
             double incidentRiskReductionPerHead = 0.0,
             double brandBonusPerHead = 0.0,
-            double researchSpeedBonusPerHead = 0.0)
+            double researchSpeedBonusPerHead = 0.0,
+            double researchPointShare = 0.0)
         {
             Role = role;
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? role.ToString() : displayName;
@@ -50,6 +51,7 @@ namespace ScalingLaws.Data
             IncidentRiskReductionPerHead = Math.Clamp(SimUnits.Finite(incidentRiskReductionPerHead), 0.0, 0.2);
             BrandBonusPerHead = Math.Clamp(SimUnits.Finite(brandBonusPerHead), 0.0, 0.1);
             ResearchSpeedBonusPerHead = Math.Clamp(SimUnits.Finite(researchSpeedBonusPerHead), 0.0, 0.2);
+            ResearchPointShare = Math.Clamp(SimUnits.Finite(researchPointShare), 0.0, 1.0);
         }
 
         public StaffRole Role { get; }
@@ -68,6 +70,19 @@ namespace ScalingLaws.Data
         public double IncidentRiskReductionPerHead { get; }
         public double BrandBonusPerHead { get; }
         public double ResearchSpeedBonusPerHead { get; }
+
+        /// <summary>
+        /// How much one head of this role adds to the research the company is doing.
+        ///
+        /// **This used to be flat across every role and it made the job title decorative.** A
+        /// go-to-market hire moved research points exactly as much as a research scientist did, and
+        /// points are the gate that money cannot open. The role affected the calendar through
+        /// <see cref="ResearchSpeedBonusPerHead"/> and never the currency.
+        ///
+        /// The five average 0.36 against the flat 0.40 they replace, so a balanced team lands about
+        /// where it was and a research-heavy one is genuinely better.
+        /// </summary>
+        public double ResearchPointShare { get; }
 
         /// <summary>Salary scales steeply with skill. A five is not five times a one, it is worth more.</summary>
         public long SalaryPerYearUsd(int skill) =>
@@ -101,21 +116,24 @@ namespace ScalingLaws.Data
                 baseSalaryPerYearUsd: 320_000,
                 hiringCostUsd: 90_000,
                 outcomeVarianceReductionPerHead: 0.075,
-                researchSpeedBonusPerHead: 0.018),
+                researchSpeedBonusPerHead: 0.018,
+                researchPointShare: 0.60),
 
             new(StaffRole.InfrastructureEngineer, "Infrastructure engineer",
                 "Keeps the cluster fed. The difference between a fleet running at its rating and one "
                 + "running at two thirds of it.",
                 baseSalaryPerYearUsd: 280_000,
                 hiringCostUsd: 70_000,
-                utilizationBonusPerHead: 0.028),
+                utilizationBonusPerHead: 0.028,
+                researchPointShare: 0.30),
 
             new(StaffRole.DataEngineer, "Data engineer",
                 "Deduplication, filtering, licensing paperwork. Unglamorous, and it moves the quality of "
                 + "every token the company will ever train on.",
                 baseSalaryPerYearUsd: 240_000,
                 hiringCostUsd: 55_000,
-                dataQualityBonusPerHead: 0.016),
+                dataQualityBonusPerHead: 0.016,
+                researchPointShare: 0.40),
 
             new(StaffRole.SafetyEngineer, "Safety engineer",
                 "Red teams the model before somebody else does it in public. Invisible when it works, "
@@ -123,14 +141,16 @@ namespace ScalingLaws.Data
                 baseSalaryPerYearUsd: 300_000,
                 hiringCostUsd: 80_000,
                 incidentRiskReductionPerHead: 0.085,
-                outcomeVarianceReductionPerHead: 0.012),
+                outcomeVarianceReductionPerHead: 0.012,
+                researchPointShare: 0.35),
 
             new(StaffRole.GoToMarket, "Go to market",
                 "Developer relations, enterprise sales, the conference circuit. Does nothing for the model "
                 + "and a great deal for whether anyone picks it.",
                 baseSalaryPerYearUsd: 210_000,
                 hiringCostUsd: 45_000,
-                brandBonusPerHead: 0.011)
+                brandBonusPerHead: 0.011,
+                researchPointShare: 0.15)
         };
 
         private static readonly Dictionary<StaffRole, StaffRoleDefinition> ByRole = BuildIndex();

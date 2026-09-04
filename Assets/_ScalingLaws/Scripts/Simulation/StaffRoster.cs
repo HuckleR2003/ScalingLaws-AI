@@ -388,6 +388,33 @@ namespace ScalingLaws.Simulation
         public double BrandBonus() =>
             StaffCatalog.Get(StaffRole.GoToMarket).BrandBonusPerHead * Strength(StaffRole.GoToMarket);
 
+        /// <summary>
+        /// How much the payroll multiplies the research the founder is doing.
+        ///
+        /// **Weighted by role**, through the same `Strength` curve every other bonus uses, so the
+        /// tenth researcher is a meeting rather than a tenth researcher. One is the founder alone.
+        /// </summary>
+        public double ResearchPeopleFactor()
+        {
+            var people = 1.0;
+
+            foreach (var definition in StaffCatalog.All)
+            {
+                people += definition.ResearchPointShare * Strength(definition.Role);
+            }
+
+            return people;
+        }
+
+        /// <summary>
+        /// Heads of research scientist, after diminishing returns.
+        ///
+        /// The one role that produces a little research of its own rather than only multiplying
+        /// what is already happening. See `ResearchBudget.PointsFromScientists` for why that is the
+        /// exception rather than the rule.
+        /// </summary>
+        public double ScientistStrength() => Strength(StaffRole.ResearchScientist);
+
         /// <summary>Multiplier on research and upgrade durations. Below one is faster.</summary>
         public double ResearchSpeedMultiplier() => Math.Clamp(
             1.0 - StaffCatalog.Get(StaffRole.ResearchScientist).ResearchSpeedBonusPerHead

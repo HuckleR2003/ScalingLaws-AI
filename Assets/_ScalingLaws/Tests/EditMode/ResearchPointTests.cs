@@ -29,37 +29,105 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ARunInFlightTeachesMoreThanAnUpgradeProgramme()
         {
-            var training = ResearchBudget.PointsFromWork(true, false, 0, 1.0);
-            var upgrading = ResearchBudget.PointsFromWork(false, true, 0, 1.0);
+            var training = ResearchBudget.PointsFromWork(true, false, 1.0, 1.0);
+            var upgrading = ResearchBudget.PointsFromWork(false, true, 1.0, 1.0);
 
             Assert.Greater(training, upgrading,
                 "Building something new has to teach more than improving something old, or there is "
                 + "no reason to take the risk.");
 
-            Assert.Greater(ResearchBudget.PointsFromWork(true, true, 0, 1.0), training,
+            Assert.Greater(ResearchBudget.PointsFromWork(true, true, 1.0, 1.0), training,
                 "Doing both is doing more.");
         }
 
-        /// <summary>The number the author asked for: staff contribute sixty percent less each.</summary>
+        /// <summary>
+        /// **Who you hire changes what the company learns.**
+        ///
+        /// This replaced a test that asserted every head added a flat forty per cent. That was the
+        /// rule and it made the job title decorative for the one currency money cannot buy: a
+        /// go-to-market hire moved research points exactly as much as a research scientist. The
+        /// role affected the calendar, through the duration multiplier, and never the gate.
+        /// </summary>
         [Test]
-        public void EachMemberOfStaffAddsFortyPercentOfTheFoundersOwnRate()
+        public void AResearchScientistIsWorthMoreToResearchThanASalesperson()
         {
-            var alone = ResearchBudget.PointsFromWork(true, false, 0, 1.0);
-            var withOne = ResearchBudget.PointsFromWork(true, false, 1, 1.0);
+            var scientist = StaffCatalog.Get(StaffRole.ResearchScientist).ResearchPointShare;
+            var sales = StaffCatalog.Get(StaffRole.GoToMarket).ResearchPointShare;
 
-            Assert.AreEqual(alone * (1.0 + ResearchBudget.StaffShare), withOne, 1e-9);
-            Assert.AreEqual(0.40, ResearchBudget.StaffShare, 1e-12,
-                "Sixty percent less than the founder, as agreed.");
+            Assert.Greater(scientist, sales,
+                "The two roles contribute the same to research, so the job title is decorative.");
+
+            // Every role still contributes something. A hire that helps the company in one way and
+            // is worth literally nothing in another reads as a bug rather than as a trade.
+            foreach (var definition in StaffCatalog.All)
+            {
+                Assert.Greater(definition.ResearchPointShare, 0.0, definition.DisplayName);
+                Assert.LessOrEqual(definition.ResearchPointShare, 1.0, definition.DisplayName);
+            }
+
+            var alone = ResearchBudget.PointsFromWork(true, false, 1.0, 1.0);
+            var withOne = ResearchBudget.PointsFromWork(true, false, 1.0 + scientist, 1.0);
+
+            Assert.AreEqual(alone * (1.0 + scientist), withOne, 1e-9);
+        }
+
+        /// <summary>
+        /// A lab full of researchers with nothing on the cluster is still a lab.
+        ///
+        /// **The one exception to "staff multiply work rather than making it".** Before this, a
+        /// company between runs with six research scientists earned exactly zero, which is not what
+        /// a research lab is. It stays small and it stays the only role that has it, so the rule the
+        /// exception is carved out of still holds.
+        /// </summary>
+        [Test]
+        public void ResearchersLearnSomethingBetweenRuns()
+        {
+            Assert.AreEqual(0.0, ResearchBudget.PointsFromWork(false, false, 3.0, 1.0), 1e-9,
+                "Idle staff generate work of their own, so hiring is the whole strategy.");
+
+            var idleLab = ResearchBudget.PointsFromScientists(4.0, 1.0);
+
+            Assert.Greater(idleLab, 0.0,
+                "Four research scientists with nothing training learn nothing at all.");
+
+            // And never more than actually building something.
+            var training = ResearchBudget.PointsFromWork(true, false, 1.0 + 4.0 * 0.60, 1.0);
+
+            Assert.Less(idleLab, training,
+                "Sitting still out-earns training a model, so nobody would ever start a run.");
         }
 
         [Test]
         public void HiringNeverBecomesAStraightMultiplierOnDiscovery()
         {
-            var one = ResearchBudget.PointsFromWork(true, false, 1, 1.0);
-            var ten = ResearchBudget.PointsFromWork(true, false, 10, 1.0);
+            var one = ResearchBudget.PointsFromWork(true, false, 1.4, 1.0);
+            var many = ResearchBudget.PointsFromWork(true, false, 1.0 + 10 * 0.4, 1.0);
 
-            Assert.Less(ten, one * 10.0,
+            Assert.Less(many, one * 10.0,
                 "Ten people must not be ten times one, or the only research strategy is hiring.");
+
+            // The roster's own curve is where the diminishing return actually lives, and it is the
+            // half a unit test of the formula cannot see.
+            var roster = new StaffRoster();
+            roster.SetOffice(OfficeTier.Floor);
+
+            var first = 0.0;
+
+            for (var index = 0; index < 12; index++)
+            {
+                roster.Add(new Hire(StaffRole.ResearchScientist, 3, new GameDate(0),
+                    "Scientist " + index, PlayerSkill.Concept, HireSource.Agency, 100.0));
+
+                if (index == 0)
+                {
+                    first = roster.ResearchPeopleFactor() - 1.0;
+                }
+            }
+
+            var twelve = roster.ResearchPeopleFactor() - 1.0;
+
+            Assert.Less(twelve, first * 12.0,
+                "The twelfth scientist is worth as much as the first, so the tenth is not a meeting.");
         }
 
         [Test]

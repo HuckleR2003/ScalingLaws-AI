@@ -76,7 +76,7 @@ namespace ScalingLaws.Simulation
         /// but the bench learns nothing while it is idle, which is the pressure that stops a player
         /// parking the company and waiting for the tree to fill itself in.
         /// </summary>
-        public static double PointsFromWork(bool training, bool upgrading, int staffCount,
+        public static double PointsFromWork(bool training, bool upgrading, double peopleFactor,
             double researchDepthMultiplier)
         {
             var founder = 0.0;
@@ -96,10 +96,37 @@ namespace ScalingLaws.Simulation
             }
 
             // Staff multiply the work that is happening rather than creating work of their own.
-            var people = 1.0 + Math.Max(0, staffCount) * StaffShare;
+            // **Weighted by role since 2026-09-04**: the term used to be one flat share per head,
+            // which meant a go-to-market hire moved research points exactly as much as a research
+            // scientist and made the job title decorative for the one currency money cannot buy.
+            var people = Math.Clamp(SimUnits.Finite(peopleFactor, 1.0), 1.0, 6.0);
             var depth = Math.Clamp(SimUnits.Finite(researchDepthMultiplier, 1.0), 0.25, 4.0);
 
             return founder * people * depth;
+        }
+
+        /// <summary>
+        /// What research scientists work out on their own, with nothing else running.
+        ///
+        /// **The one exception to "staff multiply work rather than making it".** That rule exists so
+        /// hiring can never become the whole research strategy, and it is kept: this is a quarter of
+        /// what the founder earns while training, it is the only role that has it, and it runs
+        /// through the same diminishing return as everything else, so the tenth scientist is a
+        /// meeting.
+        ///
+        /// What it buys is that a company with researchers and nothing on the cluster is still
+        /// learning something, which is what a research lab is. Before this, a lab full of
+        /// scientists between runs earned exactly zero.
+        /// </summary>
+        public const double PointsPerDayPerScientist = 1.5;
+
+        public static double PointsFromScientists(double scientistStrength,
+            double researchDepthMultiplier)
+        {
+            var heads = Math.Clamp(SimUnits.Finite(scientistStrength), 0.0, 12.0);
+            var depth = Math.Clamp(SimUnits.Finite(researchDepthMultiplier, 1.0), 0.25, 4.0);
+
+            return PointsPerDayPerScientist * heads * depth;
         }
 
         /// <summary>What a fixed budget or a revenue share comes to this month.</summary>

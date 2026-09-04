@@ -4152,11 +4152,17 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private void AdvanceResearchPoints()
         {
+            var depth = State.Skills.ResearchDepthMultiplier();
+
             var fromWork = ResearchBudget.PointsFromWork(
                 State.ActiveRun != null,
                 State.UpgradeProjects.Count > 0,
-                State.Staff.Hires.Count,
-                State.Skills.ResearchDepthMultiplier());
+                State.Staff.ResearchPeopleFactor(),
+                depth);
+
+            // The one role that learns something with nothing on the cluster. Added rather than
+            // multiplied, so it cannot make a training run worth less than not having one.
+            fromWork += ResearchBudget.PointsFromScientists(State.Staff.ScientistStrength(), depth);
 
             var budget = ResearchBudget.MonthlyBudgetUsd(
                 State.ResearchFunding,
