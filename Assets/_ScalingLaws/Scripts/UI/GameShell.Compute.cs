@@ -225,15 +225,15 @@ namespace ScalingLaws.UI
             // the other, which is a lot of empty space between a thing and its own value.
             row.Add(BuildServiceFigures());
 
+            // **The charts come up onto this line too**, at the right end and narrower. They used to
+            // take the full width underneath on the grounds that a shape squeezed into a quarter of
+            // a row is a smudge, which is true of a quarter and not of a third: at this width both
+            // curves still read, and the panel is a third shorter for it.
+            var charts = BuildUserCharts();
+            charts.AddToClassList("service__charts");
+            row.Add(charts);
+
             panel.Add(row);
-
-            // The charts keep the full width. They are the only thing on this screen that is a
-            // shape rather than a number, and a shape squeezed into a quarter of a row is a smudge.
-            var below = new VisualElement();
-            below.AddToClassList("service__below");
-            below.Add(BuildUserCharts());
-
-            panel.Add(below);
             return panel;
         }
 

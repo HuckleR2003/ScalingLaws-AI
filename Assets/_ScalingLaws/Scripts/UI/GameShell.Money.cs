@@ -39,11 +39,6 @@ namespace ScalingLaws.UI
             page.Add(BuildHostingSwitch());
             page.Add(BuildServicePanel());
 
-            // Directly under the service dial, because it is the control that moves it. The dial
-            // says how hard the fleet is working; this says how much of the fleet the customers
-            // were given in the first place.
-            page.Add(BuildClusterSplitPanel());
-
             var rental = new VisualElement();
             rental.AddToClassList("panel");
 
@@ -82,11 +77,21 @@ namespace ScalingLaws.UI
             rental.Add(rentedSlider);
 
             // And the question the slider is really being asked, in the largest type on the panel.
-            rental.Add(RentReadout.CapacityBand(state.Pool.RentedPetaflops, heldUsers));
+            rental.Add(RentReadout.CapacityBand(
+                state.Pool.RentedAndPackagedPetaflops, heldUsers));
 
             rental.Add(Hint(
                 "Contracted in petaflops, not boxes, so the bill does not move when the clouds change "
                 + "generation. It never ages and it bills every day it is held."));
+
+            // **Under the capacity band, because the band is the number it moves.** The split was a
+            // full-width panel three sections higher up the page: the control and the figure it
+            // decides were a scroll apart, which is the arrangement that makes a slider feel like it
+            // does nothing. The band says how many accounts the fleet holds; this says how much of
+            // that fleet the customers are actually given.
+            var split = BuildClusterSplitPanel();
+            split.AddToClassList("panel--inset");
+            rental.Add(split);
 
             // Reserved beside rented, half the page each. They are the same question asked two ways,
             // and reading them one under the other made the comparison a scroll rather than a look.

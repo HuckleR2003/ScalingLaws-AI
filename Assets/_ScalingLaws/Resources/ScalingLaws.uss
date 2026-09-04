@@ -16766,3 +16766,24 @@
     -unity-font-style: bold;
     color: rgb(226, 190, 44);
 }
+
+/* The user charts on the service row rather than under it. A third of the row rather than the whole
+   width: at this size both curves still read, and the panel is a third shorter. */
+.service__charts {
+    width: 34%;
+    flex-shrink: 0;
+    margin-left: 14px;
+}
+
+/* A panel nested inside another one. No ground of its own and no margin, because the panel around it
+   already carries both, and two stacked card grounds read as a mistake. */
+.panel--inset {
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}

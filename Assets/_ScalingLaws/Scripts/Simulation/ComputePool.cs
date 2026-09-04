@@ -114,6 +114,17 @@ namespace ScalingLaws.Simulation
             }
         }
 
+        /// <summary>
+        /// Everything the company rents, the slider and the packages together.
+        ///
+        /// **The number to show a player asking whether their product stays up.** They are two
+        /// different contracts and the pool keeps them apart on purpose - the slider queues, a
+        /// package does not - but "how much capacity have I rented" is one question and it needs one
+        /// answer. The capacity band was reading the slider alone, so buying a package moved nothing
+        /// on screen while the fleet quietly grew.
+        /// </summary>
+        public double RentedAndPackagedPetaflops => RentedPetaflops + PackagedPetaflops;
+
         public long PackagesDailyCostUsd
         {
             get

@@ -1210,6 +1210,12 @@ namespace ScalingLaws.UI
 
             current = screen;
 
+            // **Before the refresh, and this is the line the mechanism was missing.** A step that
+            // says "click COMPUTE" is finished by clicking COMPUTE, not by pressing a button
+            // afterwards. `PlayerOpened` was written for this months ago and nothing ever called it,
+            // so six steps of the tour argued with a player already standing where they were sent.
+            guide?.PlayerOpened(GuideTargetForScreen(screen));
+
             // **The right corner is not free on every screen.** The basement runs a build rail down
             // that edge, which is why the room's own corner banner already sits at 344 rather than
             // 22. The task strip and the prompt cards live on the panel root, outside any screen, so
@@ -1743,6 +1749,26 @@ namespace ScalingLaws.UI
             GuideTarget.Room => Screen.Room,
             _ => null
         };
+
+        /// <summary>
+        /// Which guide target a screen satisfies, or None.
+        ///
+        /// **Walks the forward table rather than being a second switch.** A reverse mapping that
+        /// drifts from the forward one is how a step gets skipped by opening the wrong screen, and
+        /// the forward table already exists because three other callers need it.
+        /// </summary>
+        private static GuideTarget GuideTargetForScreen(Screen screen)
+        {
+            foreach (GuideTarget target in Enum.GetValues(typeof(GuideTarget)))
+            {
+                if (ScreenForGuideTarget(target) == screen)
+                {
+                    return target;
+                }
+            }
+
+            return GuideTarget.None;
+        }
 
         /// <summary>
         /// Puts the creator on the page a guide step is talking about.
