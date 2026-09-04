@@ -2150,6 +2150,18 @@ namespace ScalingLaws.Data
             ["common.the_founder"] = "The founder",
             ["room.back"] = "BACK TO THE OFFICE",
             ["plate.ceo_of"] = "CEO of {0}",
+            ["build.title"] = "FURNISH",
+            ["build.done"] = "DONE",
+            ["build.open"] = "FURNISH THE OFFICE",
+            ["build.shop"] = "BUY",
+            ["build.store"] = "IN STORAGE",
+            ["build.store_empty"] = "Nothing in storage.",
+            ["build.carrying"] = "Left click a lit square to put it down. Right click anywhere to put it in storage.",
+            ["build.stash"] = "PUT IN STORAGE",
+            ["build.sell"] = "SELL {0}",
+            ["build.seats"] = "{0} desks",
+            ["build.no_floor"] = "This office has no open floor to furnish.",
+            ["build.hint"] = "Right click a piece to pick it up, left click a lit square to put it down.",
         };
 
         // ==========================================================================================
@@ -4181,6 +4193,18 @@ namespace ScalingLaws.Data
             ["common.the_founder"] = "Założyciel",
             ["room.back"] = "WRÓĆ DO BIURA",
             ["plate.ceo_of"] = "Prezes {0}",
+            ["build.title"] = "URZĄDŹ",
+            ["build.done"] = "GOTOWE",
+            ["build.open"] = "URZĄDŹ BIURO",
+            ["build.shop"] = "KUP",
+            ["build.store"] = "W MAGAZYNIE",
+            ["build.store_empty"] = "Magazyn jest pusty.",
+            ["build.carrying"] = "Lewy przycisk na podświetlonym polu stawia. Prawy gdziekolwiek odkłada do magazynu.",
+            ["build.stash"] = "DO MAGAZYNU",
+            ["build.sell"] = "SPRZEDAJ {0}",
+            ["build.seats"] = "{0} biurek",
+            ["build.no_floor"] = "To biuro nie ma wolnej podłogi do urządzenia.",
+            ["build.hint"] = "Prawy przycisk podnosi mebel, lewy na podświetlonym polu go stawia.",
         };
 
         /// <summary>

@@ -67,6 +67,74 @@ namespace ScalingLaws.UI
         /// <summary>What the camera renders into, needed to undo the crop a click travelled through.</summary>
         public Texture Texture => camera != null ? camera.targetTexture : null;
 
+        /// <summary>
+        /// Where a floor slot lands in the camera's view, 0 to 1 from the bottom left.
+        ///
+        /// **Computed from the room's transform, not from the camera.** A slot is a position in
+        /// metres inside the room, and the room is a real object in a real scene: going through its
+        /// transform means a room moved or rotated in the editor takes its floor with it, and the
+        /// build mode does not have to know it happened.
+        /// </summary>
+        public bool ViewportOfSlot(float x, float z, out Vector2 point)
+        {
+            point = default;
+
+            var room = CurrentRoom;
+
+            if (room == null || camera == null)
+            {
+                return false;
+            }
+
+            var world = room.TransformPoint(new Vector3(x, 0f, z));
+            var view = camera.WorldToViewportPoint(world);
+
+            // Behind the camera reads as a valid point with a negative depth, which would put a
+            // marker on screen for a slot nobody can see.
+            if (view.z <= 0f)
+            {
+                return false;
+            }
+
+            point = new Vector2(view.x, view.y);
+            return true;
+        }
+
+        /// <summary>
+        /// Which point on the floor a click landed on, in room-local metres.
+        ///
+        /// A ray into the room's own floor plane. The caller turns that into a slot, because the
+        /// slot grid belongs to the plan and this class has no business knowing how the floor is
+        /// divided.
+        /// </summary>
+        public bool FloorPointAt(Vector2 viewport, out float x, out float z)
+        {
+            x = 0f;
+            z = 0f;
+
+            var room = CurrentRoom;
+
+            if (room == null || camera == null)
+            {
+                return false;
+            }
+
+            var ray = camera.ViewportPointToRay(new Vector3(viewport.x, viewport.y, 0f));
+            var floor = new Plane(room.up, room.position);
+
+            if (!floor.Raycast(ray, out var distance))
+            {
+                return false;
+            }
+
+            var local = room.InverseTransformPoint(ray.GetPoint(distance));
+
+            x = local.x;
+            z = local.z;
+
+            return true;
+        }
+
         /// <summary>Which room is on screen. Null until the first call to <see cref="Show"/>.</summary>
         public OfficeTier? ShownTier => shownTier;
 

@@ -77,6 +77,15 @@ namespace ScalingLaws.Simulation
 
         public IEnumerable<DecorItem> Stored => items.Where(item => !item.IsPlaced);
 
+        /// <summary>
+        /// The piece added most recently, or null.
+        ///
+        /// The shop needs to pick up what it just bought, and `TryBuyFurniture` answers with a
+        /// refusal rather than with the item. Reading the end of the list is honest here: `Buy` is
+        /// the only thing that appends, and it appends exactly one.
+        /// </summary>
+        public DecorItem Newest => items.Count == 0 ? null : items[items.Count - 1];
+
         /// <summary>What the whole collection cost, at list price. Shown so the player can see it.</summary>
         public double InvestedUsd => items.Sum(item => item.Definition.PriceUsd);
 
@@ -130,6 +139,64 @@ namespace ScalingLaws.Simulation
 
             item.Store();
             return false;
+        }
+
+        /// <summary>
+        /// Every slot in a zone, taken or not, in the order the floor fills.
+        ///
+        /// The build mode draws these as the places a piece can go, so it needs the whole grid and
+        /// not the gaps in it. Same walk as `FreeSlots` and deliberately so: two orders would mean
+        /// the square the player clicks and the square the plan fills are different squares.
+        /// </summary>
+        public IEnumerable<(float x, float z)> AllSlots(DecorZone zone)
+        {
+            for (var z = zone.Z + WallMargin; z <= zone.Z + zone.Depth - WallMargin; z += SlotSpacing)
+            {
+                for (var x = zone.X + WallMargin; x <= zone.X + zone.Width - WallMargin; x += SlotSpacing)
+                {
+                    yield return (x, z);
+                }
+            }
+        }
+
+        /// <summary>
+        /// What is standing on this slot, or null.
+        ///
+        /// Matched on position within a hundredth of a metre, which is the same tolerance
+        /// `FreeSlots` uses to decide a slot is taken. One tolerance, or a slot can be occupied for
+        /// one of them and free for the other.
+        /// </summary>
+        public DecorItem At(float x, float z)
+        {
+            foreach (var item in items)
+            {
+                if (item.IsPlaced && Math.Abs(item.X - x) < 0.01f && Math.Abs(item.Z - z) < 0.01f)
+                {
+                    return item;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Stands a piece on one particular slot.
+        ///
+        /// **The build mode's placement, beside the furnished move's.** `Place` takes the first free
+        /// slot because six pieces arriving at once are not being positioned by anybody; this takes
+        /// the slot the player pointed at. Refuses an occupied slot rather than stacking, which is
+        /// the failure the plan has no way to represent: two items at one position are two items the
+        /// scene draws inside each other.
+        /// </summary>
+        public bool PlaceOn(DecorItem item, float x, float z)
+        {
+            if (item == null || !items.Contains(item) || At(x, z) != null)
+            {
+                return false;
+            }
+
+            item.PlaceAt(x, z);
+            return true;
         }
 
         /// <summary>Takes a piece off the floor without selling it. The money stays spent.</summary>

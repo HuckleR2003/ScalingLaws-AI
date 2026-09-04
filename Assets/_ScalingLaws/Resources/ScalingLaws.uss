@@ -16787,3 +16787,200 @@
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
 }
+
+/* ---- furnishing the office ---------------------------------------------------------------------
+ *
+ * Same grammar as the basement's build rail, and deliberately so: right click picks a thing up, left
+ * click puts it down, and the store room is money already spent. A second grammar for the same verb
+ * in one game is how a player learns neither.
+ */
+.site-floor {
+    flex-direction: row;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.obuild {
+    width: 306px;
+    flex-shrink: 0;
+    margin-left: 12px;
+    padding: 12px 12px 10px 12px;
+    background-color: rgba(10, 12, 18, 0.82);
+    border-radius: 8px;
+    border-left-width: 3px;
+    border-left-color: rgb(226, 190, 44);
+}
+
+.obuild__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.obuild__title {
+    font-size: 13px;
+    letter-spacing: 2.6px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.obuild__close {
+    height: 24px;
+    margin: 0;
+    padding: 0 12px;
+    font-size: 9.5px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgba(206, 214, 230, 0.75);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.obuild__scroll {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.obuild__section {
+    margin-top: 10px;
+    margin-bottom: 6px;
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgba(206, 214, 230, 0.45);
+}
+
+/* What is on the cursor. The one loud thing on the rail, because it is the only thing that changes
+   what a click on the room means. */
+.obuild__carry {
+    margin-bottom: 8px;
+    padding: 10px 11px 11px 11px;
+    background-color: rgba(226, 190, 44, 0.14);
+    border-radius: 6px;
+    border-left-width: 2px;
+    border-left-color: rgb(226, 190, 44);
+    flex-shrink: 0;
+}
+
+.obuild__carryname {
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(250, 232, 170);
+}
+
+.obuild__stash {
+    width: 100%;
+    height: 28px;
+    margin: 8px 0 0 0;
+    padding: 0;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(22, 18, 8);
+    background-color: rgb(226, 190, 44);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.obuild__stash:hover { background-color: rgb(244, 210, 74); }
+
+.obuild__card {
+    width: 100%;
+    margin: 0 0 6px 0;
+    padding: 9px 10px 10px 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 0;
+    border-radius: 5px;
+    align-items: stretch;
+    -unity-text-align: upper-left;
+    flex-shrink: 0;
+}
+
+.obuild__card:hover { background-color: rgba(255, 255, 255, 0.1); }
+
+.obuild__card:disabled { opacity: 0.45; }
+
+.obuild__name {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(228, 236, 248);
+    white-space: normal;
+}
+
+.obuild__price {
+    margin-top: 2px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+}
+
+.obuild__blurb {
+    margin-top: 3px;
+    font-size: 10px;
+    color: rgba(206, 214, 230, 0.58);
+    white-space: normal;
+}
+
+.obuild__seats {
+    margin-top: 3px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgba(120, 206, 156, 0.9);
+}
+
+.obuild__hint {
+    font-size: 10.5px;
+    color: rgba(206, 214, 230, 0.55);
+    white-space: normal;
+}
+
+.obuild__stored {
+    flex-direction: row;
+    margin-bottom: 5px;
+    flex-shrink: 0;
+}
+
+.obuild__take {
+    flex-grow: 1;
+    height: 26px;
+    margin: 0 5px 0 0;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    -unity-text-align: middle-left;
+    color: rgb(226, 234, 246);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.obuild__sell {
+    height: 26px;
+    margin: 0;
+    padding: 0 9px;
+    font-size: 9.5px;
+    -unity-text-align: middle-center;
+    color: rgba(226, 190, 44, 0.9);
+    background-color: rgba(226, 190, 44, 0.12);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+/* A square on the floor a carried piece can go on. Drawn over the render texture rather than into
+   the scene, because it belongs to the interface and the office camera is shared with the tab
+   render. Only while something is carried: a floor permanently covered in these is a grid the
+   player has to look past to see the room. */
+.obuild__slot {
+    position: absolute;
+    background-color: rgba(226, 190, 44, 0.22);
+    border-width: 1px;
+    border-color: rgba(226, 190, 44, 0.75);
+    border-radius: 3px;
+}
