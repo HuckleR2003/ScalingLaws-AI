@@ -16347,3 +16347,301 @@
 .world-map__caption--on {
     opacity: 1;
 }
+
+/* The last era reads differently from the four before it, because it is the only one whose subject
+   is not the model. One tint, on the heading and the edge, and nothing else: the board underneath
+   already carries the weight. */
+.era--statecraft .era__heading {
+    color: rgb(232, 214, 248);
+}
+
+/* ---- the state programme board -------------------------------------------------------------------
+ *
+ * Deliberately not shaped like the research tree above it. Those are nodes: pay and receive. These
+ * are commitments, and eight square tiles that each lead with what a failure costs read as a
+ * different kind of decision without a word of explanation.
+ *
+ * Four across at 23.5% is the same grid the upgrade tiles use, so the two screens agree about how
+ * wide a tile is.
+ */
+.sboard {
+    margin-top: 18px;
+    padding: 20px 22px 22px 22px;
+    background-color: rgba(14, 12, 20, 0.72);
+    border-radius: 10px;
+    border-left-width: 3px;
+    border-left-color: rgb(198, 122, 232);
+    flex-shrink: 0;
+}
+
+.sboard__head {
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+
+.sboard__title {
+    font-size: 19px;
+    letter-spacing: 3.4px;
+    -unity-font-style: bold;
+    color: rgb(232, 214, 248);
+}
+
+.sboard__strap {
+    margin-top: 5px;
+    max-width: 860px;
+    font-size: 12.5px;
+    color: rgba(206, 196, 222, 0.72);
+    white-space: normal;
+}
+
+.sboard__readings {
+    flex-direction: row;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+
+.sboard__reading {
+    width: 31.5%;
+    margin-right: 12px;
+    padding: 12px 14px 13px 14px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 7px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.sboard__reading--good { border-left-color: rgb(120, 206, 156); }
+.sboard__reading--warn { border-left-color: rgb(226, 190, 44); }
+.sboard__reading--bad  { border-left-color: rgb(226, 96, 96); }
+
+.sboard__kicker {
+    font-size: 9.5px;
+    letter-spacing: 1.8px;
+    -unity-font-style: bold;
+    color: rgba(206, 196, 222, 0.55);
+}
+
+.sboard__figure {
+    margin-top: 3px;
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+}
+
+.sboard__track {
+    height: 4px;
+    margin-top: 7px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+.sboard__bar {
+    height: 4px;
+    background-color: rgba(232, 214, 248, 0.8);
+    border-radius: 2px;
+}
+
+.sboard__note {
+    margin-top: 7px;
+    font-size: 10.5px;
+    color: rgba(206, 196, 222, 0.55);
+    white-space: normal;
+}
+
+.sboard__signing {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+
+.sboard__sign {
+    height: 40px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 14px;
+    padding: 0 26px;
+    font-size: 13px;
+    letter-spacing: 2.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(20, 14, 28);
+    background-color: rgb(198, 122, 232);
+    border-width: 0;
+    border-radius: 6px;
+}
+
+.sboard__sign:hover { background-color: rgb(216, 152, 244); }
+
+.sboard__sign:disabled {
+    color: rgba(206, 196, 222, 0.4);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.sboard__blocked {
+    max-width: 720px;
+    font-size: 12px;
+    color: rgba(226, 190, 44, 0.9);
+    white-space: normal;
+}
+
+.sboard__notice {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 9px 12px 10px 12px;
+    font-size: 12px;
+    color: rgb(250, 226, 226);
+    background-color: rgba(120, 32, 32, 0.42);
+    border-left-width: 3px;
+    border-left-color: rgb(226, 96, 96);
+    border-radius: 5px;
+    white-space: normal;
+}
+
+.sboard__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.sboard__horizon {
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: rgba(206, 196, 222, 0.55);
+    white-space: normal;
+}
+
+/* ---- one sector ------------------------------------------------------------------------------- */
+.stile {
+    width: 23.5%;
+    margin-right: 2%;
+    margin-bottom: 14px;
+    padding: 13px 14px 14px 14px;
+    background-color: rgba(255, 255, 255, 0.045);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+}
+
+.stile--on {
+    background-color: rgba(120, 206, 156, 0.10);
+    border-color: rgba(120, 206, 156, 0.55);
+}
+
+.stile--locked { opacity: 0.55; }
+
+.stile__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.stile__name {
+    font-size: 12.5px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(236, 240, 250);
+    white-space: normal;
+}
+
+.stile__badge {
+    font-size: 9px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgba(120, 206, 156, 0.9);
+}
+
+.stile__danger {
+    height: 3px;
+    margin-top: 9px;
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 2px;
+}
+
+.stile__dangerfill {
+    height: 3px;
+    background-color: rgb(226, 96, 96);
+    border-radius: 2px;
+}
+
+/* The largest thing on the tile, and it is the downside rather than the fee. A board that led with
+   what a sector pays would be inviting the player to read one column. */
+.stile__cost {
+    margin-top: 11px;
+    font-size: 25px;
+    -unity-font-style: bold;
+    color: rgb(244, 208, 208);
+}
+
+.stile__costlabel {
+    margin-bottom: 9px;
+    font-size: 8.5px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgba(226, 96, 96, 0.75);
+}
+
+.stile__stat {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.stile__statname {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: rgba(206, 214, 230, 0.5);
+}
+
+.stile__statvalue {
+    font-size: 11.5px;
+    -unity-font-style: bold;
+    color: rgb(226, 234, 246);
+}
+
+.stile__blurb {
+    margin-top: 8px;
+    margin-bottom: 10px;
+    font-size: 10.5px;
+    color: rgba(206, 214, 230, 0.62);
+    white-space: normal;
+}
+
+.stile__action {
+    width: 100%;
+    height: 30px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(20, 14, 28);
+    background-color: rgb(198, 122, 232);
+    border-width: 0;
+    border-radius: 5px;
+}
+
+.stile__action:hover { background-color: rgb(216, 152, 244); }
+
+.stile__action--stop {
+    color: rgba(226, 234, 246, 0.85);
+    background-color: rgba(255, 255, 255, 0.09);
+}
+
+.stile__action:disabled {
+    color: rgba(206, 214, 230, 0.35);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.stile__why {
+    margin-top: 7px;
+    font-size: 10px;
+    color: rgba(226, 190, 44, 0.85);
+    white-space: normal;
+}

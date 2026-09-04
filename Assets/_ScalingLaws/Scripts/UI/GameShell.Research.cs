@@ -103,6 +103,7 @@ namespace ScalingLaws.UI
 
                 var section = new VisualElement();
                 section.AddToClassList("era");
+                section.EnableInClassList("era--statecraft", era == ResearchEra.Statecraft);
 
                 var head = new VisualElement();
                 head.AddToClassList("era__head");
@@ -186,7 +187,17 @@ namespace ScalingLaws.UI
                 }
                 else
                 {
-                    page.Add(section);
+                    // **The state board belongs to era five and to nothing else.** It is not a research
+                // track: the nodes above it are what the company learns, and this is what it agrees
+                // to be responsible for afterwards. Drawing it as a fourth row of cards would have
+                // said those were the same kind of decision.
+                if (era == ResearchEra.Statecraft)
+                {
+                    stateBoard ??= new StateBoard(() => simulation, () => Show(Screen.Research));
+                    section.Add(stateBoard.Build());
+                }
+
+                page.Add(section);
                 }
             }
 
@@ -680,6 +691,9 @@ namespace ScalingLaws.UI
 
             return row;
         }
+
+        /// <summary>The state programme's board. Built once; era five is not always on screen.</summary>
+        private StateBoard stateBoard;
 
         private static string EraTitle(ResearchEra era) => era switch
         {

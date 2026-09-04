@@ -649,5 +649,35 @@ namespace ScalingLaws.Tests.PlayMode
 
             yield return Capture(host, "world_map_empty.png");
         }
+
+        /// <summary>
+        /// The state programme board, signed, with four sectors running.
+        ///
+        /// **The state that shows every tile condition at once**: running, available, and locked
+        /// behind a chain. An unsigned board is eight identical grey squares and answers none of
+        /// the questions a picture of this can answer.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheStateBoardDraws()
+        {
+            var simulation = Campaign();
+            var state = simulation.State;
+
+            state.CashUsd = 20_000_000_000L;
+            state.ResearchPoints = 120_000;
+            state.UnlockedResearch.Add(ResearchNodeId.SovereignLiaison);
+
+            simulation.TrySignStateProgramme(out _);
+            simulation.TryStartSector(StateSector.Bureaucracy, out _);
+            simulation.TryStartSector(StateSector.Logistics, out _);
+            simulation.TryStartSector(StateSector.Health, out _);
+            simulation.TryStartSector(StateSector.Economy, out _);
+
+            state.Programme.RecordDelivery(0.84);
+
+            var board = new StateBoard(() => simulation, () => { });
+
+            yield return Capture(board.Build(), "state_board.png");
+        }
     }
 }
