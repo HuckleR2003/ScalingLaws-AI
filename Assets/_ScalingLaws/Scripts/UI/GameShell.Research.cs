@@ -686,7 +686,8 @@ namespace ScalingLaws.UI
             ResearchEra.Foundations => Loc.T("research.era.1"),
             ResearchEra.Scaling => Loc.T("research.era.2"),
             ResearchEra.Autonomy => Loc.T("research.era.3"),
-            _ => Loc.T("research.era.4")
+            ResearchEra.Superintelligence => Loc.T("research.era.4"),
+            _ => Loc.T("research.era.5")
         };
 
     }

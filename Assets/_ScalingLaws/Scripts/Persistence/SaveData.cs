@@ -409,7 +409,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 48;
+        public const int CurrentVersion = 49;
 
         public int version = CurrentVersion;
 
@@ -583,6 +583,27 @@ namespace ScalingLaws.Persistence
 
         /// <summary>The saved conversation with Emil, oldest first.</summary>
         public List<ChatLineData> messages = new();
+
+        // ---- added in v49, the state programme ---------------------------------------------------
+
+        public bool programmeSigned;
+        public int programmeSignatory;
+        public int programmeSignedDay;
+
+        /// <summary>Sectors running, as `StateSector` values. Never renumbered.</summary>
+        public List<int> programmeSectors = new();
+
+        public int programmeLastFailureDay = -9999;
+        public int programmeFailures;
+        public long programmePaidOutUsd;
+
+        /// <summary>
+        /// Yesterday's delivery.
+        ///
+        /// **Looks derived, is causal.** Tomorrow's failure risk reads it, so a campaign reloaded
+        /// without it rolls different odds than the run that wrote it. Sixth time in this project.
+        /// </summary>
+        public double programmeLastDelivery = 1.0;
         public List<IncidentData> incidents = new();
         public long lifetimeFinesUsd;
 

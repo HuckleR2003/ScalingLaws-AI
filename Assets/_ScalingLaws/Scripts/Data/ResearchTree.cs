@@ -34,7 +34,16 @@ namespace ScalingLaws.Data
         Foundations = 1,
         Scaling = 2,
         Autonomy = 3,
-        Superintelligence = 4
+        Superintelligence = 4,
+
+        /// <summary>
+        /// The end of the game, and the only era whose subject is not the model.
+        ///
+        /// Everything before this asks what the company can build. This asks what it is willing to
+        /// be responsible for. The nodes are cheap in capability and enormous in consequence: they
+        /// open a door to running parts of a country, and nothing behind that door is reversible.
+        /// </summary>
+        Statecraft = 5
     }
 
     /// <summary>
@@ -136,7 +145,20 @@ namespace ScalingLaws.Data
         // Era 4, the end game.
         HybridArchitectures = 401,
         RecursiveSelfImprovement = 402,
-        ArtificialSuperintelligence = 403
+        ArtificialSuperintelligence = 403,
+
+        // Era 5, statecraft. What the company does with what it built.
+        //
+        // **900, not 500.** The first attempt used 501 to 505, which are `ShardedOptimizerStates`,
+        // `PipelineParallelism` and `UltraReadiness` - the scale ceiling ladder, added months
+        // earlier. Nothing failed to compile: the enum happily carried two names for one value, the
+        // tree's index quietly kept whichever was built last, and three nodes became unreachable
+        // while a fourth reported a prerequisite dated seven years after itself.
+        GeneralIntelligence = 901,
+        RealTimeAssimilation = 902,
+        SovereignLiaison = 903,
+        ContinuousOversight = 904,
+        RedundantInference = 905
     }
 
     /// <summary>
@@ -868,7 +890,69 @@ namespace ScalingLaws.Data
                 requires: new[] { ResearchNodeId.RecursiveSelfImprovement, ResearchNodeId.HybridArchitectures },
                 warning:
                 "SYSTEM ALERT: this crosses the threshold of human intelligence. The effects are not "
-                + "reversible and no part of the campaign after it resembles the part before it.")
+                + "reversible and no part of the campaign after it resembles the part before it."),
+
+            // ---- era 5, statecraft ---------------------------------------------------------------
+            //
+            // **These are cheap in capability and enormous in consequence**, which is the opposite
+            // shape to every era before them. Nothing here raises a ceiling or unlocks a corpus.
+            // They open the door to running parts of a country, and the money behind that door is
+            // larger than anything else in the game by an order of magnitude, as are the mistakes.
+            //
+            // The chain is deliberately narrow. There is one way in, one way to be trusted with it,
+            // and two ways to make it survivable, and a player who takes the first two and skips the
+            // last two has signed a national contract with no safety net. That is allowed, it is
+            // profitable for a while, and it is how this ending goes wrong.
+
+            new(ResearchNodeId.GeneralIntelligence, ResearchEra.Statecraft,
+                "General intelligence",
+                "Not a better model. A model that does not need to be told what kind of problem it "
+                + "is looking at. Everything after this is about what you point it at.",
+                GameDate.FromCalendar(2029, 1, 1), costUsd: 3_400_000_000, durationDays: 600,
+                petaflopDaysRequired: 1_400_000,
+                requires: new[] { ResearchNodeId.ArtificialSuperintelligence },
+                warning:
+                "This is the last capability node in the game. What follows is not research into "
+                + "what the models can do, it is research into who is depending on them."),
+
+            new(ResearchNodeId.RealTimeAssimilation, ResearchEra.Statecraft,
+                "Real-time assimilation",
+                "Reading a country as it happens: every transaction, every shipment, every filing, "
+                + "as one continuous input rather than as a report that arrives on Friday.",
+                GameDate.FromCalendar(2029, 6, 1), costUsd: 900_000_000, durationDays: 360,
+                petaflopDaysRequired: 400_000,
+                requires: new[] { ResearchNodeId.GeneralIntelligence }),
+
+            new(ResearchNodeId.SovereignLiaison, ResearchEra.Statecraft,
+                "Sovereign liaison",
+                "Clearances, a permanent office, and somebody whose whole job is the government's "
+                + "phone number. Nobody signs a national contract with a company they have not been "
+                + "auditing for years.",
+                GameDate.FromCalendar(2029, 6, 1), costUsd: 420_000_000, durationDays: 300,
+                petaflopDaysRequired: 90_000,
+                requires: new[] { ResearchNodeId.GeneralIntelligence },
+                warning:
+                "Opens the state programme. A government will look at five years of your safety "
+                + "record before it will talk, and that is the one gate in this game that money "
+                + "cannot move."),
+
+            new(ResearchNodeId.ContinuousOversight, ResearchEra.Statecraft,
+                "Continuous oversight",
+                "A second model whose only job is watching the first one, on the sectors that matter, "
+                + "without ever being the one making the decision.",
+                GameDate.FromCalendar(2030, 1, 1), costUsd: 1_100_000_000, durationDays: 420,
+                petaflopDaysRequired: 300_000,
+                requires: new[] { ResearchNodeId.SovereignLiaison },
+                track: ResearchTrack.Safety),
+
+            new(ResearchNodeId.RedundantInference, ResearchEra.Statecraft,
+                "Redundant inference",
+                "The state's workload runs on two independent paths so a shortfall degrades instead "
+                + "of stopping. Costs capacity to have and saves the company when it runs out.",
+                GameDate.FromCalendar(2030, 1, 1), costUsd: 1_400_000_000, durationDays: 400,
+                petaflopDaysRequired: 380_000,
+                requires: new[] { ResearchNodeId.RealTimeAssimilation },
+                track: ResearchTrack.Safety)
         };
 
         private static readonly Dictionary<ResearchNodeId, ResearchNode> ById = BuildIndex();

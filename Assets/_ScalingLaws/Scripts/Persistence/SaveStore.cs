@@ -300,6 +300,23 @@ namespace ScalingLaws.Persistence
             data.walkthroughsDone = new List<string>(state.Guide.WalkthroughsDone);
             data.walkthroughsDismissed = new List<string>(state.Guide.WalkthroughsDismissed);
 
+            var programme = state.Programme;
+
+            data.programmeSigned = programme.IsSigned;
+            data.programmeSignatory = (int)programme.Signatory;
+            data.programmeSignedDay = programme.SignedOn.DayIndex;
+            data.programmeLastFailureDay = programme.LastFailure.DayIndex;
+            data.programmeFailures = programme.Failures;
+            data.programmePaidOutUsd = programme.PaidOutUsd;
+            data.programmeLastDelivery = programme.LastDelivery;
+
+            data.programmeSectors = new List<int>();
+
+            foreach (var sector in programme.Running)
+            {
+                data.programmeSectors.Add((int)sector);
+            }
+
             data.messages = new List<ChatLineData>();
 
             foreach (var line in state.Messages.Lines)
@@ -1235,6 +1252,30 @@ namespace ScalingLaws.Persistence
             }
 
             state.Messages.Restore(thread);
+
+            var sectors = new List<StateSector>();
+
+            foreach (var value in safe.programmeSectors)
+            {
+                var sector = (StateSector)value;
+
+                // An unknown value is dropped rather than trusted, the same rule every enum coming
+                // off disk follows: a file from a build with a ninth sector must still open.
+                if (Enum.IsDefined(typeof(StateSector), sector))
+                {
+                    sectors.Add(sector);
+                }
+            }
+
+            state.Programme.Restore(
+                safe.programmeSigned,
+                (Country)safe.programmeSignatory,
+                safe.programmeSignedDay,
+                sectors,
+                safe.programmeLastFailureDay,
+                safe.programmeFailures,
+                safe.programmePaidOutUsd,
+                safe.programmeLastDelivery);
 
             foreach (var incident in safe.incidents)
             {

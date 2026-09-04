@@ -52,6 +52,16 @@ namespace ScalingLaws.Simulation
         /// </summary>
         Investment = 26,
 
+        /// <summary>
+        /// What a government pays for running its sectors.
+        ///
+        /// **Its own line rather than folded into subscriptions**, because a books page that merges
+        /// them cannot answer the one question the endgame is about: how much of this company's
+        /// income depends on one contract. A player reading a single revenue row would not see the
+        /// concentration until the contract stopped.
+        /// </summary>
+        StateProgramme = 28,
+
         /// <summary>An advance given back because the term was missed.</summary>
         GrantRepaid = 27
     }
@@ -130,7 +140,8 @@ namespace ScalingLaws.Simulation
             new(LedgerLine.Fines, "Fines and incidents", "Company", false, true),
             new(LedgerLine.Investment, "Shares and acquisitions", "Capital", false, false),
             new(LedgerLine.GrantAward, "Grants awarded", "Capital", true, true),
-            new(LedgerLine.GrantRepaid, "Grant advances returned", "Capital", false, true)
+            new(LedgerLine.GrantRepaid, "Grant advances returned", "Capital", false, true),
+            new(LedgerLine.StateProgramme, "State programme", "Trading", true, true)
         };
 
         /// <summary>month index (year * 12 + month - 1) to the totals for that month.</summary>

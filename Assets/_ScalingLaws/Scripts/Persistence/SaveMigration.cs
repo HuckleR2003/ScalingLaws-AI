@@ -149,6 +149,7 @@ namespace ScalingLaws.Persistence
                     45 => UpgradeV45ToV46(current),
                     46 => UpgradeV46ToV47(current),
                     47 => UpgradeV47ToV48(current),
+                    48 => UpgradeV48ToV49(current),
                     _ => current
                 };
             }
@@ -1759,6 +1760,35 @@ namespace ScalingLaws.Persistence
         /// backlog for a campaign that has been running four years: the numbers those messages would
         /// have quoted are gone. An empty thread is the true reading.
         /// </summary>
+        /// <summary>
+        /// v48 to v49: the state programme, unsigned.
+        ///
+        /// **Unsigned rather than reconstructed, and there is nothing to reconstruct.** A v48
+        /// campaign was played in a game where era five did not exist, so no government has ever
+        /// talked to this company. Delivery starts at full, which costs the player nothing: it is
+        /// the reading the first tick would produce anyway with no sectors running.
+        /// </summary>
+        public static SaveData UpgradeV48ToV49(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 49;
+
+            data.programmeSigned = false;
+            data.programmeSignatory = 0;
+            data.programmeSignedDay = 0;
+            data.programmeSectors = new List<int>();
+            data.programmeLastFailureDay = -9999;
+            data.programmeFailures = 0;
+            data.programmePaidOutUsd = 0L;
+            data.programmeLastDelivery = 1.0;
+
+            return data;
+        }
+
         public static SaveData UpgradeV47ToV48(SaveData data)
         {
             if (data == null)

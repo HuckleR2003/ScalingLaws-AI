@@ -482,7 +482,16 @@ namespace ScalingLaws.Simulation
             SyncPricing(market);
 
             var trainingProgress = AdvanceResearch(profile);
-            var (share, demanded, served, revenue) = ServeMarket(profile, market);
+
+            // **The state comes off the top, before the market and before training.** A government
+            // does not queue behind consumer traffic, and that is the whole trade the endgame is
+            // built on: every sector adopted is capacity the paying public no longer has. Reserving
+            // it here rather than inside `ServeMarket` keeps one rule about how much throughput
+            // exists, which is the arrangement this project has been bitten by twice for splitting.
+            var reserved = StateReservedPetaflops();
+            var openProfile = reserved > 0.0 ? profile.WithReserved(reserved) : profile;
+
+            var (share, demanded, served, revenue) = ServeMarket(openProfile, market);
 
             var servingCost = SimUnits.ToDollars(
                 profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier
@@ -549,6 +558,7 @@ namespace ScalingLaws.Simulation
             State.LifetimeOperatingCostUsd += operatingCost;
             State.RecordDailyRevenue(revenue);
 
+            AdvanceStateProgramme(profile);
             AdvanceResearchPoints();
             AdvanceMarketing();
             AdvanceRegulatoryAction();

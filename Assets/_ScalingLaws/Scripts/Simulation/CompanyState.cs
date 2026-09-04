@@ -350,6 +350,15 @@ namespace ScalingLaws.Simulation
         public List<SafetyIncident> Incidents { get; } = new();
 
         /// <summary>
+        /// The government contract, and the sectors running under it.
+        ///
+        /// Always present, almost always unsigned. A null here would put a check in front of every
+        /// read of it in the day, the books and the screen, and this project already knows how that
+        /// ends: one of them is missed and the endgame silently does nothing.
+        /// </summary>
+        public StateProgramme Programme { get; } = new();
+
+        /// <summary>
         /// The regulator's open file, or null when nobody is looking.
         ///
         /// One at a time. A second inspection while one is running would be two headlines fighting

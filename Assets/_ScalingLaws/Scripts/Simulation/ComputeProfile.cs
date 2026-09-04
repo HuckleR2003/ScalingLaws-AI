@@ -103,6 +103,36 @@ namespace ScalingLaws.Simulation
 
         public bool IsOverPowerBudget => PowerDrawKilowatts > PowerCapacityKilowatts;
 
+        /// <summary>
+        /// The same fleet with some of it already spoken for.
+        ///
+        /// **Everything except throughput is untouched, and that is the point.** The company still
+        /// owns the cards, still pays for the power and still watches them depreciate; what it does
+        /// not have is the capacity, because somebody else is holding it. A state contract does not
+        /// queue behind consumer traffic, so its share comes off the top and the market divides what
+        /// is left.
+        ///
+        /// Copying the struct rather than reaching into `ServeMarket` keeps one rule about how much
+        /// throughput exists. A second subtraction inside the market would be a second place for the
+        /// answer to live, and this project has paid for that arrangement before.
+        /// </summary>
+        public ComputeProfile WithReserved(double petaflops)
+        {
+            var held = Math.Clamp(SimUnits.Finite(petaflops), 0.0, EffectivePetaflops);
+
+            if (held <= 0.0)
+            {
+                return this;
+            }
+
+            return new ComputeProfile(
+                AcceleratorCount, RentedAcceleratorCount, AcceleratorsInTransit,
+                RawPetaflops, EffectivePetaflops - held,
+                UtilizationCeiling, BalanceFactor, ScalingEfficiency,
+                TotalAcceleratorMemoryGigabytes, PowerDrawKilowatts, PowerCapacityKilowatts,
+                DailyOperatingCostUsd, DailyDepreciationUsd, ResidualValueUsd, Bill);
+        }
+
         public static ComputeProfile Empty => new(0, 0, 0, 0, 0, 0.35, 1, 1, 0, 0, 0, 0, 0, 0);
     }
 }

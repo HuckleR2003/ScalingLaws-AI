@@ -56,6 +56,20 @@ namespace ScalingLaws.Simulation
         /// <summary>A candidate answered, withdrew, or the company signed a partnership.</summary>
         HiringNotice = 38,
 
+        // ---- the state programme, era five ---------------------------------------------------
+        StateProgrammeSigned = 53,
+        StateSectorStarted = 54,
+        StateSectorStopped = 55,
+
+        /// <summary>
+        /// Something the company runs for a country stopped working.
+        ///
+        /// Its own type rather than a `SafetyIncident` with a bigger number on it, because the two
+        /// are read differently everywhere: an incident is about a model, and this is about a
+        /// country's hospitals. The wire prints them differently and so does the books page.
+        /// </summary>
+        StateFailure = 56,
+
         /// <summary>
         /// Something the company should know that nobody has to answer.
         ///
