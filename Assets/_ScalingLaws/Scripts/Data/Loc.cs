@@ -2162,6 +2162,15 @@ namespace ScalingLaws.Data
             ["build.seats"] = "{0} desks",
             ["build.no_floor"] = "This office has no open floor to furnish.",
             ["build.hint"] = "Right click a piece to pick it up, left click a lit square to put it down.",
+            ["bank.worth"] = "WHAT THE COMPANY IS WORTH",
+            ["bank.cash"] = "Cash in the bank",
+            ["bank.hardware"] = "Hardware, at what it would fetch today",
+            ["bank.property"] = "Property owned outright",
+            ["bank.furniture"] = "Furniture, at resale",
+            ["bank.valuation"] = "COMPANY VALUATION",
+            ["bank.book_value"] = "{0} of that is things you own. The rest is what somebody thinks you will build.",
+            ["bank.run_rate"] = "Annual revenue run rate",
+            ["bank.founder_stake"] = "Founder stake worth",
         };
 
         // ==========================================================================================
@@ -4205,6 +4214,15 @@ namespace ScalingLaws.Data
             ["build.seats"] = "{0} biurek",
             ["build.no_floor"] = "To biuro nie ma wolnej podłogi do urządzenia.",
             ["build.hint"] = "Prawy przycisk podnosi mebel, lewy na podświetlonym polu go stawia.",
+            ["bank.worth"] = "ILE FIRMA JEST WARTA",
+            ["bank.cash"] = "Gotówka w banku",
+            ["bank.hardware"] = "Sprzęt, po dzisiejszej cenie odsprzedaży",
+            ["bank.property"] = "Nieruchomości na własność",
+            ["bank.furniture"] = "Meble, po cenie odsprzedaży",
+            ["bank.valuation"] = "WYCENA FIRMY",
+            ["bank.book_value"] = "{0} z tego to rzeczy, które masz. Reszta to to, w co ktoś wierzy, że zbudujesz.",
+            ["bank.run_rate"] = "Roczne tempo przychodów",
+            ["bank.founder_stake"] = "Wartość udziału założyciela",
         };
 
         /// <summary>

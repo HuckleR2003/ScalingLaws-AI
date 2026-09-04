@@ -2111,6 +2111,34 @@ namespace ScalingLaws.Simulation
                 State.AnnualRevenueRunRateUsd)
             * State.Founder.ValuationMultiplier);
 
+        /// <summary>
+        /// What the company owns today.
+        ///
+        /// Gathered rather than computed: every figure already exists somewhere and this only reads
+        /// them, so the sheet cannot drift from the ledger that produced it. See
+        /// <see cref="AssetSheet"/> for why this is deliberately not the valuation.
+        /// </summary>
+        public AssetSheet Assets()
+        {
+            var property = 0L;
+
+            foreach (var tier in State.Staff.Owned)
+            {
+                property += OfficeCatalog.Get(tier).PurchasePriceUsd;
+            }
+
+            if (State.HasServerRoom)
+            {
+                property += BasementPriceUsd;
+            }
+
+            var furniture = State.Decor == null
+                ? 0L
+                : (long)Math.Round(State.Decor.InvestedUsd * FurnitureCatalog.ResaleFraction);
+
+            return new AssetSheet(State.CashUsd, Profile.ResidualValueUsd, property, furniture);
+        }
+
         /// <summary>Opens a round. The term sheet then sits on the table until signed or lapsed.</summary>
         public bool TryOpenFundingRound(out string failureReason)
         {

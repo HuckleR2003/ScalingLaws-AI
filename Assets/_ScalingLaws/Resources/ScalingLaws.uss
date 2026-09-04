@@ -17001,3 +17001,142 @@
     border-color: rgba(226, 190, 44, 0.75);
     border-radius: 3px;
 }
+
+/* ---- the bank page ------------------------------------------------------------------------------
+ *
+ * Two halves of one question, side by side. This page was three full-width panels stacked and the
+ * grants began most of a screen below the fold, which is where the author stopped reading it.
+ */
+/* Two halves with the gap between them rather than a margin on one of them: UI Toolkit has no
+   positional pseudo classes, so `:last-child` parses, warns in every player's log and styles
+   nothing. The row's own `justify-content` does the same job and is read. */
+.bank-half {
+    width: 49%;
+    flex-shrink: 0;
+}
+
+/* The band that ends the valuation panel. Drawn rather than styled: USS has no gradients, which is
+   why the bottom bar's accent is a baked texture. Blue on the left is the price, green as far as the
+   share of it the company's own assets actually cover. */
+.vband__wrap {
+    /* Tall enough for the third line. At 88 the sentence under the figure was clipped by the wrap's
+       own `overflow: hidden`, which is there to keep the drawn band inside its rounded corners. */
+    height: 104px;
+    margin-top: 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.vband {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.vband__words {
+    padding: 11px 16px 12px 16px;
+}
+
+.vband__kicker {
+    font-size: 9.5px;
+    letter-spacing: 2.2px;
+    -unity-font-style: bold;
+    color: rgba(238, 246, 255, 0.72);
+}
+
+.vband__figure {
+    margin-top: 1px;
+    font-size: 28px;
+    -unity-font-style: bold;
+    color: rgb(246, 250, 255);
+}
+
+.vband__note {
+    margin-top: 3px;
+    font-size: 10.5px;
+    color: rgba(238, 246, 255, 0.7);
+    white-space: normal;
+}
+
+/* ---- grant cards -------------------------------------------------------------------------------- */
+.gplate {
+    height: 30px;
+    margin-bottom: 6px;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gplate--title {
+    height: 34px;
+}
+
+.torn {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.gplate__text {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 14px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+/* Who is offering. It was set at the same size as the terms under it, which made the one line that
+   turns "a grant" into "the Ministry of Digitisation is offering you a grant" disappear. */
+.gcard__body--strong {
+    font-size: 13.5px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.gcard__plates {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+.gfig {
+    width: 48%;
+    height: 46px;
+    margin-bottom: 6px;
+    justify-content: center;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.gfig__words {
+    padding-left: 13px;
+
+    /* The torn edge wanders inward by up to fourteen per cent of the plate's height, so the words
+       need more room on the right than on the left or the last character sits in the tear. */
+    padding-right: 20px;
+}
+
+.gfig__kicker {
+    font-size: 8.5px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+}
+
+.gfig__value {
+    margin-top: 1px;
+    font-size: 17px;
+    -unity-font-style: bold;
+}
+
+/* A row whose two halves sit against the outer edges with the gap between them. */
+.panel-row--split {
+    justify-content: space-between;
+}

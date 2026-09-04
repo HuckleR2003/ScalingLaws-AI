@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -139,29 +140,97 @@ namespace ScalingLaws.UI
             panel.Add(Hint(Loc.T("grant.warning")));
         }
 
+        /// <summary>
+        /// A heading on a torn plate.
+        ///
+        /// **Drawn, because USS has neither a clip path nor a mask.** Same trick as the cousin's
+        /// name block: a Painter2D shape behind the words, with the tear derived from the vertex
+        /// index so it does not reshuffle on every repaint. The grants page repaints every
+        /// simulated day, and a flickering edge would be the loudest thing on the screen.
+        /// </summary>
+        private static VisualElement TornHeading(string text, Color plate, Color ink,
+            string extraClass = null)
+        {
+            var wrap = new VisualElement();
+            wrap.AddToClassList("gplate");
+
+            if (extraClass != null)
+            {
+                wrap.AddToClassList(extraClass);
+            }
+
+            wrap.Add(new TornPlate(plate));
+
+            var label = new Label(text);
+            label.AddToClassList("gplate__text");
+            label.style.color = ink;
+            wrap.Add(label);
+
+            return wrap;
+        }
+
+        /// <summary>One figure on its own coloured plate: what it is, and how much.</summary>
+        private static VisualElement TornFigure(string caption, string value, Color plate, Color ink,
+            bool torn)
+        {
+            var wrap = new VisualElement();
+            wrap.AddToClassList("gfig");
+
+            if (torn)
+            {
+                wrap.Add(new TornPlate(plate));
+            }
+            else
+            {
+                wrap.style.backgroundColor = plate;
+            }
+
+            var words = new VisualElement();
+            words.AddToClassList("gfig__words");
+
+            var kicker = new Label(caption);
+            kicker.AddToClassList("gfig__kicker");
+            kicker.style.color = new Color(ink.r, ink.g, ink.b, 0.72f);
+            words.Add(kicker);
+
+            var figure = new Label(value);
+            figure.AddToClassList("gfig__value");
+            figure.style.color = ink;
+            words.Add(figure);
+
+            wrap.Add(words);
+            return wrap;
+        }
+
+        private static readonly Color Paper = new(0.94f, 0.94f, 0.92f);
+        private static readonly Color PaperInk = new(0.06f, 0.07f, 0.09f);
+        private static readonly Color AdvanceGreen = new(0.42f, 0.72f, 0.50f);
+        private static readonly Color CompletionGreen = new(0.10f, 0.33f, 0.22f);
+        private static readonly Color PointsBlue = new(0.16f, 0.36f, 0.64f);
+        private static readonly Color OnDark = new(0.95f, 0.98f, 0.96f);
+
         private VisualElement BuildOfferCard(GrantDefinition definition, bool canAccept, string why)
         {
             var card = new VisualElement();
             card.AddToClassList("gcard");
             card.AddToClassList("gcard--offer");
 
-            var head = new VisualElement();
-            head.AddToClassList("gcard__head");
-
-            var name = new Label(Loc.T(definition.NameKey));
-            name.AddToClassList("gcard__name");
-            head.Add(name);
+            // The name on torn paper, black on white, which is the one thing on the card that has
+            // to be read before anything else.
+            card.Add(TornHeading(Loc.T(definition.NameKey), Paper, PaperInk, "gplate--title"));
 
             // The rung rather than a countdown. A programme on the board does not expire: it is
             // there until it is taken, finished, or put away, which is what a register is.
             var rung = new Label(Loc.T("grant.tier", definition.Tier));
             rung.AddToClassList("gcard__status");
-            head.Add(rung);
+            card.Add(rung);
 
-            card.Add(head);
-
+            // **Who is offering, with weight.** This line is the difference between "a grant" and
+            // "the Ministry of Digitisation is offering you a grant", and it was set at the same
+            // size as the terms underneath it.
             var body = new Label(simulation.BodyOf(definition));
             body.AddToClassList("gcard__body");
+            body.AddToClassList("gcard__body--strong");
             card.Add(body);
 
             var goal = new Label(GoalSentence(definition, CurrentBaseline(definition)));
@@ -172,20 +241,24 @@ namespace ScalingLaws.UI
             terms.AddToClassList("gcard__terms");
             card.Add(terms);
 
+            // **Four plates rather than four rows of small grey text.** These are the terms, and
+            // the terms are the decision: what arrives now, what arrives if it is finished, what
+            // cannot be bought with money, and how long there is. Each on its own ground so the
+            // shape of an offer is readable before a word of it.
             var figures = new VisualElement();
-            figures.AddToClassList("gcard__figures");
+            figures.AddToClassList("gcard__plates");
 
-            figures.Add(UiParts.StatLine(Loc.T("grant.advance"),
-                UiFormat.Money(definition.AdvanceUsd)));
+            figures.Add(TornFigure(Loc.T("grant.advance"),
+                UiFormat.Money(definition.AdvanceUsd), AdvanceGreen, PaperInk, true));
 
-            figures.Add(UiParts.StatLine(Loc.T("grant.completion"),
-                UiFormat.Money(definition.CompletionUsd)));
+            figures.Add(TornFigure(Loc.T("grant.completion"),
+                UiFormat.Money(definition.CompletionUsd), CompletionGreen, OnDark, false));
 
-            figures.Add(UiParts.StatLine(Loc.T("grant.points"),
-                UiFormat.Number(definition.ResearchPoints, 0)));
+            figures.Add(TornFigure(Loc.T("grant.points"),
+                UiFormat.Number(definition.ResearchPoints, 0), PointsBlue, OnDark, false));
 
-            figures.Add(UiParts.StatLine(Loc.T("grant.term"),
-                Loc.T("grant.days", definition.TermDays)));
+            figures.Add(TornFigure(Loc.T("grant.term"),
+                Loc.T("grant.days", definition.TermDays), Paper, PaperInk, true));
 
             card.Add(figures);
 

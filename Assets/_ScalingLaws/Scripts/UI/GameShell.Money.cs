@@ -781,13 +781,33 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
             var page = NewPage(Loc.T("funding.title"), string.Empty);
             UiParts.ExplainPage(page, TechNotes.Valuation, TechNotes.FounderStake);
 
+            // **The two halves of "where does money come from", side by side.** This page was three
+            // full-width panels stacked and the grants were most of a screen below the fold, which
+            // is where the author stopped reading it.
+            var top = new VisualElement();
+            top.AddToClassList("panel-row");
+            top.AddToClassList("panel-row--split");
+
             var panel = new VisualElement();
             panel.AddToClassList("panel");
-            page.Add(panel);
+            panel.AddToClassList("bank-half");
 
-            panel.Add(Row("Company valuation", UiFormat.Money(simulation.CurrentValuationUsd())));
-            panel.Add(Row("Annual revenue run rate", UiFormat.Money(state.AnnualRevenueRunRateUsd)));
-            panel.Add(Row("Founder stake worth",
+            var worthHeading = new Label(Loc.T("bank.worth"));
+            worthHeading.AddToClassList("panel__heading");
+            UiParts.ExplainHeading(worthHeading, TechNotes.Valuation);
+            panel.Add(worthHeading);
+
+            var assets = simulation.Assets();
+
+            panel.Add(Row(Loc.T("bank.cash"), UiFormat.Money(assets.CashUsd)));
+            panel.Add(Row(Loc.T("bank.hardware"), UiFormat.Money(assets.HardwareUsd)));
+            panel.Add(Row(Loc.T("bank.property"), UiFormat.Money(assets.PropertyUsd)));
+            panel.Add(Row(Loc.T("bank.furniture"), UiFormat.Money(assets.FurnitureUsd)));
+
+            panel.Add(BuildValuationBand(assets));
+
+            panel.Add(Row(Loc.T("bank.run_rate"), UiFormat.Money(state.AnnualRevenueRunRateUsd)));
+            panel.Add(Row(Loc.T("bank.founder_stake"),
                 UiFormat.Money(capTable.FounderStakeValueUsd(simulation.CurrentValuationUsd()))));
 
             var offer = state.CurrentFundingOffer;
@@ -832,7 +852,13 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
             // Grants before borrowing, smallest commitment first. They were under five loan
             // tiles on the first render and fell straight off the bottom of the page, on a tab
             // now named after them.
-            page.Add(BuildGrantsPanel());
+            var grants = BuildGrantsPanel();
+            grants.AddToClassList("bank-half");
+
+            top.Add(panel);
+            top.Add(grants);
+            page.Add(top);
+
             page.Add(BuildDebtPanel());
             return page;
         }
@@ -849,6 +875,48 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
         /// and never has to be repaid, and a facility costs a fixed sum on a fixed date whether or
         /// not the quarter went well. Putting them on one screen is what makes that a choice.
         /// </summary>
+        /// <summary>
+        /// The band that ends the valuation panel.
+        ///
+        /// **Two numbers, because they are two numbers.** The valuation is what an investor would
+        /// price the company at; the book value is the sum of the rows above it. Adding the rows up
+        /// and calling that the valuation would be the "two readings of one figure" fault this
+        /// project has now fixed six times, and the gap between them is the interesting part: a
+        /// young lab with one good model is worth far more than its parts.
+        ///
+        /// The colour is the reading. The ramp runs green as far as the share of the price the
+        /// company's own assets cover, so a valuation that is mostly promise stays blue.
+        /// </summary>
+        private VisualElement BuildValuationBand(AssetSheet assets)
+        {
+            var valuation = simulation.CurrentValuationUsd();
+
+            var wrap = new VisualElement();
+            wrap.AddToClassList("vband__wrap");
+
+            var band = new ValuationBand();
+            band.SetBacked(assets.BackedShare(valuation));
+            wrap.Add(band);
+
+            var words = new VisualElement();
+            words.AddToClassList("vband__words");
+
+            var kicker = new Label(Loc.T("bank.valuation"));
+            kicker.AddToClassList("vband__kicker");
+            words.Add(kicker);
+
+            var figure = new Label(UiFormat.Money(valuation));
+            figure.AddToClassList("vband__figure");
+            words.Add(figure);
+
+            var owned = new Label(Loc.T("bank.book_value", UiFormat.Money(assets.BookValueUsd)));
+            owned.AddToClassList("vband__note");
+            words.Add(owned);
+
+            wrap.Add(words);
+            return wrap;
+        }
+
         private VisualElement BuildDebtPanel()
         {
             var panel = new VisualElement();
