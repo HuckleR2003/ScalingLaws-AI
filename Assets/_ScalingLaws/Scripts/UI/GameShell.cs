@@ -247,6 +247,9 @@ namespace ScalingLaws.UI
         /// two places to fix the next thing that is wrong with it.
         /// </summary>
         private PersonPanel personPanel;
+
+        /// <summary>The hired people, standing in the office. See <see cref="StaffPresence"/>.</summary>
+        private StaffPresence staff;
         private ModelBanner modelBanner;
 
         /// <summary>
@@ -762,6 +765,10 @@ namespace ScalingLaws.UI
             officeStage.Show(state.Staff.Office, state.Decor);
 
             founder = new FounderPresence(() => state);
+
+            // **The room has had a Staff group since it was generated and only ever held the
+            // founder.** A company could hire twelve people and the office they were in was empty.
+            staff = new StaffPresence(() => state);
             founder.Spawn();
             AddHudSlots();
             root.Add(hud.Root);

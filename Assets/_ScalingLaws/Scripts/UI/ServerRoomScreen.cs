@@ -240,22 +240,10 @@ namespace ScalingLaws.UI
                 return false;
             }
 
-            var texture = stage.Texture;
-            var scale = Mathf.Max(rect.width / texture.width, rect.height / texture.height);
-
-            var drawnWidth = texture.width * scale;
-            var drawnHeight = texture.height * scale;
-
-            var originX = (rect.width - drawnWidth) / 2f;
-            var originY = (rect.height - drawnHeight) / 2f;
-
-            var viewport = new Vector2(
-                (local.x - originX) / drawnWidth,
-
-                // UI Toolkit measures down from the top and a camera measures up from the bottom.
-                1f - (local.y - originY) / drawnHeight);
-
-            if (viewport.x < 0f || viewport.x > 1f || viewport.y < 0f || viewport.y > 1f)
+            // **Moved to `StagePicking` when the office needed the same arithmetic.** One copy: the
+            // note above says what two would buy, which is a click landing one square from the
+            // cursor with the picture right and every test green.
+            if (!StagePicking.TryViewport(view, local, stage.Texture, out var viewport))
             {
                 return false;
             }

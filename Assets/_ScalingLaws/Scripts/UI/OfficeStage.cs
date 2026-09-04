@@ -55,6 +55,18 @@ namespace ScalingLaws.UI
 
         public bool IsLive => bakedRoom != null;
 
+        /// <summary>
+        /// The camera the room is drawn through, so a click can be turned into a ray.
+        ///
+        /// Exposed rather than kept private because the picking lives in the screen: the stage owns
+        /// the geometry and the screen owns what a click means, which is the same split the basement
+        /// already uses.
+        /// </summary>
+        public Camera View => camera;
+
+        /// <summary>What the camera renders into, needed to undo the crop a click travelled through.</summary>
+        public Texture Texture => camera != null ? camera.targetTexture : null;
+
         /// <summary>Which room is on screen. Null until the first call to <see cref="Show"/>.</summary>
         public OfficeTier? ShownTier => shownTier;
 

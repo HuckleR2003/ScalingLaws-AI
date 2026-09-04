@@ -57,11 +57,20 @@ namespace ScalingLaws.UI
             // done for a camera nobody is looking through.
             officeStage?.Show(state.Staff.Office, state.Decor);
 
+            // After the room, because the people are parented into it. Cheap when the roster has
+            // not changed, which is almost every repaint.
+            staff?.Refresh();
+
             var view = Resources.Load<RenderTexture>("OfficeView");
             if (view != null)
             {
                 stage.style.backgroundImage = Background.FromRenderTexture(view);
                 stage.AddToClassList("site-stage--live");
+
+                // **Clicking somebody in the room opens who they are.** `PersonPanel` has existed
+                // since the person page was built and the only way to reach it was a row on the
+                // team screen, so the office was a picture of people the player could not talk to.
+                stage.RegisterCallback<MouseDownEvent>(down => OnOfficeClick(stage, down));
             }
             else
             {
@@ -530,6 +539,53 @@ namespace ScalingLaws.UI
             }
 
             button.text = fallback;
+        }
+
+        /// <summary>
+        /// Somebody in the room was clicked.
+        ///
+        /// **Employees and the founder are asked for differently and that is deliberate.** An
+        /// employee carries an `OfficePerson` with their index on it, which is what `PersonPanel`
+        /// takes. The founder is not on the roster at all, so a founder mode in that panel would be
+        /// a parallel data path through every one of its tabs; they get the company card instead,
+        /// which is already the page about who the player is.
+        /// </summary>
+        private void OnOfficeClick(VisualElement stage, MouseDownEvent down)
+        {
+            if (down.button != 0 || officeStage == null || !officeStage.IsLive)
+            {
+                return;
+            }
+
+            if (!StagePicking.TryViewport(stage, down.localMousePosition, officeStage.Texture,
+                    out var viewport))
+            {
+                return;
+            }
+
+            var person = StagePicking.Under<OfficePerson>(officeStage.View, viewport);
+
+            if (person != null && person.Index >= 0 && person.Index < state.Staff.Hires.Count)
+            {
+                personPanel ??= new PersonPanel(() => simulation, () => Show(current));
+                personPanel.Show(person.Index);
+                Show(current);
+
+                down.StopPropagation();
+                return;
+            }
+
+            // Nobody hired under the cursor. The founder is the other thing in the room worth
+            // clicking, and they are the one person in it with no index.
+            var plate = StagePicking.Under<NamePlate>(officeStage.View, viewport);
+
+            if (plate != null && founder?.Model != null && plate.transform.IsChildOf(founder.Model))
+            {
+                companyInfoOpen = !companyInfoOpen;
+                Show(current);
+
+                down.StopPropagation();
+            }
         }
 
         private static VisualElement SiteFigure(string label, string value)
