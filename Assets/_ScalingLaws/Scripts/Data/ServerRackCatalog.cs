@@ -37,25 +37,32 @@ namespace ScalingLaws.Data
     /// </summary>
     public readonly struct ServerRackDefinition
     {
-        public ServerRackDefinition(ServerRack id, string displayName, string pitch, int slots,
+        public ServerRackDefinition(ServerRack id, int slots,
             long priceUsd, double coolingCapacityKilowatts, double idleDrawKilowatts,
-            long monthlyUpkeepUsd, string art, string note)
+            long monthlyUpkeepUsd, string art)
         {
             Id = id;
-            DisplayName = displayName ?? id.ToString();
-            Pitch = pitch ?? string.Empty;
             Slots = Math.Clamp(slots, 1, 128);
             PriceUsd = Math.Clamp(priceUsd, 0L, 100_000_000L);
             CoolingCapacityKilowatts = Math.Clamp(SimUnits.Finite(coolingCapacityKilowatts), 0.5, 400.0);
             IdleDrawKilowatts = Math.Clamp(SimUnits.Finite(idleDrawKilowatts), 0.0, 40.0);
             MonthlyUpkeepUsd = Math.Clamp(monthlyUpkeepUsd, 0L, 10_000_000L);
             Art = art ?? string.Empty;
-            Note = note ?? string.Empty;
         }
 
         public ServerRack Id { get; }
-        public string DisplayName { get; }
-        public string Pitch { get; }
+
+        private static string KeyFor(ServerRack id) => id switch
+        {
+            ServerRack.Enclosed => "rack.enclosed",
+            ServerRack.HighDensity => "rack.highdensity",
+            ServerRack.Immersion => "rack.immersion",
+            _ => "rack.openframe"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Id));
+        public string Pitch => Loc.T(KeyFor(Id) + ".pitch");
 
         /// <summary>Accelerators it can physically hold.</summary>
         public int Slots { get; }
@@ -77,7 +84,9 @@ namespace ScalingLaws.Data
         public long MonthlyUpkeepUsd { get; }
 
         public string Art { get; }
-        public string Note { get; }
+
+        /// <summary>When this cabinet is the right answer, and when it is not.</summary>
+        public string Note => Loc.T(KeyFor(Id) + ".note");
 
         /// <summary>What one slot of capacity cost to buy. The figure the cards compare on.</summary>
         public long PricePerSlotUsd => Slots <= 0 ? PriceUsd : PriceUsd / Slots;
@@ -153,51 +162,38 @@ namespace ScalingLaws.Data
 
         private static readonly ServerRackDefinition[] Entries =
         {
-            new(ServerRack.OpenFrame, "Open frame",
-                "Four posts and some cable ties. The room is the cooling, which works until the room "
-                + "is full.",
+            // The words are `rack.*` in the phrase book.
+            new(ServerRack.OpenFrame,
                 slots: 4,
                 priceUsd: 9_000,
                 coolingCapacityKilowatts: 6.0,
                 idleDrawKilowatts: 0.1,
                 monthlyUpkeepUsd: 200,
-                art: "rack_lv1",
-                note: "Cheapest per slot in the game and the first thing to throttle. Fine while the "
-                    + "hall is half empty and a false economy once it is not."),
+                art: "rack_lv1"),
 
-            new(ServerRack.Enclosed, "Enclosed rack",
-                "Doors, a blanking kit and a proper airflow path. What a normal room is full of.",
+            new(ServerRack.Enclosed,
                 slots: 8,
                 priceUsd: 34_000,
                 coolingCapacityKilowatts: 14.0,
                 idleDrawKilowatts: 0.4,
                 monthlyUpkeepUsd: 700,
-                art: "rack_lv2",
-                note: "The one to beat. Neither the cheap answer nor the dense one."),
+                art: "rack_lv2"),
 
-            new(ServerRack.HighDensity, "High density",
-                "Rear door heat exchanger. Twice the accelerators in the same footprint, and it "
-                + "still sheds what they make.",
+            new(ServerRack.HighDensity,
                 slots: 16,
                 priceUsd: 96_000,
                 coolingCapacityKilowatts: 38.0,
                 idleDrawKilowatts: 1.4,
                 monthlyUpkeepUsd: 2_600,
-                art: "rack_lv3",
-                note: "Dear per slot and it buys floor space, which is the thing a hall runs out of "
-                    + "before it runs out of money."),
+                art: "rack_lv3"),
 
-            new(ServerRack.Immersion, "Immersion tank",
-                "The whole thing sits in dielectric fluid. Nothing else in the game fits this much "
-                + "in one square, and nothing else costs this much to keep.",
+            new(ServerRack.Immersion,
                 slots: 28,
                 priceUsd: 240_000,
                 coolingCapacityKilowatts: 90.0,
                 idleDrawKilowatts: 2.2,
                 monthlyUpkeepUsd: 9_000,
-                art: "rack_lv4",
-                note: "Worth it when the floor is the binding constraint and a waste of nine thousand "
-                    + "a month when it is not.")
+                art: "rack_lv4")
         };
 
         public static IReadOnlyList<ServerRackDefinition> All => Entries;
@@ -291,10 +287,19 @@ namespace ScalingLaws.Data
         /// The slots stay occupied and the power is still drawn, which is the point: overfilling a
         /// cheap rack is money spent on accelerators that spend their afternoons at half speed.
         /// </summary>
-        public static double ThrottleFactor(double heatKilowatts, double coolingKilowatts)
+        /// <param name="penalty">
+        /// How steeply this kind of cabinet falls off past its rating. Defaults to
+        /// <see cref="ThrottlePenalty"/>, which is every cabinet in a company that has researched
+        /// nothing; <see cref="RoomUpgrades.PenaltyFor"/> softens it for immersion tanks once
+        /// liquid loops are in. An argument rather than a second method, because two throttle
+        /// curves is the disagreement-with-a-date-on-it this project keeps rediscovering.
+        /// </param>
+        public static double ThrottleFactor(double heatKilowatts, double coolingKilowatts,
+            double penalty = ThrottlePenalty)
         {
             var heat = Math.Max(0.0, SimUnits.Finite(heatKilowatts));
             var cooling = Math.Max(0.1, SimUnits.Finite(coolingKilowatts, 0.1));
+            var steepness = Math.Clamp(SimUnits.Finite(penalty, ThrottlePenalty), 0.2, 4.0);
 
             var ratio = heat / cooling;
             if (ratio <= ThrottleFreeHeadroom)
@@ -303,7 +308,7 @@ namespace ScalingLaws.Data
             }
 
             var over = (ratio - ThrottleFreeHeadroom) / ThrottleFreeHeadroom;
-            return Math.Clamp(1.0 - over * ThrottlePenalty, WorstThrottle, 1.0);
+            return Math.Clamp(1.0 - over * steepness, WorstThrottle, 1.0);
         }
     }
 }

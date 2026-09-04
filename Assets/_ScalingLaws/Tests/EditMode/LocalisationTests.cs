@@ -162,6 +162,65 @@ namespace ScalingLaws.Tests.EditMode
         /// 2 to 4 take `few`, and 12 to 14 take `many` despite ending in the same digits. Getting
         /// that wrong is the single most obvious sign that a translation was done by a table lookup.
         /// </summary>
+        /// <summary>
+        /// No key is written twice in either language.
+        ///
+        /// **This has to read the file, not the dictionary.** `["key"] = value` in a collection
+        /// initializer is an indexer assignment, so a repeated key does not throw: the second line
+        /// silently overwrites the first and the built dictionary holds exactly one entry. By the
+        /// time anything can inspect `Loc.English` the evidence is gone, which is why two keys sat
+        /// duplicated in this file without a single test noticing.
+        ///
+        /// One of them mattered. `feedback.body` was written twice with **different text**, so the
+        /// paragraph the author wrote for the in-game feedback form had never been on screen: the
+        /// later line won every time. `research.a_month` was the same string twice, which is
+        /// harmless on its own and is how the other one stayed hidden.
+        /// </summary>
+        [Test]
+        public void NoPhraseIsWrittenTwice()
+        {
+            var path = Path.Combine(Application.dataPath, "_ScalingLaws", "Scripts", "Data", "Loc.cs");
+            var lines = File.ReadAllLines(path);
+
+            var seen = new Dictionary<string, int>();
+            var language = string.Empty;
+
+            for (var index = 0; index < lines.Length; index++)
+            {
+                var line = lines[index];
+
+                if (line.Contains("Dictionary<string, string> English"))
+                {
+                    language = "English";
+                    continue;
+                }
+
+                if (line.Contains("Dictionary<string, string> Polish"))
+                {
+                    language = "Polish";
+                    continue;
+                }
+
+                var match = Regex.Match(line, "^\\s*\\[\"([^\"]+)\"\\] = ");
+                if (!match.Success || language.Length == 0)
+                {
+                    continue;
+                }
+
+                var key = language + "/" + match.Groups[1].Value;
+
+                Assert.IsFalse(seen.TryGetValue(key, out var first),
+                    $"{match.Groups[1].Value} is written twice in the {language} book, at lines "
+                    + $"{first} and {index + 1}. The second one wins and the first is dead text "
+                    + "nobody will ever see.");
+
+                seen[key] = index + 1;
+            }
+
+            Assert.Greater(seen.Count, 3_000,
+                "The scan found almost nothing, so it is passing without reading the book.");
+        }
+
         [Test]
         public void ThePolishPluralRuleIsTheRealOne()
         {

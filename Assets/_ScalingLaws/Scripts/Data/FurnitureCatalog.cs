@@ -32,13 +32,11 @@ namespace ScalingLaws.Data
     /// </summary>
     public sealed class FurniturePiece
     {
-        public FurniturePiece(FurnitureKind kind, string displayName, string blurb, double priceUsd,
+        public FurniturePiece(FurnitureKind kind, double priceUsd,
             int deskSeats, double moraleBonus, double researchBonus,
             float sizeX, float sizeY, float sizeZ, string tint)
         {
             Kind = kind;
-            DisplayName = displayName;
-            Blurb = blurb;
             PriceUsd = priceUsd;
             DeskSeats = deskSeats;
             MoraleBonus = moraleBonus;
@@ -50,10 +48,26 @@ namespace ScalingLaws.Data
         }
 
         public FurnitureKind Kind { get; }
-        public string DisplayName { get; }
+
+        private static string KeyFor(FurnitureKind kind) => kind switch
+        {
+            FurnitureKind.Plant => "piece.plant",
+            FurnitureKind.Whiteboard => "piece.whiteboard",
+            FurnitureKind.Desk => "piece.desk",
+            FurnitureKind.Bookshelf => "piece.bookshelf",
+            FurnitureKind.Sofa => "piece.sofa",
+            FurnitureKind.StandingDesk => "piece.standingdesk",
+            FurnitureKind.CoffeeBar => "piece.coffeebar",
+            FurnitureKind.ArtPiece => "piece.art",
+            FurnitureKind.Aquarium => "piece.aquarium",
+            _ => "piece.sleeppod"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Kind));
 
         /// <summary>What it does, in the player's terms rather than the simulation's.</summary>
-        public string Blurb { get; }
+        public string Blurb => Loc.T(KeyFor(Kind) + ".blurb");
 
         public double PriceUsd { get; }
 
@@ -100,44 +114,35 @@ namespace ScalingLaws.Data
 
         private static readonly List<FurniturePiece> Pieces = new()
         {
-            new FurniturePiece(FurnitureKind.Plant, "Rubber Plant",
-                "Costs almost nothing and makes the corner look like somebody works here.",
+            // The words are `piece.*` in the phrase book.
+            new FurniturePiece(FurnitureKind.Plant,
                 900, 0, 0.010, 0.000, 0.7f, 1.1f, 0.7f, "#38703C"),
 
-            new FurniturePiece(FurnitureKind.Whiteboard, "Whiteboard Wall",
-                "Somewhere to argue about an architecture without opening a document.",
+            new FurniturePiece(FurnitureKind.Whiteboard,
                 2_400, 0, 0.005, 0.012, 1.8f, 1.2f, 0.1f, "#D6D6D2"),
 
-            new FurniturePiece(FurnitureKind.Desk, "Desk And Chair",
-                "One more seat. Desks are what caps hiring, so this is the one that grows the lab.",
+            new FurniturePiece(FurnitureKind.Desk,
                 6_500, 1, 0.000, 0.000, 1.3f, 0.75f, 0.7f, "#70522F"),
 
-            new FurniturePiece(FurnitureKind.Bookshelf, "Reference Shelf",
-                "Papers nobody reads, in a room where everybody says they have.",
+            new FurniturePiece(FurnitureKind.Bookshelf,
                 7_800, 0, 0.008, 0.010, 1.6f, 1.9f, 0.4f, "#4A3524"),
 
-            new FurniturePiece(FurnitureKind.Sofa, "Break Sofa",
-                "Twenty minutes off the desk. The people who take it stay longer.",
+            new FurniturePiece(FurnitureKind.Sofa,
                 12_000, 0, 0.022, 0.000, 2.1f, 0.8f, 0.9f, "#B78C38"),
 
-            new FurniturePiece(FurnitureKind.StandingDesk, "Standing Rig",
-                "A seat and a better one. Costs more than a desk and is worth it to whoever gets it.",
+            new FurniturePiece(FurnitureKind.StandingDesk,
                 14_500, 1, 0.014, 0.008, 1.4f, 1.1f, 0.75f, "#2F5C6E"),
 
-            new FurniturePiece(FurnitureKind.CoffeeBar, "Espresso Bar",
-                "The most reliable productivity intervention in the building.",
+            new FurniturePiece(FurnitureKind.CoffeeBar,
                 19_000, 0, 0.028, 0.014, 1.5f, 1.4f, 0.8f, "#8C4A2A"),
 
-            new FurniturePiece(FurnitureKind.ArtPiece, "Commissioned Piece",
-                "Expensive, does nothing, and everybody who visits mentions it.",
+            new FurniturePiece(FurnitureKind.ArtPiece,
                 46_000, 0, 0.030, 0.000, 2.2f, 1.6f, 0.12f, "#7A3E86"),
 
-            new FurniturePiece(FurnitureKind.Aquarium, "Reef Tank",
-                "Six hundred litres of maintenance that the whole floor stands and watches.",
+            new FurniturePiece(FurnitureKind.Aquarium,
                 72_000, 0, 0.040, 0.006, 2.4f, 1.5f, 0.7f, "#1E6E8C"),
 
-            new FurniturePiece(FurnitureKind.SleepPod, "Sleep Pod",
-                "For the nights before a launch. Nobody admits to needing one until they use it.",
+            new FurniturePiece(FurnitureKind.SleepPod,
                 95_000, 0, 0.036, 0.028, 2.2f, 1.3f, 1.2f, "#3A3F52")
         };
 

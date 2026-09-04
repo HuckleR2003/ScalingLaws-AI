@@ -352,7 +352,13 @@ namespace ScalingLaws.Simulation
         /// Zero for an empty square and for one with nothing in it: a cabinet holding no silicon is
         /// not running cool, it is not running.
         /// </summary>
-        public double HeatRatio(int column, int row, double kilowattsPerAccelerator)
+        /// <param name="upgrades">
+        /// What the company has researched about running a room. **Nullable, defaulting to null
+        /// rather than to `default`**: `default(RoomUpgrades)` never runs the constructor, so it
+        /// would arrive with no cooling and a zero throttle penalty and silently make heat free.
+        /// </param>
+        public double HeatRatio(int column, int row, double kilowattsPerAccelerator,
+            RoomUpgrades? upgrades = null)
         {
             if (!Contains(column, row))
             {
@@ -369,16 +375,15 @@ namespace ScalingLaws.Simulation
             var definition = ServerRackCatalog.Get(racks[index]);
             var heat = accelerators[index] * Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator));
 
-            var cooling = definition.CoolingCapacityKilowatts
-                          + fans[index] * ServerRackCatalog.FanCoolingKilowatts;
+            var cooling = (upgrades ?? RoomUpgrades.None).CoolingFor(definition, fans[index]);
 
             return heat / Math.Max(0.1, cooling);
         }
 
         /// <summary>The same reading as a colour. See <see cref="ServerRackCatalog.HeatOf"/>.</summary>
         public ServerRackCatalog.RackHeat HeatAt(int column, int row,
-            double kilowattsPerAccelerator) =>
-            ServerRackCatalog.HeatOf(HeatRatio(column, row, kilowattsPerAccelerator));
+            double kilowattsPerAccelerator, RoomUpgrades? upgrades = null) =>
+            ServerRackCatalog.HeatOf(HeatRatio(column, row, kilowattsPerAccelerator, upgrades));
 
         /// <summary>Every fan on the floor.</summary>
         public int FanCount
@@ -540,10 +545,12 @@ namespace ScalingLaws.Simulation
         /// where those accelerators run at half speed, and averaging would hide exactly the mistake
         /// this system exists to let the player make.
         /// </summary>
-        public HallOutput Output(double petaflopsPerAccelerator, double kilowattsPerAccelerator)
+        public HallOutput Output(double petaflopsPerAccelerator, double kilowattsPerAccelerator,
+            RoomUpgrades? upgrades = null)
         {
             var perUnit = Math.Max(0.0, SimUnits.Finite(petaflopsPerAccelerator));
             var perUnitHeat = Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator));
+            var room = upgrades ?? RoomUpgrades.None;
 
             var petaflops = 0.0;
 
@@ -565,10 +572,14 @@ namespace ScalingLaws.Simulation
                 // **Fans raise the cabinet's rating rather than lowering the heat**, which is the
                 // honest shape: air moves warmth out of the box, it does not make the silicon draw
                 // less. The bill goes up either way, and that is the cost of the fix.
-                var cooling = definition.CoolingCapacityKilowatts
-                    + fans[index] * ServerRackCatalog.FanCoolingKilowatts;
+                //
+                // Airflow modelling adds to this for every cabinet at once, and liquid loops
+                // flatten the curve past it for immersion tanks alone. Both come in through
+                // `RoomUpgrades` so the hall goes on knowing nothing about the research tree.
+                var cooling = room.CoolingFor(definition, fans[index]);
 
-                var factor = ServerRackCatalog.ThrottleFactor(heat, cooling);
+                var factor = ServerRackCatalog.ThrottleFactor(
+                    heat, cooling, room.PenaltyFor(racks[index]));
                 if (factor < 1.0)
                 {
                     throttled++;

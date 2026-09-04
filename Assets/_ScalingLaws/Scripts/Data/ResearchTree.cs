@@ -26,7 +26,22 @@ namespace ScalingLaws.Data
         /// here in two years. They are also the only nodes whose whole purpose is to reduce the
         /// chance of something rather than to raise the ceiling on anything.
         /// </summary>
-        Safety = 2
+        Safety = 2,
+
+        /// <summary>
+        /// Research about the company rather than about the model.
+        ///
+        /// **The other three tracks are all the same subject.** `Capability`, `ModelImprovement`
+        /// and `Safety` differ in what they do to a model, not in what they are about, and a survey
+        /// of all 55 nodes found every one of them researching the model: bigger, cheaper, safer,
+        /// better shaped, or a new family to build it from. That is the system a player spends the
+        /// least clock time in.
+        ///
+        /// This is the room, the payroll, the power bill and the fleet. A fourth track rather than
+        /// a sixth era, because the eras are a calendar and a technique belongs in the year it was
+        /// real; cooling and substations land in the middle of it.
+        /// </summary>
+        Operations = 3
     }
 
     public enum ResearchEra
@@ -141,6 +156,16 @@ namespace ScalingLaws.Data
         EncryptedDataVaults = 621,
         DifferentialPrivacy = 622,
         PrivacyPreservingTraining = 623,
+
+        // 8xx is the Operations track: the room, not the model. 80x is the server room.
+        //
+        // Numbered apart from the eras for the same reason 5xx and 7xx are: the track is a second
+        // axis and these nodes sit wherever on the calendar the technique was actually real, which
+        // for all four of these is the middle of the game.
+        LiquidLoops = 801,
+        AirflowModelling = 802,
+        OwnSubstation = 803,
+        RackTelemetry = 804,
 
         // Era 4, the end game.
         HybridArchitectures = 401,
@@ -303,6 +328,23 @@ namespace ScalingLaws.Data
             ResearchNodeId.SpeculativeDecoding => "node.speculativedecoding",
             ResearchNodeId.ProcessSupervision => "node.processsupervision",
             ResearchNodeId.InferenceTimeSearch => "node.inferencetimesearch",
+
+            // The Operations track. The room, not the model.
+            ResearchNodeId.LiquidLoops => "node.liquidloops",
+            ResearchNodeId.AirflowModelling => "node.airflow",
+            ResearchNodeId.OwnSubstation => "node.substation",
+            ResearchNodeId.RackTelemetry => "node.racktelemetry",
+
+            // **Era five had no arms at all until 2026-09-04**, so all five statecraft nodes fell
+            // through the default and drew as "Fine-tuning and prompting" with era one's
+            // description under them: on the tree, in the completion event and in the news. A
+            // `_ =>` arm cannot fail loudly, which is why `NodeKeyTests` now walks every member.
+            ResearchNodeId.GeneralIntelligence => "node.agi",
+            ResearchNodeId.RealTimeAssimilation => "node.assimilation",
+            ResearchNodeId.SovereignLiaison => "node.liaison",
+            ResearchNodeId.ContinuousOversight => "node.oversight",
+            ResearchNodeId.RedundantInference => "node.redundant",
+
             _ => "node.finetuning"
         };
         /// <summary>
@@ -952,7 +994,76 @@ namespace ScalingLaws.Data
                 GameDate.FromCalendar(2030, 1, 1), costUsd: 1_400_000_000, durationDays: 400,
                 petaflopDaysRequired: 380_000,
                 requires: new[] { ResearchNodeId.RealTimeAssimilation },
-                track: ResearchTrack.Safety)
+                track: ResearchTrack.Safety),
+
+            // ------------------------------------------- operations: the room, not the model
+            //
+            // **The first four nodes in this game that research the company.** Every other node in
+            // the tree makes the model bigger, cheaper, safer or better shaped; a survey of all 55
+            // found no exception, and the server room, the payroll, the fleet and the power bill
+            // had nothing behind them at all.
+            //
+            // Each one moves a constant that already existed, which is the rule every node here
+            // obeys: a node that needs a new mechanic underneath it means the mechanic is the work
+            // and the node is decoration. `RoomUpgrades` is the one place they are read.
+            //
+            // All four are optionalTechnology. They are worth a great deal to a company that owns
+            // a basement and worth nothing at all to one that rents, so the scripted operator in
+            // PlayabilityTests skips them the same way it skips the architecture ladders, and the
+            // balance suite goes on measuring the economy rather than measuring these.
+
+            new(ResearchNodeId.RackTelemetry, ResearchEra.Scaling,
+                "Rack telemetry",
+                "Inlet and outlet probes on every cabinet, logged, so the room stops being a thing "
+                + "you find out about when the throughput drops. What one more card would do to a "
+                + "cabinet is arithmetic somebody has already done; this is putting it on the "
+                + "panel before the card is fitted rather than after.",
+                GameDate.FromCalendar(2023, 3, 1), costUsd: 900_000, durationDays: 45,
+                petaflopDaysRequired: 40,
+                warning: "Buys no capacity and no throughput. It buys knowing, which is only worth "
+                    + "something to somebody who was about to guess.",
+                optionalTechnology: true,
+                track: ResearchTrack.Operations),
+
+            new(ResearchNodeId.AirflowModelling, ResearchEra.Scaling,
+                "Airflow modelling",
+                "Simulate the room rather than the cabinet: where the cold aisle actually goes, "
+                + "which vents are fighting each other, and how much of the extract is recirculated "
+                + "warm air that never left. Every cabinet on the floor sheds a little more for it.",
+                GameDate.FromCalendar(2023, 11, 1), costUsd: 2_700_000, durationDays: 90,
+                petaflopDaysRequired: 160,
+                requires: new[] { ResearchNodeId.RackTelemetry },
+                warning: "Wide and shallow, against the fan's narrow and deep. It will not save a "
+                    + "cabinet that is badly over its rating; it buys a slot back across a floor "
+                    + "that is merely warm.",
+                optionalTechnology: true,
+                track: ResearchTrack.Operations),
+
+            new(ResearchNodeId.LiquidLoops, ResearchEra.Autonomy,
+                "Liquid loops",
+                "Plumbing, pumps and a heat rejection loop for the immersion tanks. Air runs out "
+                + "long before the silicon does, and a tank that is properly served stops caring "
+                + "how hot this year's accelerator runs.",
+                GameDate.FromCalendar(2024, 8, 1), costUsd: 6_300_000, durationDays: 130,
+                petaflopDaysRequired: 340,
+                requires: new[] { ResearchNodeId.AirflowModelling },
+                warning: "Immersion cabinets only. It is the reason to buy the dearest cabinet in "
+                    + "the catalog, which until now aged on exactly the same curve as the cheapest.",
+                optionalTechnology: true,
+                track: ResearchTrack.Operations),
+
+            new(ResearchNodeId.OwnSubstation, ResearchEra.Autonomy,
+                "Own substation",
+                "The room stops being on the household meter. A transformer, a metered industrial "
+                + "connection and the paperwork that goes with drawing that much power in a "
+                + "residential street.",
+                GameDate.FromCalendar(2025, 1, 1), costUsd: 4_500_000, durationDays: 150,
+                petaflopDaysRequired: 90,
+                requires: new[] { ResearchNodeId.RackTelemetry },
+                warning: "The power bill is the one cost that grows with the thing the player is "
+                    + "proudest of. This does nothing at all for a company that owns no room.",
+                optionalTechnology: true,
+                track: ResearchTrack.Operations)
         };
 
         private static readonly Dictionary<ResearchNodeId, ResearchNode> ById = BuildIndex();

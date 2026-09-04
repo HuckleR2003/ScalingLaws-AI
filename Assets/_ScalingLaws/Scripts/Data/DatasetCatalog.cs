@@ -17,42 +17,43 @@ namespace ScalingLaws.Data
 
         private static readonly DatasetSourceDefinition[] Entries =
         {
-            new(DatasetSource.WebCrawl, "Open web crawl",
+            // The words are `corpus.*` in the phrase book.
+            new(DatasetSource.WebCrawl,
                 GameDate.FromCalendar(2022, 1, 1),
                 tokenSupplyBillions: 1_800,
                 qualityMultiplier: 0.80,
                 acquisitionCostUsd: 0,
                 requiredOwnedCapability: 0),
 
-            new(DatasetSource.CuratedWeb, "Curated and deduplicated web",
+            new(DatasetSource.CuratedWeb,
                 GameDate.FromCalendar(2022, 1, 1),
                 tokenSupplyBillions: 3_000,
                 qualityMultiplier: 1.00,
                 acquisitionCostUsd: 2_000_000,
                 requiredOwnedCapability: 0),
 
-            new(DatasetSource.CodeCorpus, "Public code corpus",
+            new(DatasetSource.CodeCorpus,
                 GameDate.FromCalendar(2022, 1, 1),
                 tokenSupplyBillions: 800,
                 qualityMultiplier: 1.10,
                 acquisitionCostUsd: 3_000_000,
                 requiredOwnedCapability: 0),
 
-            new(DatasetSource.HumanFeedback, "Human preference data",
+            new(DatasetSource.HumanFeedback,
                 GameDate.FromCalendar(2022, 6, 1),
                 tokenSupplyBillions: 60,
                 qualityMultiplier: 1.30,
                 acquisitionCostUsd: 20_000_000,
                 requiredOwnedCapability: 0),
 
-            new(DatasetSource.LicensedBooks, "Licensed book archive",
+            new(DatasetSource.LicensedBooks,
                 GameDate.FromCalendar(2023, 3, 1),
                 tokenSupplyBillions: 400,
                 qualityMultiplier: 1.18,
                 acquisitionCostUsd: 12_000_000,
                 requiredOwnedCapability: 0),
 
-            new(DatasetSource.AcademicArchive, "Licensed academic archive",
+            new(DatasetSource.AcademicArchive,
                 GameDate.FromCalendar(2023, 9, 1),
                 tokenSupplyBillions: 300,
                 qualityMultiplier: 1.15,
@@ -62,14 +63,14 @@ namespace ScalingLaws.Data
             // The volume unlock, and the reason mid-game runs stop being data limited. It needs a
             // model good enough to generate usable text, so it cannot carry a company that has not
             // shipped anything yet.
-            new(DatasetSource.Synthetic, "Synthetic generation",
+            new(DatasetSource.Synthetic,
                 GameDate.FromCalendar(2024, 6, 1),
                 tokenSupplyBillions: 20_000,
                 qualityMultiplier: 0.95,
                 acquisitionCostUsd: 6_000_000,
                 requiredOwnedCapability: 40),
 
-            new(DatasetSource.VideoAndAudio, "Licensed video and audio",
+            new(DatasetSource.VideoAndAudio,
                 GameDate.FromCalendar(2025, 1, 1),
                 tokenSupplyBillions: 5_000,
                 qualityMultiplier: 1.05,

@@ -212,6 +212,34 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The DATA stage, with the corpora the company does not own listed under the ones it does.
+        ///
+        /// **Neither of the two existing contact sheets reaches this page.** `TabProofTests` opens
+        /// the creator on BRANDING, which is stage zero, and nothing else drives the stage rail. So
+        /// a new block of rows on the screen a player spends the most time in had no picture at all.
+        ///
+        /// Rendered on 2024-09-25, where six of the eight corpora are published and unowned against
+        /// two on day one. That is the crowded case: if this page is ever going to run out of the
+        /// height the creator is allowed, it runs out here.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheDataStageDraws()
+        {
+            var simulation = Campaign();
+
+            var panel = new ModelCreatorPanel(simulation) { Stage = 3 };
+
+            // **Without this the page draws with no corpus list at all.** A freshly constructed
+            // panel has not rebuilt the lists that depend on what the company owns, and `Refresh`
+            // is what the shell calls on the way in, so a frame taken without it is a picture of a
+            // state no player ever sees. The first attempt came back with an empty DATA stage and
+            // read exactly like the new block having failed to render.
+            panel.Refresh();
+
+            yield return Capture(panel.Root, "create_data.png");
+        }
+
+        /// <summary>
         /// Where an element sits, named by the styled ancestors around it and how wide each is.
         ///
         /// A control the runtime theme assembles reports its own class as

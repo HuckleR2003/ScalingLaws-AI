@@ -134,7 +134,7 @@ namespace ScalingLaws.UI
             //
             // The hottest cabinet rather than an average. An average across a floor where one rack
             // is cooking and three are cold reads as comfortable, which is the one thing it is not.
-            var hottest = HottestRatio(hall, part);
+            var hottest = HottestRatio(hall, part, simulation.Room);
 
             temperature.text = UiFormat.Percent(hottest, 0);
             temperatureNote.text = Loc.T("room.banner.of_max", "100%");
@@ -146,7 +146,7 @@ namespace ScalingLaws.UI
             // changed in one place and quoted from the other.
             power.text = UiFormat.Kilowatts(housed.DrawKilowatts);
             powerNote.text = UiFormat.Money(
-                    (long)(housed.DrawKilowatts * 24.0 * ComputePool.DomesticTariffUsd))
+                    (long)(housed.DrawKilowatts * 24.0 * simulation.Room.TariffUsd))
                 + " " + Loc.T("common.a_day");
 
             // ---- load ----------------------------------------------------------------------------
@@ -170,7 +170,8 @@ namespace ScalingLaws.UI
         /// in kilowatts of heat rather than in temperature, and inventing a degree figure to display
         /// would be a number the simulation does not use.
         /// </summary>
-        private static double HottestRatio(ServerHall hall, HardwareGeneration part)
+        private static double HottestRatio(ServerHall hall, HardwareGeneration part,
+            RoomUpgrades upgrades)
         {
             var worst = 0.0;
 
@@ -179,7 +180,7 @@ namespace ScalingLaws.UI
             foreach (var square in hall.Occupied())
             {
                 worst = Math.Max(worst,
-                    hall.HeatRatio(square.Column, square.Row, part.PowerKilowatts));
+                    hall.HeatRatio(square.Column, square.Row, part.PowerKilowatts, upgrades));
             }
 
             // Reported against the point where throttling begins, so 100% is exactly the edge and

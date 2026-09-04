@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Text;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -81,7 +82,7 @@ namespace ScalingLaws.Simulation
 
             if (blend.SourceCount == 0)
             {
-                Append(blocking, "no usable data sources selected");
+                Append(blocking, Loc.T("plan.no_corpus"));
             }
             else if (!blend.IsSufficient)
             {
@@ -99,7 +100,12 @@ namespace ScalingLaws.Simulation
             var memoryAvailable = profile.TotalAcceleratorMemoryGigabytes * UsableMemoryFraction;
             if (memoryRequired > memoryAvailable)
             {
-                Append(blocking, $"needs {memoryRequired:N0} GB of accelerator memory, fleet offers {memoryAvailable:N0} GB");
+                Append(blocking, Loc.T("plan.needs_memory",
+                    // Invariant, not the machine's culture. A raw ":N0" prints 18 000 as "18 000"
+                    // on this machine and the project has been bitten by that four times; UiFormat
+                    // is the usual answer and it lives in UI/, which Simulation may not read.
+                    memoryRequired.ToString("N0", CultureInfo.InvariantCulture),
+                    memoryAvailable.ToString("N0", CultureInfo.InvariantCulture)));
             }
 
             // Better recipes make the same FLOPs go further. Split evenly across parameters and
@@ -166,7 +172,7 @@ namespace ScalingLaws.Simulation
                              * Math.Max(0.01, SimUnits.Finite(throughputMultiplier, 1.0));
             if (throughput <= 0.0)
             {
-                Append(blocking, "the fleet has no usable compute");
+                Append(blocking, Loc.T("plan.no_compute"));
                 return new TrainingProjection(
                     blueprint,
                     false,

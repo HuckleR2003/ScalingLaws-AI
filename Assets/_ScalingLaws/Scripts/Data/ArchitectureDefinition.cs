@@ -15,17 +15,17 @@ namespace ScalingLaws.Data
     {
         public ArchitectureDefinition(
             ArchitectureId id,
-            string displayName,
             GameDate availableFrom,
             double parameterEfficiency,
             double activeParameterFraction,
             double trainingEfficiency,
             double inferenceCostMultiplier,
             double capabilityBonus,
-            long adoptionCostUsd)
+            long adoptionCostUsd,
+            string designedName = null)
         {
             Id = id;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? id.ToString() : displayName;
+            houseName = designedName;
             AvailableFrom = availableFrom;
             ParameterEfficiency = Math.Clamp(SimUnits.Finite(parameterEfficiency, 1.0), 0.25, 4.0);
             ActiveParameterFraction = Math.Clamp(SimUnits.Finite(activeParameterFraction, 1.0), 0.02, 1.0);
@@ -36,7 +36,29 @@ namespace ScalingLaws.Data
         }
 
         public ArchitectureId Id { get; }
-        public string DisplayName { get; }
+        /// <summary>
+        /// The name a house family was given, or empty for one out of the catalog.
+        ///
+        /// **A designed family is the one thing here that cannot read the phrase book.** Its name
+        /// is whatever the player typed on the architecture screen, so it travels with the
+        /// definition and into the save; a catalog family has no name of its own to carry and reads
+        /// `family.*` instead.
+        /// </summary>
+        private readonly string houseName;
+
+        private static string KeyFor(ArchitectureId id) => id switch
+        {
+            ArchitectureId.EfficientAttention => "family.efficientattention",
+            ArchitectureId.SparseMixture => "family.sparsemixture",
+            ArchitectureId.LongContextMixture => "family.longcontext",
+            ArchitectureId.ReasoningMixture => "family.reasoning",
+            ArchitectureId.HybridStateSpace => "family.hybrid",
+            _ => "family.dense"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName =>
+            string.IsNullOrWhiteSpace(houseName) ? Loc.T(KeyFor(Id)) : houseName;
 
         /// <summary>The day the technique becomes public. Nobody trains on it before this.</summary>
         public GameDate AvailableFrom { get; }

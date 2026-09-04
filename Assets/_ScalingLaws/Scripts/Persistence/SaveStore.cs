@@ -1654,14 +1654,17 @@ namespace ScalingLaws.Persistence
                     slot,
                     new ArchitectureDefinition(
                         slot,
-                        family.displayName,
                         new GameDate(family.availableFromDayIndex),
                         family.parameterEfficiency,
                         family.activeParameterFraction,
                         family.trainingEfficiency,
                         family.inferenceCostMultiplier,
                         family.capabilityBonus,
-                        adoptionCostUsd: 0),
+                        adoptionCostUsd: 0,
+
+                        // The player's own name for a family they designed. Saved, and it stays
+                        // whatever they typed: a catalog family reads the phrase book, this does not.
+                        designedName: family.displayName),
                     family.generation);
             }
 
@@ -1682,14 +1685,14 @@ namespace ScalingLaws.Persistence
 
                 var baseline = new ArchitectureDefinition(
                     ArchitectureId.None,
-                    "baseline",
                     new GameDate(programme.startedDayIndex),
                     programme.baselineParameterEfficiency,
                     programme.baselineActiveParameterFraction,
                     programme.baselineTrainingEfficiency,
                     programme.baselineInferenceCostMultiplier,
                     programme.baselineCapabilityBonus,
-                    adoptionCostUsd: 0);
+                    adoptionCostUsd: 0,
+                    designedName: "baseline");
 
                 var project = new ArchitectureProject(
                     blueprint,

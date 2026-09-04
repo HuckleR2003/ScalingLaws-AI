@@ -38,8 +38,14 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public const double BasementUtilisationPenalty = 0.85;
 
-        /// <summary>Domestic supply, not a datacenter contract.</summary>
-        public const double DomesticTariffUsd = 0.19;
+        /// <summary>
+        /// Domestic supply, not a datacenter contract.
+        ///
+        /// **The figure itself lives in `Data/ComputePoolTariff`** and this is an alias, because
+        /// `RoomUpgrades` has to name the same rate and `Data/` cannot read `Simulation/`. Two
+        /// copies of a tariff is how a rate gets changed in one place and quoted from the other.
+        /// </summary>
+        public const double DomesticTariffUsd = ComputePoolTariff.DomesticUsd;
 
         private const double DaysPerMonth = 30.4375;
         private const double DaysPerYear = 365.2425;
@@ -228,9 +234,15 @@ namespace ScalingLaws.Simulation
         /// is about capacity and the hall is about a building, and a pool that owned a floor would
         /// be two subjects in one class.
         /// </param>
+        /// <param name="upgrades">
+        /// What the company has researched about running its own room: cooling, the throttle curve
+        /// and the tariff. Nullable rather than `default` for the reason `ServerHall.HeatRatio`
+        /// gives; a null reads as a company that has researched none of it.
+        /// </param>
         public ComputeProfile BuildProfile(GameDate date, MarketConditions market,
-            ServerHall hall = null)
+            ServerHall hall = null, RoomUpgrades? upgrades = null)
         {
+            var room = upgrades ?? RoomUpgrades.None;
             var ownedAccelerators = 0;
             var acceleratorsInTransit = 0;
             var ownedPetaflops = 0.0;
@@ -335,7 +347,7 @@ namespace ScalingLaws.Simulation
                     : 0.0;
 
                 var housed = hall.Stock(ownedAccelerators);
-                var output = hall.Output(perUnitPetaflops, perUnitKilowatts);
+                var output = hall.Output(perUnitPetaflops, perUnitKilowatts, room);
 
                 if (housed > 0 && ownedAccelerators > 0)
                 {
@@ -359,7 +371,10 @@ namespace ScalingLaws.Simulation
                 }
 
                 powerDraw += output.DrawKilowatts;
-                electricity += output.DrawKilowatts * SimUnits.HoursPerDay * DomesticTariffUsd;
+                // The substation is the company stopping being a household. Read off the
+                // upgrades rather than the constant, or the node would change the research screen
+                // and none of the money.
+                electricity += output.DrawKilowatts * SimUnits.HoursPerDay * room.TariffUsd;
                 maintenance += hall.MonthlyUpkeepUsd / DaysPerMonth;
             }
 

@@ -78,6 +78,7 @@ namespace ScalingLaws.UI
             {
                 var nodes = new List<ResearchStanding>();
                 var deepening = new List<ResearchStanding>();
+                var operations = new List<ResearchStanding>();
 
                 foreach (var standing in board)
                 {
@@ -86,17 +87,23 @@ namespace ScalingLaws.UI
                         continue;
                     }
 
-                    if (standing.Node.Track == ResearchTrack.ModelImprovement)
+                    switch (standing.Node.Track)
                     {
-                        deepening.Add(standing);
-                    }
-                    else
-                    {
-                        nodes.Add(standing);
+                        case ResearchTrack.ModelImprovement:
+                            deepening.Add(standing);
+                            break;
+
+                        case ResearchTrack.Operations:
+                            operations.Add(standing);
+                            break;
+
+                        default:
+                            nodes.Add(standing);
+                            break;
                     }
                 }
 
-                if (nodes.Count == 0 && deepening.Count == 0)
+                if (nodes.Count == 0 && deepening.Count == 0 && operations.Count == 0)
                 {
                     continue;
                 }
@@ -159,6 +166,36 @@ namespace ScalingLaws.UI
                     row.AddToClassList("deepening__row");
 
                     foreach (var standing in deepening)
+                    {
+                        var node = BuildTreeNode(standing, false);
+                        node.AddToClassList("tree-node--small");
+                        row.Add(node);
+                    }
+
+                    band.Add(row);
+                    section.Add(band);
+                }
+
+                // The third line, and the only one that is not about the model. These are the room,
+                // the payroll and the power bill: research a player buys because of what they own
+                // rather than because of what they are training. Its own band for the same reason
+                // the deepening band exists, and under it because a company with no basement has no
+                // use for any of it.
+                if (operations.Count > 0)
+                {
+                    var band = new VisualElement();
+                    band.AddToClassList("deepening");
+                    band.AddToClassList("deepening--ops");
+
+                    var bandHeading = new Label(Loc.T("research.operations"));
+                    bandHeading.AddToClassList("deepening__heading");
+                    bandHeading.AddToClassList("deepening__heading--ops");
+                    band.Add(bandHeading);
+
+                    var row = new VisualElement();
+                    row.AddToClassList("deepening__row");
+
+                    foreach (var standing in operations)
                     {
                         var node = BuildTreeNode(standing, false);
                         node.AddToClassList("tree-node--small");

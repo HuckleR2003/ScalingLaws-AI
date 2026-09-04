@@ -202,7 +202,8 @@ namespace ScalingLaws.UI
             }
 
             var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
-            stage.Dress(simulation.State.Hall, known ? part.PowerKilowatts : 0.0);
+            stage.Dress(simulation.State.Hall, known ? part.PowerKilowatts : 0.0,
+                simulation.Room);
 
             view.style.backgroundImage = Background.FromRenderTexture(stage.Texture);
             view.AddToClassList("roomstage--live");

@@ -35,13 +35,11 @@ namespace ScalingLaws.Data
     /// </summary>
     public sealed class ModelTypeDefinition
     {
-        public ModelTypeDefinition(ModelType type, string displayName, string description,
+        public ModelTypeDefinition(ModelType type,
             ResearchNodeId requires, double servingCostMultiplier,
             (AudienceSegment Segment, double Affinity)[] affinities)
         {
             Type = type;
-            DisplayName = displayName ?? type.ToString();
-            Description = description ?? string.Empty;
             Requires = requires;
             ServingCostMultiplier = Math.Clamp(servingCostMultiplier, 0.5, 3.0);
 
@@ -55,8 +53,19 @@ namespace ScalingLaws.Data
         }
 
         public ModelType Type { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
+
+        private static string KeyFor(ModelType type) => type switch
+        {
+            ModelType.Coding => "modeltype.coding",
+            ModelType.Conversational => "modeltype.conversational",
+            ModelType.Automation => "modeltype.automation",
+            ModelType.Agentic => "modeltype.agentic",
+            _ => "modeltype.general"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Type));
+        public string Description => Loc.T(KeyFor(Type) + ".desc");
 
         /// <summary>The node that has to be finished first. None means available from the start.</summary>
         public ResearchNodeId Requires { get; }
@@ -87,10 +96,7 @@ namespace ScalingLaws.Data
 
         private static readonly ModelTypeDefinition[] Entries =
         {
-            new(ModelType.General, "General purpose",
-                "Answers anything, leads at nothing. Every company ships one and none of them win "
-                + "with it after the first two years.",
-                ResearchNodeId.None, servingCostMultiplier: 1.00,
+            new(ModelType.General, ResearchNodeId.None, servingCostMultiplier: 1.00,
                 new[]
                 {
                     (AudienceSegment.Consumer, 1.00),
@@ -100,10 +106,7 @@ namespace ScalingLaws.Data
                     (AudienceSegment.Agentic, 0.30)
                 }),
 
-            new(ModelType.Coding, "Coding",
-                "Trained and tuned on repositories, tests and diffs. Reads a codebase instead of "
-                + "guessing at one.",
-                ResearchNodeId.CodingModels, servingCostMultiplier: 1.10,
+            new(ModelType.Coding, ResearchNodeId.CodingModels, servingCostMultiplier: 1.10,
                 new[]
                 {
                     (AudienceSegment.Consumer, 0.30),
@@ -113,10 +116,7 @@ namespace ScalingLaws.Data
                     (AudienceSegment.Agentic, 0.80)
                 }),
 
-            new(ModelType.Conversational, "Conversational",
-                "Tone, memory and the sense of talking to something. Turns a tool into a habit, "
-                + "which is worth more than it sounds.",
-                ResearchNodeId.ConversationalModels, servingCostMultiplier: 0.90,
+            new(ModelType.Conversational, ResearchNodeId.ConversationalModels, servingCostMultiplier: 0.90,
                 new[]
                 {
                     (AudienceSegment.Consumer, 1.55),
@@ -126,10 +126,7 @@ namespace ScalingLaws.Data
                     (AudienceSegment.Agentic, 0.25)
                 }),
 
-            new(ModelType.Automation, "Automation",
-                "Long documents, structured output and processes that used to need a department. "
-                + "Sells slowly and never leaves.",
-                ResearchNodeId.AutomationModels, servingCostMultiplier: 1.25,
+            new(ModelType.Automation, ResearchNodeId.AutomationModels, servingCostMultiplier: 1.25,
                 new[]
                 {
                     (AudienceSegment.Consumer, 0.25),
@@ -139,10 +136,7 @@ namespace ScalingLaws.Data
                     (AudienceSegment.Agentic, 0.90)
                 }),
 
-            new(ModelType.Agentic, "Autonomous agent",
-                "Given a machine, a task and no supervision. The most expensive thing on this list to "
-                + "build and the only one that owns the late game.",
-                ResearchNodeId.AgenticWorkstation, servingCostMultiplier: 1.85,
+            new(ModelType.Agentic, ResearchNodeId.AgenticWorkstation, servingCostMultiplier: 1.85,
                 new[]
                 {
                     (AudienceSegment.Consumer, 0.20),

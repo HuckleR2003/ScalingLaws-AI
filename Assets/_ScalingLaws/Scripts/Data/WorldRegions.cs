@@ -44,23 +44,57 @@ namespace ScalingLaws.Data
     /// </summary>
     public sealed class CountryDefinition
     {
-        public CountryDefinition(Country country, WorldRegion region, string displayName,
+        private readonly string stem;
+
+        public CountryDefinition(Country country, WorldRegion region,
             double taxRate, double hardwarePriceMultiplier, double innovationMultiplier,
-            double localCompetitionMultiplier, string note)
+            double localCompetitionMultiplier, string stem = null)
         {
             Country = country;
             Region = region;
-            DisplayName = displayName ?? country.ToString();
+
+            // **The stem is an argument because one of these is not a country.** `Average` builds a
+            // synthetic entry standing for a whole region, and it borrows the region's own words
+            // rather than inventing a seventeenth set. Everything else takes its own.
+            this.stem = string.IsNullOrEmpty(stem) ? KeyFor(country) : stem;
+
             TaxRate = Math.Clamp(taxRate, 0.0, 0.6);
             HardwarePriceMultiplier = Math.Clamp(hardwarePriceMultiplier, 0.5, 2.0);
             InnovationMultiplier = Math.Clamp(innovationMultiplier, 0.5, 2.0);
             LocalCompetitionMultiplier = Math.Clamp(localCompetitionMultiplier, 0.2, 2.5);
-            Note = note ?? string.Empty;
         }
 
         public Country Country { get; }
         public WorldRegion Region { get; }
-        public string DisplayName { get; }
+
+        /// <summary>
+        /// The phrase-book stem for a country.
+        ///
+        /// Written out rather than derived, same as every catalog here. A country name is not a
+        /// place to be clever: this list is the first screen of a new campaign.
+        /// </summary>
+        private static string KeyFor(Country country) => country switch
+        {
+            Country.UnitedStates => "country.us",
+            Country.Canada => "country.canada",
+            Country.Brazil => "country.brazil",
+            Country.Mexico => "country.mexico",
+            Country.UnitedKingdom => "country.uk",
+            Country.Germany => "country.germany",
+            Country.France => "country.france",
+            Country.Poland => "country.poland",
+            Country.Ireland => "country.ireland",
+            Country.Switzerland => "country.switzerland",
+            Country.Japan => "country.japan",
+            Country.SouthKorea => "country.southkorea",
+            Country.Taiwan => "country.taiwan",
+            Country.Singapore => "country.singapore",
+            Country.India => "country.india",
+            _ => "country.china"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(stem);
 
         /// <summary>Share of daily operating profit taken before it reaches the balance.</summary>
         public double TaxRate { get; }
@@ -74,23 +108,38 @@ namespace ScalingLaws.Data
         /// <summary>How crowded the local market is. Above one and your brand counts for less.</summary>
         public double LocalCompetitionMultiplier { get; }
 
-        public string Note { get; }
+        public string Note => Loc.T(stem + ".note");
 
         public override string ToString() => $"{DisplayName} ({Region})";
     }
 
     public sealed class RegionDefinition
     {
-        public RegionDefinition(WorldRegion region, string displayName, string blurb)
+        public RegionDefinition(WorldRegion region)
         {
             Region = region;
-            DisplayName = displayName ?? region.ToString();
-            Blurb = blurb ?? string.Empty;
         }
 
         public WorldRegion Region { get; }
-        public string DisplayName { get; }
-        public string Blurb { get; }
+
+        /// <summary>
+        /// The phrase-book stem for a region.
+        ///
+        /// Public because `WorldRegionCatalog.Average` hands it to a synthetic country standing for
+        /// the whole region, which is how that row gets the region's name and blurb without a
+        /// second copy of either.
+        /// </summary>
+        public static string StemFor(WorldRegion region) => region switch
+        {
+            WorldRegion.Europe => "region.europe",
+            WorldRegion.Asia => "region.asia",
+            _ => "region.america"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(StemFor(Region));
+
+        public string Blurb => Loc.T(StemFor(Region) + ".note");
     }
 
     /// <summary>
@@ -104,50 +153,32 @@ namespace ScalingLaws.Data
 
         private static readonly RegionDefinition[] Regions =
         {
-            new(WorldRegion.America, "America",
-                "Where the accelerators ship first and where everyone else already is."),
-            new(WorldRegion.Europe, "Europe",
-                "Cheaper to run, slower to supply, and a regulator that will read what you publish."),
-            new(WorldRegion.Asia, "Asia",
-                "Closest to the factories. Silicon is cheap here and attention is not.")
+            // The words are `region.*` and `country.*` in the phrase book.
+            new(WorldRegion.America),
+            new(WorldRegion.Europe),
+            new(WorldRegion.Asia)
         };
 
         private static readonly CountryDefinition[] Countries =
         {
-            new(Country.UnitedStates, WorldRegion.America, "United States",
-                0.21, 0.92, 1.15, 1.35, "First in line for every launch, and so is everybody else."),
-            new(Country.Canada, WorldRegion.America, "Canada",
-                0.26, 1.00, 1.05, 0.85, "The research is here. The capital is one border away."),
-            new(Country.Brazil, WorldRegion.America, "Brazil",
-                0.34, 1.18, 0.90, 0.60, "Almost nobody is competing for these users yet."),
-            new(Country.Mexico, WorldRegion.America, "Mexico",
-                0.30, 1.12, 0.92, 0.60, "Cheap to staff, close enough to ship to."),
+            new(Country.UnitedStates, WorldRegion.America, 0.21, 0.92, 1.15, 1.35),
+            new(Country.Canada, WorldRegion.America, 0.26, 1.00, 1.05, 0.85),
+            new(Country.Brazil, WorldRegion.America, 0.34, 1.18, 0.90, 0.60),
+            new(Country.Mexico, WorldRegion.America, 0.30, 1.12, 0.92, 0.60),
 
-            new(Country.UnitedKingdom, WorldRegion.Europe, "United Kingdom",
-                0.25, 1.04, 1.10, 1.00, "Deep research bench, thin domestic market."),
-            new(Country.Germany, WorldRegion.Europe, "Germany",
-                0.30, 1.06, 1.08, 0.90, "Industrial customers who pay on time and read the contract."),
-            new(Country.France, WorldRegion.Europe, "France",
-                0.25, 1.05, 1.06, 0.90, "State money is available if the state likes you."),
-            new(Country.Poland, WorldRegion.Europe, "Poland",
-                0.19, 1.10, 0.98, 0.55, "Low tax, low payroll, hardware arrives late."),
-            new(Country.Ireland, WorldRegion.Europe, "Ireland",
-                0.13, 1.08, 1.00, 0.70, "The tax rate is the entire pitch."),
-            new(Country.Switzerland, WorldRegion.Europe, "Switzerland",
-                0.15, 1.10, 1.12, 0.65, "Expensive people, cheap taxes, quiet neighbours."),
+            new(Country.UnitedKingdom, WorldRegion.Europe, 0.25, 1.04, 1.10, 1.00),
+            new(Country.Germany, WorldRegion.Europe, 0.30, 1.06, 1.08, 0.90),
+            new(Country.France, WorldRegion.Europe, 0.25, 1.05, 1.06, 0.90),
+            new(Country.Poland, WorldRegion.Europe, 0.19, 1.10, 0.98, 0.55),
+            new(Country.Ireland, WorldRegion.Europe, 0.13, 1.08, 1.00, 0.70),
+            new(Country.Switzerland, WorldRegion.Europe, 0.15, 1.10, 1.12, 0.65),
 
-            new(Country.Japan, WorldRegion.Asia, "Japan",
-                0.30, 0.98, 1.08, 0.85, "Patient customers, punishing tax."),
-            new(Country.SouthKorea, WorldRegion.Asia, "South Korea",
-                0.24, 0.94, 1.10, 0.80, "Memory is made here, so memory is cheap here."),
-            new(Country.Taiwan, WorldRegion.Asia, "Taiwan",
-                0.20, 0.88, 1.05, 0.70, "The wafers start here. Nothing is closer to the source."),
-            new(Country.Singapore, WorldRegion.Asia, "Singapore",
-                0.17, 1.00, 1.05, 0.75, "A small market that everything in the region routes through."),
-            new(Country.India, WorldRegion.Asia, "India",
-                0.25, 1.14, 0.96, 0.65, "More engineers than anywhere, less silicon than anywhere."),
-            new(Country.China, WorldRegion.Asia, "China",
-                0.25, 1.20, 1.05, 1.20, "Enormous demand, and export controls on everything you need.")
+            new(Country.Japan, WorldRegion.Asia, 0.30, 0.98, 1.08, 0.85),
+            new(Country.SouthKorea, WorldRegion.Asia, 0.24, 0.94, 1.10, 0.80),
+            new(Country.Taiwan, WorldRegion.Asia, 0.20, 0.88, 1.05, 0.70),
+            new(Country.Singapore, WorldRegion.Asia, 0.17, 1.00, 1.05, 0.75),
+            new(Country.India, WorldRegion.Asia, 0.25, 1.14, 0.96, 0.65),
+            new(Country.China, WorldRegion.Asia, 0.25, 1.20, 1.05, 1.20)
         };
 
         public static IReadOnlyList<RegionDefinition> All => Regions;
@@ -183,12 +214,12 @@ namespace ScalingLaws.Data
                 return Countries[0];
             }
 
-            return new CountryDefinition(Country.None, region, Get(region).DisplayName,
+            return new CountryDefinition(Country.None, region,
                 list.Average(c => c.TaxRate),
                 list.Average(c => c.HardwarePriceMultiplier),
                 list.Average(c => c.InnovationMultiplier),
                 list.Average(c => c.LocalCompetitionMultiplier),
-                Get(region).Blurb);
+                RegionDefinition.StemFor(region));
         }
     }
 }

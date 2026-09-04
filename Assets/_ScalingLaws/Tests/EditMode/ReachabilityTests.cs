@@ -220,6 +220,31 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
+        /// A corpus can be bought with money, which is a route the design had and never offered.
+        ///
+        /// `TryAcquireDataSource` was complete and tested from the day it was written and called
+        /// from nowhere in `Scripts/UI/`. The DATA stage listed only corpora the company already
+        /// owned, so an unowned one was not merely unbuyable: nothing anywhere in the game said it
+        /// existed, what it cost, or what would open it.
+        ///
+        /// Both names are asserted. The buy alone would pass on a screen that offered every corpus
+        /// and let the simulation refuse most of them, and the check alone would pass on a list
+        /// nobody can act on.
+        /// </summary>
+        [Test]
+        public void ACorpusCanBeBoughtWithMoneyAndTheScreenKnowsWhichOnes()
+        {
+            var ui = UiText();
+
+            Assert.That(Regex.IsMatch(ui, @"TryAcquireDataSource\s*\("), Is.True,
+                "Nothing in the interface buys a corpus, so the cash route to one is unreachable.");
+
+            Assert.That(Regex.IsMatch(ui, @"CanAcquireDataSource\s*\("), Is.True,
+                "The interface offers corpora without asking the simulation whether it would sell "
+                + "one, which is a second copy of five conditions waiting to disagree.");
+        }
+
+        /// <summary>
         /// Every screen the shell can draw is opened by something.
         ///
         /// A `Screen` member with a case in the switch and no `Show` call anywhere is a page that

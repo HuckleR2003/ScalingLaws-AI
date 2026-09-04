@@ -11,7 +11,6 @@ namespace ScalingLaws.Data
     {
         public DatasetSourceDefinition(
             DatasetSource flag,
-            string displayName,
             GameDate availableFrom,
             double tokenSupplyBillions,
             double qualityMultiplier,
@@ -19,7 +18,6 @@ namespace ScalingLaws.Data
             double requiredOwnedCapability)
         {
             Flag = flag;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? flag.ToString() : displayName;
             AvailableFrom = availableFrom;
             TokenSupplyBillions = Math.Clamp(SimUnits.Finite(tokenSupplyBillions), 1.0, 1_000_000.0);
             QualityMultiplier = Math.Clamp(SimUnits.Finite(qualityMultiplier, 1.0), 0.4, 1.6);
@@ -28,7 +26,21 @@ namespace ScalingLaws.Data
         }
 
         public DatasetSource Flag { get; }
-        public string DisplayName { get; }
+
+        private static string KeyFor(DatasetSource flag) => flag switch
+        {
+            DatasetSource.CuratedWeb => "corpus.curated",
+            DatasetSource.CodeCorpus => "corpus.code",
+            DatasetSource.HumanFeedback => "corpus.feedback",
+            DatasetSource.LicensedBooks => "corpus.books",
+            DatasetSource.AcademicArchive => "corpus.academic",
+            DatasetSource.Synthetic => "corpus.synthetic",
+            DatasetSource.VideoAndAudio => "corpus.video",
+            _ => "corpus.crawl"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Flag));
         public GameDate AvailableFrom { get; }
 
         /// <summary>Billions of tokens this corpus can contribute to a single run.</summary>

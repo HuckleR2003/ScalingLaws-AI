@@ -241,7 +241,7 @@ namespace ScalingLaws.UI
             var footer = new VisualElement();
             footer.AddToClassList("stage-footer");
 
-            backButton.text = "BACK";
+            backButton.text = Loc.T("create.back");
             backButton.AddToClassList("menu-button");
             backButton.AddToClassList("menu-button--quiet");
             backButton.style.width = 130;
@@ -640,7 +640,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildTypePicker()
         {
-            typePicker = NewPanel("WHAT IS IT FOR");
+            typePicker = NewPanel(Loc.T("create.panel.what_for"));
             RefreshTypePicker();
             return typePicker;
         }
@@ -767,7 +767,7 @@ namespace ScalingLaws.UI
             var policy = simulation.State.Monetization;
             var market = simulation.Market;
 
-            var free = NewPanel("FREE TIER");
+            var free = NewPanel(Loc.T("create.panel.free_tier"));
 
             var freeRow = new VisualElement();
             freeRow.AddToClassList("deploy-row");
@@ -826,7 +826,7 @@ namespace ScalingLaws.UI
 
             page.Add(free);
 
-            var paid = NewPanel("SUBSCRIPTION");
+            var paid = NewPanel(Loc.T("create.panel.subscription"));
             paid.Add(BuildSlider(Loc.T("creator.price_month"),
                 amount => UiFormat.Money((long)Math.Round(amount)),
                 0f, 200f, (float)policy.SubscriptionPriceUsdPerMonth,
@@ -1069,10 +1069,10 @@ namespace ScalingLaws.UI
             var bottom = new VisualElement();
             bottom.AddToClassList("panel-row");
 
-            scaleReadout = NewPanel("SCALING READOUT");
+            scaleReadout = NewPanel(Loc.T("create.panel.readout"));
             bottom.Add(scaleReadout);
 
-            scaleNotes = NewPanel("NOTES");
+            scaleNotes = NewPanel(Loc.T("create.panel.notes"));
             bottom.Add(scaleNotes);
 
             column.Add(bottom);
@@ -1308,7 +1308,7 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BuildPrecisionPanel()
         {
-            var panel = NewPanel("PRECISION");
+            var panel = NewPanel(Loc.T("create.panel.precision"));
             panel.AddToClassList("scale-half");
 
             var row = new VisualElement();
@@ -1347,7 +1347,7 @@ namespace ScalingLaws.UI
         /// <summary>Many thin layers or few fat ones. Capability against what a token costs.</summary>
         private VisualElement BuildArrangementPanel()
         {
-            var panel = NewPanel("ARRANGEMENT");
+            var panel = NewPanel(Loc.T("create.panel.arrangement"));
 
             var row = new VisualElement();
             row.AddToClassList("choice-row");
@@ -1478,7 +1478,7 @@ namespace ScalingLaws.UI
         /// <summary>How hard the corpus is scrubbed before the run sees it.</summary>
         private VisualElement BuildDedupPanel()
         {
-            var panel = NewPanel("DEDUPLICATION");
+            var panel = NewPanel(Loc.T("create.panel.dedup"));
 
             var row = new VisualElement();
             row.AddToClassList("choice-row");
@@ -1574,7 +1574,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildComputePanel()
         {
-            var panel = NewPanel("COMPUTE");
+            var panel = NewPanel(Loc.T("create.panel.compute"));
 
             rentedLabel.AddToClassList("field__label");
             panel.Add(rentedLabel);
@@ -1860,7 +1860,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildProjectionPanel()
         {
-            var panel = NewPanel("PROJECTION");
+            var panel = NewPanel(Loc.T("create.panel.projection"));
             panel.Add(readouts);
 
             verdict.AddToClassList("verdict");
@@ -2039,8 +2039,10 @@ namespace ScalingLaws.UI
                     continue;
                 }
 
-                var toggle = new Toggle(
-                    $"{definition.DisplayName}  ({UiFormat.Billions(definition.TokenSupplyBillions)} tokens, quality {UiFormat.Number(definition.QualityMultiplier, 2)})");
+                var toggle = new Toggle(Loc.T("create.corpus_toggle",
+                    definition.DisplayName,
+                    UiFormat.Billions(definition.TokenSupplyBillions),
+                    UiFormat.Number(definition.QualityMultiplier, 2)));
                 toggle.value = definition.Flag == DatasetSource.WebCrawl;
                 toggle.RegisterValueChangedCallback(_ => Reprice());
                 dataSourceToggles[definition.Flag] = toggle;
@@ -2053,6 +2055,101 @@ namespace ScalingLaws.UI
                 empty.AddToClassList("field__hint");
                 dataToggles.Add(empty);
             }
+
+            BuildCorpusMarket();
+        }
+
+        /// <summary>
+        /// The corpora the company does not own, what they cost, and what would open them.
+        ///
+        /// **This page used to list only what was already owned**, so on day one it was one line
+        /// reading "web crawl" and nothing anywhere in the game said that seven other corpora
+        /// existed. A player learned about them when a research node happened to hand one over.
+        ///
+        /// Two things it does, and the second is the one the audit was about:
+        ///
+        /// 1. It names them. Something you cannot afford yet is a plan; something you have never
+        ///    heard of is not.
+        /// 2. It makes `TryAcquireDataSource` reachable, which it has not been since it was
+        ///    written. Four of the eight corpora are behind a node that unlocks three at once, so
+        ///    `GateForData` finds no single gate for them and they are genuinely purchasable with
+        ///    money alone. That is the cash route the design always had and never offered.
+        ///
+        /// **Nothing unpublished is listed.** A corpus whose date has not arrived is the future,
+        /// and the honesty rule that keeps rival releases and hardware projections labelled applies
+        /// to a shopping list as much as to a forecast.
+        /// </summary>
+        private void BuildCorpusMarket()
+        {
+            var offered = 0;
+
+            foreach (var definition in DatasetCatalog.All)
+            {
+                if (simulation.State.HasDataSource(definition.Flag)
+                    || simulation.State.Date.IsBefore(definition.AvailableFrom))
+                {
+                    continue;
+                }
+
+                if (offered == 0)
+                {
+                    var heading = new Label(Loc.T("create.corpus_market"));
+                    heading.AddToClassList("panel__heading");
+                    heading.AddToClassList("corpus-market__heading");
+                    dataToggles.Add(heading);
+                }
+
+                dataToggles.Add(CorpusRow(definition));
+                offered++;
+            }
+        }
+
+        /// <summary>One corpus for sale: what it is, what it costs, and whether today is the day.</summary>
+        private VisualElement CorpusRow(DatasetSourceDefinition definition)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("corpus-row");
+
+            var words = new VisualElement();
+            words.AddToClassList("corpus-row__words");
+
+            var name = new Label(definition.DisplayName);
+            name.AddToClassList("corpus-row__name");
+            words.Add(name);
+
+            // The reason comes from the simulation, never from a second reading of the same five
+            // conditions. When it is affordable the line says what it buys instead.
+            var buyable = simulation.CanAcquireDataSource(definition.Flag, out var why);
+
+            var note = new Label(buyable
+                ? Loc.T("create.corpus_offer",
+                    UiFormat.Billions(definition.TokenSupplyBillions),
+                    UiFormat.Number(definition.QualityMultiplier, 2))
+                : why);
+
+            note.AddToClassList("corpus-row__note");
+            words.Add(note);
+            row.Add(words);
+
+            // **A refused purchase needs no message of its own.** The rebuild redraws this row,
+            // and the row's second line is already `CanAcquireDataSource`'s reason, so the answer
+            // lands exactly where the player was looking. A panel-level line would also have been
+            // wiped by `Reprice`, which owns the verdict.
+            var buy = new Button(() =>
+            {
+                simulation.TryAcquireDataSource(definition.Flag, out _);
+                RebuildDataSources();
+                Reprice();
+            })
+            {
+                text = UiFormat.Money(definition.AcquisitionCostUsd)
+            };
+
+            buy.AddToClassList("corpus-row__buy");
+            buy.SetEnabled(buyable);
+            row.Add(buy);
+
+            return row;
         }
 
         private ModelBlueprint CurrentBlueprint()

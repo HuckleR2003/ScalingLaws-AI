@@ -17,8 +17,7 @@ namespace ScalingLaws.Data
 
         private static readonly ArchitectureDefinition[] Entries =
         {
-            new(ArchitectureId.DenseTransformer, "Dense transformer",
-                GameDate.FromCalendar(2022, 1, 1),
+            new(ArchitectureId.DenseTransformer, GameDate.FromCalendar(2022, 1, 1),
                 parameterEfficiency: 1.00,
                 activeParameterFraction: 1.00,
                 trainingEfficiency: 1.00,
@@ -26,8 +25,7 @@ namespace ScalingLaws.Data
                 capabilityBonus: 0.0,
                 adoptionCostUsd: 0),
 
-            new(ArchitectureId.EfficientAttention, "Efficient attention",
-                GameDate.FromCalendar(2022, 11, 1),
+            new(ArchitectureId.EfficientAttention, GameDate.FromCalendar(2022, 11, 1),
                 parameterEfficiency: 1.05,
                 activeParameterFraction: 1.00,
                 trainingEfficiency: 1.15,
@@ -35,8 +33,7 @@ namespace ScalingLaws.Data
                 capabilityBonus: 0.0,
                 adoptionCostUsd: 1_500_000),
 
-            new(ArchitectureId.SparseMixture, "Sparse mixture of experts",
-                GameDate.FromCalendar(2023, 12, 1),
+            new(ArchitectureId.SparseMixture, GameDate.FromCalendar(2023, 12, 1),
                 parameterEfficiency: 0.85,
                 activeParameterFraction: 0.25,
                 trainingEfficiency: 0.90,
@@ -44,8 +41,7 @@ namespace ScalingLaws.Data
                 capabilityBonus: 0.0,
                 adoptionCostUsd: 9_000_000),
 
-            new(ArchitectureId.LongContextMixture, "Long context mixture",
-                GameDate.FromCalendar(2024, 9, 1),
+            new(ArchitectureId.LongContextMixture, GameDate.FromCalendar(2024, 9, 1),
                 parameterEfficiency: 0.90,
                 activeParameterFraction: 0.22,
                 trainingEfficiency: 0.88,
@@ -53,8 +49,7 @@ namespace ScalingLaws.Data
                 capabilityBonus: 1.5,
                 adoptionCostUsd: 22_000_000),
 
-            new(ArchitectureId.ReasoningMixture, "Reasoning mixture",
-                GameDate.FromCalendar(2025, 2, 1),
+            new(ArchitectureId.ReasoningMixture, GameDate.FromCalendar(2025, 2, 1),
                 parameterEfficiency: 0.95,
                 activeParameterFraction: 0.22,
                 trainingEfficiency: 0.85,
@@ -62,8 +57,7 @@ namespace ScalingLaws.Data
                 capabilityBonus: 6.0,
                 adoptionCostUsd: 55_000_000),
 
-            new(ArchitectureId.HybridStateSpace, "Hybrid state space",
-                GameDate.FromCalendar(2026, 6, 1),
+            new(ArchitectureId.HybridStateSpace, GameDate.FromCalendar(2026, 6, 1),
                 parameterEfficiency: 1.10,
                 activeParameterFraction: 0.30,
                 trainingEfficiency: 1.05,

@@ -112,11 +112,12 @@ namespace ScalingLaws.UI
             block.Add(BuildUplink(simulation, square, definition));
 
             var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
+            var room = simulation.Room;
             var heat = known ? square.Accelerators * part.PowerKilowatts : 0.0;
-            var cooling = definition.CoolingCapacityKilowatts
-                + square.Fans * ServerRackCatalog.FanCoolingKilowatts;
+            var cooling = room.CoolingFor(definition, square.Fans);
 
-            var hot = ServerRackCatalog.ThrottleFactor(heat, cooling) < 1.0;
+            var hot = ServerRackCatalog.ThrottleFactor(
+                heat, cooling, room.PenaltyFor(square.Rack)) < 1.0;
             var era = simulation.State.Date.Year;
 
             var fills = new List<SlotFill>(definition.Slots);
@@ -179,11 +180,12 @@ namespace ScalingLaws.UI
             block.AddToClassList("rackmodal__stats");
 
             var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
+            var room = simulation.Room;
             var heat = known ? square.Accelerators * part.PowerKilowatts : 0.0;
-            var cooling = definition.CoolingCapacityKilowatts
-                + square.Fans * ServerRackCatalog.FanCoolingKilowatts;
+            var cooling = room.CoolingFor(definition, square.Fans);
 
-            var factor = ServerRackCatalog.ThrottleFactor(heat, cooling);
+            var penalty = room.PenaltyFor(square.Rack);
+            var factor = ServerRackCatalog.ThrottleFactor(heat, cooling, penalty);
             var draw = heat + square.Fans * ServerRackCatalog.FanDrawKilowatts;
 
             block.Add(UiParts.StatLine(Loc.T("rack.accelerators"),
@@ -198,6 +200,18 @@ namespace ScalingLaws.UI
                     ? UiFormat.Petaflops(square.Accelerators * part.PetaflopsPerUnit * factor)
                     : "0"));
 
+            // **The one node in this game that buys information rather than a number.** Fitting a
+            // card is the decision this panel exists for and its cost was only visible afterwards:
+            // the player added silicon, the cabinet went orange, and the throughput they had just
+            // paid for was smaller than the throughput they had before. Rack telemetry answers it
+            // in advance, and a company that has not researched it still has to find out the way
+            // everybody did until now.
+            if (room.ShowsTelemetry && known)
+            {
+                block.Add(UiParts.StatLine(Loc.T("rack.next_card"),
+                    NextCardReading(square, definition, part, room)));
+            }
+
             // The verdict, in a sentence. A throttle figure alone does not say that the power bill
             // is being paid in full for throughput that is not arriving.
             var verdict = new Label(factor >= 1.0
@@ -209,6 +223,31 @@ namespace ScalingLaws.UI
             block.Add(verdict);
 
             return block;
+        }
+
+        /// <summary>
+        /// What one more accelerator would do to this cabinet, before it is fitted.
+        ///
+        /// The same two calls the fleet makes, on one more card. Nothing here is a second formula:
+        /// a panel that predicted heat differently from the way the books charge for it would be
+        /// worse than saying nothing, because the player would trust it.
+        /// </summary>
+        private static string NextCardReading(HallSquare square, ServerRackDefinition definition,
+            HardwareGeneration part, RoomUpgrades room)
+        {
+            var used = square.Accelerators + square.Fans * ServerRackCatalog.FanSlots;
+
+            if (used >= definition.Slots)
+            {
+                return Loc.T("rack.next_full");
+            }
+
+            var heat = (square.Accelerators + 1) * part.PowerKilowatts;
+            var cooling = room.CoolingFor(definition, square.Fans);
+            var factor = ServerRackCatalog.ThrottleFactor(heat, cooling, room.PenaltyFor(square.Rack));
+
+            return Loc.T("rack.next_reading",
+                UiFormat.Kilowatts(heat), UiFormat.Percent(factor, 0));
         }
 
         private VisualElement BuildActions(CompanySimulation simulation, int column, int row,

@@ -52,21 +52,43 @@ namespace ScalingLaws.Data
     /// </summary>
     public readonly struct PrecisionDefinition
     {
-        public PrecisionDefinition(TrainingPrecision precision, string displayName, string pitch,
-            double throughput, double instability, GameDate earliest, string warning)
+        public PrecisionDefinition(TrainingPrecision precision,
+            double throughput, double instability, GameDate earliest, bool hasWarning = false)
         {
             Precision = precision;
-            DisplayName = displayName ?? precision.ToString();
-            Pitch = pitch ?? string.Empty;
             Throughput = Math.Clamp(SimUnits.Finite(throughput, 1.0), 0.25, 4.0);
             Instability = Math.Clamp(SimUnits.Finite(instability), 0.0, 4.0);
             Earliest = earliest;
-            Warning = warning ?? string.Empty;
+            HasWarning = hasWarning;
         }
 
         public TrainingPrecision Precision { get; }
-        public string DisplayName { get; }
-        public string Pitch { get; }
+
+        /// <summary>
+        /// The phrase-book stem for a width.
+        ///
+        /// Written out rather than derived from the enum name, same as every other catalog here:
+        /// `Float64` is not what a player reads and a derived key is one nobody would think to
+        /// look for.
+        /// </summary>
+        private static string KeyFor(TrainingPrecision precision) => precision switch
+        {
+            TrainingPrecision.Float64 => "width.fp64",
+            TrainingPrecision.Float32 => "width.fp32",
+            TrainingPrecision.BFloat16 => "width.bf16",
+            _ => "width.fp8"
+        };
+
+        /// <summary>
+        /// Read from the book at access time, never stored.
+        ///
+        /// **A catalog that stores a string keeps whatever language it was built in.** These are
+        /// built once at type load, before the player has chosen anything, so a stored name leaves
+        /// the busiest screen in the game half English however much else is translated. Found by
+        /// rendering the DATA stage on a Polish machine and looking at it.
+        /// </summary>
+        public string DisplayName => Loc.T(KeyFor(Precision));
+        public string Pitch => Loc.T(KeyFor(Precision) + ".pitch");
 
         /// <summary>Compute the same cluster delivers at this width. More is faster and cheaper.</summary>
         public double Throughput { get; }
@@ -89,25 +111,33 @@ namespace ScalingLaws.Data
         /// </summary>
         public GameDate Earliest { get; }
 
-        public string Warning { get; }
+        /// <summary>Whether this width carries a warning at all. Only FP8 does.</summary>
+        public bool HasWarning { get; }
+
+        public string Warning => HasWarning ? Loc.T(KeyFor(Precision) + ".warning") : string.Empty;
     }
 
     public readonly struct ShapeDefinition
     {
-        public ShapeDefinition(ModelShape shape, string displayName, string pitch,
-            double capability, double servingBurden, string note)
+        public ShapeDefinition(ModelShape shape, double capability, double servingBurden)
         {
             Shape = shape;
-            DisplayName = displayName ?? shape.ToString();
-            Pitch = pitch ?? string.Empty;
             Capability = Math.Clamp(SimUnits.Finite(capability, 1.0), 0.8, 1.2);
             ServingBurden = Math.Clamp(SimUnits.Finite(servingBurden, 1.0), 0.7, 1.4);
-            Note = note ?? string.Empty;
         }
 
         public ModelShape Shape { get; }
-        public string DisplayName { get; }
-        public string Pitch { get; }
+
+        private static string KeyFor(ModelShape shape) => shape switch
+        {
+            ModelShape.Deep => "shape.deep",
+            ModelShape.Wide => "shape.wide",
+            _ => "shape.balanced"
+        };
+
+        /// <summary>Read from the book at access time. See <see cref="PrecisionDefinition"/>.</summary>
+        public string DisplayName => Loc.T(KeyFor(Shape));
+        public string Pitch => Loc.T(KeyFor(Shape) + ".pitch");
 
         /// <summary>What the same parameter count is worth arranged this way.</summary>
         public double Capability { get; }
@@ -120,25 +150,30 @@ namespace ScalingLaws.Data
         /// </summary>
         public double ServingBurden { get; }
 
-        public string Note { get; }
+        public string Note => Loc.T(KeyFor(Shape) + ".note");
     }
 
     public readonly struct DeduplicationDefinition
     {
-        public DeduplicationDefinition(DeduplicationPass pass, string displayName, string pitch,
-            double tokensKept, double quality, string note)
+        public DeduplicationDefinition(DeduplicationPass pass, double tokensKept, double quality)
         {
             Pass = pass;
-            DisplayName = displayName ?? pass.ToString();
-            Pitch = pitch ?? string.Empty;
             TokensKept = Math.Clamp(SimUnits.Finite(tokensKept, 1.0), 0.4, 1.2);
             Quality = Math.Clamp(SimUnits.Finite(quality, 1.0), 0.8, 1.3);
-            Note = note ?? string.Empty;
         }
 
         public DeduplicationPass Pass { get; }
-        public string DisplayName { get; }
-        public string Pitch { get; }
+
+        private static string KeyFor(DeduplicationPass pass) => pass switch
+        {
+            DeduplicationPass.None => "dedup.raw",
+            DeduplicationPass.Aggressive => "dedup.aggressive",
+            _ => "dedup.standard"
+        };
+
+        /// <summary>Read from the book at access time. See <see cref="PrecisionDefinition"/>.</summary>
+        public string DisplayName => Loc.T(KeyFor(Pass));
+        public string Pitch => Loc.T(KeyFor(Pass) + ".pitch");
 
         /// <summary>Share of the corpus that survives the pass.</summary>
         public double TokensKept { get; }
@@ -146,7 +181,7 @@ namespace ScalingLaws.Data
         /// <summary>What the surviving tokens are worth each.</summary>
         public double Quality { get; }
 
-        public string Note { get; }
+        public string Note => Loc.T(KeyFor(Pass) + ".note");
     }
 
     /// <summary>
@@ -181,84 +216,45 @@ namespace ScalingLaws.Data
             // The top of the ladder is also an anchor. FP8 stays at 3.36 rather than being scaled
             // up with everything else, because late-game throughput was balanced against that
             // number and a fourth rung is not a reason to move the ceiling.
-            new(TrainingPrecision.Float64, "FP64",
-                "Double width. Nobody trains like this any more, which is exactly why it is what "
-                + "you are left with before you have researched anything. Slow, and it never lies "
-                + "to you about where the run will land.",
+            // **The words live in the phrase book, not here.** Every name, pitch, note and warning
+            // for these ten entries is `width.*`, `shape.*` and `dedup.*`, read at access time. A
+            // catalog built at type load keeps whatever language it was built in, which left the
+            // busiest screen in the game half English on a Polish machine.
+
+            new(TrainingPrecision.Float64,
                 throughput: 1.0,
                 instability: 1.0,
-                earliest: GameDate.Start,
-                warning: string.Empty),
+                earliest: GameDate.Start),
 
-            new(TrainingPrecision.Float32, "FP32",
-                "Full width. A third more through the same silicon than double, and still no drama "
-                + "in the loss curve.",
+            new(TrainingPrecision.Float32,
                 throughput: 1.30,
                 instability: 1.05,
-                earliest: GameDate.Start,
-                warning: string.Empty),
+                earliest: GameDate.Start),
 
-            new(TrainingPrecision.BFloat16, "BF16",
-                "What everybody trains in. Close to twice the throughput of full width, for none "
-                + "of the risk that eight bits carries.",
+            new(TrainingPrecision.BFloat16,
                 throughput: 2.10,
                 instability: 1.40,
-                earliest: GameDate.Start,
-                warning: string.Empty),
+                earliest: GameDate.Start),
 
-            new(TrainingPrecision.Float8, "FP8",
-                "Eight bits. Nearly twice the compute out of the same cluster, and a run that can "
-                + "come apart in the last third with nothing to show for the money.",
+            new(TrainingPrecision.Float8,
                 throughput: 3.36,
                 instability: 3.2,
                 earliest: GameDate.FromCalendar(2023, 3, 1),
-                warning: "Needs 2023 silicon. The spread on the finished model is more than twice "
-                    + "what it would be at BF16, so this is a bet, not a saving.")
+                hasWarning: true)
         };
 
         private static readonly ShapeDefinition[] Shapes =
         {
-            new(ModelShape.Deep, "Deep",
-                "Many thin layers. Reasons in more steps and each step waits for the last one.",
-                capability: 1.07,
-                servingBurden: 1.22,
-                note: "Better per parameter, dearer per token, and the latency shows under load."),
-
-            new(ModelShape.Balanced, "Balanced",
-                "The proportions everything else in the game is measured against.",
-                capability: 1.0,
-                servingBurden: 1.0,
-                note: "Exactly neutral. Nothing about the rest of the run changes."),
-
-            new(ModelShape.Wide, "Wide",
-                "Few fat layers. Less depth to reason through, and the whole thing parallelises.",
-                capability: 0.95,
-                servingBurden: 0.82,
-                note: "Cheaper to serve than anything else at the same size, which is what pays "
-                    + "when the audience is large and price sensitive.")
+            new(ModelShape.Deep, capability: 1.07, servingBurden: 1.22),
+            new(ModelShape.Balanced, capability: 1.0, servingBurden: 1.0),
+            new(ModelShape.Wide, capability: 0.95, servingBurden: 0.82)
         };
 
         private static readonly DeduplicationDefinition[] Passes =
         {
-            new(DeduplicationPass.None, "Raw",
-                "Everything the crawl found, repeats included.",
-                tokensKept: 1.0,
-                quality: 0.92,
-                note: "The most tokens for the money and the model spends some of them learning the "
-                    + "same page nine times."),
-
-            new(DeduplicationPass.Standard, "Standard",
-                "Exact duplicates removed. What a competent team does without being asked.",
-                tokensKept: 1.0,
-                quality: 1.0,
-                note: "Neutral. This is the baseline the corpus quality figures assume."),
-
-            new(DeduplicationPass.Aggressive, "Aggressive",
-                "Near duplicates too, and the boilerplate. Costs a fifth of the corpus.",
-                tokensKept: 0.80,
-                quality: 1.14,
-                note: "Worth it when the corpus is larger than the run needs, and a waste of a fifth "
-                    + "of it when it is not.")
+            new(DeduplicationPass.None, tokensKept: 1.0, quality: 0.92),
+            new(DeduplicationPass.Standard, tokensKept: 1.0, quality: 1.0),
+            new(DeduplicationPass.Aggressive, tokensKept: 0.80, quality: 1.14)
         };
 
         public static IReadOnlyList<PrecisionDefinition> AllPrecisions => Precisions;

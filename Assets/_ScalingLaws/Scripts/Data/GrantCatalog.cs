@@ -169,12 +169,6 @@ namespace ScalingLaws.Data
         /// <summary>The highest rung. Nothing above this exists to be unlocked.</summary>
         public const int TopTier = 5;
 
-        /// <summary>How long an offer stays on the table before it lapses.</summary>
-        public const int OfferOpenDays = 60;
-
-        /// <summary>The most offers on the board at once. More than this is a to-do list.</summary>
-        public const int MostOpenOffers = 3;
-
         /// <summary>The most awards a company can be working off at once.</summary>
         public const int MostHeldAtOnce = 2;
 

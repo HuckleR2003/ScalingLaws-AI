@@ -261,14 +261,17 @@ namespace ScalingLaws.Simulation
 
             return new ArchitectureDefinition(
                 ArchitectureId.None,
-                "field ceiling",
                 date,
                 parameterEfficiency: bestParameter * FieldCeilingMargin,
                 activeParameterFraction: bestActive / FieldCeilingMargin,
                 trainingEfficiency: bestTraining * FieldCeilingMargin,
                 inferenceCostMultiplier: bestInference / FieldCeilingMargin,
                 capabilityBonus: bestBonus * FieldCeilingMargin + 2.0,
-                adoptionCostUsd: 0);
+                adoptionCostUsd: 0,
+
+                // Never drawn. It is the bound the designer measures a blueprint against, and a
+                // name is easier to read in a debugger than ArchitectureId.None.
+                designedName: "field ceiling");
         }
 
         private static ArchitectureDefinition Roll(
@@ -311,14 +314,17 @@ namespace ScalingLaws.Simulation
 
             return new ArchitectureDefinition(
                 id,
-                string.IsNullOrWhiteSpace(name) ? blueprint.Name : name,
                 availableFrom,
                 parameterEfficiency,
                 activeFraction,
                 trainingEfficiency,
                 inferenceCost,
                 capabilityBonus,
-                adoptionCostUsd: 0);
+                adoptionCostUsd: 0,
+
+                // **The one name in this system that is not translatable and must not be.** A
+                // house family is called whatever the player typed on the architecture screen.
+                designedName: string.IsNullOrWhiteSpace(name) ? blueprint.Name : name);
         }
 
         private static void Append(StringBuilder builder, string reason)

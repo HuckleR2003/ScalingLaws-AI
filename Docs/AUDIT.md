@@ -21,14 +21,29 @@ Every `Try*` / `Cancel*` on the simulation, checked against every file in `Scrip
 | `TryAcquireDataSource` | Buy a corpus with money instead of researching it |
 | `TryAdoptArchitecture` | Adopt a family with money instead of researching it |
 
-Both are complete, both are tested, neither has a button. They were downgraded from critical to
-optional when the research tree started granting corpora and families directly, and that reasoning
-still holds: nothing is unreachable *through the tree*. What is missing is the cash route, which is
-a real decision the design once had and currently does not offer.
+**Closed 2026-09-04 for the corpus, and it was worse than this said.** The DATA stage of the
+creator listed only corpora the company **already owned**, so an unowned one was not merely
+unbuyable: nothing anywhere in the game named it, priced it, or said what would open it. A player
+learned that licensed video existed when a research node happened to hand it over.
 
-**One dead:**
+The stage now lists every published corpus the company does not hold, with what it costs and, when
+it cannot be bought, the simulation's own reason. `CanAcquireDataSource` is the check half of
+`TryAcquireDataSource`, extracted rather than copied, so the row and the button read one body.
 
-- `CompetitorAgent.TryGetLiveModel` has no caller anywhere in the repository, tests included.
+Four of the eight corpora turn out to be genuinely purchasable with money alone, and that is a
+finding rather than a decision: `CuratedWeb`, `CodeCorpus`, `LicensedBooks` and `VideoAndAudio` are
+each unlocked by a node that unlocks two or three at once, so `GateForData` finds no single gate for
+them and `HasResearch(None)` is true. The cash route the design always had exists for exactly those.
+
+**`TryAdoptArchitecture` stays unreachable, and the reason is structural.** Every family except the
+starting dense transformer is gated by a node, and completing that node grants the family directly,
+so there is no state in which the method can succeed. It is not missing a button; it is missing an
+ungated family. Left in place, because the day one is added it is the mechanism that sells it.
+
+**The dead finding did not survive being checked:**
+
+- `CompetitorAgent.TryGetLiveModel` **has a caller**: `CompetitorField.cs:156`. The sweep that
+  reported it dead did not read the whole repository. Not deleted.
 
 Everything else the sweep flagged is `ServerHall` and `ServerStock` plumbing, called by
 `CompanySimulation` rather than by the interface. That is the intended layering: the hall owns
@@ -88,7 +103,11 @@ session.
 13 literal `Resources.Load` paths, 4 with nothing behind them. Three are directory stems used to
 build a path at runtime and are fine. One is real:
 
-- **`Cards/chip_model`** — named in the catalog, absent from disk, still a drawn stand-in.
+- **`Cards/chip_model`** — named by `UpgradeGridPanel`, absent from disk. **Reclassified on
+  2026-09-04 as an art hook rather than a defect.** The fallback beside it draws a die with contact
+  rails in USS and reads as a chip; it is better than a generated placeholder would be, and the
+  `Resources.Load` is the line that lets the author drop real art in without touching code. Tracked
+  in `Docs/NeededGraphics.md`, which is where art gaps belong.
 
 `Docs/NeededGraphics.md` is the generated list and stays the source of truth for art gaps.
 
@@ -96,25 +115,36 @@ build a path at runtime and are fine. One is real:
 
 ## 5. Catalog members nothing uses
 
-- **`CompetitorStrategy.FastFollower` is assigned to no lab.** Documented previously and still true:
-  nothing in the game runs that brief. The author's call whether to reassign or delete.
+- **`CompetitorStrategy.FastFollower` is assigned to no lab.** Documented previously and still
+  true: nothing in the game runs that brief. Fourteen labs, six strategies, and this is the one
+  nobody has. **Still the author's call and deliberately left alone on 2026-09-04**: assigning it
+  changes how a real rival behaves for fourteen years of campaign, which is a balance decision and
+  not a cleanup, and it would move `PlayabilityTests` on the eve of a long playtest.
 - `LabTrait.Imitator` was removed for the same reason and its enum value is left as a documented gap.
 
 ---
 
 ## 6. Public constants nothing reads
 
-| Constant | Reading |
-|---|---|
-| `CompanySimulation.ReputationDailyDecay` | superseded by `Standing.DailyDrift` |
-| `CompanySimulation.ReputationServiceGain` | superseded by `Standing.ServiceGain` |
-| `GrantCatalog.OfferOpenDays`, `MostOpenOffers` | the grant offer flow reads its own values |
-| `BasementFloor.CeilingHeight` | kept from before the ceiling was removed; see the note on occlusion |
-| `CityLayout.SeaLevel`, `HeightmapResolution`, `SplatResolution` | terrain values the builder no longer reads |
-| `StaffCatalog.DiminishingReturnsAfter` | superseded by `SaturationMultiplier` |
+**Four of these six were wrong, and the reason is worth more than the finding.** The sweep read
+`Scripts/` and stopped. `Editor/` is a first-class part of this project - it builds the city, the
+basement and the office - and it reads four of the constants listed here twenty times between them.
 
-Two per pair, and in every case the live number lives somewhere else. None of them is wrong, all of
-them are a second place somebody could read the wrong figure from.
+| Constant | Verdict on 2026-09-04 |
+|---|---|
+| `CompanySimulation.ReputationDailyDecay` | dead, superseded by `Standing.DailyDrift`. **Removed** |
+| `CompanySimulation.ReputationServiceGain` | dead, superseded by `Standing.ServiceGain`. **Removed** |
+| `GrantCatalog.OfferOpenDays`, `MostOpenOffers` | dead: an offer board that lapses, and the flow has neither. **Removed** |
+| `StaffCatalog.DiminishingReturnsAfter` | dead, superseded by `SaturationMultiplier`. **Removed** |
+| `BasementFloor.CeilingHeight` | **read twice** by `Editor/BasementBuilder`, which builds the walls from it. Kept |
+| `CityLayout.SeaLevel`, `HeightmapResolution`, `SplatResolution` | **read eighteen times** across the terrain builder, the dressing builder and the flight. Kept |
+
+The removals were each re-checked against Scripts, Editor and Tests together before anything was
+taken out, and the script refused to write until every name had exactly one reference left: its own
+declaration.
+
+**The lesson for the next sweep: a repository is not `Scripts/`.** An audit that reads part of the
+tree reports live code as dead with exactly the confidence it reports dead code as dead.
 
 ---
 
@@ -128,7 +158,27 @@ them are a second place somebody could read the wrong figure from.
 
 ## What is left, in order of what it costs a player
 
-1. The two cash routes (`TryAcquireDataSource`, `TryAdoptArchitecture`) have no control.
-2. `CompetitorStrategy.FastFollower` runs for nobody.
-3. 223 dead phrases and 183 dead selectors.
-4. Six constants that are a second copy of a live number.
+Updated 2026-09-04, after working through the list.
+
+1. `CompetitorStrategy.FastFollower` runs for nobody. **A design decision, not a defect**, and it is
+   the author's.
+2. `TryAdoptArchitecture` cannot succeed, because every family is gated and the gate grants it. The
+   fix is an ungated family, not a button.
+3. Phrases and selectors nothing names by a literal. **The published figures of 223 and 183 do not
+   survive re-measurement and neither does the method.** Counted across Scripts, Editor and Tests on
+   2026-09-04: 609 of 1,985 English keys and 120 of the sheet's class selectors are never named by a
+   literal.
+
+   That larger number is the point. A key reached as `KeyFor(id) + ".desc"` is invisible to this
+   instrument exactly as it is invisible to `LocalisationTests`, and that shape covers every node
+   description, every grant name and every technology note - hundreds of keys that are alive. So the
+   count is an upper bound on an upper bound, and **deleting on it would take the research tree's
+   descriptions out with the rubbish.** Nothing is removed until there is an instrument that can
+   follow a stem, which is the same instrument `LocalisationCoverageTests` would need.
+
+### Closed on 2026-09-04
+
+- The corpus cash route has a control, and the DATA stage names what the company does not own.
+- Five genuinely dead constants removed; four wrongly listed ones kept and the entry corrected.
+- `CompetitorAgent.TryGetLiveModel` is not dead. It has a caller.
+- `Cards/chip_model` reclassified as an art hook with a working fallback.

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Collections.Generic;
+using System.Globalization;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
@@ -26,8 +27,6 @@ namespace ScalingLaws.Simulation
         /// <summary>Spread of the finished capability around its projection, in capability points.</summary>
         public const double TrainingOutcomeStandardDeviation = 1.2;
 
-        public const double ReputationDailyDecay = 0.0006;
-        public const double ReputationServiceGain = 0.0012;
         public const double ReputationReleaseGain = 0.10;
 
         /// <summary>Relative pull each research consumer has on the cluster when several are running.</summary>
@@ -54,7 +53,18 @@ namespace ScalingLaws.Simulation
             MarketModel.Evaluate(State.Date, State.Rivals.FrontierCapability(State.Date));
 
         public ComputeProfile Profile =>
-            State.Pool.BuildProfile(State.Date, Market, State.HasServerRoom ? State.Hall : null);
+            State.Pool.BuildProfile(
+                State.Date, Market, State.HasServerRoom ? State.Hall : null, Room);
+
+        /// <summary>
+        /// What the company has learned about running a room full of machines.
+        ///
+        /// **Derived from the research it holds, never stored**, the same way `RivalExpansion`,
+        /// `LabTraits`, `WorldEventCatalog` and `SafetyRecord` are. The hall and the pool know
+        /// nothing about research nodes and are handed the answer; the interface reads this
+        /// property so the cabinet panel cannot disagree with the books about what a rack sheds.
+        /// </summary>
+        public RoomUpgrades Room => RoomUpgrades.For(State.HasResearch);
 
         /// <summary>
         /// What the basement is delivering today, from the cards that are actually in it.
@@ -102,8 +112,8 @@ namespace ScalingLaws.Simulation
             hall.Stock(units);
 
             return units <= 0
-                ? hall.Output(0.0, 0.0)
-                : hall.Output(petaflops / units, kilowatts / units);
+                ? hall.Output(0.0, 0.0, Room)
+                : hall.Output(petaflops / units, kilowatts / units, Room);
         }
 
         /// <summary>What the basement costs anybody who did not take the tour.</summary>
@@ -455,7 +465,7 @@ namespace ScalingLaws.Simulation
             // The hall goes in here too. It was passed to the read-only accessor and not to the
             // day that actually runs, so the room could show capacity the market never received.
             var profile = State.Pool.BuildProfile(
-                State.Date, market, State.HasServerRoom ? State.Hall : null);
+                State.Date, market, State.HasServerRoom ? State.Hall : null, Room);
 
             State.SkillsLevelledToday.Clear();
 
@@ -1296,42 +1306,71 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
-        public bool TryAcquireDataSource(DatasetSource source, out string failureReason)
+        /// <summary>
+        /// Whether the company could buy this corpus today, and why not when it could not.
+        ///
+        /// **The check half of <see cref="TryAcquireDataSource"/>, extracted rather than copied.**
+        /// The DATA stage of the creator needs to know whether to enable a button and what to write
+        /// beside it, and a second copy of these five conditions is a screen that offers a corpus
+        /// the simulation then refuses. Same rule the hall and the till already follow.
+        ///
+        /// It moves nothing, so a caller may ask it as often as it likes.
+        /// </summary>
+        public bool CanAcquireDataSource(DatasetSource source, out string failureReason)
         {
             failureReason = string.Empty;
 
             if (!DatasetCatalog.TryGet(source, out var definition))
             {
-                failureReason = "Unknown data source.";
+                failureReason = Loc.T("corpus.unknown");
                 return false;
             }
 
             if (State.HasDataSource(source))
             {
-                failureReason = "Already owned.";
+                failureReason = Loc.T("corpus.owned");
                 return false;
             }
 
             if (!definition.IsAvailableOn(State.Date, State.BestCapability))
             {
                 failureReason = State.Date.IsBefore(definition.AvailableFrom)
-                    ? $"Not available until {definition.AvailableFrom}."
-                    : $"Needs a live model at capability {definition.RequiredOwnedCapability:0}.";
+                    ? Loc.T("corpus.not_yet", definition.AvailableFrom.ToString())
+                    : Loc.T("corpus.needs_capability",
+                        definition.RequiredOwnedCapability.ToString("0", CultureInfo.InvariantCulture));
+
                 return false;
             }
 
             var dataGate = ResearchTree.GateForData(source);
             if (!State.HasResearch(dataGate))
             {
-                failureReason = $"Needs the {ResearchTree.Get(dataGate).DisplayName} research first.";
+                failureReason = Loc.T("corpus.needs_research", ResearchTree.Get(dataGate).DisplayName);
                 return false;
             }
 
             if (State.CashUsd < definition.AcquisitionCostUsd)
             {
-                failureReason = $"Needs ${definition.AcquisitionCostUsd:N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("corpus.needs_cash",
+                    definition.AcquisitionCostUsd.ToString("N0", CultureInfo.InvariantCulture),
+                    State.CashUsd.ToString("N0", CultureInfo.InvariantCulture));
+
                 return false;
             }
+
+            return true;
+        }
+
+        public bool TryAcquireDataSource(DatasetSource source, out string failureReason)
+        {
+            if (!CanAcquireDataSource(source, out failureReason))
+            {
+                return false;
+            }
+
+            // Re-read rather than passed out of the check: a method whose job is to answer a
+            // question should not also be handing back the thing it looked at.
+            DatasetCatalog.TryGet(source, out var definition);
 
             State.PostCash(LedgerLine.DataAcquisition, definition.AcquisitionCostUsd);
             State.OwnedDataSources |= source;

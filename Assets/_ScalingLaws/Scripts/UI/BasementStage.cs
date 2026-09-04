@@ -128,7 +128,8 @@ namespace ScalingLaws.UI
         /// is sixteen boxes on a screen that is already rendering a room, and a diff would be code
         /// that can disagree with the floor.
         /// </summary>
-        public void Dress(ServerHall hall, double kilowattsPerAccelerator)
+        public void Dress(ServerHall hall, double kilowattsPerAccelerator,
+            RoomUpgrades? upgrades = null)
         {
             ClearRacks();
 
@@ -145,7 +146,7 @@ namespace ScalingLaws.UI
                 }
 
                 Stand(marker, square,
-                    hall.HeatAt(square.Column, square.Row, kilowattsPerAccelerator));
+                    hall.HeatAt(square.Column, square.Row, kilowattsPerAccelerator, upgrades));
             }
         }
 

@@ -28,8 +28,6 @@ namespace ScalingLaws.Data
     {
         public StaffRoleDefinition(
             StaffRole role,
-            string displayName,
-            string description,
             long baseSalaryPerYearUsd,
             long hiringCostUsd,
             double outcomeVarianceReductionPerHead = 0.0,
@@ -41,8 +39,7 @@ namespace ScalingLaws.Data
             double researchPointShare = 0.0)
         {
             Role = role;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? role.ToString() : displayName;
-            Description = description ?? string.Empty;
+
             BaseSalaryPerYearUsd = Math.Clamp(baseSalaryPerYearUsd, 10_000L, 10_000_000L);
             HiringCostUsd = Math.Clamp(hiringCostUsd, 0L, 10_000_000L);
             OutcomeVarianceReductionPerHead = Math.Clamp(SimUnits.Finite(outcomeVarianceReductionPerHead), 0.0, 0.2);
@@ -55,8 +52,18 @@ namespace ScalingLaws.Data
         }
 
         public StaffRole Role { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
+        private static string KeyFor(StaffRole role) => role switch
+        {
+            StaffRole.InfrastructureEngineer => "role.infrastructure",
+            StaffRole.DataEngineer => "role.data",
+            StaffRole.SafetyEngineer => "role.safety",
+            StaffRole.GoToMarket => "role.gtm",
+            _ => "role.scientist"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Role));
+        public string Description => Loc.T(KeyFor(Role) + ".desc");
         public long BaseSalaryPerYearUsd { get; }
 
         /// <summary>Recruiting, relocation and a signing bonus. Paid once, on the day they start.</summary>
@@ -98,9 +105,6 @@ namespace ScalingLaws.Data
     public static class StaffLimits
     {
         public const int MaximumSkill = 5;
-
-        /// <summary>Heads past which a role stops adding anything. A tenth researcher is a meeting.</summary>
-        public const int DiminishingReturnsAfter = 6;
     }
 
     /// <summary>The ONE staff library.</summary>
@@ -110,44 +114,29 @@ namespace ScalingLaws.Data
 
         private static readonly StaffRoleDefinition[] Entries =
         {
-            new(StaffRole.ResearchScientist, "Research scientist",
-                "Reads the papers, runs the ablations, and is the reason a run lands where the plan said "
-                + "it would rather than three points under.",
-                baseSalaryPerYearUsd: 320_000,
+            new(StaffRole.ResearchScientist, baseSalaryPerYearUsd: 320_000,
                 hiringCostUsd: 90_000,
                 outcomeVarianceReductionPerHead: 0.075,
                 researchSpeedBonusPerHead: 0.018,
                 researchPointShare: 0.60),
 
-            new(StaffRole.InfrastructureEngineer, "Infrastructure engineer",
-                "Keeps the cluster fed. The difference between a fleet running at its rating and one "
-                + "running at two thirds of it.",
-                baseSalaryPerYearUsd: 280_000,
+            new(StaffRole.InfrastructureEngineer, baseSalaryPerYearUsd: 280_000,
                 hiringCostUsd: 70_000,
                 utilizationBonusPerHead: 0.028,
                 researchPointShare: 0.30),
 
-            new(StaffRole.DataEngineer, "Data engineer",
-                "Deduplication, filtering, licensing paperwork. Unglamorous, and it moves the quality of "
-                + "every token the company will ever train on.",
-                baseSalaryPerYearUsd: 240_000,
+            new(StaffRole.DataEngineer, baseSalaryPerYearUsd: 240_000,
                 hiringCostUsd: 55_000,
                 dataQualityBonusPerHead: 0.016,
                 researchPointShare: 0.40),
 
-            new(StaffRole.SafetyEngineer, "Safety engineer",
-                "Red teams the model before somebody else does it in public. Invisible when it works, "
-                + "and the only thing standing between a capable model and a very expensive week.",
-                baseSalaryPerYearUsd: 300_000,
+            new(StaffRole.SafetyEngineer, baseSalaryPerYearUsd: 300_000,
                 hiringCostUsd: 80_000,
                 incidentRiskReductionPerHead: 0.085,
                 outcomeVarianceReductionPerHead: 0.012,
                 researchPointShare: 0.35),
 
-            new(StaffRole.GoToMarket, "Go to market",
-                "Developer relations, enterprise sales, the conference circuit. Does nothing for the model "
-                + "and a great deal for whether anyone picks it.",
-                baseSalaryPerYearUsd: 210_000,
+            new(StaffRole.GoToMarket, baseSalaryPerYearUsd: 210_000,
                 hiringCostUsd: 45_000,
                 brandBonusPerHead: 0.011,
                 researchPointShare: 0.15)

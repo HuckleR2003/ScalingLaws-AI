@@ -178,6 +178,28 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 - **Grant cards read like grants.** The name on torn white, who is offering it with weight, and the
   four terms on their own coloured plates: what arrives now, what arrives on completion, the
   research points money cannot buy, and how long there is.
+- **Research about the building, not the model.** A fourth track, OPERATIONS, with four nodes for
+  the server room, on its own row under each era. Every node in this game had been about the model:
+  bigger, cheaper, safer, better shaped. The room you actually stand in, click on and pay for had
+  nothing behind it at all.
+
+  - **Rack telemetry** puts the next card's heat and speed on the cabinet panel *before* you fit it.
+    It is the only node in the game that buys information rather than a number.
+  - **Airflow modelling** adds 1.2 kW of cooling to every cabinet on the floor at once. Wide and
+    shallow, against the fan's narrow and deep: a fan rescues one cabinet and costs it a slot.
+  - **Liquid loops** flatten the throttle curve for immersion tanks alone, from 2.2 to 1.1. The
+    dearest cabinet in the catalogue used to age on exactly the same curve as the cheapest one, and
+    this is the reason to buy it that it was missing.
+  - **Own substation** takes the room off the household meter, $0.19 a kilowatt hour down to $0.11.
+    The power bill is the one cost that grows with the thing you are proudest of.
+
+  All four are optional technology: they are worth a great deal with a basement and nothing at all
+  without one.
+- **Corpora you do not own are on the DATA page, with what they cost.** The stage listed only what
+  the company already had, so seven of the eight corpora were not merely unbuyable, they were
+  invisible: nothing in the game named licensed video, priced it, or said what would open it. Each
+  row now carries the price and, when it cannot be bought, the reason. Four of them are genuinely
+  purchasable with money alone.
 
 ### Changed
 
@@ -232,6 +254,29 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Fixed
 
+- **Every node in era five was called "Fine-tuning and prompting".** All five Statecraft nodes - the
+  end of the game and the most expensive research in it - drew with era one's name and era one's
+  description, on the tree, in the completion event and in the news item that announces one. They
+  had no entry in the table that maps a node to its words, and the table has a default.
+- **A third of the game was still English on a Polish machine, and the cause was one fault
+  repeated eleven times.** A catalog that stores a display string is built once at start-up and
+  keeps whatever language it was built in, however much else is translated. The research tree was
+  fixed this way in August; nothing else was.
+
+  Now translated: the four cabinets in the server room, the ten cards on the creator's SCALE and
+  DATA stages, the three hosting packages, the six marketing channels, the five model types, the
+  six architecture families, the five staff roles, the five audience segments, the seven jobs, the
+  ten pieces of furniture, the eight corpora with the sentences that say why one cannot be bought,
+  and the three regions and sixteen countries a new campaign picks from before it has seen anything
+  else. Plus ten panel headings, the BACK button and the sentence that
+  says why a training run cannot start.
+
+  **No catalog in the game holds a player-facing string any more.** The one deliberate exception is
+  a family you designed yourself, which is called whatever you typed.
+- **A message written for the feedback form had never been on screen.** Two different texts were
+  filed under one key, so the second silently replaced the first every time the game started. The
+  phrase book had one other key written twice as well, with the same string both times, which is how
+  the first one stayed hidden.
 - **The basement floor never emptied.** Moving a cabinet left one behind on the old square that
   could not be clicked or moved, because the code that clears the floor was looking in a group
   nothing is ever put in. It had also been stacking cabinets on their own squares, dozens deep, on
@@ -315,11 +360,16 @@ guess but the shift every campaign has implicitly been running.
 The cluster split was already saved, so an older campaign arrives at the setting it has been running
 on all along.
 
+The four Operations nodes add nothing to the format. What they do to the room is worked out from the
+research the company already holds, every time it is asked, so there is no cooling figure to save, no
+tariff to save, and nothing that can drift out of step with the node that granted it. A campaign that
+researches one and reloads gets exactly what it had.
+
 ### Under the hood
 
-- 1004 EditMode tests across 102 fixtures, and 27 PlayMode across 7.
-- 1,963 phrases in the book, both languages complete.
-- 55 research nodes across five eras; 33 world events.
+- 1024 EditMode tests across 104 fixtures, and 28 PlayMode across 7.
+- 2,175 phrases in the book, both languages complete, none written twice.
+- 59 research nodes across five eras and four tracks; 33 world events.
 - The map is a 43 kB binary baked from public-domain data by `Tools/bake_world_map.py`, rather than
   parsed at runtime: the source is 725 kB of JSON whose coordinates nest four deep, which Unity's
   own reader cannot express at all.
@@ -331,8 +381,28 @@ on all along.
 - `CompetitorStrategy.FastFollower` is assigned to no lab, so nothing in the game runs that brief.
   Found by a guard that asks whether every rival trait can actually occur.
 - The unreachable-mechanism sweep was run again over every public mutator on the simulation and the
-  company. Nothing player-facing is left without a control, and two methods with no caller anywhere
-  in the repository were deleted.
+  company, and two methods with no caller anywhere in the repository were deleted. One remained:
+  buying a corpus for cash, complete and tested since the day it was written and called from
+  nowhere. It has a control now.
+- **The audit was audited, and four of its findings did not survive.** Its sweep read `Scripts/` and
+  stopped, so it reported four constants as unread that `Editor/` reads twenty times between them to
+  build the city and the basement, and one method as having no caller when it has one. Five
+  genuinely dead constants were removed; the four live ones were kept and the document corrected.
+  A repository is not `Scripts/`.
+- The published counts of dead phrases and selectors do not survive re-measurement either, and
+  neither does the method: 609 of 1,985 keys are never named by a literal, but a key reached as a
+  stem plus a suffix is invisible to that instrument exactly as it is to the localisation guard, and
+  that shape covers every research description and every grant name. Nothing was deleted on a number
+  that would have taken the research tree's own text out with the rubbish.
+- New guards: the four Operations nodes each move the constant they claim to and nothing else; no
+  two research nodes share a name or a description, which is what era five was doing; no phrase is
+  written twice in the book, which has to read the source because the duplicate is gone by the time
+  the dictionary exists; and the ten training choices resolve their words in both languages, which
+  they now need because they read the book by a stem and the literal-reading guard cannot follow
+  one, and the same for every other catalog that stopped storing its English.
+- The DATA stage has a proof frame of its own. Neither contact sheet reached it - the tab sheet
+  opens the creator on its first page and the research sheet stops above era two - and rendering it
+  is what found the English panel in the middle of a Polish page.
 - Two operations moved out of `CompanySimulation` into the test assembly. Neither had a caller
   outside a fixture, and a unit-count entry point beside a capacity-denominated contract is one edit
   away from acquiring a slider.

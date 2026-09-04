@@ -175,10 +175,28 @@ means laying it out twice, and the second time with the layout already committed
 
 ## What I would do first
 
-1. The `Operations` track and the four server room nodes. It is the system with the most decisions
-   and the least support, and the player is in it constantly.
+1. ~~The `Operations` track and the four server room nodes.~~ **Built 2026-09-04.** Track appended
+   as `ResearchTrack.Operations = 3`, nodes at 801-804, drawn as a fourth band under each era.
+   `Data/RoomUpgrades.cs` is the one place they are read: derived from the research the company
+   holds, never stored, and handed down to the hall, the pool and the cabinet panel rather than
+   read by them. Every parameter is `RoomUpgrades?` defaulting to null, because `default(struct)`
+   would arrive with a zero tariff and quietly make power free.
 2. The three staff nodes, because the role weights just landed and there is nothing to build on them.
 3. Then the Civilization layout, once the middle of the tree is worth navigating.
+
+### What the four actually moved, measured
+
+| Node | Constant | Before | After |
+|---|---|---|---|
+| Rack telemetry | nothing; shows the next card's heat and speed on the panel | hidden | shown |
+| Airflow modelling | cooling on every cabinet | rating | rating + 1.2 kW |
+| Liquid loops | `ThrottlePenalty`, immersion only | 2.2 | 1.1 |
+| Own substation | the basement tariff, per kWh | $0.19 | $0.11 |
+
+`OperationsTrackTests` measures each of them against an identical company that has not researched it,
+and the second half of each test is the one that matters: airflow does not touch the power bill,
+liquid loops do not help an air-cooled cabinet, and the substation does not touch throughput. A node
+that moved two numbers would be two nodes.
 
 Nothing here is committed. Every row is a proposal with a number beside it so it can be argued with
 on the numbers rather than on the idea.

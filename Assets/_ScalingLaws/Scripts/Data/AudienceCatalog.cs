@@ -35,7 +35,7 @@ namespace ScalingLaws.Data
     /// </summary>
     public sealed class AudienceSegmentDefinition
     {
-        public AudienceSegmentDefinition(AudienceSegment segment, string displayName, string description,
+        public AudienceSegmentDefinition(AudienceSegment segment,
             double willingnessToPay, double adoptionRatePerDay, double brandWeight,
             double servingCostWeight, double tokensPerUserPerDay,
             (int Year, double Weight)[] anchors,
@@ -48,15 +48,24 @@ namespace ScalingLaws.Data
             IntensityGrowthPerYear = Math.Clamp(intensityGrowthPerYear, 1.0, 2.0);
             ServingCostWeight = Math.Clamp(servingCostWeight, 0.0, 2.0);
             Segment = segment;
-            DisplayName = displayName ?? segment.ToString();
-            Description = description ?? string.Empty;
+
             WillingnessToPay = Math.Clamp(willingnessToPay, 0.25, 4.0);
             Anchors = anchors ?? Array.Empty<(int, double)>();
         }
 
         public AudienceSegment Segment { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
+        private static string KeyFor(AudienceSegment segment) => segment switch
+        {
+            AudienceSegment.Developer => "audience.developer",
+            AudienceSegment.Enterprise => "audience.enterprise",
+            AudienceSegment.Creative => "audience.creative",
+            AudienceSegment.Agentic => "audience.agentic",
+            _ => "audience.consumer"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Segment));
+        public string Description => Loc.T(KeyFor(Segment) + ".desc");
 
         /// <summary>
         /// How much more than the baseline this segment will pay before it walks. A developer paying
@@ -191,10 +200,7 @@ namespace ScalingLaws.Data
 
         private static readonly AudienceSegmentDefinition[] Entries =
         {
-            new(AudienceSegment.Consumer, "Consumer",
-                "People asking questions. The largest crowd by a distance and the least willing to pay "
-                + "for any of it.",
-                willingnessToPay: 1.00, adoptionRatePerDay: 0.045, brandWeight: 1.35,
+            new(AudienceSegment.Consumer, willingnessToPay: 1.00, adoptionRatePerDay: 0.045, brandWeight: 1.35,
                 servingCostWeight: 0.55, tokensPerUserPerDay: 12_000,
                 new (int, double)[]
                 {
@@ -203,10 +209,7 @@ namespace ScalingLaws.Data
                 },
                 reservationCapability: 6.0, intensityGrowthPerYear: 1.28),
 
-            new(AudienceSegment.Developer, "Developers",
-                "Engineers writing code. Almost nobody in 2022, and the first group to find out it "
-                + "would happily pay.",
-                willingnessToPay: 1.20, adoptionRatePerDay: 0.090, brandWeight: 0.55,
+            new(AudienceSegment.Developer, willingnessToPay: 1.20, adoptionRatePerDay: 0.090, brandWeight: 0.55,
                 servingCostWeight: 0.35, tokensPerUserPerDay: 180_000,
                 new (int, double)[]
                 {
@@ -215,10 +218,7 @@ namespace ScalingLaws.Data
                 },
                 reservationCapability: 11.0, intensityGrowthPerYear: 1.32),
 
-            new(AudienceSegment.Enterprise, "Enterprise",
-                "Companies replacing work that used to be done by a department. Slow to arrive, "
-                + "expensive to win, and almost impossible to lose once won.",
-                willingnessToPay: 1.65, adoptionRatePerDay: 0.012, brandWeight: 1.15,
+            new(AudienceSegment.Enterprise, willingnessToPay: 1.65, adoptionRatePerDay: 0.012, brandWeight: 1.15,
                 servingCostWeight: 0.25, tokensPerUserPerDay: 900_000,
                 new (int, double)[]
                 {
@@ -226,9 +226,7 @@ namespace ScalingLaws.Data
                 },
                 reservationCapability: 26.0, intensityGrowthPerYear: 1.24),
 
-            new(AudienceSegment.Creative, "Creative",
-                "Writing, images and marketing. Arrived early, never grew the way the others did.",
-                willingnessToPay: 1.05, adoptionRatePerDay: 0.060, brandWeight: 1.00,
+            new(AudienceSegment.Creative, willingnessToPay: 1.05, adoptionRatePerDay: 0.060, brandWeight: 1.00,
                 servingCostWeight: 0.85, tokensPerUserPerDay: 40_000,
                 new (int, double)[]
                 {
@@ -236,10 +234,7 @@ namespace ScalingLaws.Data
                 },
                 reservationCapability: 9.0, intensityGrowthPerYear: 1.26),
 
-            new(AudienceSegment.Agentic, "Autonomous",
-                "Models given a machine and a task and left alone with both. Does not exist until a "
-                + "model can hold a job down for an hour without supervision.",
-                willingnessToPay: 2.10, adoptionRatePerDay: 0.030, brandWeight: 0.70,
+            new(AudienceSegment.Agentic, willingnessToPay: 2.10, adoptionRatePerDay: 0.030, brandWeight: 0.70,
                 servingCostWeight: 1.30, tokensPerUserPerDay: 3_000_000,
                 new (int, double)[]
                 {

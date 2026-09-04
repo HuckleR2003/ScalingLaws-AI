@@ -19,13 +19,11 @@ namespace ScalingLaws.Data
     /// </summary>
     public sealed class PositionDefinition
     {
-        public PositionDefinition(PlayerSkill skill, StaffRole role, string title, string blurb,
+        public PositionDefinition(PlayerSkill skill, StaffRole role,
             double baseHourlyWageUsd, string accentHex)
         {
             Skill = skill;
             Role = role;
-            Title = title;
-            Blurb = blurb;
             BaseHourlyWageUsd = baseHourlyWageUsd;
             AccentHex = accentHex;
         }
@@ -36,11 +34,32 @@ namespace ScalingLaws.Data
         /// <summary>The department it counts towards. Not shown; the simulation reads it.</summary>
         public StaffRole Role { get; }
 
-        /// <summary>What the job is called on the tile and in the letter.</summary>
-        public string Title { get; }
+        /// <summary>
+        /// The phrase-book stem for a job.
+        ///
+        /// One per founder skill, which is the whole design of this catalog, so the stem follows
+        /// the skill rather than the legacy role: two positions can share a role.
+        /// </summary>
+        private static string KeyFor(PlayerSkill skill) => skill switch
+        {
+            PlayerSkill.Development => "job.mlengineer",
+            PlayerSkill.Concept => "job.scientist",
+            PlayerSkill.Software => "job.software",
+            PlayerSkill.DataEngineering => "job.data",
+            PlayerSkill.Safety => "job.safety",
+            PlayerSkill.Management => "job.operations",
+            _ => "job.coordinator"
+        };
+
+        /// <summary>
+        /// What the job is called on the tile and in the letter.
+        ///
+        /// Read from the book at access time, never stored. See `PrecisionDefinition`.
+        /// </summary>
+        public string Title => Loc.T(KeyFor(Skill));
 
         /// <summary>What this person does, in the player's terms.</summary>
-        public string Blurb { get; }
+        public string Blurb => Loc.T(KeyFor(Skill) + ".blurb");
 
         /// <summary>
         /// What a wholly average person in this job asks an hour.
@@ -62,41 +81,26 @@ namespace ScalingLaws.Data
 
         private static readonly List<PositionDefinition> Entries = new()
         {
+            // The words are `job.*` in the phrase book.
             new PositionDefinition(PlayerSkill.Development, StaffRole.ResearchScientist,
-                "ML Engineer",
-                "Writes the training code and the evaluation harness. The people who make the plan "
-                + "actually run.",
                 168.0, "#5B8DEF"),
 
             new PositionDefinition(PlayerSkill.Concept, StaffRole.ResearchScientist,
-                "Research Scientist",
-                "Decides what is worth training before anybody trains it. Expensive, and the reason "
-                + "a lab is a lab.",
                 242.0, "#A66BE0"),
 
             new PositionDefinition(PlayerSkill.Software, StaffRole.InfrastructureEngineer,
-                "Software Engineer",
-                "The product around the model: the API, the app, the thing customers touch.",
                 146.0, "#3FB6A8"),
 
             new PositionDefinition(PlayerSkill.DataEngineering, StaffRole.DataEngineer,
-                "Data Engineer",
-                "Corpora, cleaning, deduplication. Quiet work that decides what the model is made of.",
                 134.0, "#D6A03C"),
 
             new PositionDefinition(PlayerSkill.Safety, StaffRole.SafetyEngineer,
-                "Safety Engineer",
-                "Red teams the model before a regulator does. Cheap next to one inspection.",
                 158.0, "#E06B6B"),
 
             new PositionDefinition(PlayerSkill.Management, StaffRole.GoToMarket,
-                "Operations Lead",
-                "Runs the floor, the spend and the launches. Nobody notices them until they leave.",
                 152.0, "#E0883C"),
 
             new PositionDefinition(PlayerSkill.Teamwork, StaffRole.GoToMarket,
-                "Team Coordinator",
-                "Keeps seven disciplines pointed the same way. Raises the ceiling on everybody else.",
                 118.0, "#7FBF5F")
         };
 

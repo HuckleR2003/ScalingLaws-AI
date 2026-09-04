@@ -23,14 +23,12 @@ namespace ScalingLaws.Data
     /// </summary>
     public readonly struct MarketingChannelDefinition
     {
-        public MarketingChannelDefinition(MarketingChannel id, string displayName, string art,
-            string pitch, long dailyCostUsd, double reach, double speed, double persistence,
+        public MarketingChannelDefinition(MarketingChannel id, string art,
+            long dailyCostUsd, double reach, double speed, double persistence,
             double volatility, double credibility, AudienceSegment favours)
         {
             Id = id;
-            DisplayName = displayName;
             Art = art;
-            Pitch = pitch;
             DailyCostUsd = Math.Max(0L, dailyCostUsd);
             Reach = Math.Clamp(reach, 0.0, 2.0);
             Speed = Math.Clamp(speed, 0.05, 1.0);
@@ -41,12 +39,30 @@ namespace ScalingLaws.Data
         }
 
         public MarketingChannel Id { get; }
-        public string DisplayName { get; }
+
+        private static string KeyFor(MarketingChannel id) => id switch
+        {
+            MarketingChannel.Press => "channel.press",
+            MarketingChannel.Radio => "channel.radio",
+            MarketingChannel.Television => "channel.tv",
+            MarketingChannel.Billboards => "channel.billboards",
+            MarketingChannel.Creators => "channel.creators",
+            _ => "channel.social"
+        };
+
+        /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Id));
 
         /// <summary>Resource name for the tile picture. Missing art draws an empty plate.</summary>
         public string Art { get; }
 
-        public string Pitch { get; }
+        /// <summary>
+        /// The tooltip, and on this screen it is the whole explanation.
+        ///
+        /// The tiles are photographs with a name on them; everything that says what a channel
+        /// actually trades sits here, so leaving it in English left six pictures and no argument.
+        /// </summary>
+        public string Pitch => Loc.T(KeyFor(Id) + ".pitch");
         public long DailyCostUsd { get; }
 
         /// <summary>How much awareness a full day of this buys, before the audience fit.</summary>
@@ -87,39 +103,28 @@ namespace ScalingLaws.Data
 
         private static readonly MarketingChannelDefinition[] Entries =
         {
-            new(MarketingChannel.Social, "Social", "marketing_social",
-                "Cheap, immediate and it forgets you just as fast. It can go further than anything "
-                + "else here or nowhere at all, and it is the only channel that can cost you standing.",
+            // The words are `channel.*` in the phrase book.
+            new(MarketingChannel.Social, "marketing_social",
                 dailyCostUsd: 4_000, reach: 0.85, speed: 0.85, persistence: 0.15,
                 volatility: 0.80, credibility: -0.15, favours: AudienceSegment.Consumer),
 
-            new(MarketingChannel.Press, "Press", "marketing_press",
-                "Barely moves the numbers and is the one thing that reliably builds standing. "
-                + "Enterprise buyers read it; nobody else does.",
+            new(MarketingChannel.Press, "marketing_press",
                 dailyCostUsd: 9_000, reach: 0.30, speed: 0.35, persistence: 0.75,
                 volatility: 0.20, credibility: 0.60, favours: AudienceSegment.Enterprise),
 
-            new(MarketingChannel.Radio, "Radio", "marketing_radio",
-                "Regional, steady and unfashionable. Cheap for what it covers and it keeps working "
-                + "long after the money stops.",
+            new(MarketingChannel.Radio, "marketing_radio",
                 dailyCostUsd: 6_500, reach: 0.45, speed: 0.45, persistence: 0.55,
                 volatility: 0.25, credibility: 0.10, favours: AudienceSegment.Creative),
 
-            new(MarketingChannel.Television, "Television", "marketing_tv",
-                "The widest reach there is and the slowest to arrive. Expensive enough that a short "
-                + "campaign is money spent before anybody has noticed.",
+            new(MarketingChannel.Television, "marketing_tv",
                 dailyCostUsd: 38_000, reach: 1.60, speed: 0.18, persistence: 0.60,
                 volatility: 0.30, credibility: 0.25, favours: AudienceSegment.Consumer),
 
-            new(MarketingChannel.Billboards, "Billboards", "marketing_billboards",
-                "Physical, local and impossible to skip. Slow, and what it buys stays bought for a "
-                + "while after the posters come down.",
+            new(MarketingChannel.Billboards, "marketing_billboards",
                 dailyCostUsd: 14_000, reach: 0.70, speed: 0.30, persistence: 0.80,
                 volatility: 0.15, credibility: 0.15, favours: AudienceSegment.Consumer),
 
-            new(MarketingChannel.Creators, "Creators", "marketing_creators",
-                "Somebody with an audience talks about you. A sharp spike, a short memory, and a real "
-                + "chance of the wrong person saying the wrong thing.",
+            new(MarketingChannel.Creators, "marketing_creators",
                 dailyCostUsd: 11_000, reach: 1.10, speed: 0.75, persistence: 0.25,
                 volatility: 0.70, credibility: 0.05, favours: AudienceSegment.Developer)
         };

@@ -25,12 +25,10 @@ namespace ScalingLaws.Data
     /// </summary>
     public readonly struct HostingPackageDefinition
     {
-        public HostingPackageDefinition(HostingPackage id, string displayName, string pitch,
+        public HostingPackageDefinition(HostingPackage id,
             double petaflops, long monthlyCostUsd, double reservedQuality, int unitCap)
         {
             Id = id;
-            DisplayName = displayName;
-            Pitch = pitch;
             Petaflops = Math.Max(0.0, petaflops);
             MonthlyCostUsd = Math.Max(0L, monthlyCostUsd);
             ReservedQuality = Math.Clamp(reservedQuality, 0.0, 1.0);
@@ -38,10 +36,24 @@ namespace ScalingLaws.Data
         }
 
         public HostingPackage Id { get; }
-        public string DisplayName { get; }
+
+        private static string KeyFor(HostingPackage id) => id switch
+        {
+            HostingPackage.LowLatency => "hosting.edge",
+            HostingPackage.Bulk => "hosting.bulk",
+            _ => "hosting.growth"
+        };
+
+        /// <summary>
+        /// Read from the book at access time, never stored.
+        ///
+        /// A catalog built at type load keeps whatever language it was built in. See
+        /// `PrecisionDefinition` for the version of this note with the screenshot behind it.
+        /// </summary>
+        public string DisplayName => Loc.T(KeyFor(Id));
 
         /// <summary>What the hosting company would say it is for.</summary>
-        public string Pitch { get; }
+        public string Pitch => Loc.T(KeyFor(Id) + ".pitch");
 
         public double Petaflops { get; }
         public long MonthlyCostUsd { get; }
@@ -77,19 +89,14 @@ namespace ScalingLaws.Data
 
         private static readonly HostingPackageDefinition[] Entries =
         {
-            new(HostingPackage.Standard, "Growth cluster",
-                "Reserved capacity for about a million everyday accounts. Holds its speed while the "
-                + "shared pool starts to queue.",
+            // The words are `hosting.*` in the phrase book.
+            new(HostingPackage.Standard,
                 petaflops: 40.0, monthlyCostUsd: 320_000, reservedQuality: 0.75, unitCap: 40),
 
-            new(HostingPackage.LowLatency, "Edge tier",
-                "Half the capacity at the same money, and it barely slows down at all. For products "
-                + "sold on being fast rather than on being big.",
+            new(HostingPackage.LowLatency,
                 petaflops: 20.0, monthlyCostUsd: 300_000, reservedQuality: 1.0, unitCap: 20),
 
-            new(HostingPackage.Bulk, "Bulk allocation",
-                "Three times the capacity for twice the money, on shared iron. It queues under load "
-                + "like everything else in the pool, and at this size it will.",
+            new(HostingPackage.Bulk,
                 petaflops: 120.0, monthlyCostUsd: 640_000, reservedQuality: 0.0, unitCap: 25)
         };
 
