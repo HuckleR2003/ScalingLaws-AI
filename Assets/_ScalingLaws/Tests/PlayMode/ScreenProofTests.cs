@@ -615,5 +615,39 @@ namespace ScalingLaws.Tests.PlayMode
 
             yield return Capture(host, "messenger.png");
         }
+
+        /// <summary>
+        /// The world map, with a region chosen and a country in it.
+        ///
+        /// **The state that shows every colour at once.** An untouched map is one flat grey and
+        /// says nothing about whether the four fills are distinguishable, which is the only
+        /// question a picture of this can answer.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheWorldMapDraws()
+        {
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            var map = new WorldMapElement(WorldRegion.Europe, Country.Poland, _ => { }, _ => { });
+            map.style.flexGrow = 1;
+            host.Add(map);
+
+            yield return Capture(host, "world_map.png");
+        }
+
+        /// <summary>The same map before anything is picked, which is what a new player meets.</summary>
+        [UnityTest]
+        public IEnumerator TheWorldMapDrawsBeforeAnythingIsPicked()
+        {
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            var map = new WorldMapElement(WorldRegion.None, Country.None, _ => { }, _ => { });
+            map.style.flexGrow = 1;
+            host.Add(map);
+
+            yield return Capture(host, "world_map_empty.png");
+        }
     }
 }

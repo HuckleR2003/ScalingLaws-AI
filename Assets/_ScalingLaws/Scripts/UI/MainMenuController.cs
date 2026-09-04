@@ -1429,7 +1429,7 @@ namespace ScalingLaws.UI
             var body = new VisualElement();
             body.AddToClassList("region__body");
 
-            var map = new WorldMapElement(chosenRegion, PickRegion);
+            var map = new WorldMapElement(chosenRegion, chosenCountry, PickRegion, PickCountry);
             body.Add(map);
 
             var list = new VisualElement();
@@ -1437,7 +1437,7 @@ namespace ScalingLaws.UI
 
             if (chosenRegion == WorldRegion.None)
             {
-                var prompt = new Label(Loc.T("creator.click_continent"));
+                var prompt = new Label(Loc.T("creator.click_map"));
                 prompt.AddToClassList("field__hint");
                 list.Add(prompt);
             }

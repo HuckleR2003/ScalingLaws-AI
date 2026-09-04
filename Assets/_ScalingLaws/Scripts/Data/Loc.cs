@@ -2080,6 +2080,8 @@ namespace ScalingLaws.Data
             ["phone.guide.yes"] = "Yes, show me now",
             ["phone.guide.later"] = "Not right now",
             ["phone.guide.no"] = "Not right now, I'll get back to you.",
+            ["creator.click_map"] = "Click anywhere on the map to choose a region, or click one of the sixteen countries to settle it in one go.",
+            ["creator.pick_country_hint"] = "Pick a country from the map or from this list.",
         };
 
         // ==========================================================================================
@@ -4041,6 +4043,8 @@ namespace ScalingLaws.Data
             ["phone.guide.yes"] = "Tak, pokaż mi teraz",
             ["phone.guide.later"] = "Nie teraz",
             ["phone.guide.no"] = "Nie teraz, odezwę się.",
+            ["creator.click_map"] = "Kliknij gdziekolwiek na mapie, by wybrać region, albo kliknij jedno z szesnastu państw, by załatwić to od razu.",
+            ["creator.pick_country_hint"] = "Wybierz państwo z mapy albo z tej listy.",
         };
 
         /// <summary>
