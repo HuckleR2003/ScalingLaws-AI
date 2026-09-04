@@ -157,9 +157,26 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
   clicking one opens who they are. The room has had a staff group since the day it was generated and
   only ever held the founder.
 - **Your name over your head**, and theirs. One line, no plate, no border.
+- **Furnishing the office actually places things.** The shop was switched off in August because
+  buying a piece put it wherever the plan felt like. Right click to pick something up, left click a
+  lit square to put it down, right click anywhere to put it in storage. The same grammar the server
+  room already uses, and the squares only light up while you are carrying something.
+- **A way out of the basement.** Every other screen is left through the bottom bar it is standing on.
+  A room needs a door you can see.
+- **The name over somebody's head says what they do**, in the colour of the job, with a hairline
+  under the name. The founder gets their own colour and "CEO of <company>".
+- **Research nodes you can start now look like it.** A node that is ready and one that needs two
+  others first were a hue apart, which is not a distinction anybody makes across fifty of them.
 
 ### Changed
 
+- **The world map picks a region first, then leans in on it.** Choosing a country off a whole world
+  map means hunting for Switzerland at four pixels across. Right click steps back out.
+- **COMPUTE fits more on a line.** The user charts moved up beside the load dial at a third of the
+  width, and the cluster split moved under the capacity band it decides, from three sections higher
+  up the page.
+- **The lab page lost its strap**, which restated what four labelled tiles and a map already said and
+  pushed START below the fold on a short window.
 - **BUSINESS opens on one screen.** It was three full-width panels stacked, each showing everything
   it had all the time, so the staff benefits began about two screens down and most players never
   found them. Three short cards in a row now, saying what is running and what it costs, and the
@@ -202,6 +219,19 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Fixed
 
+- **The basement floor never emptied.** Moving a cabinet left one behind on the old square that
+  could not be clicked or moved, because the code that clears the floor was looking in a group
+  nothing is ever put in. It had also been stacking cabinets on their own squares, dozens deep, on
+  every repaint.
+- **Every tooltip with a short card threw an exception on hover.** Not visible in the game and a
+  steady stream in the log.
+- **The tutorial argued with you.** Six steps said "click COMPUTE" and then went on waiting for a
+  button after you had clicked COMPUTE. The mechanism for this was written months ago and nothing
+  ever called it.
+- **Buying a hosting package changed no number you could see.** The packages did reach the fleet;
+  the figure that says how many accounts your capacity holds was reading the rent slider alone.
+- **The name plates faced a camera nobody was looking through**, so they read edge-on and often
+  invisible.
 - **Two enum values each meant two things.** A new research node landed on the same number as the
   scale-ceiling ladder, so three nodes silently became unreachable and a fourth reported a
   prerequisite dated seven years after itself. A new ledger line landed on the same number as grant
@@ -274,8 +304,8 @@ on all along.
 
 ### Under the hood
 
-- 996 EditMode tests across 100 fixtures, and 27 PlayMode across 7.
-- 1,938 phrases in the book, both languages complete.
+- 998 EditMode tests across 101 fixtures, and 27 PlayMode across 7.
+- 1,953 phrases in the book, both languages complete.
 - 55 research nodes across five eras; 33 world events.
 - The map is a 43 kB binary baked from public-domain data by `Tools/bake_world_map.py`, rather than
   parsed at runtime: the source is 725 kB of JSON whose coordinates nest four deep, which Unity's

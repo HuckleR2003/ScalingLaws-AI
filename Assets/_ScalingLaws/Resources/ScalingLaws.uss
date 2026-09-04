@@ -2373,8 +2373,25 @@
     scale: 1.08 1.08;
 }
 
+/* **Lit and filled, not a slightly different border.** A node that can be started now and one that
+   needs two more first were a hue apart, which is a distinction nobody makes at a glance across
+   fifty of them. */
 .tree-pip--ready {
-    border-color: rgba(226, 78, 62, 0.75);
+    border-color: rgb(120, 206, 156);
+    border-width: 2px;
+    background-color: rgba(30, 84, 56, 0.55);
+    scale: 1.05 1.05;
+}
+
+.tree-pip--ready:hover {
+    border-color: rgb(160, 232, 188);
+    scale: 1.14 1.14;
+}
+
+/* Neither ready, running nor done. Dimmed rather than hidden: the shape of the tree ahead is worth
+   seeing, and a node nobody can click yet should look like one. */
+.tree-pip--locked {
+    opacity: 0.42;
 }
 
 .tree-pip--running {

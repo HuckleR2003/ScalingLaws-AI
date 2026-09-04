@@ -602,6 +602,12 @@ namespace ScalingLaws.UI
             button.EnableInClassList("tree-pip--done", standing.IsUnlocked);
             button.EnableInClassList("tree-pip--running", standing.IsInProgress);
             button.EnableInClassList("tree-pip--ready", !standing.IsUnlocked && standing.CanStart);
+
+            // **And the other half of the same fact.** Lighting the startable nodes without dimming
+            // the rest only makes the tree brighter; the player still clicks three that turn out to
+            // need a node they have not taken, which is what the tutorial kept catching.
+            button.EnableInClassList("tree-pip--locked",
+                !standing.IsUnlocked && !standing.IsInProgress && !standing.CanStart);
             button.EnableInClassList("tree-pip--picked", selectedResearch == node.Id);
 
             var icon = new VisualElement();
