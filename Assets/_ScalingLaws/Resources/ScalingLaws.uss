@@ -16086,6 +16086,15 @@
     right: 22px;
     top: 448px;
     width: 268px;
+
+    /* Hidden by default and shown on the screens whose corner is actually free. A page that uses
+       the full width has content there: a render of the business page caught this card sitting on
+       top of two of its figures. Same rule the model banner has followed since it was built. */
+    display: none;
+}
+
+.corner-is-free .prompts {
+    display: flex;
 }
 
 .prompts--arriving {
@@ -16644,4 +16653,73 @@
     font-size: 10px;
     color: rgba(226, 190, 44, 0.85);
     white-space: normal;
+}
+
+/* ---- the business page's three short cards -----------------------------------------------------
+ *
+ * These replaced three full-width panels stacked, each showing everything it had all the time: six
+ * 152x208 channel tiles twice over, then a list of benefit rows. The last of the three began about
+ * two screens down and the author reported giving up before finding the insurance in it.
+ *
+ * Nothing was removed. The card says what is running and what it costs, and the panel it replaced
+ * opens underneath when the card is picked.
+ */
+.btrio {
+    flex-direction: row;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.btrio__card {
+    width: 32%;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 2%;
+    padding: 14px 16px 13px 16px;
+    background-color: rgba(255, 255, 255, 0.045);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    align-items: stretch;
+    -unity-text-align: upper-left;
+    flex-shrink: 0;
+}
+
+.btrio__card:hover { background-color: rgba(255, 255, 255, 0.08); }
+
+.btrio__card--live { border-left-width: 3px; border-left-color: rgb(226, 190, 44); }
+
+.btrio__card--open {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(226, 190, 44, 0.55);
+}
+
+.btrio__title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgba(206, 214, 230, 0.62);
+}
+
+.btrio__figure {
+    margin-top: 5px;
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: rgb(236, 242, 252);
+    white-space: normal;
+}
+
+.btrio__status {
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: rgba(206, 214, 230, 0.6);
+}
+
+.btrio__more {
+    margin-top: 9px;
+    font-size: 9.5px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
 }

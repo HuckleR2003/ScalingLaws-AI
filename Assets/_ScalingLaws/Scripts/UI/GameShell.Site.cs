@@ -93,7 +93,7 @@ namespace ScalingLaws.UI
                 overlay.Add(title);
 
                 var subtitle = new Label(
-                    Loc.T("site.founder_line", state.FounderName,
+                    Loc.T("site.founder_line", UiFormat.PersonName(state.FounderName),
                     WorldRegionCatalog.Get(state.HomeCountry).DisplayName));
                 subtitle.AddToClassList("page-subtitle");
                 overlay.Add(subtitle);

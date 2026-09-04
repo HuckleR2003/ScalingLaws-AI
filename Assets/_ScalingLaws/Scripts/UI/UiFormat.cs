@@ -34,6 +34,20 @@ namespace ScalingLaws.UI
         public static string MoneyExact(long amount) => amount.ToString("C0", Culture);
 
         /// <summary>
+        /// A person's name, or what to call them when there is not one.
+        ///
+        /// **Never the word "Anonymous".** A playtest left the founder field empty and found their
+        /// own product page signed by somebody called Anonymous, which reads as a real person with
+        /// an odd name rather than as a blank. The field stopped being pre-filled; the fallback did
+        /// not, so an empty field produced the same page by a different route.
+        ///
+        /// Resolved here rather than stored, because a localised word written into a save would
+        /// freeze the language the campaign was created in.
+        /// </summary>
+        public static string PersonName(string name) =>
+            string.IsNullOrWhiteSpace(name) ? Loc.T("common.the_founder") : name.Trim();
+
+        /// <summary>
         /// A share price, which is the one figure in this game that needs cents.
         ///
         /// `Money` rounds to whole dollars below a thousand, so every share on the board would

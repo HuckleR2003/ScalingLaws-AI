@@ -1216,6 +1216,13 @@ namespace ScalingLaws.UI
             // because this is where the shell already knows what is open.
             contentHost?.panel?.visualTree?.EnableInClassList("has-right-rail", screen == Screen.Room);
 
+            // **The corner cards belong to the screens whose corner is actually free.** A page that
+            // uses the full width has content there, and a render of the business page came back
+            // with the guide card sitting on top of two figures. This is the rule the model banner
+            // has followed since it was built, for the same reason and after the same discovery.
+            contentHost?.panel?.visualTree?.EnableInClassList("corner-is-free",
+                screen == Screen.Site || screen == Screen.Room);
+
             contentHost.Clear();
 
             // A floating card belongs to the screen that opened it. Leaving it up over a different

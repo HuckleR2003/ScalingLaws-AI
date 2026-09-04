@@ -470,7 +470,7 @@ namespace ScalingLaws.UI
         {
             var company = simulation.State.CompanyName;
 
-            browser?.Show(company, DisplayName(), simulation.State.FounderName);
+            browser?.Show(company, DisplayName(), UiFormat.PersonName(simulation.State.FounderName));
 
             if (chipHost == null)
             {

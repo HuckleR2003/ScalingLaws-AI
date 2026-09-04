@@ -256,7 +256,8 @@ namespace ScalingLaws.UI
             shopfront.AddToClassList("mg-front");
 
             var preview = new BrowserPreview();
-            preview.Show(simulation.State.CompanyName, flagship?.Name, simulation.State.FounderName);
+            preview.Show(simulation.State.CompanyName, flagship?.Name,
+                UiFormat.PersonName(simulation.State.FounderName));
             shopfront.Add(preview.Root);
 
             block.Add(shopfront);

@@ -503,18 +503,124 @@ namespace ScalingLaws.UI
             priceRow.Add(free);
             page.Add(priceRow);
 
-            page.Add(BuildCampaignPanel(CampaignKind.Company, "COMPANY MARKETING",
-                "Reputation, slowly, and it survives a model going out of date."));
-            page.Add(BuildCampaignPanel(CampaignKind.Model, "MODEL MARKETING",
-                "Attention on the current flagship. It stops working the day the invoices stop."));
+            // **Three short cards in a row, not three tall panels stacked.** Each of the three used
+            // to show everything it had, all the time: six channel tiles at 152x208 twice over, then
+            // a list of benefits, so the last of them began about two screens down and a player
+            // gave up before finding the insurance. Nothing here is gone - the card says what is
+            // running and what it costs, and the full panel opens underneath when one is picked.
+            page.Add(BuildBusinessTrio());
 
-            // Benefits sit on the business page rather than on the team page, because what they
-            // are is a standing monthly cost that scales with headcount. The team page is about
-            // who is here; this is about what the company spends.
-            page.Add(benefits.Build());
+            if (businessOpen != BusinessSection.None)
+            {
+                page.Add(BuildOpenBusinessSection());
+            }
 
             return page;
         }
+
+        /// <summary>Which of the three is expanded. Not saved: it is where the cursor is, not state.</summary>
+        private enum BusinessSection
+        {
+            None = 0,
+            CompanyMarketing = 1,
+            ModelMarketing = 2,
+            Benefits = 3
+        }
+
+        private BusinessSection businessOpen = BusinessSection.None;
+
+        private VisualElement BuildBusinessTrio()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("btrio");
+
+            var policy = state.Monetization;
+
+            // The company/model split lives on the policy as two daily figures. A campaign carries
+            // channels, a target and a term and no kind at all, so counting them per kind would be
+            // a second answer to a question the policy already answers exactly.
+            var company = policy.CompanyMarketingDailyUsd;
+            var model = policy.ModelMarketingDailyUsd;
+
+            row.Add(TrioCard(BusinessSection.CompanyMarketing,
+                Loc.T("biz.company_marketing"),
+                company > 0L ? Loc.T("biz.running") : Loc.T("biz.nothing_running"),
+                UiFormat.Money(company) + Loc.T("biz.a_day"),
+                company > 0L));
+
+            row.Add(TrioCard(BusinessSection.ModelMarketing,
+                Loc.T("biz.model_marketing"),
+                model > 0L ? Loc.T("biz.running") : Loc.T("biz.nothing_running"),
+                UiFormat.Money(model) + Loc.T("biz.a_day"),
+                model > 0L));
+
+            // **The one the author could not find, and its card leads with the per-head price.**
+            // The old panel printed a figure per employee without saying what it was per, which he
+            // reported as the thing that made it unreadable once he had finally scrolled to it.
+            var offered = state.Benefits.Count;
+            var perHead = (long)Math.Round((double)BenefitCatalog.MonthlyCostPerHead(state.Benefits));
+
+            row.Add(TrioCard(BusinessSection.Benefits,
+                Loc.T("biz.benefits"),
+                offered > 0
+                    ? Loc.T("biz.offering", offered.ToString())
+                    : Loc.T("biz.offering_none"),
+                UiFormat.Money(perHead) + Loc.T("biz.per_person_a_month"),
+                offered > 0));
+
+            return row;
+        }
+
+        /// <summary>
+        /// One card. Clicking it opens the panel underneath, or closes it if it is already open.
+        /// </summary>
+        private VisualElement TrioCard(BusinessSection section, string title, string state_,
+            string figure, bool live)
+        {
+            var open = businessOpen == section;
+
+            var card = new Button(() =>
+            {
+                businessOpen = open ? BusinessSection.None : section;
+                Show(Screen.Business);
+            });
+
+            card.AddToClassList("btrio__card");
+            card.EnableInClassList("btrio__card--open", open);
+            card.EnableInClassList("btrio__card--live", live);
+
+            var heading = new Label(title);
+            heading.AddToClassList("btrio__title");
+            card.Add(heading);
+
+            var amount = new Label(figure);
+            amount.AddToClassList("btrio__figure");
+            card.Add(amount);
+
+            var status = new Label(state_);
+            status.AddToClassList("btrio__status");
+            card.Add(status);
+
+            var more = new Label(open ? Loc.T("biz.close") : Loc.T("biz.open"));
+            more.AddToClassList("btrio__more");
+            card.Add(more);
+
+            return card;
+        }
+
+        private VisualElement BuildOpenBusinessSection() => businessOpen switch
+        {
+            BusinessSection.CompanyMarketing => BuildCampaignPanel(CampaignKind.Company,
+                Loc.T("biz.company_marketing"), Loc.T("biz.company_marketing.blurb")),
+
+            BusinessSection.ModelMarketing => BuildCampaignPanel(CampaignKind.Model,
+                Loc.T("biz.model_marketing"), Loc.T("biz.model_marketing.blurb")),
+
+            // Benefits sit on the business page rather than on the team page, because what they are
+            // is a standing monthly cost that scales with headcount. The team page is about who is
+            // here; this is about what the company spends.
+            _ => benefits.Build()
+        };
 
         private VisualElement BuildCampaignPanel(CampaignKind kind, string heading, string blurb)
         {

@@ -2134,6 +2134,20 @@ namespace ScalingLaws.Data
             ["state.locked"] = "LOCKED",
             ["state.running"] = "RUNNING",
             ["state.everything"] = "All eight would pay {0} a day and hold {1} PF. The failure weights add up faster than the fees do.",
+            ["biz.company_marketing"] = "COMPANY MARKETING",
+            ["biz.company_marketing.blurb"] = "Reputation, slowly, and it survives a model going out of date.",
+            ["biz.model_marketing"] = "MODEL MARKETING",
+            ["biz.model_marketing.blurb"] = "Attention on the current flagship. It stops working the day the invoices stop.",
+            ["biz.benefits"] = "STAFF BENEFITS",
+            ["biz.running"] = "running",
+            ["biz.nothing_running"] = "nothing running",
+            ["biz.offering"] = "{0} offered",
+            ["biz.offering_none"] = "nothing offered",
+            ["biz.a_day"] = " a day",
+            ["biz.per_person_a_month"] = " per person, a month",
+            ["biz.open"] = "OPEN",
+            ["biz.close"] = "CLOSE",
+            ["common.the_founder"] = "The founder",
         };
 
         // ==========================================================================================
@@ -4149,6 +4163,20 @@ namespace ScalingLaws.Data
             ["state.locked"] = "ZABLOKOWANE",
             ["state.running"] = "DZIAŁA",
             ["state.everything"] = "Wszystkie osiem płaciłoby {0} dziennie i trzymało {1} PF. Wagi awarii rosną szybciej niż stawki.",
+            ["biz.company_marketing"] = "MARKETING FIRMY",
+            ["biz.company_marketing.blurb"] = "Reputacja, powoli, i przetrwa to, że model się zestarzeje.",
+            ["biz.model_marketing"] = "MARKETING MODELU",
+            ["biz.model_marketing.blurb"] = "Uwaga skupiona na obecnym flagowcu. Przestaje działać w dniu, w którym przestajesz płacić.",
+            ["biz.benefits"] = "ŚWIADCZENIA",
+            ["biz.running"] = "działa",
+            ["biz.nothing_running"] = "nic nie działa",
+            ["biz.offering"] = "{0} oferowanych",
+            ["biz.offering_none"] = "nic nie oferujesz",
+            ["biz.a_day"] = " dziennie",
+            ["biz.per_person_a_month"] = " na osobę, miesięcznie",
+            ["biz.open"] = "OTWÓRZ",
+            ["biz.close"] = "ZAMKNIJ",
+            ["common.the_founder"] = "Założyciel",
         };
 
         /// <summary>

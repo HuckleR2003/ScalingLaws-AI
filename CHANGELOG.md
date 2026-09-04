@@ -2,6 +2,16 @@
 
 Every release of Scaling Laws, newest first.
 
+**Scaling Laws** is a tycoon game about running an AI lab. You start on 1 January 2022 with $12M and
+no models, in a world where the real ones are about to arrive on the dates they actually arrived.
+You train models, sell tokens, buy compute, and try to still be here in 2036.
+
+The spine of it is one sentence: **upgrades are not purchased, they are timed.** Hardware ages, the
+frontier moves every month, and capital spent a year early sits in an asset losing roughly a quarter
+of its value with every successor launch. There is no guaranteed profit anywhere in the game: the
+price of a token falls by about half a year, demand saturates, and a company that ships one model
+and coasts is bankrupt inside three years. That is the design, not a balance problem.
+
 Dates are the day the build went public. Versions follow `MAJOR.MINOR.PATCH`: the minor number moves
 when the game gains something a player can do, the patch number when it does not.
 
@@ -28,15 +38,19 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
-**The interface stopped saying two things about the same number.** Six places in the game stated
-something that could not also be true: the inbox described one letter three different ways, the
-business page blamed a slider for a giveaway it could not move, the model creator printed a
-confident zero before anything was chosen, and the cluster was quietly doing 170 per cent of its own
-work. Every one of them is now read from a single source, with a test that fails if a second reading
-appears.
+**A government will put a country on your models, and it will look at five years first.** Era five
+opens once you have built something worth trusting: eight sectors of a state, from filing permits to
+national defence, each paying more in a day than most of this campaign earns in a month. Each one
+also holds capacity your paying customers no longer have, and each one fails at a price measured in
+billions rather than in reputation.
 
-Two mechanisms that were finished in the simulation and impossible to reach also got their controls:
-the split between building and serving, and the whole own-datacenter tier.
+The gate is a five-year safety record, and it is the only one in this game money cannot move. One
+severe incident costs about three years of it. There is nothing to buy, no research that shortens
+it, and no way through except not having done the thing.
+
+Underneath that: a real world map instead of six hand-drawn blobs, a phone that keeps what was said,
+short guided tours you can ask for again, the people you hire finally standing in the office you
+pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Added
 
@@ -59,7 +73,7 @@ the split between building and serving, and the whole own-datacenter tier.
 - **The world happens to everybody, on the dates it actually happened.** Twenty three events across
   the campaign: the invasion that closed a neon supply line, the Shanghai lockdown, export controls
   on the best accelerators, the day a chat assistant went public, the search race, the price cuts,
-  the weights leak, the copyright suit, the first comprehensive regime, the day the company selling
+  the weights leak, the copyright suit, the first regime that covers the whole field, the day the company selling
   the shovels became the most valuable in the world, reasoning models, a datacenter restarting a
   nuclear plant, and the cheap model that took a third off the going rate. Each one moves one of the
   four curves the market already computes, arrives on the wire the day it starts, and cannot be
@@ -119,9 +133,45 @@ the split between building and serving, and the whole own-datacenter tier.
   walkthrough waved away in the corner is still somewhere you can go and find it. He describes it
   and asks whether to do it now, because starting one holds the interface shut and doing that to
   somebody who tapped a list item to read what it was is the trap the lock exists to prevent.
+- **A real world map.** Natural Earth outlines, 177 countries, Robinson projection, dark grey on
+  thick white borders. Pick a region by clicking anywhere on it, or click one of the sixteen
+  countries and settle both at once. The five countries too small to find with a cursor get a
+  marker; the rest are found by their own shape. It replaced six hand-typed blobs.
+- **Era five: the state programme.** A government will put parts of a country on your models once it
+  has watched you for five years. Eight sectors from bureaucracy to defence, each paying more in a
+  day than most of the campaign earns in a month, each holding capacity the paying public no longer
+  has, and each with a failure priced in billions rather than in reputation.
+- **A five-year safety record.** What a government sees when it looks you up. It is the only gate in
+  the game money cannot move: one severe incident costs about three years of it, and the only way
+  back is time.
+- **Messager dIn.** The phone keeps the conversation now, with the campaign day beside every
+  message. Opening it used to fire a question and Emil answered it before you had read anything.
+  There is a Write / Call button instead, and under it the guides he can walk you through.
+- **Short guided tours you can ask for again**, offered from a green card in the corner and from the
+  phone. The first walks the server room end to end: buy a cabinet, stand it, open it, fit a fan.
+  While one is running the bottom bar stays on that screen.
+- **Emil names a number.** He asks you to keep the server rent under $80,000 during the compute act
+  and says there is something coming that gets you off renting, which is the basement he hands over
+  at the end.
+- **The people you hire are in the office.** One model each, their name over their head, and
+  clicking one opens who they are. The room has had a staff group since the day it was generated and
+  only ever held the founder.
+- **Your name over your head**, and theirs. One line, no plate, no border.
 
 ### Changed
 
+- **BUSINESS opens on one screen.** It was three full-width panels stacked, each showing everything
+  it had all the time, so the staff benefits began about two screens down and most players never
+  found them. Three short cards in a row now, saying what is running and what it costs, and the
+  panel each replaced opens underneath when you pick it. Nothing was removed.
+- **The benefits figure says what it is per.** It printed a price per employee without ever saying
+  so.
+- **A research scientist now does research.** The role shortened a node's calendar and did nothing
+  to research points, which are the gate money cannot open: a salesperson moved them exactly as much
+  as a scientist did. The contribution is weighted by role now, and researchers work something out
+  on their own between runs, so a lab full of them is a lab rather than a payroll.
+- **The corner cards only appear where the corner is free.** They were drawn over the business
+  page's own figures.
 - **The green guide card pulls the phone out** rather than starting the walkthrough on its own. A
   tutorial that begins because your cousin rang is a favour; one that begins because a panel
   appeared is a feature.
@@ -152,6 +202,21 @@ the split between building and serving, and the whole own-datacenter tier.
 
 ### Fixed
 
+- **Two enum values each meant two things.** A new research node landed on the same number as the
+  scale-ceiling ladder, so three nodes silently became unreachable and a fourth reported a
+  prerequisite dated seven years after itself. A new ledger line landed on the same number as grant
+  repayments, so both wrote into one slot and every figure in that row was the sum of two unrelated
+  things. Neither failed to compile. Both are written into saves, where a collision is not a bug but
+  a format in which one number means two things.
+- **Your product page was signed by somebody called Anonymous again.** The founder name field
+  stopped being pre-filled with that word after a playtest found it; the fallback did not, so
+  leaving the field empty produced exactly the same page by a different route. A blank name now
+  reads as "the founder" wherever it is shown, resolved when it is drawn rather than written into
+  the save, because a translated word stored in a file freezes the language it was made in.
+- **A fifth of the phrase book had nothing checking it.** 368 of 1,938 phrases are asked for by a
+  stem plus a suffix rather than by name, which made them invisible to the guard that proves every
+  phrase exists. A missing one renders as its own key on screen, which has shipped once before. All
+  368 currently resolve; nothing was watching them.
 - **The task strip drew on top of the basement's build rail**, and so did the new guide card. That
   screen owns its right edge, which is why the room's own corner banner already sat clear of it;
   nothing had ever told the two strips that live outside the screen.
@@ -185,15 +250,17 @@ the split between building and serving, and the whole own-datacenter tier.
 
 ### Save compatibility
 
-Save format **v48**. A campaign started on 0.1.0, v46 or v47 opens here and keeps everything in it.
+Save format **v49**. A campaign started on 0.1.0 or any version since opens here and keeps
+everything in it.
 
-Two things are new. Which walkthroughs you have finished, and which you have waved away: an older
-file has taken none, because it was played in a game that had none, so the offer appears for an
-existing campaign exactly as it does for a new one. And the thread with Emil, which arrives empty,
-because there is no honest way to invent a backlog - every line in it is what he said about a
-company as it stood on one particular day, and those figures are gone.
+Three things are new. Which guided tours you have taken, and which you waved away: an older file has
+taken none, because it was played in a game that had none, so the offer appears for an existing
+campaign exactly as it does for a new one. The conversation with Emil, which arrives empty, because
+every line in it is what he said about a company as it stood on one particular day and those figures
+are gone. And the state programme, unsigned, because era five did not exist when that file was
+played.
 
-Being part-way through a walkthrough is deliberately not saved. Quitting during one and coming back
+Being part-way through a guided tour is deliberately not saved. Quitting during one and coming back
 to it half done, with the interface still held shut and no memory of why, is worse than starting the
 two minutes again.
 
@@ -207,8 +274,17 @@ on all along.
 
 ### Under the hood
 
-- 960 EditMode tests across 95 fixtures, and 24 PlayMode across 7.
-- 1,871 phrases in the book, both languages complete.
+- 996 EditMode tests across 100 fixtures, and 27 PlayMode across 7.
+- 1,938 phrases in the book, both languages complete.
+- 55 research nodes across five eras; 33 world events.
+- The map is a 43 kB binary baked from public-domain data by `Tools/bake_world_map.py`, rather than
+  parsed at runtime: the source is 725 kB of JSON whose coordinates nest four deep, which Unity's
+  own reader cannot express at all.
+- `Docs/AUDIT.md` records a sweep for mechanisms that exist and never run, with what is still open.
+- New guards: no two names in a saved enum share a value; every phrase a catalog builds resolves in
+  both languages; every step of a guided tour that waits for the player can actually be satisfied by
+  a screen; and every presence the shell builds is also driven - the last of those written after
+  building a thirteenth unreachable mechanism while fixing the twelfth.
 - `CompetitorStrategy.FastFollower` is assigned to no lab, so nothing in the game runs that brief.
   Found by a guard that asks whether every rival trait can actually occur.
 - The unreachable-mechanism sweep was run again over every public mutator on the simulation and the
