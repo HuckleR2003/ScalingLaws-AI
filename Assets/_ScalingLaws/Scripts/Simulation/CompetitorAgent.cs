@@ -147,8 +147,32 @@ namespace ScalingLaws.Simulation
         /// researched one. That is the whole point of putting both on one calendar: if the field ran
         /// on a private schedule, losing a category would never be the player being outplayed.
         /// </summary>
+        /// <summary>
+        /// What the player's own flagship was on a given date, or General when they had nothing.
+        ///
+        /// **Set by `CompanySimulation`, and it takes a date rather than answering for today.** A
+        /// rival's live model is typed by the day it shipped, which this project has already been
+        /// caught by once: asked for today's answer, a follower's model on the shelf would change
+        /// type retroactively every time the player changed direction.
+        ///
+        /// A delegate rather than a stored copy, so nothing new reaches the save. The player's model
+        /// history is already persisted, which is what makes the derivation replay identically.
+        /// </summary>
+        public static Func<GameDate, ModelType> PlayerTypeOn { get; set; }
+
         public static ModelType TargetTypeOn(GameDate date, CompetitorStrategy strategy)
         {
+            // **The one strategy that answers to the player rather than to the calendar.** It builds
+            // whatever the player's product was on this date, which is what makes specialising
+            // something a rival can take off you. Gated by the type's own research date like every
+            // other lab, so a follower cannot ship an agent before the player could have built one.
+            if (strategy == CompetitorStrategy.FastFollower)
+            {
+                var copying = PlayerTypeOn?.Invoke(date) ?? ModelType.General;
+
+                return ModelTypeCatalog.IsReachableOn(copying, date) ? copying : ModelType.General;
+            }
+
             if (!Ladders.TryGetValue(strategy, out var ladder))
             {
                 return ModelType.General;
@@ -186,6 +210,7 @@ namespace ScalingLaws.Simulation
                     CompetitorStrategy.OpenWeights => 0.85,
                     CompetitorStrategy.FrontierRace => 1.30,
                     CompetitorStrategy.PatientScaler => 1.10,
+                    CompetitorStrategy.FastFollower => 0.95,
                     _ => 1.0
                 };
 
@@ -448,6 +473,10 @@ namespace ScalingLaws.Simulation
             CompetitorStrategy.CostLeader => 260,
             CompetitorStrategy.OpenWeights => 300,
             CompetitorStrategy.EnterpriseFocus => 350,
+
+            // Sooner than anybody. Following is the whole business, and a follower that ships slower
+            // than the lab it is following is not following.
+            CompetitorStrategy.FastFollower => 180,
             _ => 270
         };
 
@@ -458,6 +487,11 @@ namespace ScalingLaws.Simulation
             CompetitorStrategy.CostLeader => 2.8,
             CompetitorStrategy.OpenWeights => 3.2,
             CompetitorStrategy.EnterpriseFocus => 3.4,
+
+            // And gains least. Copying an answer is cheaper than finding one and it does not put you
+            // in front; sooner and shallower is the trade that makes this a different company rather
+            // than a faster copy of one.
+            CompetitorStrategy.FastFollower => 2.6,
             _ => 3.0
         };
 

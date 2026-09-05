@@ -246,18 +246,30 @@ namespace ScalingLaws.Tests.EditMode
             lines.Add(string.Empty);
             lines.Add("## Achievement thresholds nobody had measured");
             lines.Add(string.Empty);
-            lines.Add("| style | peak cash | $50B | $250B | peak fans | 1M |");
-            lines.Add("|---|---|---|---|---|---|");
+            // **Read off the catalog rather than written here.** The first version printed the
+            // thresholds as literals in the header and they were stale within the hour, which is a
+            // report telling you the wrong thing with a table around it.
+            var rungs = AchievementCatalog.All
+                .Where(entry => entry.Metric == AchievementMetric.CashUsd)
+                .OrderBy(entry => entry.Threshold)
+                .ToList();
+
+            var fans = AchievementCatalog.All
+                .First(entry => entry.Metric == AchievementMetric.Fans);
+
+            lines.Add("| style | peak cash | "
+                + string.Join(" | ", rungs.Select(r => $"${r.Threshold / 1_000_000.0:N0}M"))
+                + $" | peak fans | {fans.Threshold:N0} |");
+
+            lines.Add("|---|---|" + string.Concat(rungs.Select(_ => "---|")) + "---|---|");
 
             foreach (var (style, probe) in probes)
             {
-                lines.Add(string.Format(CultureInfo.InvariantCulture,
-                    "| {0} | ${1:N0} | {2} | {3} | {4:N0} | {5} |",
+                lines.Add(string.Format(CultureInfo.InvariantCulture, "| {0} | ${1:N0} | {2} | {3:N0} | {4} |",
                     style, probe.PeakCash,
-                    probe.PeakCash >= 50_000_000_000L ? "yes" : "no",
-                    probe.PeakCash >= 250_000_000_000L ? "yes" : "no",
+                    string.Join(" | ", rungs.Select(r => probe.PeakCash >= r.Threshold ? "yes" : "no")),
                     probe.PeakFans,
-                    probe.PeakFans >= 1_000_000.0 ? "yes" : "no"));
+                    probe.PeakFans >= fans.Threshold ? "yes" : "no"));
             }
 
             var folder = Path.Combine(

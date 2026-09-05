@@ -63,6 +63,13 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
   music is the menu, the office and the creator, and neither is inside the other. A player who wants
   their own podcast on takes music to zero and keeps the interface answering them.
 
+- **One rival watches what you sell and copies it.** `FastFollower` has been a name in the code with
+  nothing behind it since the field was written: no lab, no product line, no release pace. Alibaba
+  Qwen takes the brief, out of the four labs that were all cost leaders. It is the only strategy in
+  the game that answers to the player instead of the calendar, so specialising is now something a
+  rival can take off you. It ships sooner than anybody, every 180 days, and gains least per release,
+  because copying an answer is cheaper than finding one and it does not put you in front.
+
 - **A lab you smeared can write, ring and sue you.** Paying to make a rival look bad used to move two
   numbers and end there: nobody on the other end ever reacted. A campaign that is traced back now
   brings a notice before action from their lawyers with a sum on it and thirty days to answer, a
@@ -489,12 +496,16 @@ researches one and reloads gets exactly what it had.
 
 - 1068 EditMode tests across 111 fixtures, and 30 PlayMode across 7.
 - 2,481 phrases in the book, both languages complete, none written twice.
-- **Three achievement thresholds are unreachable and now there is a number.** Fifty billion in cash,
-  two hundred and fifty billion, and a million fans were written without anybody finishing a campaign
-  to check. The campaign probe now records the highest either figure ever reaches: across five
-  playing styles over fourteen years, the best was **$71M and 32,134 fans**. The scripted player is
-  deliberately crude and a person would do better, but not seven hundred times better. The numbers
-  need to come down and choosing them is a design call.
+- **The whole cash achievement ladder was unreachable, and now it is measured.** Fifty billion and
+  two hundred and fifty billion were marked unverified; the probe found that even the *first* rung at
+  a hundred million was above the best campaign anybody had played. Across five playing styles over
+  fourteen years the richest run peaked at **$71M and 32,134 fans**. The ladder is now
+  **$25M / $50M / $75M / $100M / $500M** and the fan award asks for a hundred thousand, all sitting
+  deliberately above the probe rather than on it, because the scripted player is crude by design and
+  a person beats it. The first rung had to clear the twelve million the company starts with, which
+  `AFreshCompanyHasEarnedNothingButStarting` caught on the first run.
+- The probe's report reads the thresholds out of the catalog now, after the first version printed
+  them as literals and was stale within the hour.
 - **A rival strategy either belongs to a lab or belongs to nobody, and now a test says which.**
   `CompetitorStrategy.FastFollower` has no lab, which is fine and deliberate. What was not fine is
   that giving it one tomorrow would have produced a General-only company on the middle numbers rather

@@ -57,7 +57,17 @@ namespace ScalingLaws.Tests.EditMode
                 var late = GameDate.FromCalendar(2032, 1, 1);
                 var target = CompetitorAgent.TargetTypeOn(late, strategy);
 
-                if (strategy != CompetitorStrategy.FrontierRace && target == ModelType.General)
+                // **`FastFollower` is exempt and the exemption is the strategy.** It builds what
+                // the player builds, and this fixture has no player, so General is the right answer
+                // rather than the fallback. `TheFollowerCopiesWhateverThePlayerIsSelling` is what
+                // covers it, by giving it somebody to copy.
+                if (strategy == CompetitorStrategy.FrontierRace
+                    || strategy == CompetitorStrategy.FastFollower)
+                {
+                    continue;
+                }
+
+                if (target == ModelType.General)
                 {
                     wrong.Add($"{strategy} still builds General in 2032, which is the fallback for a "
                               + "strategy with no rung on the ladder");
@@ -90,14 +100,20 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
-        /// A strategy with no lab has no lab, and that is a decision rather than an oversight.
+        /// Every strategy has a lab, and that is now true for the first time.
         ///
-        /// This is the assertion that has to be updated deliberately. If somebody gives `FastFollower`
-        /// to a lab, this fails and points at the four places that need a line written for it, which
-        /// is the whole reason it is here.
+        /// **This assertion did its job and then changed.** It was written yesterday saying that
+        /// `FastFollower` alone had no lab, so that giving it one would fail here and point at the
+        /// four places that needed a line written for it. A lab was given it the next day, this
+        /// failed, and the four places were written. Left as it was, it would now be a test asserting
+        /// that a finished mechanic is still missing.
+        ///
+        /// It keeps its value pointing the other way: a strategy that loses its last lab is a
+        /// mechanism that silently stops happening to anybody, which is how two of the five model
+        /// types went unbuilt for fourteen years of game time with the suite green.
         /// </summary>
         [Test]
-        public void TheOnlyStrategyWithoutALabIsTheOneThatIsDocumentedAsHavingNone()
+        public void EveryStrategyHasALab()
         {
             var assigned = Assigned();
 
@@ -106,12 +122,50 @@ namespace ScalingLaws.Tests.EditMode
                 .Where(strategy => !assigned.Contains(strategy))
                 .ToList();
 
-            CollectionAssert.AreEquivalent(
-                new[] { CompetitorStrategy.FastFollower }, idle,
-                "A strategy joined or left the board. If a lab was given FastFollower, it needs a rung "
-                + "on CompetitorAgent.Ladders, a house serving cost, a cadence and a capability gain, "
-                + "or it silently becomes a General lab on the middle numbers. If a different strategy "
-                + "lost its last lab, whatever it was built to do has just stopped happening.");
+            CollectionAssert.IsEmpty(idle,
+                "A strategy has no lab, so whatever it was built to do stops happening to anybody: "
+                + string.Join(", ", idle) + ". Either give it a lab, with a rung on "
+                + "CompetitorAgent.Ladders, a house serving cost, a cadence and a capability gain, "
+                + "or take the member out rather than leaving a name with nothing behind it.");
+        }
+
+        /// <summary>
+        /// The follower builds what the player builds, and does it without being told twice.
+        ///
+        /// The point of the strategy, and the part that cannot be read off the tables: every other
+        /// lab answers to the calendar and this one answers to the player.
+        /// </summary>
+        [Test]
+        public void TheFollowerCopiesWhateverThePlayerIsSelling()
+        {
+            var simulation = new CompanySimulation(new CompanyState("Copied", 0x60A7u));
+            var state = simulation.State;
+
+            // Far enough in that every model type has been reachable for years, so a follower that
+            // ignored the player would answer General and one that reads them answers Coding.
+            var late = GameDate.FromCalendar(2032, 6, 1);
+
+            Assert.That(CompetitorAgent.TargetTypeOn(late, CompetitorStrategy.FastFollower),
+                Is.EqualTo(ModelType.General),
+                "with nothing on sale there is nothing to copy");
+
+            state.AddDeployedModel(new DeployedModel("Copybook",
+                ArchitectureId.DenseTransformer, 60.0, GameDate.FromCalendar(2030, 1, 1),
+                2e10, 1.0, ModelType.Coding));
+
+            Assert.That(CompetitorAgent.TargetTypeOn(late, CompetitorStrategy.FastFollower),
+                Is.EqualTo(ModelType.Coding),
+                "the follower is the one lab that reads the player, and it did not");
+
+            // **And it reads the date rather than today.** A rival's live model is typed by the day
+            // it shipped, so asking about a date before the player had anything must still answer
+            // General however good their product is now.
+            Assert.That(
+                CompetitorAgent.TargetTypeOn(GameDate.FromCalendar(2026, 1, 1),
+                    CompetitorStrategy.FastFollower),
+                Is.EqualTo(ModelType.General),
+                "a model already on the shelf changed type retroactively, which is the fault this "
+                + "project has been caught by once already");
         }
     }
 }

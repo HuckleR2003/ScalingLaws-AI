@@ -41,6 +41,17 @@ namespace ScalingLaws.Simulation
         public CompanySimulation(CompanyState state)
         {
             State = state ?? throw new ArgumentNullException(nameof(state));
+
+            // **The one rival that reacts to the player needs to be able to ask about them.** Set
+            // here rather than passed through `Tick`, because `CompetitorAgent.TargetTypeOn` is
+            // reached from `TargetType` and `LiveType`, which the market reads whenever it wants to
+            // know what a lab sells; threading a parameter through all of those would make every
+            // caller carry the player's history to answer a question about one lab in fourteen.
+            //
+            // Nothing is stored: the answer is a function of the player's own model history, which
+            // the save already keeps, so the field replays identically. See
+            // `CompetitorStrategy.FastFollower`.
+            CompetitorAgent.PlayerTypeOn = PlayerTypeOn;
         }
 
         public CompanyState State { get; }
@@ -4340,6 +4351,37 @@ namespace ScalingLaws.Simulation
             }
 
             return total;
+        }
+
+        /// <summary>
+        /// What the player's strongest model was on a given day, or General when they had none.
+        ///
+        /// **A day in the past, not today**, and that is the whole care in this method. A rival's
+        /// live model is typed by the date it shipped, so a follower that asked what the player is
+        /// selling *now* would change the type of a model already on the shelf every time the player
+        /// changed direction. Asked about the day it shipped, the answer stops moving.
+        ///
+        /// Read off `DeployedModels`, which keeps retired models rather than dropping them. That is
+        /// what makes this derivable at all, and it is why the one rival that reacts to the player
+        /// adds nothing to the save.
+        /// </summary>
+        public ModelType PlayerTypeOn(GameDate date)
+        {
+            var best = ModelType.General;
+            var strongest = 0.0;
+
+            foreach (var model in State.DeployedModels)
+            {
+                if (date.DayIndex < model.ReleaseDate.DayIndex || model.Capability <= strongest)
+                {
+                    continue;
+                }
+
+                strongest = model.Capability;
+                best = model.Type;
+            }
+
+            return best;
         }
 
         private void RunRivals()

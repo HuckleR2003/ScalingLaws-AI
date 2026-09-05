@@ -212,7 +212,10 @@ namespace ScalingLaws.Simulation
             { CompetitorId.MistralAi, CompetitorStrategy.OpenWeights },
             { CompetitorId.DeepSeek, CompetitorStrategy.CostLeader },
             { CompetitorId.XAi, CompetitorStrategy.FrontierRace },
-            { CompetitorId.AlibabaQwen, CompetitorStrategy.CostLeader },
+            // **The one lab that watches the player.** Four labs shared `CostLeader` and this is
+            // the one whose own history is following the frontier closely across whatever it was
+            // doing, rather than competing on price. See `CompetitorStrategy.FastFollower`.
+            { CompetitorId.AlibabaQwen, CompetitorStrategy.FastFollower },
 
             // Cheap, because it has nothing else to sell.
             { CompetitorId.Groq, CompetitorStrategy.CostLeader },

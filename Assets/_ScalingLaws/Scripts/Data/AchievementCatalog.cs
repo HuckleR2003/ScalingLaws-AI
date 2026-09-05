@@ -250,16 +250,31 @@ namespace ScalingLaws.Data
 
         private static readonly AchievementDefinition[] Entries =
         {
+            // **The whole ladder came down once somebody measured the game.** `CampaignProbeTests`
+            // plays fourteen years in five styles and the richest run peaked at $71M, so the old
+            // first rung at $100M was already above every campaign anybody had played and the other
+            // four were out by two and three orders of magnitude.
+            //
+            // These sit deliberately above the probe rather than on it: the scripted operator is
+            // crude and a person beats it. The third rung lands just over its best run, the fourth
+            // beyond it, and the fifth is a stretch nobody has reached. Re-measure with the probe
+            // before moving any of them again.
+            //
+            // **The first rung has to clear `CompanyState.StartingCashUsd`.** At five million it sat
+            // under the twelve the company is handed on day one, so a brand new campaign earned it
+            // before doing anything, and `AFreshCompanyHasEarnedNothingButStarting` said so on the
+            // first run. Twenty five million is the first figure that is an achievement rather than
+            // a starting balance.
             new(AchievementId.Cash1, "ACH_CASH_1", AchievementGroup.Cash, 1,
-                AchievementMetric.CashUsd, 100_000_000, "ach.cash1.name", "ach.cash1.note"),
+                AchievementMetric.CashUsd, 25_000_000, "ach.cash1.name", "ach.cash1.note"),
             new(AchievementId.Cash2, "ACH_CASH_2", AchievementGroup.Cash, 2,
-                AchievementMetric.CashUsd, 1_000_000_000, "ach.cash2.name", "ach.cash2.note"),
+                AchievementMetric.CashUsd, 50_000_000, "ach.cash2.name", "ach.cash2.note"),
             new(AchievementId.Cash3, "ACH_CASH_3", AchievementGroup.Cash, 3,
-                AchievementMetric.CashUsd, 10_000_000_000, "ach.cash3.name", "ach.cash3.note"),
+                AchievementMetric.CashUsd, 75_000_000, "ach.cash3.name", "ach.cash3.note"),
             new(AchievementId.Cash4, "ACH_CASH_4", AchievementGroup.Cash, 4,
-                AchievementMetric.CashUsd, 50_000_000_000, "ach.cash4.name", "ach.cash4.note"),
+                AchievementMetric.CashUsd, 100_000_000, "ach.cash4.name", "ach.cash4.note"),
             new(AchievementId.Cash5, "ACH_CASH_5", AchievementGroup.Cash, 5,
-                AchievementMetric.CashUsd, 250_000_000_000, "ach.cash5.name", "ach.cash5.note"),
+                AchievementMetric.CashUsd, 500_000_000, "ach.cash5.name", "ach.cash5.note"),
             new(AchievementId.Model1, "ACH_MODEL_1", AchievementGroup.Models, 1,
                 AchievementMetric.ReleasedModels, 1, "ach.model1.name", "ach.model1.note"),
             new(AchievementId.Model2, "ACH_MODEL_2", AchievementGroup.Models, 2,
@@ -329,8 +344,9 @@ namespace ScalingLaws.Data
                 AchievementMetric.YearReached, 2036, "ach.surv2036.name", "ach.surv2036.note"),
             new(AchievementId.SurvLoss, "ACH_SURV_LOSS", AchievementGroup.Survival, 3,
                 AchievementMetric.DaysInDebtAtLoad, 30, "ach.survloss.name", "ach.survloss.note"),
+            // Measured best across the probe: 32,134. Same reasoning as the cash ladder.
             new(AchievementId.MktFans, "ACH_MKT_FANS", AchievementGroup.Market, 2,
-                AchievementMetric.Fans, 1_000_000, "ach.mktfans.name", "ach.mktfans.note"),
+                AchievementMetric.Fans, 100_000, "ach.mktfans.name", "ach.mktfans.note"),
             new(AchievementId.MktLive8, "ACH_MKT_LIVE8", AchievementGroup.Market, 4,
                 AchievementMetric.LiveModels, 8, "ach.mktlive8.name", "ach.mktlive8.note"),
             new(AchievementId.MktTeam20, "ACH_MKT_TEAM20", AchievementGroup.Market, 2,
