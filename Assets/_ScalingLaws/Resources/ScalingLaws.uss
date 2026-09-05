@@ -7294,6 +7294,20 @@
     color: rgb(198, 219, 236);
 }
 
+/* What a licence would cost, on a row where it cannot be bought today. Same box as the button so
+   the column lines up, without the frame that invites the click. */
+
+.corpus-row__price {
+    flex-shrink: 0;
+    width: 120px;
+    height: 30px;
+    margin-left: 12px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    color: rgb(120, 132, 152);
+}
+
 
 .tree-node--small {
     margin-top: 0;

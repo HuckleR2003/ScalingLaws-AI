@@ -1089,6 +1089,24 @@ namespace ScalingLaws.UI
             words.Add(note);
             row.Add(words);
 
+            // **The price is drawn flat when it cannot be paid.** Every family is gated by a
+            // node that grants it on completion, so a campaign started today never reaches a state
+            // where this one is licensable, and a disabled button on every row for the whole game
+            // reads as something broken rather than as something waiting. The announced offices are
+            // drawn the same way for the same reason.
+            //
+            // The button is still built for the case that is real: a campaign saved before research
+            // delivered its own unlocks holds the node and not the family, and this is its way back
+            // to what it already paid for.
+            if (!buyable)
+            {
+                var price = new Label(UiFormat.Money(definition.AdoptionCostUsd));
+                price.AddToClassList("corpus-row__price");
+                row.Add(price);
+
+                return row;
+            }
+
             var buy = new Button(() =>
             {
                 simulation.TryAdoptArchitecture(definition.Id, out _);
@@ -1101,7 +1119,6 @@ namespace ScalingLaws.UI
             };
 
             buy.AddToClassList("corpus-row__buy");
-            buy.SetEnabled(buyable);
             row.Add(buy);
 
             return row;
