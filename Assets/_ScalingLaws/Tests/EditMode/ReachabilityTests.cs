@@ -8,6 +8,7 @@ using NUnit.Framework;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace ScalingLaws.Tests.EditMode
 {
@@ -330,6 +331,76 @@ namespace ScalingLaws.Tests.EditMode
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// The FOUNDATION page names every family the company cannot build on yet, and draws a
+        /// button only where one could be pressed.
+        ///
+        /// **Two faults, and the second was shipped by the fix for the first.** The dropdown lists
+        /// only families the company already holds, so an unowned one had no name anywhere in the
+        /// game, no price and nothing saying what would open it. The rows that fixed that then
+        /// carried a priced button on every line, and every one of those was dead: a family's gate
+        /// node grants the family on completion, so a campaign started today never reaches a state
+        /// where the licence is open. A row that reads as an option and refuses every click reads as
+        /// a bug, which is why the announced offices are drawn flat as well.
+        ///
+        /// Walked in 2030 so every family is published and the only thing refusing them is the gate.
+        /// </summary>
+        [Test]
+        public void TheFoundationPageNamesTheFamiliesItCannotBuildOnAndOffersNoDeadButton()
+        {
+            var simulation = new CompanySimulation(new CompanyState("Families", 0xFA11u));
+
+            while (simulation.State.Date.Year < 2030)
+            {
+                simulation.Advance(90);
+            }
+
+            simulation.State.CashUsd = 50_000_000_000L;
+
+            var panel = new UI.ModelCreatorPanel(simulation);
+            panel.Refresh();
+
+            var named = new List<string>();
+            var dead = new List<string>();
+
+            // Only the stage being looked at is in the tree, which is what made the badge count
+            // read zero on the opening page.
+            for (var stage = 0; stage < UI.ModelCreatorPanel.StageCount; stage++)
+            {
+                panel.Stage = stage;
+
+                var offers = panel.Root.Q(className: "family-offers");
+
+                if (offers == null)
+                {
+                    continue;
+                }
+
+                named.AddRange(offers.Query<Label>(className: "corpus-row__name")
+                    .ToList().Select(label => label.text));
+
+                dead.AddRange(offers.Query<Button>(className: "corpus-row__buy")
+                    .ToList().Where(button => !button.enabledSelf).Select(button => button.text));
+            }
+
+            foreach (var definition in ArchitectureCatalog.All)
+            {
+                if (simulation.State.HasArchitecture(definition.Id)
+                    || !definition.IsAvailableOn(simulation.State.Date))
+                {
+                    continue;
+                }
+
+                Assert.That(named, Contains.Item(definition.DisplayName),
+                    $"{definition.Id} is published, the company does not have it, and the creator "
+                    + "never names it: a player learns it exists when a node hands it over");
+            }
+
+            Assert.IsEmpty(dead,
+                "These licence buttons are drawn and can never be pressed, on every row, for the "
+                + "whole campaign: " + string.Join(", ", dead));
         }
 }
 }
