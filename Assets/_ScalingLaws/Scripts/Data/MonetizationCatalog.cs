@@ -33,24 +33,35 @@ namespace ScalingLaws.Data
     public readonly struct CampaignDefinition
     {
         public CampaignDefinition(
-            string displayName,
+            string key,
             CampaignKind kind,
-            string description,
             long dailyBudgetUsd,
             double effectPerDay,
             GameDate earliestDate)
         {
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? "Campaign" : displayName;
+            Key = string.IsNullOrWhiteSpace(key) ? "camp.devrel" : key;
             Kind = kind;
-            Description = description ?? string.Empty;
             DailyBudgetUsd = Math.Clamp(dailyBudgetUsd, 0L, 500_000_000L);
             EffectPerDay = Math.Clamp(SimUnits.Finite(effectPerDay), 0.0, 0.05);
             EarliestDate = earliestDate;
         }
 
-        public string DisplayName { get; }
+        /// <summary>
+        /// The phrase-book stem for this programme.
+        ///
+        /// **A key on the row rather than a `KeyFor` switch**, because a campaign has no id enum to
+        /// switch on: it was identified by its own display name, which is the one shape that cannot
+        /// have one. It is still a literal in the table, so it stays visible to
+        /// `LocalisationTests.EveryKeyTheInterfaceAsksForExists`, and it reaches no save: the format
+        /// records channels and a term, never a programme's name.
+        /// </summary>
+        public string Key { get; }
+
+        /// <summary>Read from the book at access time, never stored. See `PlayerSkillDefinition`.</summary>
+        public string DisplayName => Loc.T(Key);
+
         public CampaignKind Kind { get; }
-        public string Description { get; }
+        public string Description => Loc.T(Key + ".about");
         public long DailyBudgetUsd { get; }
 
         /// <summary>Brand added per day at full effect, before diminishing returns.</summary>
@@ -98,33 +109,23 @@ namespace ScalingLaws.Data
 
         private static readonly CampaignDefinition[] Entries =
         {
-            new("Developer relations", CampaignKind.Company,
-                "Conference talks, sample code and someone who answers the forum. Slow, cheap, and it "
-                + "outlives whichever model is current.",
+            new("camp.devrel", CampaignKind.Company,
                 dailyBudgetUsd: 8_000, effectPerDay: 0.00055, earliestDate: GameDate.Start),
 
-            new("Trade press", CampaignKind.Company,
-                "Briefings and benchmarks in the places procurement teams read before they shortlist.",
+            new("camp.press", CampaignKind.Company,
                 dailyBudgetUsd: 45_000, effectPerDay: 0.00150, earliestDate: GameDate.Start),
 
-            new("Brand campaign", CampaignKind.Company,
-                "The company name in places that have nothing to do with software. Expensive, and the "
-                + "only thing that reaches people who will never read a benchmark.",
+            new("camp.brand", CampaignKind.Company,
                 dailyBudgetUsd: 400_000, effectPerDay: 0.00380,
                 earliestDate: GameDate.FromCalendar(2023, 6, 1)),
 
-            new("Launch push", CampaignKind.Model,
-                "Everything pointed at the model that just shipped. Works immediately and stops working "
-                + "the day the invoices stop.",
+            new("camp.launch", CampaignKind.Model,
                 dailyBudgetUsd: 30_000, effectPerDay: 0.00260, earliestDate: GameDate.Start),
 
-            new("Performance advertising", CampaignKind.Model,
-                "Bought attention, measured daily. Reliable, unromantic, and it never compounds.",
+            new("camp.performance", CampaignKind.Model,
                 dailyBudgetUsd: 180_000, effectPerDay: 0.00700, earliestDate: GameDate.Start),
 
-            new("Everywhere at once", CampaignKind.Model,
-                "The saturation campaign. Enormous reach while it runs and nothing left behind when it "
-                + "does not.",
+            new("camp.saturation", CampaignKind.Model,
                 dailyBudgetUsd: 1_400_000, effectPerDay: 0.01800,
                 earliestDate: GameDate.FromCalendar(2024, 1, 1))
         };
@@ -158,11 +159,17 @@ namespace ScalingLaws.Data
             return effectPerDay * saturating / Math.Max(1.0, budget);
         }
 
+        /// <summary>
+        /// What the player is charging, in words.
+        ///
+        /// Read from the book rather than returned as a literal: this lands on three buttons on the
+        /// BUSINESS page, which were English on a Polish game.
+        /// </summary>
         public static string PricingName(PricingModel model) => model switch
         {
-            PricingModel.PayPerToken => "Pay per token",
-            PricingModel.Subscription => "Subscription",
-            _ => "Free"
+            PricingModel.PayPerToken => Loc.T("pricing.pertoken"),
+            PricingModel.Subscription => Loc.T("pricing.subscription"),
+            _ => Loc.T("pricing.free")
         };
     }
 }

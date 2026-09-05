@@ -274,6 +274,71 @@ namespace ScalingLaws.Tests.EditMode
             });
         }
 
+        /// <summary>
+        /// The last seven catalogs that stored English: skills, safety tiers, founder traits,
+        /// funding rounds, hiring channels, marketing programmes and compute tiers.
+        ///
+        /// **The heading on the section above was wrong when it was written.** It said no catalog in
+        /// the game stored a player-facing string, and eighteen did: twelve had been moved and seven
+        /// had not, which a review from outside counted before anybody here did. That claim is true
+        /// now, and this test is the reason it can stay true.
+        /// </summary>
+        [Test]
+        public void EverySkillTierTraitRoundChannelCampaignAndComputeTierHasItsWords()
+        {
+            InBothLanguages(missing =>
+            {
+                foreach (var skill in PlayerSkillCatalog.All)
+                {
+                    Resolved($"skill.{skill.Skill}.name", skill.DisplayName, missing);
+                    Resolved($"skill.{skill.Skill}.about", skill.Description, missing);
+                    Resolved($"skill.{skill.Skill}.short", skill.ShortEffect, missing);
+                    Resolved($"skill.{skill.Skill}.full", skill.EffectAtFull, missing);
+                }
+
+                foreach (var tier in SafetyModuleCatalog.All)
+                {
+                    Resolved($"safety.{tier.Module}{tier.Tier}.name", tier.DisplayName, missing);
+                    Resolved($"safety.{tier.Module}{tier.Tier}.about", tier.Description, missing);
+                }
+
+                foreach (var trait in FounderTraitCatalog.All)
+                {
+                    Resolved($"trait.{trait.Trait}.name", trait.DisplayName, missing);
+                    Resolved($"trait.{trait.Trait}.flavour", trait.Flavour, missing);
+                    Resolved($"trait.{trait.Trait}.effect", trait.EffectSummary, missing);
+                }
+
+                foreach (var round in FundingCatalog.All)
+                {
+                    Resolved($"funding.{round.Stage}.name", round.DisplayName, missing);
+                }
+
+                foreach (var channel in HiringChannels.All)
+                {
+                    Resolved($"hire.{channel.Source}.name", channel.DisplayName, missing);
+                    Resolved($"hire.{channel.Source}.tagline", channel.Tagline, missing);
+                }
+
+                foreach (var campaign in MonetizationCatalog.All)
+                {
+                    Resolved($"{campaign.Key}.name", campaign.DisplayName, missing);
+                    Resolved($"{campaign.Key}.about", campaign.Description, missing);
+                }
+
+                foreach (var tier in ComputeTierCatalog.All)
+                {
+                    Resolved($"tier.{tier.Tier}.name", tier.DisplayName, missing);
+                    Resolved($"tier.{tier.Tier}.about", tier.Description, missing);
+                }
+
+                foreach (PricingModel model in Enum.GetValues(typeof(PricingModel)))
+                {
+                    Resolved($"pricing.{model}", MonetizationCatalog.PricingName(model), missing);
+                }
+            });
+        }
+
         /// <summary>The seven skills the creator asks a new player to understand.</summary>
         [Test]
         public void EverySkillNoteHasAllFiveOfItsPhrases()

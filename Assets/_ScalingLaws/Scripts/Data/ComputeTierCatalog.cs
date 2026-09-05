@@ -22,8 +22,6 @@ namespace ScalingLaws.Data
         private static readonly ComputeTierDefinition[] Entries =
         {
             new(ComputeTier.RentedCloud,
-                "Rented cloud",
-                "Billed by the hour on somebody else's cluster. Costs the most per FLOP and can be handed back tomorrow.",
                 leadTimeDays: 0,
                 capitalPriceMultiplier: 1.0,
                 powerCostPerKilowattHourUsd: 0.0,
@@ -37,8 +35,6 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.Start),
 
             new(ComputeTier.ColocatedServers,
-                "Colocated servers",
-                "Your accelerators in a rented hall. Cheaper per FLOP than renting, but the rack fee and the depreciation run whether the cluster is busy or idle.",
                 leadTimeDays: 45,
                 capitalPriceMultiplier: 1.0,
                 powerCostPerKilowattHourUsd: 0.14,
@@ -52,8 +48,6 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.Start),
 
             new(ComputeTier.OwnDatacenter,
-                "Own datacenter",
-                "Your building, your power contract. The cheapest FLOP in the game and the slowest decision to reverse: 300 days from signature to first token.",
                 leadTimeDays: 300,
                 capitalPriceMultiplier: 0.92,
                 powerCostPerKilowattHourUsd: 0.055,

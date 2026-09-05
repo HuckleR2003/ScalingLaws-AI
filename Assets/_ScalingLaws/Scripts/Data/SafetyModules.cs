@@ -19,14 +19,12 @@ namespace ScalingLaws.Data
     /// <summary>One rung of one module.</summary>
     public readonly struct SafetyTier
     {
-        public SafetyTier(SafetyModule module, int tier, string displayName, string icon,
+        public SafetyTier(SafetyModule module, int tier, string icon,
             ResearchNodeId requires, int extraDays, long extraCostUsd,
-            double riskReduction, double saveChance, double perModelBonus, int perModelCap,
-            string description)
+            double riskReduction, double saveChance, double perModelBonus, int perModelCap)
         {
             Module = module;
             Tier = tier;
-            DisplayName = displayName;
             Icon = icon;
             Requires = requires;
             ExtraDays = Math.Max(0, extraDays);
@@ -35,12 +33,37 @@ namespace ScalingLaws.Data
             SaveChance = Math.Clamp(saveChance, 0.0, 0.95);
             PerModelBonus = Math.Max(0.0, perModelBonus);
             PerModelCap = Math.Max(0, perModelCap);
-            Description = description ?? string.Empty;
         }
 
         public SafetyModule Module { get; }
         public int Tier { get; }
-        public string DisplayName { get; }
+
+        /// <summary>
+        /// The stem for everything written about this tier.
+        ///
+        /// **Written out rather than assembled from the module and the number.** A key built by
+        /// concatenation is invisible to `LocalisationTests.EveryKeyTheInterfaceAsksForExists`,
+        /// which can only read literals, and this project has already shipped a screen of raw keys
+        /// once for exactly that reason.
+        /// </summary>
+        private static string KeyFor(SafetyModule module, int tier) => (module, tier) switch
+        {
+            (SafetyModule.Assa, 0) => "safety.assa0",
+            (SafetyModule.Assa, 1) => "safety.assa1",
+            (SafetyModule.Assa, 2) => "safety.assa2",
+            (SafetyModule.Assa, 3) => "safety.assa3",
+            (SafetyModule.RedTeam, 0) => "safety.red0",
+            (SafetyModule.RedTeam, 1) => "safety.red1",
+            (SafetyModule.RedTeam, 2) => "safety.red2",
+            (SafetyModule.RedTeam, 3) => "safety.red3",
+            (SafetyModule.DataProtection, 0) => "safety.data0",
+            (SafetyModule.DataProtection, 1) => "safety.data1",
+            (SafetyModule.DataProtection, 2) => "safety.data2",
+            _ => "safety.data3"
+        };
+
+        /// <summary>Read from the book at access time, never stored. See `PlayerSkillDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Module, Tier));
 
         /// <summary>File name under `Resources/Research`. The same art the tree node uses.</summary>
         public string Icon { get; }
@@ -65,7 +88,7 @@ namespace ScalingLaws.Data
         /// <summary>Models past this add nothing. A fleet of products is not a fleet of auditors.</summary>
         public int PerModelCap { get; }
 
-        public string Description { get; }
+        public string Description => Loc.T(KeyFor(Module, Tier) + ".about");
 
         /// <summary>Risk reduction with the fleet bonus folded in.</summary>
         public double RiskReductionWith(int liveModels) =>
@@ -132,68 +155,41 @@ namespace ScalingLaws.Data
             // Automatic Self Safety Auditioning. The model is shut in a room with itself and told to
             // find the way out. Every tier is the same idea with more of it.
 
-            new(SafetyModule.Assa, 0, "Basics ASSA", "research_assa0_basic",
+            new(SafetyModule.Assa, 0, "research_assa0_basic",
                 ResearchNodeId.None, extraDays: 6, extraCostUsd: 100_000,
-                riskReduction: 0.04, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5,
-                "A plain set of algorithms that run through the maintenance windows. Offline and "
-                + "sealed off, the model is thrown at itself over and over, looking for the holes in "
-                + "its own handling of data and its own encryption before anybody outside finds them."),
+                riskReduction: 0.04, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5),
 
-            new(SafetyModule.Assa, 1, "Licensed Stacked-ASSA", "research_assa1_licensed",
+            new(SafetyModule.Assa, 1, "research_assa1_licensed",
                 ResearchNodeId.LicensedStackedAssa, extraDays: 30, extraCostUsd: 480_000,
-                riskReduction: 0.10, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5,
-                "The same sealed room, with better tools in it. ASSA on its own is the floor; this is "
-                + "a licence for a suite of outside algorithms that bolt onto it, and what the licence "
-                + "actually buys is that the automated passes stop missing the same class of hole "
-                + "every time."),
+                riskReduction: 0.10, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5),
 
-            new(SafetyModule.Assa, 2, "Advanced ASSA", "research_assa2_advanced",
+            new(SafetyModule.Assa, 2, "research_assa2_advanced",
                 ResearchNodeId.AdvancedAssa, extraDays: 62, extraCostUsd: 1_900_000,
-                riskReduction: 0.18, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5,
-                "Every previous audit is training data now. With enough of it the company can stand "
-                + "up an attacking system the size of the model itself, sealed in with it, and let "
-                + "the two of them go at each other for as long as the calendar allows."),
+                riskReduction: 0.18, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5),
 
-            new(SafetyModule.Assa, 3, "ASSA Ecosystem", "research_assa3_ecosystem",
+            new(SafetyModule.Assa, 3, "research_assa3_ecosystem",
                 ResearchNodeId.AssaEcosystem, extraDays: 104, extraCostUsd: 6_400_000,
-                riskReduction: 0.30, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5,
-                "No longer a pass that runs and finishes. A standing population of auditors, each "
-                + "specialised, each fed by what the others found, running against every model the "
-                + "company has ever shipped. Nothing else in this stage comes close and nothing else "
-                + "costs this much of the year."),
+                riskReduction: 0.30, saveChance: 0.0, perModelBonus: 0.02, perModelCap: 5),
 
             // ---------------------------------------------------------------- red teaming
             //
             // These do not lower the risk of anything. They are the appeal after the verdict.
 
-            new(SafetyModule.RedTeam, 0, "Basic Red Teaming", "research_red0_basic_teaming",
+            new(SafetyModule.RedTeam, 0, "research_red0_basic_teaming",
                 ResearchNodeId.None, extraDays: 4, extraCostUsd: 60_000,
-                riskReduction: 0.0, saveChance: 0.025, perModelBonus: 0.005, perModelCap: 8,
-                "A folder of prompts somebody wrote by hand, tried against the model, and wrote down "
-                + "the results of. It is not much and it is not automated, but a company that has "
-                + "done it has an answer ready when somebody asks what was tested."),
+                riskReduction: 0.0, saveChance: 0.025, perModelBonus: 0.005, perModelCap: 8),
 
-            new(SafetyModule.RedTeam, 1, "Automated Red Teaming", "research_red1_automated_teaming",
+            new(SafetyModule.RedTeam, 1, "research_red1_automated_teaming",
                 ResearchNodeId.AutomatedRedTeaming, extraDays: 22, extraCostUsd: 420_000,
-                riskReduction: 0.0, saveChance: 0.055, perModelBonus: 0.008, perModelCap: 8,
-                "The folder becomes a machine. It generates its own attempts, keeps the ones that got "
-                + "closest and mutates those, so the tests stop being a list somebody thought of and "
-                + "start being a search."),
+                riskReduction: 0.0, saveChance: 0.055, perModelBonus: 0.008, perModelCap: 8),
 
-            new(SafetyModule.RedTeam, 2, "Adversarial Campaigns", "research_red2_adversarial_campaigns",
+            new(SafetyModule.RedTeam, 2, "research_red2_adversarial_campaigns",
                 ResearchNodeId.AdversarialCampaigns, extraDays: 48, extraCostUsd: 1_600_000,
-                riskReduction: 0.0, saveChance: 0.10, perModelBonus: 0.01, perModelCap: 8,
-                "Campaigns rather than tests: long runs with a goal, a budget and a record, aimed at "
-                + "one class of failure at a time. Every failed attempt is kept, because a failed "
-                + "attack is the most useful thing anybody has about the next one."),
+                riskReduction: 0.0, saveChance: 0.10, perModelBonus: 0.01, perModelCap: 8),
 
-            new(SafetyModule.RedTeam, 3, "Continuous Red Team", "research_red3_redteam",
+            new(SafetyModule.RedTeam, 3, "research_red3_redteam",
                 ResearchNodeId.ContinuousRedTeam, extraDays: 84, extraCostUsd: 5_200_000,
-                riskReduction: 0.0, saveChance: 0.175, perModelBonus: 0.02, perModelCap: 8,
-                "A standing team of agents that never stops and never ships. They attack every model "
-                + "on sale, all the time, and they get better at it every time they fail. When a "
-                + "regulator arrives, this is the company that already knows what they are about to "
-                + "find."),
+                riskReduction: 0.0, saveChance: 0.175, perModelBonus: 0.02, perModelCap: 8),
 
             // ---------------------------------------------------------------- data protection
             //
@@ -201,33 +197,21 @@ namespace ScalingLaws.Data
             // know how to isolate personal data, and this is the line between a bad quarter and the
             // fine that ends the campaign.
 
-            new(SafetyModule.DataProtection, 0, "Basic Data Isolation", "research_data0_basic_isolation",
+            new(SafetyModule.DataProtection, 0, "research_data0_basic_isolation",
                 ResearchNodeId.BasicDataIsolation, extraDays: 12, extraCostUsd: 240_000,
-                riskReduction: 0.07, saveChance: 0.05, perModelBonus: 0.0, perModelCap: 0,
-                "User data is pulled out of the model's ordinary working path and kept somewhere it "
-                + "has to ask to reach. Simple, and it is the difference between a leak of a log and "
-                + "a leak of a customer list."),
+                riskReduction: 0.07, saveChance: 0.05, perModelBonus: 0.0, perModelCap: 0),
 
-            new(SafetyModule.DataProtection, 1, "Encrypted Data Vaults", "research_data1_encrypted_data",
+            new(SafetyModule.DataProtection, 1, "research_data1_encrypted_data",
                 ResearchNodeId.EncryptedDataVaults, extraDays: 34, extraCostUsd: 900_000,
-                riskReduction: 0.125, saveChance: 0.125, perModelBonus: 0.0, perModelCap: 0,
-                "Anything sensitive lives encrypted, in a store with its own access list, and the "
-                + "list is short. What this buys is not that a breach cannot happen. It is that a "
-                + "breach comes out unreadable."),
+                riskReduction: 0.125, saveChance: 0.125, perModelBonus: 0.0, perModelCap: 0),
 
-            new(SafetyModule.DataProtection, 2, "Differential Privacy", "research_data2_differential_privacy",
+            new(SafetyModule.DataProtection, 2, "research_data2_differential_privacy",
                 ResearchNodeId.DifferentialPrivacy, extraDays: 66, extraCostUsd: 3_100_000,
-                riskReduction: 0.215, saveChance: 0.30, perModelBonus: 0.0, perModelCap: 0,
-                "The training data is processed so that no single person can be recovered from what "
-                + "the model learned. It costs a little capability and it is the first tier that a "
-                + "regulator will accept as an argument rather than as a promise."),
+                riskReduction: 0.215, saveChance: 0.30, perModelBonus: 0.0, perModelCap: 0),
 
-            new(SafetyModule.DataProtection, 3, "Privacy-Preserving Training", "research_data3_privacy_training",
+            new(SafetyModule.DataProtection, 3, "research_data3_privacy_training",
                 ResearchNodeId.PrivacyPreservingTraining, extraDays: 112, extraCostUsd: 8_800_000,
-                riskReduction: 0.30, saveChance: 0.50, perModelBonus: 0.0, perModelCap: 0,
-                "Privacy stops being something added after the run and becomes part of how the run "
-                + "works. Half of everything that would have ended the company now does not, and it "
-                + "costs a season of the calendar to get there."),
+                riskReduction: 0.30, saveChance: 0.50, perModelBonus: 0.0, perModelCap: 0),
         };
 
         /// <summary>

@@ -31,25 +31,45 @@ namespace ScalingLaws.Data
     /// </summary>
     public sealed class HiringChannel
     {
-        public HiringChannel(HireSource source, string displayName, string siteName, string tagline,
+        public HiringChannel(HireSource source, string siteName,
             double wageMultiplier, double qualityMultiplier, string accentHex)
         {
             Source = source;
-            DisplayName = displayName;
             SiteName = siteName;
-            Tagline = tagline;
             WageMultiplier = wageMultiplier;
             QualityMultiplier = qualityMultiplier;
             AccentHex = accentHex;
         }
 
         public HireSource Source { get; }
-        public string DisplayName { get; }
+
+        /// <summary>
+        /// Written out rather than built from the enum name, because a key made by concatenation is
+        /// invisible to `LocalisationTests.EveryKeyTheInterfaceAsksForExists`.
+        /// </summary>
+        /// <summary>
+        /// The stem for this channel's name and its tagline.
+        ///
+        /// **`hire.channel.*` rather than `hire.*`, and the reason is worth keeping.** The obvious
+        /// keys were already taken by the captions on the two tiles in the "where are you looking"
+        /// card, which are a different fact about the same word: `hire.agency` is the heading
+        /// "EMPLOYMENT AGENCY" and this is the channel's short name, "Agency".
+        /// `LocalisationTests.NoPhraseIsWrittenTwice` caught the collision on the first run.
+        /// </summary>
+        private static string KeyFor(HireSource source) => source switch
+        {
+            HireSource.Remote => "hire.channel.remote",
+            HireSource.Agency => "hire.channel.agency",
+            _ => "hire.channel.specialist"
+        };
+
+        /// <summary>Read from the book at access time, never stored. See `PlayerSkillDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Source));
 
         /// <summary>The address the player types. Half the character of the channel is in it.</summary>
         public string SiteName { get; }
 
-        public string Tagline { get; }
+        public string Tagline => Loc.T(KeyFor(Source) + ".tagline");
 
         /// <summary>What they ask, against the position's ordinary rate.</summary>
         public double WageMultiplier { get; }
@@ -85,17 +105,14 @@ namespace ScalingLaws.Data
 
         private static readonly List<HiringChannel> Entries = new()
         {
-            new HiringChannel(HireSource.Remote, "Remote", "IThand.hck",
-                "Contract work, worldwide. No desk required.",
-                0.70, 0.40, "#4FA3C7"),
+            // **The address stays a literal and is not translated.** It is a domain name, and a
+            // translated domain is a different site.
+            new HiringChannel(HireSource.Remote, "IThand.hck", 0.70, 0.40, "#4FA3C7"),
 
-            new HiringChannel(HireSource.Agency, "Agency", "Regional Employment Register",
-                "State employment records. Form E-11/b.",
+            new HiringChannel(HireSource.Agency, "Regional Employment Register",
                 1.00, 0.70, "#8E8A72"),
 
-            new HiringChannel(HireSource.Specialist, "Specialist", "get-admin.hck",
-                "Search by discipline. Hire by specification.",
-                1.20, 1.50, "#C9A227")
+            new HiringChannel(HireSource.Specialist, "get-admin.hck", 1.20, 1.50, "#C9A227")
         };
 
         public static IReadOnlyList<HiringChannel> All => Entries;

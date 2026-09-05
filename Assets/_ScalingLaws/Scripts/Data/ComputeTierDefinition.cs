@@ -15,8 +15,6 @@ namespace ScalingLaws.Data
     {
         public ComputeTierDefinition(
             ComputeTier tier,
-            string displayName,
-            string description,
             int leadTimeDays,
             double capitalPriceMultiplier,
             double powerCostPerKilowattHourUsd,
@@ -30,8 +28,7 @@ namespace ScalingLaws.Data
             GameDate earliestDate)
         {
             Tier = tier;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? tier.ToString() : displayName;
-            Description = description ?? string.Empty;
+
             LeadTimeDays = Math.Clamp(leadTimeDays, 0, 1500);
             CapitalPriceMultiplier = Math.Clamp(SimUnits.Finite(capitalPriceMultiplier, 1.0), 0.5, 2.0);
             PowerCostPerKilowattHourUsd = Math.Clamp(SimUnits.Finite(powerCostPerKilowattHourUsd), 0.0, 2.0);
@@ -46,8 +43,21 @@ namespace ScalingLaws.Data
         }
 
         public ComputeTier Tier { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
+        /// <summary>
+        /// Written out rather than built from the enum name, because a key made by concatenation is
+        /// invisible to `LocalisationTests.EveryKeyTheInterfaceAsksForExists`.
+        /// </summary>
+        private static string KeyFor(ComputeTier tier) => tier switch
+        {
+            ComputeTier.RentedCloud => "tier.rented",
+            ComputeTier.ColocatedServers => "tier.colocated",
+            _ => "tier.owned"
+        };
+
+        /// <summary>Read from the book at access time, never stored. See `PlayerSkillDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Tier));
+
+        public string Description => Loc.T(KeyFor(Tier) + ".about");
 
         /// <summary>Days between paying and the hardware producing its first FLOP.</summary>
         public int LeadTimeDays { get; }

@@ -32,9 +32,6 @@ namespace ScalingLaws.Data
     {
         public FounderTraitDefinition(
             FounderTrait trait,
-            string displayName,
-            string flavour,
-            string effectSummary,
             double brandBonus = 0.0,
             double operatingCostMultiplier = 1.0,
             double researchDurationMultiplier = 1.0,
@@ -46,9 +43,6 @@ namespace ScalingLaws.Data
             int safetyHeadStart = 0)
         {
             Trait = trait;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? trait.ToString() : displayName;
-            Flavour = flavour ?? string.Empty;
-            EffectSummary = effectSummary ?? string.Empty;
             BrandBonus = Math.Clamp(SimUnits.Finite(brandBonus), -0.5, 0.5);
             OperatingCostMultiplier = Math.Clamp(SimUnits.Finite(operatingCostMultiplier, 1.0), 0.5, 2.0);
             ResearchDurationMultiplier = Math.Clamp(SimUnits.Finite(researchDurationMultiplier, 1.0), 0.5, 2.0);
@@ -61,13 +55,40 @@ namespace ScalingLaws.Data
         }
 
         public FounderTrait Trait { get; }
-        public string DisplayName { get; }
+
+        /// <summary>
+        /// The stem for the three things written about this trait.
+        ///
+        /// Written out rather than built from the enum name, because a key made by concatenation is
+        /// invisible to `LocalisationTests.EveryKeyTheInterfaceAsksForExists`.
+        /// </summary>
+        private static string KeyFor(FounderTrait trait) => trait switch
+        {
+            FounderTrait.SilverTongue => "trait.silvertongue",
+            FounderTrait.Solopreneur => "trait.solopreneur",
+            FounderTrait.Entrepreneur => "trait.entrepreneur",
+            FounderTrait.Researcher => "trait.researcher",
+            FounderTrait.HardwareWhisperer => "trait.hardwarewhisperer",
+            FounderTrait.DataHoarder => "trait.datahoarder",
+            FounderTrait.SafetyAdvocate => "trait.safetyadvocate",
+            _ => "trait.venturedarling"
+        };
+
+        /// <summary>Read from the book at access time, never stored. See `PlayerSkillDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Trait));
 
         /// <summary>One line of character. Shown on the card, does nothing mechanically.</summary>
-        public string Flavour { get; }
+        public string Flavour => Loc.T(KeyFor(Trait) + ".flavour");
 
-        /// <summary>The numbers, in plain words, for the card.</summary>
-        public string EffectSummary { get; }
+        /// <summary>
+        /// The numbers, in plain words, for the card.
+        ///
+        /// **Still written rather than generated from the multipliers.** `researchDurationMultiplier
+        /// 1.18` is what the field holds and "slower to finish anything" is what it means, and only
+        /// one of those is worth reading on a card. A generator would also have to decide, for every
+        /// language, which way round a multiplier under one reads.
+        /// </summary>
+        public string EffectSummary => Loc.T(KeyFor(Trait) + ".effect");
 
         public double BrandBonus { get; }
         public double OperatingCostMultiplier { get; }
@@ -97,45 +118,21 @@ namespace ScalingLaws.Data
 
         private static readonly FounderTraitDefinition[] Entries =
         {
-            new(FounderTrait.SilverTongue, "Silver Tongue",
-                "You sold the seed round on a slide deck with one chart on it, and the chart was wrong.",
-                "+0.10 brand, +8% reputation gain, +6% operating cost",
-                brandBonus: 0.10, reputationGainMultiplier: 1.08, operatingCostMultiplier: 1.06),
+            new(FounderTrait.SilverTongue, brandBonus: 0.10, reputationGainMultiplier: 1.08, operatingCostMultiplier: 1.06),
 
-            new(FounderTrait.Solopreneur, "Solopreneur",
-                "Four people, one room, no HR department and no meetings about meetings.",
-                "-14% operating cost, +0.04 brand, +18% research time",
-                brandBonus: 0.04, operatingCostMultiplier: 0.86, researchDurationMultiplier: 1.18),
+            new(FounderTrait.Solopreneur, brandBonus: 0.04, operatingCostMultiplier: 0.86, researchDurationMultiplier: 1.18),
 
-            new(FounderTrait.Entrepreneur, "Entrepreneur",
-                "You hire faster than you can interview, and it mostly works.",
-                "-20% research time, +6% reputation gain, +22% operating cost",
-                researchDurationMultiplier: 0.80, reputationGainMultiplier: 1.06, operatingCostMultiplier: 1.22),
+            new(FounderTrait.Entrepreneur, researchDurationMultiplier: 0.80, reputationGainMultiplier: 1.06, operatingCostMultiplier: 1.22),
 
-            new(FounderTrait.Researcher, "Researcher",
-                "You read the papers before they were papers. You are also terrible on a stage.",
-                "+14% training throughput, -0.06 brand",
-                brandBonus: -0.06, trainingThroughputMultiplier: 1.14),
+            new(FounderTrait.Researcher, brandBonus: -0.06, trainingThroughputMultiplier: 1.14),
 
-            new(FounderTrait.HardwareWhisperer, "Hardware Whisperer",
-                "You know a guy. The guy knows an allocation manager.",
-                "-14% hardware purchase price, -8% operating cost, -6% training throughput",
-                operatingCostMultiplier: 0.92, hardwarePriceMultiplier: 0.86, trainingThroughputMultiplier: 0.94),
+            new(FounderTrait.HardwareWhisperer, operatingCostMultiplier: 0.92, hardwarePriceMultiplier: 0.86, trainingThroughputMultiplier: 0.94),
 
-            new(FounderTrait.DataHoarder, "Data Hoarder",
-                "You have been scraping since before anyone thought it was worth anything.",
-                "+30% supply from every corpus, +10% operating cost",
-                operatingCostMultiplier: 1.10, dataSupplyMultiplier: 1.30),
+            new(FounderTrait.DataHoarder, operatingCostMultiplier: 1.10, dataSupplyMultiplier: 1.30),
 
-            new(FounderTrait.SafetyAdvocate, "Safety Advocate",
-                "You wrote the memo nobody read in 2021. In 2024 everybody suddenly remembers it.",
-                "Safety starts 2 levels above par, +0.07 brand, -8% training throughput",
-                brandBonus: 0.07, trainingThroughputMultiplier: 0.92, safetyHeadStart: 2),
+            new(FounderTrait.SafetyAdvocate, brandBonus: 0.07, trainingThroughputMultiplier: 0.92, safetyHeadStart: 2),
 
-            new(FounderTrait.VentureDarling, "Venture Darling",
-                "Investors adore you. Users have never heard of you.",
-                "+30% valuation, -0.05 brand, +8% operating cost",
-                brandBonus: -0.05, valuationMultiplier: 1.30, operatingCostMultiplier: 1.08)
+            new(FounderTrait.VentureDarling, brandBonus: -0.05, valuationMultiplier: 1.30, operatingCostMultiplier: 1.08)
         };
 
         private static readonly Dictionary<FounderTrait, FounderTraitDefinition> ByTrait = BuildIndex();

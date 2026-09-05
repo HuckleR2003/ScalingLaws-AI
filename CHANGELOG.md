@@ -69,6 +69,13 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 - **Each product on sale has its own chart.** The second and third banners in the corner drew the
   meters and no graph at all, so with two models there was no way to see which one was carrying the
   company. Every model now keeps its own last month of trading and draws it.
+- **The last seven catalogs speak Polish.** The founder's seven skills, the twelve safety tiers, the
+  eight founder traits, the six funding rounds, the three hiring channels, the six marketing
+  programmes and the three compute tiers all stored their words in the file that holds their numbers,
+  so they kept whichever language the game started in. That is the creator, the SAFETY stage, the
+  funding page, the hiring card, BUSINESS and COMPUTE. All eighteen catalogs in the game now read the
+  phrase book at the moment they are asked, and a test walks every entry of the last seven in both
+  languages so the claim can stay true rather than being believed.
 - **The cluster split, on COMPUTE.** How much of the fleet goes to training, upgrades, architecture
   programmes and research, and how much is left for the people paying. The number has existed and
   been saved since the beginning, was set once by a test fixture, and no screen had ever offered it.
@@ -317,6 +324,10 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
   no longer possible for it to print `1 dni`.
 - **The training strip printed its percentage in the machine's culture.** Fourth time that fault has
   turned up in this project; it now goes through `UiFormat` like everything else.
+- **The two tiles asking where you want to look for people were never translated**, nor were the
+  paragraphs under them, and the Polish for both captions had been sitting in the phrase book unread
+  since the day it was written. The card passed the English straight in. Found by a duplicate-key
+  failure on an unrelated change, which is the third time that guard has paid for itself.
 - **The letter asking where you got stuck was never in the game.** Two different texts were filed
   under one phrase key: the letter, and the body of the report window. The second silently replaced
   the first, so the mail from HCK Labs showed the report window's text and the letter reached
@@ -451,8 +462,8 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1058 EditMode tests across 108 fixtures, and 29 PlayMode across 7.
-- 2,359 phrases in the book, both languages complete, none written twice.
+- 1059 EditMode tests across 108 fixtures, and 29 PlayMode across 7.
+- 2,475 phrases in the book, both languages complete, none written twice.
 - Achievements are three files and one call site: a table in `Data/`, a pure function over the
   campaign in `Simulation/`, and `PlayerPrefs` in `Persistence/`. No rule reads any of them, so a
   change there can move what a player is told and cannot move what a player is charged.

@@ -510,9 +510,12 @@ namespace ScalingLaws.UI
             var choices = new VisualElement();
             choices.AddToClassList("hirechoice");
 
-            choices.Add(BuildChoiceTile(HireSource.Agency, "EMPLOYMENT AGENCY",
-                "Free to use. Sends whoever is on the register, and they are worse than their "
-                + "paperwork says. Standard wages.",
+            // **Both captions have been in the phrase book since it was written and neither was
+            // ever read.** This card passed the English straight in, so two tiles and two paragraphs
+            // sat untranslated on a Polish screen with their translations sitting unused a few
+            // hundred lines apart. Found by a duplicate-key failure on an unrelated change.
+            choices.Add(BuildChoiceTile(HireSource.Agency, Loc.T("hire.agency"),
+                Loc.T("hire.agency.body"),
                 () =>
                 {
                     hiringChoice?.RemoveFromHierarchy();
@@ -520,9 +523,8 @@ namespace ScalingLaws.UI
                     Show(Screen.Hiring);
                 }));
 
-            choices.Add(BuildChoiceTile(HireSource.Specialist, "FIND A SPECIALIST",
-                "Costs a search fee whether or not they sign. You set the discipline and the "
-                + "minimum level, and what arrives beats the advert. Wages a fifth higher.",
+            choices.Add(BuildChoiceTile(HireSource.Specialist, Loc.T("hire.specialist"),
+                Loc.T("hire.specialist.body"),
                 () =>
                 {
                     hiringChoice?.RemoveFromHierarchy();

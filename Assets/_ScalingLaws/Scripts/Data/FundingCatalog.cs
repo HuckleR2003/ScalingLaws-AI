@@ -12,7 +12,6 @@ namespace ScalingLaws.Data
     {
         public FundingStageDefinition(
             FundingStage stage,
-            string displayName,
             long targetRaiseUsd,
             double requiredCapabilityRatio,
             long requiredAnnualRevenueUsd,
@@ -21,7 +20,6 @@ namespace ScalingLaws.Data
             int offerWindowDays)
         {
             Stage = stage;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? stage.ToString() : displayName;
             TargetRaiseUsd = Math.Clamp(targetRaiseUsd, 0L, 500_000_000_000L);
             RequiredCapabilityRatio = Math.Clamp(SimUnits.Finite(requiredCapabilityRatio), 0.0, 1.5);
             RequiredAnnualRevenueUsd = Math.Max(0L, requiredAnnualRevenueUsd);
@@ -31,7 +29,23 @@ namespace ScalingLaws.Data
         }
 
         public FundingStage Stage { get; }
-        public string DisplayName { get; }
+
+        /// <summary>
+        /// Written out rather than built from the enum name, because a key made by concatenation is
+        /// invisible to `LocalisationTests.EveryKeyTheInterfaceAsksForExists`.
+        /// </summary>
+        private static string KeyFor(FundingStage stage) => stage switch
+        {
+            FundingStage.SeriesA => "funding.stage.a",
+            FundingStage.SeriesB => "funding.stage.b",
+            FundingStage.SeriesC => "funding.stage.c",
+            FundingStage.SeriesD => "funding.stage.d",
+            FundingStage.Growth => "funding.stage.growth",
+            _ => "funding.stage.ipo"
+        };
+
+        /// <summary>Read from the book at access time, never stored. See `PlayerSkillDefinition`.</summary>
+        public string DisplayName => Loc.T(KeyFor(Stage));
 
         /// <summary>What a round of this size normally writes, before the valuation adjusts it.</summary>
         public long TargetRaiseUsd { get; }
@@ -92,7 +106,7 @@ namespace ScalingLaws.Data
 
         private static readonly FundingStageDefinition[] Entries =
         {
-            new(FundingStage.SeriesA, "Series A",
+            new(FundingStage.SeriesA,
                 targetRaiseUsd: 25_000_000,
                 requiredCapabilityRatio: 0.55,
                 requiredAnnualRevenueUsd: 0,
@@ -100,7 +114,7 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.Start,
                 offerWindowDays: 90),
 
-            new(FundingStage.SeriesB, "Series B",
+            new(FundingStage.SeriesB,
                 targetRaiseUsd: 80_000_000,
                 requiredCapabilityRatio: 0.65,
                 requiredAnnualRevenueUsd: 10_000_000,
@@ -108,7 +122,7 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.Start,
                 offerWindowDays: 75),
 
-            new(FundingStage.SeriesC, "Series C",
+            new(FundingStage.SeriesC,
                 targetRaiseUsd: 250_000_000,
                 requiredCapabilityRatio: 0.75,
                 requiredAnnualRevenueUsd: 80_000_000,
@@ -116,7 +130,7 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.Start,
                 offerWindowDays: 60),
 
-            new(FundingStage.SeriesD, "Series D",
+            new(FundingStage.SeriesD,
                 targetRaiseUsd: 700_000_000,
                 requiredCapabilityRatio: 0.80,
                 requiredAnnualRevenueUsd: 300_000_000,
@@ -124,7 +138,7 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.FromCalendar(2023, 6, 1),
                 offerWindowDays: 60),
 
-            new(FundingStage.Growth, "Growth round",
+            new(FundingStage.Growth,
                 targetRaiseUsd: 2_000_000_000,
                 requiredCapabilityRatio: 0.85,
                 requiredAnnualRevenueUsd: 1_000_000_000,
@@ -132,7 +146,7 @@ namespace ScalingLaws.Data
                 earliestDate: GameDate.FromCalendar(2024, 1, 1),
                 offerWindowDays: 45),
 
-            new(FundingStage.PublicOffering, "Public offering",
+            new(FundingStage.PublicOffering,
                 targetRaiseUsd: 6_000_000_000,
                 requiredCapabilityRatio: 0.85,
                 requiredAnnualRevenueUsd: 3_000_000_000,
@@ -215,11 +229,11 @@ namespace ScalingLaws.Data
         {
             return sentiment switch
             {
-                >= 2.0 => "Frenzied",
-                >= 1.5 => "Hot",
-                >= 1.0 => "Steady",
-                >= 0.7 => "Cautious",
-                _ => "Closed"
+                >= 2.0 => Loc.T("funding.appetite.frenzied"),
+                >= 1.5 => Loc.T("funding.appetite.hot"),
+                >= 1.0 => Loc.T("funding.appetite.steady"),
+                >= 0.7 => Loc.T("funding.appetite.cautious"),
+                _ => Loc.T("funding.appetite.closed")
             };
         }
 
