@@ -49,6 +49,28 @@ Everything else the sweep flagged is `ServerHall` and `ServerStock` plumbing, ca
 `CompanySimulation` rather than by the interface. That is the intended layering: the hall owns
 placement, the simulation owns the till.
 
+## The sweep's blind spot, found 2026-09-05
+
+An outside pass reported **`TryAnswerSmearThreat` as having no caller anywhere**: a letter in the
+inbox with a countdown printed on it and no button. It is a good finding shape and it is wrong, and
+the reason is worth writing down here because this sweep will produce it again.
+
+The route is **inbox → `TryActOnMail` → `AnswerThreatLetter` → `TryAnswerSmearThreat`**. Nothing in
+`Scripts/UI/` names the method, so searching `UI/` for it comes back empty even though a player can
+press the button. **The entry point and the destination are two different public methods**, and this
+sweep only sees the ones the interface names.
+
+The same shape produced the `TryGetLiveModel` entry above. Two false positives from one blind spot is
+a property of the method rather than bad luck: it proves a name is mentioned, never that a click
+arrives.
+
+What the finding was right about is that **nothing had built the screen with that letter in it**.
+`MailScreenReachTests` now does, and walks every `MailKind` failing any letter that reports
+`NeedsAnswer` and draws no control. That is the check this sweep cannot do.
+
+**Closed the same day:** `GameShell.recentEvents`, a sixty-item buffer appended to and trimmed and
+never read anywhere in `Scripts/` or `Tests/`, is deleted.
+
 ---
 
 ## 2. The phrase book, and a blind spot worth 19% of it
