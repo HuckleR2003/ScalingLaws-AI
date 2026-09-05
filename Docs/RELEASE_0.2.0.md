@@ -69,6 +69,8 @@ than loaded from a file, so the download does not grow by a byte.
 Around forty, and these are the ones you would have noticed:
 
 - **The founder can be a woman.** Forty six Polish lines were telling the player what *he* had done.
+- **A founder you did not name signed the company page "Anonymous"**, which reads as a real person
+  with an odd name rather than as a blank.
 - **The official company page always showed the newest model**, whichever one you clicked.
 - **Clicking a person in the office did nothing** in the case where the raycast missed them.
 - **A letter from the game's author was never in the game.** Two different texts shared one address
@@ -88,8 +90,8 @@ particular day.
 
 ## Under the hood
 
-- 1078 EditMode tests across 113 fixtures, 30 PlayMode across 8.
-- 2,488 phrases, English and Polish, both complete.
+- 1079 EditMode tests across 113 fixtures, 31 PlayMode across 8.
+- 2,489 phrases, English and Polish, both complete.
 - Eighteen catalogs stopped storing text, so nothing on screen is stuck in the language the game
   started in.
 

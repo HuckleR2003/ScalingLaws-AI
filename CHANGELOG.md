@@ -361,6 +361,13 @@ otherwise.
 
 ### Fixed
 
+- **A founder nobody named was called "Anonymous" on their own product page.** Reported by a
+  playtester in August and answered in two places out of five: the name field stopped being
+  pre-filled and the interface resolves a missing name to "the founder" in whatever language is
+  being read. The save default, the sanitiser and the migration for the oldest files each went on
+  writing the literal word, and a non-empty string is a name, so the fallback could never run. Found
+  by rendering the creator and reading the mock of the company's own page.
+
 - **Nothing tested that clicking a person in the office picks the right one.** The panel was
   covered and the arithmetic that decides who is under the cursor was not, which is how a playtest
   came to report it as doing nothing. Five tests now hold it, including the one that matters most:
@@ -534,8 +541,8 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1078 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
-- 2,488 phrases in the book, both languages complete, none written twice.
+- 1079 EditMode tests across 113 fixtures, and 31 PlayMode across 8.
+- 2,489 phrases in the book, both languages complete, none written twice.
 - **The whole cash achievement ladder was unreachable, and now it is measured.** Fifty billion and
   two hundred and fifty billion were marked unverified; the probe found that even the *first* rung at
   a hundred million was above the best campaign anybody had played. Across five playing styles over
