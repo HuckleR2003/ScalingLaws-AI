@@ -5,6 +5,7 @@ using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
+using ScalingLaws.UI;
 using UnityEngine;
 
 namespace ScalingLaws.Tests.EditMode
@@ -440,6 +441,50 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(read.Warehouse.CountOf(ServerRack.Enclosed), Is.Zero);
             Assert.That(read.Warehouse.Fans, Is.EqualTo(4));
             Assert.That(read.Warehouse.ValueUsd, Is.EqualTo(worth));
+        }
+
+        /// <summary>
+        /// Nothing writes a name for a founder the player never named.
+        ///
+        /// **Answered in two places out of five in August and it went on happening.** The creator's
+        /// name field stopped being pre-filled and `UiFormat.PersonName` resolves an empty name to
+        /// "the founder" in the current language, but the save default, the sanitiser and the v9
+        /// migration each substituted the literal word "Anonymous". A non-empty string is a name,
+        /// so the fallback never fired and the product page was signed by somebody called
+        /// Anonymous, which is what the playtest reported.
+        ///
+        /// It is also a stored English literal, the fault eighteen catalogs were rewritten to
+        /// avoid: written into the file, it keeps the language the campaign was made in.
+        /// </summary>
+        [Test]
+        public void NoSaveInventsANameForAFounderNobodyNamed()
+        {
+            Assert.That(new SaveData().founderName, Is.Empty, "the save default names them");
+
+            Assert.That(new CompanyState("Prometheus AI").FounderName, Is.Empty,
+                "a fresh campaign names them before the player has");
+
+            var blank = SaveStore.Sanitize(new SaveData { founderName = "   " });
+
+            Assert.That(blank.founderName, Is.Empty,
+                "the sanitiser substitutes a word, so PersonName can never resolve one");
+
+            var v9 = SaveStore.Sanitize(SaveMigration.UpgradeV9ToV10(
+                new SaveData { version = 9, companyName = "Prometheus AI" }));
+
+            Assert.That(v9.founderName, Is.Empty,
+                "a v9 file was written by a game that never asked, so there is nothing to recover");
+
+            // The other half of the pair: an empty name has words to draw, in both languages.
+            foreach (var language in new[] { Language.English, Language.Polish })
+            {
+                Loc.Current = language;
+
+                Assert.That(UiFormat.PersonName(v9.founderName), Is.Not.Empty);
+                Assert.That(UiFormat.PersonName(v9.founderName), Is.Not.EqualTo("Anonymous"));
+            }
+
+            Loc.Current = Language.English;
         }
 
         [Test]
