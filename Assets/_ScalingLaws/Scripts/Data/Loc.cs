@@ -368,8 +368,9 @@ namespace ScalingLaws.Data
             ["family.already"] = "Already yours.",
             ["family.not_yet"] = "Nobody has published this until {0}.",
             ["family.needs_node"] = "Needs {0} researched first.",
+            ["family.needs_its_node"] = "Needs its own research first.",
             ["family.no_cash"] = "Costs {0}, which is more than the account holds.",
-            ["family.offer"] = "Licence it outright instead of waiting for the research.",
+            ["family.offer"] = "Families you do not have yet, and what opens each one.",
             ["family.buys"] = "Serving costs {0} of a dense model, {1} of the parameters active.",
 
             // ---- the five company archetypes on the creator's first page -----------------------
@@ -2980,8 +2981,9 @@ namespace ScalingLaws.Data
             ["family.already"] = "Już jest twoja.",
             ["family.not_yet"] = "Nikt tego nie opublikował przed {0}.",
             ["family.needs_node"] = "Najpierw trzeba zbadać: {0}.",
+            ["family.needs_its_node"] = "Najpierw trzeba to zbadać.",
             ["family.no_cash"] = "Kosztuje {0}, a na koncie jest mniej.",
-            ["family.offer"] = "Wykup licencję zamiast czekać na badania.",
+            ["family.offer"] = "Rodziny, których jeszcze nie masz, i co je otwiera.",
             ["family.buys"] = "Serwowanie kosztuje {0} tego co model gęsty, aktywnych parametrów {1}.",
 
             // ---- the five company archetypes on the creator's first page -----------------------

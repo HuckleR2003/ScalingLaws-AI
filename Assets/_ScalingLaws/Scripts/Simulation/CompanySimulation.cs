@@ -1309,7 +1309,15 @@ namespace ScalingLaws.Simulation
 
             if (!State.HasResearch(gate))
             {
-                failureReason = Loc.T("family.needs_node", ResearchTree.Get(gate).DisplayName);
+                var node = ResearchTree.Get(gate).DisplayName;
+
+                // **A node is often named after the family it opens**, so naming both writes the
+                // same words twice on one row: "Efficient attention / Needs Efficient attention
+                // researched first." Two of the five read that way and the render showed it.
+                failureReason = string.Equals(node, architecture.DisplayName, StringComparison.OrdinalIgnoreCase)
+                    ? Loc.T("family.needs_its_node")
+                    : Loc.T("family.needs_node", node);
+
                 return false;
             }
 
