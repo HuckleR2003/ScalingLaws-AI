@@ -48,9 +48,19 @@ The gate is a five-year safety record, and it is the only one in this game money
 severe incident costs about three years of it. There is nothing to buy, no research that shortens
 it, and no way through except not having done the thing.
 
-Underneath that: a real world map instead of six hand-drawn blobs, a phone that keeps what was said,
-short guided tours you can ask for again, the people you hire finally standing in the office you
-pay for, and a BUSINESS page that opens on one screen instead of three.
+**And the game has music.** Three loops where there was one, so the office is no longer silent, with
+their own slider beside the one for interface sound. Every note is computed at startup rather than
+loaded, so the download does not grow by a byte.
+
+The other thing you will feel first: **a rival you smeared now has lawyers.** Get traced and their
+counsel rings, a notice before action lands in the inbox with a figure and thirty days, and refusing
+it can put you in front of a court. Nobody reacted to that before.
+
+Underneath all of it: a real world map instead of six hand-drawn blobs, a phone that keeps what was
+said, short guided tours you can ask for again, the people you hire finally standing in the office
+you pay for, corporation tax with a clock on it, and a BUSINESS page that opens on one screen instead
+of three. The founder can be a woman, which forty six Polish lines had been quietly assuming
+otherwise.
 
 ### Added
 
@@ -505,7 +515,7 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1068 EditMode tests across 111 fixtures, and 30 PlayMode across 7.
+- 1075 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
 - 2,481 phrases in the book, both languages complete, none written twice.
 - **The whole cash achievement ladder was unreachable, and now it is measured.** Fifty billion and
   two hundred and fifty billion were marked unverified; the probe found that even the *first* rung at
