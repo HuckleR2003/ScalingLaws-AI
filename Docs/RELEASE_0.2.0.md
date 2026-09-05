@@ -47,10 +47,10 @@ than loaded from a file, so the download does not grow by a byte.
 - **Separate SOUND and MUSIC sliders**, side by side, neither inside the other.
 - **A phone that keeps what was said**, and short guided tours you can ask for again at any time.
 - **The people you hire stand in the office you pay for**, and clicking one opens who they are.
-- **You can licence an architecture family with money.** The creator used to list only the families
-  you already had, so an unowned one was not merely unbuyable: nothing in the game named it, priced
-  it or said what would open it. They are listed now, with what each costs and why not when it is
-  not today.
+- **The creator names the architecture families you do not have yet**, with what each would cost
+  and which research opens it. It used to list only the ones you already had, so a family you had
+  not researched was not named anywhere in the game: you found out hybrid state space existed when
+  a node handed it over.
 
 ## Changed
 
@@ -88,7 +88,7 @@ particular day.
 
 ## Under the hood
 
-- 1077 EditMode tests across 113 fixtures, 30 PlayMode across 8.
+- 1078 EditMode tests across 113 fixtures, 30 PlayMode across 8.
 - 2,488 phrases, English and Polish, both complete.
 - Eighteen catalogs stopped storing text, so nothing on screen is stuck in the language the game
   started in.
@@ -97,4 +97,6 @@ particular day.
 
 - The scripted campaigns in the balance probe peak around $71M. If you get far past that, the top of
   the achievement ladder may still be out of reach, and it will be measured again rather than guessed.
+- Licensing a family with money is not a route you can take. Every family is opened by research
+  that hands it over, so the price on the creator's list is information rather than an offer.
 - The furniture shop is suspended in favour of the furnished-move option.

@@ -75,10 +75,18 @@ otherwise.
   rewritten in the present tense or impersonally, which needs no gender field, no question at the
   creator and no save migration. English was already neutral and is untouched.
 
-- **Licensing an architecture family with money.** The creator listed only the families the company
-  already held, so an unowned one was not merely unbuyable: nothing anywhere named it, priced it, or
-  said what would open it. The last mechanism in the game a player could not reach, and the twelfth
-  of that class.
+- **The creator names the architecture families the company does not have.** It listed only the
+  families already held, so an unowned one was not merely unbuyable: nothing anywhere in the game
+  named it, priced it, or said what would open it. A player learned that hybrid state space existed
+  when a research node happened to hand it over. Each one is a row now, with the licence price and
+  the node that opens it.
+
+  **The cash route itself stays shut, and the row says so by drawing the price flat.** Every family
+  is gated by a node that grants the family on completion, so a campaign started today never reaches
+  a state where `TryAdoptArchitecture` can succeed, and a priced button on every row for the whole
+  game would read as something broken. The button is built only where it could be pressed, which
+  today is a save made before research delivered its own unlocks. Measured after the rows shipped
+  with a button on every line, which is what `ReachabilityTests` now holds.
 
 - **Music, and a game that is not silent.** Three loops where there was one: the menu, the office,
   and the model creator, each computed from sine waves at startup so the project still carries no
@@ -526,7 +534,7 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1077 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
+- 1078 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
 - 2,488 phrases in the book, both languages complete, none written twice.
 - **The whole cash achievement ladder was unreachable, and now it is measured.** Fifty billion and
   two hundred and fifty billion were marked unverified; the probe found that even the *first* rung at
