@@ -38,6 +38,12 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+Nothing yet. The next thing that changes goes here.
+
+---
+
+## [0.2.0] - 2026-09-06
+
 **A government will put a country on your models, and it will look at five years first.** Era five
 opens once you have built something worth trusting: eight sectors of a state, from filing permits to
 national defence, each paying more in a day than most of this campaign earns in a month. Each one
@@ -515,7 +521,7 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1075 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
+- 1076 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
 - 2,481 phrases in the book, both languages complete, none written twice.
 - **The whole cash achievement ladder was unreachable, and now it is measured.** Fifty billion and
   two hundred and fifty billion were marked unverified; the probe found that even the *first* rung at
