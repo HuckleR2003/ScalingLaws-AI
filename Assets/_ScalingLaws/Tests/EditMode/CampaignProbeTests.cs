@@ -75,6 +75,22 @@ namespace ScalingLaws.Tests.EditMode
             public readonly List<(int Year, long Cash, double Capability, double Frontier)> Track = new();
 
             public int Bankrupt = -1;
+
+            /// <summary>
+            /// The highest cash and the largest following the campaign ever reached.
+            ///
+            /// **Peaks, not final values**, because an achievement fires the moment a number is
+            /// touched. A company that reached sixty billion and spent it on a datacenter has
+            /// earned the cash achievement and finishes the campaign reading nearly nothing.
+            ///
+            /// Here because three thresholds in `AchievementCatalog` were written without anybody
+            /// finishing a campaign to see whether they are reachable: fifty billion, two hundred
+            /// and fifty billion, and a million fans.
+            /// </summary>
+            public long PeakCash;
+
+            public double PeakFans;
+
             public int Models;
             public int Nodes;
             public int Incidents;
@@ -141,9 +157,14 @@ namespace ScalingLaws.Tests.EditMode
 
             var everySeen = new HashSet<CompanyEventType>();
 
+            // Kept rather than discarded, so the summary at the foot can compare the styles against
+            // each other. Each run is fourteen years and there is no re-running one to look again.
+            var probes = new List<(Style Style, Probe Probe)>();
+
             foreach (Style style in Enum.GetValues(typeof(Style)))
             {
                 var probe = Run(style);
+                probes.Add((style, probe));
 
                 foreach (var kind in probe.Seen)
                 {
@@ -220,6 +241,25 @@ namespace ScalingLaws.Tests.EditMode
             lines.Add($"{everySeen.Count} of {Enum.GetValues(typeof(CompanyEventType)).Length} "
                 + "event kinds were raised at least once.");
 
+            // **The three thresholds nobody had checked.** Written into the report rather than
+            // asserted: whether a number is right is a design call, and this fixture measures.
+            lines.Add(string.Empty);
+            lines.Add("## Achievement thresholds nobody had measured");
+            lines.Add(string.Empty);
+            lines.Add("| style | peak cash | $50B | $250B | peak fans | 1M |");
+            lines.Add("|---|---|---|---|---|---|");
+
+            foreach (var (style, probe) in probes)
+            {
+                lines.Add(string.Format(CultureInfo.InvariantCulture,
+                    "| {0} | ${1:N0} | {2} | {3} | {4:N0} | {5} |",
+                    style, probe.PeakCash,
+                    probe.PeakCash >= 50_000_000_000L ? "yes" : "no",
+                    probe.PeakCash >= 250_000_000_000L ? "yes" : "no",
+                    probe.PeakFans,
+                    probe.PeakFans >= 1_000_000.0 ? "yes" : "no"));
+            }
+
             var folder = Path.Combine(
                 Directory.GetParent(Application.dataPath)!.FullName, "CampaignProbe~");
 
@@ -266,6 +306,12 @@ namespace ScalingLaws.Tests.EditMode
                     simulation.Advance(30);
 
                     Drain(state, probe);
+
+                    // Monthly, which is close enough: an achievement fires the moment the number is
+                    // touched, and no campaign reaches fifty billion and spends it inside thirty
+                    // days.
+                    probe.PeakCash = Math.Max(probe.PeakCash, state.CashUsd);
+                    probe.PeakFans = Math.Max(probe.PeakFans, state.Fans);
 
                     if (state.IsBankrupt && probe.Bankrupt < 0)
                     {

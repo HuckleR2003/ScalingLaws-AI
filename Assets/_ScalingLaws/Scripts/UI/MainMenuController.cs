@@ -477,23 +477,22 @@ namespace ScalingLaws.UI
             languageRow.Add(languageField);
             sheet.Add(languageRow);
 
+            // **Two controls on one line, neither inside the other.** Sound is the clicks and the
+            // rest of the feedback; music is the menu, the office and the creator. Stacked, with one
+            // scaling the other, the second slider needs a sentence explaining that the first also
+            // moves it, and a control that needs that footnote is two controls doing one job.
             var volumeRow = new VisualElement();
             volumeRow.AddToClassList("setting-row");
-            volumeRow.Add(SettingCopy(Loc.T("settings.volume"), Loc.T("settings.volume.note")));
+            volumeRow.AddToClassList("setting-row--pair");
 
-            var volumeValue = new Label($"{Mathf.RoundToInt(GameSettings.MasterVolume * 100f)}%");
-            volumeValue.AddToClassList("setting-value");
+            volumeRow.Add(VolumeControl(
+                Loc.T("settings.volume"), Loc.T("settings.volume.note"),
+                GameSettings.MasterVolume, GameSettings.SetMasterVolume));
 
-            var volumeSlider = new Slider(0f, 100f) { value = GameSettings.MasterVolume * 100f };
-            volumeSlider.style.width = 190;
-            volumeSlider.RegisterValueChangedCallback(evt =>
-            {
-                GameSettings.SetMasterVolume(evt.newValue / 100f);
-                volumeValue.text = $"{Mathf.RoundToInt(evt.newValue)}%";
-            });
+            volumeRow.Add(VolumeControl(
+                Loc.T("settings.music"), Loc.T("settings.music.note"),
+                GameSettings.MusicVolume, GameSettings.SetMusicVolume));
 
-            volumeRow.Add(volumeSlider);
-            volumeRow.Add(volumeValue);
             sheet.Add(volumeRow);
 
             var fullscreenRow = new VisualElement();
@@ -537,6 +536,40 @@ namespace ScalingLaws.UI
             sheet.Add(back);
 
             return panel;
+        }
+
+        /// <summary>
+        /// One named volume: the words, the slider and the reading, in a column of its own.
+        ///
+        /// Built here rather than twice inline because the two are the same control with a different
+        /// float behind them, and two copies is how one of them ends up 190px and the other 200.
+        /// </summary>
+        private static VisualElement VolumeControl(string name, string note, float current,
+            Action<float> set)
+        {
+            var column = new VisualElement();
+            column.AddToClassList("setting-half");
+            column.Add(SettingCopy(name, note));
+
+            var reading = new Label($"{Mathf.RoundToInt(current * 100f)}%");
+            reading.AddToClassList("setting-value");
+
+            var slider = new Slider(0f, 100f) { value = current * 100f };
+            slider.AddToClassList("setting-half__slider");
+
+            slider.RegisterValueChangedCallback(evt =>
+            {
+                set(evt.newValue / 100f);
+                reading.text = $"{Mathf.RoundToInt(evt.newValue)}%";
+            });
+
+            var line = new VisualElement();
+            line.AddToClassList("setting-half__line");
+            line.Add(slider);
+            line.Add(reading);
+            column.Add(line);
+
+            return column;
         }
 
         private static VisualElement SettingCopy(string name, string description)

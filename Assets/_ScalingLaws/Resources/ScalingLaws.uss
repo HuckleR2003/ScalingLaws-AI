@@ -324,6 +324,34 @@
     white-space: normal;
 }
 
+/* Two volumes on one line. Each half owns its words and its slider, so the row grows with the
+   longer label instead of the slider sliding sideways under it. */
+
+.setting-row--pair {
+    align-items: flex-start;
+}
+
+.setting-half {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    margin-right: 18px;
+}
+
+.setting-half__line {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.setting-half__slider {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin: 0;
+    margin-right: 10px;
+}
+
 .setting-value {
     width: 56px;
     -unity-font-style: bold;

@@ -54,6 +54,15 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Added
 
+- **Music, and a game that is not silent.** Three loops where there was one: the menu, the office,
+  and the model creator, each computed from sine waves at startup so the project still carries no
+  audio files and the build does not grow. Four new cues besides: a page turning under the notices
+  that put a verdict in front of you, a message arriving on the phone, and the phone being picked up
+  and put down. Written by Gosia; the loops are hers, the crossfade below is not.
+- **SOUND and MUSIC, two sliders on one line.** Sound is the clicks and the rest of the feedback,
+  music is the menu, the office and the creator, and neither is inside the other. A player who wants
+  their own podcast on takes music to zero and keeps the interface answering them.
+
 - **A lab you smeared can write, ring and sue you.** Paying to make a rival look bad used to move two
   numbers and end there: nobody on the other end ever reacted. A campaign that is traced back now
   brings a notice before action from their lawyers with a sum on it and thirty days to answer, a
@@ -311,6 +320,19 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Fixed
 
+- **The music stepped up in volume every time a loop turned over.** Reported as the loops not
+  looping. Measured: there is no click, the join is continuous to the sample. What there was is a
+  step in density, because the arrangement thins out towards the end and the opening comes back full:
+  the creator loop ended at 26% of its peak and restarted at 67%, every twenty four seconds. The end
+  of each loop is now crossfaded with its own beginning, so the edge becomes a two second ramp.
+- **The creator called the same skill two different things.** The "(i)" card said PROGRAMOWANIE and
+  the row beside it said ROZWÓJ, because yesterday's catalog pass gave the skills a second set of
+  names in the phrase book beside the set that had been there since August. One fact at two
+  addresses; it now reads the older key, which is the one whose Polish was written with the
+  explanation in front of it.
+- **Sixty events were kept in memory for a screen that was never built.** `recentEvents` was appended
+  to and trimmed and never once read.
+
 - **The official page was always about the newest model.** With two products on sale, clicking the
   other one still gave the name and the figures of the flagship, because every reading on the page
   came from `Flagship()`. There is a row of tabs above it now, one per product, drawn only from two
@@ -465,14 +487,20 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1062 EditMode tests across 109 fixtures, and 29 PlayMode across 7.
+- 1068 EditMode tests across 111 fixtures, and 30 PlayMode across 7.
+- 2,481 phrases in the book, both languages complete, none written twice.
+- **Three achievement thresholds are unreachable and now there is a number.** Fifty billion in cash,
+  two hundred and fifty billion, and a million fans were written without anybody finishing a campaign
+  to check. The campaign probe now records the highest either figure ever reaches: across five
+  playing styles over fourteen years, the best was **$71M and 32,134 fans**. The scripted player is
+  deliberately crude and a person would do better, but not seven hundred times better. The numbers
+  need to come down and choosing them is a design call.
 - **A rival strategy either belongs to a lab or belongs to nobody, and now a test says which.**
   `CompetitorStrategy.FastFollower` has no lab, which is fine and deliberate. What was not fine is
   that giving it one tomorrow would have produced a General-only company on the middle numbers rather
   than the lab its own comment describes, because it has no rung on the type ladder, no serving cost,
   no cadence and no capability gain. Nothing would have failed. This is the same fault that left two
   of the five model types dead by construction for fourteen years of game time.
-- 2,475 phrases in the book, both languages complete, none written twice.
 - Achievements are three files and one call site: a table in `Data/`, a pure function over the
   campaign in `Simulation/`, and `PlayerPrefs` in `Persistence/`. No rule reads any of them, so a
   change there can move what a player is told and cannot move what a player is charged.

@@ -350,7 +350,6 @@ namespace ScalingLaws.UI
         private VisualElement trainingFill;
         private Label trainingLabel;
         private Label trainingDays;
-        private readonly List<CompanyEvent> recentEvents = new();
 
         /// <summary>
         /// Whether this company folding has already been counted.
@@ -1237,6 +1236,12 @@ namespace ScalingLaws.UI
         private void Show(Screen screen)
         {
             var changed = current != screen;
+
+            // The model creator gets its own loop and everything else shares the office one.
+            // `SetTrack` does nothing when the answer has not changed, which matters here: almost
+            // every control on every screen answers by calling `Show(current)`, so this runs
+            // constantly and must never restart the music.
+            AudioDirector.SetTrack(screen == Screen.Create ? MusicTrack.Creator : MusicTrack.Office);
 
             // **Keep the reading position whenever the same page is rebuilt.**
             //
@@ -2911,12 +2916,11 @@ namespace ScalingLaws.UI
                     _ => null
                 });
 
-                recentEvents.Add(companyEvent);
+                // **`recentEvents` used to be appended here and trimmed to sixty, and nothing in
+                // `Scripts/` or `Tests/` ever read it.** Removed after an outside sweep listed it:
+                // sixty events held in memory for a strip that was never built. The wire keeps every
+                // story that is worth keeping, and `NewsFeed` is where a reader would go.
                 PlayEventCue(companyEvent.Type);
-                if (recentEvents.Count > 60)
-                {
-                    recentEvents.RemoveAt(0);
-                }
             }
 
             SyncAchievements();
@@ -3022,6 +3026,10 @@ namespace ScalingLaws.UI
         /// </summary>
         private void ShowRunFinished(string message)
         {
+            // One page turning. The three notices that stop the game and put a card in front of the
+            // player share the sound, because from where the player sits they are the same event:
+            // something has been decided and there is a sheet about it.
+            AudioDirector.Page();
             runFinished?.RemoveFromHierarchy();
 
             var veil = new VisualElement();
@@ -3099,6 +3107,7 @@ namespace ScalingLaws.UI
         /// </summary>
         private void ShowGrantCompleted(string message, long amountUsd)
         {
+            AudioDirector.Page();
             runFinished?.RemoveFromHierarchy();
 
             var veil = new VisualElement();
@@ -3173,6 +3182,7 @@ namespace ScalingLaws.UI
         /// </summary>
         private void ShowTaxCarried(string message, long carriedUsd)
         {
+            AudioDirector.Page();
             runFinished?.RemoveFromHierarchy();
 
             var veil = new VisualElement();

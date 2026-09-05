@@ -97,7 +97,14 @@ namespace ScalingLaws.UI
             returning = callingBack;
 
             BuildFrame();
-            frame.schedule.Execute(LightUp).ExecuteLater(WakeDelay);
+
+            // On the wake rather than on the call, because the frame is dark until then and a
+            // notification that arrives before anything is on screen has nothing to belong to.
+            frame.schedule.Execute(() =>
+            {
+                AudioDirector.Message();
+                LightUp();
+            }).ExecuteLater(WakeDelay);
         }
 
         /// <summary>
@@ -111,6 +118,7 @@ namespace ScalingLaws.UI
             Close();
             returning = false;
 
+            AudioDirector.PhoneOpen();
             BuildFrame();
 
             // Straight past the app-opening theatre. That sequence exists to make the first call
@@ -936,6 +944,14 @@ namespace ScalingLaws.UI
 
         public void Close()
         {
+            // Only when there was something to close. `Ring` and `OpenMenu` both call this first to
+            // clear whatever was up, and an unguarded cue would tick every time the phone was asked
+            // to open rather than every time it was put down.
+            if (frame != null)
+            {
+                AudioDirector.PhoneClose();
+            }
+
             typing = null;
             choices = null;
             chatList = null;

@@ -233,7 +233,19 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// The player answers the letter. Called from the inbox, which is the only way in.
+        /// The player answers the letter.
+        ///
+        /// **The route in, written out because a sweep for callers will not find one.** The inbox
+        /// calls `TryActOnMail`, which routes a `LegalThreat` to `AnswerThreatLetter`, which calls
+        /// this. Nothing in `Scripts/UI/` names this method, so a search of `UI/` for it comes back
+        /// empty and reports a mechanism the player cannot reach - which is exactly what an outside
+        /// review concluded about it, correctly following the method this project uses everywhere
+        /// else.
+        ///
+        /// The earlier version of this comment said "called from the inbox, which is the only way
+        /// in" and was worse than useless: it described a call that does not literally exist and
+        /// invited the next reader to stop looking. `MailScreenTests` is the answer that does not
+        /// depend on anyone believing a comment.
         /// </summary>
         public bool TryAnswerSmearThreat(bool settle, out string note)
         {

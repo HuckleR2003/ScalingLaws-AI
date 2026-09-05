@@ -34,8 +34,6 @@ namespace ScalingLaws.Data
             string displayName,
             string mark,
             string accentHex,
-            string tagline,
-            string opening,
             long startingCashUsd,
             double startingReputation,
             DatasetSource startingData,
@@ -44,11 +42,9 @@ namespace ScalingLaws.Data
             double priceMultiplier = 1.0)
         {
             Archetype = archetype;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? archetype.ToString() : displayName;
+            StoredName = string.IsNullOrWhiteSpace(displayName) ? archetype.ToString() : displayName;
             Mark = string.IsNullOrWhiteSpace(mark) ? "?" : mark;
             AccentHex = string.IsNullOrWhiteSpace(accentHex) ? "#3A8ADC" : accentHex;
-            Tagline = tagline ?? string.Empty;
-            Opening = opening ?? string.Empty;
             StartingCashUsd = Math.Clamp(startingCashUsd, 1_000_000L, 1_000_000_000L);
             StartingReputation = Math.Clamp(SimUnits.Finite(startingReputation), 0.0, 1.0);
             StartingData = startingData;
@@ -58,16 +54,44 @@ namespace ScalingLaws.Data
         }
 
         public CompanyArchetype Archetype { get; }
-        public string DisplayName { get; }
+
+        private string StoredName { get; }
+
+        /// <summary>
+        /// What the tile is called.
+        ///
+        /// Four of the five are company names and stay exactly as written: a name is not translated.
+        /// The fifth is not a name, it is the words "your own company", and that one reads from the
+        /// book like everything else a player is shown.
+        /// </summary>
+        public string DisplayName =>
+            Archetype == CompanyArchetype.Custom ? Loc.T("archetype.own.name") : StoredName;
 
         /// <summary>One or two characters drawn as the logo. No texture required.</summary>
         public string Mark { get; }
 
         public string AccentHex { get; }
-        public string Tagline { get; }
+
+        /// <summary>
+        /// The stem this archetype's phrases hang off.
+        ///
+        /// **`DisplayName` deliberately stays a literal.** OpenSI, Antropic, DeepSearch and HuggyFace
+        /// are names of companies and a name is not translated. Only the one that is not a name,
+        /// the player's own company, reads from the book.
+        /// </summary>
+        private static string KeyFor(CompanyArchetype archetype) => archetype switch
+        {
+            CompanyArchetype.Antropic => "archetype.careful",
+            CompanyArchetype.DeepSearch => "archetype.research",
+            CompanyArchetype.HuggyFace => "archetype.open",
+            CompanyArchetype.Custom => "archetype.own",
+            _ => "archetype.shipfast"
+        };
+
+        public string Tagline => Loc.T(KeyFor(Archetype) + ".tag");
 
         /// <summary>The paragraph shown when the tile is picked. Sets the tone of the campaign.</summary>
-        public string Opening { get; }
+        public string Opening => Loc.T(KeyFor(Archetype) + ".blurb");
 
         public long StartingCashUsd { get; }
         public double StartingReputation { get; }
@@ -122,9 +146,6 @@ namespace ScalingLaws.Data
         private static readonly CompanyIdentityDefinition[] Entries =
         {
             new(CompanyArchetype.OpenSi, "OpenSI", "OI", "#12B886",
-                "Ship it, then find out.",
-                "You have the loudest launch in the industry and a burn rate to match. The world will hear "
-                + "about your first model whether or not it is ready. That cuts both ways.",
                 startingCashUsd: 14_000_000,
                 startingReputation: 0.16,
                 startingData: DatasetSource.WebCrawl,
@@ -133,10 +154,6 @@ namespace ScalingLaws.Data
                 priceMultiplier: 1.0),
 
             new(CompanyArchetype.Antropic, "Antropic", "A", "#D9822B",
-                "Slower on purpose.",
-                "You left a bigger lab because you did not like where it was going. Your models will be "
-                + "late and careful, and in about three years the market will decide whether that was "
-                + "wisdom or an excuse.",
                 startingCashUsd: 11_000_000,
                 startingReputation: 0.10,
                 startingData: DatasetSource.WebCrawl,
@@ -145,10 +162,6 @@ namespace ScalingLaws.Data
                 priceMultiplier: 1.15),
 
             new(CompanyArchetype.DeepSearch, "DeepSearch", "DS", "#4C6EF5",
-                "The papers come first.",
-                "A research lab that happens to have a company attached. Your people are the best in the "
-                + "field and none of them want to talk to a customer. The science is ahead. The product "
-                + "is not.",
                 startingCashUsd: 16_000_000,
                 startingReputation: 0.06,
                 startingData: DatasetSource.WebCrawl,
@@ -157,10 +170,6 @@ namespace ScalingLaws.Data
                 priceMultiplier: 1.0),
 
             new(CompanyArchetype.HuggyFace, "HuggyFace", "HF", "#F59F00",
-                "Everything in the open.",
-                "You give the weights away and charge for what surrounds them. Your reach is enormous and "
-                + "your margin is a rumour. If the market ever stops rewarding goodwill, this gets hard "
-                + "very quickly.",
                 startingCashUsd: 9_000_000,
                 startingReputation: 0.22,
                 startingData: DatasetSource.WebCrawl | DatasetSource.CodeCorpus,
@@ -169,9 +178,6 @@ namespace ScalingLaws.Data
                 priceMultiplier: 0.45),
 
             new(CompanyArchetype.Custom, "Your own company", "+", "#8A9BB0",
-                "Start from nothing at all.",
-                "No history, no goodwill, no house style. Everything about this company will be something "
-                + "you decided.",
                 startingCashUsd: 12_000_000,
                 startingReputation: 0.05,
                 startingData: DatasetSource.WebCrawl,

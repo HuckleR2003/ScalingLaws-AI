@@ -55,7 +55,7 @@ namespace ScalingLaws.Data
             PlayerSkill.Teamwork => "skill.teamwork",
             PlayerSkill.Concept => "skill.concept",
             PlayerSkill.Software => "skill.software",
-            PlayerSkill.DataEngineering => "skill.dataeng",
+            PlayerSkill.DataEngineering => "skill.data",
             _ => "skill.safety"
         };
 
@@ -65,8 +65,14 @@ namespace ScalingLaws.Data
         /// A catalog is built once at type load, so a name captured there keeps whatever language
         /// the game happened to start in and the creator draws seven English rows on a Polish page
         /// forever. Thirteenth catalog to be moved for that reason.
+        ///
+        /// **`.title`, which `SkillNotes` has been reading since August.** The first pass of this
+        /// gave the catalog its own set of names beside those, so the "(i)" card said PROGRAMOWANIE
+        /// and the row beside it said ROZWÓJ: one fact at two addresses, which is the opposite of
+        /// `feedback.body` and worth telling apart. Both call sites uppercase, so collapsing onto
+        /// the older key moves nothing in English and fixes the Polish.
         /// </summary>
-        public string DisplayName => Loc.T(KeyFor(Skill));
+        public string DisplayName => Loc.T(KeyFor(Skill) + ".title");
 
         /// <summary>A sentence on what this is. Long enough to need a tooltip rather than a row.</summary>
         public string Description => Loc.T(KeyFor(Skill) + ".about");

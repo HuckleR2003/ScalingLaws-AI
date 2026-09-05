@@ -15,12 +15,23 @@ namespace ScalingLaws.Persistence
     {
         private const string Prefix = "ScalingLaws.Settings.";
         private const string MasterVolumeKey = Prefix + "MasterVolume";
+        private const string MusicVolumeKey = Prefix + "MusicVolume";
         private const string FullscreenKey = Prefix + "Fullscreen";
         private const string ReduceMotionKey = Prefix + "ReduceMotion";
         private const string LanguageKey = Prefix + "Language";
         private const string AutosaveKey = Prefix + "AutosaveMinutes";
 
         public const float DefaultMasterVolume = 0.8f;
+
+        /// <summary>
+        /// How loud the music is under everything else, before the master volume touches it.
+        ///
+        /// **Full by default, and separate from master on purpose.** Interface sound is feedback:
+        /// it answers a click and a player who turns it off loses information. Music is a room, and
+        /// wanting to run a tycoon with a podcast on is a normal thing to want. One slider cannot
+        /// serve both, and a player who only has one turns everything off to get rid of the loop.
+        /// </summary>
+        public const float DefaultMusicVolume = 1.0f;
 
         /// <summary>
         /// The intervals the game offers, in minutes. Zero is off and it is the default.
@@ -60,6 +71,14 @@ namespace ScalingLaws.Persistence
         public static float MasterVolume { get; private set; } = DefaultMasterVolume;
 
         /// <summary>
+        /// Music only, multiplied into the music source rather than into the listener.
+        ///
+        /// Read every frame by <c>AudioDirector</c> rather than pushed from here, so this file
+        /// stays a store of preferences and knows nothing about who plays what.
+        /// </summary>
+        public static float MusicVolume { get; private set; } = DefaultMusicVolume;
+
+        /// <summary>
         /// Whether the game fills the screen. **Defaults to true, and that is a fix.**
         ///
         /// It defaulted to false, so `ApplyDisplayMode` put every first launch into a window at
@@ -95,6 +114,7 @@ namespace ScalingLaws.Persistence
         public static void Reload()
         {
             MasterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MasterVolumeKey, DefaultMasterVolume));
+            MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumeKey, DefaultMusicVolume));
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, 1) == 1;
             ReduceMotion = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
 
@@ -129,6 +149,21 @@ namespace ScalingLaws.Persistence
             PlayerPrefs.SetFloat(MasterVolumeKey, MasterVolume);
             PlayerPrefs.Save();
             AudioListener.volume = MasterVolume;
+        }
+
+        /// <summary>
+        /// Sets the music level. Nothing is applied here on purpose.
+        ///
+        /// Master volume goes to `AudioListener`, which is a global and therefore this file's to
+        /// set. Music belongs to one `AudioSource` owned by the presentation layer, and reaching
+        /// across to touch it would make persistence depend on the interface. `AudioDirector` reads
+        /// this instead.
+        /// </summary>
+        public static void SetMusicVolume(float value)
+        {
+            MusicVolume = Mathf.Clamp01(value);
+            PlayerPrefs.SetFloat(MusicVolumeKey, MusicVolume);
+            PlayerPrefs.Save();
         }
 
         public static void SetFullscreen(bool value)

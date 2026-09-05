@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using ScalingLaws.Core;
+using ScalingLaws.Persistence;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -17,17 +19,38 @@ namespace ScalingLaws.UI
         Deny,
         Tab,
         Positive,
-        Warning
+        Warning,
+        Page,
+        Message,
+        PhoneOpen,
+        PhoneClose
+    }
+
+    /// <summary>Which loop is wanted. What is playing is a separate question until it is built.</summary>
+    public enum MusicTrack
+    {
+        None,
+        Menu,
+        Office,
+        Creator
     }
 
     /// <summary>
-    /// Original procedural audio for the interface and main menu.
+    /// Original procedural audio for the interface, the menu and the game.
     ///
-    /// The menu theme is intentionally sparse, warm and slow, but it is not a recreation of any
-    /// existing game track. Both the music and the short UI sounds are synthesised from simple waves
-    /// at runtime, so the project carries no unlicensed samples and a missing imported asset can
-    /// never break a screen. This component owns presentation only. It never reads or mutates the
-    /// simulation, a save, or the clock.
+    /// Nothing here is a sample. The seven short interface cues are synthesised in this file exactly
+    /// as they always were; the three music loops and the four longer cues come from
+    /// <see cref="Synth"/>. The project therefore carries no unlicensed audio and a missing imported
+    /// asset can never break a screen. This component owns presentation only: it never reads or
+    /// mutates the simulation, a save, or the clock.
+    ///
+    /// **The music is built on a worker thread and that is not an optimisation.** Measured on this
+    /// machine the three loops cost about 4.4 seconds of one core between them, and the office loop
+    /// alone is 2.1. Built where the seven cues are built, that is a game which freezes on the
+    /// splash screen for four seconds on a fast machine and longer on a slow one. Built behind the
+    /// scene, the menu appears at once and its music arrives a second or two later, which nobody
+    /// notices and nobody can complain about. The short cues stay synchronous because all eleven of
+    /// them together cost under forty milliseconds.
     /// </summary>
     public sealed class AudioDirector : MonoBehaviour
     {
@@ -44,7 +67,14 @@ namespace ScalingLaws.UI
         private AudioSource musicSource;
         private AudioSource effectsSource;
         private AudioListener fallbackListener;
+
         private AudioClip menuTheme;
+        private AudioClip officeTheme;
+        private AudioClip creatorTheme;
+
+        private MusicTrack wanted = MusicTrack.None;
+        private MusicTrack playing = MusicTrack.None;
+        private float appliedMusicVolume = -1f;
         private float nextHoverTime;
 
         /// <summary>Creates the single director before either UI document builds.</summary>
@@ -86,6 +116,7 @@ namespace ScalingLaws.UI
             fallbackListener = gameObject.AddComponent<AudioListener>();
 
             BuildPalette();
+            StartCoroutine(BuildMusicOffThread());
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
@@ -97,6 +128,33 @@ namespace ScalingLaws.UI
                 instance = null;
             }
         }
+
+        /// <summary>
+        /// Keeps the music at whatever the player last asked for.
+        ///
+        /// Polled rather than pushed, and cheap because it only writes when the number has actually
+        /// moved. The alternative is `GameSettings` raising an event, which would make persistence
+        /// know about presentation for the sake of one float.
+        /// </summary>
+        private void Update()
+        {
+            // **Divided back out of the listener.** The master slider is on `AudioListener`, and
+            // the player asked for two independent controls rather than one inside the other, so the
+            // music undoes the listener's share and applies its own. Guarded against a master of
+            // zero, which would otherwise be a division by nothing and a burst of full-volume music.
+            var master = Mathf.Max(0.0001f, GameSettings.MasterVolume);
+            var target = MusicVolume * GameSettings.MusicVolume / master;
+
+            if (musicSource != null && !Mathf.Approximately(target, appliedMusicVolume))
+            {
+                appliedMusicVolume = target;
+                musicSource.volume = target;
+            }
+        }
+
+        // =====================================================================================
+        // WHAT THE REST OF THE INTERFACE CALLS
+        // =====================================================================================
 
         /// <summary>Plays a named cue. Safe before the audio service has loaded.</summary>
         public static void Play(UiSound sound)
@@ -116,6 +174,35 @@ namespace ScalingLaws.UI
         /// <summary>Lets an important caution mark itself with a restrained cue.</summary>
         public static void Warning() => Play(UiSound.Warning);
 
+        /// <summary>A notice arriving. One page, turning, next to the player's hands.</summary>
+        public static void Page() => Play(UiSound.Page);
+
+        /// <summary>Something has come in on the phone.</summary>
+        public static void Message() => Play(UiSound.Message);
+
+        /// <summary>The phone coming up, and any other pick that is not a press.</summary>
+        public static void PhoneOpen() => Play(UiSound.PhoneOpen);
+
+        /// <summary>The phone going away.</summary>
+        public static void PhoneClose() => Play(UiSound.PhoneClose);
+
+        /// <summary>
+        /// Asks for a loop. Takes effect when that loop has finished building, and not before.
+        ///
+        /// Idempotent, so a screen may call it on every rebuild without restarting the music. That
+        /// matters: `GameShell.Show` runs a full rebuild on almost every click.
+        /// </summary>
+        public static void SetTrack(MusicTrack track)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            instance.wanted = track;
+            instance.ApplyTrack();
+        }
+
         /// <summary>Available to tests and later explicit screen wiring.</summary>
         public bool HasCue(UiSound sound)
         {
@@ -123,15 +210,30 @@ namespace ScalingLaws.UI
             return cues.TryGetValue(sound, out var clip) && clip != null;
         }
 
-        /// <summary>The original main-menu loop. Exposed for a lightweight audio contract test.</summary>
+        /// <summary>
+        /// The main-menu loop. Exposed for a lightweight audio contract test.
+        ///
+        /// **Builds on the spot if the worker has not finished.** In edit mode there is no worker at
+        /// all, because `Awake` does not run, and a test that adds this component and asks for the
+        /// theme has to get one. It costs about a second and a half in that one test and nothing at
+        /// all in the game, where the coroutine has almost always won the race.
+        /// </summary>
         public AudioClip MenuTheme
         {
             get
             {
-                EnsurePalette();
+                if (menuTheme == null)
+                {
+                    menuTheme = ToClip("Menu Theme - First Light", Synth.MenuTheme(2));
+                }
+
                 return menuTheme;
             }
         }
+
+        // =====================================================================================
+        // BUILDING
+        // =====================================================================================
 
         /// <summary>
         /// Builds the palette on first use if the lifecycle has not already done it.
@@ -145,17 +247,134 @@ namespace ScalingLaws.UI
         /// </summary>
         private void EnsurePalette()
         {
-            if (menuTheme == null || cues.Count == 0)
+            if (cues.Count == 0)
             {
                 BuildPalette();
             }
         }
 
+        /// <summary>
+        /// The three loops, one after another, on a worker thread.
+        ///
+        /// Sequential rather than three tasks at once, deliberately: a player's machine is running a
+        /// game, and taking three cores for four seconds to save two of them is a bad trade. The
+        /// menu is first because it is the only one anybody hears in the first minute.
+        ///
+        /// `AudioClip.Create` and `SetData` are main thread only, so the arithmetic happens on the
+        /// worker and the clip is made here, which is what the yield is for.
+        /// </summary>
+        private IEnumerator BuildMusicOffThread()
+        {
+            if (menuTheme == null)
+            {
+                var work = Task.Run(() => Synth.MenuTheme(2));
+                while (!work.IsCompleted)
+                {
+                    yield return null;
+                }
+
+                menuTheme = ToClip("Menu Theme - First Light", work.Result);
+                ApplyTrack();
+            }
+
+            var office = Task.Run(Synth.GameTheme);
+            while (!office.IsCompleted)
+            {
+                yield return null;
+            }
+
+            officeTheme = ToClip("Office Theme - The Long Run", office.Result);
+            ApplyTrack();
+
+            var creator = Task.Run(Synth.CreatorTheme);
+            while (!creator.IsCompleted)
+            {
+                yield return null;
+            }
+
+            creatorTheme = ToClip("Creator Theme - Eight Stages", creator.Result);
+            ApplyTrack();
+        }
+
+        private static AudioClip ToClip(string name, float[] samples)
+        {
+            var clip = AudioClip.Create(name, samples.Length, 1, SampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        private void BuildPalette()
+        {
+            // The seven that shipped, unchanged. They are the sound of the interface and nobody
+            // asked for a different one.
+            cues[UiSound.Hover] = BuildTone("UI Hover", 0.045f, 660f, 920f, 0.16f, 0.04f, Wave.Sine);
+            cues[UiSound.Click] = BuildTone("UI Click", 0.065f, 280f, 190f, 0.26f, 0.025f, Wave.Triangle);
+            cues[UiSound.Confirm] = BuildChord("UI Confirm", 0.16f, new[] { 440f, 554.37f, 659.25f }, 0.19f);
+            cues[UiSound.Deny] = BuildTone("UI Deny", 0.12f, 210f, 126f, 0.20f, 0.03f, Wave.Sine);
+            cues[UiSound.Tab] = BuildTone("UI Tab", 0.055f, 480f, 610f, 0.16f, 0.02f, Wave.Triangle);
+            cues[UiSound.Positive] = BuildChord("UI Positive", 0.22f, new[] { 392f, 493.88f, 587.33f }, 0.18f);
+            cues[UiSound.Warning] = BuildTone("UI Warning", 0.20f, 330f, 246.94f, 0.18f, 0.04f, Wave.Sine);
+
+            // The four longer ones. Under forty milliseconds for all of them, so there is no reason
+            // to make anybody wait for these.
+            cues[UiSound.Page] = ToClip("UI Page", Synth.PageTurn());
+            cues[UiSound.Message] = ToClip("UI Message", Synth.Message());
+            cues[UiSound.PhoneOpen] = ToClip("UI Phone Open", Synth.PhoneOpen());
+            cues[UiSound.PhoneClose] = ToClip("UI Phone Close", Synth.PhoneClose());
+        }
+
+        // =====================================================================================
+        // SCENES, TRACKS AND INPUT
+        // =====================================================================================
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             boundRoots.Clear();
-            SetMenuMusic(scene.name == SceneFlow.MainMenuScene);
+            SetTrack(scene.name == SceneFlow.MainMenuScene ? MusicTrack.Menu : MusicTrack.Office);
             StartCoroutine(BindDocumentsNextFrame());
+        }
+
+        /// <summary>
+        /// Puts the wanted loop on, if it exists yet.
+        ///
+        /// Silence is the right answer while a loop is still being built. The alternative is playing
+        /// the wrong one for a second and cutting it off, which is worse than waiting.
+        /// </summary>
+        private void ApplyTrack()
+        {
+            if (musicSource == null)
+            {
+                return;
+            }
+
+            var clip = wanted switch
+            {
+                MusicTrack.Menu => menuTheme,
+                MusicTrack.Office => officeTheme,
+                MusicTrack.Creator => creatorTheme,
+                _ => null
+            };
+
+            if (clip == null)
+            {
+                if (wanted == MusicTrack.None)
+                {
+                    musicSource.Stop();
+                    playing = MusicTrack.None;
+                }
+
+                return;
+            }
+
+            if (playing == wanted && musicSource.isPlaying)
+            {
+                return;
+            }
+
+            playing = wanted;
+            musicSource.clip = clip;
+            musicSource.time = 0f;
+            musicSource.Play();
         }
 
         private IEnumerator BindDocumentsNextFrame()
@@ -223,28 +442,10 @@ namespace ScalingLaws.UI
             }
         }
 
-        private void SetMenuMusic(bool shouldPlay)
-        {
-            if (musicSource == null || menuTheme == null)
-            {
-                return;
-            }
-
-            if (!shouldPlay)
-            {
-                musicSource.Stop();
-                return;
-            }
-
-            musicSource.clip = menuTheme;
-            if (!musicSource.isPlaying)
-            {
-                musicSource.Play();
-            }
-        }
-
         private void PlayCue(UiSound sound, float volume)
         {
+            EnsurePalette();
+
             if (effectsSource == null || !cues.TryGetValue(sound, out var clip) || clip == null)
             {
                 return;
@@ -253,59 +454,9 @@ namespace ScalingLaws.UI
             effectsSource.PlayOneShot(clip, Mathf.Clamp01(volume));
         }
 
-        private void BuildPalette()
-        {
-            menuTheme = BuildMenuTheme();
-            cues[UiSound.Hover] = BuildTone("UI Hover", 0.045f, 660f, 920f, 0.16f, 0.04f, Wave.Sine);
-            cues[UiSound.Click] = BuildTone("UI Click", 0.065f, 280f, 190f, 0.26f, 0.025f, Wave.Triangle);
-            cues[UiSound.Confirm] = BuildChord("UI Confirm", 0.16f, new[] { 440f, 554.37f, 659.25f }, 0.19f);
-            cues[UiSound.Deny] = BuildTone("UI Deny", 0.12f, 210f, 126f, 0.20f, 0.03f, Wave.Sine);
-            cues[UiSound.Tab] = BuildTone("UI Tab", 0.055f, 480f, 610f, 0.16f, 0.02f, Wave.Triangle);
-            cues[UiSound.Positive] = BuildChord("UI Positive", 0.22f, new[] { 392f, 493.88f, 587.33f }, 0.18f);
-            cues[UiSound.Warning] = BuildTone("UI Warning", 0.20f, 330f, 246.94f, 0.18f, 0.04f, Wave.Sine);
-        }
-
-        private static AudioClip BuildMenuTheme()
-        {
-            const float seconds = 28f;
-            var samples = new float[Mathf.CeilToInt(seconds * SampleRate)];
-            var notes = new[]
-            {
-                new Note(0.6f, 4.2f, 220f, 0.13f), new Note(5.4f, 3.8f, 329.63f, 0.10f),
-                new Note(10.1f, 4.5f, 261.63f, 0.12f), new Note(16.0f, 3.7f, 293.66f, 0.10f),
-                new Note(20.8f, 4.8f, 246.94f, 0.12f), new Note(25.3f, 2.1f, 369.99f, 0.09f)
-            };
-
-            for (var index = 0; index < samples.Length; index++)
-            {
-                var time = index / (float)SampleRate;
-                var value = 0.0f;
-
-                // A low, slowly moving pad gives the notes space without introducing a recognisable
-                // borrowed melody. It resets cleanly at the loop boundary.
-                value += 0.035f * Mathf.Sin(2f * Mathf.PI * 110f * time);
-                value += 0.018f * Mathf.Sin(2f * Mathf.PI * 164.81f * time + 0.9f);
-
-                foreach (var note in notes)
-                {
-                    var local = time - note.Start;
-                    if (local < 0f || local > note.Duration)
-                    {
-                        continue;
-                    }
-
-                    var envelope = Envelope(local, note.Duration, 0.32f, 1.25f);
-                    var phase = 2f * Mathf.PI * note.Frequency * local;
-                    value += note.Amplitude * envelope * (Mathf.Sin(phase) + 0.18f * Mathf.Sin(phase * 2f));
-                }
-
-                samples[index] = Mathf.Clamp(value, -0.35f, 0.35f);
-            }
-
-            var clip = AudioClip.Create("Menu Theme - First Light", samples.Length, 1, SampleRate, false);
-            clip.SetData(samples, 0);
-            return clip;
-        }
+        // =====================================================================================
+        // THE ORIGINAL CUE SYNTHESIS, UNCHANGED
+        // =====================================================================================
 
         private static AudioClip BuildTone(
             string name,
@@ -385,6 +536,15 @@ namespace ScalingLaws.UI
             UiSound.Tab => 0.20f,
             UiSound.Positive => 0.32f,
             UiSound.Warning => 0.28f,
+
+            // The four from Synth are levelled in the waveform rather than here, so what the author
+            // hears in the preview file is what a player hears in the game. A second multiplier in
+            // this table would be a second place the answer lives.
+            UiSound.Page => 1.0f,
+            UiSound.Message => 1.0f,
+            UiSound.PhoneOpen => 1.0f,
+            UiSound.PhoneClose => 1.0f,
+
             _ => ClickVolume
         };
 
@@ -392,22 +552,6 @@ namespace ScalingLaws.UI
         {
             Sine,
             Triangle
-        }
-
-        private readonly struct Note
-        {
-            public Note(float start, float duration, float frequency, float amplitude)
-            {
-                Start = start;
-                Duration = duration;
-                Frequency = frequency;
-                Amplitude = amplitude;
-            }
-
-            public float Start { get; }
-            public float Duration { get; }
-            public float Frequency { get; }
-            public float Amplitude { get; }
         }
     }
 }

@@ -290,7 +290,7 @@ namespace ScalingLaws.Tests.EditMode
             {
                 foreach (var skill in PlayerSkillCatalog.All)
                 {
-                    Resolved($"skill.{skill.Skill}.name", skill.DisplayName, missing);
+                    Resolved($"skill.{skill.Skill}.title", skill.DisplayName, missing);
                     Resolved($"skill.{skill.Skill}.about", skill.Description, missing);
                     Resolved($"skill.{skill.Skill}.short", skill.ShortEffect, missing);
                     Resolved($"skill.{skill.Skill}.full", skill.EffectAtFull, missing);
