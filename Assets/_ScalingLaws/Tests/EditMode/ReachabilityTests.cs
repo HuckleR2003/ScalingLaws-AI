@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using ScalingLaws.Data;
+using ScalingLaws.Simulation;
 using UnityEngine;
 
 namespace ScalingLaws.Tests.EditMode
@@ -57,6 +59,11 @@ namespace ScalingLaws.Tests.EditMode
             ("MarketingChannel", "MarketingCatalog"),
             ("StaffBenefit", "BenefitCatalog"),
             ("SmearTier", "SmearCatalog"),
+
+            // Added 2026-09-06 with the licensing rows on the FOUNDATION page. Until then the
+            // dropdown listed only families the company already held, so an unowned one was not
+            // merely unbuyable: nothing in the game named it, priced it, or said what would open it.
+            ("ArchitectureId", "ArchitectureCatalog"),
         };
 
         /// <summary>
@@ -277,5 +284,52 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsEmpty(orphans,
                 "These screens are built and nothing opens them:\n  " + string.Join("\n  ", orphans));
         }
-    }
+    
+        /// <summary>
+        /// The check half and the doing half agree about every family, on every date.
+        ///
+        /// **A screen that offers what the simulation then refuses is worse than no screen**, and
+        /// two copies of five conditions is how that happens. `CanAdoptArchitecture` was extracted
+        /// from `TryAdoptArchitecture` rather than written beside it, and this is what holds that
+        /// they stayed one body.
+        ///
+        /// Walked on three dates because four of the five conditions are about time or money: a
+        /// company on day one has neither the research nor the cash, and one in 2032 has both.
+        /// </summary>
+        [Test]
+        public void OfferingAFamilyAndLicensingOneNeverDisagree()
+        {
+            foreach (var year in new[] { 2022, 2027, 2032 })
+            {
+                var simulation = new CompanySimulation(new CompanyState("Families", 0xFA11u));
+
+                while (simulation.State.Date.Year < year)
+                {
+                    simulation.Advance(90);
+                }
+
+                // Enough to make cash the one condition that is never the blocker, so the test is
+                // about the other four rather than about the balance.
+                simulation.State.CashUsd = 50_000_000_000L;
+
+                foreach (var definition in ArchitectureCatalog.All)
+                {
+                    var offered = simulation.CanAdoptArchitecture(definition.Id, out var why);
+                    var done = simulation.TryAdoptArchitecture(definition.Id, out var refused);
+
+                    Assert.That(done, Is.EqualTo(offered),
+                        $"in {year} the screen would say {(offered ? "yes" : "no")} to "
+                        + $"{definition.Id} and the simulation said {(done ? "yes" : "no")}: "
+                        + $"\"{why}\" against \"{refused}\"");
+
+                    if (!offered)
+                    {
+                        Assert.That(why, Is.Not.Empty,
+                            $"{definition.Id} is refused in {year} with no reason to print, so the "
+                            + "row would draw a disabled button and say nothing");
+                    }
+                }
+            }
+        }
+}
 }

@@ -363,6 +363,15 @@ namespace ScalingLaws.Data
             ["upgrade.version"] = "Version: {0}",
             ["upgrade.base"] = "Base",
 
+            // ---- licensing an architecture family with money rather than research ------------------
+            ["family.unknown"] = "No such family.",
+            ["family.already"] = "Already yours.",
+            ["family.not_yet"] = "Nobody has published this until {0}.",
+            ["family.needs_node"] = "Needs {0} researched first.",
+            ["family.no_cash"] = "Costs {0}, which is more than the account holds.",
+            ["family.offer"] = "Licence it outright instead of waiting for the research.",
+            ["family.buys"] = "Serving costs {0} of a dense model, {1} of the parameters active.",
+
             // ---- the five company archetypes on the creator's first page -----------------------
             // Only `archetype.own.name` is here: the other four are company names and a name is not
             // translated. Ported from Fix 5, English taken across character for character.
@@ -2965,6 +2974,15 @@ namespace ScalingLaws.Data
             ["upgrade.level_market"] = "POZIOM {0}   ·   RYNEK {1}",
             ["upgrade.none_live"] = "Nic jeszcze nie działa. Wydaj model, a to się zapełni.",
             ["upgrade.version"] = "Wersja: {0}",
+
+            // ---- licensing an architecture family with money rather than research ------------------
+            ["family.unknown"] = "Nie ma takiej rodziny.",
+            ["family.already"] = "Już jest twoja.",
+            ["family.not_yet"] = "Nikt tego nie opublikował przed {0}.",
+            ["family.needs_node"] = "Najpierw trzeba zbadać: {0}.",
+            ["family.no_cash"] = "Kosztuje {0}, a na koncie jest mniej.",
+            ["family.offer"] = "Wykup licencję zamiast czekać na badania.",
+            ["family.buys"] = "Serwowanie kosztuje {0} tego co model gęsty, aktywnych parametrów {1}.",
 
             // ---- the five company archetypes on the creator's first page -----------------------
             // Only `archetype.own.name` is here: the other four are company names and a name is not

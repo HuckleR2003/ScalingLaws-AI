@@ -7229,6 +7229,22 @@
     margin-top: 14px;
 }
 
+/* The families a company could licence, under the dropdown of the ones it holds. Shares the
+   corpus rows: it is the same list of a thing with a price and a reason. */
+
+.family-offers {
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+.family-offers__heading {
+    font-size: 10.5px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(132, 145, 164);
+    margin-bottom: 5px;
+}
+
 .corpus-row {
     flex-direction: row;
     align-items: center;

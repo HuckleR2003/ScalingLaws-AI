@@ -1273,40 +1273,64 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
-        public bool TryAdoptArchitecture(ArchitectureId architectureId, out string failureReason)
+        /// <summary>
+        /// Whether the company could licence this family today, and why not when it could not.
+        ///
+        /// **The check half of <see cref="TryAdoptArchitecture"/>, extracted rather than copied**, for
+        /// the same reason `CanAcquireDataSource` was: the FOUNDATION stage needs to know whether to
+        /// enable a button and what to write beside it, and a second copy of these five conditions is
+        /// a screen that offers a family the simulation then refuses.
+        ///
+        /// It moves nothing, so a caller may ask as often as it likes.
+        /// </summary>
+        public bool CanAdoptArchitecture(ArchitectureId architectureId, out string failureReason)
         {
             failureReason = string.Empty;
 
             if (!ArchitectureCatalog.TryGet(architectureId, out var architecture))
             {
-                failureReason = "Unknown architecture.";
+                failureReason = Loc.T("family.unknown");
                 return false;
             }
 
             if (State.HasArchitecture(architectureId))
             {
-                failureReason = "Already adopted.";
+                failureReason = Loc.T("family.already");
                 return false;
             }
 
             if (!architecture.IsAvailableOn(State.Date))
             {
-                failureReason = $"Not published until {architecture.AvailableFrom}.";
+                failureReason = Loc.T("family.not_yet", architecture.AvailableFrom.ToString());
                 return false;
             }
 
             var gate = ResearchTree.GateForArchitecture(architectureId);
+
             if (!State.HasResearch(gate))
             {
-                failureReason = $"Needs the {ResearchTree.Get(gate).DisplayName} research first.";
+                failureReason = Loc.T("family.needs_node", ResearchTree.Get(gate).DisplayName);
                 return false;
             }
 
             if (State.CashUsd < architecture.AdoptionCostUsd)
             {
-                failureReason = $"Needs ${architecture.AdoptionCostUsd:N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("family.no_cash", Usd(architecture.AdoptionCostUsd));
                 return false;
             }
+
+            return true;
+        }
+
+        public bool TryAdoptArchitecture(ArchitectureId architectureId, out string failureReason)
+        {
+            if (!CanAdoptArchitecture(architectureId, out failureReason))
+            {
+                return false;
+            }
+
+            // Safe: `CanAdoptArchitecture` has already established that the catalog knows it.
+            ArchitectureCatalog.TryGet(architectureId, out var architecture);
 
             State.PostCash(LedgerLine.Research, architecture.AdoptionCostUsd);
             State.AdoptedArchitectures.Add(architectureId);

@@ -1016,7 +1016,95 @@ namespace ScalingLaws.UI
             // below it falls off the bottom of the screen.
             architectureField.tooltip = Loc.T("create.sparse_note");
 
+            // **What the company could licence but has not.** The dropdown lists only families
+            // already held, so until this existed an unowned one was not merely unbuyable: nothing
+            // in the game named it, priced it, or said what would open it. Same fault the corpus
+            // list had, same answer.
+            familyOffers.AddToClassList("family-offers");
+            panel.Add(familyOffers);
+
             return panel;
+        }
+
+        /// <summary>Families the company does not hold, with what each would cost today.</summary>
+        private readonly VisualElement familyOffers = new();
+
+        /// <summary>
+        /// Redraws the licensing list.
+        ///
+        /// **Nothing at all when there is nothing to offer.** A heading over an empty list is what
+        /// made the hiring screen render as a blank page with a single button on it.
+        /// </summary>
+        private void RebuildFamilyOffers()
+        {
+            familyOffers.Clear();
+
+            var offered = 0;
+
+            foreach (var definition in ArchitectureCatalog.All)
+            {
+                if (simulation.State.HasArchitecture(definition.Id)
+                    || !definition.IsAvailableOn(simulation.State.Date))
+                {
+                    continue;
+                }
+
+                if (offered == 0)
+                {
+                    var heading = new Label(Loc.T("family.offer"));
+                    heading.AddToClassList("family-offers__heading");
+                    familyOffers.Add(heading);
+                }
+
+                familyOffers.Add(FamilyRow(definition));
+                offered++;
+            }
+        }
+
+        /// <summary>One family for licence: what it is, why not, and the price.</summary>
+        private VisualElement FamilyRow(ArchitectureDefinition definition)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("corpus-row");
+
+            var words = new VisualElement();
+            words.AddToClassList("corpus-row__words");
+
+            var name = new Label(definition.DisplayName);
+            name.AddToClassList("corpus-row__name");
+            words.Add(name);
+
+            // The reason is the simulation's own, never a second reading of the same conditions.
+            var buyable = simulation.CanAdoptArchitecture(definition.Id, out var why);
+
+            // **What it buys, from the two numbers the family already carries.** No prose is
+            // invented for this row: a definition has no description field, and writing one per
+            // family here would be six paragraphs living apart from the six the "(i)" cards hold.
+            var note = new Label(buyable
+                ? Loc.T("family.buys",
+                    UiFormat.Percent(definition.InferenceCostMultiplier * 100.0, 0),
+                    UiFormat.Percent(definition.ActiveParameterFraction * 100.0, 0))
+                : why);
+            note.AddToClassList("corpus-row__note");
+            words.Add(note);
+            row.Add(words);
+
+            var buy = new Button(() =>
+            {
+                simulation.TryAdoptArchitecture(definition.Id, out _);
+                RebuildArchitectures();
+                RebuildFamilyOffers();
+                Reprice();
+            })
+            {
+                text = UiFormat.Money(definition.AdoptionCostUsd)
+            };
+
+            buy.AddToClassList("corpus-row__buy");
+            buy.SetEnabled(buyable);
+            row.Add(buy);
+
+            return row;
         }
 
         /// <summary>
@@ -2044,6 +2132,10 @@ namespace ScalingLaws.UI
             {
                 architectureField.index = 0;
             }
+
+            // The two lists are the two halves of one fact, what the company can build on, so they
+            // are redrawn together. Licensing one moves it from the offers into the dropdown.
+            RebuildFamilyOffers();
         }
 
         private void RebuildDataSources()
