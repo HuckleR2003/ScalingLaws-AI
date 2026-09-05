@@ -185,8 +185,10 @@ namespace ScalingLaws.UI
                 return -1;
             }
 
-            var best = -1;
-            var bestDistance = radius;
+            // Nulls rather than a shorter list, so an index still means the same person. Filtering
+            // the absent out renumbers everybody behind them and opens the wrong card, which from
+            // the player's chair looks exactly like the click having missed.
+            var aims = new Vector3?[spawned.Count];
 
             for (var index = 0; index < spawned.Count; index++)
             {
@@ -199,9 +201,45 @@ namespace ScalingLaws.UI
                     continue;
                 }
 
-                var world = person.transform.position + Vector3.up * AimHeight;
-                var view = camera.WorldToViewportPoint(world);
+                aims[index] = person.transform.position + Vector3.up * AimHeight;
+            }
 
+            return NearestIn(camera, viewport, aims, radius);
+        }
+
+        /// <summary>
+        /// Which of these points is nearest a place in the camera's view, or -1 when none is close.
+        ///
+        /// **Split out of `NearestTo` so the arithmetic can be measured without a room.** The office
+        /// is the one screen where the whole interaction is a click on a person, and testing it used
+        /// to need a loaded scene, a character prefab and physics running, which is why none of it
+        /// was tested at all. This half is pure geometry and a camera.
+        ///
+        /// A null entry is somebody who is not there to be clicked, and it keeps its place in the
+        /// list so the answer is still an index into the roster.
+        /// </summary>
+        public static int NearestIn(Camera camera, Vector2 viewport,
+            IReadOnlyList<Vector3?> aims, float radius = 0.055f)
+        {
+            if (camera == null || aims == null)
+            {
+                return -1;
+            }
+
+            var best = -1;
+            var bestDistance = radius;
+
+            for (var index = 0; index < aims.Count; index++)
+            {
+                if (aims[index] == null)
+                {
+                    continue;
+                }
+
+                var view = camera.WorldToViewportPoint(aims[index].Value);
+
+                // Behind the camera. It still projects to a point on screen, which is how an actor
+                // standing behind you becomes the nearest thing to the cursor.
                 if (view.z <= 0f)
                 {
                     continue;
