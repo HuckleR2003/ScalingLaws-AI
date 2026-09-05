@@ -54,6 +54,11 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Added
 
+- **The founder can be a woman.** Polish puts gender in the past tense, so forty six lines were
+  telling the player what *he* had done: "Sprzedałeś firmę", "Gdzie utknąłeś?". All of them are
+  rewritten in the present tense or impersonally, which needs no gender field, no question at the
+  creator and no save migration. English was already neutral and is untouched.
+
 - **Music, and a game that is not silent.** Three loops where there was one: the menu, the office,
   and the model creator, each computed from sine waves at startup so the project still carries no
   audio files and the build does not grow. Four new cues besides: a page turning under the notices
@@ -326,6 +331,12 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
   the shell's own headers, banners and tooltips.
 
 ### Fixed
+
+- **Nothing tested that clicking a person in the office picks the right one.** The panel was
+  covered and the arithmetic that decides who is under the cursor was not, which is how a playtest
+  came to report it as doing nothing. Five tests now hold it, including the one that matters most:
+  somebody off shift keeps their place in the roster, because dropping them renumbers everybody
+  behind and opens the wrong person's card.
 
 - **The music stepped up in volume every time a loop turned over.** Reported as the loops not
   looping. Measured: there is no click, the join is continuous to the sample. What there was is a
