@@ -33,7 +33,7 @@ inside three years. That is intentional.
 | `Assets/_ScalingLaws/Scripts/Simulation/` | The rules. Also no UnityEngine, so tests run in milliseconds. |
 | `Assets/_ScalingLaws/Scripts/Persistence/` | Save format, migration, PlayerPrefs I/O. The only folder that imports UnityEngine. |
 | `Assets/_ScalingLaws/Scripts/UI/` | 93 files. UI Toolkit panels, consumers only: nothing here decides anything. |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1076 tests across 113 fixtures. No scene is loaded by any of them. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1077 tests across 113 fixtures. No scene is loaded by any of them. |
 | `Assets/_ScalingLaws/Tests/PlayMode/` | 30 tests across 8 fixtures. These load a scene, which is the point: they are the only ones that can see a layout fault. |
 
 **These counts were wrong for a long time and it mattered.** This table said `UI/` was
