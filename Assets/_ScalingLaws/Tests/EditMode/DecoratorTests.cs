@@ -151,6 +151,40 @@ namespace ScalingLaws.Tests.EditMode
                 "A sofa in a box raises nobody's morale.");
         }
 
+        /// <summary>
+        /// A stored piece can be put back, and putting it back makes it count again.
+        ///
+        /// **`TryPlaceFurniture` had no caller anywhere, including tests.** Found by the sweep before
+        /// the 0.2.0 build: `TryStoreFurniture` takes a piece off the floor and nothing put one back,
+        /// so the pair was half a mechanism. It is dormant rather than broken, because
+        /// `GameShell.FurnishingShopIsOpen` is false and neither half is reachable today.
+        ///
+        /// **Not deleted, and that is the point.** Removing the placing half would leave a shop that
+        /// can store and cannot restore on the day it is switched back on, which is exactly the shape
+        /// of `TryRemove` silently destroying fans: a dormant fault that only becomes a fault when a
+        /// feature arrives. The rack store room learned this and has `TryStoreRack` beside
+        /// `TryStandRack`; this is the same pair, now proven to work.
+        /// </summary>
+        [Test]
+        public void AStoredPieceCanBePutBackOnTheFloor()
+        {
+            var simulation = Rich();
+            simulation.TryBuyFurniture(FurnitureKind.Sofa, Zone);
+
+            var item = simulation.State.Decor.Items.Single();
+            var standing = simulation.State.Decor.MoraleBonus;
+
+            Assert.That(simulation.TryStoreFurniture(item), Is.Empty);
+            Assert.That(item.IsPlaced, Is.False);
+
+            Assert.That(simulation.TryPlaceFurniture(item, Zone), Is.Empty,
+                "a piece that was just taken off this floor cannot be put back on it");
+
+            Assert.That(item.IsPlaced, Is.True);
+            Assert.That(simulation.State.Decor.MoraleBonus, Is.EqualTo(standing),
+                "the sofa is back on the floor and is worth what it was worth before");
+        }
+
         [Test]
         public void ADeskSomebodyIsSittingAtCannotBeStored()
         {
