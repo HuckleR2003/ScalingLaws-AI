@@ -462,7 +462,13 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1059 EditMode tests across 108 fixtures, and 29 PlayMode across 7.
+- 1062 EditMode tests across 109 fixtures, and 29 PlayMode across 7.
+- **A rival strategy either belongs to a lab or belongs to nobody, and now a test says which.**
+  `CompetitorStrategy.FastFollower` has no lab, which is fine and deliberate. What was not fine is
+  that giving it one tomorrow would have produced a General-only company on the middle numbers rather
+  than the lab its own comment describes, because it has no rung on the type ladder, no serving cost,
+  no cadence and no capability gain. Nothing would have failed. This is the same fault that left two
+  of the five model types dead by construction for fourteen years of game time.
 - 2,475 phrases in the book, both languages complete, none written twice.
 - Achievements are three files and one call site: a table in `Data/`, a pure function over the
   campaign in `Simulation/`, and `PlayerPrefs` in `Persistence/`. No rule reads any of them, so a
