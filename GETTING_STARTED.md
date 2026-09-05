@@ -83,7 +83,7 @@ From a terminal, with Unity closed:
 "C:\Program Files\Unity\Hub\Editor\6000.5.8f1\Editor\Unity.exe" -batchmode -nographics -projectPath "<project>" -runTests -testPlatform EditMode -testResults TestResults.xml
 ```
 
-888 tests, about a minute including the import. Exit code 0 means everything passed, 2 means something failed and
+1075 tests, a few minutes including the import. Exit code 0 means everything passed, 2 means something failed and
 `TestResults.xml` says what.
 
 **Do not add `-quit` to `-runTests`.** Unity finishes the import, never runs the tests, and exits 0,
