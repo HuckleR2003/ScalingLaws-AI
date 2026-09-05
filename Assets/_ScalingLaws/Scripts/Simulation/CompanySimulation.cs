@@ -589,6 +589,7 @@ namespace ScalingLaws.Simulation
             // The world moving on, and the company's own dealings with it. All of it after the
             // market has been served, because every one of these reads a figure the day produced.
             FadeSmears();
+            AdvanceSmearThreat();
             PayShareDividends();
             AdvanceLawsuits();
             ConsiderAcquisitionOffer();
@@ -4452,6 +4453,16 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public const int LongestDeferralDays = 913;
 
+        /// <summary>
+        /// What the revenue adds for a postponement the company took rather than asked for.
+        ///
+        /// Flat, once, on the whole bill, and it is carried into next year's assessment with it. A
+        /// flat charge rather than the daily accrual that used to apply, because the point is that
+        /// the player is *told a number* on the day it happens: 35% a year compounding invisibly in
+        /// an inbox is a worse penalty that nobody ever saw arrive.
+        /// </summary>
+        public const double UnjustifiedDeferralSurcharge = 0.09;
+
         /// <summary>What each deferral adds to what is owed. The author's figure.</summary>
         public const double DeferralInterest = 0.086;
 
@@ -4476,8 +4487,80 @@ namespace ScalingLaws.Simulation
         private void AdvanceMail()
         {
             IssueTaxDemand();
+
+            // **Before the general chaser**, which grows an overdue demand at 35% a year for as long
+            // as it sits there. That is right for a regulator's penalty and wrong for the revenue,
+            // who close the file and add it to next year's. Closing it here means the chaser never
+            // sees the tax letter at all.
+            CarryOverdueTax();
+
             ChaseOverdueDemands();
             InviteApplicant();
+        }
+
+        /// <summary>
+        /// What the revenue does with a year's tax nobody answered.
+        ///
+        /// **The surcharge is the price of not asking.** `DeferDemand` is the same postponement
+        /// requested rather than taken: it costs interest and no standing, and it has a ceiling.
+        /// This costs a flat nine per cent of the whole bill, costs standing, and is on the public
+        /// record. A player who cannot tell those apart will use the wrong one, so the notice says
+        /// the figure out loud rather than folding it into next January's total silently.
+        /// </summary>
+        private void CarryOverdueTax()
+        {
+            foreach (var letter in State.Mail.All)
+            {
+                if (letter.Kind != MailKind.TaxDemand
+                    || letter.IsClosed
+                    || letter.AmountUsd <= 0L
+                    || State.Date.DayIndex <= letter.DueDayIndex)
+                {
+                    continue;
+                }
+
+                var owed = letter.AmountUsd;
+                var surcharge = (long)Math.Round(owed * UnjustifiedDeferralSurcharge);
+                var carried = owed + surcharge;
+
+                letter.IsClosed = true;
+                letter.AmountUsd = 0L;
+                letter.Outcome = Loc.T("tax.carried.outcome", Usd(carried));
+
+                // Into the running accrual, so it lands in next January's demand alongside whatever
+                // the company earns this year. One demand a year, which is what makes the date
+                // something a player can plan around.
+                State.AccruedTaxUsd += carried;
+
+                State.Reputation = Math.Clamp(State.Reputation - LateStandingLoss, 0.0, 1.0);
+
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.TaxCarriedForward, State.Date,
+                    Loc.T("tax.carried.body", Usd(owed),
+                        UnjustifiedDeferralSurcharge.ToString("P0",
+                            System.Globalization.CultureInfo.InvariantCulture),
+                        Usd(surcharge), Usd(carried), State.Date.Year + 1),
+                    carried));
+            }
+        }
+
+        /// <summary>
+        /// The open tax demand, or null. What the corner banner draws.
+        ///
+        /// A view over the inbox rather than a second record of the same fact: the letter is the
+        /// demand, and a banner reading off its own copy is how the two come to disagree about
+        /// whether anything is owed.
+        /// </summary>
+        public MailItem OutstandingTaxDemand()
+        {
+            foreach (var letter in State.Mail.All)
+            {
+                if (letter.Kind == MailKind.TaxDemand && !letter.IsClosed && letter.AmountUsd > 0L)
+                {
+                    return letter;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -4654,6 +4737,16 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
+            // **Both answers to a legal threat go one way in.** Paying it is not `PayDemand`:
+            // that posts to Fines and adds to the lifetime penalties figure, and a settlement with a
+            // competitor is neither. Refusing it is not the generic Decline either, because refusing
+            // this is what rolls the case.
+            if (letter.Kind == MailKind.LegalThreat
+                && action is MailAction.Pay or MailAction.Decline)
+            {
+                return AnswerThreatLetter(letter, action == MailAction.Pay, out failureReason);
+            }
+
             switch (action)
             {
                 case MailAction.Pay:
@@ -4677,6 +4770,34 @@ namespace ScalingLaws.Simulation
                     failureReason = "Nothing to do.";
                     return false;
             }
+        }
+
+        /// <summary>
+        /// Settles or refuses a lab's notice before action, and closes the letter either way.
+        ///
+        /// The letter is closed here rather than inside `TryAnswerSmearThreat`, because the rules
+        /// side owns the threat and the inbox owns the paper. The two are kept in step by there
+        /// being exactly one route between them, which is this method.
+        /// </summary>
+        private bool AnswerThreatLetter(MailItem letter, bool settle, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!TryAnswerSmearThreat(settle, out var note))
+            {
+                failureReason = note;
+                return false;
+            }
+
+            letter.IsClosed = true;
+            letter.Outcome = note;
+
+            if (settle)
+            {
+                letter.AmountUsd = 0L;
+            }
+
+            return true;
         }
 
         private bool PayDemand(MailItem letter, out string failureReason)

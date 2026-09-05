@@ -257,8 +257,14 @@ namespace ScalingLaws.UI
             // date has not arrived, or the research has not been done, or it is already at the
             // ceiling. A grey tile with a level on it and no explanation is the thing that sent a
             // playtest looking for a bug in the upgrade system.
+            // **The level is meaningless without the number it is measured against**, and that
+            // number only appeared once the model had fallen behind, as a red badge. So the two
+            // states a player meets first, at par and ahead of it, drew a level and no ruler. A
+            // model ships at market par on every trait, and a first-time reader with no ruler on
+            // screen reads those levels as having come from nowhere.
             var level = new Label(
-                standing.IsAvailable ? Loc.T("upgrade.level", standing.Level)
+                standing.IsAvailable
+                    ? Loc.T("upgrade.level_market", standing.Level, standing.ExpectedLevel)
                 : standing.Needs != ResearchNodeId.None
                     ? Loc.T("upgrade.needs", ResearchTree.Get(standing.Needs).DisplayName)
                     : Loc.T("upgrade.from", definition.AvailableFrom));
@@ -336,6 +342,12 @@ namespace ScalingLaws.UI
             var version = new Label(Loc.T("upgrade.version", model.Line.PreviousName));
             version.AddToClassList("udet__version");
             panel.Add(version);
+
+            // Beside the model rather than in the page note at the top, because it is a fact about
+            // this model on the day it shipped and not a definition of the word "trait".
+            var par = new Label(Loc.T("upgrade.par_note"));
+            par.AddToClassList("udet__par");
+            panel.Add(par);
 
             panel.Add(BuildChip(model));
 

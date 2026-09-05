@@ -106,9 +106,10 @@ namespace ScalingLaws.UI
     /// thing I shipped doing well? Four facts, in the order they get asked. Are people happy with it.
     /// Is it still current. How many are paying. Is it making money.
     ///
-    /// While a run is in flight it becomes the run instead, because during those weeks that is the
-    /// only thing happening and a banner about a product that has not shipped yet would be showing
-    /// numbers about nothing.
+    /// A run in flight adds a strip along the bottom rather than taking the panel over. A company
+    /// training its second model still has its first one on sale, and hiding it for the two hundred
+    /// days the run takes was read, correctly, as the product having disappeared. With **nothing** on
+    /// sale the run is the whole banner, because then it genuinely is the only thing happening.
     /// </summary>
     public sealed class ModelBanner
     {
@@ -146,9 +147,14 @@ namespace ScalingLaws.UI
         /// True for the extra banners in the stack.
         ///
         /// A company running three lines has three products on sale, and each deserves its own
-        /// corner panel. What it does **not** deserve is three copies of the chart, three training
-        /// strips for one run, and three buttons to the same management page. The lead banner carries
-        /// those; the others carry the name, the meters and what the model has taken.
+        /// corner panel. What it does **not** deserve is three training strips for one run and three
+        /// buttons to the same management page. The lead banner carries those.
+        ///
+        /// **It does keep its chart**, which it did not until the playtest asked for it. The reason
+        /// it had none was that the chart used to be the company's daily net, and the same picture
+        /// under three product names says three things about one number. A follower draws its own
+        /// model's last month instead, so the question the panel exists to answer, is this one
+        /// climbing or sliding, has an answer for each of them.
         ///
         /// One class with two densities rather than a second widget, because the subject is the same
         /// and two widgets for one subject drift apart.
@@ -227,10 +233,7 @@ namespace ScalingLaws.UI
             subscribers.AddToClassList("mb__subs");
             body.Add(subscribers);
 
-            if (!compact)
-            {
-                body.Add(chart);
-            }
+            body.Add(chart);
 
             var footer = new VisualElement();
             footer.AddToClassList("mb__footer");
@@ -324,16 +327,18 @@ namespace ScalingLaws.UI
             }
 
             var work = inFlight();
+            var standing = product();
 
-            if (work.Busy)
+            // **A run does not take the panel over while something is on sale.** It used to, and a
+            // company training its second model watched its first one vanish for two hundred days.
+            // With nothing on sale the run is the whole banner, which is the opening of every
+            // campaign and the one case where it really is all there is to report.
+            if (work.Busy && !standing.Exists)
             {
                 ShowWork(work);
                 return;
             }
 
-            training.style.display = DisplayStyle.None;
-
-            var standing = product();
             title.text = standing.Name.ToUpperInvariant();
 
             // Nothing on sale means nothing to report, so the banner is just its own header until
@@ -343,6 +348,19 @@ namespace ScalingLaws.UI
             body.style.display = shut ? DisplayStyle.None : DisplayStyle.Flex;
             manage.style.display = shut ? DisplayStyle.None : DisplayStyle.Flex;
             chevron.text = shut ? "+" : "-";
+
+            // Under the product rather than instead of it, and only on the lead banner: one run is
+            // one strip, and repeating it under every product on sale would say three things are
+            // training when one is. **Before the fold check**, because a player who has folded the
+            // panel away has not asked to stop being told how long the run has left.
+            var running = work.Busy && !compact;
+
+            training.style.display = running ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (running)
+            {
+                FillWork(work);
+            }
 
             if (shut)
             {
@@ -356,8 +374,8 @@ namespace ScalingLaws.UI
             topicalityFill.EnableInClassList("mb-meter__fill--bad", standing.Topicality < 0.3);
 
             subscribers.text = standing.Exists
-                ? $"Current Subs.  {UiFormat.Count(standing.Subscribers)}"
-                : "Nothing on sale yet.";
+                ? Loc.T("banner.current_subs", UiFormat.Count(standing.Subscribers))
+                : Loc.T("banner.nothing_on_sale");
 
             chart.Set(dailySeries());
 
@@ -370,13 +388,21 @@ namespace ScalingLaws.UI
             earnings.text = UiFormat.Money(standing.MonthEarningsUsd);
             earnings.EnableInClassList("mb-cell__value--good", standing.MonthEarningsUsd > 0L);
 
+            // The age goes through `UiFormat.Days` rather than into the sentence as a number,
+            // because Polish has three plural forms and "1 dni" is what writing it inline produces.
             manage.tooltip = standing.Exists
-                ? $"{standing.Name} is {standing.DaysOld} days old, capability "
-                    + $"{UiFormat.Number(standing.Capability)} against a frontier of "
-                    + $"{UiFormat.Number(standing.Frontier)}."
-                : "Nothing has shipped yet.";
+                ? Loc.T("banner.about", standing.Name, UiFormat.Days(standing.DaysOld),
+                    UiFormat.Number(standing.Capability), UiFormat.Number(standing.Frontier))
+                : Loc.T("banner.about_empty");
         }
 
+        /// <summary>
+        /// The run is the whole banner, which happens only when there is nothing on sale.
+        ///
+        /// Separate from <see cref="FillWork"/> because the other caller wants the strip and nothing
+        /// else: it has a product to keep on screen, and closing the body or renaming the title
+        /// underneath it is the bug this pair was split to fix.
+        /// </summary>
         private void ShowWork(WorkInFlight work)
         {
             body.style.display = DisplayStyle.None;
@@ -384,14 +410,26 @@ namespace ScalingLaws.UI
             training.style.display = DisplayStyle.Flex;
 
             title.text = work.Subject.ToUpperInvariant();
+            FillWork(work);
+        }
+
+        /// <summary>Fills the strip in, and touches nothing above it.</summary>
+        private void FillWork(WorkInFlight work)
+        {
             trainingCaption.text = work.Caption;
             trainingFill.style.width = Length.Percent((float)(work.Progress * 100.0));
 
             // Days left, which is the number a player actually plans around. The percentage is there
             // to make the bar readable, not to be the answer.
-            trainingDays.text = work.DaysLeft == 1
-                ? $"1 day left   ({work.Progress:P0})"
-                : $"{work.DaysLeft:N0} days left   ({work.Progress:P0})";
+            //
+            // Through the phrase book and through `UiFormat`, both of which this line was missing:
+            // it printed "days left" in English on a Polish banner, and `:P0` follows the machine
+            // culture, which is the fault that has now turned up in this project four times.
+            var left = work.DaysLeft == 1
+                ? Loc.T("banner.days_left.one")
+                : Loc.T("banner.days_left.many", UiFormat.Number(work.DaysLeft, 0));
+
+            trainingDays.text = left + "   (" + UiFormat.Percent(work.Progress, 0) + ")";
         }
     }
 }

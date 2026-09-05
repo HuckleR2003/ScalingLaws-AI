@@ -116,7 +116,23 @@ namespace ScalingLaws.Simulation
         GrantCompleted = 51,
 
         /// <summary>The condition was broken or the term ran out, so the advance goes back.</summary>
-        GrantLost = 52
+        GrantLost = 52,
+
+        /// <summary>
+        /// A smear campaign was traced back to this company.
+        ///
+        /// **Its own type rather than a second `SmearLaunched` with different words.** The wire has
+        /// to file the two in opposite sections: one landed is a story about the target with nobody
+        /// named, one traced is a scandal about us. Telling them apart by reading the message text
+        /// would be a switch on a translated string.
+        /// </summary>
+        SmearBackfired = 57,
+
+        /// <summary>A lab is threatening to sue over a campaign it traced back.</summary>
+        SmearThreatened = 58,
+
+        /// <summary>A tax demand ran out of days and was carried into next year with a surcharge.</summary>
+        TaxCarriedForward = 59
     }
 
     /// <summary>

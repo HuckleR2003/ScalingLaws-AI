@@ -224,5 +224,139 @@ namespace ScalingLaws.Tests.EditMode
             Assert.Less(points, 12000,
                 $"{points} points is more geometry than a picker needs, and every hover retessellates it.");
         }
+    
+        /// <summary>
+        /// The panel the creator draws the map in. 780 by 386 is what the column comes out as.
+        /// </summary>
+        private static readonly Rect Panel = new(0f, 0f, 780f, 386f);
+
+        /// <summary>How much of the panel the drawn map covers, zero to one.</summary>
+        private static float Fill(WorldRegion region)
+        {
+            var element = new WorldMapElement(region, Country.None, _ => { }, _ => { });
+            var view = element.ViewIn(Panel);
+
+            var scale = Mathf.Min(Panel.width / view.width, Panel.height / view.height);
+
+            return view.width * scale * view.height * scale / (Panel.width * Panel.height);
+        }
+
+        /// <summary>
+        /// The map fills the panel it is drawn in, whichever region is chosen.
+        ///
+        /// **This is the fault a playtest measured by eye and got right to within a point.** Europe
+        /// was drawing 459 pixels of a 780 pixel panel, because the view was a roughly square
+        /// bounding box fitted into a box twice as wide as it is tall, and the smaller ratio wins
+        /// when you fit that way. It reported as "the right hand side is about 40% empty"; it was
+        /// 41%.
+        ///
+        /// Ninety nine per cent rather than a hundred because the arithmetic is in floats. Anything
+        /// that fails this is letterboxing again.
+        /// </summary>
+        [Test]
+        public void TheMapFillsThePanelWhicheverRegionIsChosen()
+        {
+            Assert.That(Fill(WorldRegion.None), Is.GreaterThan(0.99f),
+                "the whole world should crop its empty Pacific margins rather than sit in a band");
+
+            foreach (WorldRegion region in System.Enum.GetValues(typeof(WorldRegion)))
+            {
+                Assert.That(Fill(region), Is.GreaterThan(0.99f),
+                    $"{region} leaves {(1f - Fill(region)) * 100f:F0}% of the panel empty");
+            }
+        }
+
+        /// <summary>
+        /// And nothing is drawn outside the map to achieve that.
+        ///
+        /// The other way to fill a box is to grow the view past the world's own edges, which puts
+        /// the same bar back somewhere else and calls it a fix.
+        /// </summary>
+        [Test]
+        public void TheViewNeverReachesPastTheMap()
+        {
+            foreach (WorldRegion region in System.Enum.GetValues(typeof(WorldRegion)))
+            {
+                var view = new WorldMapElement(region, Country.None, _ => { }, _ => { })
+                    .ViewIn(Panel);
+
+                Assert.That(view.xMin, Is.GreaterThanOrEqualTo(-0.001f), $"{region}");
+                Assert.That(view.yMin, Is.GreaterThanOrEqualTo(-0.001f), $"{region}");
+                Assert.That(view.xMax, Is.LessThanOrEqualTo(1.001f), $"{region}");
+                Assert.That(view.yMax, Is.LessThanOrEqualTo(WorldShapes.Aspect + 0.001f),
+                    $"{region}");
+            }
+        }
+
+        /// <summary>
+        /// Leaning in on a region actually leans in.
+        ///
+        /// A view fitted to the panel could satisfy everything above by simply being the whole world
+        /// every time, which would delete the mechanic and pass both tests.
+        ///
+        /// **Measured as the share of the picture the region occupies, not as the size of the view.**
+        /// The first version of this test asked for the view to be a quarter smaller and the
+        /// Americas failed it, correctly: that region runs from Alaska to Tierra del Fuego, which is
+        /// 84% of the map's whole height, so there is no vertical room to lean into and the panel is
+        /// twice as wide as it is tall. What is true of every region, including that one, is that
+        /// choosing it makes the region a larger part of what is drawn.
+        /// </summary>
+        [Test]
+        public void ChoosingARegionMakesThatRegionABiggerPartOfThePicture()
+        {
+            var whole = new WorldMapElement(WorldRegion.None, Country.None, _ => { }, _ => { })
+                .ViewIn(Panel);
+
+            foreach (WorldRegion region in System.Enum.GetValues(typeof(WorldRegion)))
+            {
+                if (region == WorldRegion.None)
+                {
+                    continue;
+                }
+
+                var view = new WorldMapElement(region, Country.None, _ => { }, _ => { })
+                    .ViewIn(Panel);
+
+                Assert.That(view.width * view.height,
+                    Is.LessThanOrEqualTo(whole.width * whole.height + 0.0001f),
+                    $"{region} shows more of the world than not choosing anything does");
+
+                var bounds = Bounds(region);
+
+                var before = bounds.width * bounds.height / (whole.width * whole.height);
+                var after = bounds.width * bounds.height / (view.width * view.height);
+
+                Assert.That(after, Is.GreaterThan(before * 1.15f),
+                    $"{region} is {after / before:F2}x of the picture after choosing it, "
+                    + "which is not leaning in");
+            }
+        }
+
+        /// <summary>The box around every country the game offers in one region.</summary>
+        private static Rect Bounds(WorldRegion region)
+        {
+            var low = new Vector2(float.MaxValue, float.MaxValue);
+            var high = new Vector2(float.MinValue, float.MinValue);
+
+            foreach (var shape in WorldShapes.All)
+            {
+                if (shape.Region != region || shape.Member == Country.None)
+                {
+                    continue;
+                }
+
+                foreach (var ring in shape.Rings)
+                {
+                    foreach (var point in ring)
+                    {
+                        low = Vector2.Min(low, point);
+                        high = Vector2.Max(high, point);
+                    }
+                }
+            }
+
+            return new Rect(low.x, low.y, high.x - low.x, high.y - low.y);
+        }
+
     }
 }

@@ -92,6 +92,11 @@ namespace ScalingLaws.Simulation
                 GrantGoal.SustainReputation => state.Reputation,
                 GrantGoal.ShipProtected => BestDataProtectionOnSale(state),
                 GrantGoal.SustainOnSale => LiveModelCount(state),
+
+                // The day something last went wrong. Compared against the day it had last gone
+                // wrong when the grant was signed, which is the baseline: anything later is an
+                // incident on this body's watch.
+                GrantGoal.NoIncidents => state.LastTroubleDayIndex,
                 _ => 0.0
             };
         }
@@ -109,6 +114,14 @@ namespace ScalingLaws.Simulation
             if (goal == GrantGoal.SustainHeadroom)
             {
                 return reading <= target;
+            }
+
+            // **The other one that reads backwards**, and for a different reason: the body is
+            // asking for the absence of something. Nothing has gone wrong since signing while the
+            // last thing that went wrong is no newer than the day it was signed.
+            if (goal == GrantGoal.NoIncidents)
+            {
+                return reading <= baseline;
             }
 
             if (goal == GrantGoal.ReachCapability)

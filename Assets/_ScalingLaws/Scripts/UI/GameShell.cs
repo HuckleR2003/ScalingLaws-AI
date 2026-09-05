@@ -127,6 +127,9 @@ namespace ScalingLaws.UI
         private NewsScreen news;
         private NewsBanner newsBanner;
         private GrantBanner grantBanner;
+
+        /// <summary>The year's tax, counting down, under the grants panel.</summary>
+        private TaxBanner taxBanner;
         private StartedNotice startedNotice;
         private MailScreen mail;
         private OfficeChooser offices;
@@ -250,6 +253,18 @@ namespace ScalingLaws.UI
 
         /// <summary>The hired people, standing in the office. See <see cref="StaffPresence"/>.</summary>
         private StaffPresence staff;
+
+        /// <summary>
+        /// When the "this is the way back" flash on the basement icon stops being drawn.
+        ///
+        /// Real time rather than game time, because it is a piece of presentation measured in
+        /// seconds of somebody reading, and the game clock can be paused or running at three times
+        /// speed while they do it. Not saved: it belongs to the moment a walkthrough ended.
+        /// </summary>
+        private float showRoomWayBackUntil;
+
+        /// <summary>How long the way back to the basement stays lit. Long enough to read, once.</summary>
+        private const float RoomWayBackSeconds = 2.5f;
         private ModelBanner modelBanner;
 
         /// <summary>
@@ -716,6 +731,19 @@ namespace ScalingLaws.UI
                         ? shown
                         : null));
 
+            // **Once, and only for the room.** The basement is reached from one icon on the site
+            // rail and nothing else in the game points at it, so a player who has just been walked
+            // through it would have to go looking.
+            guide.walkthroughFinished = id =>
+            {
+                if (id != WalkthroughCatalog.ServerRoomId)
+                {
+                    return;
+                }
+
+                showRoomWayBackUntil = Time.realtimeSinceStartup + RoomWayBackSeconds;
+            };
+
             guide.handOverBasement = () =>
             {
                 if (simulation.TryOpenServerRoom(true, out _))
@@ -853,6 +881,12 @@ namespace ScalingLaws.UI
 
             grantBanner = new GrantBanner(() => simulation, () => Show(Screen.Funding));
             leftStack.Add(grantBanner.Root);
+
+            // Under the grants panel and in the same column, because what the state gives you and
+            // what it asks back are two halves of one subject. It opens the letter, which is where
+            // the decision is.
+            taxBanner = new TaxBanner(() => simulation, () => Show(Screen.Mail));
+            leftStack.Add(taxBanner.Root);
 
             root.Add(leftStack);
 
@@ -1288,6 +1322,10 @@ namespace ScalingLaws.UI
             modelBanner?.SetHidden(screen != Screen.Site);
             newsBanner?.SetHidden(screen != Screen.Site);
             grantBanner?.SetHidden(screen != Screen.Site);
+
+            // Two conditions, and both matter: the site screen, and something actually owed. A
+            // strip that draws an empty orange box eleven months of the year is furniture.
+            taxBanner?.SetHidden(screen != Screen.Site || !taxBanner.HasSomethingToSay);
 
             foreach (var follower in followerBanners)
             {
@@ -1805,11 +1843,11 @@ namespace ScalingLaws.UI
         /// Called from the tour's own refresh rather than from the button, so a step reached by any
         /// route lands on the right page.
         /// </summary>
-        private void PutCreatorOnStage(int stage)
+        private int PutCreatorOnStage(int stage)
         {
             if (creator == null || stage < 0 || stage >= ModelCreatorPanel.StageCount)
             {
-                return;
+                return -1;
             }
 
             if (current != Screen.Create)
@@ -1817,10 +1855,16 @@ namespace ScalingLaws.UI
                 Show(Screen.Create);
             }
 
-            if (creator.Stage != stage)
+            // **Forward only, and this is the whole fix.** Setting the stage unconditionally pulled
+            // a player who had pressed NEXT themselves back to the page the tour was still standing
+            // on, on every repaint, which at normal speed is about once a second. The tour catches
+            // up instead: the caller reads where the creator really is and advances its own step.
+            if (creator.Stage < stage)
             {
                 creator.Stage = stage;
             }
+
+            return creator.Stage;
         }
 
         /// <summary>Opens the screen a guide step is about.</summary>
@@ -2784,7 +2828,7 @@ namespace ScalingLaws.UI
                     var banner = new ModelBanner(
                         () => StandingOf(model),
                         () => default,
-                        Array.Empty<long>,
+                        () => model.RecentRevenueUsd,
                         () => Show(Screen.Management),
                         true);
 
@@ -2800,7 +2844,12 @@ namespace ScalingLaws.UI
             }
         }
 
-        /// <summary>This model's own standing, or an empty one once it stops being sold.</summary>
+        /// <summary>
+        /// This model's own standing, or an empty one once it stops being sold.
+        ///
+        /// The chart beside it comes from `DeployedModel.RecentRevenueUsd` rather than from here,
+        /// because a standing is today and the chart is the month behind it.
+        /// </summary>
         private ProductStanding StandingOf(DeployedModel model)
         {
             foreach (var record in simulation.MarketedModels())
@@ -2826,6 +2875,42 @@ namespace ScalingLaws.UI
                     ShowRunFinished(companyEvent.Message);
                 }
 
+                // **The one moment a grant is worth anything.** It used to be a line on the wire
+                // among thirty, which is where a player learns to stop reading.
+                if (companyEvent.Type == CompanyEventType.GrantCompleted)
+                {
+                    ShowGrantCompleted(companyEvent.Message, companyEvent.AmountUsd);
+                }
+
+                // A year's tax pushed into the next year because nobody answered the letter. The
+                // surcharge is the number the player has to see, and it used to be a rate quietly
+                // compounding in an inbox.
+                if (companyEvent.Type == CompanyEventType.TaxCarriedForward)
+                {
+                    ShowTaxCarried(companyEvent.Message, companyEvent.AmountUsd);
+                }
+
+                // **Their lawyers ring.** A letter is something a player finds and a call is
+                // something that happens to them, which is the difference the playtest was asking
+                // for. Only on the letter going out: the same event says they dropped it and says
+                // a settlement landed, and neither of those is a phone call.
+                if (companyEvent.Type == CompanyEventType.SmearThreatened
+                    && state.SmearThreat is { IsAnswered: false, DaysElapsed: 0 })
+                {
+                    RingTheirLawyers(state.SmearThreat);
+                }
+
+                // **The tour waits for these rather than narrating them.** Reported here because
+                // every way of moving the clock already comes through this method, so a run that
+                // finishes while the player is on another tab still moves the step on.
+                guide?.Reported(companyEvent.Type switch
+                {
+                    CompanyEventType.TrainingStarted => GuideScript.RunStartedSignal,
+                    CompanyEventType.TrainingCompleted => GuideScript.RunFinishedSignal,
+                    CompanyEventType.ModelReleased => GuideScript.ModelReleasedSignal,
+                    _ => null
+                });
+
                 recentEvents.Add(companyEvent);
                 PlayEventCue(companyEvent.Type);
                 if (recentEvents.Count > 60)
@@ -2835,6 +2920,31 @@ namespace ScalingLaws.UI
             }
 
             SyncAchievements();
+        }
+
+        /// <summary>
+        /// The lab's counsel, on the phone, once.
+        ///
+        /// Skipped while the guide's own phone is up rather than replacing it: the opening call is
+        /// the one conversation in the game that has to finish, and a company being sued during the
+        /// tutorial has bigger problems than the tutorial. The letter is in the inbox either way,
+        /// which is where the decision actually lives.
+        /// </summary>
+        private void RingTheirLawyers(SmearThreat threat)
+        {
+            if (phone == null || phone.IsOpen)
+            {
+                return;
+            }
+
+            var them = CompetitorCatalog.NameOf(threat.Lab);
+
+            phone.RingFrom(them, new[]
+            {
+                Loc.T("threat.call.line1", them),
+                Loc.T("threat.call.line2"),
+                Loc.T("threat.call.line3")
+            });
         }
 
         /// <summary>
@@ -2976,6 +3086,130 @@ namespace ScalingLaws.UI
             shellRoot.Add(veil);
         }
 
+        /// <summary>
+        /// A grant's conditions were met and it has paid.
+        ///
+        /// The regulator's card in green, which is what the playtest asked for and is the right
+        /// call: the two are the same kind of moment from opposite ends, a body that was watching
+        /// you has finished watching, and the player should recognise the shape before reading a
+        /// word of it.
+        ///
+        /// Shares the notice element with the finished run rather than adding a second one. Two
+        /// notice mechanisms is how two of them end up on screen at once.
+        /// </summary>
+        private void ShowGrantCompleted(string message, long amountUsd)
+        {
+            runFinished?.RemoveFromHierarchy();
+
+            var veil = new VisualElement();
+            veil.AddToClassList("notice-veil");
+            veil.RegisterCallback<ClickEvent>(_ => runFinished?.RemoveFromHierarchy());
+
+            var card = new VisualElement();
+            card.AddToClassList("notice");
+            card.AddToClassList("notice--good");
+            card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
+
+            var title = new Label(Loc.T("grant.notice.title"));
+            title.AddToClassList("notice__title");
+            card.Add(title);
+
+            var body = new Label(message ?? string.Empty);
+            body.AddToClassList("notice__body");
+            card.Add(body);
+
+            // What arrived, and what every grant has paid between them. **Derived from the list of
+            // completed grants rather than from the books**, because the ledger drops the detail of
+            // old months to stay small, so a lifetime figure read from it would quietly shrink. The
+            // catalog and the completed list are both permanent and cannot disagree.
+            var lifetime = 0L;
+
+            foreach (var id in state.GrantsCompleted)
+            {
+                if (GrantCatalog.TryGet(id, out var paidFor))
+                {
+                    lifetime += paidFor.AdvanceUsd + paidFor.CompletionUsd;
+                }
+            }
+
+            var paid = new Label(Loc.T("grant.notice.paid",
+                UiFormat.Money(amountUsd), UiFormat.Money(lifetime)));
+
+            paid.AddToClassList("notice__figure");
+            card.Add(paid);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("notice__buttons");
+
+            var go = new Button(() =>
+            {
+                runFinished?.RemoveFromHierarchy();
+                Show(Screen.Funding);
+            })
+            { text = Loc.T("grant.notice.open") };
+
+            go.AddToClassList("notice__button");
+            go.AddToClassList("notice__button--go");
+            buttons.Add(go);
+
+            var ok = new Button(() => runFinished?.RemoveFromHierarchy()) { text = "OK" };
+            ok.AddToClassList("notice__button");
+            buttons.Add(ok);
+
+            card.Add(buttons);
+            veil.Add(card);
+
+            runFinished = veil;
+            shellRoot.Add(veil);
+        }
+
+        /// <summary>
+        /// The revenue has closed the file and moved the bill to next year.
+        ///
+        /// The same card the finished run and the completed grant use, in the warning colour rather
+        /// than the good one. Three mechanisms for putting something in front of the player is how
+        /// two of them end up on screen at once, which this project has already had happen with the
+        /// corner banners.
+        /// </summary>
+        private void ShowTaxCarried(string message, long carriedUsd)
+        {
+            runFinished?.RemoveFromHierarchy();
+
+            var veil = new VisualElement();
+            veil.AddToClassList("notice-veil");
+            veil.RegisterCallback<ClickEvent>(_ => runFinished?.RemoveFromHierarchy());
+
+            var card = new VisualElement();
+            card.AddToClassList("notice");
+            card.AddToClassList("notice--warn");
+            card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
+
+            var title = new Label(Loc.T("tax.carried.title"));
+            title.AddToClassList("notice__title");
+            card.Add(title);
+
+            var body = new Label(message ?? string.Empty);
+            body.AddToClassList("notice__body");
+            card.Add(body);
+
+            var total = new Label(Loc.T("tax.carried.total", UiFormat.Money(carriedUsd)));
+            total.AddToClassList("notice__figure");
+            card.Add(total);
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("notice__buttons");
+
+            var ok = new Button(() => runFinished?.RemoveFromHierarchy()) { text = "OK" };
+            ok.AddToClassList("notice__button");
+            buttons.Add(ok);
+
+            card.Add(buttons);
+            veil.Add(card);
+
+            runFinished = veil;
+            shellRoot.Add(veil);
+        }
+
         private void RefreshChrome()
         {
             upgradeStrip?.Refresh();
@@ -2999,6 +3233,11 @@ namespace ScalingLaws.UI
             newsBanner?.Refresh();
             grantBanner?.SetHidden(current != Screen.Site);
             grantBanner?.Refresh();
+
+            // Refresh first: it hides itself when nothing is owed, and the screen check has to be
+            // able to override that in the other direction.
+            taxBanner?.Refresh();
+            taxBanner?.SetHidden(current != Screen.Site || !taxBanner.HasSomethingToSay);
 
             RefreshFollowerBanners();
 

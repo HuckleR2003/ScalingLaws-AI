@@ -65,6 +65,21 @@ namespace ScalingLaws.Data
         ShipProtected = 7,
 
         /// <summary>
+        /// Go the whole term without an incident.
+        ///
+        /// **The one a first grant should be about.** Sustained, so it breaks on the day it breaks
+        /// rather than at the close, and it is measured on `LastTroubleDayIndex`, which the game
+        /// already keeps for Safe Harbour. Nothing new is stored and nothing new is rolled.
+        ///
+        /// **Nine, not eight.** Eight was already `SustainOnSale`, sitting further down the list
+        /// past a doc comment, and the compiler took the two names for one value without a word:
+        /// three switches then reported arms as unreachable and nothing said why. Third time this
+        /// project has had a silent enum collision, after `GeneralIntelligence` over
+        /// `ShardedOptimizerStates` and `StateProgramme` over `GrantRepaid`.
+        /// </summary>
+        NoIncidents = 9,
+
+        /// <summary>
         /// Keep this many products on sale, every day, for a long term.
         ///
         /// The low bar per day is the point. What makes it hard is the length: two years of staying
@@ -184,7 +199,10 @@ namespace ScalingLaws.Data
         private static readonly GrantDefinition[] Entries =
         {
             // tier                              goal                        target term   advance   completion  points
-            new(GrantId.MinistrySafeStart,   1, GrantGoal.ShipProtected,     0,     300,    90_000,    400_000,   60),
+            // Ninety days rather than three hundred, because the condition is now something a
+            // company either keeps or does not from the first day, and a year of holding your
+            // breath is not a tutorial grant. See the note on `GrantGoal.NoIncidents`.
+            new(GrantId.MinistrySafeStart,   1, GrantGoal.NoIncidents,       1,      90,    90_000,    400_000,   60),
             new(GrantId.MinistryFirstLine,   1, GrantGoal.ReleaseModels,     1,     240,    70_000,    300_000,   45),
 
             new(GrantId.StandardsStipend,    2, GrantGoal.ReleaseModels,     3,     540,   120_000,    600_000,   75),
@@ -279,6 +297,7 @@ namespace ScalingLaws.Data
             GrantGoal.SustainHeadroom => true,
             GrantGoal.SustainReputation => true,
             GrantGoal.SustainOnSale => true,
+            GrantGoal.NoIncidents => true,
             _ => false
         };
     }

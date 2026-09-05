@@ -159,10 +159,22 @@ namespace ScalingLaws.UI
         /// <summary>
         /// How much room is left around a region when the map leans in on it.
         ///
-        /// A tenth of the region's own size on each side. Tight enough that the region fills the
-        /// frame and loose enough that a country on its edge is not against the glass.
+        /// **An eighth of the region's own size on each side**, and the comment here said a tenth
+        /// while the constant said 0.55 for long enough that the screen was shipped that way. More
+        /// than half the region's width added to each side leaves the region itself under half the
+        /// frame, which a playtest reported as forty per cent of the panel being empty.
+        ///
+        /// It has to stay small for a different reason too. The Americas run from Alaska to Tierra
+        /// del Fuego, which is 84% of the map's whole height before any padding at all, so a
+        /// generous pad pushes that region straight back out to the entire world and leaning in on
+        /// it does nothing. Europe and Asia, the two the playtest named, are compact enough that the
+        /// pad is what frames them.
+        ///
+        /// It does not have to carry the framing on its own any more. <see cref="ViewIn"/> widens
+        /// whatever comes out of here to the shape of the panel, so a country on the edge of its
+        /// region still has neighbours around it and none of that room is blank.
         /// </summary>
-        public const float ZoomPadding = 0.55f;
+        public const float ZoomPadding = 0.12f;
 
         /// <summary>
         /// What part of the map is on screen, in map space.
@@ -172,6 +184,145 @@ namespace ScalingLaws.UI
         /// map space - the outlines, the markers and the hit test all read the same coordinates -
         /// and a second way of saying where we are looking is how a click lands one country from
         /// the cursor with the picture right and every test green.
+        /// </summary>
+        /// <summary>
+        /// The view fitted to the panel it is being drawn in, which is the one the element uses.
+        ///
+        /// **`View` is the subject and this is the picture.** A region's bounding box is roughly
+        /// square, the panel is about twice as wide as it is tall, and fitting a square subject into
+        /// a 2:1 box by the smaller ratio leaves half the box empty however the padding is tuned.
+        /// That is what the playtest was looking at.
+        ///
+        /// So the short axis is grown until the view matches the panel, which takes in more map
+        /// rather than more nothing: there is ocean, coastline and a neighbouring continent either
+        /// side of every region on this board, and all of it frames the choice. Where there is no
+        /// more map to take in, the long axis is cropped instead, which is what happens to the whole
+        /// world: it trims the empty Pacific margins and draws the continents larger.
+        ///
+        /// **Blank is never added.** Growing past the map's own bounds would put a bar back, in a
+        /// different place, and call it a fix.
+        /// </summary>
+        public Rect ViewIn(Rect box)
+        {
+            var subject = View;
+
+            if (box.width <= 0f || box.height <= 0f
+                || subject.width <= 0f || subject.height <= 0f)
+            {
+                return subject;
+            }
+
+            var world = new Rect(0f, 0f, 1f, WorldShapes.Aspect);
+            var wanted = box.width / box.height;
+
+            var width = subject.width;
+            var height = subject.height;
+
+            // **A chosen region never fills the whole world**, however tall it is. The Americas run
+            // from the Canadian arctic to Tierra del Fuego, 84% of the map's height before padding,
+            // so matching that to a 2:1 panel gives back the entire world and choosing the region
+            // does nothing at all. Capped and then cropped, which is what an atlas does.
+            if (region != WorldRegion.None)
+            {
+                height = Mathf.Min(height, world.height * MostOfTheWorld);
+                width = Mathf.Min(width, world.width * MostOfTheWorld);
+            }
+
+            if (subject.width / subject.height < wanted)
+            {
+                width = height * wanted;
+            }
+            else
+            {
+                height = width / wanted;
+            }
+
+            // Nothing may be wider or taller than the map. When the ask does not fit, the other axis
+            // gives way instead, which crops rather than letterboxes.
+            if (width > world.width)
+            {
+                width = world.width;
+                height = width / wanted;
+            }
+
+            if (height > world.height)
+            {
+                height = world.height;
+                width = height * wanted;
+            }
+
+            // Centred on the subject, then slid back inside the map. Sliding rather than shrinking,
+            // so a region against the edge of the world keeps its size and simply sits off-centre,
+            // which is what an atlas does.
+            // **Centred on the countries rather than on their coastlines.** What has to stay in
+            // frame is the pin of every country the region offers, because those are the things
+            // being clicked; the outlines are context and context is what a crop is allowed to take.
+            var pins = PinBox();
+            var focus = pins.width > 0f ? pins.center : subject.center;
+
+            var x = focus.x - width * 0.5f;
+            var y = focus.y - height * 0.5f;
+
+            // Slid back over any pin the crop left outside, before being slid back inside the map.
+            // Order matters: the world is the harder constraint and has to win.
+            if (pins.width > 0f)
+            {
+                x = Mathf.Min(x, pins.xMin);
+                x = Mathf.Max(x, pins.xMax - width);
+                y = Mathf.Min(y, pins.yMin);
+                y = Mathf.Max(y, pins.yMax - height);
+            }
+
+            x = Mathf.Clamp(x, world.xMin, Mathf.Max(world.xMin, world.xMax - width));
+            y = Mathf.Clamp(y, world.yMin, Mathf.Max(world.yMin, world.yMax - height));
+
+            return new Rect(x, y, width, height);
+        }
+
+        /// <summary>
+        /// The most of the world a chosen region is allowed to show.
+        ///
+        /// Two thirds, which is what makes leaning in on a pole-to-pole region mean something. It
+        /// does not bind for Europe or Asia; those are compact enough that their own bounds are
+        /// already far under it.
+        /// </summary>
+        public const float MostOfTheWorld = 0.66f;
+
+        /// <summary>
+        /// The box around the pins of every country the chosen region offers, or an empty rect.
+        ///
+        /// The pin is the asset's own centroid for each country, so this is the smallest box that
+        /// contains everything a player could be trying to click. A crop is allowed to lose
+        /// coastline and is not allowed to lose one of these.
+        /// </summary>
+        private Rect PinBox()
+        {
+            if (region == WorldRegion.None)
+            {
+                return Rect.zero;
+            }
+
+            var low = new Vector2(float.MaxValue, float.MaxValue);
+            var high = new Vector2(float.MinValue, float.MinValue);
+            var any = false;
+
+            foreach (var shape in WorldShapes.All)
+            {
+                if (shape.Region != region || shape.Member == Country.None)
+                {
+                    continue;
+                }
+
+                low = Vector2.Min(low, shape.Pin);
+                high = Vector2.Max(high, shape.Pin);
+                any = true;
+            }
+
+            return any ? new Rect(low.x, low.y, high.x - low.x, high.y - low.y) : Rect.zero;
+        }
+
+        /// <summary>
+        /// What part of the map the screen is about, before it is fitted to the panel.
         /// </summary>
         public Rect View
         {
@@ -233,7 +384,7 @@ namespace ScalingLaws.UI
         /// </summary>
         private float Fit(Rect rect, out Vector2 offset)
         {
-            var view = View;
+            var view = ViewIn(rect);
 
             var scale = Mathf.Min(rect.width / view.width, rect.height / view.height);
 

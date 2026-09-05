@@ -81,9 +81,12 @@ namespace ScalingLaws.Simulation
 
                 note = Loc.T("smear.backfired", them);
 
-                State.RaiseEvent(new CompanyEvent(CompanyEventType.SmearLaunched, State.Date,
+                // Its own event type, because the wire has to file the two in opposite sections and
+                // telling them apart by reading a translated message is not a thing to build on.
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.SmearBackfired, State.Date,
                     Loc.T("smear.event.backfired", them), -definition.CostUsd));
 
+                OpenSmearThreat(lab, tier);
                 return true;
             }
 
@@ -98,6 +101,186 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(CompanyEventType.SmearLaunched, State.Date,
                 Loc.T("smear.event.landed", them), -definition.CostUsd));
 
+            return true;
+        }
+
+        // ---- being caught ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Their lawyers write, and the company has thirty days to answer.
+        ///
+        /// **One threat at a time.** A second traced campaign while a letter is still open replaces
+        /// nothing and adds nothing: a company already being threatened by one lab does not need two
+        /// inboxes for the same mistake, and the open one is the one carrying the roll. The
+        /// relationship is still charged, so the second campaign is not free.
+        /// </summary>
+        private void OpenSmearThreat(CompetitorId lab, SmearTier tier)
+        {
+            if (State.SmearThreat is { IsAnswered: false })
+            {
+                return;
+            }
+
+            var them = CompetitorCatalog.NameOf(lab);
+            var settlement = SmearCatalog.SettlementFor(tier);
+            var demanded = SmearCatalog.DamagesFor(tier);
+
+            var letter = State.Mail.Add(MailKind.LegalThreat, State.Date, them,
+                Loc.T("threat.subject"),
+                Loc.T("threat.body", them, UsdText(settlement), UsdText(demanded), SmearThreat.AnswerDays));
+
+            letter.AmountUsd = settlement;
+            letter.DueDayIndex = State.Date.DayIndex + SmearThreat.AnswerDays;
+
+            State.SmearThreat = new SmearThreat(lab, State.Date, settlement, letter.Id);
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.SmearThreatened, State.Date,
+                Loc.T("threat.event", them), 0L));
+        }
+
+        /// <summary>
+        /// Runs the open threat's clock, and decides at the end of it.
+        ///
+        /// Silence is worse odds than a refusal, which is the one number in this system that is
+        /// about manners rather than about money.
+        /// </summary>
+        private void AdvanceSmearThreat()
+        {
+            var threat = State.SmearThreat;
+
+            if (threat == null || threat.IsAnswered)
+            {
+                return;
+            }
+
+            threat.Advance();
+
+            if (!threat.IsExpired)
+            {
+                return;
+            }
+
+            threat.Answer();
+
+            if (State.Mail.TryGet(threat.MailId, out var letter) && !letter.IsClosed)
+            {
+                letter.IsClosed = true;
+                letter.Outcome = Loc.T("threat.outcome.ignored");
+            }
+
+            DecideSmearSuit(threat, SmearCatalog.SuitChanceAfterSilence, "suit.grounds.smear_ignored");
+        }
+
+        /// <summary>
+        /// Whether it goes to court, rolled here and nowhere earlier.
+        ///
+        /// The whole reason `SmearThreat` is saved. Rolling at the moment the letter arrived and
+        /// holding the answer would let a player reload their way out of every consequence in this
+        /// system, which is the hole `RegulatoryAction` and the open cases were both built to close.
+        /// </summary>
+        private void DecideSmearSuit(SmearThreat threat, double chance, string groundsKey)
+        {
+            var them = CompetitorCatalog.NameOf(threat.Lab);
+
+            var random = new DeterministicRandom(RivalryMix(
+                State.RosterSeed, (uint)threat.Lab, (uint)threat.OpenedOn.DayIndex, 0x9A11Du));
+
+            if (!random.NextChance(chance))
+            {
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.SmearThreatened, State.Date,
+                    Loc.T("threat.event.dropped", them), 0L));
+
+                return;
+            }
+
+            // Their costs are theirs. The company pays its own only if it loses, which is what the
+            // filing side of `Judge` already does from the other chair.
+            var demanded = SmearCatalog.DamagesFor(SmearTierFor(threat.SettlementUsd));
+
+            State.Lawsuits.Add(new Lawsuit(threat.Lab, State.Date, demanded, 0L, groundsKey, true));
+
+            State.Relations.Record(threat.Lab, State.Date,
+                SmearCatalog.TracedRelationCost, "relation.reason.smear_caught", them);
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.LawsuitFiled, State.Date,
+                Loc.T("suit.event.filed_against", them), -demanded));
+        }
+
+        /// <summary>
+        /// Which tier a settlement figure came from.
+        ///
+        /// **The tier is not on the threat and does not need to be.** `SettlementFor` is a function
+        /// of the tier alone, so reading it back is exact rather than a guess, and it means an open
+        /// threat carries one number instead of two that could disagree after a balance change.
+        /// </summary>
+        private static SmearTier SmearTierFor(long settlementUsd)
+        {
+            var best = SmearTier.Whisper;
+            var nearest = long.MaxValue;
+
+            foreach (var definition in SmearCatalog.All)
+            {
+                var gap = Math.Abs(SmearCatalog.SettlementFor(definition.Tier) - settlementUsd);
+
+                if (gap < nearest)
+                {
+                    nearest = gap;
+                    best = definition.Tier;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// The player answers the letter. Called from the inbox, which is the only way in.
+        /// </summary>
+        public bool TryAnswerSmearThreat(bool settle, out string note)
+        {
+            note = string.Empty;
+
+            var threat = State.SmearThreat;
+
+            if (threat == null || threat.IsAnswered)
+            {
+                note = Loc.T("threat.gone");
+                return false;
+            }
+
+            var them = CompetitorCatalog.NameOf(threat.Lab);
+
+            if (settle)
+            {
+                if (State.CashUsd < threat.SettlementUsd)
+                {
+                    note = Loc.T("threat.no_cash");
+                    return false;
+                }
+
+                threat.Answer();
+
+                // Straight off cash, which is what every other movement in this system does.
+                // The lawsuit awards and filing costs beside it bypass the ledger the same way, and
+                // making one of the six consistent with the books would only hide the other five.
+                State.CashUsd -= threat.SettlementUsd;
+
+                // Paying buys back part of what the campaign cost the relationship. Not all of it:
+                // they were still lied about, and the cheque is an admission rather than an apology.
+                State.Relations.Record(threat.Lab, State.Date,
+                    -SmearCatalog.TracedRelationCost * 0.5, "relation.reason.smear_settled", them);
+
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.SmearThreatened, State.Date,
+                    Loc.T("threat.event.settled", them), -threat.SettlementUsd));
+
+                note = Loc.T("threat.settled", them);
+                return true;
+            }
+
+            threat.Answer();
+
+            DecideSmearSuit(threat, SmearCatalog.SuitChanceAfterRefusal, "suit.grounds.smear");
+
+            note = Loc.T("threat.refused", them);
             return true;
         }
 
@@ -215,6 +398,49 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
+        /// <summary>
+        /// A case the company is defending.
+        ///
+        /// Their costs are added to the damages on a loss, exactly as the company's are added to
+        /// theirs when it loses one it filed. A settlement is the same fraction from either side.
+        /// </summary>
+        private void JudgeAgainstUs(Lawsuit suit, DeterministicRandom random, double odds, string them)
+        {
+            if (random.NextChance(odds))
+            {
+                suit.Decide(LawsuitVerdict.Lost, suit.DamagesDemandedUsd);
+
+                var costs = LawsuitBook.CostOf(suit.DamagesDemandedUsd);
+                var owed = suit.DamagesDemandedUsd + costs;
+
+                State.CashUsd -= owed;
+                State.LastTroubleDayIndex = State.Date.DayIndex;
+
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.LawsuitDecided, State.Date,
+                    Loc.T("suit.event.lost_to", them), -owed));
+
+                return;
+            }
+
+            if (random.NextChance(LawsuitBook.SettlementChance))
+            {
+                var settled = (long)(suit.DamagesDemandedUsd * LawsuitBook.SettlementShare);
+
+                suit.Decide(LawsuitVerdict.Settled, settled);
+                State.CashUsd -= settled;
+
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.LawsuitDecided, State.Date,
+                    Loc.T("suit.event.settled_against", them), -settled));
+
+                return;
+            }
+
+            suit.Decide(LawsuitVerdict.Won, 0L);
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.LawsuitDecided, State.Date,
+                Loc.T("suit.event.thrown_out", them), 0L));
+        }
+
         private void AdvanceLawsuits()
         {
             for (var index = 0; index < State.Lawsuits.Count; index++)
@@ -253,6 +479,16 @@ namespace ScalingLaws.Simulation
                 State.RosterSeed, (uint)suit.Target, (uint)suit.FiledOn.DayIndex, 0xC0FFEEu));
 
             var them = CompetitorCatalog.NameOf(suit.Target);
+
+            // **The same roll from the other chair.** On a case filed against the company, the
+            // odds are the plaintiff's, so a win for them is a loss here and the money leaves. One
+            // body rather than two, because everything else about a hearing is identical from
+            // either side and a second copy is a second place to change the calendar.
+            if (suit.AgainstUs)
+            {
+                JudgeAgainstUs(suit, random, odds, them);
+                return;
+            }
 
             if (random.NextChance(odds))
             {

@@ -52,7 +52,13 @@ namespace ScalingLaws.UI
         private readonly Action<GuideTarget?> lockToTab;
 
         /// <summary>Puts the model creator on the page the step is describing.</summary>
-        private readonly Action<int> showCreatorStage;
+        /// <summary>
+        /// Puts the creator on a page and answers with the page it is actually on.
+        ///
+        /// Two-way on purpose. The tour may move the creator forward and may never move it back, so
+        /// when the player is ahead the answer is larger than the request and the tour catches up.
+        /// </summary>
+        private readonly Func<int, int> showCreatorStage;
 
         /// <summary>Raised when the player steps out meaning to come back.</summary>
         public Action leftForNow;
@@ -92,7 +98,7 @@ namespace ScalingLaws.UI
         public GuideOverlay(VisualElement host, Func<GuideProgress> progress,
             Action<GuideTarget> goTo, Action changed,
             Func<GuideTarget, VisualElement> tabFor = null,
-            Action<int> showCreatorStage = null,
+            Func<int, int> showCreatorStage = null,
             Action<GuideTarget?> lockToTab = null)
         {
             this.showCreatorStage = showCreatorStage;
@@ -105,6 +111,7 @@ namespace ScalingLaws.UI
 
             // The screens report through the static; there is one shell and this is the one overlay.
             Reached = WalkthroughDid;
+            KeepClear = KeepClearOfTheBottom;
         }
 
         /// <summary>
@@ -161,6 +168,43 @@ namespace ScalingLaws.UI
         /// business with one. There is exactly one shell.
         /// </summary>
         public static Action<string> Reached;
+
+        /// <summary>
+        /// Which walkthrough step is on screen, or null. Static for the same reason `Reached` is:
+        /// there is one shell and one overlay, and the screens that answer to a walkthrough should
+        /// not have to be handed a reference to it.
+        /// </summary>
+        public static string WalkingStepId { get; private set; }
+
+        /// <summary>
+        /// Moves the bar to the top of the screen while something else owns the bottom of it.
+        ///
+        /// The cabinet panel is the one that does: its actions sit exactly where the bar does, and
+        /// a walkthrough step telling the player to press one of them was drawing over it.
+        /// </summary>
+        public void KeepClearOfTheBottom(bool clear)
+        {
+            strip?.EnableInClassList("guide--high", clear);
+        }
+
+        /// <summary>
+        /// The same thing, for the screens. Static like `Reached`, and for the same reason: there is
+        /// one shell and one overlay, and a screen should not have to be handed a reference to the
+        /// tutorial to say "I am covering the bottom of the window".
+        /// </summary>
+        public static Action<bool> KeepClear;
+
+        /// <summary>
+        /// A walkthrough was completed. The shell sets this; the overlay only reports.
+        ///
+        /// Not fired on a STOP, deliberately: somebody who put a walkthrough down is not somebody
+        /// who wants a follow-up flashing at them.
+        /// </summary>
+        public Action<string> walkthroughFinished;
+
+        /// <summary>True when a walkthrough is showing this exact step.</summary>
+        public static bool WalkingOn(string stepId) =>
+            !string.IsNullOrEmpty(stepId) && WalkingStepId == stepId;
 
         /// <summary>Is a walkthrough on screen right now.</summary>
         public bool IsWalking => running != null;
@@ -220,6 +264,8 @@ namespace ScalingLaws.UI
         /// </summary>
         private void EndWalkthrough(bool finished)
         {
+            WalkingStepId = null;
+
             var walkthrough = running;
 
             running = null;
@@ -228,6 +274,10 @@ namespace ScalingLaws.UI
             if (finished && walkthrough != null)
             {
                 progress().WalkthroughsDone.Add(walkthrough.Id);
+
+                // The shell decides what to do about it. Today one thing does: the site rail lights
+                // the way back to the basement, because it is the only door into it.
+                walkthroughFinished?.Invoke(walkthrough.Id);
             }
 
             Hide();
@@ -321,9 +371,17 @@ namespace ScalingLaws.UI
 
             // The creator page first, because the highlight below is a query against whatever is on
             // screen and moving the page after ringing something rings the wrong thing.
-            if (step.CreatorStage >= 0)
+            if (step.CreatorStage >= 0 && showCreatorStage != null)
             {
-                showCreatorStage?.Invoke(step.CreatorStage);
+                var on = showCreatorStage(step.CreatorStage);
+
+                // **The player got there first.** Same rule as `PlayerOpened` for tabs: somebody
+                // who has already pressed NEXT through to the compute page does not need to be
+                // told to open it, and does not want to be dragged back to say so.
+                if (on > step.CreatorStage && CatchUpToCreatorStage(on))
+                {
+                    return;
+                }
             }
 
             // Always, whatever happened above. The page behind was very likely rebuilt, so the ring
@@ -349,6 +407,11 @@ namespace ScalingLaws.UI
                 EndWalkthrough(finished: true);
                 return;
             }
+
+            // Published for the screens that answer to a walkthrough with something other than a
+            // USS class. The basement is the only one so far: its cabinets are drawn in 3D and a
+            // class cannot reach them.
+            WalkingStepId = step.Id;
 
             if (builtFor != runningStep || strip == null || strip.parent == null)
             {
@@ -381,7 +444,7 @@ namespace ScalingLaws.UI
                 counter.text = CounterText();
             }
 
-            if (next != null)
+            if (next != null && string.IsNullOrEmpty(step.Signal))
             {
                 next.text = step.Prompt
                     ?? (step.WaitForClick ? Loc.T("guide.show_me") : Loc.T("guide.next"));
@@ -483,7 +546,15 @@ namespace ScalingLaws.UI
             var buttons = new VisualElement();
             buttons.AddToClassList("guide__buttons");
 
-            if (running != null && step.WaitForClick)
+            if (!string.IsNullOrEmpty(step.Signal))
+            {
+                // **A step waiting on the game has no button either**, for the same reason a
+                // waiting walkthrough step has none: the claim is that the thing happened. A NEXT
+                // beside "I am not pressing that for you" is a way to not press it and move on,
+                // which is what the playtest did and then reported the training as instant.
+                next = null;
+            }
+            else if (running != null && step.WaitForClick)
             {
                 // **A waiting step in a walkthrough has no button at all.** The whole claim of one
                 // is that the player did the thing, and a NEXT beside "click the cabinet" is a way
@@ -769,6 +840,40 @@ namespace ScalingLaws.UI
         /// Only for steps that were waiting on that exact screen. Everything else is a step that is
         /// talking, and talking is not finished by walking away from it.
         /// </summary>
+        /// <summary>
+        /// The game did something a step was waiting for.
+        ///
+        /// **The tour's half of `GuideStep.Signal`.** A step carrying one draws no NEXT, so this is
+        /// the only thing that can move it on: the player has to start the run, or wait for it, or
+        /// put the model on sale. Anything else would put the button back and make the sentence
+        /// above it optional again.
+        ///
+        /// Unknown signals are ignored, and a signal that arrives while a different step is showing
+        /// is ignored too. Both are normal: the shell reports what happened without knowing or
+        /// caring where the tour has got to.
+        /// </summary>
+        public void Reported(string signal)
+        {
+            if (string.IsNullOrEmpty(signal) || running != null)
+            {
+                return;
+            }
+
+            var state = progress();
+
+            if (state.Stage != GuideStage.Touring)
+            {
+                return;
+            }
+
+            if (Current?.Signal != signal)
+            {
+                return;
+            }
+
+            Advance();
+        }
+
         public void PlayerOpened(GuideTarget target)
         {
             var state = progress();
@@ -788,6 +893,43 @@ namespace ScalingLaws.UI
             }
 
             Advance();
+        }
+
+        /// <summary>
+        /// Walks the tour forward to the last step that is about a creator page the player has
+        /// already passed.
+        ///
+        /// Stops at the first step that is not about the creator at all, so it can never run off
+        /// the end of the act: the steps after the creator are about other screens and have to be
+        /// read.
+        ///
+        /// Returns true when it moved, so the caller can leave the rest of the refresh to the
+        /// rebuild that follows.
+        /// </summary>
+        private bool CatchUpToCreatorStage(int stage)
+        {
+            var state = progress();
+            var moved = false;
+
+            while (true)
+            {
+                var step = Current;
+
+                if (step == null || step.CreatorStage < 0 || step.CreatorStage >= stage)
+                {
+                    break;
+                }
+
+                state.Step++;
+                moved = true;
+            }
+
+            if (moved)
+            {
+                changed?.Invoke();
+            }
+
+            return moved;
         }
 
         /// <summary>Puts the tour down, keeping the step so it can be picked up again.</summary>

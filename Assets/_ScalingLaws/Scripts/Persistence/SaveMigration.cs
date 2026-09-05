@@ -150,6 +150,8 @@ namespace ScalingLaws.Persistence
                     46 => UpgradeV46ToV47(current),
                     47 => UpgradeV47ToV48(current),
                     48 => UpgradeV48ToV49(current),
+                    49 => UpgradeV49ToV50(current),
+                    50 => UpgradeV50ToV51(current),
                     _ => current
                 };
             }
@@ -1768,6 +1770,73 @@ namespace ScalingLaws.Persistence
         /// talked to this company. Delivery starts at full, which costs the player nothing: it is
         /// the reading the first tick would produce anyway with no sectors running.
         /// </summary>
+        /// <summary>
+        /// v49 to v50: each model keeps its own last month, and an older file kept none.
+        ///
+        /// **Empty rather than reconstructed, and there is nothing to reconstruct from.** A day's
+        /// take is a share of that day's revenue weighted by the users the model held and its
+        /// capability against its siblings; the save records none of the three per day. Splitting
+        /// the lifetime figure evenly across the last month would invent a flat line for a product
+        /// that may have been collapsing, and a flat line is worse than an empty chart because it
+        /// reads as a measurement.
+        ///
+        /// It fills itself in over the following month of play and costs the player nothing.
+        /// </summary>
+        /// <summary>
+        /// v50 to v51: cases learn which chair they were filed from, and a threat can be open.
+        ///
+        /// **Every case in a v50 file was filed by the player**, because there was no other kind, so
+        /// the zeros are a record rather than an assumption. No threat is open for the same reason:
+        /// a v50 campaign was played in a game where a smeared lab never wrote back, and inventing
+        /// one now would put a demand on the desk over a campaign that has long since blown over.
+        /// </summary>
+        public static SaveData UpgradeV50ToV51(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 51;
+
+            data.lawsuitAgainstUs = new List<int>();
+
+            for (var index = 0; index < (data.lawsuitTargets?.Count ?? 0); index++)
+            {
+                data.lawsuitAgainstUs.Add(0);
+            }
+
+            data.smearThreatOpen = false;
+            data.smearThreatLab = 0;
+            data.smearThreatOpenedDay = 0;
+            data.smearThreatSettlementUsd = 0L;
+            data.smearThreatMailId = 0;
+            data.smearThreatDaysElapsed = 0;
+            data.smearThreatAnswered = false;
+
+            return data;
+        }
+
+        public static SaveData UpgradeV49ToV50(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 50;
+
+            foreach (var model in data.models ?? new List<DeployedModelData>())
+            {
+                if (model != null)
+                {
+                    model.recentRevenue = new List<long>();
+                }
+            }
+
+            return data;
+        }
+
         public static SaveData UpgradeV48ToV49(SaveData data)
         {
             if (data == null)

@@ -65,6 +65,16 @@ namespace ScalingLaws.Data
 
         /// <summary>Read from the book at access time. See `PrecisionDefinition`.</summary>
         public string DisplayName => Loc.T(KeyFor(Type));
+
+        /// <summary>
+        /// One word for the tile, where the full name does not fit.
+        ///
+        /// **A second key rather than a shorter first one.** `DisplayName` is read by the
+        /// demographics screen, the research tree and the market summary, and "General purpose"
+        /// says something there that "General" does not. The creator's tiles are 200px wide and
+        /// wrapped the long one onto two lines with half of it outside the box.
+        /// </summary>
+        public string ShortName => Loc.T(KeyFor(Type) + ".short");
         public string Description => Loc.T(KeyFor(Type) + ".desc");
 
         /// <summary>The node that has to be finished first. None means available from the start.</summary>

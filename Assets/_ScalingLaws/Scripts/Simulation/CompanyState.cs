@@ -384,6 +384,15 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public RegulatoryAction PendingAction { get; set; }
 
+        /// <summary>
+        /// A lab that traced a smear back, waiting on an answer.
+        ///
+        /// Null almost always. Saved for the same reason `PendingAction` is: whether they go to
+        /// court is rolled on the day the letter runs out, so an open threat is a decision that has
+        /// not been made yet and dropping it would let a reload walk past it.
+        /// </summary>
+        public SmearThreat SmearThreat { get; set; }
+
         /// <summary>Total paid in regulatory penalties. Investors ask about this.</summary>
         public long LifetimeFinesUsd { get; set; }
 

@@ -80,6 +80,14 @@ namespace ScalingLaws.Persistence
         public double peakUsers;
         public int retiredDayIndex;
 
+        /// <summary>
+        /// What it earned on each of its last thirty one days on sale, oldest first. Added in v50.
+        ///
+        /// A record for the same reason the three above it are: a day's take is a share of that
+        /// day's revenue weighted by users and capability, and none of the three survive the day.
+        /// </summary>
+        public List<long> recentRevenue = new();
+
         /// <summary>How the parameters were arranged. Read by the market daily. Added in v25.</summary>
         public int shape;
 
@@ -409,7 +417,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 49;
+        public const int CurrentVersion = 51;
 
         public int version = CurrentVersion;
 
@@ -790,6 +798,28 @@ namespace ScalingLaws.Persistence
         public List<int> lawsuitDaysElapsed = new();
         public List<int> lawsuitVerdicts = new();
         public List<long> lawsuitAwarded = new();
+
+        /// <summary>
+        /// One per case: non-zero when the lab is suing the company rather than the other way round.
+        /// Added in v51.
+        ///
+        /// Read defensively as well as migrated, so a file short of an entry reads as a case the
+        /// player filed, which is what every case written before v51 was.
+        /// </summary>
+        public List<int> lawsuitAgainstUs = new();
+
+        // ---- a lab threatening to sue over a smear it traced back. Added in v51 --------------------
+        //
+        // Causal, not derived: whether they file is rolled on the day the letter runs out. Dropping
+        // it on load would be a consequence a reload could walk past.
+
+        public bool smearThreatOpen;
+        public int smearThreatLab;
+        public int smearThreatOpenedDay;
+        public long smearThreatSettlementUsd;
+        public int smearThreatMailId;
+        public int smearThreatDaysElapsed;
+        public bool smearThreatAnswered;
 
         /// <summary>
         /// Grants: what is on the table, what is being worked off, and who has been turned away.

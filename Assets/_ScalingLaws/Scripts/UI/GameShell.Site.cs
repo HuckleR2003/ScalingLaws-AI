@@ -193,6 +193,20 @@ namespace ScalingLaws.UI
                     : Loc.T("room.locked.body"),
                 InsightTip.Placement.LeftOf);
 
+            // **A flash on the way back, once, just after the walkthrough.** The basement is
+            // reached from this icon and from nowhere else, and a player who has just been walked
+            // around it has no reason to know that. Two and a half seconds and it is gone: this
+            // screen already carries two permanent labels and does not need a third.
+            if (showRoomWayBackUntil > 0f && Time.realtimeSinceStartup < showRoomWayBackUntil)
+            {
+                room.AddToClassList("site-icon--lit");
+
+                var wayBack = new Label(Loc.T("room.way_back"));
+                wayBack.AddToClassList("site-icon__hint");
+                wayBack.pickingMode = PickingMode.Ignore;
+                room.Add(wayBack);
+            }
+
             rail.Add(room);
 
             // The furniture shop. Third in the rail rather than a tab of its own, because it is a

@@ -40,16 +40,33 @@ namespace ScalingLaws.Simulation
         public const int DaysInCourt = 270;
 
         public Lawsuit(CompetitorId target, GameDate filedOn, long damagesDemandedUsd,
-            long costsUsd, string groundsKey)
+            long costsUsd, string groundsKey, bool againstUs = false)
         {
             Target = target;
             FiledOn = filedOn;
             DamagesDemandedUsd = Math.Max(0L, damagesDemandedUsd);
             CostsUsd = Math.Max(0L, costsUsd);
             GroundsKey = string.IsNullOrEmpty(groundsKey) ? "suit.grounds.training" : groundsKey;
+            AgainstUs = againstUs;
         }
 
+        /// <summary>
+        /// The other lab, whichever side of the room it is sitting on.
+        ///
+        /// It is the defendant on a case the company filed and the plaintiff on one filed against
+        /// it, which is why the field is not called `Defendant`.
+        /// </summary>
         public CompetitorId Target { get; }
+
+        /// <summary>
+        /// True when the lab is suing the company rather than the other way round.
+        ///
+        /// **A direction on the existing case rather than a second court.** Everything about a
+        /// hearing is the same from either chair: the same calendar, the same odds curve, the same
+        /// roll held back to the day it closes. Two types would be two places to change
+        /// `DaysInCourt` and one place to forget.
+        /// </summary>
+        public bool AgainstUs { get; }
         public GameDate FiledOn { get; }
         public long DamagesDemandedUsd { get; }
 

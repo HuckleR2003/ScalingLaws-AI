@@ -2966,8 +2966,16 @@
     flex-shrink: 0;
 }
 
+/* **They share the row rather than taking 122px each.** The panel had the whole width and the
+   five tiles were using about half of it, which is why the longest name wrapped and fell out of its
+   box. A zero basis with equal growth, so adding a sixth type re-divides the row instead of
+   overflowing it. */
+
 .type-tile {
-    width: 122px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
     margin: 0;
     margin-right: 5px;
     margin-bottom: 5px;
@@ -3005,8 +3013,17 @@
     border-color: rgba(255, 255, 255, 0.05);
 }
 
+/* One colour per type, on the edge nearest the reader. The same five the silicon plate uses, so
+   the type a player picked here is recognisable on the model hub afterwards. */
+
+.type-tile--general { border-left-width: 3px; border-left-color: rgb(132, 146, 168); }
+.type-tile--coding { border-left-width: 3px; border-left-color: rgb(126, 176, 214); }
+.type-tile--talk { border-left-width: 3px; border-left-color: rgb(166, 138, 214); }
+.type-tile--auto { border-left-width: 3px; border-left-color: rgb(214, 162, 62); }
+.type-tile--agent { border-left-width: 3px; border-left-color: rgb(126, 191, 143); }
+
 .type-tile__name {
-    font-size: 11px;
+    font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(216, 226, 240);
@@ -5650,11 +5667,84 @@
     white-space: normal;
 }
 
-/* A follower is the same panel at a lower density: no chart, no training strip, and two cells that
-   answer for the model rather than for the company. */
+/* ---- the tax strip ----
+
+   Under the grants panel, in the same column, in the one colour nothing else on this screen uses.
+   Orange rather than red: a bill that has been coming all year is not an emergency, and it becomes
+   one only in the last fortnight, which is what `tb--urgent` is for. */
+
+.tb {
+    margin: 0;
+    margin-top: 8px;
+    padding: 10px;
+    padding-bottom: 8px;
+    background-color: rgba(38, 26, 12, 0.92);
+    border-left-width: 3px;
+    border-left-color: rgb(214, 138, 42);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-radius: 0;
+    align-items: stretch;
+    flex-shrink: 0;
+}
+
+.tb--urgent {
+    background-color: rgba(52, 26, 12, 0.94);
+    border-left-color: rgb(228, 106, 44);
+}
+
+.tb__masthead {
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(226, 170, 96);
+    -unity-text-align: middle-left;
+}
+
+.tb__amount {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(242, 226, 206);
+    margin-top: 3px;
+    -unity-text-align: middle-left;
+}
+
+.tb__clock {
+    font-size: 11px;
+    color: rgb(174, 156, 134);
+    margin-top: 1px;
+    -unity-text-align: middle-left;
+}
+
+.tb__clock--urgent {
+    color: rgb(236, 154, 96);
+}
+
+.tb__track {
+    height: 3px;
+    margin-top: 7px;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.tb__fill {
+    height: 3px;
+    background-color: rgb(214, 138, 42);
+}
+
+/* A follower is the same panel at a lower density: no training strip, no button through to the
+   desk, and two cells that answer for the model rather than for the company.
+
+   It does keep a chart, of its own model's last month. The lead one is read for a shape; this one is
+   answering up or down, and three panels are already most of the right-hand column, so it gets two
+   thirds of the height. Two classes, so it beats `.mb-chart` wherever either happens to sit. */
 .mb--compact .mb__body {
     padding-top: 8px;
     padding-bottom: 8px;
+}
+
+.mb--compact .mb-chart {
+    height: 34px;
 }
 
 .mb--compact .mb__manage {
@@ -9480,6 +9570,17 @@
     white-space: normal;
 }
 
+/* Why a model that has bought nothing already carries levels. Quiet: it is read once, by
+   somebody meeting the screen for the first time, and then never again. */
+.udet__par {
+    font-size: 11.5px;
+    color: rgb(132, 145, 164);
+    white-space: normal;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+}
+
 .udet__version {
     font-size: 12px;
     -unity-font-style: italic;
@@ -10955,6 +11056,97 @@
     transition-duration: 0.32s;
     opacity: 1;
     translate: 0 0;
+}
+
+/* **Out of the way of anything that owns the bottom of the screen.** The cabinet panel puts its
+   buy and fit buttons down there, and the tour bar was drawn over them: it is on the panel root, so
+   it paints after everything in the page whatever the page does about it. Moving the bar is the
+   only fix that works. */
+
+.guide--high {
+    bottom: auto;
+    top: 78px;
+}
+
+/* A grant that paid. The regulator's card is the same shape in red, and the two are the same kind of
+   moment from opposite ends: a body that was watching you has stopped. */
+
+.notice--good {
+    border-color: rgb(126, 191, 143);
+}
+
+/* The revenue closing a file. Not the good colour and not the red one: the money is not gone, it
+   has moved, and it comes back bigger. */
+.notice--warn {
+    border-color: rgb(214, 138, 42);
+}
+
+/* Which of your own products this page is about. Only drawn from two upward: a picker with one
+   entry looks like a choice and is not one. */
+
+.mg-picker {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.mg-picker__tab {
+    height: 30px;
+    margin: 0 6px 0 0;
+    padding: 0 14px 0 14px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.03);
+    color: rgb(168, 180, 200);
+}
+
+.mg-picker__tab--on {
+    border-color: rgb(120, 176, 250);
+    background-color: rgba(120, 176, 250, 0.16);
+    color: rgb(238, 243, 252);
+}
+
+.notice__figure {
+    margin-top: 10px;
+    padding: 8px 10px 8px 10px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(206, 240, 214);
+    white-space: normal;
+    border-radius: 5px;
+    border-left-width: 3px;
+    border-left-color: rgb(126, 191, 143);
+    background-color: rgba(34, 78, 48, 0.55);
+}
+
+/* The one moment the way back to the basement is pointed at, just after its walkthrough. Lit rather
+   than labelled permanently: this rail already carries two icons that explain themselves on hover. */
+
+.site-icon--lit {
+    border-color: rgb(226, 150, 110);
+    border-width: 2px;
+}
+
+.site-icon__hint {
+    position: absolute;
+    right: 92px;
+    top: 24px;
+    width: 190px;
+    padding: 6px 9px 6px 9px;
+    font-size: 11.5px;
+    -unity-font-style: bold;
+    color: rgb(248, 232, 220);
+    white-space: normal;
+    border-radius: 5px;
+    border-left-width: 3px;
+    border-left-color: rgb(226, 150, 110);
+    background-color: rgba(60, 30, 18, 0.94);
 }
 
 .guide--arriving {

@@ -57,6 +57,16 @@ namespace ScalingLaws.Data
         /// <summary>The one Emil offers as soon as the tour is over.</summary>
         public const string ServerRoomId = "walk_serverroom";
 
+        /// <summary>
+        /// The step that is about the cabinets already on the floor.
+        ///
+        /// Named here because the room reads it: the floor is one render texture, so that step's
+        /// highlight is drawn in the scene rather than put on an element, and the room has to know
+        /// which step asked for it. An id rather than an index, or a step inserted above would move
+        /// the ring onto a sentence about the shop.
+        /// </summary>
+        public const string RoomCabinetsStepId = "walk_room_shop";
+
         private static readonly Walkthrough ServerRoom = new(
             ServerRoomId,
             "walk.room.title",
@@ -74,14 +84,21 @@ namespace ScalingLaws.Data
                 new("walk_room_open", "walk.room.open", GuideTarget.Room,
                     highlight: "roombuild"),
 
+                // **The cabinets, not the shop.** This step is the sentence "these are the
+                // cabinets, the cheap one holds four", and it rang the price list on the right.
+                // The floor cannot carry a class - it is one render texture - so the room raises an
+                // outline round the occupied squares while this step is showing.
                 new("walk_room_shop", "walk.room.shop", GuideTarget.Room,
-                    highlight: "roombuild__card"),
+                    highlight: "roomstage"),
 
                 new("walk_room_buy", "walk.room.buy", GuideTarget.Room,
                     highlight: "roombuild__card", waitForClick: true),
 
+                // Satisfied by the piece reaching the cursor, which is what the sentence is
+                // about. It used to wait for a NEXT, so the player put the cabinet down and the
+                // tour was still telling them they were carrying it.
                 new("walk_room_carry", "walk.room.carry", GuideTarget.Room,
-                    highlight: "roomfloor"),
+                    highlight: "roomfloor", waitForClick: true),
 
                 new("walk_room_stand", "walk.room.stand", GuideTarget.Room,
                     highlight: "roomfloor", waitForClick: true),

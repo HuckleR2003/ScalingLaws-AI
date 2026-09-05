@@ -54,6 +54,21 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Added
 
+- **A lab you smeared can write, ring and sue you.** Paying to make a rival look bad used to move two
+  numbers and end there: nobody on the other end ever reacted. A campaign that is traced back now
+  brings a notice before action from their lawyers with a sum on it and thirty days to answer, a
+  phone call from their counsel the same day, and a case in front of a court if you refuse or say
+  nothing. Refusing is 45% to end up in court; ignoring the letter is 60%, because a refusal is an
+  answer and silence is not. A campaign that lands is still only a suspicion, and a suspicion is not
+  a case.
+- **Corporation tax has a clock on it.** An orange strip under the grants panel names the year, the
+  amount and the days left, and opens the letter. Miss the date and the file closes with a card
+  saying so: the whole sum goes into next year's assessment with a **nine per cent surcharge for
+  postponing it without asking**, and the figure is on the card. Asking to defer is untouched and
+  still the better answer, which is the point of having both.
+- **Each product on sale has its own chart.** The second and third banners in the corner drew the
+  meters and no graph at all, so with two models there was no way to see which one was carrying the
+  company. Every model now keeps its own last month of trading and draws it.
 - **The cluster split, on COMPUTE.** How much of the fleet goes to training, upgrades, architecture
   programmes and research, and how much is left for the people paying. The number has existed and
   been saved since the beginning, was set once by a test fixture, and no screen had ever offered it.
@@ -213,6 +228,23 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Changed
 
+- **A training run no longer takes your product off the screen.** Starting a second model used to
+  replace the corner banner with the run for the two hundred days it takes: no name, no users, no
+  mood, no way through to the management desk, while the company still had something on sale the
+  whole time. The run is a strip under the product now. With nothing on sale it is still the whole
+  banner, which is the opening of every campaign.
+- **The world map fills the panel it is drawn in.** Choosing Europe drew 459 pixels of a 780 pixel
+  box and left the rest empty, which a playtest measured by eye as "about 40% on the right"; it was
+  41%. The view is fitted to the shape of the panel by taking in more map rather than more nothing,
+  and where there is no more map to take in it crops instead: the opening view trims the empty
+  Pacific margins and draws every continent seventeen per cent larger. A region is capped at two
+  thirds of the world, so leaning in on the Americas means something even though that region runs
+  from the Canadian arctic to Tierra del Fuego.
+- **The UPGRADE tiles say what the market is at.** A model ships level with the market on every
+  trait, so a first release opens this screen already carrying levels nobody bought. The number it
+  is measured against only appeared once a model had fallen behind it, as a red badge, so the two
+  states a player meets first both drew a level with no ruler beside it. Every tile now reads
+  `LEVEL 4 - MARKET 4`, and a line under the model's name says where those levels came from.
 - **The Polish build stops addressing every hire as a man.** Three of the five first names in the
   candidate pool are female or unisex, and the notes said *dostał*, *przyjął*, *odszedł* for all of
   them. Present tense carries no gender in Polish, so this needed no gender field and no migration.
@@ -269,6 +301,22 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Fixed
 
+- **The official page was always about the newest model.** With two products on sale, clicking the
+  other one still gave the name and the figures of the flagship, because every reading on the page
+  came from `Flagship()`. There is a row of tabs above it now, one per product, drawn only from two
+  upward.
+- **A smear campaign reached the news as nothing at all.** The event fell through to the wire's
+  default arm, so the loudest thing a player can do to a rival was the one thing the reader was never
+  told about. One that lands is a story about the target with nobody named; one that is traced back
+  is a scandal about your own company and says so.
+- **Ignoring a tax demand grew it at 35% a year, silently, forever.** Nothing announced it and
+  nothing outside the inbox showed it, so the penalty was worse than the new one and nobody ever saw
+  it arrive.
+- **The corner banner spoke English on a Polish game.** "Current Subs.", "Nothing on sale yet.", the
+  days-left line and the whole management tooltip. The age reads through the plural helper, so it is
+  no longer possible for it to print `1 dni`.
+- **The training strip printed its percentage in the machine's culture.** Fourth time that fault has
+  turned up in this project; it now goes through `UiFormat` like everything else.
 - **The letter asking where you got stuck was never in the game.** Two different texts were filed
   under one phrase key: the letter, and the body of the report window. The second silently replaced
   the first, so the mail from HCK Labs showed the report window's text and the letter reached
@@ -360,8 +408,22 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
 
 ### Save compatibility
 
-Save format **v49**. A campaign started on 0.1.0 or any version since opens here and keeps
+Save format **v51**. A campaign started on 0.1.0 or any version since opens here and keeps
 everything in it.
+
+Two more things are new since v49. **Each model keeps its own last month of trading**, which is what
+the second corner banner draws; an older file starts that empty, because a day's take is a share of
+that day's revenue weighted by the users the model held and its capability against its siblings, and
+the save records none of the three per day. Splitting the lifetime figure evenly across the last
+month would draw a flat line for a product that may have been collapsing, and a flat line is worse
+than an empty chart because it reads as a measurement. It fills itself in over a month of play.
+
+And **an open legal threat**, which no older file can have, because a smeared lab never wrote back in
+the game they were played in. Whether that lab goes to court is rolled on the day their letter runs
+out rather than when it arrives, so the threat is a decision that has not been made yet and has to
+survive a save: the seventh time in this project something that looked derived turned out to be
+causal, and the save replay test is what says so. Every case in an older file was one the player
+filed, which is recorded rather than assumed, because there was no other kind.
 
 Three things are new. Which guided tours you have taken, and which you waved away: an older file has
 taken none, because it was played in a game that had none, so the offer appears for an existing
@@ -389,8 +451,8 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1035 EditMode tests across 105 fixtures, and 29 PlayMode across 7.
-- 2,310 phrases in the book, both languages complete, none written twice.
+- 1058 EditMode tests across 108 fixtures, and 29 PlayMode across 7.
+- 2,359 phrases in the book, both languages complete, none written twice.
 - Achievements are three files and one call site: a table in `Data/`, a pure function over the
   campaign in `Simulation/`, and `PlayerPrefs` in `Persistence/`. No rule reads any of them, so a
   change there can move what a player is told and cannot move what a player is charged.

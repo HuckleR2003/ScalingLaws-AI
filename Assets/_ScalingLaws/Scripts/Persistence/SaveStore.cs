@@ -368,7 +368,20 @@ namespace ScalingLaws.Persistence
                 data.lawsuitDaysElapsed.Add(suit.DaysElapsed);
                 data.lawsuitVerdicts.Add((int)suit.Verdict);
                 data.lawsuitAwarded.Add(suit.AwardedUsd);
+                data.lawsuitAgainstUs.Add(suit.AgainstUs ? 1 : 0);
             }
+
+            // The open threat. Written flat rather than as a nested object, the same shape the
+            // inspection and the grants beside it use.
+            var threat = state.SmearThreat;
+
+            data.smearThreatOpen = threat != null;
+            data.smearThreatLab = threat == null ? 0 : (int)threat.Lab;
+            data.smearThreatOpenedDay = threat?.OpenedOn.DayIndex ?? 0;
+            data.smearThreatSettlementUsd = threat?.SettlementUsd ?? 0L;
+            data.smearThreatMailId = threat?.MailId ?? 0;
+            data.smearThreatDaysElapsed = threat?.DaysElapsed ?? 0;
+            data.smearThreatAnswered = threat is { IsAnswered: true };
 
             foreach (var grant in state.Grants)
             {
@@ -557,6 +570,7 @@ namespace ScalingLaws.Persistence
                     lifetimeRevenueUsd = model.LifetimeRevenueUsd,
                     daysOnSale = model.DaysOnSale,
                     peakUsers = model.PeakUsers,
+                    recentRevenue = new List<long>(model.RecentRevenueUsd),
                     retiredDayIndex = model.RetiredOn.DayIndex
                 });
             }
@@ -958,12 +972,20 @@ namespace ScalingLaws.Persistence
                     continue;
                 }
 
+                // **Read short rather than guarded above**, because the guard at the top of this
+                // loop breaks out on the first list that runs out, and a v50 file has no entries in
+                // this one at all. A missing entry is a case the player filed, which is what every
+                // case written before v51 was.
+                var againstUs = index < safe.lawsuitAgainstUs.Count
+                    && safe.lawsuitAgainstUs[index] != 0;
+
                 var suit = new Lawsuit(
                     (CompetitorId)safe.lawsuitTargets[index],
                     new GameDate(safe.lawsuitFiledDays[index]),
                     safe.lawsuitDamages[index],
                     safe.lawsuitCosts[index],
-                    safe.lawsuitGrounds[index]);
+                    safe.lawsuitGrounds[index],
+                    againstUs);
 
                 var verdict = Enum.IsDefined(typeof(LawsuitVerdict), safe.lawsuitVerdicts[index])
                     ? (LawsuitVerdict)safe.lawsuitVerdicts[index]
@@ -971,6 +993,21 @@ namespace ScalingLaws.Persistence
 
                 suit.Restore(safe.lawsuitDaysElapsed[index], verdict, safe.lawsuitAwarded[index]);
                 state.Lawsuits.Add(suit);
+            }
+
+            state.SmearThreat = null;
+
+            if (safe.smearThreatOpen
+                && Enum.IsDefined(typeof(CompetitorId), safe.smearThreatLab))
+            {
+                var threat = new SmearThreat(
+                    (CompetitorId)safe.smearThreatLab,
+                    new GameDate(Math.Max(GameDate.MinimumDayIndex, safe.smearThreatOpenedDay)),
+                    safe.smearThreatSettlementUsd,
+                    safe.smearThreatMailId);
+
+                threat.Restore(safe.smearThreatDaysElapsed, safe.smearThreatAnswered);
+                state.SmearThreat = threat;
             }
 
             state.Grants.Clear();
@@ -1366,6 +1403,8 @@ namespace ScalingLaws.Persistence
 
                 deployed.RestoreHistory(model.lifetimeRevenueUsd, model.daysOnSale, model.peakUsers,
                     new GameDate(Math.Max(GameDate.MinimumDayIndex, model.retiredDayIndex)));
+
+                deployed.RestoreRecentRevenue(model.recentRevenue);
 
                 if (model.versions is { Count: > 0 })
                 {

@@ -47,7 +47,7 @@ namespace ScalingLaws.Data
     {
         public GuideStep(string id, string line, GuideTarget target = GuideTarget.None,
             string highlight = null, string prompt = null, bool waitForClick = false,
-            int creatorStage = -1)
+            int creatorStage = -1, string signal = null)
         {
             Id = id;
             lineKey = line;
@@ -56,7 +56,21 @@ namespace ScalingLaws.Data
             promptKey = prompt;
             WaitForClick = waitForClick;
             CreatorStage = creatorStage;
+            Signal = signal;
         }
+
+        /// <summary>
+        /// Something the game has to actually do before this step is over, or null.
+        ///
+        /// **A step with one draws no button at all.** `create_start` used to say "I am not
+        /// pressing that for you" and then offer a NEXT that walked past the whole point of the
+        /// sentence, and `after_release` opened with "say you've shipped" about a release that had
+        /// not happened. A tour that narrates events instead of waiting for them teaches the player
+        /// that its instructions are optional.
+        ///
+        /// The same shape the walkthroughs use, deliberately: one mechanism for one subject.
+        /// </summary>
+        public string Signal { get; }
 
         public string Id { get; }
 
@@ -253,6 +267,15 @@ namespace ScalingLaws.Data
         /// it: the three opening tasks stay in the corner either way, because they are the opening
         /// of the game rather than the end of the lesson.
         /// </summary>
+        /// <summary>A training run was commissioned. Reported when the event reaches the shell.</summary>
+        public const string RunStartedSignal = "run_started";
+
+        /// <summary>A training run finished and is on the shelf.</summary>
+        public const string RunFinishedSignal = "run_finished";
+
+        /// <summary>A model went on sale.</summary>
+        public const string ModelReleasedSignal = "model_released";
+
         public static IReadOnlyList<GuideStep> Steps { get; } = new List<GuideStep>
         {
             // ---- the floor, and the thing that bankrupts people ----------------------------
@@ -339,8 +362,16 @@ namespace ScalingLaws.Data
                 null, false, 5),
             new("create_review", "guide.step.create_review", GuideTarget.Create, "verdict",
                 null, false, 6),
+            // **Waits for the run to actually start.** The line says he will not press it for
+            // you; before this it offered a NEXT that pressed nothing and moved on anyway.
             new("create_start", "guide.step.create_start", GuideTarget.Create, "verdict",
-                null, false, 6),
+                null, false, 6, GuideScript.RunStartedSignal),
+
+            // And then he waits with the player. Four months of calendar is the first time the game
+            // asks anybody to wait for anything, and being told what that feels like by somebody who
+            // has done it is worth more than a progress bar on its own.
+            new("create_running", "guide.step.create_running", GuideTarget.Site, null,
+                null, false, -1, GuideScript.RunFinishedSignal),
 
             // **The last page, walked to rather than mentioned.** The tour explained seven stages
             // and stopped, so a player who followed it exactly never opened AFTER TRAINING and did
@@ -358,7 +389,10 @@ namespace ScalingLaws.Data
             new("publish_how", "guide.step.publish_how", GuideTarget.Release, "relrow"),
 
             // ---- what you do the day after a release ---------------------------------------
-            new("after_release", "guide.step.after_release"),
+            // **Waits for the release rather than assuming it.** This opened with "say you've
+            // shipped", which is a tutorial telling the player what they did.
+            new("after_release", "guide.step.after_release", GuideTarget.None, null,
+                null, false, -1, GuideScript.ModelReleasedSignal),
             new("upgrade_open", "guide.step.upgrade_open",
                 GuideTarget.Upgrade, null, "guide.show_me", true),
             new("upgrade_tiles", "guide.step.upgrade_tiles", GuideTarget.Upgrade, "utile__badge"),

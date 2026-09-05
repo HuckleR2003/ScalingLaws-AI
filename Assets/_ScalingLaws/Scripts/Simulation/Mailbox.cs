@@ -30,7 +30,16 @@ namespace ScalingLaws.Simulation
         /// test this file already applies to everything else. It arrives once per campaign and never
         /// returns, because a request for help that keeps asking is an advertisement.
         /// </summary>
-        Feedback = 5
+        Feedback = 5,
+
+        /// <summary>
+        /// A lab's lawyers, over a smear campaign they traced back.
+        ///
+        /// Mail rather than news because it is waiting on an answer, which is the test this file
+        /// already applies to everything else. Paying settles it; refusing may put it in front of a
+        /// court, and so may saying nothing.
+        /// </summary>
+        LegalThreat = 6
     }
 
     /// <summary>What the reader can do about it.</summary>
@@ -179,6 +188,11 @@ namespace ScalingLaws.Simulation
                         ? new[] { MailAction.Pay }
                         : new[] { MailAction.Pay, MailAction.Defer },
                     MailKind.Fine => new[] { MailAction.Pay },
+
+                    // Refusing is a real option here rather than a way to postpone the bill, which
+                    // is why this is the one demand in the game that offers it. What refusing buys
+                    // is the chance that the letter was the whole of it.
+                    MailKind.LegalThreat => new[] { MailAction.Pay, MailAction.Decline },
 
                     // Two ways out, and closing it is one of them. A letter you cannot dismiss is a
                     // letter that becomes furniture.

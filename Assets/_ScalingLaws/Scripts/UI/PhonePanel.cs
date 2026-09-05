@@ -488,18 +488,29 @@ namespace ScalingLaws.UI
         /// <summary>
         /// The chat furniture, without the scripted backlog the opening call fills it with.
         /// </summary>
-        private void OpenChat()
+        /// <summary>
+        /// The chat furniture, without the scripted backlog the opening call fills it with.
+        /// </summary>
+        /// <param name="handleText">
+        /// Whose conversation this is. Null for the cousin, which is every caller but one: his
+        /// thread is the phone's whole reason to exist and a default keeps those call sites reading
+        /// exactly as they did.
+        /// </param>
+        private void OpenChat(string handleText = null)
         {
             screen.Clear();
 
             var header = new VisualElement();
             header.AddToClassList("chat__header");
-            header.Add(Avatar(34));
+
+            // His face only when it is him. A photograph of the cousin over a stranger's words is
+            // worse than the initial the disc falls back to.
+            header.Add(handleText == null ? Avatar(34) : Disc(34, handleText));
 
             var who = new VisualElement();
             who.AddToClassList("chat__who");
 
-            var handle = new Label(GuideScript.CousinHandle);
+            var handle = new Label(handleText ?? GuideScript.CousinHandle);
             handle.AddToClassList("chat__handle");
             who.Add(handle);
 
@@ -835,6 +846,92 @@ namespace ScalingLaws.UI
                 Close();
                 answered?.Invoke(accepted);
             }).ExecuteLater(CollapseMilliseconds);
+        }
+
+        /// <summary>
+        /// Somebody who is not the cousin rings, says their piece, and hangs up.
+        ///
+        /// **Nothing is kept.** There is no thread with this caller, no history, and no row on the
+        /// home screen afterwards, which is what separates a call from a conversation. The player
+        /// reads it and ends it; the letter it is about is in the inbox and that is where the
+        /// decision lives.
+        ///
+        /// It goes through `Close` first like every other way into the phone, so a call arriving
+        /// while the guide's own phone is up replaces it rather than drawing over it.
+        /// </summary>
+        public void RingFrom(string caller, IReadOnlyList<string> lines)
+        {
+            if (string.IsNullOrWhiteSpace(caller) || lines == null || lines.Count == 0)
+            {
+                return;
+            }
+
+            Close();
+            returning = false;
+
+            BuildFrame();
+
+            frame.schedule.Execute(() =>
+            {
+                screen.AddToClassList("phone__screen--on");
+                OpenChat(caller);
+
+                var delay = 0f;
+
+                foreach (var line in lines)
+                {
+                    // Long enough to read the one before it. Typing first, then the words, which is
+                    // the same rhythm his own calls use.
+                    var text = line;
+                    var typeAt = delay;
+                    var sayAt = delay + 0.9f;
+
+                    screen.schedule.Execute(() => ShowTyping(true))
+                        .ExecuteLater((long)(typeAt * 1000f));
+
+                    screen.schedule.Execute(() =>
+                    {
+                        ShowTyping(false);
+                        chatList.Add(Bubble(text, false));
+                        ScrollDown();
+                    }).ExecuteLater((long)(sayAt * 1000f));
+
+                    delay = sayAt + 0.6f;
+                }
+
+                screen.schedule.Execute(() =>
+                {
+                    var end = new VisualElement();
+                    end.AddToClassList("chat__choices");
+
+                    // **One button, and it does not accept anything.** `Collapse(true)` is how the
+                    // tour is taken up; a caller from outside the tutorial must never be able to
+                    // start it, which is what passing false here guarantees.
+                    var hang = new Button(() => Collapse(false)) { text = Loc.T("threat.call.end") };
+                    hang.AddToClassList("chat__choice");
+                    end.Add(hang);
+
+                    screen.Add(end);
+                }).ExecuteLater((long)(delay * 1000f) + 300);
+            }).ExecuteLater(WakeDelay);
+        }
+
+        /// <summary>An initial on a coloured disc, for a caller who has no portrait.</summary>
+        private static VisualElement Disc(int size, string name)
+        {
+            var circle = new VisualElement();
+            circle.AddToClassList("avatar");
+            circle.style.width = size;
+            circle.style.height = size;
+
+            var initial = new Label(string.IsNullOrWhiteSpace(name)
+                ? "?"
+                : name[..1].ToUpperInvariant());
+
+            initial.AddToClassList("avatar__initial");
+            circle.Add(initial);
+
+            return circle;
         }
 
         public void Close()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
@@ -216,12 +217,60 @@ namespace ScalingLaws.Simulation
         /// <summary>The most people it ever held at once.</summary>
         public double PeakUsers { get; private set; }
 
+        /// <summary>How many days of its own trading a model keeps, which is what a banner draws.</summary>
+        public const int RecentDays = 31;
+
+        private readonly List<long> recentRevenue = new();
+
+        /// <summary>
+        /// What this model earned on each of its last thirty one days on sale, oldest first.
+        ///
+        /// **A record, like the lifetime figure above it, and for a sharper reason.** A day's take is
+        /// a share of the company's revenue weighted by the users this model held and its capability
+        /// against its siblings, and all three of those are gone by tomorrow. Nothing in the state
+        /// can recover what the second product earned last Tuesday.
+        ///
+        /// A month rather than everything: it exists so a corner banner can show whether this
+        /// product is climbing or sliding, and the chart is thirty one columns wide.
+        /// </summary>
+        public IReadOnlyList<long> RecentRevenueUsd => recentRevenue;
+
         /// <summary>Books a day of trading against this model.</summary>
         public void RecordDay(long revenueUsd, double users)
         {
-            LifetimeRevenueUsd += Math.Max(0L, revenueUsd);
+            var earned = Math.Max(0L, revenueUsd);
+
+            LifetimeRevenueUsd += earned;
             DaysOnSale++;
             PeakUsers = Math.Max(PeakUsers, Math.Max(0.0, SimUnits.Finite(users)));
+
+            recentRevenue.Add(earned);
+
+            while (recentRevenue.Count > RecentDays)
+            {
+                recentRevenue.RemoveAt(0);
+            }
+        }
+
+        /// <summary>Restores the last month of trading. Only the save is allowed to call this.</summary>
+        public void RestoreRecentRevenue(IEnumerable<long> days)
+        {
+            recentRevenue.Clear();
+
+            if (days == null)
+            {
+                return;
+            }
+
+            foreach (var day in days)
+            {
+                recentRevenue.Add(Math.Max(0L, day));
+            }
+
+            while (recentRevenue.Count > RecentDays)
+            {
+                recentRevenue.RemoveAt(0);
+            }
         }
 
         /// <summary>Restores the record on load. Only the save is allowed to call this.</summary>

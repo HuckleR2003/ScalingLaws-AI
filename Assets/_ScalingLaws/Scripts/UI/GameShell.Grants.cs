@@ -346,6 +346,10 @@ namespace ScalingLaws.UI
                 GrantGoal.SustainOnSale => Loc.T("grant.goal.onsale",
                     (int)Math.Round(definition.Target)),
 
+                // Says the term rather than the target, because the target of this one is "one"
+                // and the number a player cares about is how long they have to keep it up.
+                GrantGoal.NoIncidents => Loc.T("grant.goal.noincidents", definition.TermDays),
+
                 _ => Loc.T("grant.goal.protected", (int)Math.Round(definition.Target))
             };
 
@@ -356,6 +360,11 @@ namespace ScalingLaws.UI
             GrantGoal.SustainHeadroom => UiFormat.Percent(reading, 0),
             GrantGoal.SustainReputation => UiFormat.Percent(reading, 0),
             GrantGoal.ReachCapability => UiFormat.Number(reading, 1),
+
+            // A day index is not a reading anybody wants to look at. This condition is a yes or a
+            // no, and the row says which.
+            GrantGoal.NoIncidents => Loc.T("grant.reading.clean"),
+
             _ => ((int)Math.Round(reading)).ToString(CultureInfo.InvariantCulture)
         };
 

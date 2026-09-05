@@ -167,6 +167,11 @@ namespace ScalingLaws.UI
                 page.Add(editor.Build(open.Value.Column, open.Value.Row));
             }
 
+            // **The tour bar owns the bottom of the screen and so does this panel.** The bar is on
+            // the panel root, so it paints after anything in the page and no z-order here can beat
+            // it. It moves to the top while a cabinet is open, which is where the room has nothing.
+            GuideOverlay.KeepClear?.Invoke(open.HasValue);
+
             return page;
         }
 
@@ -202,6 +207,11 @@ namespace ScalingLaws.UI
             }
 
             var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
+            // **The ring belongs to one step of the walkthrough and nothing else.** Named by id
+            // rather than by index, because a step inserted above it would silently move the ring
+            // onto a sentence about the shop.
+            stage.RingTheCabinets = GuideOverlay.WalkingOn(WalkthroughCatalog.RoomCabinetsStepId);
+
             stage.Dress(simulation.State.Hall, known ? part.PowerKilowatts : 0.0,
                 simulation.Room);
 
@@ -527,6 +537,11 @@ namespace ScalingLaws.UI
                 // ignored when nothing is running, so this screen never has to ask
                 // whether a tutorial is on.
                 GuideOverlay.Reached?.Invoke("walk_room_buy");
+
+                // Buying puts it straight on the cursor, so the step about carrying it is over in
+                // the same instant. Reported separately rather than folded into the step above,
+                // because a player who picks a cabinet back up off the floor is also carrying one.
+                GuideOverlay.Reached?.Invoke("walk_room_carry");
 
                 changed?.Invoke();
             });

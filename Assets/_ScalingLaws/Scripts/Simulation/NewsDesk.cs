@@ -68,6 +68,29 @@ namespace ScalingLaws.Simulation
                         $"{company} folds", raised.Message, "Wire", true, NewsWeight.Loud);
                     return true;
 
+                // **Both halves of a smear, and they are opposite stories.** One that lands is
+                // about the target and carries no name, because the wire does not know who paid for
+                // it; one that is traced back is a scandal about this company and says so. Until
+                // this arm existed, the loudest thing a player can do to a rival reached the reader
+                // as nothing at all.
+                case CompanyEventType.SmearLaunched:
+                    item = new NewsItem(raised.Date, NewsSection.Scandals,
+                        Loc.T("news.smear.landed"), raised.Message, "Wire", false,
+                        NewsWeight.Notable);
+                    return true;
+
+                case CompanyEventType.SmearBackfired:
+                    item = new NewsItem(raised.Date, NewsSection.Scandals,
+                        Loc.T("news.smear.traced", company), raised.Message, "Wire", true,
+                        NewsWeight.Loud);
+                    return true;
+
+                case CompanyEventType.SmearThreatened:
+                    item = new NewsItem(raised.Date, NewsSection.Scandals,
+                        Loc.T("news.smear.threat", company), raised.Message, "Wire", true,
+                        NewsWeight.Notable);
+                    return true;
+
                 // Not a scandal in the moral sense, and it belongs here anyway: being unable to serve
                 // the demand you attracted is the weakness a reader would notice first.
                 case CompanyEventType.DemandUnserved:

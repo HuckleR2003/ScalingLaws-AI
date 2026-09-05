@@ -83,6 +83,39 @@ namespace ScalingLaws.Tests.EditMode
             NothingSharesAValue<DatasetSource>();
             NothingSharesAValue<ModelTrait>();
             NothingSharesAValue<CompetitorId>();
+
+            // The letter's kind is written as an int and read back through Enum.IsDefined, so two
+            // kinds on one value is a save that silently opens the wrong buttons on a demand.
+            NothingSharesAValue<MailKind>();
+            NothingSharesAValue<MailAction>();
+            NothingSharesAValue<LawsuitVerdict>();
+            NothingSharesAValue<SmearTier>();
+        }
+
+        /// <summary>
+        /// The enums that are not saved but are switched on, which turns out to be the same risk.
+        ///
+        /// **Added after the third collision in this project.** `GrantGoal.NoIncidents` was written
+        /// as 8, which `SustainOnSale` already was, sitting further down the list behind a doc
+        /// comment. Nothing said so: the compiler took the two names for one value and three
+        /// switches reported unrelated arms as unreachable, which is a message about a symptom in a
+        /// different file.
+        ///
+        /// A collision here does not corrupt a save the way one in the list above does. It does
+        /// something almost as bad and harder to see: two conditions become one condition, and the
+        /// catalog quietly stops meaning what it says.
+        /// </summary>
+        [Test]
+        public void TheEnumsTheRulesSwitchOnAreUnique()
+        {
+            NothingSharesAValue<GrantGoal>();
+            NothingSharesAValue<GrantId>();
+            NothingSharesAValue<AchievementMetric>();
+            NothingSharesAValue<AchievementGroup>();
+            NothingSharesAValue<ModelType>();
+            NothingSharesAValue<ServerRack>();
+            NothingSharesAValue<PlayerSkill>();
+            NothingSharesAValue<ModelEffectKind>();
         }
     }
 }

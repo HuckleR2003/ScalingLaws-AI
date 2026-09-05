@@ -128,6 +128,15 @@ namespace ScalingLaws.UI
         /// is sixteen boxes on a screen that is already rendering a room, and a diff would be code
         /// that can disagree with the floor.
         /// </summary>
+        /// <summary>
+        /// Whether the occupied squares carry the tutorial's ring.
+        ///
+        /// Set by the room while the walkthrough is on the step that says "these are the cabinets".
+        /// A field rather than an argument because `Dress` is called from several places and only
+        /// one of them knows anything about a tutorial.
+        /// </summary>
+        public bool RingTheCabinets { get; set; }
+
         public void Dress(ServerHall hall, double kilowattsPerAccelerator,
             RoomUpgrades? upgrades = null)
         {
@@ -146,7 +155,8 @@ namespace ScalingLaws.UI
                 }
 
                 Stand(marker, square,
-                    hall.HeatAt(square.Column, square.Row, kilowattsPerAccelerator, upgrades));
+                    hall.HeatAt(square.Column, square.Row, kilowattsPerAccelerator, upgrades),
+                    RingTheCabinets);
             }
         }
 
@@ -460,8 +470,25 @@ namespace ScalingLaws.UI
         public const string RackPrefix = "Rack_";
 
         private static void Stand(Transform marker, HallSquare square,
-            ServerRackCatalog.RackHeat heat)
+            ServerRackCatalog.RackHeat heat, bool ring = false)
         {
+            // **The tutorial's ring, drawn in the room because the floor has no element to class.**
+            // A plate under the cabinet rather than an outline around it: the camera looks down at
+            // thirty degrees, so the sides of a box are mostly hidden by the box and the floor
+            // beneath it is the part that is always in view.
+            if (ring)
+            {
+                var halo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                halo.name = "WalkRing";
+                halo.transform.SetParent(marker, false);
+                halo.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+                halo.transform.localScale = new Vector3(1.45f, 0.04f, 1.45f);
+
+                Object.Destroy(halo.GetComponent<BoxCollider>());
+                halo.GetComponent<MeshRenderer>().sharedMaterial =
+                    Paint("walk-ring", new Color(0.86f, 0.44f, 0.36f));
+            }
+
             // Taller cabinets for more slots, within what the ceiling allows. The immersion tank is
             // the exception in the catalog and it reads as one on the floor.
             var height = RackHeight(square.Rack);

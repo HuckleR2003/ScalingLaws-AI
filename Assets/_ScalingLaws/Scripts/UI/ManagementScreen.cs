@@ -106,7 +106,11 @@ namespace ScalingLaws.UI
         {
             Root.Clear();
 
-            var product = simulation.Product();
+            // **Which model this page is about.** Defaults to the flagship, which is what a
+            // stranger looking the company up would find, and follows the picker when the player
+            // asks for one of the others.
+            var chosen = ChosenModel();
+            var product = ProductOf(chosen);
 
             var title = new Label(showing switch
             {
@@ -158,13 +162,12 @@ namespace ScalingLaws.UI
 
             if (showing == Tab.Versions)
             {
-                // The flagship rather than the standing, because the version list belongs to a
-                // product line and the standing is a reading taken off one.
-                var flagship = simulation.Flagship();
-
-                if (flagship != null)
+                // The chosen model rather than the standing, because the version list belongs
+                // to a product line and the standing is a reading taken off one. Following the
+                // picker, or the tabs above would change the page and leave this list behind.
+                if (chosen != null)
                 {
-                    Root.Add(UiParts.VersionList(flagship));
+                    Root.Add(UiParts.VersionList(chosen));
                 }
 
                 return;
@@ -172,6 +175,7 @@ namespace ScalingLaws.UI
 
             if (showing == Tab.Desk)
             {
+                Root.Add(BuildModelPicker(chosen));
                 BuildDesk(product);
             }
             else
@@ -233,11 +237,107 @@ namespace ScalingLaws.UI
 
         private void BuildPage(ProductStanding product)
         {
+            // Above the shopfront, because it says which shopfront this is. Empty and invisible
+            // when the company sells one thing, which is most of a campaign.
+            Root.Add(BuildModelPicker(ChosenModel()));
+
             Root.Add(BuildHero(product));
             Root.Add(BuildStatusStrip());
             Root.Add(BuildPlans());
             Root.Add(BuildReviews(product));
         }
+
+        /// <summary>
+        /// The model this page is currently about, or null when nothing is on sale.
+        ///
+        /// The flagship unless the player has picked another and it is still on sale. Falling back
+        /// rather than holding on: a model that has been withdrawn since the last visit would
+        /// otherwise leave the page about something nobody can buy.
+        /// </summary>
+        private DeployedModel ChosenModel()
+        {
+            var flagship = simulation.Flagship();
+
+            if (looking == null)
+            {
+                return flagship;
+            }
+
+            foreach (var record in simulation.MarketedModels())
+            {
+                if (ReferenceEquals(record.Model, looking))
+                {
+                    return looking;
+                }
+            }
+
+            looking = null;
+            return flagship;
+        }
+
+        /// <summary>The standing for one model, or the company's own when it is the flagship.</summary>
+        private ProductStanding ProductOf(DeployedModel model)
+        {
+            if (model == null)
+            {
+                return simulation.Product();
+            }
+
+            foreach (var record in simulation.MarketedModels())
+            {
+                if (ReferenceEquals(record.Model, model))
+                {
+                    return simulation.ProductFor(record);
+                }
+            }
+
+            return simulation.Product();
+        }
+
+        /// <summary>
+        /// One tab per product on sale, or nothing at all when there is one.
+        ///
+        /// Drawn only from two upward on purpose. A picker with a single entry is a control that
+        /// looks like a choice and is not one, and this page is meant to read as a shopfront.
+        /// </summary>
+        private VisualElement BuildModelPicker(DeployedModel chosen)
+        {
+            var marketed = simulation.MarketedModels();
+
+            if (marketed.Count < 2)
+            {
+                return new VisualElement();
+            }
+
+            var row = new VisualElement();
+            row.AddToClassList("mg-picker");
+
+            foreach (var record in marketed)
+            {
+                var model = record.Model;
+
+                var tab = new Button(() =>
+                {
+                    looking = model;
+                    Refresh();
+                })
+                { text = model.Name };
+
+                tab.AddToClassList("mg-picker__tab");
+                tab.EnableInClassList("mg-picker__tab--on", ReferenceEquals(model, chosen));
+                row.Add(tab);
+            }
+
+            return row;
+        }
+
+        /// <summary>
+        /// The product the player has asked to look at, or null for the flagship.
+        ///
+        /// Not saved. Which of your own products you are reading about belongs to the visit, and a
+        /// page that reopens on whatever was on screen a week ago has forgotten what it is for.
+        /// </summary>
+        private DeployedModel looking;
 
         private VisualElement BuildHero(ProductStanding product)
         {

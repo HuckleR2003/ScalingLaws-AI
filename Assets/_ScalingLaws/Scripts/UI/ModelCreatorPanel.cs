@@ -691,11 +691,12 @@ namespace ScalingLaws.UI
             });
 
             tile.AddToClassList("type-tile");
+            tile.AddToClassList(AccentFor(definition.Type));
             tile.EnableInClassList("type-tile--on", picked);
             tile.EnableInClassList("type-tile--locked", !unlocked);
             tile.SetEnabled(unlocked);
 
-            var name = new Label(definition.DisplayName.ToUpperInvariant());
+            var name = new Label(definition.ShortName.ToUpperInvariant());
             name.AddToClassList("type-tile__name");
             tile.Add(name);
 
@@ -720,9 +721,27 @@ namespace ScalingLaws.UI
                 tile.Add(gate);
             }
 
-            tile.tooltip = definition.Description;
+            // The full name is still available, under the short one on the tile.
+            tile.tooltip = definition.DisplayName + "\n\n" + definition.Description;
             return tile;
         }
+
+        /// <summary>
+        /// The tile's colour for a model type.
+        ///
+        /// Written out rather than assembled, because a class name built by concatenation is
+        /// invisible to `StylesheetTests.EveryClassUsedFromCodeExists`, which can only read
+        /// literals. The colours are the ones the silicon plate already uses for the same types, so
+        /// a coding model reads as the same thing on both screens.
+        /// </summary>
+        private static string AccentFor(ModelType type) => type switch
+        {
+            ModelType.Coding => "type-tile--coding",
+            ModelType.Conversational => "type-tile--talk",
+            ModelType.Automation => "type-tile--auto",
+            ModelType.Agentic => "type-tile--agent",
+            _ => "type-tile--general"
+        };
 
         /// <summary>
         /// The last stage: what happens the day the run finishes.
