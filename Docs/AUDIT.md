@@ -40,6 +40,20 @@ starting dense transformer is gated by a node, and completing that node grants t
 so there is no state in which the method can succeed. It is not missing a button; it is missing an
 ungated family. Left in place, because the day one is added it is the mechanism that sells it.
 
+**The naming half was closed on 2026-09-05 and the licensing half was not.** The FOUNDATION stage
+now lists every published family the company does not hold, with the licence price and the node that
+would open it, which is the part of this that was costing a player something: the dropdown showed
+only what was already owned, so five of the six families had no name, no price and no explanation
+anywhere in the game.
+
+**The first version of those rows carried a priced button on every line, and every one was dead** -
+the structural reason above, arriving as a screen full of disabled controls. The price is drawn flat
+where the licence cannot be taken, the way the announced offices are, and the button is built only
+where it could be pressed. That leaves exactly one live case, a save written before research
+delivered its own unlocks, which holds the node without the family.
+`ReachabilityTests.TheFoundationPageNamesTheFamiliesItCannotBuildOnAndOffersNoDeadButton` holds both
+halves, because a comment cannot answer this and a test can.
+
 **The dead finding did not survive being checked:**
 
 - `CompetitorAgent.TryGetLiveModel` **has a caller**: `CompetitorField.cs:156`. The sweep that
@@ -185,7 +199,9 @@ Updated 2026-09-04, after working through the list.
 1. `CompetitorStrategy.FastFollower` runs for nobody. **A design decision, not a defect**, and it is
    the author's.
 2. `TryAdoptArchitecture` cannot succeed, because every family is gated and the gate grants it. The
-   fix is an ungated family, not a button.
+   fix is an ungated family, not a button, and it is a design decision about whether money may skip
+   a calendar gate. **What was missing and is now fixed is the naming**: the creator lists every
+   family the company does not hold, priced, with the node that opens it.
 3. Phrases and selectors nothing names by a literal. **The published figures of 223 and 183 do not
    survive re-measurement and neither does the method.** Counted across Scripts, Editor and Tests on
    2026-09-04: 609 of 1,985 English keys and 120 of the sheet's class selectors are never named by a
