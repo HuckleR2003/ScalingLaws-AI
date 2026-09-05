@@ -254,6 +254,37 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The BRANDING stage in a year where every architecture family is published, so the
+        /// licensing list is at its longest.
+        ///
+        /// **`TabProofTests` already frames this stage and it frames it in 2024**, where one family
+        /// of six is published and unowned, so the crowded case had no picture: the list sits under
+        /// the identity panel in a fixed column and five rows is where it would run out of room.
+        /// Same argument as the DATA stage above.
+        ///
+        /// **What this frame is for specifically**: the price on a row that cannot be licensed is
+        /// drawn flat rather than as a button, because every family is opened by a node that grants
+        /// it, and a disabled button on every row for the whole campaign reads as something broken.
+        /// Whether flat text at the end of a row still reads as a price is not a thing a test can
+        /// answer.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheLicensingRowsDrawWhenEveryFamilyIsPublished()
+        {
+            var simulation = Campaign();
+
+            // Moved rather than advanced: the date is the only thing publication reads, and eight
+            // years of ticking would be a balance run rather than a picture.
+            simulation.State.Date = GameDate.FromCalendar(2030, 6, 1);
+
+            var panel = new ModelCreatorPanel(simulation) { Stage = 0 };
+
+            panel.Refresh();
+
+            yield return Capture(panel.Root, "create_licensing.png");
+        }
+
+        /// <summary>
         /// Where an element sits, named by the styled ancestors around it and how wide each is.
         ///
         /// A control the runtime theme assembles reports its own class as
