@@ -92,7 +92,7 @@ namespace ScalingLaws.Simulation
         public FounderProfile Founder { get; set; }
 
         /// <summary>The founder's name. Shown wherever the company is not the subject.</summary>
-        public string FounderName { get; set; } = "Anonymous";
+        public string FounderName { get; set; } = string.Empty;
 
         /// <summary>
         /// The floor the company's own cabinets stand on, and whether it has one at all.

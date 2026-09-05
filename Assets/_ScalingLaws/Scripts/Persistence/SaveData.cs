@@ -628,7 +628,7 @@ namespace ScalingLaws.Persistence
 
         // ---- added in v10 ----
 
-        public string founderName = "Anonymous";
+        public string founderName = string.Empty;
 
         /// <summary>
         /// Which model the founder is, by prefab name, and whether they wear glasses.

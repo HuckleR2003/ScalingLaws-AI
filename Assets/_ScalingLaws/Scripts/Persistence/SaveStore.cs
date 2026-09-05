@@ -1985,7 +1985,11 @@ namespace ScalingLaws.Persistence
 
             // ---- v10 fields ----
 
-            safe.founderName = string.IsNullOrWhiteSpace(safe.founderName) ? "Anonymous" : safe.founderName.Trim();
+            // **Empty stays empty.** Substituting a word here defeats `UiFormat.PersonName`,
+            // which exists to resolve a missing name in whatever language is current: a non-empty
+            // string is a name, so the fallback never runs and the product page is signed by
+            // somebody called Anonymous. That is what a playtester found in their own campaign.
+            safe.founderName = safe.founderName?.Trim() ?? string.Empty;
             safe.founderLook = safe.founderLook?.Trim() ?? string.Empty;
             safe.founderGlasses = Math.Max(0, safe.founderGlasses);
             safe.skillLevels ??= new List<int>();

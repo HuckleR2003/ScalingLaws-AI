@@ -119,7 +119,7 @@ namespace ScalingLaws.UI
             // The founder's own colour, deliberately none of the five staff colours: they are not
             // on the payroll and the room should say so without a word.
             spawned.AddComponent<NamePlate>().Set(
-                company?.FounderName,
+                UiFormat.PersonName(company?.FounderName),
                 company == null ? null : Loc.T("plate.ceo_of", company.CompanyName),
                 NamePlate.FounderColour);
         }

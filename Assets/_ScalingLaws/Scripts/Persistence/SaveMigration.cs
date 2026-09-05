@@ -446,7 +446,11 @@ namespace ScalingLaws.Persistence
             }
 
             data.version = 10;
-            data.founderName = string.IsNullOrWhiteSpace(data.companyName) ? "Anonymous" : "Founder";
+            // **Left empty rather than named.** A v9 save was written by a game that never
+            // asked who the founder was, so there is nothing to recover, and both words this used
+            // to write were English literals frozen into the file. An empty name resolves at the
+            // point it is drawn, in whatever language the player is reading.
+            data.founderName = string.Empty;
             data.skillLevels ??= new List<int>();
             data.skillExperience ??= new List<long>();
 
