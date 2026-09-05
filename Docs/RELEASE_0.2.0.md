@@ -47,6 +47,10 @@ than loaded from a file, so the download does not grow by a byte.
 - **Separate SOUND and MUSIC sliders**, side by side, neither inside the other.
 - **A phone that keeps what was said**, and short guided tours you can ask for again at any time.
 - **The people you hire stand in the office you pay for**, and clicking one opens who they are.
+- **You can licence an architecture family with money.** The creator used to list only the families
+  you already had, so an unowned one was not merely unbuyable: nothing in the game named it, priced
+  it or said what would open it. They are listed now, with what each costs and why not when it is
+  not today.
 
 ## Changed
 
@@ -84,8 +88,8 @@ particular day.
 
 ## Under the hood
 
-- 1076 EditMode tests across 113 fixtures, 30 PlayMode across 8.
-- 2,481 phrases, English and Polish, both complete.
+- 1077 EditMode tests across 113 fixtures, 30 PlayMode across 8.
+- 2,488 phrases, English and Polish, both complete.
 - Eighteen catalogs stopped storing text, so nothing on screen is stuck in the language the game
   started in.
 
@@ -93,6 +97,4 @@ particular day.
 
 - The scripted campaigns in the balance probe peak around $71M. If you get far past that, the top of
   the achievement ladder may still be out of reach, and it will be measured again rather than guessed.
-- Buying an architecture family with money still has no button. The research tree gives them away, so
-  nothing is unreachable; the cash route the design once had is missing.
 - The furniture shop is suspended in favour of the furnished-move option.

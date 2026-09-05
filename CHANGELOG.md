@@ -75,6 +75,11 @@ otherwise.
   rewritten in the present tense or impersonally, which needs no gender field, no question at the
   creator and no save migration. English was already neutral and is untouched.
 
+- **Licensing an architecture family with money.** The creator listed only the families the company
+  already held, so an unowned one was not merely unbuyable: nothing anywhere named it, priced it, or
+  said what would open it. The last mechanism in the game a player could not reach, and the twelfth
+  of that class.
+
 - **Music, and a game that is not silent.** Three loops where there was one: the menu, the office,
   and the model creator, each computed from sine waves at startup so the project still carries no
   audio files and the build does not grow. Four new cues besides: a page turning under the notices
@@ -521,8 +526,8 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1076 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
-- 2,481 phrases in the book, both languages complete, none written twice.
+- 1077 EditMode tests across 113 fixtures, and 30 PlayMode across 8.
+- 2,488 phrases in the book, both languages complete, none written twice.
 - **The whole cash achievement ladder was unreachable, and now it is measured.** Fifty billion and
   two hundred and fifty billion were marked unverified; the probe found that even the *first* rung at
   a hundred million was above the best campaign anybody had played. Across five playing styles over
