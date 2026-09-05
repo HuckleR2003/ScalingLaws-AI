@@ -188,7 +188,9 @@ namespace ScalingLaws.UI
             }
 
             var model = simulation.State.DeployedModels[modelIndex];
-            var standings = model.Traits.Standings(simulation.State.Date).ToList();
+            var standings = model.Traits
+                .Standings(simulation.State.Date, simulation.State.HasResearch)
+                .ToList();
 
             foreach (var standing in standings)
             {
@@ -251,9 +253,15 @@ namespace ScalingLaws.UI
             name.AddToClassList("utile__name");
             words.Add(name);
 
-            var level = new Label(standing.IsAvailable
-                ? Loc.T("upgrade.level", standing.Level)
-                : Loc.T("upgrade.from", definition.AvailableFrom));
+            // **Three reasons a tile can be shut and they are not the same sentence.** The
+            // date has not arrived, or the research has not been done, or it is already at the
+            // ceiling. A grey tile with a level on it and no explanation is the thing that sent a
+            // playtest looking for a bug in the upgrade system.
+            var level = new Label(
+                standing.IsAvailable ? Loc.T("upgrade.level", standing.Level)
+                : standing.Needs != ResearchNodeId.None
+                    ? Loc.T("upgrade.needs", ResearchTree.Get(standing.Needs).DisplayName)
+                    : Loc.T("upgrade.from", definition.AvailableFrom));
 
             level.AddToClassList("utile__level");
             words.Add(level);

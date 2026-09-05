@@ -900,8 +900,8 @@ namespace ScalingLaws.Simulation
             }
 
             State.Effects.Add(
-                new ModelEffect(ModelEffectKind.SafeHarbour, State.Date, 3650,
-                    EffectBook.SafeHarbourMagnitude),
+                new ModelEffect(ModelEffectKind.SafeHarbour, State.Date,
+                    EffectBook.SafeHarbourGrantDays, EffectBook.SafeHarbourMagnitude),
                 State.Date);
 
             State.RaiseEvent(new CompanyEvent(
@@ -1480,7 +1480,9 @@ namespace ScalingLaws.Simulation
                 return new List<TraitStanding>();
             }
 
-            return State.DeployedModels[modelIndex].Traits.Standings(State.Date);
+            // The gate goes in here too, or the release planner prices a trait the
+            // commission will refuse and the version ships with nothing behind it.
+            return State.DeployedModels[modelIndex].Traits.Standings(State.Date, State.HasResearch);
         }
 
         /// <summary>

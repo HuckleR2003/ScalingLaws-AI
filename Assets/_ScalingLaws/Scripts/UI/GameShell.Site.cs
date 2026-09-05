@@ -308,10 +308,15 @@ namespace ScalingLaws.UI
 
             var person = StagePicking.Under<OfficePerson>(officeStage.View, viewport);
 
-            if (person != null && person.Index >= 0 && person.Index < state.Staff.Hires.Count)
+            // **The ray is the first attempt, not the only one.** See `StaffPresence.NearestTo`
+            // for the four ways a raycast into this room comes back empty while somebody is plainly
+            // standing there. Projection answers the same question and cannot fail for any of them.
+            var index = person != null ? person.Index : staff?.NearestTo(officeStage.View, viewport) ?? -1;
+
+            if (index >= 0 && index < state.Staff.Hires.Count)
             {
                 personPanel ??= new PersonPanel(() => simulation, () => Show(current));
-                personPanel.Show(person.Index);
+                personPanel.Show(index);
                 Show(current);
 
                 down.StopPropagation();

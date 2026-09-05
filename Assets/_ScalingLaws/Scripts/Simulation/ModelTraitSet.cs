@@ -15,8 +15,10 @@ namespace ScalingLaws.Simulation
             long upgradeCostUsd,
             double upgradePetaflopDays,
             int upgradeDays,
-            bool isAvailable)
+            bool isAvailable,
+            ResearchNodeId needs = ResearchNodeId.None)
         {
+            Needs = needs;
             Trait = trait;
             Level = Math.Clamp(level, 0, ModelTraitSetLimits.MaximumLevel);
             ExpectedLevel = Math.Clamp(expectedLevel, 0, ModelTraitSetLimits.MaximumLevel);
@@ -36,6 +38,14 @@ namespace ScalingLaws.Simulation
         public double UpgradePetaflopDays { get; }
         public int UpgradeDays { get; }
         public bool IsAvailable { get; }
+
+        /// <summary>
+        /// The node that would open this trait, or None when nothing is in the way.
+        ///
+        /// Named rather than implied, the same as the covered part of the parameter slider: a
+        /// control that is greyed out with no reason given reads as a bug.
+        /// </summary>
+        public ResearchNodeId Needs { get; }
 
         /// <summary>Levels below what the market expects. Zero or more.</summary>
         public int Shortfall => Math.Max(0, ExpectedLevel - Level);
@@ -187,13 +197,32 @@ namespace ScalingLaws.Simulation
             return shortfall;
         }
 
-        /// <summary>Everything the upgrade grid needs, in catalog order.</summary>
-        public List<TraitStanding> Standings(GameDate date)
+        /// <summary>
+        /// Everything the upgrade grid needs, in catalog order.
+        /// </summary>
+        /// <param name="hasResearch">
+        /// What the company has finished. **Without this the grid was lying.** Availability used to
+        /// be the date alone, while `TryStartUpgrades` also requires the node that opens the trait,
+        /// so a gated trait looked pickable, went into the basket, and the whole commission was
+        /// refused after the version had already shipped: no money spent, no programme started, no
+        /// level moved, and it all happened in the same instant. A playtest reported that as three
+        /// separate bugs.
+        ///
+        /// Null reads as a company with nothing researched-but-hidden, which is what every caller
+        /// that does not care about gates wants.
+        /// </param>
+        public List<TraitStanding> Standings(GameDate date, Func<ResearchNodeId, bool> hasResearch = null)
         {
             var standings = new List<TraitStanding>(ModelTraitSetLimits.TraitCount);
             foreach (var definition in ModelTraitCatalog.All)
             {
                 var level = GetLevel(definition.Trait);
+                var gate = ResearchTree.GateForTrait(definition.Trait);
+
+                var open = gate == ResearchNodeId.None
+                    || hasResearch == null
+                    || hasResearch(gate);
+
                 standings.Add(new TraitStanding(
                     definition.Trait,
                     level,
@@ -201,7 +230,8 @@ namespace ScalingLaws.Simulation
                     definition.UpgradeCostUsd(level),
                     definition.UpgradePetaflopDays(level),
                     definition.UpgradeDays(level),
-                    definition.IsAvailableOn(date)));
+                    definition.IsAvailableOn(date) && open,
+                    open ? ResearchNodeId.None : gate));
             }
 
             return standings;

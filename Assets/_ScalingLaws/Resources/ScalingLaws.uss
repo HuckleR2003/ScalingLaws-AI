@@ -4346,11 +4346,29 @@
     color: rgb(210, 222, 240);
 }
 
+/* **The reason a node cannot be started is the most useful line on this card**, and it used to
+   be orange text on the card's own ground, which reads as a footnote. A plate, because a player
+   scanning a tree for something to do needs the refusals to be the thing they see. */
+
 .rcard__blocked {
-    margin-top: 5px;
+    margin-top: 7px;
+    padding: 6px 8px 6px 8px;
     font-size: 12px;
-    color: rgb(226, 150, 110);
+    -unity-font-style: bold;
+    color: rgb(248, 214, 206);
     white-space: normal;
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: rgb(206, 88, 76);
+    background-color: rgba(126, 40, 34, 0.42);
+}
+
+/* Done. The one state worth spotting from across the page, so the whole card takes the colour
+   rather than a badge in the corner of it. */
+
+.rcard--done {
+    border-color: rgb(126, 176, 214);
+    background-color: rgb(20, 33, 49);
 }
 
 .rcard__buttons {

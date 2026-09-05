@@ -424,7 +424,7 @@ namespace ScalingLaws.UI
                 return panel;
             }
 
-            var standings = model.Traits.Standings(simulation.State.Date)
+            var standings = model.Traits.Standings(simulation.State.Date, simulation.State.HasResearch)
                 .Where(entry => basket.Contains(entry.Trait))
                 .ToList();
 

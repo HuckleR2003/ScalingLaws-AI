@@ -1233,6 +1233,13 @@ namespace ScalingLaws.UI
             // so six steps of the tour argued with a player already standing where they were sent.
             guide?.PlayerOpened(GuideTargetForScreen(screen));
 
+            // **Before the page is built, not after.** `guide.Refresh()` runs at the bottom of this
+            // method and that is where the tour's gifts used to be handed over, so a player who
+            // clicked through to RESEARCH on the step that pays for their first node saw every node
+            // priced against points they did not have. It opened when the next day rebuilt the
+            // page, which reads as "you have to wait a day" and is nothing of the kind.
+            guide?.HandOverAnythingOwed();
+
             // **The right corner is not free on every screen.** The basement runs a build rail down
             // that edge, which is why the room's own corner banner already sits at 344 rather than
             // 22. The task strip and the prompt cards live on the panel root, outside any screen, so

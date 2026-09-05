@@ -107,6 +107,35 @@ namespace ScalingLaws.UI
             Reached = WalkthroughDid;
         }
 
+        /// <summary>
+        /// Hands over anything the tour owes at the step it is on.
+        ///
+        /// **Separate from `Refresh` because the order mattered and nobody could see it.** `Show`
+        /// builds the page and then refreshes the guide, so the research screen drew itself while
+        /// the favour was still unarmed: every node priced against points the company did not have,
+        /// and the tree only opened when the next day rebuilt the page. A playtest found it as
+        /// "everything is locked until a day passes", which is exactly what it looks like from the
+        /// outside and says nothing about the cause.
+        ///
+        /// Idempotent, derived from the step index, and safe to call as often as anything likes.
+        /// </summary>
+        public void HandOverAnythingOwed()
+        {
+            var state = progress();
+
+            if (state == null)
+            {
+                return;
+            }
+
+            state.GrantGiftsUpTo(state.Step);
+
+            if (state.BasementIsOwed(state.Step))
+            {
+                handOverBasement?.Invoke();
+            }
+        }
+
         public bool IsShowing => strip != null && strip.parent != null;
 
         // ---- walkthroughs -----------------------------------------------------------------------
@@ -265,7 +294,7 @@ namespace ScalingLaws.UI
             // trigger a rebuild: the second playtest reached the research screen, past the offer,
             // and was still told it needed 278 points it did not have. The rule is now "the tour has
             // reached the step where he pays for it", which is true however the player got there.
-            state.GrantGiftsUpTo(state.Step);
+            HandOverAnythingOwed();
 
             if (builtFor != state.Step || strip == null || strip.parent == null)
             {

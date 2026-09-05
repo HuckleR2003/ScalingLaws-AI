@@ -2525,6 +2525,7 @@ namespace ScalingLaws.Data
             ["ach.group.survival"] = "SURVIVAL",
             ["ach.group.market"] = "THE MARKET",
             ["ach.group.time"] = "TIME",
+            ["upgrade.needs"] = "NEEDS {0}",
         };
 
         // ==========================================================================================
@@ -4931,6 +4932,7 @@ namespace ScalingLaws.Data
             ["ach.group.survival"] = "PRZETRWANIE",
             ["ach.group.market"] = "RYNEK",
             ["ach.group.time"] = "CZAS",
+            ["upgrade.needs"] = "WYMAGA: {0}",
         };
 
         /// <summary>

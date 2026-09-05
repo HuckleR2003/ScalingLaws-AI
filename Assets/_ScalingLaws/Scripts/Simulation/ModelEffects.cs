@@ -157,7 +157,26 @@ namespace ScalingLaws.Simulation
     public sealed class EffectBook
     {
         /// <summary>Days with no penalty and no scandal before the company earns Safe Harbour.</summary>
-        public const int SafeHarbourDays = 365;
+        /// <summary>
+        /// A clean record this long earns Safe Harbour, and an incident restarts the clock.
+        ///
+        /// **Two years, and it does two jobs.** It is what has to be survived to earn the effect in
+        /// the first place, and it is the wait after losing one: an incident sets the clock back to
+        /// that day, so the earliest it can return is two years later. Raised from one year when the
+        /// duration came down from ten, because a penalty of "wait a year" against an effect worth
+        /// two is not a penalty.
+        /// </summary>
+        public const int SafeHarbourDays = 730;
+
+        /// <summary>
+        /// How long a grant lasts before it has to be earned again.
+        ///
+        /// **Was 3,650, which is most of a campaign.** A playtest earned it and was told it had
+        /// 2,930 days left, at which point it is not something you keep, it is something you own.
+        /// Two years, and `AwardSafeHarbourIfEarned` re-grants the day after it lapses to a company
+        /// that has stayed out of trouble, so the renewal costs no code and no click.
+        /// </summary>
+        public const int SafeHarbourGrantDays = 730;
 
         /// <summary>What a clean year is worth: people arriving, and staying.</summary>
         public const double SafeHarbourMagnitude = 0.10;

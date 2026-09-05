@@ -461,6 +461,10 @@ namespace ScalingLaws.UI
             var node = standing.Node;
             researchCard = new VisualElement();
             researchCard.AddToClassList("rcard");
+
+            // A finished node reads as finished from the ground up, not from a badge. This is the
+            // state a player scans a fifty node tree for.
+            researchCard.EnableInClassList("rcard--done", standing.IsUnlocked);
             researchCard.style.left = Mathf.Clamp(at.x, 8f, 1400f);
             researchCard.style.top = Mathf.Clamp(at.y, 8f, 700f);
 

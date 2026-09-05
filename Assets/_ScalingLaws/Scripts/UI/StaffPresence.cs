@@ -164,6 +164,89 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
+        /// Which employee is nearest a point in the camera's view, or -1 when nobody is near it.
+        ///
+        /// **The click path that does not go through physics.** `StagePicking` raycasts, which is
+        /// exact when it works and has four ways to come back empty that look identical from the
+        /// outside: a capsule on a scaled prefab root, a rig that swallows the ray, the wrong
+        /// camera, or a scene with physics not running. A playtest reported the result as "clicking
+        /// a person does nothing", which is all any of them look like.
+        ///
+        /// Projecting is the same arithmetic the build-mode slot markers already use, it needs no
+        /// component on the model, and it cannot be defeated by a collider.
+        ///
+        /// The aim is the body rather than the feet: <see cref="AimHeight"/> up the model, which is
+        /// roughly where a person's chest is and where a player points.
+        /// </summary>
+        public int NearestTo(Camera camera, Vector2 viewport, float radius = 0.055f)
+        {
+            if (camera == null || spawned.Count == 0)
+            {
+                return -1;
+            }
+
+            var best = -1;
+            var bestDistance = radius;
+
+            for (var index = 0; index < spawned.Count; index++)
+            {
+                var person = spawned[index];
+
+                // Somebody off shift is not in the room to be clicked on. Their renderers are off,
+                // and a card opened by clicking an empty patch of floor is worse than no card.
+                if (person == null || !IsOnShift(index))
+                {
+                    continue;
+                }
+
+                var world = person.transform.position + Vector3.up * AimHeight;
+                var view = camera.WorldToViewportPoint(world);
+
+                if (view.z <= 0f)
+                {
+                    continue;
+                }
+
+                var distance = Vector2.Distance(new Vector2(view.x, view.y), viewport);
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = index;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>Where on a person a click is aimed, in metres up from the floor.</summary>
+        private const float AimHeight = 1.0f;
+
+        /// <summary>
+        /// Whether this employee is currently drawn.
+        ///
+        /// Read off the renderers rather than recomputed from the clock, so the answer cannot
+        /// disagree with what is on screen: they are the same fact.
+        /// </summary>
+        private bool IsOnShift(int index)
+        {
+            if (index < 0 || index >= spawned.Count || spawned[index] == null)
+            {
+                return false;
+            }
+
+            foreach (var renderer in spawned[index].GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.enabled)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Shows the people whose shift it is and hides the rest.
         ///
         /// **The first thing in the game that makes the schedule control visible.** Hours were
