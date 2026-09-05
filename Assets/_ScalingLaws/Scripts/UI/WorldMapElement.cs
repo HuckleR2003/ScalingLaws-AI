@@ -204,7 +204,7 @@ namespace ScalingLaws.UI
         /// </summary>
         public Rect ViewIn(Rect box)
         {
-            var subject = View;
+            var subject = Framed(View, PinBox());
 
             if (box.width <= 0f || box.height <= 0f
                 || subject.width <= 0f || subject.height <= 0f)
@@ -287,6 +287,47 @@ namespace ScalingLaws.UI
         /// already far under it.
         /// </summary>
         public const float MostOfTheWorld = 0.66f;
+
+        /// <summary>
+        /// How far past its countries' own centres a region may reach, as a multiple of the span
+        /// between them.
+        ///
+        /// **This is what stops one overseas department deciding the frame.** A region's extent is
+        /// the box around its countries' outlines, and an outline is every ring the source files
+        /// under that country: France's include French Guiana at 5N and Reunion at 21S, so the box
+        /// around six European countries ran from Shetland to the Indian Ocean. Held inside the pin
+        /// box grown by this much, the coastline is kept and the reach is not.
+        ///
+        /// Generous, because it has to leave real context around the countries being chosen. It
+        /// binds on Europe and nowhere else: Asia and the Americas are already inside it.
+        /// </summary>
+        public const float PinContext = 1.0f;
+
+        /// <summary>
+        /// The region's extent, held inside what its own countries actually occupy.
+        ///
+        /// Takes the smaller span on each axis, centred where the outline box already was, so a
+        /// region whose outlines stay near its countries is returned untouched and one stretched by
+        /// a territory on another continent is pulled back to the pins with room around them.
+        /// </summary>
+        private static Rect Framed(Rect outlines, Rect pins)
+        {
+            if (pins.width <= 0f && pins.height <= 0f)
+            {
+                return outlines;
+            }
+
+            var width = Mathf.Min(outlines.width, Mathf.Max(pins.width * (1f + 2f * PinContext),
+                pins.width + 0.02f));
+
+            var height = Mathf.Min(outlines.height, Mathf.Max(pins.height * (1f + 2f * PinContext),
+                pins.height + 0.02f));
+
+            // Around the countries rather than around the coastlines, or trimming the reach of an
+            // overseas department would slide the frame off the region it is about.
+            return new Rect(pins.center.x - width * 0.5f, pins.center.y - height * 0.5f,
+                width, height);
+        }
 
         /// <summary>
         /// The box around the pins of every country the chosen region offers, or an empty rect.

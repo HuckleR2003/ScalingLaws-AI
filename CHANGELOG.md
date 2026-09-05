@@ -246,7 +246,10 @@ pay for, and a BUSINESS page that opens on one screen instead of three.
   and where there is no more map to take in it crops instead: the opening view trims the empty
   Pacific margins and draws every continent seventeen per cent larger. A region is capped at two
   thirds of the world, so leaning in on the Americas means something even though that region runs
-  from the Canadian arctic to Tierra del Fuego.
+  from the Canadian arctic to Tierra del Fuego. And choosing Europe used to draw the Sahara across
+  the bottom of the panel, because a region's extent is the box around its countries' outlines and
+  France's outline includes French Guiana: six countries that span seventeen degrees of latitude
+  were framed as though they spanned fifty eight.
 - **The UPGRADE tiles say what the market is at.** A model ships level with the market on every
   trait, so a first release opens this screen already carrying levels nobody bought. The number it
   is measured against only appeared once a model had fallen behind it, as a red badge, so the two
