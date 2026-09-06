@@ -78,6 +78,21 @@ go in. This file is the draft for the store update post, so anything vague here 
   nothing protected the card, so a full rail compressed the cards themselves and the last line of
   every cabinet, the price, disappeared under the next one. Section headings did the same.
 
+- **The free research node was free straight away, not the next morning.** Emil pays for the
+  company's first node, and a player standing on the research screen when he says so watched every
+  node keep its price until a day rolled over. Nothing was broken underneath: the favour was granted
+  the moment he offered it, and the tree they were looking at had been drawn a second earlier. The
+  page is now rebuilt when a gift lands on it, which happens once in a campaign.
+
+- **The tutorial no longer dies at step 44.** Three of the fifty seven steps wait for the player to
+  do something rather than for a button, and they were waiting on the event rather than on the
+  company. Release your first model while he is still explaining how to release one and the only
+  `model released` this campaign will ever raise has gone past the step that needed it; the tour then
+  waits forever for a second, on a step that draws no NEXT. Every step that waits now asks whether
+  the thing has already been done, so a player running ahead of the tour is caught up rather than
+  stranded. It also explains the oddest half of the report: starting an upgrade raised that event
+  again, which is why he suddenly continued.
+
 ### Save compatibility
 
 **No change.** Nothing here adds state: the room reads figures it already had, and the research board
@@ -85,7 +100,7 @@ is colour. A save from 0.2.0 opens with everything in it.
 
 ### Under the hood
 
-- 1088 EditMode tests across 114 fixtures, and 31 PlayMode across 8.
+- 1095 EditMode tests across 115 fixtures, and 31 PlayMode across 8.
 - 2,497 phrases in the book, both languages complete, none written twice.
 - `ResearchTree.MissingPrerequisites` is a pure function in `Data/`, so the board and the card cannot
   disagree about what blocks a node. It started transitive and the guard rejected that: walking the
