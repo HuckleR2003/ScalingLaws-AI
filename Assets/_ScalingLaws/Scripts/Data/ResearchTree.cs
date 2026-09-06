@@ -1149,6 +1149,46 @@ namespace ScalingLaws.Data
             return ResearchNodeId.None;
         }
 
+        /// <summary>
+        /// The prerequisites of this node that the company does not hold yet.
+        ///
+        /// **Direct parents only, and that was decided by measurement.** The first version walked
+        /// the whole chain, on the reasoning that a prerequisite which is itself blocked is still
+        /// work the player has to do. `ResearchRoadTests` counted it: the deepest node in the tree
+        /// would have lit sixteen of the fifty nine red at once, which is a quarter of the board in
+        /// one colour and not a direction anybody can act on.
+        ///
+        /// The chain is not lost. A node painted red is still a node, so clicking it paints its own
+        /// prerequisites, and the board walks a player back one rung at a time.
+        ///
+        /// Order follows the node's own list, which is the order they are written in the tree.
+        /// </summary>
+        public static List<ResearchNodeId> MissingPrerequisites(
+            ResearchNodeId id, Func<ResearchNodeId, bool> isHeld)
+        {
+            var missing = new List<ResearchNodeId>();
+
+            if (isHeld == null || !ById.TryGetValue(id, out var start))
+            {
+                return missing;
+            }
+
+            foreach (var prerequisite in start.Prerequisites)
+            {
+                if (prerequisite == ResearchNodeId.None || isHeld(prerequisite))
+                {
+                    continue;
+                }
+
+                if (!missing.Contains(prerequisite))
+                {
+                    missing.Add(prerequisite);
+                }
+            }
+
+            return missing;
+        }
+
         private static Dictionary<ResearchNodeId, ResearchNode> BuildIndex()
         {
             var index = new Dictionary<ResearchNodeId, ResearchNode>(Entries.Length);
