@@ -74,8 +74,14 @@ namespace ScalingLaws.UI
         private PortraitStudio studio;
         private string founderLook = string.Empty;
         private int founderGlasses;
-        private WorldRegion chosenRegion = WorldRegion.America;
-        private Country chosenCountry = Country.UnitedStates;
+        // **Nothing is chosen, so the map opens on the whole world.** These were America and the
+        // United States, which zoomed the map into one region before the player had looked at it
+        // and, worse, was not only a view: `WorldRegionCatalog.Get` answers `Country.None` with the
+        // first country in the list, so an untouched map handed the company an American tax rate,
+        // American hardware prices and American competition. Every other branch on this page was
+        // already written for an unchosen start.
+        private WorldRegion chosenRegion = WorldRegion.None;
+        private Country chosenCountry = Country.None;
 
         private int introLine;
         private VisualElement introHost;
@@ -1410,9 +1416,17 @@ namespace ScalingLaws.UI
             // the player did not choose.
             var named = !string.IsNullOrWhiteSpace(founderName);
 
+            // **And the company has to sit somewhere.** Four of the numbers the campaign runs on
+            // come from the country, and the catalog answers `Country.None` with whichever row is
+            // first rather than refusing, so leaving this ungated would make the default silent
+            // instead of absent. Same reasoning as the name directly above.
+            var placed = chosenCountry != Country.None;
+
             page.Add(Footer(Loc.T("menu.begin_january"), Begin, () => Show(Stage.Founder),
-                CompanyIsChosen && named,
-                CompanyIsChosen ? Loc.T("menu.needs_a_name") : Loc.T("menu.pick_a_lab")));
+                CompanyIsChosen && named && placed,
+                !CompanyIsChosen ? Loc.T("menu.pick_a_lab")
+                    : !named ? Loc.T("menu.needs_a_name")
+                    : Loc.T("menu.needs_a_country")));
 
             return page;
         }
@@ -1454,7 +1468,7 @@ namespace ScalingLaws.UI
             header.Add(title);
 
             var chosen = new Label(chosenCountry == Country.None
-                ? "No country chosen"
+                ? Loc.T("creator.no_country")
                 : WorldRegionCatalog.Get(chosenCountry).DisplayName.ToUpperInvariant());
             chosen.AddToClassList("region__chosen");
             header.Add(chosen);
