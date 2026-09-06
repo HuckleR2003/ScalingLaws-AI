@@ -787,7 +787,8 @@ namespace ScalingLaws.UI
             // one they waved away in the corner. Same door as the chip: the overlay owns the strip.
             phone.startWalkthrough = walkthrough => guide?.StartWalkthrough(walkthrough);
 
-            tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome);
+            tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome,
+                () => current == Screen.Site);
 
             // **Above the task strip and separate from it.** The chip that offers a walkthrough is
             // not one of the five opening tasks, and hanging it off that list would have made its
