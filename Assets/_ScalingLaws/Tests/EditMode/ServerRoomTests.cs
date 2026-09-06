@@ -499,5 +499,86 @@ namespace ScalingLaws.Tests.EditMode
                 "An enabled button that the simulation then refuses is a dead control: "
                 + string.Join("   ", disagreed));
         }
+
+        /// <summary>
+        /// The room has a way to put cards in the cabinets.
+        ///
+        /// **This is the gap the author found by playing.** Every action the room offered was about
+        /// the furniture: buy a cabinet, carry it, stand it, sell it, fit a fan. The thing cabinets
+        /// exist to hold was bought on a different screen and the room never mentioned it, so a
+        /// basement opened early is four empty frames with no parts and no way to get any.
+        ///
+        /// Source-read rather than click-driven, the same instrument `ReachabilityTests` uses: it
+        /// proves the door is named here, not that a click arrives. The frame in `ScreenProof~` is
+        /// what proves it draws.
+        /// </summary>
+        [Test]
+        public void TheServerRoomOffersAWayToFillTheCabinets()
+        {
+            var source = System.IO.File.ReadAllText(System.IO.Path.Combine(
+                UnityEngine.Application.dataPath,
+                "_ScalingLaws", "Scripts", "UI", "ServerRoomScreen.cs"));
+
+            Assert.That(source, Does.Contain("TryBuyHardware"),
+                "the room can buy cabinets and fans and nothing to put in them, which is the state "
+                + "the author reported as the magic going out of the room");
+
+            Assert.That(source, Does.Contain("HousedAccelerators"),
+                "a room that cannot say how many cards are standing in it cannot explain why the "
+                + "cabinets are doing nothing");
+        }
+
+        /// <summary>
+        /// When the room says the tier is shut, it says what the simulation would say.
+        ///
+        /// The panel prints `ComputeTierStatus.LockReason` and `TryBuyHardware` refuses with that
+        /// same field. Two copies of that sentence would let the screen explain one gate while the
+        /// purchase fails on another, which from the player's chair is the game arguing with itself.
+        /// </summary>
+        [Test]
+        public void TheReasonTheRoomPrintsIsTheReasonTheSimulationRefuses()
+        {
+            var simulation = new CompanySimulation(new CompanyState("Silicon", 0x51u));
+
+            Assert.That(ComputeTierCatalog.TryGet(ComputeTier.ColocatedServers, out var tier), Is.True);
+
+            var state = simulation.State;
+            var status = tier.Evaluate(
+                state.Date, state.CashUsd, state.ReleasedModelCount, state.LifetimeRevenueUsd);
+
+            Assume.That(status.IsUnlocked, Is.False,
+                "a brand new company is the case this test is about; if colocation now opens on "
+                + "day one the gate has moved and this fixture needs rewriting rather than deleting");
+
+            var newest = HardwareCatalog.All
+                .Where(generation => generation.Class == HardwareClass.Accelerator
+                    && generation.IsAvailableOn(state.Date))
+                .ToList();
+
+            Assert.That(newest, Is.Not.Empty, "no accelerator has shipped by the opening date");
+
+            simulation.TryBuyHardware(newest[0].Id, 64, ComputeTier.ColocatedServers, out var refused);
+
+            Assert.That(refused, Is.EqualTo(status.LockReason),
+                "the sentence the room prints and the sentence the purchase refuses with have "
+                + "drifted apart");
+        }
+
+        /// <summary>
+        /// A floor with no cabinets has nowhere to put a card, and the room knows it.
+        ///
+        /// The panel stops before offering a purchase when `TotalSlots` is zero. That is not
+        /// politeness: buying cards for a room with no racks spends money on hardware the hall
+        /// cannot house, and `Stock` would house none of it.
+        /// </summary>
+        [Test]
+        public void AnEmptyFloorHousesNothingHoweverManyCardsAreOwned()
+        {
+            var hall = new ServerHall(4, 4);
+
+            Assert.That(hall.TotalSlots, Is.Zero, "a floor with no cabinets has no slots");
+            Assert.That(hall.Stock(256), Is.Zero, "cards cannot stand on bare floor");
+            Assert.That(hall.HousedAccelerators, Is.Zero);
+        }
     }
 }
