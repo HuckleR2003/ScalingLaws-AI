@@ -48,6 +48,11 @@ go in. This file is the draft for the store update post, so anything vague here 
   newest generations straight from the room. It is the same purchase the fleet screen makes, so the
   price, the tier gate and the founder's discount are all decided where they already were.
 
+- **Sound and music in the Escape menu.** Both sliders existed and neither was reachable from inside
+  a campaign: they are on the main menu, so anybody who found the office loop loud had to leave the
+  game they were playing to turn it down. Two independent controls side by side rather than one
+  scaling the other, which is the shape they were built in.
+
 - **When the room cannot sell you a card, it says why.** The basement can be opened on day one as
   Emil's gift, while accelerators need the colocated tier and its own gates, so there is a real
   stretch of the game where the room is furniture by design. It prints the tier's own reason rather
@@ -55,6 +60,31 @@ go in. This file is the draft for the store update post, so anything vague here 
   with nowhere to put it is money spent on nothing.
 
 ### Changed
+
+- **Missing a grant costs twice the advance, and a letter says so.** Handing back exactly what was
+  taken made an advance an interest-free loan for the length of the term, so the arithmetic said to
+  sign for everything on the board and give back whatever did not land. At twice, a programme has to
+  be worth finishing before it is worth signing. The letter is there because the banner and the wire
+  both scroll and this is a six figure charge on a day nobody was expecting one.
+
+- **The task list rolls up away from the site.** Every task on it is something you do at the
+  headquarters, so on the fleet screen or in the basement it was a list of instructions for
+  somewhere you are not, at full weight, in the corner where the product and upgrade banners live.
+  It becomes the counter and nothing else out there, at 35% more transparent, and a click opens it
+  again. The click is forgotten on the way home. The rolled-up pill carries no dismiss cross,
+  because at that size the cross and the counter are one target and only one of them cannot be
+  undone.
+
+- **A node blocked by another node says NEEDS FIRST, on a red band.** The other three states are a
+  status and a colour is enough for those; this one is an instruction, and it is the same red the
+  board paints the road in, so the banner on the card and the pips that just lit up behind it read
+  as one thing.
+
+- **Pressing NEW MODEL during the tutorial continues the tour.** The step describing the model hub
+  rings that door and the step after it is the one waiting for it to be clicked, so a player who
+  read the line and pressed the lit button was told to press NEXT and then told to click a door they
+  were already through. One step of lookahead, deliberately not more: a screen change two steps
+  ahead is somebody wandering off, not somebody keeping up.
 
 - **A finished research node is blue.** Done and startable were two greens a hue apart, which across
   fifty nine nodes is not a distinction anybody makes at a glance, and the player scanning for "what
@@ -93,15 +123,41 @@ go in. This file is the draft for the store update post, so anything vague here 
   stranded. It also explains the oddest half of the report: starting an upgrade raised that event
   again, which is why he suddenly continued.
 
+- **A grant could be signed, ignored, and paid out.** "Safe first release" asks that nothing goes
+  wrong for ninety days, and nothing goes wrong at a company with no model, no users and nothing on
+  sale. Accepting it on the first morning and walking away collected $400,000 and sixty research
+  points three months later. Every sustained programme had the same hole for the same reason: they
+  describe how a company is run, and an empty office complies with all of them perfectly. A
+  sustained term now starts on the day the company has something to sell, and once it starts it
+  runs; taking the product back down does not stop the clock.
+
+- **The map opened zoomed into America.** Your lab's page picked a region and a country before you
+  had looked at it, and that was not only a view: the country decides the tax rate, what
+  accelerators cost, how fast research runs and how hard the local competition is, so a player who
+  never touched the map was quietly given four American numbers. Nothing is chosen now, the map
+  opens on the world, and the company cannot be founded until you have said where it sits. Same
+  reasoning as the founder's name, which stopped being pre-filled for the same reason.
+
+- **The research card said LOCKED in English.** Four of its five states were written into the code
+  rather than the phrase book, so a Polish player read them in English next to a Polish title. It
+  also said the same word for two different things: short of points is a matter of waiting, and
+  short of a prerequisite is another node to go and start.
+
 ### Save compatibility
 
-**No change.** Nothing here adds state: the room reads figures it already had, and the research board
-is colour. A save from 0.2.0 opens with everything in it.
+**Save 52.** One new field: whether a grant's term has actually started running. A campaign from 51
+opens with every award it holds already running, which is what those awards were doing, and the days
+they have spent are the days the file records. Nothing else changed, and nothing is dropped.
 
 ### Under the hood
 
-- 1095 EditMode tests across 115 fixtures, and 31 PlayMode across 8.
-- 2,497 phrases in the book, both languages complete, none written twice.
+- 1115 EditMode tests across 117 fixtures, and 31 PlayMode across 8.
+- 2,505 phrases in the book, both languages complete, none written twice.
+- Two of the tests written for the volume sliders were deleted the same hour: an EditMode element
+  has no panel, so setting a slider's value dispatches no change event, and the pair of them were
+  measuring an assignment and a callback that never ran. One of the two passed. What replaced them
+  reads the sliders back off the settings, which is the half that catches a music control wired to
+  the effects.
 - `ResearchTree.MissingPrerequisites` is a pure function in `Data/`, so the board and the card cannot
   disagree about what blocks a node. It started transitive and the guard rejected that: walking the
   whole chain lit sixteen of the fifty nine nodes at once, which is a quarter of the board in one
