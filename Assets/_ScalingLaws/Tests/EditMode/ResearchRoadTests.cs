@@ -158,5 +158,76 @@ namespace ScalingLaws.Tests.EditMode
                     + $"{road.Count} nodes red in front of it");
             }
         }
+
+        /// <summary>
+        /// The card's state badge comes out of the phrase book, and one of the five is the road.
+        ///
+        /// **`research.needs_first` was written in both languages and drawn by nothing.** The card
+        /// had four states in hard-coded English instead, and two of them were the same word: a node
+        /// short of points and a node short of a prerequisite both said LOCKED, though only one of
+        /// them is something the player can go and fix this afternoon.
+        /// </summary>
+        [Test]
+        public void TheCardNamesTheFiveStatesFromTheBook()
+        {
+            var source = System.IO.File.ReadAllText(System.IO.Path.Combine(
+                UnityEngine.Application.dataPath,
+                "_ScalingLaws", "Scripts", "UI", "GameShell.Research.cs"));
+
+            foreach (var key in new[]
+            {
+                "research.badge.done", "common.in_progress", "research.badge.ready",
+                "research.needs_first", "common.locked"
+            })
+            {
+                Assert.That(source, Does.Contain(key),
+                    $"the card does not draw '{key}', so either a state is written in English in a "
+                    + "game that ships in two languages, or a phrase is in the book with no reader");
+            }
+
+            // Comments stripped first, and this test failed on its own first run without it: the
+            // comment above the badge explains the fault by quoting the word it removed. A guard
+            // that reads source has to read the code rather than the prose around it.
+            var code = string.Join("\n", source
+                .Split('\n')
+                .Select(line => line.TrimStart().StartsWith("//") ? string.Empty : line));
+
+            foreach (var english in new[] { "\"RESEARCHED\"", "\"IN PROGRESS\"", "\"LOCKED\"" })
+            {
+                Assert.That(code, Does.Not.Contain(english),
+                    $"{english} is still written into the card, so a Polish player reads it in "
+                    + "English next to a Polish title");
+            }
+        }
+
+        /// <summary>
+        /// The banner is a band, not a coloured word.
+        ///
+        /// The other three badges are a status and a colour is enough for those. This one is an
+        /// instruction, and it is the half of the repair that happens on the card rather than on
+        /// the board, so it has to survive somebody tidying the stylesheet.
+        /// </summary>
+        [Test]
+        public void TheNeedsFirstBadgeIsPaintedRatherThanTinted()
+        {
+            var uss = System.IO.File.ReadAllText(System.IO.Path.Combine(
+                UnityEngine.Application.dataPath, "_ScalingLaws", "Resources", "ScalingLaws.uss"));
+
+            var at = uss.IndexOf(".rcard__badge--needed", System.StringComparison.Ordinal);
+
+            Assert.That(at, Is.GreaterThanOrEqualTo(0),
+                "the stylesheet has no rule for the badge, so it draws as the grey default");
+
+            var rule = uss.Substring(at, uss.IndexOf('}', at) - at);
+
+            Assert.That(rule, Does.Contain("background-color"),
+                "a red word where the player was promised a red banner");
+
+            Assert.That(uss.IndexOf(".rcard__badge {", System.StringComparison.Ordinal),
+                Is.LessThan(at),
+                "the base rule sits after the modifier at equal specificity, which in USS means the "
+                + "base wins and every property they share is silently thrown away. That is exactly "
+                + "how the tree pips went a fortnight without drawing a single state colour.");
+        }
     }
 }

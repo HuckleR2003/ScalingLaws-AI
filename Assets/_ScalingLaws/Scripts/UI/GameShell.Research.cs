@@ -494,14 +494,25 @@ namespace ScalingLaws.UI
             title.AddToClassList("rcard__title");
             titles.Add(title);
 
-            var state = standing.IsUnlocked ? "RESEARCHED"
-                : standing.IsInProgress ? "IN PROGRESS"
-                : standing.CanStart ? "READY" : "LOCKED";
+            // **A node can be locked for two different reasons and only one of them is the player's
+            // to fix today.** Short of points is a matter of waiting; short of a prerequisite is a
+            // different node to go and start. The board already paints that road red on the click,
+            // and the card said "LOCKED" for both, in English, in a game that ships in two.
+            var blockedBy = standing.IsUnlocked || standing.IsInProgress
+                ? new List<ResearchNodeId>()
+                : ResearchTree.MissingPrerequisites(node.Id, simulation.State.HasResearch);
+
+            var state = standing.IsUnlocked ? Loc.T("research.badge.done")
+                : standing.IsInProgress ? Loc.T("common.in_progress")
+                : standing.CanStart ? Loc.T("research.badge.ready")
+                : blockedBy.Count > 0 ? Loc.T("research.needs_first")
+                : Loc.T("common.locked");
 
             var badge = new Label(state);
             badge.AddToClassList("rcard__badge");
             badge.EnableInClassList("rcard__badge--ready", standing.CanStart);
             badge.EnableInClassList("rcard__badge--done", standing.IsUnlocked);
+            badge.EnableInClassList("rcard__badge--needed", blockedBy.Count > 0);
             titles.Add(badge);
 
             head.Add(titles);
