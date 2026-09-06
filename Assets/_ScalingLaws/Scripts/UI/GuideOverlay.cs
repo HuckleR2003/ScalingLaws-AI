@@ -58,6 +58,26 @@ namespace ScalingLaws.UI
         /// Two-way on purpose. The tour may move the creator forward and may never move it back, so
         /// when the player is ahead the answer is larger than the request and the tour catches up.
         /// </summary>
+        /// <summary>
+        /// Whether the thing a step is waiting for has already happened.
+        ///
+        /// **A signal is an event and the tour needs a state.** `Reported` only advances the step
+        /// that is on screen when the event arrives, so a player who releases a model one step early
+        /// dropped the only `model_released` they were ever going to get and the tour stopped at a
+        /// step with no button on it. Answered from the company rather than from a remembered set,
+        /// so it survives a save and a reload the way a latch would not.
+        /// </summary>
+        private readonly Func<string, bool> alreadyDone;
+
+        /// <summary>
+        /// Redraws whatever screen is open, for the one case where a gift changes it underneath.
+        ///
+        /// The shell's own `changed` repaints the chrome and not the page, which is correct for
+        /// every other use and wrong for this one: a research tree built a moment before the favour
+        /// landed still has a price on every node.
+        /// </summary>
+        private readonly Action repaintScreen;
+
         private readonly Func<int, int> showCreatorStage;
 
         /// <summary>Raised when the player steps out meaning to come back.</summary>
@@ -99,8 +119,12 @@ namespace ScalingLaws.UI
             Action<GuideTarget> goTo, Action changed,
             Func<GuideTarget, VisualElement> tabFor = null,
             Func<int, int> showCreatorStage = null,
-            Action<GuideTarget?> lockToTab = null)
+            Action<GuideTarget?> lockToTab = null,
+            Action repaintScreen = null,
+            Func<string, bool> alreadyDone = null)
         {
+            this.alreadyDone = alreadyDone;
+            this.repaintScreen = repaintScreen;
             this.showCreatorStage = showCreatorStage;
             this.host = host;
             this.progress = progress;
@@ -135,7 +159,14 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            state.GrantGiftsUpTo(state.Step);
+            // **The return value is the whole point and it used to be discarded.** A node that has
+            // just been paid for is drawn with its price until something rebuilds the page, and the
+            // chrome refresh does not. From `Show` this reports false, because the gift was handed
+            // over at the top of that method before the page was built, so this cannot re-enter.
+            if (state.GrantGiftsUpTo(state.Step))
+            {
+                repaintScreen?.Invoke();
+            }
 
             if (state.BasementIsOwed(state.Step))
             {
@@ -336,6 +367,19 @@ namespace ScalingLaws.UI
                 state.Stage = GuideStage.Finished;
                 Hide();
                 changed?.Invoke();
+                return;
+            }
+
+            // **A step cannot wait for something that has already happened.** `Reported` only moves
+            // the step that is on screen when the event fires, so releasing a model one step early
+            // spends the single `model_released` this campaign will ever raise and leaves the next
+            // step waiting forever with no button on it. That is the tour dying at 44 of 57.
+            //
+            // Asked of the company rather than remembered, so a reload cannot lose the answer. Each
+            // pass moves the index forward, so a run of already-satisfied steps unwinds and stops.
+            if (!string.IsNullOrEmpty(step.Signal) && alreadyDone != null && alreadyDone(step.Signal))
+            {
+                Advance();
                 return;
             }
 

@@ -728,7 +728,9 @@ namespace ScalingLaws.UI
                 target => hud?.LockToSlot(
                     target.HasValue && ScreenForGuideTarget(target.Value) is { } shown
                         ? shown
-                        : null));
+                        : null),
+                () => Show(current),
+                AlreadyDone);
 
             // **Once, and only for the room.** The basement is reached from one icon on the site
             // rail and nothing else in the game points at it, so a player who has just been walked
@@ -3219,6 +3221,31 @@ namespace ScalingLaws.UI
             runFinished = veil;
             shellRoot.Add(veil);
         }
+
+        /// <summary>
+        /// Whether the thing a tour step is waiting for has already been done.
+        ///
+        /// **The shell answers because it is the side that knows the company.** The tour asks in
+        /// signals, which are events, and an event that fired one step too early is gone. These are
+        /// the same three facts read off the state instead, so a step waiting for a run that has
+        /// already finished, or a model already on sale, moves on rather than stopping the tour.
+        ///
+        /// Deliberately generous. `run_started` is satisfied by a run that has since finished and by
+        /// a model already released, because a player who is further along than the step has done
+        /// the thing it is asking for, and the alternative is a tour that argues with them.
+        /// </summary>
+        private bool AlreadyDone(string signal) => signal switch
+        {
+            GuideScript.RunStartedSignal =>
+                state.ActiveRun != null || state.Shelf.Count > 0 || state.ReleasedModelCount > 0,
+
+            GuideScript.RunFinishedSignal =>
+                state.Shelf.Count > 0 || state.ReleasedModelCount > 0,
+
+            GuideScript.ModelReleasedSignal => state.ReleasedModelCount > 0,
+
+            _ => false
+        };
 
         private void RefreshChrome()
         {
