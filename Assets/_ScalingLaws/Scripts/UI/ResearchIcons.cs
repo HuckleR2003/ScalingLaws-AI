@@ -90,7 +90,24 @@ namespace ScalingLaws.UI
             { ResearchNodeId.QuantisedServing, "research_quantisedserving" },
             { ResearchNodeId.SpeculativeDecoding, "research_speculativedecoding" },
             { ResearchNodeId.ProcessSupervision, "research_processsupervision" },
-            { ResearchNodeId.InferenceTimeSearch, "research_inferencetimesearch" }
+            { ResearchNodeId.InferenceTimeSearch, "research_inferencetimesearch" },
+
+            // The last nine. Five are era four and five, where the tree is at its most abstract and
+            // an empty disc reads as a node that is not finished rather than one nobody drew; four
+            // are the Operations track, which is the newest and had never had art at all.
+            //
+            // They arrived in `Art/Research` and were copied to `Resources/Research`, because that
+            // is the only folder `Resources.Load` can see. The note above this table is about the
+            // same mistake made once before, with six files.
+            { ResearchNodeId.GeneralIntelligence, "research_agi" },
+            { ResearchNodeId.RealTimeAssimilation, "research_assimilation" },
+            { ResearchNodeId.SovereignLiaison, "research_sovereign" },
+            { ResearchNodeId.ContinuousOversight, "research_oversight" },
+            { ResearchNodeId.RedundantInference, "research_redundant" },
+            { ResearchNodeId.RackTelemetry, "research_telemetry" },
+            { ResearchNodeId.AirflowModelling, "research_airflow" },
+            { ResearchNodeId.LiquidLoops, "research_liquidloops" },
+            { ResearchNodeId.OwnSubstation, "research_substation" }
         };
 
         private static readonly Dictionary<ResearchNodeId, Texture2D> Loaded = new();
