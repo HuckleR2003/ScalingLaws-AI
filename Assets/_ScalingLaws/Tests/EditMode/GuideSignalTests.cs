@@ -184,6 +184,59 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
+        /// Pressing the lit door carries the tour through the step that was about to ask for it.
+        ///
+        /// **Reported at 26 of 57.** The step describing the model hub rings the NEW MODEL door and
+        /// the step after it is the one waiting for that door to be clicked. A player who read the
+        /// line and pressed the lit button was told to press NEXT, and then told to click a door
+        /// they were already through.
+        /// </summary>
+        [Test]
+        public void PressingTheDoorEarlyCarriesTheTourThroughTheStepThatAsksForIt()
+        {
+            var asks = GuideScript.Steps
+                .Select((step, index) => (step, index))
+                .First(pair => pair.step.WaitForClick && pair.index > 0
+                    && !GuideScript.Steps[pair.index - 1].WaitForClick);
+
+            var describing = asks.index - 1;
+            var rig = new Rig(describing);
+
+            rig.Overlay.Refresh();
+            rig.Overlay.PlayerOpened(asks.step.Target);
+
+            Assert.That(rig.State.Step, Is.EqualTo(asks.index + 1),
+                "The player did what the next step was about to ask and the tour made them press "
+                + "NEXT and then asked for it anyway.");
+        }
+
+        /// <summary>
+        /// One step of lookahead and no more.
+        ///
+        /// A screen change two steps ahead of the tour is a player wandering off, not a player
+        /// keeping up, and skipping to meet them would take whole acts with it.
+        /// </summary>
+        [Test]
+        public void ItDoesNotRunAheadByMoreThanTheOneStep()
+        {
+            var asks = GuideScript.Steps
+                .Select((step, index) => (step, index))
+                .First(pair => pair.step.WaitForClick && pair.index > 1
+                    && !GuideScript.Steps[pair.index - 1].WaitForClick
+                    && !GuideScript.Steps[pair.index - 2].WaitForClick);
+
+            var twoBack = asks.index - 2;
+            var rig = new Rig(twoBack);
+
+            rig.Overlay.Refresh();
+            rig.Overlay.PlayerOpened(asks.step.Target);
+
+            Assert.That(rig.State.Step, Is.EqualTo(twoBack).Or.EqualTo(twoBack + 1),
+                "Opening a screen two steps early walked the tour to it, so a stray click can carry "
+                + "a player past lines they have not read.");
+        }
+
+        /// <summary>
         /// The shell hands the tour both answers.
         ///
         /// Both are optional constructor arguments, so a shell that quietly stopped passing them

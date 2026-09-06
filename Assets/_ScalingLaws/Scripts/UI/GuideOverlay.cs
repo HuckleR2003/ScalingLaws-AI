@@ -931,12 +931,44 @@ namespace ScalingLaws.UI
 
             var step = Current;
 
-            if (step == null || !step.WaitForClick || step.Target != target)
+            if (step == null)
             {
                 return;
             }
 
-            Advance();
+            if (step.WaitForClick && step.Target == target)
+            {
+                Advance();
+                return;
+            }
+
+            // **One step of lookahead, and no more.** The step that describes the model hub rings
+            // the NEW MODEL door, and the step after it is the one waiting for that door. A player
+            // who reads the line and presses the lit button was then told to press NEXT, and then
+            // told to click a door they were already through.
+            //
+            // Only from a step that is not itself waiting for a click, so this can never carry a
+            // player past a door the tour is holding them at, and only one step, so a stray screen
+            // change cannot skip an act.
+            if (!step.WaitForClick && NextStepWaitsFor(target))
+            {
+                Advance();
+                Advance();
+            }
+        }
+
+        /// <summary>Whether the step after the current one is waiting for this screen to open.</summary>
+        private bool NextStepWaitsFor(GuideTarget target)
+        {
+            var at = progress().Step + 1;
+
+            if (at < 0 || at >= GuideScript.Steps.Count)
+            {
+                return false;
+            }
+
+            var next = GuideScript.Steps[at];
+            return next.WaitForClick && next.Target == target;
         }
 
         /// <summary>
