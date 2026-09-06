@@ -363,6 +363,17 @@ namespace ScalingLaws.Data
             ["upgrade.version"] = "Version: {0}",
             ["upgrade.base"] = "Base",
 
+            // ---- the silicon that goes in the cabinets, bought from the room itself -----------
+            ["room.build.silicon"] = "WHAT GOES IN THEM",
+            ["room.silicon.owned"] = "Accelerators owned",
+            ["room.silicon.housed"] = "Standing in this room",
+            ["room.silicon.free"] = "Empty slots down here",
+            ["room.silicon.batch"] = "Cards per order",
+            ["room.silicon.no_racks"] = "No cabinets on the floor yet, so there is nowhere to put a card. Buy one below and stand it on a square first.",
+            ["room.silicon.projected"] = "Not announced yet. This generation is the game's projection.",
+            ["room.silicon.buy_note"] = "Bought into the colocated tier, the same purchase the fleet screen makes. Cards fill the cabinets down here first.",
+
+
             // ---- licensing an architecture family with money rather than research ------------------
             ["family.unknown"] = "No such family.",
             ["family.already"] = "Already yours.",
@@ -2975,6 +2986,17 @@ namespace ScalingLaws.Data
             ["upgrade.level_market"] = "POZIOM {0}   ·   RYNEK {1}",
             ["upgrade.none_live"] = "Nic jeszcze nie działa. Wydaj model, a to się zapełni.",
             ["upgrade.version"] = "Wersja: {0}",
+
+            // ---- the silicon that goes in the cabinets, bought from the room itself -----------
+            ["room.build.silicon"] = "CO DO NICH WCHODZI",
+            ["room.silicon.owned"] = "Akceleratory na stanie",
+            ["room.silicon.housed"] = "Stoi w tym pomieszczeniu",
+            ["room.silicon.free"] = "Wolne sloty na dole",
+            ["room.silicon.batch"] = "Kart w zamówieniu",
+            ["room.silicon.no_racks"] = "Na podłodze nie ma jeszcze szaf, więc nie ma gdzie włożyć karty. Kup szafę niżej i postaw ją na kwadracie.",
+            ["room.silicon.projected"] = "Jeszcze nieogłoszona. Ta generacja to prognoza gry.",
+            ["room.silicon.buy_note"] = "Kupowane w warstwę kolokacji, ten sam zakup co na ekranie floty. Karty najpierw zapełniają szafy tutaj.",
+
 
             // ---- licensing an architecture family with money rather than research ------------------
             ["family.unknown"] = "Nie ma takiej rodziny.",

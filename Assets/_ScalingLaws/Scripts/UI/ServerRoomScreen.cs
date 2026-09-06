@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
@@ -490,6 +492,9 @@ namespace ScalingLaws.UI
             var scroller = new ScrollView();
             scroller.AddToClassList("roombuild__scroll");
 
+            scroller.Add(SectionHeading(Loc.T("room.build.silicon")));
+            scroller.Add(BuildSilicon(simulation));
+
             scroller.Add(SectionHeading(Loc.T("room.build.shop")));
 
             foreach (var definition in ServerRackCatalog.All)
@@ -519,6 +524,144 @@ namespace ScalingLaws.UI
         /// still two calls, so a purchase that cannot be placed is money spent on something sitting
         /// in the store room rather than money that vanished.
         /// </summary>
+        /// <summary>How many accelerators a click buys, matching the batch the fleet screen sells.</summary>
+        private const int SiliconBatch = 64;
+
+        /// <summary>
+        /// What is in the cabinets, and where the next card comes from.
+        ///
+        /// **The room could not say why it was empty.** Standing a cabinet on the floor does nothing
+        /// visible until the company owns silicon to put in it, and silicon was bought two screens
+        /// away with no mention of it here. A room whose central mechanic depends on a purchase it
+        /// never names is a room that reads as broken.
+        ///
+        /// The tier gate is printed in the tier's own words rather than being re-derived, so the
+        /// sentence here and the refusal from <see cref="CompanySimulation.TryBuyHardware"/> cannot
+        /// drift apart.
+        /// </summary>
+        private VisualElement BuildSilicon(CompanySimulation simulation)
+        {
+            var state = simulation.State;
+            var hall = state.Hall;
+            var panel = new VisualElement();
+            panel.AddToClassList("roombuild__silicon");
+
+            var owned = 0;
+            foreach (var asset in state.Pool.Assets)
+            {
+                if (asset.IsOnline(state.Date))
+                {
+                    owned += asset.Units;
+                }
+            }
+
+            panel.Add(UiParts.StatLine(Loc.T("room.silicon.owned"), owned.ToString()));
+            panel.Add(UiParts.StatLine(Loc.T("room.silicon.housed"), hall.HousedAccelerators.ToString()));
+
+            panel.Add(UiParts.StatLine(Loc.T("room.silicon.free"),
+                Math.Max(0, hall.TotalSlots - hall.HousedAccelerators).ToString()));
+
+            // A floor with no cabinets on it has no slots, and telling that player to buy cards
+            // would be sending them to spend money on something with nowhere to go.
+            if (hall.TotalSlots == 0)
+            {
+                var noRacks = new Label(Loc.T("room.silicon.no_racks"));
+                noRacks.AddToClassList("roombuild__hint");
+                panel.Add(noRacks);
+
+                return panel;
+            }
+
+            const ComputeTier tier = ComputeTier.ColocatedServers;
+
+            if (!ComputeTierCatalog.TryGet(tier, out var definition))
+            {
+                return panel;
+            }
+
+            var status = definition.Evaluate(
+                state.Date, state.CashUsd, state.ReleasedModelCount, state.LifetimeRevenueUsd);
+
+            if (!status.IsUnlocked)
+            {
+                var locked = new Label(status.LockReason);
+                locked.AddToClassList("roombuild__hint");
+                panel.Add(locked);
+
+                return panel;
+            }
+
+            // Accelerators only.  also carries host CPUs, node memory and
+            // fabric, and none of those goes in a rack slot; offering them here would be offering
+            // the player parts the room cannot hold.
+            var newest = new List<HardwareGeneration>();
+
+            foreach (var generation in HardwareCatalog.All)
+            {
+                if (generation.Class == HardwareClass.Accelerator && generation.IsAvailableOn(state.Date))
+                {
+                    newest.Add(generation);
+                }
+            }
+
+            // Newest first. In 2027 the top of a catalog ordered by release date is a 2022 card, and
+            // a shop that opens on five year old silicon is a shop nobody reads twice.
+            newest.Sort((left, right) => right.ReleaseDate.DayIndex.CompareTo(left.ReleaseDate.DayIndex));
+
+            // Three of them. The fleet screen is the place to read twenty two generations; the room
+            // needs the ones a player would actually put in a rack today.
+            for (var index = 0; index < newest.Count && index < 3; index++)
+            {
+                panel.Add(SiliconRow(simulation, newest[index], tier));
+            }
+
+            return panel;
+        }
+
+        /// <summary>
+        /// One generation, buyable from the room.
+        ///
+        /// The purchase is <see cref="CompanySimulation.TryBuyHardware"/>, unchanged and uncopied.
+        /// This screen adds a door, not a rule: the price, the tier gate, the scarcity and the
+        /// founder's discount are all decided where they already were, and a refusal here refuses
+        /// for the same reason it would on the fleet screen.
+        /// </summary>
+        private VisualElement SiliconRow(
+            CompanySimulation simulation, HardwareGeneration generation, ComputeTier tier)
+        {
+            var card = new Button(() =>
+            {
+                if (simulation.TryBuyHardware(generation.Id, SiliconBatch, tier, out _))
+                {
+                    changed?.Invoke();
+                }
+            });
+
+            card.AddToClassList("roombuild__card");
+
+            var name = new Label(generation.DisplayName.ToUpperInvariant());
+            name.AddToClassList("roombuild__name");
+            card.Add(name);
+
+            card.Add(UiParts.StatLine(Loc.T("room.silicon.batch"), SiliconBatch.ToString()));
+
+            // Heat for the whole batch, because that is what decides whether it fits the cabinets
+            // already on the floor. Same unit the rack shop prints its cooling in, one rail apart.
+            card.Add(UiParts.StatLine(Loc.T("rack.cooling"),
+                UiFormat.Kilowatts(generation.PowerKilowatts * SiliconBatch)));
+
+            if (generation.IsProjection)
+            {
+                var projected = new Label(Loc.T("room.silicon.projected"));
+                projected.AddToClassList("roombuild__hint");
+                card.Add(projected);
+            }
+
+            card.tooltip = generation.DisplayName + ". " + Loc.T("room.silicon.buy_note");
+
+            return card;
+        }
+
         private VisualElement ShopRow(CompanySimulation simulation, ServerRackDefinition definition)
         {
             var affordable = simulation.State.CashUsd >= definition.PriceUsd;
