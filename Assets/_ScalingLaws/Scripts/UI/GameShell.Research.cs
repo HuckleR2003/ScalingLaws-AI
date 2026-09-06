@@ -58,6 +58,11 @@ namespace ScalingLaws.UI
             var funding = BuildResearchFunding();
             var placedFunding = false;
 
+            // The pips from the previous draw are gone from the tree; keeping their buttons would
+            // mean lighting elements nobody can see and, on a tree that changed, lighting the wrong
+            // ones. Rebuilt with the board it belongs to.
+            treePips.Clear();
+
             if (researchProblem.Length > 0)
             {
                 var trouble = new Label(researchProblem);
@@ -634,10 +639,12 @@ namespace ScalingLaws.UI
             button.RegisterCallback<ClickEvent>(click =>
             {
                 selectedResearch = node.Id;
+                MarkTheRoadTo(node.Id);
                 ShowResearchCard(standing, click.position);
             });
 
             button.AddToClassList("tree-pip");
+            treePips[node.Id] = button;
             button.EnableInClassList("tree-pip--done", standing.IsUnlocked);
             button.EnableInClassList("tree-pip--running", standing.IsInProgress);
             button.EnableInClassList("tree-pip--ready", !standing.IsUnlocked && standing.CanStart);
@@ -673,6 +680,36 @@ namespace ScalingLaws.UI
             column.Add(label);
 
             return column;
+        }
+
+        /// <summary>Every pip currently on the board, so a selection can light one without a redraw.</summary>
+        private readonly Dictionary<ResearchNodeId, Button> treePips = new();
+
+        /// <summary>
+        /// Paints the selected node and, in red, everything it is waiting on.
+        ///
+        /// The chain comes from <see cref="ResearchTree.MissingPrerequisites"/> rather than being
+        /// walked here, so the board and the card cannot disagree about what is blocking a node, and
+        /// so the rule is testable without a panel.
+        ///
+        /// Every pip is cleared first. Without that the red accumulates across clicks and the board
+        /// ends up showing the union of every road the player has ever looked at.
+        /// </summary>
+        private void MarkTheRoadTo(ResearchNodeId id)
+        {
+            foreach (var pair in treePips)
+            {
+                pair.Value.EnableInClassList("tree-pip--needed", false);
+                pair.Value.EnableInClassList("tree-pip--picked", pair.Key == id);
+            }
+
+            foreach (var missing in ResearchTree.MissingPrerequisites(id, simulation.State.HasResearch))
+            {
+                if (treePips.TryGetValue(missing, out var pip))
+                {
+                    pip.EnableInClassList("tree-pip--needed", true);
+                }
+            }
         }
 
         private static IEnumerable<VisualElement> UnlockLines(ResearchNode node)
