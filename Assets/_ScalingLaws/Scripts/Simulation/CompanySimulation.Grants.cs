@@ -54,6 +54,28 @@ namespace ScalingLaws.Simulation
                 var grant = State.Grants[index];
                 var definition = grant.Definition;
 
+                // **A sustained term does not start until there is something to sustain.** With
+                // nothing on sale a company has no incidents, no load and no customers, so every
+                // one of these conditions is met by a company that is not trading at all, and the
+                // ninety days of "Safe first release" ran out into a payout for doing nothing.
+                //
+                // Counting goals are left alone: releasing three models or finishing two nodes is
+                // work the deadline exists to put pressure on, and pausing that clock would remove
+                // the only cost a counting grant has.
+                if (GrantCatalog.IsSustained(definition.Goal) && !grant.HasBegun)
+                {
+                    if (!GrantConditions.IsTrading(State))
+                    {
+                        continue;
+                    }
+
+                    grant.Begin();
+
+                    State.RaiseEvent(new CompanyEvent(
+                        CompanyEventType.GrantAccepted, State.Date,
+                        Loc.T("grant.event.begun", Loc.T(definition.NameKey), definition.TermDays)));
+                }
+
                 grant.Advance();
 
                 var reading = GrantConditions.Reading(
@@ -105,25 +127,54 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// The term was missed, so the advance goes back.
+        /// The term was missed, so the advance goes back, twice over.
         ///
         /// **Charged whether or not the company can afford it**, which is the point: an advance
         /// that could be kept by simply running out of money would make failing a grant a way of
         /// borrowing at nothing. Insolvency is checked later in the same tick and will catch it.
+        ///
+        /// **Twice, asked for by name, and returning it at par was the weaker rule.** An advance
+        /// repaid at exactly what was taken is an interest-free loan for the length of the term, so
+        /// the arithmetic said to accept everything on the board and hand back whatever did not
+        /// land. Doubling it means a programme has to be worth finishing before it is worth signing.
+        ///
+        /// The letter is the record. The banner and the wire both scroll, and this is a six figure
+        /// charge nobody agreed to on the day it happens.
         /// </summary>
         private void ReclaimGrant(GrantDefinition definition)
         {
-            State.PostCash(LedgerLine.GrantRepaid, definition.AdvanceUsd);
+            var charged = (long)Math.Round(definition.AdvanceUsd * GrantCatalog.ReclaimMultiple);
+
+            State.PostCash(LedgerLine.GrantRepaid, charged);
             State.Reputation += GrantCatalog.ReputationCostOfFailing;
 
             State.GrantQuietUntil[definition.Id] =
                 State.Date.AddDays(GrantCatalog.QuietDaysAfterDeclining).DayIndex;
 
+            var letter = State.Mail.Add(MailKind.Notice, State.Date,
+                BodyOf(definition),
+                Loc.T("grant.mail.reclaimed.subject", Loc.T(definition.NameKey)),
+                Loc.T("grant.mail.reclaimed.body",
+                    Loc.T(definition.NameKey),
+                    UiMoney(definition.AdvanceUsd),
+                    UiMoney(charged),
+                    GrantCatalog.QuietDaysAfterDeclining));
+
+            letter.AmountUsd = charged;
+
+            // **Closed on arrival, because the money has already gone.** `Mailbox.OwedUsd` totals
+            // the amount on every letter that is still open, so leaving this one open would have
+            // the inbox reporting a debt that was settled the moment it was incurred, with nothing
+            // anywhere that could clear it. The figure stays for the archive.
+            letter.IsClosed = true;
+            letter.Outcome = Loc.T("grant.mail.reclaimed.outcome", UiMoney(charged));
+
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.GrantLost, State.Date,
                 Loc.T("grant.event.reclaimed", Loc.T(definition.NameKey)),
-                definition.AdvanceUsd));
+                charged));
         }
+
 
         // ---- what the player does -----------------------------------------------------------------
 

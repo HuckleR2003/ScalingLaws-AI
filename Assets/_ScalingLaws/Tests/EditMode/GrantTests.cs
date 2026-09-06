@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
+using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
 
 namespace ScalingLaws.Tests.EditMode
@@ -212,6 +213,10 @@ namespace ScalingLaws.Tests.EditMode
         /// This is what separates the two shapes. Recovering before the closing date would make a
         /// sustained award identical to a counting one, and the whole reason it costs money to hold
         /// is that a single bad day ends it.
+        ///
+        /// The company has to be trading for any of that to mean anything. A sustained term does
+        /// not start until it is, so without the revenue below this fixture measures a term that
+        /// never began and reads a break that correctly did not happen.
         /// </summary>
         [Test]
         public void ASustainedAwardIsLostOnTheDayItBreaksAndRecoveringDoesNotSaveIt()
@@ -220,6 +225,7 @@ namespace ScalingLaws.Tests.EditMode
             var state = simulation.State;
 
             state.Reputation = 0.9;
+            state.LifetimeRevenueUsd = 500_000;
 
             var grant = Sign(simulation, GrantId.ContinuityAward);
 
@@ -333,6 +339,199 @@ namespace ScalingLaws.Tests.EditMode
                 Assert.That(double.IsNaN(reading), Is.False, $"{goal} read NaN.");
                 Assert.That(double.IsInfinity(reading), Is.False, $"{goal} read infinity.");
             }
+        }
+
+        // ---- the term, and what a missed one costs --------------------------------------------------
+
+        /// <summary>
+        /// A sustained term does not run while the company has nothing on sale.
+        ///
+        /// **This is a payout for doing nothing, and it was in the game.** "Safe first release"
+        /// measures incidents, and a company with no model has none, so signing it on day one and
+        /// walking away collected $400,000 and sixty research points ninety days later. Every
+        /// sustained goal has the same hole for the same reason: they describe how a company is run
+        /// and an empty office is trivially compliant with all of them.
+        /// </summary>
+        [Test]
+        public void ASustainedTermDoesNotRunBeforeTheCompanyIsTrading()
+        {
+            var simulation = Fresh();
+            var grant = Sign(simulation, GrantId.MinistrySafeStart);
+
+            Assume.That(GrantCatalog.IsSustained(grant.Definition.Goal), Is.True,
+                "this fixture is about a sustained award and that one has stopped being one");
+
+            for (var day = 0; day < 120; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(GrantConditions.IsTrading(simulation.State), Is.False,
+                "the company started selling something on its own, so this measures nothing");
+
+            Assert.That(grant.DaysElapsed, Is.Zero,
+                "The term ran past its own length against a company with nothing on sale. Ninety "
+                + "days of that pays out, which is guaranteed income with the calendar gate "
+                + "skipped, and the spine forbids exactly that.");
+
+            Assert.That(simulation.HeldGrants(), Has.Member(grant),
+                "and it must not quietly close either: waiting is not failing");
+        }
+
+        /// <summary>
+        /// A counting term starts the day it is signed, because the deadline is the whole cost.
+        ///
+        /// Releasing a model or finishing a node is work, and the date on it is the pressure. If
+        /// those waited too, a player could sign for everything and start the clock whenever it
+        /// suited them.
+        /// </summary>
+        [Test]
+        public void ACountingTermStartsCountingAtOnce()
+        {
+            var simulation = Fresh();
+            var grant = Sign(simulation, GrantId.MinistryFirstLine);
+
+            Assume.That(GrantCatalog.IsSustained(grant.Definition.Goal), Is.False);
+
+            simulation.AdvanceDay();
+            simulation.AdvanceDay();
+
+            Assert.That(grant.DaysElapsed, Is.EqualTo(2));
+        }
+
+        /// <summary>
+        /// The clock starts on the day the company starts trading, and never stops again.
+        ///
+        /// Retiring the last model must not pause it. A term the player can hold open is a term
+        /// with no deadline, and the deadline is the only cost a grant carries until it is missed.
+        /// </summary>
+        [Test]
+        public void TheTermStartsWhenTheCompanyDoesAndDoesNotStopAgain()
+        {
+            var simulation = Fresh();
+            var grant = Sign(simulation, GrantId.MinistrySafeStart);
+
+            simulation.AdvanceDay();
+            Assert.That(grant.HasBegun, Is.False);
+
+            simulation.State.LifetimeRevenueUsd = 250_000;
+            simulation.AdvanceDay();
+
+            Assert.That(grant.HasBegun, Is.True, "the company is trading and the term is still idle");
+            Assert.That(grant.DaysElapsed, Is.EqualTo(1));
+
+            simulation.State.LifetimeRevenueUsd = 0;
+            simulation.AdvanceDay();
+
+            Assert.That(grant.DaysElapsed, Is.EqualTo(2),
+                "the clock stopped when the trading did, so a player can hold a term open for as "
+                + "long as they like by taking the product down");
+        }
+
+        /// <summary>
+        /// Missing a term costs twice the advance.
+        ///
+        /// At par the advance is an interest-free loan for the length of the term, so the
+        /// arithmetic said to sign everything on the board and hand back whatever did not land.
+        /// </summary>
+        [Test]
+        public void MissingATermCostsTwiceWhatWasAdvanced()
+        {
+            var simulation = Fresh();
+            var definition = GrantCatalog.Get(GrantId.MinistryFirstLine);
+
+            var before = simulation.State.CashUsd;
+            Sign(simulation, GrantId.MinistryFirstLine);
+
+            Assert.That(simulation.State.CashUsd - before, Is.EqualTo(definition.AdvanceUsd),
+                "the advance did not arrive, so what follows is measuring the wrong thing");
+
+            var afterAdvance = simulation.State.CashUsd;
+
+            for (var day = 0; day <= definition.TermDays; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(simulation.HeldGrants().Any(held => held.Id == GrantId.MinistryFirstLine),
+                Is.False, "the term never closed");
+
+            var recovered = afterAdvance - simulation.State.CashUsd;
+
+            Assert.That(recovered, Is.GreaterThanOrEqualTo(definition.AdvanceUsd * 2),
+                $"Only ${recovered:N0} came back against an advance of "
+                + $"${definition.AdvanceUsd:N0}. Anything at or under par makes signing for "
+                + "everything and missing on purpose the strongest opening in the game.");
+        }
+
+        /// <summary>
+        /// And a letter says so, with both figures in it.
+        ///
+        /// The banner and the wire both scroll. This is a six figure charge the player did not
+        /// authorise on the day it happens, and the inbox is the one place in the game that keeps
+        /// something until it has been read.
+        /// </summary>
+        [Test]
+        public void MissingATermPutsALetterOnTheDesk()
+        {
+            var simulation = Fresh();
+            var definition = GrantCatalog.Get(GrantId.MinistryFirstLine);
+
+            Sign(simulation, GrantId.MinistryFirstLine);
+
+            var before = simulation.State.Mail.All.Count;
+
+            for (var day = 0; day <= definition.TermDays; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            var arrived = simulation.State.Mail.All
+                .Skip(before)
+                .Where(letter => letter.Subject.Contains(Loc.T(definition.NameKey)))
+                .ToList();
+
+            Assert.That(arrived, Is.Not.Empty,
+                "nothing reached the inbox, so the only notice of the charge was a line on a feed "
+                + "that scrolls");
+
+            Assert.That(arrived[0].AmountUsd,
+                Is.EqualTo((long)(definition.AdvanceUsd * GrantCatalog.ReclaimMultiple)),
+                "the letter quotes a different sum from the one that left the account");
+
+            Assert.That(arrived[0].IsClosed, Is.True,
+                "An open letter carrying an amount is a debt as far as the inbox is concerned: "
+                + "`Mailbox.OwedUsd` totals every one of them. This money left the account on the "
+                + "day it was charged, so an open letter would have the company owing it for the "
+                + "rest of the campaign with no button anywhere that could clear it.");
+
+            Assert.That(simulation.State.Mail.OwedUsd, Is.Zero,
+                "and that is what it would look like");
+        }
+
+        /// <summary>
+        /// An award saved before the term could wait is already running.
+        ///
+        /// Restarting it would hand the player back days they have already spent, on an award they
+        /// signed under the old rule.
+        /// </summary>
+        [Test]
+        public void AnAwardFromBeforeTheWaitIsAlreadyRunning()
+        {
+            var simulation = Fresh();
+            Sign(simulation, GrantId.MinistrySafeStart);
+
+            var data = SaveStore.Capture(simulation.State);
+            data.version = 51;
+            data.grantHeldBegun = new List<bool>();
+
+            var upgraded = SaveMigration.UpgradeV51ToV52(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(52));
+            Assert.That(upgraded.grantHeldBegun, Has.Count.EqualTo(upgraded.grantHeldIds.Count));
+            Assert.That(upgraded.grantHeldBegun, Has.All.True);
+
+            Assert.That(SaveStore.Restore(upgraded).Grants[0].HasBegun, Is.True);
         }
     }
 }

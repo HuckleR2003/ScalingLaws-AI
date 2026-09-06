@@ -417,7 +417,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 51;
+        public const int CurrentVersion = 52;
 
         public int version = CurrentVersion;
 
@@ -839,6 +839,15 @@ namespace ScalingLaws.Persistence
         public List<double> grantHeldBaselines = new();
         public List<int> grantHeldDaysElapsed = new();
         public List<bool> grantHeldBroken = new();
+
+        /// <summary>
+        /// Whether each held award's term has actually started.
+        ///
+        /// A sustained term waits for the company to be trading, so this decides whether tomorrow's
+        /// tick ages the award. Causal rather than a record, which is why it is here: dropping it
+        /// would restart the clock on every award in the save on the next load.
+        /// </summary>
+        public List<bool> grantHeldBegun = new();
 
         /// <summary>Programmes already seen through, so a body does not fund the same work twice.</summary>
         public List<int> grantsCompleted = new();

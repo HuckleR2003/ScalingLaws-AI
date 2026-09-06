@@ -32,6 +32,19 @@ namespace ScalingLaws.Simulation
         public int DaysElapsed { get; private set; }
 
         /// <summary>
+        /// Whether the term has started running.
+        ///
+        /// **A sustained condition cannot be tested against a company that is not trading.** With
+        /// nothing on sale there are no incidents, no load on the fleet and nobody being charged, so
+        /// every one of those conditions holds perfectly and the term runs out into a payout for
+        /// doing nothing. The clock starts on the first day the company has a product live.
+        ///
+        /// Causal, so it is saved. It is what tomorrow's tick reads to decide whether to age the
+        /// award, and this project has now been caught seven times by state that looked derived.
+        /// </summary>
+        public bool HasBegun { get; private set; }
+
+        /// <summary>
         /// Set the moment a sustained condition is broken, and never cleared.
         ///
         /// A sustained award is lost on the day it is broken rather than at the closing date,
@@ -52,12 +65,29 @@ namespace ScalingLaws.Simulation
 
         public void Advance() => DaysElapsed = Math.Min(TermDays, DaysElapsed + 1);
 
+        /// <summary>
+        /// Starts the term. Once, and never taken back.
+        ///
+        /// Retiring the last model does not stop the clock again. A term that could be paused would
+        /// be a term the player can hold open indefinitely, and the deadline is the entire pressure
+        /// a grant applies.
+        /// </summary>
+        public void Begin() => HasBegun = true;
+
         public void Break() => IsBroken = true;
 
-        public void Restore(int daysElapsed, bool broken)
+        /// <summary>
+        /// Puts a saved award back.
+        ///
+        /// <paramref name="begun"/> defaults to true because that is the honest reading of every
+        /// file written before the term could wait: those awards had been ageing since the day they
+        /// were signed, and starting them again would hand the player back the days already spent.
+        /// </summary>
+        public void Restore(int daysElapsed, bool broken, bool begun = true)
         {
             DaysElapsed = Math.Clamp(daysElapsed, 0, TermDays);
             IsBroken = broken;
+            HasBegun = begun;
         }
     }
 
@@ -136,6 +166,23 @@ namespace ScalingLaws.Simulation
 
             return reading >= target;
         }
+
+        /// <summary>
+        /// Whether the company is trading: something on sale, or money already taken for it.
+        ///
+        /// **What a sustained term waits for.** Both halves are needed and they are not the same
+        /// day. A model goes live before anybody has paid for it, so the first half starts the
+        /// clock on the day the product exists rather than on the day the first invoice clears; and
+        /// a company that has retired its last model has still been selling, so the second half
+        /// stops the clock being restartable by taking a product down.
+        ///
+        /// Read off figures the company already keeps, which is the rule every grant condition
+        /// follows: a term that starts on something the player cannot see on another screen is a
+        /// term they cannot plan around.
+        /// </summary>
+        public static bool IsTrading(CompanyState state) =>
+            state != null
+            && (LiveModelCount(state) > 0 || state.LifetimeRevenueUsd > 0L);
 
         /// <summary>
         /// Products actually on sale today.

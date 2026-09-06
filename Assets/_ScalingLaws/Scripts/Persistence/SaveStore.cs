@@ -390,6 +390,7 @@ namespace ScalingLaws.Persistence
                 data.grantHeldBaselines.Add(grant.Baseline);
                 data.grantHeldDaysElapsed.Add(grant.DaysElapsed);
                 data.grantHeldBroken.Add(grant.IsBroken);
+                data.grantHeldBegun.Add(grant.HasBegun);
             }
 
             foreach (var id in state.GrantsCompleted)
@@ -1035,7 +1036,12 @@ namespace ScalingLaws.Persistence
                     new GameDate(safe.grantHeldStartDays[index]),
                     safe.grantHeldBaselines[index]);
 
-                grant.Restore(safe.grantHeldDaysElapsed[index], safe.grantHeldBroken[index]);
+                // A file from before the term could wait has no column here, and the default is
+                // true rather than false: those awards had been ageing since the day they were
+                // signed, so starting them again would hand back days already spent.
+                var begun = index >= safe.grantHeldBegun.Count || safe.grantHeldBegun[index];
+
+                grant.Restore(safe.grantHeldDaysElapsed[index], safe.grantHeldBroken[index], begun);
                 state.Grants.Add(grant);
             }
 

@@ -291,6 +291,17 @@ namespace ScalingLaws.Data
         /// Written as a switch rather than a range check on the enum, so adding a member forces a
         /// decision here instead of silently landing on whichever side the numbers fall.
         /// </summary>
+        /// <summary>
+        /// What a missed term costs, as a multiple of the advance.
+        ///
+        /// **Two, and returning it at par was the weaker rule.** An advance repaid at exactly what
+        /// was taken is an interest-free loan for the length of the term, so signing everything on
+        /// the board and handing back whatever did not land was strictly better than choosing. At
+        /// two a programme has to be worth finishing before it is worth signing, which is the
+        /// decision these are here to create.
+        /// </summary>
+        public const double ReclaimMultiple = 2.0;
+
         public static bool IsSustained(GrantGoal goal) => goal switch
         {
             GrantGoal.SustainFreeTier => true,

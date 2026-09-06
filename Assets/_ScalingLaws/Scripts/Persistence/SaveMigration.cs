@@ -152,6 +152,7 @@ namespace ScalingLaws.Persistence
                     48 => UpgradeV48ToV49(current),
                     49 => UpgradeV49ToV50(current),
                     50 => UpgradeV50ToV51(current),
+                    51 => UpgradeV51ToV52(current),
                     _ => current
                 };
             }
@@ -1786,6 +1787,37 @@ namespace ScalingLaws.Persistence
         ///
         /// It fills itself in over the following month of play and costs the player nothing.
         /// </summary>
+        /// <summary>
+        /// v51 to v52: every award already held is already running.
+        ///
+        /// A sustained term now waits for the company to be trading before its clock starts, which
+        /// is what stops "Safe first release" paying out to a company with nothing on sale. A v51
+        /// award has been ageing since the day it was signed and the days it has spent are written
+        /// down in `grantHeldDaysElapsed`.
+        ///
+        /// **So the flag goes to true, which is the reading the save itself supports.** Setting it
+        /// false would restart terms mid-campaign and hand the player back days they have already
+        /// used, on awards they signed under the old rule.
+        /// </summary>
+        public static SaveData UpgradeV51ToV52(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 52;
+
+            data.grantHeldBegun = new List<bool>();
+
+            for (var index = 0; index < (data.grantHeldIds?.Count ?? 0); index++)
+            {
+                data.grantHeldBegun.Add(true);
+            }
+
+            return data;
+        }
+
         /// <summary>
         /// v50 to v51: cases learn which chair they were filed from, and a threat can be open.
         ///
