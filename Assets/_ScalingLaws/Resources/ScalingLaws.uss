@@ -2396,7 +2396,7 @@
 /* Twenty five percent up from 48. A node is the main control on this screen and it was smaller
    than the buttons on every other one. */
 
-.tree-pip:hover {
+.tree-pip.tree-pip:hover {
     border-color: rgb(120, 176, 250);
     scale: 1.08 1.08;
 }
@@ -2404,35 +2404,61 @@
 /* **Lit and filled, not a slightly different border.** A node that can be started now and one that
    needs two more first were a hue apart, which is a distinction nobody makes at a glance across
    fifty of them. */
-.tree-pip--ready {
+.tree-pip.tree-pip--ready {
     border-color: rgb(120, 206, 156);
     border-width: 2px;
     background-color: rgba(30, 84, 56, 0.55);
     scale: 1.05 1.05;
 }
 
-.tree-pip--ready:hover {
+.tree-pip.tree-pip--ready:hover {
     border-color: rgb(160, 232, 188);
     scale: 1.14 1.14;
 }
 
 /* Neither ready, running nor done. Dimmed rather than hidden: the shape of the tree ahead is worth
    seeing, and a node nobody can click yet should look like one. */
-.tree-pip--locked {
+.tree-pip.tree-pip--locked {
     opacity: 0.42;
 }
 
-.tree-pip--running {
+.tree-pip.tree-pip--running {
     border-color: rgb(214, 162, 62);
     background-color: rgba(120, 84, 20, 0.35);
 }
 
-.tree-pip--done {
-    border-color: rgb(112, 200, 136);
-    background-color: rgba(30, 72, 46, 0.55);
+/* **Done is blue, not green.** Ready and done were two greens a hue apart, which across fifty nodes
+   is not a distinction anybody makes at a glance: the player scanning for "what can I start" kept
+   stopping on nodes already finished. Blue also fills the disc rather than tinting its edge, so a
+   finished node reads from across the board instead of from its border. The icons are near-white
+   line work, so the fill stays saturated enough to keep them legible. */
+
+.tree-pip.tree-pip--done {
+    border-color: rgb(150, 205, 255);
+    background-color: rgba(38, 104, 170, 0.85);
 }
 
-.tree-pip--picked {
+.tree-pip--done .tree-pip__icon {
+    opacity: 1;
+}
+
+/* What is standing between you and the node you just clicked. Applied to the prerequisites of the
+   selected node, and to every prerequisite of those, so the red is the whole road rather than the
+   next step. Cleared on the next click, because it answers one question about one node. */
+
+.tree-pip.tree-pip--needed {
+    border-color: rgb(232, 96, 96);
+    border-width: 3px;
+    background-color: rgba(122, 32, 32, 0.62);
+    opacity: 1;
+    scale: 1.05 1.05;
+}
+
+.tree-pip--needed .tree-pip__icon {
+    opacity: 1;
+}
+
+.tree-pip.tree-pip--picked {
     border-color: rgb(178, 158, 226);
     background-color: rgba(70, 56, 108, 0.55);
 }
@@ -13923,6 +13949,7 @@
     color: rgb(124, 141, 166);
     margin-top: 14px;
     margin-bottom: 6px;
+    flex-shrink: 0;
 }
 
 .roombuild__card {
@@ -13941,6 +13968,13 @@
        flex-start sizes each row to its own text, so the two labels touched: `SLOTY4`. */
     align-items: stretch;
     -unity-text-align: middle-left;
+
+    /* **The card itself, not only its children.** `.roombuild__card > *` below protects what is
+       inside a card that is being squeezed, which protects nothing: the scroller compresses the
+       card, the card clips, and the last stat row of every cabinet disappears under the next one.
+       Found by rendering the rail once the silicon section made the column tall enough to show it;
+       the fault was already there, one row further down. */
+    flex-shrink: 0;
 }
 
 .roombuild__card:hover {
@@ -13952,6 +13986,16 @@
    other, and the shop reads as overlapping text. Same fault the creator pages hit twice. */
 .roombuild__card > * {
     flex-shrink: 0;
+}
+
+/* The silicon block is not a card, so it says the same thing for itself and its rows. */
+.roombuild__silicon,
+.roombuild__silicon > * {
+    flex-shrink: 0;
+}
+
+.roombuild__silicon {
+    margin-bottom: 10px;
 }
 
 .roombuild__scroll {
@@ -14002,6 +14046,7 @@
     color: rgb(124, 141, 166);
     white-space: normal;
     margin-top: 4px;
+    flex-shrink: 0;
 }
 
 .roombuild__sell {
