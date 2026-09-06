@@ -38,7 +38,59 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
-Nothing yet. The next thing that changes goes here.
+### Added
+
+- **The server room sells what goes in the cabinets.** Everything the room offered was furniture: buy
+  a cabinet, carry it, stand it, sell it, fit a fan. The accelerators those cabinets exist to hold
+  were bought on a different screen and the room never mentioned them, so a basement opened early was
+  four empty frames with no parts and no way to get any. The build rail now says how many cards the
+  company owns, how many are standing down here and how many slots are empty, and sells the three
+  newest generations straight from the room. It is the same purchase the fleet screen makes, so the
+  price, the tier gate and the founder's discount are all decided where they already were.
+
+- **When the room cannot sell you a card, it says why.** The basement can be opened on day one as
+  Emil's gift, while accelerators need the colocated tier and its own gates, so there is a real
+  stretch of the game where the room is furniture by design. It prints the tier's own reason rather
+  than a padlock. A floor with no cabinets on it says that instead, because buying silicon for a room
+  with nowhere to put it is money spent on nothing.
+
+### Changed
+
+- **A finished research node is blue.** Done and startable were two greens a hue apart, which across
+  fifty nine nodes is not a distinction anybody makes at a glance, and the player scanning for "what
+  can I start" kept stopping on nodes already finished. Blue also fills the disc rather than tinting
+  its edge, so a finished node reads from across the board.
+
+- **Clicking a node you cannot start shows what is blocking it.** The prerequisites you do not have
+  light red on the board, immediately, instead of being named in one sentence inside the card. A red
+  node is still a node, so clicking it shows its own, and the board walks you back one rung at a time.
+
+### Fixed
+
+- **The research board had never drawn a single one of its state colours.** Ready, running, done and
+  picked all set a border and a fill, and the base rule for a node sits later in the stylesheet with
+  equal specificity, so it won every one of them. What survived was what the base does not set: the
+  dimming on a locked node and the hover scale, which is why the tree looked like it had some states.
+  Found by changing the "done" colour, rendering the board and measuring the pixel: it came back at
+  the same plate as before.
+
+- **The cabinet shop clipped its own rows.** Each card protected its children from being squeezed and
+  nothing protected the card, so a full rail compressed the cards themselves and the last line of
+  every cabinet, the price, disappeared under the next one. Section headings did the same.
+
+### Save compatibility
+
+**No change.** Nothing here adds state: the room reads figures it already had, and the research board
+is colour. A save from 0.2.0 opens with everything in it.
+
+### Under the hood
+
+- 1088 EditMode tests across 114 fixtures, and 31 PlayMode across 8.
+- 2,497 phrases in the book, both languages complete, none written twice.
+- `ResearchTree.MissingPrerequisites` is a pure function in `Data/`, so the board and the card cannot
+  disagree about what blocks a node. It started transitive and the guard rejected that: walking the
+  whole chain lit sixteen of the fifty nine nodes at once, which is a quarter of the board in one
+  colour. The rule is the direct prerequisites and the test records why.
 
 ---
 
