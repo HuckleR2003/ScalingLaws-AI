@@ -36,171 +36,6 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ---
 
-## [Unreleased]
-
-### Added
-
-- **The server room sells what goes in the cabinets.** Everything the room offered was furniture: buy
-  a cabinet, carry it, stand it, sell it, fit a fan. The accelerators those cabinets exist to hold
-  were bought on a different screen and the room never mentioned them, so a basement opened early was
-  four empty frames with no parts and no way to get any. The build rail now says how many cards the
-  company owns, how many are standing down here and how many slots are empty, and sells the three
-  newest generations straight from the room. It is the same purchase the fleet screen makes, so the
-  price, the tier gate and the founder's discount are all decided where they already were.
-
-- **Sound and music in the Escape menu.** Both sliders existed and neither was reachable from inside
-  a campaign: they are on the main menu, so anybody who found the office loop loud had to leave the
-  game they were playing to turn it down. Two independent controls side by side rather than one
-  scaling the other, which is the shape they were built in.
-
-- **When the room cannot sell you a card, it says why.** The basement can be opened on day one as
-  Emil's gift, while accelerators need the colocated tier and its own gates, so there is a real
-  stretch of the game where the room is furniture by design. It prints the tier's own reason rather
-  than a padlock. A floor with no cabinets on it says that instead, because buying silicon for a room
-  with nowhere to put it is money spent on nothing.
-
-### Changed
-
-- **Missing a grant costs twice the advance, and a letter says so.** Handing back exactly what was
-  taken made an advance an interest-free loan for the length of the term, so the arithmetic said to
-  sign for everything on the board and give back whatever did not land. At twice, a programme has to
-  be worth finishing before it is worth signing. The letter is there because the banner and the wire
-  both scroll and this is a six figure charge on a day nobody was expecting one.
-
-- **The task list rolls up away from the site.** Every task on it is something you do at the
-  headquarters, so on the fleet screen or in the basement it was a list of instructions for
-  somewhere you are not, at full weight, in the corner where the product and upgrade banners live.
-  It becomes the counter and nothing else out there, at 35% more transparent, and a click opens it
-  again. The click is forgotten on the way home. The rolled-up pill carries no dismiss cross,
-  because at that size the cross and the counter are one target and only one of them cannot be
-  undone.
-
-- **A node blocked by another node says NEEDS FIRST, on a red band.** The other three states are a
-  status and a colour is enough for those; this one is an instruction, and it is the same red the
-  board paints the road in, so the banner on the card and the pips that just lit up behind it read
-  as one thing.
-
-- **Pressing NEW MODEL during the tutorial continues the tour.** The step describing the model hub
-  rings that door and the step after it is the one waiting for it to be clicked, so a player who
-  read the line and pressed the lit button was told to press NEXT and then told to click a door they
-  were already through. One step of lookahead, deliberately not more: a screen change two steps
-  ahead is somebody wandering off, not somebody keeping up.
-
-- **A finished research node is blue.** Done and startable were two greens a hue apart, which across
-  fifty nine nodes is not a distinction anybody makes at a glance, and the player scanning for "what
-  can I start" kept stopping on nodes already finished. Blue also fills the disc rather than tinting
-  its edge, so a finished node reads from across the board.
-
-- **Clicking a node you cannot start shows what is blocking it.** The prerequisites you do not have
-  light red on the board, immediately, instead of being named in one sentence inside the card. A red
-  node is still a node, so clicking it shows its own, and the board walks you back one rung at a time.
-
-### Fixed
-
-- **The research board had never drawn a single one of its state colours.** Ready, running, done and
-  picked all set a border and a fill, and the base rule for a node sits later in the stylesheet with
-  equal specificity, so it won every one of them. What survived was what the base does not set: the
-  dimming on a locked node and the hover scale, which is why the tree looked like it had some states.
-  Found by changing the "done" colour, rendering the board and measuring the pixel: it came back at
-  the same plate as before.
-
-- **The cabinet shop clipped its own rows.** Each card protected its children from being squeezed and
-  nothing protected the card, so a full rail compressed the cards themselves and the last line of
-  every cabinet, the price, disappeared under the next one. Section headings did the same.
-
-- **The free research node was free straight away, not the next morning.** Emil pays for the
-  company's first node, and a player standing on the research screen when he says so watched every
-  node keep its price until a day rolled over. Nothing was broken underneath: the favour was granted
-  the moment he offered it, and the tree they were looking at had been drawn a second earlier. The
-  page is now rebuilt when a gift lands on it, which happens once in a campaign.
-
-- **The tutorial no longer dies at step 44.** Three of the fifty seven steps wait for the player to
-  do something rather than for a button, and they were waiting on the event rather than on the
-  company. Release your first model while he is still explaining how to release one and the only
-  `model released` this campaign will ever raise has gone past the step that needed it; the tour then
-  waits forever for a second, on a step that draws no NEXT. Every step that waits now asks whether
-  the thing has already been done, so a player running ahead of the tour is caught up rather than
-  stranded. It also explains the oddest half of the report: starting an upgrade raised that event
-  again, which is why he suddenly continued.
-
-- **The game refuses in Polish now.** When you try something the game will not allow, it tells you
-  why, and seventy nine of those sentences were English in the Polish build: the company is
-  insolvent, a run is already in flight, that needs a research node first. They survived eleven
-  passes over the text because they are not written where screens are drawn. They are written beside
-  the rules, in a folder nobody had thought to search for player-facing words.
-
-- **Three pictures that were already in the game and were never drawn.** The model creator has eight
-  stages and showed art on two of them, while the illustrations for the data and compute stages sat
-  in the same folder as the two being used. The compute screen was the one screen about the fleet
-  with a bare heading, and its banner had been on disk the whole time. Found by walking every
-  resource folder in both directions: what the code asks for against what is there, and what is
-  there against what anybody asks for.
-
-- **The menu, the banner, the creator, the team page, the bank, the site, research, compute and
-  marketing** all read their words from the phrase book. That is the last of the large screens. The
-  book is at 2,722 phrases a language, up from 2,505, and every one of them exists in both.
-
-- **A grant could be signed, ignored, and paid out.** "Safe first release" asks that nothing goes
-  wrong for ninety days, and nothing goes wrong at a company with no model, no users and nothing on
-  sale. Accepting it on the first morning and walking away collected $400,000 and sixty research
-  points three months later. Every sustained programme had the same hole for the same reason: they
-  describe how a company is run, and an empty office complies with all of them perfectly. A
-  sustained term now starts on the day the company has something to sell, and once it starts it
-  runs; taking the product back down does not stop the clock.
-
-- **The map opened zoomed into America.** Your lab's page picked a region and a country before you
-  had looked at it, and that was not only a view: the country decides the tax rate, what
-  accelerators cost, how fast research runs and how hard the local competition is, so a player who
-  never touched the map was quietly given four American numbers. Nothing is chosen now, the map
-  opens on the world, and the company cannot be founded until you have said where it sits. Same
-  reasoning as the founder's name, which stopped being pre-filled for the same reason.
-
-- **The Polish stopped assuming you are a man.** The game has no gender field and never asks, so
-  eight sentences were guessing. Most of that was fixed a day earlier; what survived are the forms a
-  search for past-tense endings cannot see, including the tutorial's skip button, which every player
-  reads in their first minute.
-
-- **Five sentences promised a number the game does not use.** A reasoning model's serving bill is
-  2.60 and the text said two and a half. Single precision is 1.30 and the text said a third. The
-  tutorial promised a zloty in a game denominated in dollars, and apartments and cars that do not
-  exist in it. Token prices fall to 44.9% a year and the README called that roughly half. No
-  constant moved; the sentences did.
-
-- **The research card said LOCKED in English.** Four of its five states were written into the code
-  rather than the phrase book, so a Polish player read them in English next to a Polish title. It
-  also said the same word for two different things: short of points is a matter of waiting, and
-  short of a prerequisite is another node to go and start.
-
-### Save compatibility
-
-**Save 52.** One new field: whether a grant's term has actually started running. A campaign from 51
-opens with every award it holds already running, which is what those awards were doing, and the days
-they have spent are the days the file records. Nothing else changed, and nothing is dropped.
-
-### Under the hood
-
-- 1115 EditMode tests across 117 fixtures, and 31 PlayMode across 8.
-- 2,722 phrases in the book, both languages complete, none written twice.
-- Seven finished fixes came in from Samanta's side, built on a snapshot thirty commits back,
-  so none of the fourteen files could be copied blind. Nine were byte-identical to that base
-  and were taken as they came; five had moved here and were merged three ways. Six conflicts,
-  every one of them where this side had been working the same day, and one of those was not a
-  conflict at all: a working copy in CRLF against a delivery in LF reports an entire file as
-  one conflict, and taking the delivered file at that point would have reverted an afternoon.
-- Six delivered keys were dropped rather than added, each because the only line that would
-  have read it is a line where the local version was kept.
-- Two of the tests written for the volume sliders were deleted the same hour: an EditMode element
-  has no panel, so setting a slider's value dispatches no change event, and the pair of them were
-  measuring an assignment and a callback that never ran. One of the two passed. What replaced them
-  reads the sliders back off the settings, which is the half that catches a music control wired to
-  the effects.
-- `ResearchTree.MissingPrerequisites` is a pure function in `Data/`, so the board and the card cannot
-  disagree about what blocks a node. It started transitive and the guard rejected that: walking the
-  whole chain lit sixteen of the fifty nine nodes at once, which is a quarter of the board in one
-  colour. The rule is the direct prerequisites and the test records why.
-
----
-
 ## [0.2.0] - 2026-09-06
 
 **A government will put a country on your models, and it will look at five years first.** Era five
@@ -228,6 +63,26 @@ of three. The founder can be a woman, which forty six Polish lines had been quie
 otherwise.
 
 ### Added
+
+- **The server room sells what goes in the cabinets.** Everything the room offered was furniture: buy
+  a cabinet, carry it, stand it, sell it, fit a fan. The accelerators those cabinets exist to hold
+  were bought on a different screen and the room never mentioned them, so a basement opened early was
+  four empty frames with no parts and no way to get any. The build rail now says how many cards the
+  company owns, how many are standing down here and how many slots are empty, and sells the three
+  newest generations straight from the room. It is the same purchase the fleet screen makes, so the
+  price, the tier gate and the founder's discount are all decided where they already were.
+
+- **Sound and music in the Escape menu.** Both sliders existed and neither was reachable from inside
+  a campaign: they are on the main menu, so anybody who found the office loop loud had to leave the
+  game they were playing to turn it down. Two independent controls side by side rather than one
+  scaling the other, which is the shape they were built in.
+
+- **When the room cannot sell you a card, it says why.** The basement can be opened on day one as
+  Emil's gift, while accelerators need the colocated tier and its own gates, so there is a real
+  stretch of the game where the room is furniture by design. It prints the tier's own reason rather
+  than a padlock. A floor with no cabinets on it says that instead, because buying silicon for a room
+  with nowhere to put it is money spent on nothing.
+
 
 - **The founder can be a woman.** Polish puts gender in the past tense, so forty six lines were
   telling the player what *he* had done: "Sprzedałeś firmę", "Gdzie utknąłeś?". All of them are
@@ -444,6 +299,41 @@ otherwise.
 
 ### Changed
 
+- **Missing a grant costs twice the advance, and a letter says so.** Handing back exactly what was
+  taken made an advance an interest-free loan for the length of the term, so the arithmetic said to
+  sign for everything on the board and give back whatever did not land. At twice, a programme has to
+  be worth finishing before it is worth signing. The letter is there because the banner and the wire
+  both scroll and this is a six figure charge on a day nobody was expecting one.
+
+- **The task list rolls up away from the site.** Every task on it is something you do at the
+  headquarters, so on the fleet screen or in the basement it was a list of instructions for
+  somewhere you are not, at full weight, in the corner where the product and upgrade banners live.
+  It becomes the counter and nothing else out there, at 35% more transparent, and a click opens it
+  again. The click is forgotten on the way home. The rolled-up pill carries no dismiss cross,
+  because at that size the cross and the counter are one target and only one of them cannot be
+  undone.
+
+- **A node blocked by another node says NEEDS FIRST, on a red band.** The other three states are a
+  status and a colour is enough for those; this one is an instruction, and it is the same red the
+  board paints the road in, so the banner on the card and the pips that just lit up behind it read
+  as one thing.
+
+- **Pressing NEW MODEL during the tutorial continues the tour.** The step describing the model hub
+  rings that door and the step after it is the one waiting for it to be clicked, so a player who
+  read the line and pressed the lit button was told to press NEXT and then told to click a door they
+  were already through. One step of lookahead, deliberately not more: a screen change two steps
+  ahead is somebody wandering off, not somebody keeping up.
+
+- **A finished research node is blue.** Done and startable were two greens a hue apart, which across
+  fifty nine nodes is not a distinction anybody makes at a glance, and the player scanning for "what
+  can I start" kept stopping on nodes already finished. Blue also fills the disc rather than tinting
+  its edge, so a finished node reads from across the board.
+
+- **Clicking a node you cannot start shows what is blocking it.** The prerequisites you do not have
+  light red on the board, immediately, instead of being named in one sentence inside the card. A red
+  node is still a node, so clicking it shows its own, and the board walks you back one rung at a time.
+
+
 - **A training run no longer takes your product off the screen.** Starting a second model used to
   replace the corner banner with the run for the two hundred days it takes: no name, no users, no
   mood, no way through to the management desk, while the company still had something on sale the
@@ -519,6 +409,81 @@ otherwise.
   the shell's own headers, banners and tooltips.
 
 ### Fixed
+
+- **The research board had never drawn a single one of its state colours.** Ready, running, done and
+  picked all set a border and a fill, and the base rule for a node sits later in the stylesheet with
+  equal specificity, so it won every one of them. What survived was what the base does not set: the
+  dimming on a locked node and the hover scale, which is why the tree looked like it had some states.
+  Found by changing the "done" colour, rendering the board and measuring the pixel: it came back at
+  the same plate as before.
+
+- **The cabinet shop clipped its own rows.** Each card protected its children from being squeezed and
+  nothing protected the card, so a full rail compressed the cards themselves and the last line of
+  every cabinet, the price, disappeared under the next one. Section headings did the same.
+
+- **The free research node was free straight away, not the next morning.** Emil pays for the
+  company's first node, and a player standing on the research screen when he says so watched every
+  node keep its price until a day rolled over. Nothing was broken underneath: the favour was granted
+  the moment he offered it, and the tree they were looking at had been drawn a second earlier. The
+  page is now rebuilt when a gift lands on it, which happens once in a campaign.
+
+- **The tutorial no longer dies at step 44.** Three of the fifty seven steps wait for the player to
+  do something rather than for a button, and they were waiting on the event rather than on the
+  company. Release your first model while he is still explaining how to release one and the only
+  `model released` this campaign will ever raise has gone past the step that needed it; the tour then
+  waits forever for a second, on a step that draws no NEXT. Every step that waits now asks whether
+  the thing has already been done, so a player running ahead of the tour is caught up rather than
+  stranded. It also explains the oddest half of the report: starting an upgrade raised that event
+  again, which is why he suddenly continued.
+
+- **The game refuses in Polish now.** When you try something the game will not allow, it tells you
+  why, and seventy nine of those sentences were English in the Polish build: the company is
+  insolvent, a run is already in flight, that needs a research node first. They survived eleven
+  passes over the text because they are not written where screens are drawn. They are written beside
+  the rules, in a folder nobody had thought to search for player-facing words.
+
+- **Three pictures that were already in the game and were never drawn.** The model creator has eight
+  stages and showed art on two of them, while the illustrations for the data and compute stages sat
+  in the same folder as the two being used. The compute screen was the one screen about the fleet
+  with a bare heading, and its banner had been on disk the whole time. Found by walking every
+  resource folder in both directions: what the code asks for against what is there, and what is
+  there against what anybody asks for.
+
+- **The menu, the banner, the creator, the team page, the bank, the site, research, compute and
+  marketing** all read their words from the phrase book. That is the last of the large screens. The
+  book is at 2,722 phrases a language, up from 2,505, and every one of them exists in both.
+
+- **A grant could be signed, ignored, and paid out.** "Safe first release" asks that nothing goes
+  wrong for ninety days, and nothing goes wrong at a company with no model, no users and nothing on
+  sale. Accepting it on the first morning and walking away collected $400,000 and sixty research
+  points three months later. Every sustained programme had the same hole for the same reason: they
+  describe how a company is run, and an empty office complies with all of them perfectly. A
+  sustained term now starts on the day the company has something to sell, and once it starts it
+  runs; taking the product back down does not stop the clock.
+
+- **The map opened zoomed into America.** Your lab's page picked a region and a country before you
+  had looked at it, and that was not only a view: the country decides the tax rate, what
+  accelerators cost, how fast research runs and how hard the local competition is, so a player who
+  never touched the map was quietly given four American numbers. Nothing is chosen now, the map
+  opens on the world, and the company cannot be founded until you have said where it sits. Same
+  reasoning as the founder's name, which stopped being pre-filled for the same reason.
+
+- **The Polish stopped assuming you are a man.** The game has no gender field and never asks, so
+  eight sentences were guessing. Most of that was fixed a day earlier; what survived are the forms a
+  search for past-tense endings cannot see, including the tutorial's skip button, which every player
+  reads in their first minute.
+
+- **Five sentences promised a number the game does not use.** A reasoning model's serving bill is
+  2.60 and the text said two and a half. Single precision is 1.30 and the text said a third. The
+  tutorial promised a zloty in a game denominated in dollars, and apartments and cars that do not
+  exist in it. Token prices fall to 44.9% a year and the README called that roughly half. No
+  constant moved; the sentences did.
+
+- **The research card said LOCKED in English.** Four of its five states were written into the code
+  rather than the phrase book, so a Polish player read them in English next to a Polish title. It
+  also said the same word for two different things: short of points is a matter of waiting, and
+  short of a prerequisite is another node to go and start.
+
 
 - **A founder nobody named was called "Anonymous" on their own product page.** Reported by a
   playtester in August and answered in two places out of five: the name field stopped being
@@ -657,8 +622,14 @@ otherwise.
 
 ### Save compatibility
 
-Save format **v51**. A campaign started on 0.1.0 or any version since opens here and keeps
+Save format **v52**. A campaign started on 0.1.0 or any version since opens here and keeps
 everything in it.
+
+**v52 is one field: whether a grant's term has actually started running.** A sustained programme now
+waits for the company to be trading before its clock starts, so a file from v51 opens with every
+award it holds already running, which is what those awards were doing. The days they have spent are
+the days the file records, and starting them again would hand back time already used on terms signed
+under the old rule.
 
 Two more things are new since v49. **Each model keeps its own last month of trading**, which is what
 the second corner banner draws; an older file starts that empty, because a day's take is a share of
@@ -700,8 +671,16 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1079 EditMode tests across 113 fixtures, and 31 PlayMode across 8.
-- 2,489 phrases in the book, both languages complete, none written twice.
+- 1115 EditMode tests across 117 fixtures, and 31 PlayMode across 8. Measured on the day of the
+  build, not carried forward: three numbers in this project's own documents were wrong for months
+  because they were quoted from a file instead of counted.
+- 2,722 phrases in the book, both languages complete, none written twice.
+- 59 research nodes across five eras and four tracks, and **every one of them now has an icon**. The
+  last nine arrived as files in `Art/` rather than `Resources/`, which is the only folder
+  `Resources.Load` can see, so all nine would have drawn an empty disc with no error and nothing in
+  the log. The same mistake, with six files, is recorded in a comment directly above the table they
+  were added to.
+- 184 source files changed since 0.1.0: 30,575 lines added, 2,604 removed, across 96 commits.
 - **The whole cash achievement ladder was unreachable, and now it is measured.** Fifty billion and
   two hundred and fifty billion were marked unverified; the probe found that even the *first* rung at
   a hundred million was above the best campaign anybody had played. Across five playing styles over
