@@ -2,6 +2,7 @@ using System;
 using ScalingLaws.Data;
 using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -368,6 +369,15 @@ namespace ScalingLaws.UI
             var block = new VisualElement();
             block.AddToClassList("pause__settings");
 
+            // **First, because it is the setting somebody opens this page in a hurry to reach.**
+            // Neither slider was here at all: both live on the main menu, so a player who wanted the
+            // office loop quieter had to leave the campaign to do it.
+            block.Add(Volume("settings.volume", "settings.volume.note",
+                GameSettings.MasterVolume, GameSettings.SetMasterVolume));
+
+            block.Add(Volume("settings.music", "settings.music.note",
+                GameSettings.MusicVolume, GameSettings.SetMusicVolume));
+
             var autosave = new VisualElement();
             autosave.AddToClassList("pause__setting");
 
@@ -410,6 +420,58 @@ namespace ScalingLaws.UI
 
             block.Add(Toggle("pause.fullscreen", GameSettings.Fullscreen,
                 value => GameSettings.SetFullscreen(value)));
+
+            return block;
+        }
+
+        /// <summary>
+        /// One volume slider with its own reading.
+        ///
+        /// **It does not go through `changed`.** Every other control on this page redraws the menu
+        /// when it is touched, which is right for a chip that has to light up and fatal for a
+        /// slider: rebuilding the page mid-drag destroys the handle under the cursor, which is
+        /// exactly the bug that stopped the first tutorial playtest. `GameSettings` applies the
+        /// value itself and the reading beside it is updated in place.
+        ///
+        /// The note is drawn under the name rather than in a tooltip, because the difference
+        /// between these two is the whole reason there are two of them.
+        /// </summary>
+        private static VisualElement Volume(string key, string noteKey, float current,
+            Action<float> set)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("pause__volume");
+
+            var row = new VisualElement();
+            row.AddToClassList("pause__setting");
+
+            var label = new Label(Loc.T(key));
+            label.AddToClassList("pause__label");
+            row.Add(label);
+
+            var reading = new Label(Mathf.RoundToInt(current * 100f) + "%");
+            reading.AddToClassList("pause__reading");
+
+            var slider = new Slider(0f, 100f) { value = current * 100f };
+            slider.AddToClassList("pause__slider");
+
+            slider.RegisterValueChangedCallback(evt =>
+            {
+                set(evt.newValue / 100f);
+                reading.text = Mathf.RoundToInt(evt.newValue) + "%";
+            });
+
+            var line = new VisualElement();
+            line.AddToClassList("pause__sliderline");
+            line.Add(slider);
+            line.Add(reading);
+            row.Add(line);
+
+            block.Add(row);
+
+            var note = new Label(Loc.T(noteKey));
+            note.AddToClassList("pause__hint");
+            block.Add(note);
 
             return block;
         }
