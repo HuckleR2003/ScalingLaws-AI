@@ -71,13 +71,13 @@ namespace ScalingLaws.UI
             UiParts.ExplainHeading(effectsHeading, TechNotes.TeamWorth);
             effects.Add(effectsHeading);
 
-            effects.Add(Row("Training outcome spread",
-                $"{UiFormat.Percent(roster.OutcomeVarianceMultiplier())} of baseline"));
-            effects.Add(Row("Cluster utilization", $"+{UiFormat.Percent(roster.UtilizationBonus())}"));
-            effects.Add(Row("Data quality", $"x{UiFormat.Number(roster.DataQualityMultiplier(), 3)}"));
-            effects.Add(Row("Incident risk", $"x{UiFormat.Number(roster.IncidentRiskMultiplier(), 2)}"));
-            effects.Add(Row("Brand from the team", $"+{UiFormat.Number(roster.BrandBonus(), 3)}"));
-            effects.Add(Row("Research pace", $"x{UiFormat.Number(roster.ResearchSpeedMultiplier(), 3)}"));
+            effects.Add(Row(Loc.T("team.stat.spread"),
+                Loc.T("team.of_baseline", UiFormat.Percent(roster.OutcomeVarianceMultiplier()))));
+            effects.Add(Row(Loc.T("team.stat.utilisation"), $"+{UiFormat.Percent(roster.UtilizationBonus())}"));
+            effects.Add(Row(Loc.T("skill.data.short"), $"x{UiFormat.Number(roster.DataQualityMultiplier(), 3)}"));
+            effects.Add(Row(Loc.T("team.stat.incident_risk"), $"x{UiFormat.Number(roster.IncidentRiskMultiplier(), 2)}"));
+            effects.Add(Row(Loc.T("team.stat.brand"), $"+{UiFormat.Number(roster.BrandBonus(), 3)}"));
+            effects.Add(Row(Loc.T("team.stat.research_pace"), $"x{UiFormat.Number(roster.ResearchSpeedMultiplier(), 3)}"));
             bottom.Add(effects);
 
             var offices = new VisualElement();
@@ -185,8 +185,8 @@ namespace ScalingLaws.UI
             tile.Add(ring);
 
             InsightTip.Attach(tile, position.Title.ToUpperInvariant(),
-                $"{position.Blurb} An ordinary one asks about ${position.BaseHourlyWageUsd:N0} an "
-                + $"hour. {count} on the team.");
+                Loc.T("team.position.note", position.Blurb,
+                    UiFormat.Number(position.BaseHourlyWageUsd, 0), count));
 
             return tile;
         }
@@ -237,9 +237,10 @@ namespace ScalingLaws.UI
             title.AddToClassList("roster__title");
             words.Add(title);
 
-            var under = new Label(people.Count == 1
-                ? "One person, and what they cost."
-                : $"{people.Count} people, and what they cost.");
+            // Loc.Counted rather than a one-or-many ternary: Polish needs three forms here,
+            // and "1 osoba" / "2 osoby" / "5 osob" is not a question of singular against plural.
+            var under = new Label(
+                Loc.T("team.roster_under", Loc.Counted(people.Count, "noun.person")));
 
             under.AddToClassList("roster__under");
             words.Add(under);
@@ -302,8 +303,10 @@ namespace ScalingLaws.UI
             words.Add(name);
 
             var since = new Label(hire.HourlyWageUsd > 0.0
-                ? $"${hire.HourlyWageUsd:N2} an hour  ·  since {hire.StartedOn}"
-                : $"{UiFormat.Money(hire.SalaryPerYearUsd)} a year  ·  since {hire.StartedOn}");
+                ? Loc.T("team.paid_hourly_since",
+                    UiFormat.Number(hire.HourlyWageUsd, 2), hire.StartedOn)
+                : Loc.T("team.paid_yearly_since",
+                    UiFormat.Money(hire.SalaryPerYearUsd), hire.StartedOn));
 
             since.AddToClassList("rperson__since");
             words.Add(since);
@@ -348,16 +351,15 @@ namespace ScalingLaws.UI
 
             var onSite = new Button(ShowHiringChoice)
             {
-                text = $"HIRE NOW     -     ({free} workplace{(free == 1 ? string.Empty : "s")} available)"
+                // The English "workplace" plus an S is exactly the shape Polish cannot copy.
+                text = Loc.T("team.hire_now_free", Loc.Counted(free, "noun.workplace"))
             };
 
             onSite.AddToClassList("hirebar__button");
             onSite.AddToClassList("hirebar__button--main");
             onSite.SetEnabled(free > 0);
 
-            InsightTip.Attach(onSite, "HIRE INTO THE OFFICE",
-                "Two routes: the employment register, which is free and sends ordinary people, or "
-                + "a specialist search, which costs a fee and finds exactly what you asked for.");
+            InsightTip.Attach(onSite, Loc.T("team.hire_office.title"), Loc.T("team.hire_office.note"));
 
             row.Add(onSite);
 
@@ -369,16 +371,15 @@ namespace ScalingLaws.UI
                 portals.Open = HiringPortal.Remote;
                 Show(Screen.Hiring);
             })
-            { text = $"HIRE NOW - REMOTE ({seats - usedRemote})" };
+            { text = Loc.T("team.hire_remote_free", seats - usedRemote) };
 
             remote.AddToClassList("hirebar__button");
             remote.AddToClassList("hirebar__button--remote");
             remote.SetEnabled(usedRemote < seats);
 
-            InsightTip.Attach(remote, "HIRE REMOTELY",
-                $"IThand.hck. No desk needed, {HiringChannels.Get(HireSource.Remote).WageMultiplier:P0} "
-                + "of the usual wage, and the people are much weaker than their profiles claim. "
-                + "This is how a company with no office starts.");
+            InsightTip.Attach(remote, Loc.T("team.hire_remote.title"),
+                Loc.T("team.hire_remote.note",
+                    UiFormat.Percent(HiringChannels.Get(HireSource.Remote).WageMultiplier, 0)));
 
             row.Add(remote);
             return row;
@@ -450,8 +451,8 @@ namespace ScalingLaws.UI
                 row.Add(job);
 
                 var pay = new Label(hire.HourlyWageUsd > 0.0
-                    ? $"${hire.HourlyWageUsd:N2}/h"
-                    : UiFormat.Money(hire.SalaryPerYearUsd) + "/yr");
+                    ? Loc.T("mail.per_hour", UiFormat.Number(hire.HourlyWageUsd, 2))
+                    : Loc.T("team.per_year", UiFormat.Money(hire.SalaryPerYearUsd)));
 
                 pay.AddToClassList("crew__pay");
                 row.Add(pay);
@@ -568,8 +569,9 @@ namespace ScalingLaws.UI
             text.AddToClassList("hirechoice__blurb");
             tile.Add(text);
 
-            var numbers = new Label(
-                $"wage x{channel.WageMultiplier:0.00}   ·   quality x{channel.QualityMultiplier:0.00}");
+            var numbers = new Label(Loc.T("team.channel_numbers",
+                UiFormat.Number(channel.WageMultiplier, 2),
+                UiFormat.Number(channel.QualityMultiplier, 2)));
 
             numbers.AddToClassList("hirechoice__numbers");
 

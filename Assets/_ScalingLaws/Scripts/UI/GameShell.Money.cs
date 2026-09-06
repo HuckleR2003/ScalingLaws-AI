@@ -80,9 +80,7 @@ namespace ScalingLaws.UI
             rental.Add(RentReadout.CapacityBand(
                 state.Pool.RentedAndPackagedPetaflops, heldUsers));
 
-            rental.Add(Hint(
-                "Contracted in petaflops, not boxes, so the bill does not move when the clouds change "
-                + "generation. It never ages and it bills every day it is held."));
+            rental.Add(Hint(Loc.T("money.reserved.note")));
 
             // **Under the capacity band, because the band is the number it moves.** The split was a
             // full-width panel three sections higher up the page: the control and the figure it
@@ -161,8 +159,7 @@ namespace ScalingLaws.UI
 
             if (state.Pool.Assets.Count == 0)
             {
-                owned.Add(Hint("Nothing owned. Everything is rented, which is the right answer until "
-                    + "the cluster is busy enough to justify the capital."));
+                owned.Add(Hint(Loc.T("money.nothing_owned")));
             }
             else
             {
@@ -347,8 +344,8 @@ namespace ScalingLaws.UI
 
             card.SetEnabled(unlocked);
             card.tooltip = generation.IsProjection
-                ? "Roadmap extrapolation, not a shipped product."
-                : $"Shipped {generation.ReleaseDate}.";
+                ? Loc.T("money.card.projection")
+                : Loc.T("money.card.shipped", generation.ReleaseDate);
             return card;
         }
 
@@ -418,8 +415,7 @@ namespace ScalingLaws.UI
                     Show(Screen.Business);
                 });
                 pricing.Add(priceSlider);
-                pricing.Add(Hint("Metered against the market. When token prices fall, so does your revenue "
-                    + "per token, whether or not anything else changed."));
+                pricing.Add(Hint(Loc.T("money.metered.note")));
             }
             else if (policy.Model == PricingModel.Subscription)
             {
@@ -645,10 +641,12 @@ namespace ScalingLaws.UI
                 ? policy.CompanyMarketingDailyUsd
                 : policy.ModelMarketingDailyUsd;
 
-            panel.Add(Row("Spending now", $"{UiFormat.Money(current)} a day"));
+            panel.Add(Row(Loc.T("money.spending_now"),
+                Loc.T("money.spend_per_day", UiFormat.Money(current))));
             if (kind == CampaignKind.Model)
             {
-                panel.Add(Row("Awareness held", $"+{UiFormat.Number(policy.ModelAwareness, 3)} brand"));
+                panel.Add(Row(Loc.T("money.awareness_held"),
+                    Loc.T("money.brand_points", UiFormat.Number(policy.ModelAwareness, 3))));
             }
 
             var grid = new VisualElement();
@@ -818,16 +816,23 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
             if (offer.IsOpen)
             {
                 var definition = FundingCatalog.Get(offer.Stage);
-                panel.Add(Row($"{definition.DisplayName} on the table",
-                    $"{UiFormat.Money(offer.RaiseUsd)} for {UiFormat.Percent(offer.EquitySold)}"));
-                panel.Add(Row("Term sheet expires", $"in {offer.DaysRemaining(state.Date)} days"));
+                panel.Add(Row(Loc.T("funding.on_the_table", definition.DisplayName),
+                    Loc.T("funding.raise_for",
+                        UiFormat.Money(offer.RaiseUsd), UiFormat.Percent(offer.EquitySold))));
+                panel.Add(Row(Loc.T("funding.expires"),
+                    Loc.T("funding.in_days",
+                        Loc.Counted(offer.DaysRemaining(state.Date), "noun.day"))));
 
                 var sign = new Button(() =>
                 {
                     simulation.TryAcceptFundingOffer(out _);
                     Show(Screen.Funding);
                 })
-                { text = offer.IsDownRound ? "SIGN THE DOWN ROUND" : "SIGN THE TERM SHEET" };
+                {
+                    text = offer.IsDownRound
+                        ? Loc.T("funding.sign_down_round")
+                        : Loc.T("funding.sign_term_sheet")
+                };
                 sign.AddToClassList("button");
                 sign.AddToClassList("button--primary");
                 sign.style.marginTop = 14;
@@ -1080,7 +1085,7 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
                 UiFormat.Money(definition.MonthlyCommissionUsd), true));
 
             figures.Add(LoanFigure(Loc.T("loan.back_in_total"),
-                $"{definition.EffectiveMultiple:P0}", false));
+                UiFormat.Percent(definition.EffectiveMultiple, 0), false));
 
             card.Add(figures);
 
