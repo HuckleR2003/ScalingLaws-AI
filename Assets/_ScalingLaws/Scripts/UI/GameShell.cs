@@ -2767,6 +2767,11 @@ namespace ScalingLaws.UI
             Screen.Marketing => "background_marketing",
             Screen.Mail => "background_mail",
             Screen.Hiring => "background_hiring",
+
+            // The file has been in `Resources/Banners` all along and the table never named it, so
+            // the one screen about the fleet was the one screen with a bare heading.
+            Screen.Fleet => "background_compute",
+
             _ => null
         };
 

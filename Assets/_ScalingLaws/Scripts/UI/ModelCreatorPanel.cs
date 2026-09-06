@@ -357,8 +357,8 @@ namespace ScalingLaws.UI
                 0 => BuildBrandingStage(),
                 1 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
                 2 => WithArt("newmodel_2", BuildShapePanel()),
-                3 => BuildDataPanel(),
-                4 => BuildComputePanel(),
+                3 => WithArt("newmodel_3", BuildDataPanel()),
+                4 => WithArt("newmodel_4", BuildComputePanel()),
                 5 => BuildSafetyPanel(),
                 6 => BuildProjectionPanel(),
                 _ => BuildDeployStage()
