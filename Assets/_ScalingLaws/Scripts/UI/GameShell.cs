@@ -292,7 +292,7 @@ namespace ScalingLaws.UI
                 // petaflop-days by the size of the whole fleet and ignored the safety stage
                 // entirely, so a playtest was quoted twenty-one days, told four, and then watched
                 // "0 days" sit on screen while the calendar kept turning.
-                return new WorkInFlight("TRAINING MODEL", run.Blueprint.Name, progress,
+                return new WorkInFlight(Loc.T("banner.training"), run.Blueprint.Name, progress,
                     run.DaysRemaining(simulation.RunPetaflopDaysPerDay()));
             }
 
@@ -1603,7 +1603,7 @@ namespace ScalingLaws.UI
 
             var subject = slowest.ModelIndex >= 0 && slowest.ModelIndex < state.DeployedModels.Count
                 ? state.DeployedModels[slowest.ModelIndex].Name
-                : "a model";
+                : Loc.T("common.a_model");
 
             var name = new Label(subject);
             name.AddToClassList("ub__name");
@@ -2227,7 +2227,7 @@ namespace ScalingLaws.UI
             body.AddToClassList("chapter__body");
 
             var when = new Label(chapter.On.ToString()
-                + (chapter.IsProjection ? "   ·   PROJECTION" : string.Empty));
+                + (chapter.IsProjection ? Loc.T("chapter.projection") : string.Empty));
 
             when.AddToClassList("chapter__when");
             when.EnableInClassList("chapter__when--projection", chapter.IsProjection);
@@ -2272,14 +2272,16 @@ namespace ScalingLaws.UI
 
             if (!seen)
             {
-                return "INDEPENDENT";
+                return Loc.T("rival.independent");
             }
 
             return latest switch
             {
-                LabChapterKind.Exit => dossier.Fate == LabFate.Absorbed ? "ABSORBED" : "CONSOLIDATED",
-                LabChapterKind.Setback => "STRUGGLING",
-                _ => "INDEPENDENT"
+                LabChapterKind.Exit => dossier.Fate == LabFate.Absorbed
+                    ? Loc.T("rival.absorbed")
+                    : Loc.T("rival.consolidated"),
+                LabChapterKind.Setback => Loc.T("rival.struggling"),
+                _ => Loc.T("rival.independent")
             };
         }
 
@@ -3309,7 +3311,7 @@ namespace ScalingLaws.UI
             dateLabel.text = state.Date.ToString();
 
             var position = RankingBoard.PlayerPosition(simulation.Ranking());
-            rankLabel.text = position > 0 ? $"rank #{position}" : "unranked";
+            rankLabel.text = position > 0 ? Loc.T("hud.rank", position) : Loc.T("hud.unranked");
 
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
 

@@ -46,12 +46,12 @@ namespace ScalingLaws.UI
                 active == null
                     ? string.Empty
                     : active.IsWaitingForCompute
-                        ? $"{ResearchTree.Get(active.Node).DisplayName} has run its calendar and is "
-                          + "waiting on the cluster."
-                        : $"{ResearchTree.Get(active.Node).DisplayName} in progress: "
-                          + $"{UiFormat.Percent(active.Progress, 0)}, "
-                          + $"{Math.Min(active.DaysCompleted, active.DurationDays)} of "
-                          + $"{active.DurationDays} days.");
+                        ? Loc.T("research.ran_calendar", ResearchTree.Get(active.Node).DisplayName)
+                        : Loc.T("research.in_progress_line",
+                            ResearchTree.Get(active.Node).DisplayName,
+                            UiFormat.Percent(active.Progress, 0),
+                            Math.Min(active.DaysCompleted, active.DurationDays),
+                            active.DurationDays));
             UiParts.ExplainPage(page, TechNotes.Eras);
 
             var board = simulation.ResearchBoard();
@@ -296,10 +296,10 @@ namespace ScalingLaws.UI
             // its whole fleet on a training run reaches the end of the calendar and stops, and this
             // used to read "0 days left, 30% done" for the rest of the campaign.
             var what = new Label(active.IsWaitingForCompute
-                ? $"{node.DisplayName}  ·  the calendar is done, the cluster is not  ·  "
-                  + $"{UiFormat.Number(active.PetaflopDaysRemaining, 0)} PF-days still owed"
-                : $"{node.DisplayName}  ·  {left} days left  ·  "
-                  + $"{UiFormat.Percent(active.Progress, 0)} done");
+                ? Loc.T("research.bar_waiting", node.DisplayName,
+                    UiFormat.Number(active.PetaflopDaysRemaining, 0))
+                : Loc.T("research.bar_running", node.DisplayName, left,
+                    UiFormat.Percent(active.Progress, 0)));
 
             what.AddToClassList("researching__what");
             what.EnableInClassList("researching__what--waiting", active.IsWaitingForCompute);
@@ -330,7 +330,7 @@ namespace ScalingLaws.UI
 
                 Show(Screen.Research);
             })
-            { text = cancelArmed ? "CONFIRM, NOTHING COMES BACK" : "CANCEL" };
+            { text = cancelArmed ? Loc.T("research.cancel_confirm") : Loc.T("common.cancel") };
 
             stop.AddToClassList("researching__stop");
             stop.EnableInClassList("researching__stop--armed", cancelArmed);
@@ -548,13 +548,13 @@ namespace ScalingLaws.UI
             var cost = new VisualElement();
             cost.AddToClassList("rcard__costs");
 
-            cost.Add(RCardFigure("POINTS", $"{points:N0}",
+            cost.Add(RCardFigure(Loc.T("research.points"), $"{points:N0}",
                 simulation.State.ResearchPoints >= points));
 
-            cost.Add(RCardFigure("CASH", UiFormat.Money(cash),
+            cost.Add(RCardFigure(Loc.T("research.cash"), UiFormat.Money(cash),
                 simulation.State.CashUsd >= cash));
 
-            cost.Add(RCardFigure("TAKES", UiFormat.Days(standing.DurationDays), true));
+            cost.Add(RCardFigure(Loc.T("research.takes"), UiFormat.Days(standing.DurationDays), true));
 
             researchCard.Add(cost);
 
@@ -727,7 +727,7 @@ namespace ScalingLaws.UI
         {
             if (node.UnlocksArchitecture != ArchitectureId.None)
             {
-                yield return UnlockLine("ARCHITECTURE",
+                yield return UnlockLine(Loc.T("unlock.architecture"),
                     ArchitectureCatalog.Get(node.UnlocksArchitecture).DisplayName);
             }
 
@@ -737,34 +737,34 @@ namespace ScalingLaws.UI
                 {
                     if ((node.UnlocksData & corpus.Flag) == corpus.Flag)
                     {
-                        yield return UnlockLine("CORPUS", corpus.DisplayName);
+                        yield return UnlockLine(Loc.T("unlock.corpus"), corpus.DisplayName);
                     }
                 }
             }
 
             if (node.UnlocksTier != ComputeTier.None)
             {
-                yield return UnlockLine("COMPUTE TIER", node.UnlocksTier.ToString());
+                yield return UnlockLine(Loc.T("unlock.tier"), node.UnlocksTier.ToString());
             }
 
             // ModelTrait has no None member, so the gate flag is the only honest signal that a node
             // actually opens an upgrade line rather than defaulting to the zero trait.
             if (node.GatesTrait)
             {
-                yield return UnlockLine("UPGRADE LINE", node.UnlocksTrait.ToString());
+                yield return UnlockLine(Loc.T("unlock.upgrade_line"), node.UnlocksTrait.ToString());
             }
 
             foreach (var definition in ModelTypeCatalog.All)
             {
                 if (definition.Requires == node.Id)
                 {
-                    yield return UnlockLine("MODEL TYPE", definition.DisplayName);
+                    yield return UnlockLine(Loc.T("unlock.model_type"), definition.DisplayName);
                 }
             }
 
             foreach (var required in node.Prerequisites)
             {
-                yield return UnlockLine("NEEDS FIRST", ResearchTree.Get(required).DisplayName);
+                yield return UnlockLine(Loc.T("unlock.needs_first"), ResearchTree.Get(required).DisplayName);
             }
         }
 
@@ -775,7 +775,7 @@ namespace ScalingLaws.UI
 
             var tag = new Label(kind);
             tag.AddToClassList("unlock-row__tag");
-            tag.EnableInClassList("unlock-row__tag--needs", kind == "NEEDS FIRST");
+            tag.EnableInClassList("unlock-row__tag--needs", kind == Loc.T("unlock.needs_first"));
             row.Add(tag);
 
             var name = new Label(what);

@@ -86,8 +86,8 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             heading.style.marginBottom = 0;
             head.Add(heading);
 
-            var overall = new Label(UiFormat.Percent(simulation.State.Awareness.Overall, 0)
-                + " overall");
+            var overall = new Label(Loc.T("marketing.overall",
+                UiFormat.Percent(simulation.State.Awareness.Overall, 0)));
 
             overall.AddToClassList("rfund__banked");
             head.Add(overall);
@@ -157,14 +157,20 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             name.AddToClassList("chan__name");
             tile.Add(name);
 
-            var price = new Label(UiFormat.Money(definition.DailyCostUsd) + " a day");
+            var price = new Label(Loc.T("release.per_day", UiFormat.Money(definition.DailyCostUsd)));
             price.AddToClassList("chan__price");
             tile.Add(price);
 
+            // The four figures go through UiFormat rather than into the string as `:0.00` and `:P0`.
+            // Those follow the machine culture, which is the fault CONTRIBUTING names as the source
+            // of $20,00 in this project.
             tile.tooltip = definition.Pitch
-                + $"\n\nBest with: {AudienceCatalog.Get(definition.Favours).DisplayName}."
-                + $"\nReach {definition.Reach:0.00}, speed {definition.Speed:P0}, "
-                + $"sticks {definition.Persistence:P0}, swings {definition.Volatility:P0}.";
+                + Loc.T("marketing.best_with", AudienceCatalog.Get(definition.Favours).DisplayName)
+                + Loc.T("marketing.channel_stats",
+                    UiFormat.Number(definition.Reach, 2),
+                    UiFormat.Percent(definition.Speed, 0),
+                    UiFormat.Percent(definition.Persistence, 0),
+                    UiFormat.Percent(definition.Volatility, 0));
 
             return tile;
         }
@@ -202,7 +208,9 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             foreach (var months in MarketingCatalog.TermsInMonths)
             {
                 var term = months;
-                var label = months <= 0 ? "OPEN ENDED" : $"{months} MONTH" + (months > 1 ? "S" : string.Empty);
+                var label = months <= 0
+                    ? Loc.T("marketing.open_ended_caps")
+                    : Loc.Counted(months, "noun.month").ToUpperInvariant();
 
                 var chip = new Button(() => { pickedTerm = term; Show(Screen.Marketing); })
                 { text = label };
@@ -232,24 +240,24 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                 // Two blocks, because the player is answering two questions: what am I buying, and
                 // what does it cost. The old single sentence made them read a paragraph to find a
                 // number they were going to compare against another number.
-                panel.Add(BookRow("AUDIENCE",
+                panel.Add(BookRow(Loc.T("marketing.audience"),
                     AudienceCatalog.Get(pickedAudience).DisplayName));
 
-                panel.Add(BookRow("CHANNELS", string.Join(" + ", pickedChannels
+                panel.Add(BookRow(Loc.T("marketing.channels"), string.Join(" + ", pickedChannels
                     .Select(channel => MarketingCatalog.Get(channel).DisplayName))));
 
-                panel.Add(BookRow("RUNS FOR", draft.IsOpenEnded
-                    ? "until you stop it"
-                    : $"{draft.DaysBooked} days"));
+                panel.Add(BookRow(Loc.T("marketing.runs_for"), draft.IsOpenEnded
+                    ? Loc.T("marketing.until_stopped")
+                    : Loc.Counted(draft.DaysBooked, "noun.day")));
 
                 var split = new VisualElement();
                 split.AddToClassList("mkbook__split");
                 panel.Add(split);
 
-                panel.Add(BookRow("PER DAY", UiFormat.Money(daily), true));
+                panel.Add(BookRow(Loc.T("marketing.per_day"), UiFormat.Money(daily), true));
 
-                panel.Add(BookRow("TOTAL", draft.IsOpenEnded
-                    ? "open ended"
+                panel.Add(BookRow(Loc.T("marketing.total"), draft.IsOpenEnded
+                    ? Loc.T("marketing.open_ended")
                     : UiFormat.Money(total), true));
 
                 if (draft.IsOpenEnded)
@@ -366,13 +374,13 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                 }
 
                 var left = new Label(campaign.IsOpenEnded
-                    ? "OPEN ENDED"
-                    : $"{campaign.DaysLeft(state.Date)} DAYS LEFT");
+                    ? Loc.T("marketing.open_ended_caps")
+                    : Loc.T("marketing.days_left", campaign.DaysLeft(state.Date)));
 
                 left.AddToClassList("run-row__left");
                 row.Add(left);
 
-                var cost = new Label(UiFormat.Money(campaign.DailyCostUsd) + "/day");
+                var cost = new Label(Loc.T("release.per_day", UiFormat.Money(campaign.DailyCostUsd)));
                 cost.AddToClassList("run-row__cost");
                 row.Add(cost);
 

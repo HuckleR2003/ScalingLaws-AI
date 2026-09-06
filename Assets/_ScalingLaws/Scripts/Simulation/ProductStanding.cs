@@ -1,5 +1,6 @@
 using System;
 using ScalingLaws.Core;
+using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
@@ -20,7 +21,7 @@ namespace ScalingLaws.Simulation
             double subscribers, long monthEarnings, long monthNet, int daysOld, double capability,
             double frontier)
         {
-            Name = string.IsNullOrWhiteSpace(name) ? "NO PRODUCT" : name;
+            GivenName = name;
             Exists = exists;
             Happiness = Math.Clamp(SimUnits.Finite(happiness), 0.0, 1.0);
             Topicality = Math.Clamp(SimUnits.Finite(topicality), 0.0, 1.0);
@@ -32,7 +33,17 @@ namespace ScalingLaws.Simulation
             Frontier = Math.Max(0.0, SimUnits.Finite(frontier));
         }
 
-        public string Name { get; }
+        private string GivenName { get; }
+
+        /// <summary>
+        /// What the banner calls the product.
+        ///
+        /// **Resolved when it is read, not when the struct is built.** The fallback is a phrase the
+        /// player sees, so it follows the language like everything else. A struct built during an
+        /// English session and read after a switch would otherwise still say NO PRODUCT.
+        /// </summary>
+        public string Name =>
+            string.IsNullOrWhiteSpace(GivenName) ? Loc.T("banner.no_product") : GivenName;
 
         /// <summary>False when nothing is on sale, which is a state the banner has to draw.</summary>
         public bool Exists { get; }
@@ -68,10 +79,10 @@ namespace ScalingLaws.Simulation
         /// <summary>One word for the topicality bar, so the colour is not the only information.</summary>
         public string Freshness => Topicality switch
         {
-            >= 0.8 => "CURRENT",
-            >= 0.55 => "HOLDING",
-            >= 0.3 => "SLIPPING",
-            _ => "OUTDATED"
+            >= 0.8 => Loc.T("banner.fresh.current"),
+            >= 0.55 => Loc.T("banner.fresh.holding"),
+            >= 0.3 => Loc.T("banner.fresh.slipping"),
+            _ => Loc.T("banner.fresh.outdated")
         };
 
         /// <summary>

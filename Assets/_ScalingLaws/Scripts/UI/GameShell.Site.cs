@@ -119,10 +119,10 @@ namespace ScalingLaws.UI
 
                 var strip = new VisualElement();
                 strip.AddToClassList("site-strip");
-                strip.Add(SiteFigure("STAFF", state.Staff.Headcount.ToString()));
-                strip.Add(SiteFigure("MODELS LIVE", state.DeployedModels.Count.ToString()));
-                strip.Add(SiteFigure("CASH", UiFormat.Money(state.CashUsd)));
-                strip.Add(SiteFigure("DAY", UiFormat.Days(state.Date.DayIndex)));
+                strip.Add(SiteFigure(Loc.T("site.staff"), state.Staff.Headcount.ToString()));
+                strip.Add(SiteFigure(Loc.T("site.models_live"), state.DeployedModels.Count.ToString()));
+                strip.Add(SiteFigure(Loc.T("site.cash"), UiFormat.Money(state.CashUsd)));
+                strip.Add(SiteFigure(Loc.T("site.day"), UiFormat.Days(state.Date.DayIndex)));
                 overlay.Add(strip);
 
                 stage.Add(overlay);
@@ -147,12 +147,11 @@ namespace ScalingLaws.UI
 
             var upgrade = new Button(() => Show(Screen.Offices));
             upgrade.AddToClassList("site-icon");
-            SetIcon(upgrade, "Ui/office_upgrade", "OFFICE");
+            SetIcon(upgrade, "Ui/office_upgrade", Loc.T("site.icon.office"));
 
-            InsightTip.Attach(upgrade, "THE OFFICE",
-                $"Upgrade the office, rent or buy. You are in {place.DisplayName.ToLowerInvariant()}: "
-                + $"{state.Staff.Headcount} of {place.Desks} desks at "
-                + $"{UiFormat.Money(place.MonthlyRentUsd)} a month, and desks are what caps hiring.",
+            InsightTip.Attach(upgrade, Loc.T("site.office.title"),
+                Loc.T("site.office.note", place.DisplayName.ToLowerInvariant(),
+                    state.Staff.Headcount, place.Desks, UiFormat.Money(place.MonthlyRentUsd)),
                 InsightTip.Placement.LeftOf);
 
             rail.Add(upgrade);
@@ -172,11 +171,9 @@ namespace ScalingLaws.UI
             });
 
             map.AddToClassList("site-icon");
-            SetIcon(map, "Ui/map", "MAP");
+            SetIcon(map, "Ui/map", Loc.T("site.icon.map"));
 
-            InsightTip.Attach(map, "THE WORLD MAP",
-                "Travel. Who is building what, and where. Today it opens the board; the drive out to "
-                + "it is being built.",
+            InsightTip.Attach(map, Loc.T("site.map.title"), Loc.T("site.map.note"),
                 InsightTip.Placement.LeftOf);
 
             rail.Add(map);
@@ -185,7 +182,7 @@ namespace ScalingLaws.UI
             // rather than a tab: you go downstairs to it. The author's own icon.
             var room = new Button(() => Show(Screen.Room));
             room.AddToClassList("site-icon");
-            SetIcon(room, "Ui/tab_compute_center", "ROOM");
+            SetIcon(room, "Ui/tab_compute_center", Loc.T("site.icon.room"));
 
             InsightTip.Attach(room, Loc.T("room.title"),
                 state.HasServerRoom
@@ -223,12 +220,10 @@ namespace ScalingLaws.UI
 
                 decorate.AddToClassList("site-icon");
                 decorate.EnableInClassList("site-icon--on", decorOpen);
-                SetIcon(decorate, "Ui/office_decorate", "DECOR");
+                SetIcon(decorate, "Ui/office_decorate", Loc.T("site.icon.decor"));
 
-                InsightTip.Attach(decorate, "FURNISH THE OFFICE",
-                    "Buy desks, sofas and everything else. Desks raise the hiring cap; the rest makes "
-                    + "the floor a better place to work. Anything can be sold back at "
-                    + $"{FurnitureCatalog.ResaleFraction:P0} of what it cost.",
+                InsightTip.Attach(decorate, Loc.T("site.decor.title"),
+                    Loc.T("site.decor.note", UiFormat.Percent(FurnitureCatalog.ResaleFraction, 0)),
                     InsightTip.Placement.LeftOf);
 
                 rail.Add(decorate);

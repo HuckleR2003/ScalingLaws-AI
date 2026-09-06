@@ -71,10 +71,7 @@ namespace ScalingLaws.UI
             owning.AddToClassList("hswitch__half");
             owning.AddToClassList("hswitch__half--locked");
             owning.SetEnabled(false);
-            owning.tooltip =
-                "Not yet. Owning silicon needs two released models, eighty million in cash, two "
-                + "hundred million of lifetime revenue and the datacenter programme researched. "
-                + "Renting is the right answer until the cluster is busy enough to justify capital.";
+            owning.tooltip = Loc.T("compute.owning.notyet");
 
             strip.Add(owning);
 
@@ -210,9 +207,8 @@ namespace ScalingLaws.UI
             words.Add(headline);
 
             var effect = new Label(quality.Reliability >= 1.0
-                ? "No penalty. The market sees the product at its full strength."
-                : $"Costing you {UiFormat.Percent(1.0 - quality.Reliability)} of how attractive the "
-                    + "product looks to everyone deciding today.");
+                ? Loc.T("compute.no_penalty")
+                : Loc.T("compute.penalty", UiFormat.Percent(1.0 - quality.Reliability)));
 
             effect.AddToClassList("service__effect");
             effect.EnableInClassList("service__effect--bad", quality.Reliability < 1.0);
@@ -317,8 +313,8 @@ namespace ScalingLaws.UI
             left.Add(registeredChart);
 
             var leftFoot = new Label(history.Count < 2
-                ? "Filling in as the days pass."
-                : $"Last {history.Count} days");
+                ? Loc.T("chart.filling_in")
+                : Loc.T("chart.last_days", history.Count));
 
             leftFoot.AddToClassList("chart-block__foot");
             left.Add(leftFoot);
@@ -501,7 +497,7 @@ namespace ScalingLaws.UI
             heading.style.marginBottom = 0;
             head.Add(heading);
 
-            var total = new Label(UiFormat.Money((long)profile.Bill.TotalUsd) + " a day");
+            var total = new Label(Loc.T("release.per_day", UiFormat.Money((long)profile.Bill.TotalUsd)));
             total.AddToClassList("fleet-bill__total");
             head.Add(total);
 
@@ -513,10 +509,10 @@ namespace ScalingLaws.UI
 
             var legend = new VisualElement();
             legend.AddToClassList("fleet-bill__legend");
-            legend.Add(BillKey("CLOUD RENT", profile.Bill.CloudRentUsd, FleetBillBar.RentColour));
-            legend.Add(BillKey("ELECTRICITY", profile.Bill.ElectricityUsd, FleetBillBar.PowerColour));
-            legend.Add(BillKey("HOUSING", profile.Bill.HousingUsd, FleetBillBar.HousingColour));
-            legend.Add(BillKey("UPKEEP", profile.Bill.MaintenanceUsd, FleetBillBar.UpkeepColour));
+            legend.Add(BillKey(Loc.T("bill.cloud_rent"), profile.Bill.CloudRentUsd, FleetBillBar.RentColour));
+            legend.Add(BillKey(Loc.T("bill.electricity"), profile.Bill.ElectricityUsd, FleetBillBar.PowerColour));
+            legend.Add(BillKey(Loc.T("bill.housing"), profile.Bill.HousingUsd, FleetBillBar.HousingColour));
+            legend.Add(BillKey(Loc.T("bill.upkeep"), profile.Bill.MaintenanceUsd, FleetBillBar.UpkeepColour));
             block.Add(legend);
 
             // Power is the one that can stop the fleet rather than only cost money.
