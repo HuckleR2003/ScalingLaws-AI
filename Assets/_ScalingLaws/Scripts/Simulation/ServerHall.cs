@@ -145,19 +145,19 @@ namespace ScalingLaws.Simulation
 
             if (rack == ServerRack.None)
             {
-                failureReason = "Nothing to place.";
+                failureReason = Loc.T("room.nothing_to_place");
                 return false;
             }
 
             if (!Contains(column, row))
             {
-                failureReason = "That square is not on the floor.";
+                failureReason = Loc.T("room.off_the_floor");
                 return false;
             }
 
             if (racks[IndexOf(column, row)] != ServerRack.None)
             {
-                failureReason = "Something is already standing there.";
+                failureReason = Loc.T("room.square_taken");
                 return false;
             }
 
@@ -181,14 +181,14 @@ namespace ScalingLaws.Simulation
 
             if (!Contains(column, row))
             {
-                failureReason = "That square is not on the floor.";
+                failureReason = Loc.T("room.off_the_floor");
                 return false;
             }
 
             var index = IndexOf(column, row);
             if (racks[index] == ServerRack.None)
             {
-                failureReason = "Nothing is standing there.";
+                failureReason = Loc.T("room.square_empty");
                 return false;
             }
 
@@ -218,7 +218,7 @@ namespace ScalingLaws.Simulation
 
             if (!Contains(column, row))
             {
-                failureReason = "That square is not on the floor.";
+                failureReason = Loc.T("room.off_the_floor");
                 return false;
             }
 
@@ -245,7 +245,7 @@ namespace ScalingLaws.Simulation
 
             if (!Contains(fromColumn, fromRow) || !Contains(toColumn, toRow))
             {
-                failureReason = "That square is not on the floor.";
+                failureReason = Loc.T("room.off_the_floor");
                 return false;
             }
 
@@ -259,13 +259,13 @@ namespace ScalingLaws.Simulation
 
             if (racks[from] == ServerRack.None)
             {
-                failureReason = "Nothing is standing there.";
+                failureReason = Loc.T("room.square_empty");
                 return false;
             }
 
             if (racks[to] != ServerRack.None)
             {
-                failureReason = "Something is already standing there.";
+                failureReason = Loc.T("room.square_taken");
                 return false;
             }
 
@@ -314,13 +314,13 @@ namespace ScalingLaws.Simulation
 
             if (!Contains(column, row) || racks[IndexOf(column, row)] == ServerRack.None)
             {
-                failureReason = "there is no rack on that square";
+                failureReason = Loc.T("room.no_rack_here");
                 return false;
             }
 
             if (FreeSlots(column, row) < ServerRackCatalog.FanSlots)
             {
-                failureReason = "the rack is full";
+                failureReason = Loc.T("room.rack_full");
                 return false;
             }
 

@@ -454,6 +454,15 @@ namespace ScalingLaws.Simulation
         private static string UiMoney(long usd) => "$" + usd.ToString("N0",
             System.Globalization.CultureInfo.InvariantCulture);
 
+        /// <summary>
+        /// A whole number with separators, for figures that are not money.
+        ///
+        /// Same reason as <see cref="UiMoney"/>: `UiFormat` lives in `UI/`, which this layer may
+        /// not read, and a bare ":N0" in an interpolated string follows the machine's culture.
+        /// </summary>
+        private static string Whole(double value) => value.ToString("N0",
+            System.Globalization.CultureInfo.InvariantCulture);
+
         // ------------------------------------------------------------------ tick
 
         /// <summary>Runs one day and returns what happened.</summary>
@@ -738,7 +747,7 @@ namespace ScalingLaws.Simulation
                 return true;
             }
 
-            failureReason = $"That needs the {ResearchTree.Get(gate).DisplayName} research first.";
+            failureReason = Loc.T("train.needs_research", ResearchTree.Get(gate).DisplayName);
             return false;
         }
 
@@ -746,8 +755,9 @@ namespace ScalingLaws.Simulation
         {
             if (!State.CanBuildType(blueprint.Type))
             {
-                failureReason = $"{ModelTypeCatalog.Get(blueprint.Type).DisplayName} models need "
-                    + $"{ResearchTree.Get(ModelTypeCatalog.Get(blueprint.Type).Requires).DisplayName} first.";
+                failureReason = Loc.T("train.type_needs",
+                    ModelTypeCatalog.Get(blueprint.Type).DisplayName,
+                    ResearchTree.Get(ModelTypeCatalog.Get(blueprint.Type).Requires).DisplayName);
                 return false;
             }
 
@@ -780,26 +790,26 @@ namespace ScalingLaws.Simulation
 
             if (State.IsBankrupt)
             {
-                failureReason = "The company is insolvent.";
+                failureReason = Loc.T("fail.insolvent");
                 return false;
             }
 
             if (State.ActiveRun != null)
             {
-                failureReason = "A training run is already in flight.";
+                failureReason = Loc.T("train.already_running");
                 return false;
             }
 
             if (!State.HasArchitecture(blueprint.Architecture))
             {
-                failureReason = $"{blueprint.Architecture} has not been adopted.";
+                failureReason = Loc.T("train.arch_not_adopted", blueprint.Architecture);
                 return false;
             }
 
             var missingData = blueprint.DataSources & ~State.OwnedDataSources;
             if (missingData != DatasetSource.None)
             {
-                failureReason = $"The company does not own {missingData}.";
+                failureReason = Loc.T("train.no_corpus", missingData);
                 return false;
             }
 
@@ -1112,19 +1122,19 @@ namespace ScalingLaws.Simulation
 
             if (units <= 0)
             {
-                failureReason = "Nothing to buy.";
+                failureReason = Loc.T("hw.nothing_to_buy");
                 return false;
             }
 
             if (!HardwareCatalog.TryGet(generationId, out var generation))
             {
-                failureReason = "Unknown hardware.";
+                failureReason = Loc.T("hw.unknown");
                 return false;
             }
 
             if (!ComputeTierCatalog.TryGet(tier, out var tierDefinition) || tierDefinition.IsRented)
             {
-                failureReason = "Hardware can only be bought into a tier the company operates.";
+                failureReason = Loc.T("hw.needs_tier");
                 return false;
             }
 
@@ -1137,7 +1147,7 @@ namespace ScalingLaws.Simulation
 
             if (!generation.IsAvailableOn(State.Date))
             {
-                failureReason = $"{generation.DisplayName} does not ship until {generation.ReleaseDate}.";
+                failureReason = Loc.T("hw.not_shipped", generation.DisplayName, generation.ReleaseDate);
                 return false;
             }
 
@@ -1156,7 +1166,7 @@ namespace ScalingLaws.Simulation
             var total = pricePerUnit * units;
             if (State.CashUsd < total)
             {
-                failureReason = $"Needs ${total:N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("fail.needs_cash", UiMoney(total), UiMoney(State.CashUsd));
                 return false;
             }
 
@@ -1169,7 +1179,7 @@ namespace ScalingLaws.Simulation
             var drawAfter = Profile.PowerDrawKilowatts + generation.PowerKilowatts * units;
             if (drawAfter > capacityAfter)
             {
-                failureReason = $"Draws {drawAfter:N0} kW, the site provides {capacityAfter:N0} kW.";
+                failureReason = Loc.T("hw.power_short", Whole(drawAfter), Whole(capacityAfter));
                 return false;
             }
 
@@ -1200,7 +1210,7 @@ namespace ScalingLaws.Simulation
 
             if (assetIndex < 0 || assetIndex >= State.Pool.Assets.Count)
             {
-                failureReason = "No such batch.";
+                failureReason = Loc.T("hw.no_batch");
                 return false;
             }
 
@@ -1208,7 +1218,7 @@ namespace ScalingLaws.Simulation
             var sellUnits = Math.Clamp(units, 0, asset.Units);
             if (sellUnits <= 0)
             {
-                failureReason = "Nothing to sell.";
+                failureReason = Loc.T("hw.nothing_to_sell");
                 return false;
             }
 
@@ -1440,7 +1450,7 @@ namespace ScalingLaws.Simulation
 
             if (shelfIndex < 0 || shelfIndex >= State.Shelf.Count)
             {
-                failureReason = "Nothing on the shelf at that slot.";
+                failureReason = Loc.T("model.nothing_on_shelf");
                 return false;
             }
 
@@ -1552,13 +1562,13 @@ namespace ScalingLaws.Simulation
 
             if (model == null)
             {
-                failureReason = "No model.";
+                failureReason = Loc.T("model.none");
                 return false;
             }
 
             if (model.IsRetired)
             {
-                failureReason = $"{model.Name} is already off sale.";
+                failureReason = Loc.T("model.already_off_sale", model.Name);
                 return false;
             }
 
@@ -1577,8 +1587,7 @@ namespace ScalingLaws.Simulation
             {
                 if (project.ModelIndex == slot)
                 {
-                    failureReason = $"An upgrade programme is running on {model.Name}. "
-                        + "Cancel it or let it finish first.";
+                    failureReason = Loc.T("model.upgrade_running", model.Name);
 
                     return false;
                 }
@@ -1665,7 +1674,7 @@ namespace ScalingLaws.Simulation
 
             if (State.IsBankrupt)
             {
-                failureReason = "The company is insolvent.";
+                failureReason = Loc.T("fail.insolvent");
                 return false;
             }
 
@@ -1673,7 +1682,7 @@ namespace ScalingLaws.Simulation
 
             if (modelIndex < 0 || modelIndex >= stock)
             {
-                failureReason = "No such model.";
+                failureReason = Loc.T("model.no_such");
                 return false;
             }
 
@@ -1692,13 +1701,13 @@ namespace ScalingLaws.Simulation
 
             if (wanted.Count == 0)
             {
-                failureReason = "Nothing was picked.";
+                failureReason = Loc.T("upgrade.nothing_picked");
                 return false;
             }
 
             if (State.UpgradeProjects.Count >= CompanyState.MaximumConcurrentUpgrades)
             {
-                failureReason = $"Already running {CompanyState.MaximumConcurrentUpgrades} upgrade programmes.";
+                failureReason = Loc.T("upgrade.at_limit", CompanyState.MaximumConcurrentUpgrades);
                 return false;
             }
 
@@ -1721,33 +1730,33 @@ namespace ScalingLaws.Simulation
             {
                 if (!ModelTraitCatalog.TryGet(trait, out var definition))
                 {
-                    failureReason = "Unknown trait.";
+                    failureReason = Loc.T("trait.unknown");
                     return false;
                 }
 
                 if (!definition.IsAvailableOn(State.Date))
                 {
-                    failureReason = $"{definition.DisplayName} is not a solved problem until {definition.AvailableFrom}.";
+                    failureReason = Loc.T("trait.not_solved", definition.DisplayName, definition.AvailableFrom);
                     return false;
                 }
 
                 var traitGate = ResearchTree.GateForTrait(trait);
                 if (!State.HasResearch(traitGate))
                 {
-                    failureReason = $"Needs the {ResearchTree.Get(traitGate).DisplayName} research first.";
+                    failureReason = Loc.T("fail.needs_research", ResearchTree.Get(traitGate).DisplayName);
                     return false;
                 }
 
                 if (State.IsUpgradeInFlight(modelIndex, trait, onShelf))
                 {
-                    failureReason = $"{definition.DisplayName} is already being worked on for this model.";
+                    failureReason = Loc.T("trait.already_working", definition.DisplayName);
                     return false;
                 }
 
                 var level = traitSet.GetLevel(trait);
                 if (level >= ModelTraitSetLimits.MaximumLevel)
                 {
-                    failureReason = $"{definition.DisplayName} is already at the ceiling.";
+                    failureReason = Loc.T("trait.at_ceiling", definition.DisplayName);
                     return false;
                 }
 
@@ -1764,7 +1773,7 @@ namespace ScalingLaws.Simulation
 
             if (State.CashUsd < cost)
             {
-                failureReason = $"Needs ${cost:N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("fail.needs_cash", UiMoney(cost), UiMoney(State.CashUsd));
                 return false;
             }
 
@@ -1881,7 +1890,7 @@ namespace ScalingLaws.Simulation
             var active = State.ActiveResearch;
             if (active == null)
             {
-                failureReason = "Nothing is being researched.";
+                failureReason = Loc.T("research.none_running");
                 return false;
             }
 
@@ -1905,7 +1914,7 @@ namespace ScalingLaws.Simulation
 
             if (!ResearchTree.TryGet(nodeId, out var node))
             {
-                failureReason = "Unknown research.";
+                failureReason = Loc.T("research.unknown");
                 return false;
             }
 
@@ -2053,13 +2062,13 @@ namespace ScalingLaws.Simulation
 
             if (State.IsBankrupt)
             {
-                failureReason = "The company is insolvent.";
+                failureReason = Loc.T("fail.insolvent");
                 return false;
             }
 
             if (State.ActiveArchitectureProject != null)
             {
-                failureReason = "A family programme is already running.";
+                failureReason = Loc.T("arch.programme_running");
                 return false;
             }
 
@@ -2069,8 +2078,7 @@ namespace ScalingLaws.Simulation
             if (!ArchitectureCeiling.IsWithinCeiling(
                     blueprint.Weight, State.HasResearch, out var beyond))
             {
-                failureReason = $"{beyond} is pushed further than the company knows how to go. "
-                    + "Research opens the rest of that slider.";
+                failureReason = Loc.T("arch.beyond_known", beyond);
 
                 return false;
             }
@@ -2268,13 +2276,13 @@ namespace ScalingLaws.Simulation
             var offer = State.CurrentFundingOffer;
             if (!offer.IsOpen)
             {
-                failureReason = "No term sheet on the table.";
+                failureReason = Loc.T("funding.none_open");
                 return false;
             }
 
             if (offer.HasExpired(State.Date))
             {
-                failureReason = "That term sheet has lapsed.";
+                failureReason = Loc.T("funding.lapsed");
                 return false;
             }
 
@@ -2418,7 +2426,7 @@ namespace ScalingLaws.Simulation
 
             if (index < 0 || index >= State.Staff.Headcount)
             {
-                failureReason = "No such person.";
+                failureReason = Loc.T("person.no_such");
                 return false;
             }
 
@@ -2455,25 +2463,25 @@ namespace ScalingLaws.Simulation
 
             if (!OfficeCatalog.TryGet(tier, out var definition))
             {
-                failureReason = "Unknown office.";
+                failureReason = Loc.T("office.unknown");
                 return false;
             }
 
             if (!definition.CanBeBought)
             {
-                failureReason = $"{definition.DisplayName} is not for sale.";
+                failureReason = Loc.T("office.not_for_sale", definition.DisplayName);
                 return false;
             }
 
             if (State.Staff.Owns(tier))
             {
-                failureReason = "The company already owns it.";
+                failureReason = Loc.T("office.already_owned");
                 return false;
             }
 
             if (State.Date.IsBefore(definition.EarliestDate))
             {
-                failureReason = $"Not available before {definition.EarliestDate}.";
+                failureReason = Loc.T("office.not_before", definition.EarliestDate);
                 return false;
             }
 
@@ -2489,15 +2497,15 @@ namespace ScalingLaws.Simulation
 
             if (State.CashUsd < owed)
             {
-                failureReason = $"Needs ${owed:N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("fail.needs_cash", UiMoney(owed), UiMoney(State.CashUsd));
                 return false;
             }
 
             if (moving && definition.Desks < State.Staff.Headcount)
             {
-                failureReason =
-                    $"{definition.DisplayName} holds {definition.Desks}, the company has "
-                    + $"{State.Staff.Headcount} people.";
+                failureReason = Loc.T("office.too_small",
+                    definition.DisplayName, definition.Desks,
+                    Loc.Counted(State.Staff.Headcount, "noun.person"));
 
                 return false;
             }
@@ -2546,19 +2554,19 @@ namespace ScalingLaws.Simulation
 
             if (!OfficeCatalog.TryGet(tier, out var definition))
             {
-                failureReason = "Unknown office.";
+                failureReason = Loc.T("office.unknown");
                 return false;
             }
 
             if (tier == State.Staff.Office)
             {
-                failureReason = "Already there.";
+                failureReason = Loc.T("office.already_there");
                 return false;
             }
 
             if (State.Date.IsBefore(definition.EarliestDate))
             {
-                failureReason = $"Not available before {definition.EarliestDate}.";
+                failureReason = Loc.T("office.not_before", definition.EarliestDate);
                 return false;
             }
 
@@ -2567,15 +2575,16 @@ namespace ScalingLaws.Simulation
 
             if (State.CashUsd < definition.RequiredCashUsd || State.CashUsd < owed)
             {
-                failureReason =
-                    $"Needs ${Math.Max(definition.RequiredCashUsd, owed):N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("fail.needs_cash",
+                    UiMoney(Math.Max(definition.RequiredCashUsd, owed)), UiMoney(State.CashUsd));
                 return false;
             }
 
             if (definition.Desks < State.Staff.Headcount)
             {
-                failureReason =
-                    $"{definition.DisplayName} holds {definition.Desks}, the company has {State.Staff.Headcount} people.";
+                failureReason = Loc.T("office.too_small",
+                    definition.DisplayName, definition.Desks,
+                    Loc.Counted(State.Staff.Headcount, "noun.person"));
                 return false;
             }
 
@@ -3323,7 +3332,7 @@ namespace ScalingLaws.Simulation
 
             if (!LoanCatalog.TryGet(product, out var definition))
             {
-                failureReason = "Unknown facility.";
+                failureReason = Loc.T("fleet.unknown_facility");
                 return false;
             }
 
@@ -4801,13 +4810,13 @@ namespace ScalingLaws.Simulation
 
             if (!State.Mail.TryGet(mailId, out var letter))
             {
-                failureReason = "No such letter.";
+                failureReason = Loc.T("mail.no_such");
                 return false;
             }
 
             if (letter.IsClosed)
             {
-                failureReason = "That has already been dealt with.";
+                failureReason = Loc.T("mail.already_done");
                 return false;
             }
 
@@ -4841,7 +4850,7 @@ namespace ScalingLaws.Simulation
                     return true;
 
                 default:
-                    failureReason = "Nothing to do.";
+                    failureReason = Loc.T("mail.nothing_to_do");
                     return false;
             }
         }
@@ -4880,14 +4889,13 @@ namespace ScalingLaws.Simulation
 
             if (letter.AmountUsd <= 0L)
             {
-                failureReason = "Nothing owed.";
+                failureReason = Loc.T("tax.nothing_owed");
                 return false;
             }
 
             if (State.CashUsd < letter.AmountUsd)
             {
-                failureReason = $"{Usd(letter.AmountUsd)} owed and {Usd(State.CashUsd)} in the "
-                    + "account. It keeps growing while it is unpaid.";
+                failureReason = Loc.T("tax.cannot_pay", Usd(letter.AmountUsd), Usd(State.CashUsd));
 
                 return false;
             }
@@ -4930,14 +4938,13 @@ namespace ScalingLaws.Simulation
 
             if (letter.Kind != MailKind.TaxDemand)
             {
-                failureReason = "Only the revenue will wait. A penalty will not.";
+                failureReason = Loc.T("tax.penalty_wont_wait");
                 return false;
             }
 
             if (letter.DeferredDays >= LongestDeferralDays)
             {
-                failureReason = $"Already deferred {letter.DeferredDays} days, which is the limit. "
-                    + "It has to be paid.";
+                failureReason = Loc.T("tax.defer_limit", Loc.Counted(letter.DeferredDays, "noun.day"));
 
                 return false;
             }
@@ -4962,7 +4969,7 @@ namespace ScalingLaws.Simulation
 
             if (letter.Kind != MailKind.JobOffer)
             {
-                failureReason = "Nothing to accept.";
+                failureReason = Loc.T("hire.nothing_to_accept");
                 return false;
             }
 
@@ -4978,21 +4985,20 @@ namespace ScalingLaws.Simulation
             // catalog rate, which is exactly what that save was already paying for that person.
             if (State.IsBankrupt)
             {
-                failureReason = "The company is insolvent.";
+                failureReason = Loc.T("fail.insolvent");
                 return false;
             }
 
             if (!State.Staff.HasFreeSeat)
             {
-                failureReason =
-                    $"No free desk. {State.Staff.OfficeDefinition.DisplayName} holds "
-                    + $"{State.Staff.Desks}.";
+                failureReason = Loc.T("hire.no_free_desk",
+                    State.Staff.OfficeDefinition.DisplayName, State.Staff.Desks);
                 return false;
             }
 
             if (!StaffCatalog.TryGet(letter.Role, out var legacy))
             {
-                failureReason = "Unknown role.";
+                failureReason = Loc.T("hire.unknown_role");
                 return false;
             }
 
@@ -5000,13 +5006,13 @@ namespace ScalingLaws.Simulation
 
             if (State.CashUsd < fee)
             {
-                failureReason = $"Hiring costs ${fee:N0}, has ${State.CashUsd:N0}.";
+                failureReason = Loc.T("hire.needs_cash", UiMoney(fee), UiMoney(State.CashUsd));
                 return false;
             }
 
             if (!State.Staff.Add(new Hire(letter.Role, letter.Skill, State.Date)))
             {
-                failureReason = "There is nowhere for them to sit.";
+                failureReason = Loc.T("hire.nowhere_to_sit");
                 return false;
             }
 
@@ -5037,13 +5043,13 @@ namespace ScalingLaws.Simulation
 
             if (letter.Kind != MailKind.JobOffer || letter.IsClosed)
             {
-                failureReason = "Nothing to negotiate.";
+                failureReason = Loc.T("hire.nothing_to_negotiate");
                 return false;
             }
 
             if (letter.Candidate == null)
             {
-                failureReason = "That letter has no candidate behind it.";
+                failureReason = Loc.T("hire.no_candidate");
                 return false;
             }
 
@@ -5062,7 +5068,11 @@ namespace ScalingLaws.Simulation
         public const double StandardCounterFraction = 0.92;
 
 
-        private static string Usd(long amount) => "$" + amount.ToString("N0");
+        // Was "$" + amount.ToString("N0") with no culture, which follows the machine and printed
+        // the tax letter's figures as "$1 234 567" on a Polish install while every other amount on
+        // screen came from the invariant path. Same output as UiMoney; kept as a name because
+        // twelve call sites use it.
+        private static string Usd(long amount) => UiMoney(amount);
 
         /// <summary>Every retainer the company holds, not just the dearest one. They all invoice.</summary>
         private long DailyIntelRetainerUsd()
