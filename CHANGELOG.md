@@ -410,6 +410,13 @@ otherwise.
 
 ### Fixed
 
+- **Clicking the founder opens the founder.** It used to open the company page, which is a
+  reasonable answer to a different question, and it had been written that way for months behind a
+  branch that could never run. The card is theirs now: the seven skills with the levels the creation
+  points bought, what each one moves, and the traits picked at the start with what those do. None of
+  the employee figures appear on it, because a founder has no wage, no tenure and no loyalty band,
+  and inventing five of those for the one person the card is about would be worse than not having it.
+
 - **Clicking the founder did nothing, and clicking anybody else worked.** The character packs ship
   with no collider, so the ray from the office camera went straight through them on every frame
   since the room was built. Every hire has had a capsule since the day people became clickable, and
