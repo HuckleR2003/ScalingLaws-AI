@@ -123,6 +123,23 @@ go in. This file is the draft for the store update post, so anything vague here 
   stranded. It also explains the oddest half of the report: starting an upgrade raised that event
   again, which is why he suddenly continued.
 
+- **The game refuses in Polish now.** When you try something the game will not allow, it tells you
+  why, and seventy nine of those sentences were English in the Polish build: the company is
+  insolvent, a run is already in flight, that needs a research node first. They survived eleven
+  passes over the text because they are not written where screens are drawn. They are written beside
+  the rules, in a folder nobody had thought to search for player-facing words.
+
+- **Three pictures that were already in the game and were never drawn.** The model creator has eight
+  stages and showed art on two of them, while the illustrations for the data and compute stages sat
+  in the same folder as the two being used. The compute screen was the one screen about the fleet
+  with a bare heading, and its banner had been on disk the whole time. Found by walking every
+  resource folder in both directions: what the code asks for against what is there, and what is
+  there against what anybody asks for.
+
+- **The menu, the banner, the creator, the team page, the bank, the site, research, compute and
+  marketing** all read their words from the phrase book. That is the last of the large screens. The
+  book is at 2,722 phrases a language, up from 2,505, and every one of them exists in both.
+
 - **A grant could be signed, ignored, and paid out.** "Safe first release" asks that nothing goes
   wrong for ninety days, and nothing goes wrong at a company with no model, no users and nothing on
   sale. Accepting it on the first morning and walking away collected $400,000 and sixty research
@@ -138,6 +155,17 @@ go in. This file is the draft for the store update post, so anything vague here 
   opens on the world, and the company cannot be founded until you have said where it sits. Same
   reasoning as the founder's name, which stopped being pre-filled for the same reason.
 
+- **The Polish stopped assuming you are a man.** The game has no gender field and never asks, so
+  eight sentences were guessing. Most of that was fixed a day earlier; what survived are the forms a
+  search for past-tense endings cannot see, including the tutorial's skip button, which every player
+  reads in their first minute.
+
+- **Five sentences promised a number the game does not use.** A reasoning model's serving bill is
+  2.60 and the text said two and a half. Single precision is 1.30 and the text said a third. The
+  tutorial promised a zloty in a game denominated in dollars, and apartments and cars that do not
+  exist in it. Token prices fall to 44.9% a year and the README called that roughly half. No
+  constant moved; the sentences did.
+
 - **The research card said LOCKED in English.** Four of its five states were written into the code
   rather than the phrase book, so a Polish player read them in English next to a Polish title. It
   also said the same word for two different things: short of points is a matter of waiting, and
@@ -152,7 +180,15 @@ they have spent are the days the file records. Nothing else changed, and nothing
 ### Under the hood
 
 - 1115 EditMode tests across 117 fixtures, and 31 PlayMode across 8.
-- 2,505 phrases in the book, both languages complete, none written twice.
+- 2,722 phrases in the book, both languages complete, none written twice.
+- Seven finished fixes came in from Samanta's side, built on a snapshot thirty commits back,
+  so none of the fourteen files could be copied blind. Nine were byte-identical to that base
+  and were taken as they came; five had moved here and were merged three ways. Six conflicts,
+  every one of them where this side had been working the same day, and one of those was not a
+  conflict at all: a working copy in CRLF against a delivery in LF reports an entire file as
+  one conflict, and taking the delivered file at that point would have reverted an afternoon.
+- Six delivered keys were dropped rather than added, each because the only line that would
+  have read it is a line where the local version was kept.
 - Two of the tests written for the volume sliders were deleted the same hour: an EditMode element
   has no panel, so setting a slider's value dispatches no change event, and the pair of them were
   measuring an assignment and a callback that never ran. One of the two passed. What replaced them
