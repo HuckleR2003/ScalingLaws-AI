@@ -338,7 +338,13 @@ namespace ScalingLaws.UI
 
             if (plate != null && founder?.Model != null && plate.transform.IsChildOf(founder.Model))
             {
-                companyInfoOpen = !companyInfoOpen;
+                // **The founder gets a person's card, not the company's.** Clicking somebody in
+                // this room opens who they are, and answering that with the company page for one
+                // person in the room is answering a different question. The card is theirs: the
+                // seven skills, what the creation points bought, and the traits they picked, with
+                // none of the employee figures a founder does not have.
+                personPanel ??= new PersonPanel(() => simulation, () => Show(current));
+                personPanel.ShowFounder();
                 Show(current);
 
                 down.StopPropagation();

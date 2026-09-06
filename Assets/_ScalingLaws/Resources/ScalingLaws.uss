@@ -12797,6 +12797,44 @@
     border-left-color: rgba(255, 255, 255, 0.07);
 }
 
+/* The founder's card. Seven rows of icon, name, bar and level, in the same frame an employee
+   gets, because they are a person in the same room. `flex-shrink: 0` on the row and the icon for
+   the reason every block on a growable page in this project states it: UI Toolkit shrinks children
+   by default and a row of four things silently becomes a row of three and a half. */
+.pp__skill {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.pp__skill-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+.pp__skill-words {
+    flex-grow: 1;
+}
+
+.pp__skill-effect {
+    font-size: 11px;
+    color: rgb(150, 162, 182);
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
+.pp__skill-level {
+    width: 34px;
+    flex-shrink: 0;
+    font-size: 15px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    color: rgb(228, 238, 252);
+}
+
 .pp__portrait {
     margin-bottom: 14px;
 }

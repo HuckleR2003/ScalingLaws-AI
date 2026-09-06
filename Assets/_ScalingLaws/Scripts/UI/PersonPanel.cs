@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -39,6 +40,15 @@ namespace ScalingLaws.UI
         private Tab tab = Tab.Person;
 
         /// <summary>Which person is open, as an index into the roster, or -1 for none.</summary>
+        /// <summary>
+        /// What `open` holds when the card is the founder's rather than an employee's.
+        ///
+        /// A sentinel rather than a second bool, because `open` is already the one field that says
+        /// whether this panel is up and whose it is. Two fields would be two things to keep in step
+        /// and one of them would eventually say the panel is closed while the other draws it.
+        /// </summary>
+        public const int FounderIndex = -2;
+
         private int open = -1;
 
         /// <summary>Set once DISMISS has been pressed, because nothing brings them back.</summary>
@@ -53,7 +63,7 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>Whether anybody is open. The shell asks before drawing the scrim.</summary>
-        public bool IsOpen => open >= 0;
+        public bool IsOpen => open >= 0 || open == FounderIndex;
 
         /// <summary>
         /// Opens one person, or closes the panel when given the person already open.
@@ -68,6 +78,15 @@ namespace ScalingLaws.UI
             dismissArmed = false;
             problem = string.Empty;
             changed?.Invoke();
+        }
+
+        /// <summary>Opens the founder's own card. The one person in the room with no index.</summary>
+        public void ShowFounder()
+        {
+            open = FounderIndex;
+            tab = Tab.Person;
+            dismissArmed = false;
+            problem = string.Empty;
         }
 
         public void Close() => Show(-1);
@@ -89,7 +108,18 @@ namespace ScalingLaws.UI
             var simulation = company();
             var host = new VisualElement();
 
-            if (simulation == null || open < 0 || open >= simulation.State.Staff.Headcount)
+            if (simulation == null)
+            {
+                host.style.display = DisplayStyle.None;
+                return host;
+            }
+
+            if (open == FounderIndex)
+            {
+                return BuildFounderCard(host, simulation);
+            }
+
+            if (open < 0 || open >= simulation.State.Staff.Headcount)
             {
                 host.style.display = DisplayStyle.None;
                 return host;
@@ -123,6 +153,157 @@ namespace ScalingLaws.UI
                 trouble.AddToClassList("pp__problem");
                 card.Add(trouble);
             }
+
+            host.Add(card);
+            return host;
+        }
+
+        // ---- the founder ---------------------------------------------------------------------
+
+        /// <summary>
+        /// The player's own card, in the frame every other person in the room uses.
+        ///
+        /// **Nothing here is invented, which is the whole reason it is a separate builder.** The
+        /// employee tabs run on tenure, hourly wage, salary, hiring channel, bonus days, loyalty,
+        /// schedule and role, and the founder has not one of those. Forcing them through it would
+        /// mean fabricating a wage and a loyalty band for the person the card is about.
+        ///
+        /// What the founder does have is the seven skills, the levels the two hundred creation
+        /// points bought, the experience earned since, and the traits they chose. That is a real
+        /// page and it is the page a player clicking on themselves is asking for.
+        /// </summary>
+        private VisualElement BuildFounderCard(VisualElement host, CompanySimulation simulation)
+        {
+            var state = simulation.State;
+
+            host.AddToClassList("pp-scrim");
+            host.RegisterCallback<ClickEvent>(_ => Close());
+
+            var card = new VisualElement();
+            card.AddToClassList("pp");
+            card.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+
+            var head = new VisualElement();
+            head.AddToClassList("pp__head");
+
+            var who = new VisualElement();
+            who.AddToClassList("pp__who");
+
+            var name = new Label(UiFormat.PersonName(state.FounderName));
+            name.AddToClassList("pp__name");
+            who.Add(name);
+
+            var job = new Label(Loc.T("plate.ceo_of", state.CompanyName));
+            job.AddToClassList("pp__job");
+            who.Add(job);
+
+            head.Add(who);
+
+            var actions = new VisualElement();
+            actions.AddToClassList("pp__actions");
+
+            var close = new Button(Close) { text = Loc.T("common.close") };
+            close.AddToClassList("pp__action");
+            actions.Add(close);
+
+            head.Add(actions);
+            card.Add(head);
+
+            var body = new VisualElement();
+            body.AddToClassList("pp__body");
+
+            var left = new VisualElement();
+            left.AddToClassList("pp__left");
+
+            // **Measured from the starting level, not from zero.** Every skill begins at twenty and
+            // that is the neutral point the whole system is scored against, so a bar drawn from zero
+            // would show a founder who spent nothing as most of the way along.
+            foreach (var definition in PlayerSkillCatalog.All)
+            {
+                var level = state.Skills.Level(definition.Skill);
+
+                var row = new VisualElement();
+                row.AddToClassList("pp__skill");
+
+                var badge = SkillIcons.Badge(definition.Skill, 34);
+                badge.AddToClassList("pp__skill-icon");
+                row.Add(badge);
+
+                var words = new VisualElement();
+                words.AddToClassList("pp__skill-words");
+
+                var title = new Label(definition.DisplayName);
+                title.AddToClassList("pp__stat-label");
+                words.Add(title);
+
+                var effect = new Label(definition.ShortEffect);
+                effect.AddToClassList("pp__skill-effect");
+                words.Add(effect);
+
+                var track = new VisualElement();
+                track.AddToClassList("pp__track");
+
+                var fill = new VisualElement();
+                fill.AddToClassList("pp__fill");
+                fill.style.width = Length.Percent(Math.Clamp(level, 0, 100));
+                track.Add(fill);
+                words.Add(track);
+
+                row.Add(words);
+
+                var reading = new Label(level.ToString(CultureInfo.InvariantCulture));
+                reading.AddToClassList("pp__skill-level");
+                row.Add(reading);
+
+                left.Add(row);
+            }
+
+            body.Add(left);
+
+            var right = new VisualElement();
+            right.AddToClassList("pp__right");
+
+            var traitsHeading = new Label(Loc.T("creator.traits"));
+            traitsHeading.AddToClassList("pp__stat-label");
+            right.Add(traitsHeading);
+
+            var traits = state.Founder.Traits;
+            var drew = false;
+
+            foreach (var trait in traits)
+            {
+                if (trait == FounderTrait.None)
+                {
+                    continue;
+                }
+
+                var definition = FounderTraitCatalog.Get(trait);
+
+                var title = new Label(definition.DisplayName);
+                title.AddToClassList("pp__want");
+                right.Add(title);
+
+                var note = new Label(definition.EffectSummary);
+                note.AddToClassList("pp__skill-effect");
+                right.Add(note);
+
+                drew = true;
+            }
+
+            if (!drew)
+            {
+                var none = new Label(Loc.T("common.none"));
+                none.AddToClassList("pp__skill-effect");
+                right.Add(none);
+            }
+
+            // What the creation points actually went on, which is the one number that says whether
+            // this founder is a specialist or spread thin.
+            right.Add(Stat(Loc.T("creator.spent"),
+                state.Skills.TotalAllocated.ToString(CultureInfo.InvariantCulture)));
+
+            body.Add(right);
+            card.Add(body);
 
             host.Add(card);
             return host;
