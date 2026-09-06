@@ -120,7 +120,9 @@ namespace ScalingLaws.UI
         private DropdownField familyField;
         private Label familyHint;
         private readonly List<string> familyLines = new();
-        private const string NewLineOption = "Start a new line";
+        /// <summary>The sentinel row in the family dropdown. A property, not a const: it is shown to
+        /// the player, so it has to follow the language like everything else on the screen.</summary>
+        private static string NewLineOption => Loc.T("create.new_line");
         private Label laptopType;
         private ModelType chosenType = ModelType.General;
 
@@ -539,7 +541,7 @@ namespace ScalingLaws.UI
         }
 
         private string DisplayName() =>
-            string.IsNullOrWhiteSpace(nameField.value) ? "UNTITLED" : nameField.value.ToUpperInvariant();
+            string.IsNullOrWhiteSpace(nameField.value) ? Loc.T("create.untitled_caps") : nameField.value.ToUpperInvariant();
 
         /// <summary>
         /// The first stage: who the model is, plus the two decisions that are designed and not yet
@@ -557,7 +559,7 @@ namespace ScalingLaws.UI
             top.AddToClassList("panel-row");
 
             var series = NewPanel(Loc.T("create.series"));
-            familyField = new DropdownField("Model family");
+            familyField = new DropdownField(Loc.T("create.model_family"));
             familyField.AddToClassList("field");
             familyField.RegisterValueChangedCallback(_ => Reprice());
             series.Add(familyField);
@@ -653,7 +655,7 @@ namespace ScalingLaws.UI
             }
 
             typePicker.Clear();
-            typePicker.Add(SectionHeading("WHAT IS IT FOR"));
+            typePicker.Add(SectionHeading(Loc.T("create.what_for")));
 
             var grid = new VisualElement();
             grid.AddToClassList("type-grid");
@@ -1232,9 +1234,9 @@ namespace ScalingLaws.UI
 
             var zones = new VisualElement();
             zones.AddToClassList("belt-block__zones");
-            zones.Add(ZoneCaption("COMPUTE-STARVED", "belt-zone--left"));
-            zones.Add(ZoneCaption("EFFICIENT ZONE", "belt-zone--mid"));
-            zones.Add(ZoneCaption("DATA-HEAVY SPILL", "belt-zone--right"));
+            zones.Add(ZoneCaption(Loc.T("create.zone.starved"), "belt-zone--left"));
+            zones.Add(ZoneCaption(Loc.T("create.zone.efficient"), "belt-zone--mid"));
+            zones.Add(ZoneCaption(Loc.T("create.zone.spill"), "belt-zone--right"));
             block.Add(zones);
 
             var balance = new Button(BalanceShape) { text = Loc.T("create.match_optimum") };
@@ -1293,11 +1295,11 @@ namespace ScalingLaws.UI
             memoryLabel.EnableInClassList("scale-memory--over", !profile.Fits);
 
             scaleReadout.Clear();
-            scaleReadout.Add(SectionHeading("SCALING READOUT"));
+            scaleReadout.Add(SectionHeading(Loc.T("create.panel.readout")));
 
             // Capability is shown against the scale it is measured on rather than against a private
             // maximum, so the bar means the same thing here as it does on the rankings screen.
-            scaleReadout.Add(ThinBar("Expected capability",
+            scaleReadout.Add(ThinBar(Loc.T("create.expected"),
                 UiFormat.Number(projection.ProjectedCapability), projection.ProjectedCapability / 100.0));
             scaleReadout.Add(ThinBar(Loc.T("create.training_efficiency"),
                 UiFormat.Percent(profile.TrainingEfficiency), profile.TrainingEfficiency));
@@ -1314,7 +1316,7 @@ namespace ScalingLaws.UI
                 Math.Min(1.0, profile.MemoryPressure)));
 
             scaleNotes.Clear();
-            scaleNotes.Add(SectionHeading("NOTES"));
+            scaleNotes.Add(SectionHeading(Loc.T("create.panel.notes")));
 
             foreach (var note in profile.Notes)
             {
@@ -2072,8 +2074,8 @@ namespace ScalingLaws.UI
             var ceiling = simulation.ParameterCeilingBillions();
             parameterLockLabel.text =
                 ScaleCeiling.TryNextRung(simulation.State.HasResearch, out var rung, out _)
-                    ? $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP  ·  {ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}"
-                    : $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP";
+                    ? Loc.T("create.locked_cap_node", UiFormat.Billions(ceiling), ResearchTree.Get(rung).DisplayName.ToUpperInvariant())
+                    : Loc.T("create.locked_cap", UiFormat.Billions(ceiling));
         }
 
         /// <summary>
@@ -2107,8 +2109,8 @@ namespace ScalingLaws.UI
 
             tokenLockLabel.text =
                 TokenCeiling.TryNextRung(simulation.State.HasResearch, out var rung, out _)
-                    ? $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP  ·  {ResearchTree.Get(rung).DisplayName.ToUpperInvariant()}"
-                    : $"LOCKED  ·  {UiFormat.Billions(ceiling)} CAP";
+                    ? Loc.T("create.locked_cap_node", UiFormat.Billions(ceiling), ResearchTree.Get(rung).DisplayName.ToUpperInvariant())
+                    : Loc.T("create.locked_cap", UiFormat.Billions(ceiling));
         }
 
         private void ConfigureSlider(Slider slider, float low, float high, float initial)
@@ -2130,7 +2132,7 @@ namespace ScalingLaws.UI
             foreach (var pair in simulation.State.CustomArchitectures)
             {
                 architectureOptions.Add(pair.Key);
-                labels.Add($"{pair.Value.DisplayName}  (house)");
+                labels.Add(Loc.T("create.house_suffix", pair.Value.DisplayName));
             }
 
             foreach (var definition in ArchitectureCatalog.AvailableOn(simulation.State.Date))
@@ -2311,7 +2313,7 @@ namespace ScalingLaws.UI
                 : DeduplicationPass.Standard;
 
             return new ModelBlueprint(
-                string.IsNullOrWhiteSpace(nameField.value) ? "Untitled model" : nameField.value,
+                string.IsNullOrWhiteSpace(nameField.value) ? Loc.T("create.untitled_model") : nameField.value,
                 architecture,
                 Math.Pow(10.0, parameterSlider.value),
                 Math.Pow(10.0, tokenSlider.value),
@@ -2421,24 +2423,30 @@ namespace ScalingLaws.UI
                 profile, simulation.Market, simulation.State.Pool.RentedPetaflops, rentCeiling));
 
             BeginReadouts();
-            AddReadout("Projected capability", UiFormat.Number(projection.ProjectedCapability), Tone.Neutral);
-            AddReadout("Frontier today", UiFormat.Number(simulation.Market.FrontierCapability), Tone.Neutral);
+            AddReadout(Loc.T("create.projected"), UiFormat.Number(projection.ProjectedCapability), Tone.Neutral);
+            // `create.fig_frontier` rather than `create.frontier`, and the difference matters. Both
+            // hold "FRONTIER TODAY" in English, but their Polish diverged: FRONT DZISIAJ against
+            // GRANICA DZISIAJ. This panel already draws the second one a few hundred lines down, so
+            // calling the first here would put two names for one number on one screen.
+            AddReadout(Loc.T("create.fig_frontier"), UiFormat.Number(simulation.Market.FrontierCapability), Tone.Neutral);
             AddReadout(
-                "Tokens per parameter",
-                $"{UiFormat.Number(projection.TokensPerParameter)} against {UiFormat.Number(projection.OptimalTokensPerParameter)} optimal",
+                Loc.T("create.tokens_per_parameter"),
+                Loc.T("create.against_optimal", UiFormat.Number(projection.TokensPerParameter),
+                    UiFormat.Number(projection.OptimalTokensPerParameter)),
                 projection.IsUndertrained || projection.IsOvertrained ? Tone.Warn : Tone.Good);
-            AddReadout("Budget converted", UiFormat.Percent(projection.ShapeEfficiency),
+            AddReadout(Loc.T("create.budget_converted"), UiFormat.Percent(projection.ShapeEfficiency),
                 projection.ShapeEfficiency > 0.9 ? Tone.Good : Tone.Warn);
-            AddReadout("Compute", UiFormat.PetaflopDays(projection.TrainingPetaflopDays), Tone.Neutral);
-            AddReadout("Duration", UiFormat.Days(projection.TrainingDays), Tone.Neutral);
-            AddReadout("Cash it burns", UiFormat.Money(projection.ComputeCashCostUsd),
+            AddReadout(Loc.T("create.compute_short"), UiFormat.PetaflopDays(projection.TrainingPetaflopDays), Tone.Neutral);
+            AddReadout(Loc.T("create.duration"), UiFormat.Days(projection.TrainingDays), Tone.Neutral);
+            AddReadout(Loc.T("create.fig_cash"), UiFormat.Money(projection.ComputeCashCostUsd),
                 projection.ComputeCashCostUsd > simulation.State.CashUsd ? Tone.Bad : Tone.Neutral);
-            AddReadout("With value lost", UiFormat.Money(projection.ComputeEconomicCostUsd), Tone.Neutral);
+            AddReadout(Loc.T("create.value_lost"), UiFormat.Money(projection.ComputeEconomicCostUsd), Tone.Neutral);
             AddReadout(
-                "Accelerator memory",
-                $"{UiFormat.Count(projection.MemoryRequiredGigabytes)} GB of {UiFormat.Count(projection.MemoryAvailableGigabytes)} GB",
+                Loc.T("create.accel_memory"),
+                Loc.T("create.memory_of", UiFormat.Count(projection.MemoryRequiredGigabytes),
+                    UiFormat.Count(projection.MemoryAvailableGigabytes)),
                 projection.MemoryRequiredGigabytes > projection.MemoryAvailableGigabytes ? Tone.Bad : Tone.Good);
-            AddReadout("Data quality", UiFormat.Number(projection.Blend.QualityMultiplier, 2),
+            AddReadout(Loc.T("create.corpus_quality"), UiFormat.Number(projection.Blend.QualityMultiplier, 2),
                 projection.Blend.IsSufficient ? Tone.Good : Tone.Bad);
             EndReadouts();
 
@@ -2449,10 +2457,10 @@ namespace ScalingLaws.UI
             {
                 verdict.AddToClassList("verdict--ok");
                 verdict.text = projection.IsUndertrained
-                    ? "Runnable, but this model is too large for the data it will see. The same bill would buy more capability in a smaller model."
+                    ? Loc.T("create.shape_too_large")
                     : projection.IsOvertrained
-                        ? "Runnable, but the parameters run out long before the tokens do. Most of this compute is being wasted."
-                        : "Runnable and well shaped.";
+                        ? Loc.T("create.shape_too_small")
+                        : Loc.T("create.shape_good");
             }
             else
             {
@@ -2480,8 +2488,8 @@ namespace ScalingLaws.UI
                     UiFormat.Percent(running.Progress, 0), elapsed);
 
                 abandonButton.text = abandonArmed
-                    ? "CONFIRM, THE RUN IS LOST"
-                    : "ABANDON THIS RUN";
+                    ? Loc.T("create.abandon_confirm")
+                    : Loc.T("create.abandon");
 
                 abandonButton.EnableInClassList("button--armed", abandonArmed);
             }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ScalingLaws.Data;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -185,29 +186,28 @@ namespace ScalingLaws.UI
     /// </summary>
     public static class MenuLines
     {
-        public static readonly string[] All =
+        /// <summary>
+        /// The eight lines, resolved fresh every time they are asked for.
+        ///
+        /// **A property rather than a `static readonly` array, and that is the whole point.** A
+        /// static array of resolved strings is built once, the first time anything touches the type,
+        /// and keeps whatever language was current at that moment for the rest of the process. The
+        /// player can switch language from the settings sheet at any time, so the menu would go on
+        /// typing English after the rest of the screen had turned Polish.
+        ///
+        /// The menu rebuilds itself on a language change, and the array is read once per rebuild, so
+        /// resolving eight phrases here costs nothing anybody can measure.
+        /// </summary>
+        public static string[] All => new[]
         {
-            "January 2022. Twelve million dollars, no product, and eleven months before the world "
-            + "finds out what any of this is for.",
-
-            "Watch your safety numbers. Sixty million in the bank, everything going well, and then a "
-            + "regulator pulls your only model off the market and fines you ninety.",
-
-            "Your model finishes training in four months. The frontier does not wait four months.",
-
-            "Rent the compute or buy it. Buy it too early and you own a depreciating asset; buy it "
-            + "too late and somebody else already has the customers.",
-
-            "Corporation tax accrues all year and arrives in January. A company that cannot pay in "
-            + "January decided that in September.",
-
-            "You can pay for advance warning. The cheap desk is wrong about one thing in three and "
-            + "sounds exactly as confident as the expensive one.",
-
-            "Advertising buys attention, never quality. A bad model advertised hard gets tried and "
-            + "abandoned, which costs you twice.",
-
-            "There is no winning move that works twice. Token prices halve every year."
+            Loc.T("menu.tip.1"),
+            Loc.T("menu.tip.2"),
+            Loc.T("menu.tip.3"),
+            Loc.T("menu.tip.4"),
+            Loc.T("menu.tip.5"),
+            Loc.T("menu.tip.6"),
+            Loc.T("menu.tip.7"),
+            Loc.T("menu.tip.8")
         };
     }
 }

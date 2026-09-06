@@ -132,7 +132,7 @@ namespace ScalingLaws.UI
 
         private readonly VisualElement trainingFill = new();
         private readonly Label trainingDays = new();
-        private readonly Label trainingCaption = new("TRAINING MODEL");
+        private readonly Label trainingCaption = new(Loc.T("banner.training"));
         private readonly Label chevron = new();
 
         /// <summary>Folded away by the player, or folded by default because there is nothing to show.</summary>
@@ -221,9 +221,9 @@ namespace ScalingLaws.UI
 
             var meters = new VisualElement();
             meters.AddToClassList("mb__meters");
-            meters.Add(Meter("HAPPINESS", happinessFill, "mb-meter__fill--good"));
+            meters.Add(Meter(Loc.T("banner.happiness"), happinessFill, "mb-meter__fill--good"));
 
-            var right = Meter("TOPICALITY", topicalityFill, "mb-meter__fill--warm");
+            var right = Meter(Loc.T("banner.topicality"), topicalityFill, "mb-meter__fill--warm");
             topicalityWord.AddToClassList("mb-meter__word");
             right.Add(topicalityWord);
             meters.Add(right);
@@ -241,8 +241,10 @@ namespace ScalingLaws.UI
             // The lead banner reports the company: what came in and what is left of it. A follower
             // reports the model: what this one has taken since it went on sale. Same two cells, two
             // different questions, and the captions say which is which so neither can be misread.
-            footer.Add(FooterCell(compact ? "USERS ON IT" : "NET INCOME", net));
-            footer.Add(FooterCell(compact ? "EARNED ALL TIME" : "SUBS. EARNINGS", earnings));
+            footer.Add(FooterCell(
+                compact ? Loc.T("banner.users_on_it") : Loc.T("banner.net_income"), net));
+            footer.Add(FooterCell(
+                compact ? Loc.T("banner.earned_total") : Loc.T("banner.subs_earnings"), earnings));
             body.Add(footer);
 
             return body;

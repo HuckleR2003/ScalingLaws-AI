@@ -394,10 +394,12 @@ namespace ScalingLaws.UI
 
             card.Add(chart);
 
-            card.Add(ConsoleRow("PARAMETERS", "20.0B"));
-            card.Add(ConsoleRow("TRAINING TOKENS", "400B"));
-            card.Add(ConsoleRow("TOKENS PER PARAMETER", "20.0"));
-            card.Add(ConsoleRow("PROJECTED CAPABILITY", "21.5"));
+            // The readout behind the menu. The last two already had keys, from the creator screen
+            // that shows the same four figures for real.
+            card.Add(ConsoleRow(Loc.T("create.parameters"), "20.0B"));
+            card.Add(ConsoleRow(Loc.T("create.training_tokens"), "400B"));
+            card.Add(ConsoleRow(Loc.T("create.tokens_per_parameter"), "20.0"));
+            card.Add(ConsoleRow(Loc.T("create.projected"), "21.5"));
 
             var rack = new VisualElement();
             rack.AddToClassList("rack-row");
@@ -934,8 +936,7 @@ namespace ScalingLaws.UI
             traitsHeading.AddToClassList("panel__heading");
             traitsHeader.Add(traitsHeading);
 
-            traitsHeader.Add(Hint($"Pick {FounderTraitCatalog.TraitsPerFounder}. They last the whole campaign "
-                + "and every one is a trade, not a bonus."));
+            traitsHeader.Add(Hint(Loc.T("create.traits_note", FounderTraitCatalog.TraitsPerFounder)));
             traits.Add(traitsHeader);
 
             // One row of four, with the rest behind a banner joined to the bottom of it. Eight cards
@@ -960,7 +961,9 @@ namespace ScalingLaws.UI
 
             var toggle = new Button(() => { showAllTraits = !showAllTraits; Show(Stage.Founder); })
             {
-                text = expanded ? "SHOW LESS" : $"SHOW MORE  ({all.Count - visible})"
+                text = expanded
+                    ? Loc.T("create.show_less")
+                    : Loc.T("create.show_more", all.Count - visible)
             };
             toggle.AddToClassList("trait-banner");
 
@@ -977,9 +980,11 @@ namespace ScalingLaws.UI
             page.Add(traits);
 
             var remaining = FounderTraitCatalog.TraitsPerFounder - chosenTraits.Count;
-            page.Add(Footer("CONTINUE", () => Show(Stage.Company), () => Show(Stage.Intro),
+            // One sentence where English had two. Polish counts in three forms, not two, so the
+            // number goes to the end of the line rather than into the middle of a noun.
+            page.Add(Footer(Loc.T("create.continue"), () => Show(Stage.Company), () => Show(Stage.Intro),
                 remaining == 0,
-                remaining == 1 ? "One more trait to pick." : $"{remaining} more traits to pick."));
+                Loc.T("create.traits_left", remaining)));
 
             return page;
         }
@@ -1042,13 +1047,13 @@ namespace ScalingLaws.UI
             view.style.backgroundImage = Background.FromRenderTexture(studio.Texture);
             portrait.Add(view);
 
-            portrait.Add(PortraitChooser("CHARACTER", by =>
+            portrait.Add(PortraitChooser(Loc.T("create.character"), by =>
             {
                 studio.StepLook(by);
                 founderLook = studio.LookName;
             }));
 
-            portrait.Add(PortraitChooser("GLASSES", by =>
+            portrait.Add(PortraitChooser(Loc.T("create.glasses"), by =>
             {
                 studio.StepGlasses(by);
                 founderGlasses = studio.GlassesIndex;
@@ -1099,9 +1104,8 @@ namespace ScalingLaws.UI
             header.Add(budget);
 
             column.Add(header);
-            column.Add(Hint($"Everything starts at {PlayerSkillLimits.StartingLevel}, where it has no effect "
-                + $"either way. Each click adds {PlayerSkillLimits.PointsPerClick}. These keep growing as you "
-                + "play, and they are the only thing money cannot buy."));
+            column.Add(Hint(Loc.T("create.skills_note",
+                PlayerSkillLimits.StartingLevel, PlayerSkillLimits.PointsPerClick)));
 
             // Seven rows in one stack is taller than the page has room for. Four and three side by
             // side is the same information in a little over half the height.
@@ -1280,14 +1284,14 @@ namespace ScalingLaws.UI
 
         private static IEnumerable<VisualElement> TraitEffectLines(FounderTraitDefinition definition)
         {
-            yield return EffectLine("Brand", definition.BrandBonus, 0.0, true);
-            yield return EffectLine("Operating cost", definition.OperatingCostMultiplier, 1.0, false);
-            yield return EffectLine("Research time", definition.ResearchDurationMultiplier, 1.0, false);
-            yield return EffectLine("Training speed", definition.TrainingThroughputMultiplier, 1.0, true);
-            yield return EffectLine("Hardware price", definition.HardwarePriceMultiplier, 1.0, false);
-            yield return EffectLine("Data supply", definition.DataSupplyMultiplier, 1.0, true);
+            yield return EffectLine(Loc.T("create.effect.brand"), definition.BrandBonus, 0.0, true);
+            yield return EffectLine(Loc.T("create.effect.opcost"), definition.OperatingCostMultiplier, 1.0, false);
+            yield return EffectLine(Loc.T("create.effect.research"), definition.ResearchDurationMultiplier, 1.0, false);
+            yield return EffectLine(Loc.T("create.effect.training"), definition.TrainingThroughputMultiplier, 1.0, true);
+            yield return EffectLine(Loc.T("create.effect.hardware"), definition.HardwarePriceMultiplier, 1.0, false);
+            yield return EffectLine(Loc.T("create.effect.data"), definition.DataSupplyMultiplier, 1.0, true);
             yield return EffectLine("Valuation", definition.ValuationMultiplier, 1.0, true);
-            yield return EffectLine("Reputation gain", definition.ReputationGainMultiplier, 1.0, true);
+            yield return EffectLine(Loc.T("create.effect.reputation"), definition.ReputationGainMultiplier, 1.0, true);
         }
 
         /// <summary>
@@ -1537,21 +1541,20 @@ namespace ScalingLaws.UI
 
             var caption = new Label(exact
                 ? WorldRegionCatalog.Get(chosenCountry).Note
-                : $"Average across {WorldRegionCatalog.CountriesIn(chosenRegion).Count} countries. "
-                  + "Pick one for the real figures.");
+                : Loc.T("country.region_average", WorldRegionCatalog.CountriesIn(chosenRegion).Count));
             caption.AddToClassList("region-effects__caption");
             strip.Add(caption);
 
             var row = new VisualElement();
             row.AddToClassList("region-effects__row");
 
-            row.Add(EffectTile("HARDWARE ACCESS", profile.HardwarePriceMultiplier, 1.0, false,
-                "What accelerators cost here"));
-            row.Add(EffectTile("CORPORATE TAX", profile.TaxRate, 0.0, false, "Share of operating profit"));
-            row.Add(EffectTile("INNOVATION", profile.InnovationMultiplier, 1.0, true,
-                "Research and upgrade speed"));
-            row.Add(EffectTile("LOCAL COMPETITION", profile.LocalCompetitionMultiplier, 1.0, false,
-                "How hard your brand has to work"));
+            row.Add(EffectTile(Loc.T("country.hardware"), profile.HardwarePriceMultiplier, 1.0, false,
+                Loc.T("country.hardware.note")));
+            row.Add(EffectTile(Loc.T("country.tax"), profile.TaxRate, 0.0, false, Loc.T("country.tax.note")));
+            row.Add(EffectTile(Loc.T("country.innovation"), profile.InnovationMultiplier, 1.0, true,
+                Loc.T("country.innovation.note")));
+            row.Add(EffectTile(Loc.T("country.competition"), profile.LocalCompetitionMultiplier, 1.0, false,
+                Loc.T("country.competition.note")));
 
             strip.Add(row);
             return strip;
