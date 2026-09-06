@@ -5,8 +5,17 @@ Read it BEFORE building anything new. Extend an existing mechanism instead of
 creating a second one. That rule is borrowed from PC Workman, where it is the
 reason there is one hardware compatibility engine instead of six.
 
-Updated: 2026-08-02. Unity 6000.4.11f1, no render pipeline chosen yet because
-there is no scene yet.
+Updated: 2026-09-06, for 0.2.0. Unity **6000.5.8f1**, which is not optional: the manifest
+carries `com.unity.modules.physicscore2d` and 6000.4.11f1 dies on package resolution
+with no test results at all.
+
+Still on the built-in pipeline rather than URP. There are three scenes now (the
+house, the basement and the city), so the older line here saying there is no
+scene yet was describing a project that stopped existing in August.
+
+**Numbers in this file are measured, and the command that measures each one is
+written next to it.** Three counts in this document were wrong for months
+because they were copied forward instead of re-run.
 
 ---
 
@@ -33,7 +42,7 @@ inside three years. That is intentional.
 | `Assets/_ScalingLaws/Scripts/Simulation/` | The rules. Also no UnityEngine, so tests run in milliseconds. |
 | `Assets/_ScalingLaws/Scripts/Persistence/` | Save format, migration, PlayerPrefs I/O. The only folder that imports UnityEngine. |
 | `Assets/_ScalingLaws/Scripts/UI/` | 93 files. UI Toolkit panels, consumers only: nothing here decides anything. |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1079 tests across 113 fixtures. No scene is loaded by any of them. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1115 tests across 117 fixtures. No scene is loaded by any of them. Count them with the command in `CLAUDE.md`; this line has been wrong twice. |
 | `Assets/_ScalingLaws/Tests/PlayMode/` | 31 tests across 8 fixtures. These load a scene, which is the point: they are the only ones that can see a layout fault. |
 
 **These counts were wrong for a long time and it mattered.** This table said `UI/` was
@@ -307,7 +316,7 @@ chain, and calendar, and the calendar is the part that cannot be bought out of. 
 what moved the baseline player from finishing four years ahead of the whole field to finishing
 behind it.
 
-Four eras, seventeen nodes, ending on `ArtificialSuperintelligence`, which is visible on the board
+Five eras and 59 nodes across four tracks, ending on `ArtificialSuperintelligence`, which is visible on the board
 from day one, carries a warning, and cannot be reached inside the first four years. Two rules that
 `ConsistencyTests` pins: every node must be reachable from the root, and no node may open earlier
 than its own prerequisite. The second one caught a real dead end where Autonomous Agents opened six
@@ -336,11 +345,19 @@ that does not care whether the quarter went well. That is the entire reason both
 | Bridge | 15M | 1.22x | 18 months | 45 percent of the frontier |
 | Venture debt | 120M | 1.45x | 4 years | 40M run rate, scaling laws |
 | Corporate bond | 900M | 1.62x | 7 years | 400M run rate, datacenter programme |
-| Sovereign compute | 10B | **2.25x** | 11 years | 2B run rate, 90 percent of the frontier, recursive self-improvement |
+| Sovereign compute | 10B | **2.40x**, ~2.87 effective | 11 years | 2B run rate, 90 percent of the frontier, recursive self-improvement |
+| State compute grant | 1B | 2.93x, ~3.30 effective | 8 years | the smaller state programme, dearer per dollar on purpose |
+
+**Two costs, not one, and the headline multiple is only half the price.** Every
+facility also charges a monthly commission on the *original* principal, which
+pays nothing off and runs through the grace period. That is what makes borrowing
+more than you need expensive rather than merely large. The effective column is
+`repaymentMultiple + monthlyCommissionRate * months`, and `DebtTests` pins the
+sovereign band on that figure rather than on the headline.
 
 The sovereign programme is the largest single sum in the game and the only one that can end a
-campaign by itself: ten billion in, twenty two and a half billion out, and a government that will
-not renegotiate.
+campaign by itself: ten billion in, a little under twenty nine billion out once the commission is
+counted, and a government that will not renegotiate.
 
 Arrears are tracked rather than instantly fatal. A lender carries a good company through a bad
 quarter and stops after `ArrearsBeforeDefault` days, at which point the default is called publicly
@@ -361,7 +378,12 @@ corrupt one.
 - **v3**: trait levels, the release shelf, the cap table, rival agent state and
   the intelligence desk.
 - **v4**: in-house architecture families and any programme in flight.
-- **v5** (current): rented compute contracted in petaflops rather than units.
+- **v5**: rented compute contracted in petaflops rather than units.
+- **v52** (current). Forty seven steps have been added since this list was
+  written and they are not worth enumerating here; `SaveMigration` is the list,
+  one method per step, each stamping its own version number. The last few:
+  **v50** each model's own month of trading, **v51** which chair a lawsuit was
+  filed from, **v52** whether a grant's term has started running.
 
 `UpgradeV1ToV2` reconstructs a batch from the bare count: the accelerator that
 was current on the save date, bought half a value half-life earlier.
@@ -380,8 +402,12 @@ the clouds were renting, and that determines the petaflops.
 
 Every step says what it had to invent in `SaveMigration.LastMigrationNotes`. Each
 method moves a file forward exactly one version and the runner chains them, so a
-v1 file goes v1 to v2 to v3 to v4 to v5. When v6 arrives, add `UpgradeV5ToV6` and
-chain it. Do not edit an existing reader.
+v1 file walks every step up to the current one. When v53 arrives, add
+`UpgradeV52ToV53` and chain it. Do not edit an existing reader.
+
+The runner is a loop rather than a hand-written nest of calls, because a loop
+cannot stop short of the newest version. It did once, and later fields loaded
+uninitialised.
 
 `SaveStore.Sanitize` clamps every field on the way in, on the assumption the
 file may have been hand edited or written by a build that no longer exists.
@@ -419,8 +445,10 @@ to license, nothing to keep in step with the palette, and it stays sharp at any 
 
 ## Commands
 
-Unity lives in `C:\Program Files\Unity\Hub\Editor\6000.4.11f1`. In PowerShell,
+Unity lives in `C:\Program Files\Unity\Hub\Editor\6000.5.8f1`. In PowerShell,
 build the path with `Join-Path ${env:ProgramFiles} ...` rather than a literal.
+`ProjectSettings/ProjectVersion.txt` is the only source of truth for the version
+and it must be read before running any of this.
 
 ```
 -batchmode -nographics -projectPath <project> -runTests -testPlatform EditMode -testResults TestResults.xml
@@ -465,21 +493,35 @@ was the only gate and money compounds. Calendar cost cannot be compounded away.
 
 Steps 1 to 4 are done, and the first screens of step 5 are up. Left open:
 
-- **Player-designed architecture families.** The biggest remaining gap. Right
-  now an architecture is adopted from `ArchitectureCatalog` for cash. The design
-  is to mirror the model creator: an `ArchitectureProject` that spends research
-  budget and calendar time on chosen directions (sparsity, attention, context,
-  serving cost) and produces a custom `ArchitectureDefinition` with rolled stats,
-  which then becomes the family every later model inherits from. It wants the
-  same treatment the creator got and should not be rushed in beside something else.
-- **Staff and offices.** There is no team. Employee skill is what drives review
-  scores in Devices Tycoon and it is a natural multiplier on both training
-  outcome variance and upgrade speed.
-- **Safety incidents.** The Safety trait currently only pays into brand. It
-  should also gate a tail risk: a model far below par on Safety can produce an
-  incident that costs reputation and triggers regulatory attention.
-- **Office and hardware screens.** The compute simulation is complete but has no
-  UI. See `UI_RESEARCH_AND_ASSETS.md`.
+**Four things this section listed as missing are in 0.2.0**, and they are left
+written out below rather than deleted, because a map that quietly drops an entry
+teaches nobody anything about how long a gap stays open.
+
+- ~~**Player-designed architecture families.**~~ **Built.**
+  `ArchitectureCreatorPanel` and `ArchitectureProject`: five direction sliders,
+  research budget and calendar time, rolled stats, and a ladder of research that
+  raises each slider's ceiling from 0.35 to the full range.
+- ~~**Staff and offices.**~~ **Built.** `StaffRoster`, five office tiers with
+  rent against purchase, and the people stand in the room and can be clicked.
+- ~~**Safety incidents.**~~ **Built, and further than this described.** A
+  `SafetyPlan` of three modules on the run itself, an incident roll, and
+  `RegulatoryAction`: a five day inspection whose verdict is rolled against the
+  modules **the model was built with** rather than what the company holds today.
+- ~~**Office and hardware screens.**~~ **Built.** The fleet screen, the premises
+  page, and the basement as a room you walk into.
+
+Still open:
+
+- **URP.** The package is in the manifest and no pipeline asset is assigned, so
+  the room is on the built-in shader path. Turning it on means re-running the
+  room builder and re-doing the portrait pass; one character pack renders magenta
+  until it happens.
+- **Licensing an architecture family for cash.** The method exists and no
+  reachable state satisfies it, because every family is opened by research that
+  hands it over. The creator names the families you do not hold and prices them
+  as information rather than as an offer.
+- **The basement cursor has no test.** The grid is tested and the click-to-tile
+  projection is not, because Edit mode dispatches no pointer events.
 
 ## Style
 

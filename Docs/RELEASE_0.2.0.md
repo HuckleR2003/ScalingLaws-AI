@@ -81,7 +81,7 @@ Around forty, and these are the ones you would have noticed:
 
 ## Saves
 
-**Format v51.** A campaign from 0.1.0 or anything since opens here and keeps everything in it.
+**Format v52.** A campaign from 0.1.0 or anything since opens here and keeps everything in it.
 
 Two things cannot be recovered for an older file and are left honestly empty rather than invented:
 the month of trading history each model now keeps, which fills itself in over a month of play, and
@@ -90,8 +90,8 @@ particular day.
 
 ## Under the hood
 
-- 1079 EditMode tests across 113 fixtures, 31 PlayMode across 8.
-- 2,489 phrases, English and Polish, both complete.
+- 1115 EditMode tests across 117 fixtures, 31 PlayMode across 8.
+- 2,722 phrases, English and Polish, both complete.
 - Eighteen catalogs stopped storing text, so nothing on screen is stuck in the language the game
   started in.
 
