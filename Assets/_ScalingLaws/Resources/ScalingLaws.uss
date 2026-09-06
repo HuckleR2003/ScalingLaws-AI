@@ -4403,6 +4403,22 @@
 .rcard__badge--done {
     color: rgb(126, 196, 250); }
 
+/* A band rather than a coloured word, because this is the one badge that is an instruction: there
+   is another node to go and start first. The other three are a status and read as one. Sits flush
+   with the title column above it, so it is the width of the card's copy and impossible to skim
+   past. The colour is the same red the board paints the road in, deliberately: the player is meant
+   to connect the banner on the card with the pips that just lit up behind it. */
+.rcard__badge--needed {
+    color: rgb(255, 228, 228);
+    background-color: rgb(140, 36, 36);
+    border-left-color: rgb(232, 96, 96);
+    border-left-width: 3px;
+    border-radius: 3px;
+    padding: 4px 8px 4px 8px;
+    margin-top: 5px;
+    -unity-font-style: bold;
+}
+
 .rcard__body {
     font-size: 12.5px;
     color: rgb(196, 208, 226);
@@ -11362,6 +11378,27 @@
     scale: 1 1;
 }
 
+/* Rolled up on a screen away from the site: the counter and nothing else, at 35% more transparent.
+   Placed above `--arriving` on purpose. Both are one class on the same element, so at equal
+   specificity the later rule takes `opacity`, and putting this one second would hold a rolled-up
+   strip at 0.65 on the frame it is meant to be invisible for and lose the pop entirely. */
+.taskbar--rolled {
+    width: 132px;
+    opacity: 0.65;
+}
+
+.taskbar--rolled .taskbar__head {
+    margin-bottom: 0;
+}
+
+.taskbar--clickable:hover {
+    opacity: 1;
+}
+
+.taskbar__kicker--clickable:hover {
+    color: rgb(244, 214, 96);
+}
+
 .taskbar--arriving {
     opacity: 0;
     scale: 0.7 0.5;
@@ -15830,6 +15867,30 @@
 .pause__label {
     font-size: 14px;
     color: rgb(226, 232, 244);
+}
+
+/* The two volume rows. `.pause__hint` under each says which sounds it moves, because the whole
+   reason there are two of these is that one is the clicks and one is the room. */
+.pause__volume {
+    flex-shrink: 0;
+}
+
+.pause__sliderline {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.pause__slider {
+    width: 190px;
+    margin: 0;
+}
+
+.pause__reading {
+    width: 48px;
+    font-size: 12px;
+    -unity-text-align: middle-right;
+    color: rgb(170, 182, 204);
 }
 
 .pause__choices {
