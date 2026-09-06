@@ -410,6 +410,13 @@ otherwise.
 
 ### Fixed
 
+- **Clicking the founder did nothing, and clicking anybody else worked.** The character packs ship
+  with no collider, so the ray from the office camera went straight through them on every frame
+  since the room was built. Every hire has had a capsule since the day people became clickable, and
+  the founder never got one, so this was not a near miss or a bad angle: there was nothing there to
+  hit. A hire also has a fallback that projects their position when the ray fails, and the founder
+  had none of that either, so nothing caught it.
+
 - **The research board had never drawn a single one of its state colours.** Ready, running, done and
   picked all set a border and a fill, and the base rule for a node sits later in the stylesheet with
   equal specificity, so it won every one of them. What survived was what the base does not set: the
@@ -671,7 +678,7 @@ researches one and reloads gets exactly what it had.
 
 ### Under the hood
 
-- 1115 EditMode tests across 117 fixtures, and 31 PlayMode across 8. Measured on the day of the
+- 1116 EditMode tests across 117 fixtures, and 31 PlayMode across 8. Measured on the day of the
   build, not carried forward: three numbers in this project's own documents were wrong for months
   because they were quoted from a file instead of counted.
 - 2,722 phrases in the book, both languages complete, none written twice.
