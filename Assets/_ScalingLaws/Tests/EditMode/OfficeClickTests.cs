@@ -152,5 +152,39 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(StaffPresence.NearestIn(camera, new Vector2(view.x, view.y), people),
                 Is.EqualTo(-1));
         }
+
+        /// <summary>
+        /// Everybody standing in the room has something for the ray to hit.
+        ///
+        /// **The founder had no collider and the ray had therefore never once hit them.** Clicking a
+        /// hired employee opened their card; clicking the founder did nothing, on every frame, at
+        /// every camera angle, since the day the room was built. It reads as one broken person
+        /// rather than as a missing component, which is why it survived a playtest that reported it.
+        ///
+        /// The character packs ship with no collider at all. `StaffPresence` has known that since
+        /// people became clickable and says so in a comment; `FounderPresence` was written later,
+        /// from the same packs, and did not. That is the whole bug: a lesson learned in one file and
+        /// not carried to the other.
+        ///
+        /// Source-read, the same instrument `ReachabilityTests` uses. A collider added at runtime by
+        /// a class that needs a scene, a prefab and a character pack cannot be asserted from Edit
+        /// mode any other way, and the alternative to this test is no test.
+        /// </summary>
+        [Test]
+        public void EverybodyInTheRoomHasSomethingForTheRayToHit()
+        {
+            foreach (var file in new[] { "StaffPresence", "FounderPresence" })
+            {
+                var source = System.IO.File.ReadAllText(System.IO.Path.Combine(
+                    Application.dataPath, "_ScalingLaws", "Scripts", "UI", file + ".cs"));
+
+                Assert.That(source, Does.Contain("AddComponent<CapsuleCollider>"),
+                    file + " puts a person in the room with nothing to click. The packs ship no "
+                    + "collider, so the ray passes through them and the card never opens.");
+
+                Assert.That(source, Does.Contain("AddComponent<NamePlate>"),
+                    file + " puts a person in the room with no name over them.");
+            }
+        }
     }
 }

@@ -122,6 +122,23 @@ namespace ScalingLaws.UI
                 UiFormat.PersonName(company?.FounderName),
                 company == null ? null : Loc.T("plate.ceo_of", company.CompanyName),
                 NamePlate.FounderColour);
+
+            // **What makes the founder clickable, and it was missing.** The character packs ship
+            // with no collider, so a ray through the office camera went straight through them on
+            // every frame since the room was built. Clicking a hired employee opened their card and
+            // clicking the founder did nothing, ever, which reads as one broken person rather than
+            // as a missing component.
+            //
+            // `StaffPresence` has had this capsule since the day people could be clicked and its
+            // comment says exactly why. The lesson was learned in one file and never carried to the
+            // other, and both spawn from the same packs.
+            //
+            // Same dimensions as a hire's, deliberately: the founder is a person of the same size
+            // standing in the same room, and two numbers here would be two things to keep in step.
+            var body = spawned.AddComponent<CapsuleCollider>();
+            body.height = 1.8f;
+            body.radius = 0.32f;
+            body.center = new Vector3(0f, 0.9f, 0f);
         }
 
         /// <summary>
