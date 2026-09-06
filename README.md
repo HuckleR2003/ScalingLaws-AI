@@ -41,7 +41,7 @@ find out later that a regulator judges you on what you had switched on the day y
 
 Hardware ages. An accelerator bought on launch day loses value to calendar time and again to every
 successor that ships after it, so capital committed too early sits in an asset that is worth less
-every month. Token prices fall by roughly half a year, permanently. The frontier moves whether or not
+every month. Token prices fall by more than half a year, permanently. The frontier moves whether or not
 you do.
 
 There is no guaranteed profit anywhere in the design. A company that ships one model and then makes
