@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 
@@ -251,6 +251,54 @@ namespace ScalingLaws.Simulation
         public long MonthIncome(int monthKey) => Side(monthKey, true);
 
         public long MonthCost(int monthKey) => Side(monthKey, false);
+
+        // A day is read exactly the way a month is, through the same three questions, because the
+        // report asks the same three questions of it. Only the current month is kept day by day,
+        // which is why there is no key: there is only one month it could mean.
+
+        /// <summary>Income minus cash costs on one day of the month being recorded.</summary>
+        public long DayCashFlow(int day)
+        {
+            var total = 0L;
+            foreach (var entry in Catalog)
+            {
+                if (!entry.IsCash)
+                {
+                    continue;
+                }
+
+                var amount = DayTotal(day, entry.Line);
+                total += entry.IsIncome ? amount : -amount;
+            }
+
+            return total;
+        }
+
+        public long DayIncome(int day) => DaySide(day, true);
+
+        public long DayCost(int day) => DaySide(day, false);
+
+        private long DaySide(int day, bool income)
+        {
+            var total = 0L;
+            foreach (var entry in Catalog)
+            {
+                if (entry.IsCash && entry.IsIncome == income)
+                {
+                    total += DayTotal(day, entry.Line);
+                }
+            }
+
+            return total;
+        }
+
+        /// <summary>Days of the current month that recorded anything, earliest first.</summary>
+        public List<int> RecordedDays()
+        {
+            var days = new List<int>(currentMonthDays.Keys);
+            days.Sort();
+            return days;
+        }
 
         /// <summary>Month keys that recorded anything, oldest first.</summary>
         public List<int> RecordedMonths()

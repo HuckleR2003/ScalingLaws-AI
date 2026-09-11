@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -320,11 +320,13 @@ namespace ScalingLaws.UI
             row.AddToClassList("mrow");
             row.AddToClassList("mrow--head");
 
+            // Four English literals on a Polish screen, and the last of them named the wrong
+            // figure: the column holds subscription takings and has never held a net.
             row.Add(Cell(string.Empty, "mrow__icon"));
-            row.Add(Cell("MODEL", "mrow__name"));
-            row.Add(Cell("USERS", "mrow__users"));
-            row.Add(Cell("SUBS", "mrow__subs"));
-            row.Add(Cell("NET INCOME", "mrow__income"));
+            row.Add(Cell(Loc.T("model.col_model"), "mrow__name"));
+            row.Add(Cell(Loc.T("model.col_users"), "mrow__users"));
+            row.Add(Cell(Loc.T("model.col_subs"), "mrow__subs"));
+            row.Add(Cell(Loc.T("model.col_earned"), "mrow__income"));
 
             return row;
         }
@@ -375,7 +377,7 @@ namespace ScalingLaws.UI
 
             row.Add(Cell(UiFormat.Count(model.Users), "mrow__users"));
             row.Add(Cell(UiFormat.Count(model.Subscribers), "mrow__subs"));
-            row.Add(Cell(UiFormat.Money(model.MonthEarningsUsd), "mrow__income"));
+            row.Add(Cell(UiFormat.Money(model.RecentEarningsUsd), "mrow__income"));
 
             return row;
         }

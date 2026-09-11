@@ -1,4 +1,4 @@
-using ScalingLaws.Data;
+﻿using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
@@ -12,14 +12,14 @@ namespace ScalingLaws.Simulation
     public readonly struct ModelRow
     {
         public ModelRow(string name, ModelType type, double capability, double users,
-            double subscribers, long monthEarningsUsd, int daysOnSale)
+            double subscribers, long recentEarningsUsd, int daysOnSale)
         {
             Name = name ?? string.Empty;
             Type = type;
             Capability = capability;
             Users = users;
             Subscribers = subscribers;
-            MonthEarningsUsd = monthEarningsUsd;
+            RecentEarningsUsd = recentEarningsUsd;
             DaysOnSale = daysOnSale;
         }
 
@@ -33,8 +33,15 @@ namespace ScalingLaws.Simulation
         /// <summary>Of those, the ones who pay.</summary>
         public double Subscribers { get; }
 
-        /// <summary>What it has earned this calendar month.</summary>
-        public long MonthEarningsUsd { get; }
+        /// <summary>
+        /// What it has taken over its last <see cref="DeployedModel.RecentDays"/> on sale.
+        ///
+        /// **Read out of the record rather than split again here.** It used to be this month's
+        /// subscriptions divided by a utility weight this table computed for itself, which is a
+        /// third answer to a question the daily attribution already answers and writes down. The
+        /// column and the corner banner now quote the same recorded figure.
+        /// </summary>
+        public long RecentEarningsUsd { get; }
 
         public int DaysOnSale { get; }
     }

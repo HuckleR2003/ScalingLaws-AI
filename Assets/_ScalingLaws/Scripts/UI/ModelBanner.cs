@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Simulation;
 using UnityEngine;
@@ -239,12 +239,17 @@ namespace ScalingLaws.UI
             footer.AddToClassList("mb__footer");
 
             // The lead banner reports the company: what came in and what is left of it. A follower
-            // reports the model: what this one has taken since it went on sale. Same two cells, two
-            // different questions, and the captions say which is which so neither can be misread.
+            // reports the model, at two horizons: everything it has taken since it went on sale,
+            // and the last month of it, which is the pair that answers whether this product is
+            // still the one carrying the company or only the one that used to.
+            //
+            // **The first cell used to be the user count on a follower**, which is the same figure
+            // the subscriber line above already carries, drawn a second time as money because the
+            // cell is a money cell. Four cells of information, three of them the same two numbers.
             footer.Add(FooterCell(
-                compact ? Loc.T("banner.users_on_it") : Loc.T("banner.net_income"), net));
+                compact ? Loc.T("banner.earned_total") : Loc.T("banner.net_income"), net));
             footer.Add(FooterCell(
-                compact ? Loc.T("banner.earned_total") : Loc.T("banner.subs_earnings"), earnings));
+                compact ? Loc.T("banner.earned_recent") : Loc.T("banner.subs_earnings"), earnings));
             body.Add(footer);
 
             return body;
@@ -381,14 +386,30 @@ namespace ScalingLaws.UI
 
             chart.Set(dailySeries());
 
-            net.text = (standing.MonthNetUsd >= 0 ? "+" : "-")
-                + UiFormat.Money(Math.Abs(standing.MonthNetUsd));
+            // A follower draws the product, the lead draws the company, and the two never share a
+            // field: the sign and the profit colour belong to a net, which a product does not have
+            // because the fleet bill is not attributed per model and inventing a split would be a
+            // figure with nothing behind it.
+            if (compact)
+            {
+                net.text = UiFormat.Money(standing.OwnLifetimeUsd);
+                net.EnableInClassList("mb-cell__value--good", standing.OwnLifetimeUsd > 0L);
+                net.EnableInClassList("mb-cell__value--bad", false);
 
-            net.EnableInClassList("mb-cell__value--good", standing.IsProfitable);
-            net.EnableInClassList("mb-cell__value--bad", !standing.IsProfitable);
+                earnings.text = UiFormat.Money(standing.OwnRecentUsd);
+                earnings.EnableInClassList("mb-cell__value--good", standing.OwnRecentUsd > 0L);
+            }
+            else
+            {
+                net.text = (standing.MonthNetUsd >= 0 ? "+" : "-")
+                    + UiFormat.Money(Math.Abs(standing.MonthNetUsd));
 
-            earnings.text = UiFormat.Money(standing.MonthEarningsUsd);
-            earnings.EnableInClassList("mb-cell__value--good", standing.MonthEarningsUsd > 0L);
+                net.EnableInClassList("mb-cell__value--good", standing.IsProfitable);
+                net.EnableInClassList("mb-cell__value--bad", !standing.IsProfitable);
+
+                earnings.text = UiFormat.Money(standing.MonthEarningsUsd);
+                earnings.EnableInClassList("mb-cell__value--good", standing.MonthEarningsUsd > 0L);
+            }
 
             // The age goes through `UiFormat.Days` rather than into the sentence as a number,
             // because Polish has three plural forms and "1 dni" is what writing it inline produces.

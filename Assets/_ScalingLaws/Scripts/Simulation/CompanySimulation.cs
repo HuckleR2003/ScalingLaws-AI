@@ -1606,6 +1606,77 @@ namespace ScalingLaws.Simulation
 
         private static string UsdText(long amount) => "$" + amount.ToString("N0");
 
+        /// <summary>Everything the company has on sale today, in the order the state holds it.</summary>
+        private List<DeployedModel> MarketedNow()
+        {
+            var marketed = new List<DeployedModel>();
+
+            foreach (var model in State.DeployedModels)
+            {
+                if (model != null && model.IsLiveOn(State.Date) && !IsSupersededInItsLine(model))
+                {
+                    marketed.Add(model);
+                }
+            }
+
+            return marketed;
+        }
+
+        /// <summary>
+        /// How many people are on each of the models that are currently on sale.
+        ///
+        /// **One split, two readers, and until this existed there were two answers.** The archive
+        /// asked the market for the standing of the model kind and handed the whole of it to
+        /// every model of that kind, so a company selling two general models reported the same
+        /// audience under both names, to the last decimal. That is the headline figure on a corner
+        /// banner, so the screen failed at the only question it exists for.
+        ///
+        /// The market tracks an audience per kind and it is right to: a buyer picks a kind of
+        /// product and then a version of it. So the kind audience is divided between the lines
+        /// selling that kind **by capability**, which is what won the share in the first place and
+        /// is the tie-break the daily attribution already used. The parts sum to that kind own
+        /// total, so the products can never between them hold more people than the company does.
+        ///
+        /// Only what is actually on sale appears here. A superseded model in a line is not being
+        /// chosen by anybody, which is what the market thinks too.
+        /// </summary>
+        private double[] AudienceOnSale(IReadOnlyList<DeployedModel> marketed)
+        {
+            var users = new double[marketed.Count];
+            if (marketed.Count == 0)
+            {
+                return users;
+            }
+
+            var breakdown = MarketByType();
+            var capability = new double[marketed.Count];
+            var perKind = new Dictionary<ModelType, double>();
+
+            for (var index = 0; index < marketed.Count; index++)
+            {
+                // The floor is what keeps a model of no capability at all from dividing by zero
+                // when it is the only one of its kind. Every real comparison is untouched by it.
+                var own = Math.Max(0.01, marketed[index].EffectiveCapability(State.Date));
+                capability[index] = own;
+
+                var kind = marketed[index].Type;
+                perKind[kind] = perKind.TryGetValue(kind, out var running) ? running + own : own;
+            }
+
+            for (var index = 0; index < marketed.Count; index++)
+            {
+                if (!breakdown.TryGetType(marketed[index].Type, out var standing))
+                {
+                    continue;
+                }
+
+                users[index] = SimUnits.Finite(
+                    standing.PlayerUsers * (capability[index] / perKind[marketed[index].Type]));
+            }
+
+            return users;
+        }
+
         /// <summary>
         /// Every model the company ever put on sale, newest first.
         ///
@@ -1617,6 +1688,11 @@ namespace ScalingLaws.Simulation
         {
             var records = new List<ModelRecord>(State.DeployedModels.Count);
 
+            // The audience is divided across everything on sale at once, so the whole shelf has
+            // to be known before any one record can say how many people are on it.
+            var onSale = MarketedNow();
+            var audience = AudienceOnSale(onSale);
+
             for (var index = 0; index < State.DeployedModels.Count; index++)
             {
                 var model = State.DeployedModels[index];
@@ -1626,15 +1702,10 @@ namespace ScalingLaws.Simulation
                 }
 
                 var live = model.IsLiveOn(State.Date);
-                var marketed = live && !IsSupersededInItsLine(model);
+                var slot = onSale.IndexOf(model);
 
-                var users = 0.0;
-                if (marketed && MarketByType().TryGetType(model.Type, out var standing))
-                {
-                    users = standing.PlayerUsers;
-                }
-
-                records.Add(new ModelRecord(index, model, live, marketed, users,
+                records.Add(new ModelRecord(index, model, live, slot >= 0,
+                    slot < 0 ? 0.0 : audience[slot],
                     model.EffectiveCapability(State.Date)));
             }
 
@@ -3937,9 +4008,12 @@ namespace ScalingLaws.Simulation
         /// <summary>
         /// One product's standing, for its own corner banner.
         ///
-        /// The company-wide figures are deliberately replaced by this model's own: a follower banner
-        /// carries the people on it and what it has taken since release, because "net income" three
-        /// times over would be the same number printed three times.
+        /// **The company figures stay the company's and the product gets its own.** They used to
+        /// share two slots: the model's lifetime take was passed in as the month's earnings and
+        /// its user count as the month's net, and the banner swapped the captions to match. So a
+        /// headcount was drawn as money in profit-green, and the management screen, which reads
+        /// the same two properties under its own captions, printed a lifetime figure under THIS
+        /// MONTH. `OwnLifetimeUsd` and `OwnRecentUsd` are what a follower actually draws.
         /// </summary>
         public ProductStanding ProductFor(in ModelRecord record)
         {
@@ -3952,6 +4026,13 @@ namespace ScalingLaws.Simulation
 
             var capability = record.CapabilityToday;
             var age = State.Date.DayIndex - model.ReleaseDate.DayIndex;
+            var month = Ledger.MonthKeyOf(State.Date);
+
+            var recent = 0L;
+            foreach (var day in model.RecentRevenueUsd)
+            {
+                recent += day;
+            }
 
             return new ProductStanding(
                 model.Name,
@@ -3959,11 +4040,13 @@ namespace ScalingLaws.Simulation
                 Sentiment().Satisfaction,
                 ProductStanding.TopicalityOf(age, capability, Market.FrontierCapability),
                 record.Users,
-                model.LifetimeRevenueUsd,
-                (long)Math.Round(record.Users),
+                State.Ledger.MonthTotal(month, LedgerLine.Subscriptions),
+                State.Ledger.MonthCashFlow(month),
                 age,
                 capability,
-                Market.FrontierCapability);
+                Market.FrontierCapability,
+                model.LifetimeRevenueUsd,
+                recent);
         }
 
         /// <summary>Everything on sale right now, strongest first. One banner each.</summary>
@@ -4002,6 +4085,14 @@ namespace ScalingLaws.Simulation
             var age = State.Date.DayIndex - best.ReleaseDate.DayIndex;
             var frontier = Market.FrontierCapability;
 
+            // The flagship's own take, so the two product properties mean the same thing on this
+            // standing as on a follower's and no reader has to know which one it was handed.
+            var recent = 0L;
+            foreach (var day in best.RecentRevenueUsd)
+            {
+                recent += day;
+            }
+
             return new ProductStanding(
                 best.Name,
                 true,
@@ -4012,74 +4103,60 @@ namespace ScalingLaws.Simulation
                 net,
                 age,
                 bestCapability,
-                frontier);
+                frontier,
+                best.LifetimeRevenueUsd,
+                recent);
         }
 
         /// <summary>
-        /// One row per live model: who is using it and what it earns.
+        /// One row per product on sale: who is using it and what it has taken.
         ///
-        /// **Split by the same utility weight the market itself uses**, rather than tracked
-        /// separately. A second set of per-model counters would be a second source of truth that
-        /// could disagree with the revenue the company actually banks, and the first time it did
-        /// the player would be reading a table that contradicts their own bank balance.
+        /// **This table used to answer both of its own questions for itself**, and both answers
+        /// disagreed with the corner banner standing beside them. It divided the company's
+        /// audience by a utility weight computed here, and this month's subscriptions by the same
+        /// weight, so the MODEL screen and the banner quoted different figures for one product and
+        /// nothing could say which was right. Users come from <see cref="AudienceOnSale"/> and the
+        /// money out of the daily record, which are the two the rest of the game reads.
         ///
-        /// Live models only. A retired model has no users, and a table that listed it would be
-        /// showing the player a product they cannot do anything about.
+        /// **On sale, not merely live.** It listed every live model, including one superseded
+        /// inside its own line, under a heading that says ON SALE. A superseded model is chosen by
+        /// nobody and earns nothing, and the old weight handed it a share of both.
         /// </summary>
         public List<ModelRow> ModelBoard()
         {
             var rows = new List<ModelRow>();
-            var live = new List<DeployedModel>();
+            var marketed = MarketedNow();
 
-            foreach (var model in State.DeployedModels)
-            {
-                if (model.IsLiveOn(State.Date))
-                {
-                    live.Add(model);
-                }
-            }
-
-            if (live.Count == 0)
+            if (marketed.Count == 0)
             {
                 return rows;
             }
 
-            var month = Ledger.MonthKeyOf(State.Date);
-            var earnings = State.Ledger.MonthTotal(month, LedgerLine.Subscriptions);
-            var users = Sentiment().Users;
+            var audience = AudienceOnSale(marketed);
 
-            var weights = new double[live.Count];
-            var total = 0.0;
-
-            for (var index = 0; index < live.Count; index++)
+            for (var index = 0; index < marketed.Count; index++)
             {
-                var model = live[index];
+                var model = marketed[index];
 
-                weights[index] = Math.Exp(MarketShareModel.Utility(
-                    model.EffectiveCapability(State.Date),
-                    Math.Clamp(State.Reputation + model.BrandBonus(State.Date), 0.0, 1.0),
-                    model.PriceMultiplier,
-                    model.AgeYears(State.Date)));
-
-                total += weights[index];
-            }
-
-            for (var index = 0; index < live.Count; index++)
-            {
-                var model = live[index];
-                var share = total <= 0.0 ? 0.0 : weights[index] / total;
+                var recent = 0L;
+                foreach (var day in model.RecentRevenueUsd)
+                {
+                    recent += day;
+                }
 
                 rows.Add(new ModelRow(
                     model.Name,
                     model.Type,
                     model.EffectiveCapability(State.Date),
-                    users * share,
-                    users * share * SubscriberFraction,
-                    (long)Math.Round(earnings * share),
+                    audience[index],
+                    audience[index] * SubscriberFraction,
+                    recent,
                     model.DaysOnSale));
             }
 
-            rows.Sort(static (left, right) => right.MonthEarningsUsd.CompareTo(left.MonthEarningsUsd));
+            rows.Sort(static (left, right) =>
+                right.RecentEarningsUsd.CompareTo(left.RecentEarningsUsd));
+
             return rows;
         }
 
@@ -4452,33 +4529,26 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private void RecordModelDay(long revenue)
         {
-            var marketed = new List<DeployedModel>();
-            foreach (var model in State.DeployedModels)
-            {
-                if (model != null && model.IsLiveOn(State.Date) && !IsSupersededInItsLine(model))
-                {
-                    marketed.Add(model);
-                }
-            }
+            var marketed = MarketedNow();
 
             if (marketed.Count == 0)
             {
                 return;
             }
 
-            var breakdown = MarketByType();
+            var audience = AudienceOnSale(marketed);
             var weights = new double[marketed.Count];
             var total = 0.0;
 
             for (var index = 0; index < marketed.Count; index++)
             {
-                var users = breakdown.TryGetType(marketed[index].Type, out var standing)
-                    ? standing.PlayerUsers
-                    : 0.0;
+                // Capability on top of the audience, because holding a lot of people on a weak
+                // product is not the same business as holding them on a strong one. The audience
+                // is this model own share of its kind rather than the whole kind, which is what
+                // stopped two general models each being credited as though it held everybody.
+                var weight = audience[index]
+                    * Math.Max(0.01, marketed[index].EffectiveCapability(State.Date));
 
-                // Several lines can sell the same kind. Capability breaks the tie, and it is also
-                // the tie-break the market itself used to hand out that share.
-                var weight = users * Math.Max(0.01, marketed[index].EffectiveCapability(State.Date));
                 weights[index] = weight;
                 total += weight;
             }
@@ -4508,11 +4578,7 @@ namespace ScalingLaws.Simulation
 
                 credited += slice;
 
-                var users = breakdown.TryGetType(marketed[index].Type, out var standing)
-                    ? standing.PlayerUsers * share
-                    : 0.0;
-
-                marketed[index].RecordDay(slice, users);
+                marketed[index].RecordDay(slice, audience[index]);
             }
         }
 

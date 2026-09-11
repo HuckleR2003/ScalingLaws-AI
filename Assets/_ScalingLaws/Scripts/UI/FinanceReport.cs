@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Simulation;
@@ -121,6 +121,9 @@ namespace ScalingLaws.UI
         private bool showDays;
         private int monthKey = -1;
 
+        /// <summary>Day of the month the day view is reporting. Negative means nothing to report.</summary>
+        private int dayOfMonth = -1;
+
         public FinanceReport(Func<Ledger> books, Func<GameDate> today, Action close)
         {
             this.books = books;
@@ -136,8 +139,8 @@ namespace ScalingLaws.UI
             title.AddToClassList("finance__title");
             head.Add(title);
 
-            monthly = Toggle("BY MONTH", () => { showDays = false; Render(); });
-            daily = Toggle("BY DAY", () => { showDays = true; Render(); });
+            monthly = Toggle(Loc.T("finance.by_month"), () => ShowDays(false));
+            daily = Toggle(Loc.T("finance.by_day"), () => ShowDays(true));
             head.Add(monthly);
             head.Add(daily);
 
@@ -172,6 +175,17 @@ namespace ScalingLaws.UI
             return button;
         }
 
+        /// <summary>
+        /// Switches between the two views. The toggles call this and nothing else does the switch,
+        /// so a test can drive it: an EditMode element has no panel, so a click sent to a button is
+        /// never dispatched and the lambda behind it would go unmeasured.
+        /// </summary>
+        public void ShowDays(bool days)
+        {
+            showDays = days;
+            Render();
+        }
+
         /// <summary>Opens on the month currently being played.</summary>
         public void Open()
         {
@@ -200,25 +214,54 @@ namespace ScalingLaws.UI
                 monthKey = recorded[^1];
             }
 
-            var series = new List<long>(recorded.Count);
-            foreach (var key in recorded)
+            // **The two views are two reports, not one report with a caption on it.** BY DAY used
+            // to leave the headline on the month and then sum all thirty one days underneath it,
+            // so both toggles printed the same figures and the only thing that changed was a
+            // sentence claiming otherwise. A day view reports one day: the last one that actually
+            // happened, which is the one a player clicks this to ask about.
+            var days = books().RecordedDays();
+            dayOfMonth = days.Count == 0 ? -1 : days[^1];
+
+            var onADay = showDays && dayOfMonth > 0;
+
+            if (onADay)
             {
-                series.Add(books().MonthCashFlow(key));
+                // Days of the month being played, so the bars under a day view are days. The
+                // ledger keeps detail for this month alone, which is the whole of what it can
+                // honestly draw.
+                var byDay = new List<long>(days.Count);
+                foreach (var day in days)
+                {
+                    byDay.Add(books().DayCashFlow(day));
+                }
+
+                chart.Set(byDay, days.IndexOf(dayOfMonth));
+            }
+            else
+            {
+                var series = new List<long>(recorded.Count);
+                foreach (var key in recorded)
+                {
+                    series.Add(books().MonthCashFlow(key));
+                }
+
+                chart.Set(series, recorded.IndexOf(monthKey));
             }
 
-            chart.Set(series, recorded.IndexOf(monthKey));
-
-            var flow = books().MonthCashFlow(monthKey);
+            var flow = onADay ? books().DayCashFlow(dayOfMonth) : books().MonthCashFlow(monthKey);
             headline.text = (flow >= 0 ? "+" : "-") + UiFormat.Money(Math.Abs(flow));
             headline.EnableInClassList("finance__headline--up", flow >= 0);
             headline.EnableInClassList("finance__headline--down", flow < 0);
 
-            caption.text = showDays
-                ? $"{MonthName(monthKey)}, day by day. "
-                    + $"In {UiFormat.Money(books().MonthIncome(monthKey))}, "
-                    + $"out {UiFormat.Money(books().MonthCost(monthKey))}."
-                : $"{MonthName(monthKey)}. In {UiFormat.Money(books().MonthIncome(monthKey))}, "
-                    + $"out {UiFormat.Money(books().MonthCost(monthKey))}.";
+            caption.text = onADay
+                ? Loc.T("finance.on_day", DayName(monthKey, dayOfMonth),
+                    UiFormat.Money(books().DayIncome(dayOfMonth)),
+                    UiFormat.Money(books().DayCost(dayOfMonth)))
+                : showDays
+                    ? Loc.T("finance.no_day_yet", MonthName(monthKey))
+                    : Loc.T("finance.in_month", MonthName(monthKey),
+                        UiFormat.Money(books().MonthIncome(monthKey)),
+                        UiFormat.Money(books().MonthCost(monthKey)));
 
             RenderGroup("Model");
             RenderGroup("Company");
@@ -267,20 +310,16 @@ namespace ScalingLaws.UI
 
         private long Amount(LedgerLine line)
         {
-            if (!showDays)
+            // It walked all thirty one days here and returned the month, which is why the two
+            // views printed the same lines. The day view only has the month being played, because
+            // that is the only one kept day by day, and with no day recorded yet it falls back to
+            // the month rather than to a page of zeroes.
+            if (!showDays || dayOfMonth <= 0)
             {
                 return books().MonthTotal(monthKey, line);
             }
 
-            // Day view only has the month being played, because that is the only one kept day by day.
-            // Older months are monthly totals and pretending otherwise would invent a shape for them.
-            var total = 0L;
-            for (var day = 1; day <= 31; day++)
-            {
-                total += books().DayTotal(day, line);
-            }
-
-            return total;
+            return books().DayTotal(dayOfMonth, line);
         }
 
         private VisualElement Row(LedgerLineInfo info, long amount)
@@ -314,5 +353,7 @@ namespace ScalingLaws.UI
             var month = key % 12 + 1;
             return $"{year}-{month:00}";
         }
+
+        private static string DayName(int key, int day) => $"{MonthName(key)}-{day:00}";
     }
 }

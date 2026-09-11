@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
@@ -19,7 +19,7 @@ namespace ScalingLaws.Simulation
     {
         public ProductStanding(string name, bool exists, double happiness, double topicality,
             double subscribers, long monthEarnings, long monthNet, int daysOld, double capability,
-            double frontier)
+            double frontier, long ownLifetime = 0L, long ownRecent = 0L)
         {
             GivenName = name;
             Exists = exists;
@@ -31,6 +31,8 @@ namespace ScalingLaws.Simulation
             DaysOld = Math.Max(0, daysOld);
             Capability = Math.Max(0.0, SimUnits.Finite(capability));
             Frontier = Math.Max(0.0, SimUnits.Finite(frontier));
+            OwnLifetimeUsd = Math.Max(0L, ownLifetime);
+            OwnRecentUsd = Math.Max(0L, ownRecent);
         }
 
         private string GivenName { get; }
@@ -69,6 +71,22 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Everything in minus everything out this month. Negative is normal early.</summary>
         public long MonthNetUsd { get; }
+
+        // The two above are the company. The two below are this product, and keeping them apart
+        // is the whole point of the pair existing.
+        //
+        // **They were one pair doing both jobs and it drew a headcount as money.** A follower
+        // banner passed its own user count into `monthNet` and swapped the caption to say so, so
+        // 1.96M people were printed as `+$1.96M` in the green a profit gets, because
+        // `IsProfitable` reads that same slot. Two fields carrying four meanings is the shape of
+        // the fault rather than an accident in one line, so they are separated rather than
+        // formatted differently.
+
+        /// <summary>What this one product has taken since the day it went on sale.</summary>
+        public long OwnLifetimeUsd { get; }
+
+        /// <summary>What it has taken over its last <see cref="DeployedModel.RecentDays"/> on sale.</summary>
+        public long OwnRecentUsd { get; }
 
         public int DaysOld { get; }
         public double Capability { get; }

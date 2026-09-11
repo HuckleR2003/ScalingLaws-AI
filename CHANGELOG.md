@@ -36,6 +36,63 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ---
 
+## [Unreleased]
+
+**Two products stopped being one product printed twice.** A company selling a second model watched
+both corner banners report the same audience to the last decimal, because the archive asked the
+market how many people were on that *kind* of model and handed the whole of that answer to every
+model of that kind. There is one split now, it divides a kind's audience between the lines selling
+it by capability, and the parts add up to exactly what the company holds.
+
+### Fixed
+
+- **Every product on sale reports its own audience.** Reported by Natalia. Two general models on
+  sale both read 1,962,294 users on a measured seventy day campaign; they now read 1,229,389 and
+  732,905, and the two add up to the 1,962,294 the company actually has. The same split feeds the
+  daily revenue attribution, so a product's takings follow the people who are actually on it.
+- **A headcount is no longer drawn as money.** The follower banner passed its user count through the
+  slot the lead banner uses for the month's net, so 1.96M people were printed as `+$1.96M` in the
+  green a profit gets. The two cells under a product are now that product's own takings: everything
+  since release, and the last 31 days.
+- **The MODEL table agreed with nothing.** It divided the company's audience and the month's
+  subscriptions by a weight it computed for itself, so the table and the banner beside it quoted
+  different figures for the same product and nothing said which was right. Both now read the split
+  and the daily record. Its four column headings were also English on a Polish build, and the last
+  of them said NET INCOME over a column that has only ever held subscription takings.
+- **The MODEL table listed models that are not on sale.** A model superseded inside its own line
+  earns nothing and is chosen by nobody, and the old weight handed it a share of both, under a
+  heading that says ON SALE.
+- **BY DAY in WHERE THE MONEY WENT did nothing, twice.** Reported by the author. The big figure
+  stayed on the month whichever toggle was lit, and the lines underneath added up all thirty one day
+  buckets, which is the month again. It reports one day now, the last one recorded: its own
+  headline, its own lines, and bars that are days rather than months. Both toggles and the sentence
+  under the headline were English literals on a Polish build.
+- **The management desk's four figures were about four different things.** On a product tab the
+  third tile showed that model's whole lifetime take under a caption reading THIS MONTH, and the
+  fourth showed its user count as money. The row is now this product's users, its payers, its last
+  31 days, and the company's net, which its own footer already said it was.
+
+### Save compatibility
+
+**Unchanged, v51.** Nothing new is stored: the split is derived from the market standing and the
+model history that saves already carry, so an existing campaign reads correctly the moment it loads.
+
+### Under the hood
+
+- **1,124 EditMode tests**, up from 1,116. `TwoProductsTests` ships two models in separate lines
+  and
+  requires their figures to differ, requires them to add up to the company, and requires no user
+  count to equal a money field. `FinanceDayViewTests` drives the real report panel.
+- `CompanySimulation.AudienceOnSale` is the one answer to "how many people are on this model", and
+  `MarketedNow` the one answer to "what is on sale". Three callers, where there were three separate
+  calculations.
+- `ProductStanding` carries `OwnLifetimeUsd` and `OwnRecentUsd` so a product's money and the
+  company's month stop sharing two fields between four meanings.
+- `Ledger` answers about a day the way it answers about a month: `DayCashFlow`, `DayIncome`,
+  `DayCost`, `RecordedDays`.
+- **2,734 phrases per language**, up from 2,723.
+
+---
 ## [0.2.0] - 2026-09-06
 
 **A government will put a country on your models, and it will look at five years first.** Era five

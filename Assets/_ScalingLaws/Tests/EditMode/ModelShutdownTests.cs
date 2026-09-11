@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -403,9 +403,14 @@ namespace ScalingLaws.Tests.EditMode
             Assert.AreEqual(marketed[0].Model.Name, first.Name);
             Assert.AreEqual(marketed[1].Model.Name, second.Name);
 
-            Assert.AreNotEqual(first.MonthEarningsUsd, second.MonthEarningsUsd,
-                "Two banners printing the same company-wide figure would be the same number twice "
-                + "with different names on it.");
+            // `MonthEarningsUsd` is the company and says so on both standings. What a follower
+            // banner actually draws is the product, and that is what has to differ.
+            Assert.AreNotEqual(first.OwnLifetimeUsd, second.OwnLifetimeUsd,
+                "Two banners printing the same figure would be the same number twice with "
+                + "different names on it.");
+
+            Assert.AreNotEqual(first.Subscribers, second.Subscribers,
+                "Two products, one audience figure.");
         }
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -860,9 +860,6 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildKpis(ProductStanding product)
         {
-            var state = simulation.State;
-            var month = Ledger.MonthKeyOf(state.Date);
-            var spent = state.Ledger.MonthCost(month);
             var hour = 12.0;
 
             var row = new VisualElement();
@@ -876,8 +873,13 @@ namespace ScalingLaws.UI
             row.Add(Kpi(Loc.T("mg.kpi_paying"), UiFormat.Count(product.Subscribers * PaidShare()),
                 Loc.T("mg.of_them", UiFormat.Percent(PaidShare(), 0)), null));
 
-            row.Add(Kpi(Loc.T("mg.kpi_earned_month"), UiFormat.Money(product.MonthEarningsUsd),
-                Loc.T("mg.against_spent", UiFormat.Money(spent)), null));
+            // **The four tiles have to be about the same thing.** The two above are this product
+            // and this one was handed `MonthEarningsUsd`, which on a product tab used to carry the
+            // model's whole lifetime take under a caption saying THIS MONTH, and the fourth tile
+            // carried its user count drawn as money. This one is the product's own recorded month
+            // and the last is the company, which its own foot line already says.
+            row.Add(Kpi(Loc.T("mg.kpi_earned_recent"), UiFormat.Money(product.OwnRecentUsd),
+                Loc.T("mg.lifetime_is", UiFormat.Money(product.OwnLifetimeUsd)), null));
 
             row.Add(Kpi(Loc.T("mg.kpi_net_month"), UiFormat.Money(product.MonthNetUsd),
                 product.IsProfitable ? Loc.T("mg.in_the_black") : Loc.T("mg.burning_cash"),
