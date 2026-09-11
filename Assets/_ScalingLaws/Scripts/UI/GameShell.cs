@@ -232,6 +232,12 @@ namespace ScalingLaws.UI
         private ScrollView pageScroller;
 
         /// <summary>
+        /// The bar down the right edge of the open page. Built once with the scroller and living
+        /// inside it, so it travels with the page it belongs to and costs it no width.
+        /// </summary>
+        private PageScrollbar pageBar;
+
+        /// <summary>
         /// The person card, mounted beside the page rather than inside it. Held so a rebuild that
         /// keeps the scroller can still take the old one down: it is built fresh each time, and
         /// the host it goes into is no longer cleared on every pass.
@@ -571,6 +577,7 @@ namespace ScalingLaws.UI
         private void Update()
         {
             shortcuts?.Poll();
+            PollScrollKeys();
 
             if (state.IsBankrupt)
             {
@@ -692,6 +699,52 @@ namespace ScalingLaws.UI
                 // player half way down the research tree could not finish a sentence.
                 Show(current);
             }
+        }
+
+        /// <summary>
+        /// The arrows, and the four keys beside them, moving the open page.
+        ///
+        /// **Reported by the author, who plays on a laptop.** Half the screens in this game are
+        /// taller than the window, and with the theme scrollbar turned off there was no bar to
+        /// drag and no key that moved anything, so a section that continued below the fold read
+        /// as a section that had been cut off.
+        ///
+        /// It reads the live layout rather than anything cached, because the page under it is
+        /// rebuilt constantly and a height measured a moment ago is a height from a different
+        /// page.
+        /// </summary>
+        private void PollScrollKeys()
+        {
+            if (shortcuts == null || pageScroller == null || pageScroller.panel == null)
+            {
+                return;
+            }
+
+            // Nothing moves behind a menu or a modal. A page scrolling under a pause screen is
+            // the same fault as a clock that keeps running under one.
+            if (pause is { IsOpen: true })
+            {
+                return;
+            }
+
+            var viewport = pageScroller.layout.height;
+            var content = pageScroller.contentContainer.layout.height;
+
+            if (float.IsNaN(viewport) || float.IsNaN(content))
+            {
+                return;
+            }
+
+            var wanted = shortcuts.PollScroll(pageScroller.scrollOffset.y, viewport, content,
+                Time.unscaledDeltaTime);
+
+            if (!wanted.HasValue)
+            {
+                return;
+            }
+
+            pageScroller.scrollOffset =
+                new Vector2(pageScroller.scrollOffset.x, wanted.Value);
         }
 
         /// <summary>Where the open page is scrolled to, or zero when it does not scroll.</summary>
@@ -1389,6 +1442,7 @@ namespace ScalingLaws.UI
             {
                 contentHost.Clear();
                 pageScroller = null;
+                pageBar = null;
             }
 
             // Built fresh every pass, and the host is no longer cleared every pass, so the one
@@ -1459,7 +1513,22 @@ namespace ScalingLaws.UI
                 scroller.AddToClassList("page-scroll");
                 scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
                 scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+
+                // **One thing scrolls this page and it is the shell.** A focused ScrollView gets
+                // arrow handling of its own from UI Toolkit, so leaving that on would mean the page
+                // moving by one amount when the player had last clicked inside it and another when
+                // they had not, which is indistinguishable from the keys being unreliable.
+                scroller.focusable = false;
+
                 pageScroller = scroller;
+
+                // **Into the scroller itself, not into its content container.** A bar inside the
+                // content would scroll away with the page it is meant to be measuring. Outside
+                // it and absolutely positioned, it overlays the right-hand edge and takes no
+                // width from anything, which is the whole reason the theme scrollbar was turned
+                // off in the first place.
+                pageBar = new PageScrollbar(scroller);
+                scroller.hierarchy.Add(pageBar);
             }
 
             // The two rooms are the exception: they fill the window rather than being documents,
@@ -1559,6 +1628,12 @@ namespace ScalingLaws.UI
             {
                 InsightTip.EndRebuild();
             }
+
+            // After the page exists, because the bar is a measurement of it. Deferred as well:
+            // the content has not been laid out when this returns, so its height is still
+            // whatever the last page was and the thumb would be sized for that one.
+            pageBar?.Refresh();
+            pageBar?.schedule.Execute(() => pageBar?.Refresh()).ExecuteLater(1);
         }
 
         /// <summary>

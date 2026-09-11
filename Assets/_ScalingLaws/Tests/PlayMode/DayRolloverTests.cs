@@ -216,6 +216,93 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The bar down the right edge costs the page nothing.
+        ///
+        /// **This is the requirement, stated by the author as the requirement: no collision, no
+        /// shifting anything.** The theme scrollbar takes its width out of the content, which is why
+        /// every scroller in this game was built with it switched off, and it is why turning it back
+        /// on was never the answer. The bar is absolutely positioned inside the scroller and outside
+        /// its content container, so the page is exactly as wide with it as without it.
+        ///
+        /// Measured against the page, not against the bar: a bar that is correctly positioned and a
+        /// page that is correctly wide are two different facts, and only the second one is what was
+        /// asked for.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheScrollbarTakesNoWidthFromThePage()
+        {
+            var (shell, root) = Load();
+
+            Assert.That(shell.OpenScreenByName("Research"), Is.True);
+
+            for (var frame = 0; frame < 6; frame++)
+            {
+                yield return null;
+            }
+
+            var scroller = root.Q<ScrollView>(className: "page-scroll");
+            Assert.That(scroller, Is.Not.Null);
+
+            var bar = scroller.Q(className: "pscroll");
+            Assert.That(bar, Is.Not.Null, "the page has no scrollbar on it");
+
+            Assert.That(scroller.contentContainer.Contains(bar), Is.False,
+                "The bar is inside the content container, so it scrolls away with the page it is "
+                + "meant to be measuring.");
+
+            var withTheBar = scroller.contentContainer.layout.width;
+
+            bar.style.display = DisplayStyle.None;
+
+            for (var frame = 0; frame < 4; frame++)
+            {
+                yield return null;
+            }
+
+            Assert.That(scroller.contentContainer.layout.width, Is.EqualTo(withTheBar).Within(0.01f),
+                "The page is " + withTheBar + " wide with the bar and "
+                + scroller.contentContainer.layout.width + " without it, so the bar is taking "
+                + "width out of the content and every page re-flows when it appears.");
+        }
+
+        /// <summary>
+        /// And it is drawn where the page actually is, which is the half that can be quietly wrong.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheThumbFollowsTheReadingPosition()
+        {
+            var (shell, root) = Load();
+
+            Assert.That(shell.OpenScreenByName("Research"), Is.True);
+
+            for (var frame = 0; frame < 6; frame++)
+            {
+                yield return null;
+            }
+
+            var scroller = root.Q<ScrollView>(className: "page-scroll");
+            var thumb = scroller.Q(className: "pscroll__thumb");
+            Assert.That(thumb, Is.Not.Null, "the bar has no thumb");
+
+            Assume.That(scroller.contentContainer.layout.height,
+                Is.GreaterThan(scroller.layout.height),
+                "the page fits the window, so there is nothing for the bar to report");
+
+            var atTheTop = thumb.layout.y;
+
+            scroller.scrollOffset = new Vector2(0f,
+                scroller.contentContainer.layout.height - scroller.layout.height);
+
+            for (var frame = 0; frame < 4; frame++)
+            {
+                yield return null;
+            }
+
+            Assert.That(thumb.layout.y, Is.GreaterThan(atTheTop),
+                "The page was scrolled to the bottom and the thumb did not move.");
+        }
+
+        /// <summary>
         /// Leaving the screen is a different thing from redrawing it, and the card has to know which
         /// happened. A card left hanging over a different tab is the fault the corner banners had.
         /// </summary>

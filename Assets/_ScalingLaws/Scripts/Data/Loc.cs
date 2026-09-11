@@ -187,6 +187,15 @@ namespace ScalingLaws.Data
 
             // ---- words the whole interface uses ------------------------------------------------------
             ["common.close"] = "CLOSE",
+            ["keys.title"] = "KEYBOARD",
+            ["keys.pause"] = "Pause or resume",
+            ["keys.slow"] = "Speed x1",
+            ["keys.normal"] = "Speed x2",
+            ["keys.fast"] = "Speed x3",
+            ["keys.scroll"] = "Scroll the page",
+            ["keys.page"] = "A screenful at a time",
+            ["keys.ends"] = "Top or bottom of the page",
+            ["keys.menu"] = "Menu, or close what is open",
             ["common.cancel"] = "CANCEL",
             ["common.confirm"] = "CONFIRM",
             ["common.back"] = "BACK",
@@ -3061,6 +3070,15 @@ namespace ScalingLaws.Data
 
             // ---- words the whole interface uses ------------------------------------------------------
             ["common.close"] = "ZAMKNIJ",
+            ["keys.title"] = "KLAWIATURA",
+            ["keys.pause"] = "Pauza lub wznowienie",
+            ["keys.slow"] = "Prędkość x1",
+            ["keys.normal"] = "Prędkość x2",
+            ["keys.fast"] = "Prędkość x3",
+            ["keys.scroll"] = "Przewijanie strony",
+            ["keys.page"] = "Cały ekran naraz",
+            ["keys.ends"] = "Początek lub koniec strony",
+            ["keys.menu"] = "Menu albo zamknięcie tego, co otwarte",
             ["common.cancel"] = "ANULUJ",
             ["common.confirm"] = "POTWIERDŹ",
             ["common.back"] = "WSTECZ",

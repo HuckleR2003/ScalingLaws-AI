@@ -1,5 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using ScalingLaws.Core;
@@ -89,23 +90,58 @@ namespace ScalingLaws.Tests.EditMode
                 "A frame with no key down must not re-send the speed the clock is already at.");
         }
 
+        /// <summary>
+        /// Every key the file reads is a key the table describes.
+        ///
+        /// **This asserted a count of four and that is what it caught: the fourth key being added.**
+        /// A count is not the fact worth holding. The fact is that a binding cannot exist in the
+        /// polling and be missing from the table, because the table is the only thing that can tell
+        /// a player the key is there. So the source is read for every `KeyCode` it actually polls
+        /// and each one has to be findable in a row.
+        /// </summary>
         [Test]
         public void EveryBoundKeyIsDescribedInTheTable()
         {
-            Assert.AreEqual(4, KeyboardShortcuts.All.Length);
-
             foreach (var shortcut in KeyboardShortcuts.All)
             {
                 Assert.IsNotEmpty(shortcut.KeyName);
                 Assert.IsNotEmpty(shortcut.Action);
             }
 
-            // The table is what the interface reads to say what a key does. A binding that exists in
-            // Resolve and not here is a shortcut nobody can be told about.
             var source = Source("KeyboardShortcuts.cs");
-            foreach (var key in new[] { "Space", "Alpha1", "Alpha2", "Alpha3" })
+
+            var polled = Regex
+                .Matches(source, @"KeyCode\.(\w+)")
+                .Select(match => match.Groups[1].Value)
+                .Distinct()
+                .ToList();
+
+            Assert.That(polled, Is.Not.Empty, "the file reads no keys at all");
+
+            // How a key is written on the table and how it is named in `KeyCode` are two different
+            // vocabularies, so the match is by what a reader would recognise rather than by string
+            // equality. The arrows are drawn as arrows and the digits carry an Alpha prefix.
+            var described = string.Join("  ",
+                KeyboardShortcuts.All.Select(shortcut => shortcut.KeyName)).ToUpperInvariant();
+
+            foreach (var key in polled)
             {
-                StringAssert.Contains(key, source);
+                var expected = key switch
+                {
+                    "Alpha1" or "Keypad1" => "1",
+                    "Alpha2" or "Keypad2" => "2",
+                    "Alpha3" or "Keypad3" => "3",
+                    "PageUp" => "PGUP",
+                    "PageDown" => "PGDN",
+                    "Escape" => "ESC",
+                    "UpArrow" => "↑",
+                    "DownArrow" => "↓",
+                    _ => key.ToUpperInvariant()
+                };
+
+                StringAssert.Contains(expected, described,
+                    key + " is polled and no row on the table mentions it, so it is a shortcut "
+                    + "nobody can be told about.");
             }
         }
 

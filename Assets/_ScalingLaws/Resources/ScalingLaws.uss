@@ -6852,6 +6852,36 @@
     width: 100%;
 }
 
+/* ---- the bar down the right edge of a page ---------------------------------------------------
+
+   Absolutely positioned on purpose, and that is the whole point of it existing. The runtime
+   theme scrollbar takes its width out of the content, so every page in the game would re-flow the
+   moment it got long enough to need one, and pages here get longer and shorter as a campaign runs.
+   This one costs nothing: nothing moves when it appears and nothing moves when it goes away.
+
+   It clears the tour strip at the foot of the screen by sitting 12px off each end. */
+.pscroll {
+    position: absolute;
+    right: 4px;
+    top: 12px;
+    bottom: 12px;
+    width: 10px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 5px;
+}
+
+.pscroll__thumb {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    background-color: rgba(214, 224, 240, 0.34);
+    border-radius: 3px;
+}
+
+.pscroll__thumb:hover {
+    background-color: rgba(226, 236, 252, 0.62);
+}
+
 /* The slider inside a creator stage.
 
    Named from C# since the creator was written and never present here, so it took the runtime
@@ -17740,4 +17770,33 @@
 /* A row whose two halves sit against the outer edges with the gap between them. */
 .panel-row--split {
     justify-content: space-between;
+}
+
+/* ---- the keyboard list on the settings page -------------------------------------------------- */
+
+.pause__keys {
+    margin-top: 18px;
+    flex-shrink: 0;
+}
+
+.pause__key {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+/* Fixed width so the descriptions line up into a column rather than stepping in and out with the
+   length of each key name. */
+.pause__cap {
+    width: 96px;
+    flex-shrink: 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgb(226, 236, 252);
+}
+
+.pause__keywhat {
+    font-size: 13px;
+    color: rgb(150, 164, 190);
 }

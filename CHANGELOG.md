@@ -52,6 +52,12 @@ three survive a redraw now. So does the figure at the top of the screen, which u
 opposite problem: it only moved when a day went past, so money spent while paused did not
 show at all.
 
+**And the game can be played without a mouse.** Half these screens are taller than the window
+and there was no bar to drag and no key that moved anything, so a section continuing below the
+fold read as a section that had been cut off. The arrows scroll now, and there is a bar down
+the right edge that is drawn over the page rather than beside it, so nothing on the page moves
+when it appears.
+
 ### Fixed
 
 - **Every product on sale reports its own audience.** Reported by Natalia. Two general models on
@@ -105,6 +111,23 @@ show at all.
   2026-08-25.
 - **A refusal on the UPGRADE screen was an English sentence on a Polish build**, and it is the one
   the player reads at the moment the button turns them down.
+- **Every page can be moved with the keyboard, and shows a bar saying there is more of it.**
+  Reported by the author, who plays on a laptop with no mouse. Half the screens here are taller than
+  the window, and the scrollers were built with the theme's own scrollbar switched off, because that
+  bar takes its width out of the content and would re-flow every page in the game the moment one got
+  long enough to need it. So there was nothing to drag and no key that moved anything, and a section
+  continuing below the fold read as a section that had been cut off. Arrows scroll, PGUP and PGDN
+  move a screenful with a sliver of overlap, HOME and END go to the ends, and the bar down the right
+  edge is drawn over the page rather than beside it, so nothing moves when it appears or goes away.
+  It hides itself whenever the page fits.
+- **The arrows stay out of the way of the controls they would fight.** A slider and a dropdown are
+  both driven with the arrows and both are everywhere in this game, so the page does not move while
+  one of them has the keyboard. Nor does it move behind the pause menu.
+- **The list of keys exists.** `KeyboardShortcuts.All` has said since it was written that the
+  interface reads it, so a key cannot be bound in one place and described in another. Nothing read
+  it: the only caller anywhere was a test. The four keys the game already had were undiscoverable,
+  which is the half of "unplayable without a mouse" that adding more keys would have made worse.
+  They are on the settings page now, printed from the table that binds them, in both languages.
 
 ### Save compatibility
 
@@ -113,7 +136,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,128 EditMode tests and 36 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,139 EditMode tests and 38 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -128,7 +151,12 @@ model history that saves already carry, so an existing campaign reads correctly 
   rollover, so opening the tab that is already open runs the identical path a day does.
 - `CompanySimulation.UpgradeSubjects` is one list of everything that can be improved, on sale or
   on the shelf, so the screen never has to ask which of two types it is holding.
-- **2,738 phrases per language**, up from 2,723.
+- `KeyboardShortcuts.ResolveScroll` and `PageScrollbar.ThumbGeometry` are the two halves that can
+  be wrong without looking wrong, so both are pure and both are measured: a thumb that is subtly
+  the wrong length still looks like a scrollbar.
+- The page scroller is made unfocusable, because UI Toolkit gives a focused one arrow handling of
+  its own and two things moving one page is indistinguishable from unreliable keys.
+- **2,747 phrases per language**, up from 2,723.
 
 ---
 ## [0.2.0] - 2026-09-06

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Data;
 using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
@@ -420,6 +420,48 @@ namespace ScalingLaws.UI
 
             block.Add(Toggle("pause.fullscreen", GameSettings.Fullscreen,
                 value => GameSettings.SetFullscreen(value)));
+
+            block.Add(BuildKeys());
+
+            return block;
+        }
+
+        /// <summary>
+        /// The keys, printed from the one table that binds them.
+        ///
+        /// **`KeyboardShortcuts.All` has claimed since it was written that the interface reads it,
+        /// so a key cannot be bound in one place and described in another. Nothing read it.** The
+        /// only caller anywhere was a test, so the four keys the game had were undiscoverable, and
+        /// the player who reported that the game is unplayable without a mouse had no way of
+        /// finding out that it partly was not.
+        ///
+        /// This is the reader that makes the claim true. A binding added to the table appears here
+        /// with no further work, and one removed from it stops being advertised.
+        /// </summary>
+        private static VisualElement BuildKeys()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("pause__keys");
+
+            var heading = new Label(Loc.T("keys.title"));
+            heading.AddToClassList("pause__label");
+            block.Add(heading);
+
+            foreach (var shortcut in KeyboardShortcuts.All)
+            {
+                var row = new VisualElement();
+                row.AddToClassList("pause__key");
+
+                var cap = new Label(shortcut.KeyName);
+                cap.AddToClassList("pause__cap");
+                row.Add(cap);
+
+                var what = new Label(Loc.T(shortcut.Action));
+                what.AddToClassList("pause__keywhat");
+                row.Add(what);
+
+                block.Add(row);
+            }
 
             return block;
         }
