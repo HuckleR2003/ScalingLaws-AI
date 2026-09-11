@@ -1,4 +1,4 @@
-using ScalingLaws.Core;
+﻿using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 
@@ -76,6 +76,14 @@ namespace ScalingLaws.Tests.PlayMode
             state.AddDeployedModel(new DeployedModel(
                 "Kestrel", ArchitectureId.DenseTransformer, 41.0,
                 GameDate.FromCalendar(2023, 2, 14), 2e10, 0.8));
+
+            // **A finished run waiting to ship, which this campaign never had.** RELEASE therefore
+            // photographed its own empty state on every pass: the one screen where the player is
+            // looking at something they spent two hundred days building was reviewed as a panel
+            // saying nothing is here. Same reasoning as the two effects below.
+            state.AddToShelf(new TrainedModel(
+                "Harrier", ArchitectureId.SparseMixture, 47.5,
+                GameDate.FromCalendar(2024, 5, 2), 4e10, 47.0));
 
             // **Two temporary effects, because an empty header proves nothing about the badges.**
             //

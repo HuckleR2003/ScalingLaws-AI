@@ -183,6 +183,18 @@ than grey text with the money shouting over it.
   three steps of 304 reach 912, so a fourth postponement was accepted: it moved the date by a single
   day, charged another 8.6% on the whole balance, and read as a button that did nothing. The ceiling
   is derived from the number of postponements now, so the two cannot drift.
+- **A model goes on sale on terms you chose.** Clicking a model on RELEASE shipped it, on the spot,
+  at whatever price the company happened to be charging. Two hundred days of training and most of
+  the company's cash went on sale in one click with no screen in between, and the tutorial tells you
+  at step 44 to click it and set something. There is a card now: what it costs a month, whether
+  there is a free tier, and how much of one.
+- **The release tiles show the model.** They were a title and two grey lines. They carry the silicon
+  plate the upgrade screen draws, with the company mark on it and the model's name stamped across
+  it.
+- **The card says that the price belongs to the company, not to the model.** One subscription price
+  covers everything on sale, and a player who learns that by watching an existing product's revenue
+  move has learned it the expensive way. The line only appears when there is something already
+  selling.
 
 ### Save compatibility
 
@@ -191,7 +203,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,150 EditMode tests and 39 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,155 EditMode tests and 39 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.

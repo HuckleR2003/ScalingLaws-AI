@@ -712,6 +712,20 @@ namespace ScalingLaws.UI
             return panel;
         }
 
+        /// <summary>
+        /// The last look before anybody can buy it: price, free tier, and a picture of the thing.
+        /// </summary>
+        private void OpenReleaseConfirm(int slot)
+        {
+            releaseConfirm ??= new ReleaseConfirmDialog(() => simulation,
+                _ => Show(Screen.Site),
+                () => Show(Screen.Release));
+
+            releaseConfirm.Show(shellRoot, slot);
+        }
+
+        private ReleaseConfirmDialog releaseConfirm;
+
         private VisualElement BuildReleaseScreen()
         {
             var page = NewPage(Loc.T("page.release"), Loc.T("page.release.strap"));
@@ -752,12 +766,21 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
             {
                 var slot = index;
                 var shelved = state.Shelf[index];
-                var card = new Button(() =>
-                {
-                    simulation.TryReleaseModel(slot, state.DefaultPriceMultiplier, out _);
-                    Show(Screen.Release);
-                });
+
+                // **Clicking this used to ship the model.** Two hundred days of training and most
+                // of the company's cash went on sale on one click, at whatever price the company
+                // happened to be charging, with no screen in between. The tutorial tells the
+                // player at step 44 to click it and set something; there was nothing to set.
+                var card = new Button(() => OpenReleaseConfirm(slot));
                 card.AddToClassList("card");
+                card.AddToClassList("relopt");
+
+                // The silicon plate from the upgrade screen. This card was a title and two grey
+                // lines, which is a row in a list rather than the thing the player has spent the
+                // last two hundred days building.
+                var die = ChipPreview.Build(state.CompanyName, shelved.Name);
+                die.AddToClassList("die--tile");
+                card.Add(die);
 
                 var title = new Label(shelved.Name.ToUpperInvariant());
                 title.AddToClassList("card__title");
@@ -774,6 +797,10 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
                 UiFormat.Number(simulation.Market.FrontierCapability)));
                 waitLine.AddToClassList("card__line");
                 card.Add(waitLine);
+
+                var go = new Label(Loc.T("release.confirm.open"));
+                go.AddToClassList("relopt__go");
+                card.Add(go);
 
                 grid.Add(card);
             }

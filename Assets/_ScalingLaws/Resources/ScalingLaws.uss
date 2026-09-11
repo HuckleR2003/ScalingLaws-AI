@@ -17929,3 +17929,156 @@
     white-space: normal;
     margin-top: 10px;
 }
+
+/* ---- the release card and the tile that opens it ---------------------------------------------
+
+   The tile was a title and two grey lines. It is the one screen where the player is looking at a
+   thing they spent two hundred days building, so it carries the same silicon plate the upgrade
+   screen draws. */
+/* **`.card` is 134px tall with `justify-content: flex-end` and `overflow: hidden`.** Anything
+   taller than that is pushed off the *top* and clipped, which is why the plate came back drawn at
+   y = -133.71 and invisible: measured, not guessed, after two renders spent on the wrong theory.
+
+   Two classes rather than one, so this outranks `.card` wherever either happens to sit in the
+   sheet. The room screen already learned that the hard way. */
+.card.relopt {
+    height: auto;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* **The plate is sized by its body, not by its container.** `.die__body` is a fixed 132px square,
+   so capping the wrapper at 120 clipped it and the model name was drawn over the top of it. Found
+   by looking at the render; the same shape as the cabinet pictures that came back the height of the
+   window. */
+.die--tile {
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.die--tile .die__body {
+    width: 96px;
+    height: 96px;
+}
+
+.relopt__go {
+    margin-top: 10px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(226, 168, 92);
+}
+
+.relship {
+    width: 560px;
+}
+
+.relship__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.die--release {
+    margin-right: 18px;
+    flex-shrink: 0;
+}
+
+.die--release .die__body {
+    width: 104px;
+    height: 104px;
+}
+
+.relship__titles {
+    flex-grow: 1;
+}
+
+.relship__kicker {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: rgb(150, 164, 190);
+}
+
+.relship__name {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+}
+
+.relship__ships {
+    font-size: 12.5px;
+    color: rgb(178, 190, 210);
+    white-space: normal;
+}
+
+.relship__row {
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+
+.relship__switchrow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.relship__label {
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    color: rgb(150, 164, 190);
+}
+
+.relship__reading {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 252);
+}
+
+.relship__hint {
+    font-size: 12.5px;
+    color: rgb(150, 164, 190);
+    white-space: normal;
+}
+
+.relship__slider {
+    margin-top: 2px;
+    max-width: 100%;
+}
+
+/* On or off before how much. "How generous" only exists once "at all?" is yes. */
+.relship__toggle {
+    margin: 0;
+    height: 26px;
+    padding-left: 14px;
+    padding-right: 14px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(178, 190, 210);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 3px;
+}
+
+.relship__toggle--on {
+    color: rgb(226, 240, 232);
+    background-color: rgba(46, 92, 72, 0.55);
+    border-color: rgba(140, 200, 168, 0.45);
+}
+
+/* One price for the whole catalogue is a fact about the game that this card has to say rather
+   than imply, because the alternative is learning it by watching an existing product's revenue
+   move. */
+.relship__shared {
+    font-size: 12px;
+    color: rgb(226, 168, 92);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.relship__problem {
+    font-size: 12.5px;
+    color: rgb(226, 128, 116);
+    white-space: normal;
+    margin-bottom: 8px;
+}
