@@ -18082,3 +18082,33 @@
     white-space: normal;
     margin-bottom: 8px;
 }
+
+/* ---- the tour, waiting on the calendar --------------------------------------------------------
+
+   Under what he says rather than in place of it: the line is the reason the wait is worth sitting
+   through, and the bar is the evidence that it is a wait rather than a hang. */
+.guide__wait {
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+.guide__waitlabel {
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1.2px;
+    color: rgb(226, 168, 92);
+    margin-bottom: 5px;
+}
+
+.guide__waittrack {
+    height: 7px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.guide__waitfill {
+    height: 100%;
+    border-radius: 4px;
+    background-color: rgb(226, 168, 92);
+}

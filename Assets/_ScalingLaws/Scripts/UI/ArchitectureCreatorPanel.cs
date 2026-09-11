@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -501,7 +501,7 @@ namespace ScalingLaws.UI
                     ? $"  ·  pays {UiFormat.Money(ArchitectureDesigner.CashCostUsd(blueprint))}"
                     : string.Empty);
 
-            durationReading.text = UiFormat.Days(ArchitectureDesigner.DurationDays(blueprint));
+            durationReading.text = UiFormat.Days(ProgrammeDurationDays());
 
             outcome.Clear();
             Card(Loc.T("arch.outcome"), outcome);
@@ -995,6 +995,55 @@ namespace ScalingLaws.UI
 
         private double Weight(ResearchDirection direction) =>
             directions.TryGetValue(direction, out var slider) ? slider.value : 0.0;
+
+        /// <summary>
+        /// Commissions the programme the sliders currently describe, and says how it went.
+        ///
+        /// **The tour needs an answer, not just an action.** Emil offers to set the five
+        /// directions and start the programme, and the step after it only waits for a programme
+        /// that was really started. `Commit` swallows that: it puts the reason on the panel and
+        /// returns nothing, which is right for a button and useless to a caller that has to
+        /// decide what happens next.
+        /// </summary>
+        public bool CommitNow(out string failureReason)
+        {
+            if (!simulation.TryStartArchitectureProgramme(CurrentBlueprint(), out failureReason))
+            {
+                problem = failureReason;
+                Reprice();
+                return false;
+            }
+
+            problem = string.Empty;
+            Refresh();
+            return true;
+        }
+
+        /// <summary>
+        /// How many days the programme on the sliders would actually run for.
+        ///
+        /// **`ArchitectureDesigner.DurationDays` is not that number and the screen quoted it
+        /// anyway.** The founder's Concept skill, the research staff and the home country all
+        /// move a programme's length through `ScaleResearchDuration`, and
+        /// `TryStartArchitectureProgramme` puts the scaled figure into the project. So the
+        /// DURATION reading said one thing and the calendar did another, by as much as a third
+        /// either way, on the one control the whole screen is a commitment of.
+        ///
+        /// The clamp is the project's own, mirrored here rather than guessed at, so the reading
+        /// and the programme agree at both ends of the slider.
+        ///
+        /// **The advice does not change it.** `TakeTheAdvice` moves the five directions and
+        /// nothing else, while this reads the duration slider and whether there is a base
+        /// family, so the offer can quote what it is asking for before it has applied anything.
+        /// That is the only order in which a quote means something.
+        /// </summary>
+        public int ProgrammeDurationDays()
+        {
+            var scaled = simulation.ScaleResearchDuration(
+                ArchitectureDesigner.DurationDays(CurrentBlueprint()));
+
+            return Math.Clamp(scaled, 1, ArchitectureBlueprint.MaximumDurationDays);
+        }
 
         private void Commit()
         {

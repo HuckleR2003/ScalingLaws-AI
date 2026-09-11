@@ -196,6 +196,23 @@ than grey text with the money shouting over it.
   move has learned it the expensive way. The line only appears when there is something already
   selling.
 
+- **The tutorial says when it is waiting for the clock rather than for you.** At step 40 Emil
+  says nothing happens for months, and then nothing on screen said anything was happening. Those
+  steps carry no button, on purpose, because the next thing is the game's move and not the
+  player's, and from the chair that is indistinguishable from a tour that has frozen. There is a
+  line and a bar under what he says now, on every step that is waiting on work.
+- **The architecture step is a decision instead of a demonstration.** He explained the house
+  family, set the five sliders, and walked on, so the player was left looking at a page they had
+  just been told decides the next five years of every model they build, having done nothing with
+  it, and the tour never came back to it. Two answers now: start it, which quotes how long it
+  takes and actually commissions it, or not now. Saying yes keeps him there until the family
+  lands. Saying no walks straight on.
+- **The architecture screen was quoting a length the programme does not run for.** DURATION read
+  the designer's own figure, and the founder, the research staff and the home country all move a
+  programme's length before it reaches the calendar. A default company opening the screen was told
+  365 days and would have got 317. Both the reading and the new button now say what the
+  calendar will do.
+
 ### Save compatibility
 
 **Unchanged, v51.** Nothing new is stored: the split is derived from the market standing and the
@@ -203,7 +220,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,155 EditMode tests and 39 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,162 EditMode tests and 41 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -212,6 +229,15 @@ model history that saves already carry, so an existing campaign reads correctly 
   calculations.
 - `ProductStanding` carries `OwnLifetimeUsd` and `OwnRecentUsd` so a product's money and the
   company's month stop sharing two fields between four meanings.
+- **One step serves both answers to the architecture question, with no branch in the script.**
+  The step that follows the offer waits on `arch_built`, and `AlreadyDone` reports it satisfied
+  when nothing is running, so a player who declined arrives with nothing in flight and unwinds
+  through it. A branch would have been a second shape of step for one decision.
+- `ArchitectureCreatorPanel.ProgrammeDurationDays` is the one answer to how long a family
+  programme takes, and it is the scaled one. The reading and the tour's button read it.
+- The tutorial strip has never been rendered into a frame until now, and it is the one thing in
+  the game every new player reads every word of. `ScreenProofTests` writes `guide_offer.png` and
+  `guide_waiting.png`.
 - `Ledger` answers about a day the way it answers about a month: `DayCashFlow`, `DayIncome`,
   `DayCost`, `RecordedDays`.
 - `DayRolloverTests` is a PlayMode fixture that needs no clock: `Show(current)` **is** the

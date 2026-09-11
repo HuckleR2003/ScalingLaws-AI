@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace ScalingLaws.Data
 {
@@ -276,6 +276,17 @@ namespace ScalingLaws.Data
         /// <summary>A model went on sale.</summary>
         public const string ModelReleasedSignal = "model_released";
 
+        /// <summary>
+        /// A house family programme has landed.
+        ///
+        /// **The step that waits on it clears itself when there is nothing to wait for**, which
+        /// is what lets one step serve both answers to the offer. A player who says "not now"
+        /// has no programme in flight, so `AlreadyDone` is true on arrival and the tour walks
+        /// straight through. A branch in the script would have been a second shape of step for
+        /// one decision.
+        /// </summary>
+        public const string ArchitectureBuiltSignal = "arch_built";
+
         public static IReadOnlyList<GuideStep> Steps { get; } = new List<GuideStep>
         {
             // ---- the floor, and the thing that bankrupts people ----------------------------
@@ -321,7 +332,16 @@ namespace ScalingLaws.Data
             new("arch_pitch", "guide.step.arch_pitch"),
             new("arch_open", "guide.step.arch_open",
                 GuideTarget.Architecture, null, "guide.show_me", true),
-            new("arch_what", "guide.step.arch_what", GuideTarget.Architecture, "arx__card"),
+            // **A decision, not a demonstration.** He explained the screen, filled it in and
+            // walked on, so the player was left looking at a page they had been told mattered
+            // and had not used. The offer starts the programme and quotes the months it takes;
+            // declining is the plain NEXT button with an honest caption on it.
+            new("arch_what", "guide.step.arch_what", GuideTarget.Architecture, "arx__card",
+                "guide.offer.arch_not"),
+
+            // Passed straight through by anybody who declined, because nothing is running.
+            new("arch_building", "guide.step.arch_building", GuideTarget.Architecture,
+                "arx__verdict", null, false, -1, ArchitectureBuiltSignal),
             new("arch_locked", "guide.step.arch_locked", GuideTarget.Architecture, "dlock"),
             new("arch_info", "guide.step.arch_info", GuideTarget.Architecture, "infodot"),
 

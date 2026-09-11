@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine.UIElements;
@@ -88,6 +88,34 @@ namespace ScalingLaws.UI
 
         /// <summary>One extra button a step may offer, or null. Set by the shell.</summary>
         public Func<GuideStep, GuideOffer?> offerFor;
+
+        /// <summary>
+        /// What a step is waiting for, when it is waiting for work rather than for a click.
+        ///
+        /// **Reported: at step 40 Emil says "nothing happens for months" and nothing on screen
+        /// says anything is happening.** He is right, the run is under way, and the strip has no
+        /// button because the claim is that the game does the next thing. From the player's chair
+        /// that is indistinguishable from a tutorial that has frozen.
+        ///
+        /// Same shape as `offerFor`: the shell knows what the number means and the tour only
+        /// draws it. Null when the step is not waiting on anything measurable, which is most of
+        /// them.
+        /// </summary>
+        public Func<GuideStep, GuideWait?> waitFor;
+
+        /// <summary>One line and a bar, for a step whose next move belongs to the calendar.</summary>
+        public readonly struct GuideWait
+        {
+            public GuideWait(string label, double progress)
+            {
+                Label = label ?? string.Empty;
+                Progress = Math.Clamp(progress, 0.0, 1.0);
+            }
+
+            public string Label { get; }
+
+            public double Progress { get; }
+        }
 
         /// <summary>A thing the cousin will do for you, if you ask him on the right step.</summary>
         public readonly struct GuideOffer
@@ -476,6 +504,38 @@ namespace ScalingLaws.UI
         /// <summary>
         /// Repoints the existing strip at the current step's words, touching no elements.
         /// </summary>
+        /// <summary>
+        /// The bar under the line, with the words the report asked for in it.
+        ///
+        /// It is rebuilt with the strip rather than updated in place, and the strip is rebuilt
+        /// only when the step index changes, so this does **not** animate. That is deliberate and
+        /// it is the smaller of two faults: a bar that crept forward would need the strip rebuilt
+        /// every day, and rebuilding it destroys the button under the player's cursor between the
+        /// press and the release, which is the bug that stopped the first tutorial playtest.
+        /// Saying "let the clock run" is what the player needs; the corner strip already carries
+        /// the live countdown.
+        /// </summary>
+        private static VisualElement BuildWait(GuideWait waiting)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("guide__wait");
+
+            var label = new Label(waiting.Label);
+            label.AddToClassList("guide__waitlabel");
+            block.Add(label);
+
+            var track = new VisualElement();
+            track.AddToClassList("guide__waittrack");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("guide__waitfill");
+            fill.style.width = Length.Percent((float)(waiting.Progress * 100.0));
+            track.Add(fill);
+
+            block.Add(track);
+            return block;
+        }
+
         private void Retext(GuideStep step)
         {
             if (line != null)
@@ -586,6 +646,15 @@ namespace ScalingLaws.UI
             line = new Label(step.Line);
             line.AddToClassList("guide__line");
             bar.Add(line);
+
+            // **Under the line, not instead of it.** What he says is the reason the wait is
+            // worth sitting through; the bar is the evidence that it is a wait rather than a
+            // hang. Replacing one with the other would answer the complaint by deleting the
+            // thing the step exists for.
+            if (waitFor != null && waitFor(step) is { } waiting)
+            {
+                bar.Add(BuildWait(waiting));
+            }
 
             var buttons = new VisualElement();
             buttons.AddToClassList("guide__buttons");

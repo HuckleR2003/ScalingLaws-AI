@@ -877,13 +877,71 @@ namespace ScalingLaws.UI
             // `ArchitectureCreatorPanel.TakeTheAdvice` were both written and nothing joined them, so
             // the one step in the tour that hands the player something to press drew no button at
             // all. Same failure class as the server hall: complete on both sides, no wire.
-            guide.offerFor = step => step.Id == GuideScript.ArchitectureOfferStepId
-                ? new GuideOverlay.GuideOffer(Loc.T("guide.offer.arch"), () =>
+            // **Setting the sliders and moving on was half an answer.** The step after this one
+            // waits for the programme, so the offer has to start one: advice that leaves the
+            // screen exactly as it found it is the same as no advice, and a player who wants a
+            // family has no other moment in the tour where they are looking at this page and
+            // know what it is for. Declining is the NEXT button with its own caption, so there
+            // is no second mechanism here and nothing to keep in step.
+            guide.offerFor = step =>
+            {
+                if (step.Id != GuideScript.ArchitectureOfferStepId || families == null)
                 {
-                    families?.TakeTheAdvice();
+                    return null;
+                }
+
+                // Quoted before anything is applied, which it can be: the advice moves the five
+                // directions and the duration comes off the duration slider.
+                var label = Loc.T("guide.offer.arch",
+                    UiFormat.Days(families.ProgrammeDurationDays()));
+
+                return new GuideOverlay.GuideOffer(label, () =>
+                {
+                    families.TakeTheAdvice();
+
+                    // A refusal leaves nothing running, so the waiting step ahead clears itself
+                    // and the tour does not strand the player on it. The panel already carries
+                    // the reason, in the place every other refusal on this screen puts it.
+                    AudioDirector.Play(families.CommitNow(out _)
+                        ? UiSound.Confirm
+                        : UiSound.Deny);
+
                     RefreshChrome();
-                })
-                : null;
+                });
+            };
+
+            // **What a waiting step is waiting for.** The tour draws the bar; this is the only
+            // place that knows the number, which is the same split the offer above uses. Any step
+            // that waits on a signal while a run is under way gets one, rather than the id being
+            // written here a second time: a list of step ids in the shell is a second copy of the
+            // script that drifts the first time somebody adds a step.
+            guide.waitFor = step =>
+            {
+                if (string.IsNullOrEmpty(step.Signal))
+                {
+                    return null;
+                }
+
+                var work = WorkInFlightNow();
+                if (work.Busy)
+                {
+                    return new GuideOverlay.GuideWait(Loc.T("guide.waiting_run"),
+                        work.Progress);
+                }
+
+                // **The second long job, and it is deliberately not inside `WorkInFlightNow`.**
+                // That method answers for the product banner, which holds one subject and gave
+                // research away to keep it. This one answers "is the thing he asked you to wait
+                // for actually moving", and for the family step that thing is the programme.
+                var family = simulation.State.ActiveArchitectureProject;
+                if (family != null)
+                {
+                    return new GuideOverlay.GuideWait(Loc.T("guide.waiting_family"),
+                        family.Progress);
+                }
+
+                return null;
+            };
 
             guide.leftForNow = () =>
             {
@@ -3219,6 +3277,8 @@ namespace ScalingLaws.UI
                     CompanyEventType.TrainingStarted => GuideScript.RunStartedSignal,
                     CompanyEventType.TrainingCompleted => GuideScript.RunFinishedSignal,
                     CompanyEventType.ModelReleased => GuideScript.ModelReleasedSignal,
+                    CompanyEventType.ArchitectureResearchCompleted =>
+                        GuideScript.ArchitectureBuiltSignal,
                     _ => null
                 });
 
@@ -3581,6 +3641,11 @@ namespace ScalingLaws.UI
                 state.Shelf.Count > 0 || state.ReleasedModelCount > 0,
 
             GuideScript.ModelReleasedSignal => state.ReleasedModelCount > 0,
+
+            // **Nothing running means nothing to wait for.** This is the whole of the branch
+            // the architecture decision would otherwise have needed: a player who declined the
+            // offer arrives with no programme in flight and the step is satisfied on sight.
+            GuideScript.ArchitectureBuiltSignal => state.ActiveArchitectureProject == null,
 
             _ => false
         };

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -707,6 +707,74 @@ namespace ScalingLaws.Tests.PlayMode
             host.Add(map);
 
             yield return Capture(host, "world_map.png");
+        }
+
+        /// <summary>
+        /// The tour asking the architecture question, with both answers on it.
+        ///
+        /// **The one strip every new player reads every word of, and it had never been in a
+        /// frame.** It is absolutely positioned, it carries a name plate drawn with Painter2D,
+        /// and it now has a button whose caption is assembled from a day count, which is three
+        /// separate ways for a line to come out too long for the bar it sits in. None of those
+        /// is visible to an assertion.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheTourAsksTheArchitectureQuestion()
+        {
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            var progress = new GuideProgress
+            {
+                Stage = GuideStage.Touring,
+                Step = GuideScript.IndexOf(GuideScript.ArchitectureOfferStepId)
+            };
+
+            var overlay = new GuideOverlay(host, () => progress, _ => { }, () => { })
+            {
+                offerFor = step => step.Id == GuideScript.ArchitectureOfferStepId
+                    ? new GuideOverlay.GuideOffer(
+                        Loc.T("guide.offer.arch", UiFormat.Days(214)), () => { })
+                    : null
+            };
+
+            overlay.Refresh();
+
+            yield return Capture(host, "guide_offer.png");
+        }
+
+        /// <summary>
+        /// The tour waiting on the calendar, which is what step 40 looks like now.
+        ///
+        /// **Reported: "nothing happens for months" and nothing on screen said anything was**
+        /// **happening.** The step draws no button, because the claim is that the game does the
+        /// next thing, and from the player's chair that is indistinguishable from a tutorial
+        /// that has frozen. The bar goes under the line rather than in place of it: what he says
+        /// is the reason the wait is worth sitting through.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheTourSaysWhenItIsWaitingOnTheClock()
+        {
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            var waiting = GuideScript.IndexOf(GuideScript.ArchitectureOfferStepId) + 1;
+            var progress = new GuideProgress
+            {
+                Stage = GuideStage.Touring,
+                Step = waiting
+            };
+
+            var overlay = new GuideOverlay(host, () => progress, _ => { }, () => { })
+            {
+                waitFor = step => string.IsNullOrEmpty(step.Signal)
+                    ? null
+                    : new GuideOverlay.GuideWait(Loc.T("guide.waiting_family"), 0.34)
+            };
+
+            overlay.Refresh();
+
+            yield return Capture(host, "guide_waiting.png");
         }
 
         /// <summary>The same map before anything is picked, which is what a new player meets.</summary>
