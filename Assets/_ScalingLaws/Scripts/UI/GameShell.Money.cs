@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -45,6 +45,10 @@ namespace ScalingLaws.UI
             // The two panels at the top of FLEET are the ones a player reads while deciding what to
             // spend, and they were the smallest things on the screen. Forty percent taller.
             rental.AddToClassList("fleet-panel");
+
+            // The strip on the research banner jumps here when a node has run out of
+            // cluster, and it has to be able to find this panel to light it.
+            rental.AddToClassList("rent-panel");
             var rentalHeading = new Label(Loc.T("panel.rented_capacity"));
             rentalHeading.AddToClassList("panel__heading");
             UiParts.ExplainHeading(rentalHeading, TechNotes.RentOrOwn);

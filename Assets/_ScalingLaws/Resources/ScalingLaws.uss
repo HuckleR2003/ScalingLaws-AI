@@ -17827,3 +17827,52 @@
     font-size: 13px;
     color: rgb(150, 164, 190);
 }
+
+/* The rent panel, named so the research strip can find it when a node has stalled on compute. */
+.rent-panel {
+    flex-shrink: 0;
+}
+
+/* Two seconds of attention and then gone. A highlight that stays becomes a second permanent mark
+   on the screen and stops being read; one that only flashes can be missed by anybody looking at
+   the other half of the page while it happens. */
+.lit-briefly {
+    border-width: 2px;
+    border-color: rgb(226, 168, 92);
+}
+
+/* The way out of a stall, on the strip that reports it. */
+.rb__jump {
+    margin: 0;
+    margin-bottom: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    height: 22px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 0.6px;
+    color: rgb(255, 226, 206);
+    background-color: rgba(196, 84, 60, 0.92);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.rb__jump:hover {
+    background-color: rgba(224, 104, 76, 1);
+}
+
+/* One desk: the card, and the case for it underneath. `.dcards` is the row across the page and
+   this is a column inside it, or the buttons interleave with the cards. */
+.dcards__col {
+    flex-shrink: 0;
+    width: 330px;
+    margin-right: 16px;
+}
+
+/* The card is 330 wide and fixed, so the column takes its width rather than stretching: a button
+   twice as wide as the thing it belongs to reads as a button for the whole page. The card gives up
+   its own right margin to the column, or the two would add. */
+.dcards__col > .dcard {
+    margin-right: 0;
+}

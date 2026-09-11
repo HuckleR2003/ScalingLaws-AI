@@ -2818,6 +2818,19 @@ namespace ScalingLaws.UI
 
             var starved = project.IsWaitingForCompute || project.IsComputeStarved;
 
+            // **A stall says what is wrong and nothing about what to do.** A node that has run
+            // out its calendar and is waiting on the cluster is the most common state in the
+            // opening hour, because a new company has rented nothing, and the strip reported it
+            // as a fact with no way out of it. The header is a button on that path: it opens
+            // COMPUTE and lights the rent control for two seconds, which is the one control that
+            // ends the wait.
+            if (starved)
+            {
+                var jump = new Button(GoAndRentSomething) { text = Loc.T("research.no_power_go") };
+                jump.AddToClassList("rb__jump");
+                researchBanner.Add(jump);
+            }
+
             var kicker = new Label(Loc.T(starved ? "research.waiting" : "research.running"));
             kicker.AddToClassList("rb__kicker");
             researchBanner.Add(kicker);
@@ -2859,6 +2872,32 @@ namespace ScalingLaws.UI
             shellRoot.Add(researchBanner);
         }
 
+        /// <summary>
+        /// Opens COMPUTE and lights the rent control for a moment.
+        ///
+        /// **Two seconds and then it stops**, which is the whole design of it: a highlight that
+        /// stays is a second permanent mark on the screen and the player stops reading it, and a
+        /// highlight that only appears once is a flash they may be looking away for. It is put on
+        /// after the page is built, because the control does not exist until then.
+        /// </summary>
+        private void GoAndRentSomething()
+        {
+            Show(Screen.Fleet);
+
+            var control = contentHost?.Q(className: "rent-panel");
+            if (control == null)
+            {
+                return;
+            }
+
+            control.AddToClassList("lit-briefly");
+            control.schedule.Execute(() => control.RemoveFromClassList("lit-briefly"))
+                .ExecuteLater(2000);
+        }
+
+        /// <summary>Which desk has its benefits open, or none. Screen state, so the shell keeps it.</summary>
+        private IntelTier? intelBenefitsFor;
+
         private VisualElement BuildFeedScreen()
         {
             var page = NewPage(Loc.T("intel.title"), Loc.T("intel.strap"));
@@ -2881,6 +2920,14 @@ namespace ScalingLaws.UI
                 var captured = tier;
                 var held = state.IsMember(tier);
                 var monthly = IntelligenceService.MonthlyRetainerUsd(tier);
+
+                // **A column per desk, not a card and a button side by side.** `.dcards` is a row,
+                // so adding the benefits block straight to it made three cards and three buttons
+                // alternate across the page with the buttons floating at the top. Found by looking
+                // at the render; every layout fault in this project has been.
+                var column = new VisualElement();
+                column.AddToClassList("dcards__col");
+                tiers.Add(column);
 
                 var card = new Button(() =>
                 {
@@ -2909,7 +2956,21 @@ namespace ScalingLaws.UI
                 action.AddToClassList("dcard__action");
                 card.Add(action);
 
-                tiers.Add(card);
+                column.Add(card);
+
+                // **The case for the membership, which this screen never made.** The news page
+                // sells the same three desks and has carried a SEE BENEFITS button since it was
+                // written; here the player got a name, a sentence about what the outlet is, and
+                // a price. What it buys you is a different question and the one somebody with
+                // their hand on $400k a month is actually asking.
+                //
+                // Outside the card rather than inside it: the card is itself a Button that joins
+                // and leaves, and a button inside a button is a click nobody can predict.
+                column.Add(IntelBenefits.Block(captured, intelBenefitsFor == captured, () =>
+                {
+                    intelBenefitsFor = intelBenefitsFor == captured ? null : captured;
+                    Show(Screen.Feed);
+                }));
             }
 
             var feed = new VisualElement();

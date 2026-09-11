@@ -154,6 +154,17 @@ than grey text with the money shouting over it.
   Polish. **Six of them already had Polish in the phrase book and no reader at all**, which is the
   third time this month that a duplicate-key failure has pointed at a screen that was never wired
   rather than at redundant text.
+- **The INTEL screen sold three memberships and made the case for none of them.** The news page has
+  carried a SEE BENEFITS button since it was written; the screen whose whole job is choosing between
+  the three desks had a name, a sentence about what the outlet is, and a price. The pitch and the
+  benefits answer different questions, and the second one is what somebody with their hand on $400k a
+  month is actually asking. Both screens read one copy of it now.
+- **A stalled research node says what to do about it.** Running out of cluster is the most common
+  state in the opening hour, because a new company has rented nothing, and the strip reported it as a
+  fact with no way out. It carries a button that opens COMPUTE and lights the rent panel for two
+  seconds.
+- **The BANK tab said BANK and the screen it opens said BANK AND DONATIONS.** The tab agrees with the
+  page now.
 
 ### Save compatibility
 

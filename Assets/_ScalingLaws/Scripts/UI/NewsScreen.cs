@@ -378,46 +378,15 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BenefitsBlock(IntelTier tier)
         {
-            var block = new VisualElement();
-            block.AddToClassList("desk__benefits");
-
             var open = benefitsFor == tier;
 
-            var toggle = new Button(() =>
+            return IntelBenefits.Block(tier, open, () =>
             {
                 benefitsFor = open ? null : tier;
                 Refresh();
-            })
-            { text = Loc.T(open ? "intel.benefits.hide" : "intel.benefits.show") };
-
-            toggle.AddToClassList("desk__seebenefits");
-            block.Add(toggle);
-
-            if (!open)
-            {
-                return block;
-            }
-
-            var body = new Label(BenefitsCopy(tier));
-            body.AddToClassList("desk__benefitstext");
-            block.Add(body);
-
-            return block;
+            });
         }
 
-        /// <summary>
-        /// What each membership is worth, in the outlet's own terms.
-        ///
-        /// **A switch rather than a key assembled from the enum name.** A phrase-book key built by
-        /// concatenation is invisible to `LocalisationTests`, and this project has already shipped
-        /// one screen of raw keys that way.
-        /// </summary>
-        private static string BenefitsCopy(IntelTier tier) => tier switch
-        {
-            IntelTier.NationalPress => Loc.T("intel.benefits.press"),
-            IntelTier.KnownWords => Loc.T("intel.benefits.known"),
-            _ => Loc.T("intel.benefits.trend")
-        };
 
         // ---- small pieces ---------------------------------------------------------------------------
 
