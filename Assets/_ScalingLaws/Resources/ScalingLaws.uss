@@ -17876,3 +17876,56 @@
 .dcards__col > .dcard {
     margin-right: 0;
 }
+
+/* ---- the corporation tax card ---------------------------------------------------------------
+
+   Wider than the other notices because it carries two full-width decisions rather than a sentence
+   and a dismiss, and the two buttons are the same size on purpose: one of them is the cheaper
+   answer and the card must not say which by making it bigger. */
+.taxcard {
+    width: 520px;
+}
+
+.taxcard__amount {
+    font-size: 42px;
+    -unity-font-style: bold;
+    color: rgb(232, 240, 252);
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+
+.taxcard__button {
+    flex-grow: 1;
+    height: 44px;
+    font-size: 14px;
+}
+
+.taxcard__cannot {
+    font-size: 12.5px;
+    color: rgb(226, 128, 116);
+    margin-top: 8px;
+    white-space: normal;
+}
+
+/* The two lines the report asked for by name: what the postponement charged, and what is now due
+   and when. The rate is the one a player underestimates, so it is the larger of the two. */
+.taxcard__rate {
+    font-size: 34px;
+    -unity-font-style: bold;
+    color: rgb(226, 168, 92);
+    margin-top: 8px;
+}
+
+.taxcard__total {
+    font-size: 18px;
+    color: rgb(206, 218, 238);
+    margin-top: 4px;
+    margin-bottom: 6px;
+}
+
+.taxcard__last {
+    font-size: 13px;
+    color: rgb(240, 176, 120);
+    white-space: normal;
+    margin-top: 10px;
+}

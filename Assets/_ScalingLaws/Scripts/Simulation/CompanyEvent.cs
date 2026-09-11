@@ -132,7 +132,10 @@ namespace ScalingLaws.Simulation
         SmearThreatened = 58,
 
         /// <summary>A tax demand ran out of days and was carried into next year with a surcharge.</summary>
-        TaxCarriedForward = 59
+        TaxCarriedForward = 59,
+
+        /// <summary>The whole arrears taken at once after three years of postponement.</summary>
+        TaxCollected = 60
     }
 
     /// <summary>

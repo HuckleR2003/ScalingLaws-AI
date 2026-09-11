@@ -4650,7 +4650,19 @@ namespace ScalingLaws.Simulation
         /// price is what makes it a decision. Deferring buys the company the one thing it cannot buy
         /// with anything else, which is time to let a model it has already paid for start earning.
         /// </summary>
-        public const int LongestDeferralDays = 913;
+        /// <summary>
+        /// How many postponements the revenue will grant. Three, and the ceiling is derived from
+        /// it rather than written beside it.
+        ///
+        /// **913 was one day more than three steps and the comment beside it said three steps
+        /// reached it.** `DeferralStepDays` is 304, so three took the letter to 912 and a fourth was
+        /// accepted: it moved the date by a single day, charged another 8.6% on the whole balance,
+        /// and read to the player as a postponement that did nothing. Found by a test asserting the
+        /// fourth is refused, which is the sentence the constant already claimed.
+        /// </summary>
+        public const int MostPostponements = 3;
+
+        public const int LongestDeferralDays = DeferralStepDays * MostPostponements;
 
         /// <summary>
         /// What the revenue adds for a postponement the company took rather than asked for.
@@ -4661,6 +4673,22 @@ namespace ScalingLaws.Simulation
         /// an inbox is a worse penalty that nobody ever saw arrive.
         /// </summary>
         public const double UnjustifiedDeferralSurcharge = 0.09;
+
+        /// <summary>
+        /// What the revenue takes when a company has run the deferrals out and still not paid.
+        ///
+        /// **The ceiling had no consequence behind it.** `LongestDeferralDays` stopped the player
+        /// asking for another postponement and nothing else: the letter sat there, the due date
+        /// passed, `CarryOverdueTax` added nine per cent and rolled it into next January, and the
+        /// same three deferrals were available again against the new demand. So the ceiling was a
+        /// closed door beside an open one, and a company could roll corporation tax forever for a
+        /// predictable annual fee, which is the shape this game is not allowed to have.
+        ///
+        /// The author's figure, and it is deliberately more than double the nine: the nine is what
+        /// a late payer is charged, this is what somebody who has spent three years not paying is
+        /// charged, and the whole sum comes out on the day whether or not the account can stand it.
+        /// </summary>
+        public const double RefusedDeferralPenalty = 0.20;
 
         /// <summary>What each deferral adds to what is owed. The author's figure.</summary>
         public const double DeferralInterest = 0.086;
@@ -4719,6 +4747,19 @@ namespace ScalingLaws.Simulation
                 }
 
                 var owed = letter.AmountUsd;
+
+                // **Three years of postponement is where the asking stops and the collecting
+                // starts.** A letter that has used its whole allowance and gone past its date is
+                // not late any more, it is refused, and the revenue takes the lot with a fifth on
+                // top. It is allowed to leave the company overdrawn: a penalty a company can
+                // always afford is a fee, and this one is meant to be the thing that ends a
+                // campaign run this way.
+                if (letter.DeferredDays >= LongestDeferralDays)
+                {
+                    CollectRefusedTax(letter, owed);
+                    continue;
+                }
+
                 var surcharge = (long)Math.Round(owed * UnjustifiedDeferralSurcharge);
                 var carried = owed + surcharge;
 
@@ -4740,6 +4781,40 @@ namespace ScalingLaws.Simulation
                         Usd(surcharge), Usd(carried), State.Date.Year + 1),
                     carried));
             }
+        }
+
+        /// <summary>
+        /// Takes the whole arrears, with the refusal penalty, on the day the allowance runs out.
+        ///
+        /// **It does not check whether the money is there.** Every other charge in this game is
+        /// refused when the company cannot cover it, which is right for a purchase and wrong for a
+        /// tax bill: a revenue service that walks away because the account is empty is not a
+        /// deadline, it is a suggestion. The balance goes negative and the insolvency rule that
+        /// already exists decides what that means.
+        /// </summary>
+        private void CollectRefusedTax(MailItem letter, long owed)
+        {
+            var penalty = (long)Math.Round(owed * RefusedDeferralPenalty);
+            var taken = owed + penalty;
+
+            State.PostCash(LedgerLine.Tax, taken);
+            State.LifetimeTaxPaidUsd += taken;
+            State.LifetimeOperatingCostUsd += taken;
+
+            letter.IsClosed = true;
+            letter.AmountUsd = 0L;
+            letter.Outcome = Loc.T("tax.refused.outcome", Usd(taken));
+
+            // Twice what a late payment costs in standing. Three years of this is a matter of
+            // public record by the time it ends, not a quiet administrative note.
+            State.Reputation = Math.Clamp(State.Reputation - LateStandingLoss * 2.0, 0.0, 1.0);
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.TaxCollected, State.Date,
+                Loc.T("tax.refused.body", Usd(owed),
+                    RefusedDeferralPenalty.ToString("P0",
+                        System.Globalization.CultureInfo.InvariantCulture),
+                    Usd(penalty), Usd(taken)),
+                taken));
         }
 
         /// <summary>

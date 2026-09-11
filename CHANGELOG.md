@@ -165,6 +165,24 @@ than grey text with the money shouting over it.
   seconds.
 - **The BANK tab said BANK and the screen it opens said BANK AND DONATIONS.** The tab agrees with the
   page now.
+- **Corporation tax is a decision now, and both answers are one click away.** Reported by Natalia.
+  The demand arrived as a strip and a letter: POSTPONE was a button on the strip and PAY meant
+  opening the inbox and finding the letter, so the dearer answer was the easier one. The clock stops
+  and a card asks, with the two answers the same size, because making one of them bigger would be
+  the game telling the player which is correct.
+- **Postponing says what it cost, on the day.** Two lines: the rate and what it added, then the new
+  total and the new date. It used to happen the instant the button was pressed and the price
+  appeared in next January's assessment, which is where a player stops connecting the two.
+- **Three years of postponement now ends the way the report asked.** Running the allowance out and
+  then waiting used to cost nine per cent and buy another year, with the three postponements
+  restored against the new demand: the ceiling was a closed door standing beside an open one, and
+  corporation tax was rollable forever for a predictable annual fee. Past it the revenue takes the
+  whole arrears with a 20% refusal penalty, on the day, whether or not the account can stand it.
+  The card warns on the postponement that earns it rather than afterwards.
+- **The three-postponement ceiling was one day out of reach.** `LongestDeferralDays` was 913 and
+  three steps of 304 reach 912, so a fourth postponement was accepted: it moved the date by a single
+  day, charged another 8.6% on the whole balance, and read as a button that did nothing. The ceiling
+  is derived from the number of postponements now, so the two cannot drift.
 
 ### Save compatibility
 
@@ -173,7 +191,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,140 EditMode tests and 39 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,150 EditMode tests and 39 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.

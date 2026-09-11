@@ -270,6 +270,17 @@ namespace ScalingLaws.UI
         private VisualElement researchBanner;
         private int researchBannerDay = -1;
         private VisualElement runFinished;
+
+        /// <summary>
+        /// The tax demand, as a card with two buttons on it.
+        ///
+        /// It stops the clock while it is up, and puts back whatever speed was running when it is
+        /// answered: a decision worth stopping the game for is worth un-stopping it afterwards, and
+        /// a player who gets their game back paused is a player who thinks the card broke something.
+        /// </summary>
+        private TaxDemandDialog taxDialog;
+
+        private SimSpeed speedBeforeTheTaxCard = SimSpeed.Normal;
         private readonly List<MarketingChannel> pickedChannels = new();
         private AudienceSegment pickedAudience = AudienceSegment.Consumer;
         private int pickedTerm = 3;
@@ -3167,6 +3178,14 @@ namespace ScalingLaws.UI
                     ShowRunFinished(companyEvent.Message);
                 }
 
+                // **Tax is the one bill in the game with two answers and a deadline**, and until
+                // now the cheaper answer was two clicks away in the inbox while the dearer one was
+                // a button on a strip. The card stops the clock and asks.
+                if (companyEvent.Type == CompanyEventType.TaxDemanded)
+                {
+                    ShowTaxDemand();
+                }
+
                 // **The one moment a grant is worth anything.** It used to be a line on the wire
                 // among thirty, which is where a player learns to stop reading.
                 if (companyEvent.Type == CompanyEventType.GrantCompleted)
@@ -3311,6 +3330,40 @@ namespace ScalingLaws.UI
         /// a dialog whose only button is OK has told the player something and then made them find
         /// the screen themselves. Clicking anywhere off it dismisses it, same as the research card.
         /// </summary>
+        /// <summary>
+        /// Stops the clock and puts the demand in front of the player.
+        ///
+        /// The speed is remembered rather than forced back to Normal, for the same reason SPACE
+        /// remembers what to resume to: a player reading at triple speed asked for triple speed.
+        /// </summary>
+        private void ShowTaxDemand()
+        {
+            var letter = simulation.OutstandingTaxDemand();
+            if (letter == null)
+            {
+                return;
+            }
+
+            taxDialog ??= new TaxDemandDialog(() => simulation, () =>
+            {
+                SetSpeed(speedBeforeTheTaxCard);
+                RefreshChrome();
+                Show(current);
+            });
+
+            if (taxDialog.IsOpen)
+            {
+                return;
+            }
+
+            speedBeforeTheTaxCard = clock.Speed == SimSpeed.Paused
+                ? KeyboardShortcuts.DefaultResumeSpeed
+                : clock.Speed;
+
+            SetSpeed(SimSpeed.Paused);
+            taxDialog.Show(shellRoot, letter);
+        }
+
         private void ShowRunFinished(string message)
         {
             // One page turning. The three notices that stop the game and put a card in front of the
