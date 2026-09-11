@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ScalingLaws.Data;
@@ -52,13 +52,24 @@ namespace ScalingLaws.UI
 
         private readonly CompanySimulation simulation;
         private readonly Action<int, IReadOnlyList<ModelTrait>> planRelease;
+
+        /// <summary>
+        /// Starts the work straight away on a model that has not shipped. Separate from
+        /// <see cref="planRelease"/> because there is no version to name and no price to set:
+        /// the programmes ship with the model when the player releases it.
+        /// </summary>
+        private readonly Action<int, IReadOnlyList<ModelTrait>> commissionOnShelf;
         private readonly Action goBack;
 
         private readonly VisualElement root;
         private readonly VisualElement tiles = new();
         private readonly VisualElement detail = new();
         private readonly DropdownField modelField = new();
-        private readonly List<int> modelIndices = new();
+        /// <summary>
+        /// What is on offer, rebuilt on every refresh. The dropdown index is an index into this,
+        /// so the two cannot disagree about which row is which.
+        /// </summary>
+        private List<UpgradeSubject> subjects = new();
 
         /// <summary>What the player has picked, for the model they are looking at.</summary>
         private readonly HashSet<ModelTrait> chosen = new();
@@ -67,10 +78,12 @@ namespace ScalingLaws.UI
         private string problem = string.Empty;
 
         public UpgradeGridPanel(CompanySimulation simulation,
-            Action<int, IReadOnlyList<ModelTrait>> planRelease, Action goBack)
+            Action<int, IReadOnlyList<ModelTrait>> planRelease, Action goBack,
+            Action<int, IReadOnlyList<ModelTrait>> commissionOnShelf = null)
         {
             this.simulation = simulation;
             this.planRelease = planRelease;
+            this.commissionOnShelf = commissionOnShelf;
             this.goBack = goBack;
 
             root = new VisualElement();
@@ -138,6 +151,18 @@ namespace ScalingLaws.UI
             root.Add(columns);
         }
 
+        /// <summary>
+        /// Says why the last commission was refused, on the panel rather than in the log.
+        ///
+        /// The shell owns the refusal because the shell owns the call, and a button that does
+        /// nothing and explains nothing is the shape this project has shipped twice.
+        /// </summary>
+        public void ReportProblem(string why)
+        {
+            problem = why ?? string.Empty;
+            Refresh();
+        }
+
         /// <summary>Opens the model creator, for the empty state. Null when there is nowhere to go.</summary>
         public System.Action goToCreator;
 
@@ -187,8 +212,8 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            var model = simulation.State.DeployedModels[modelIndex];
-            var standings = model.Traits
+            var subject = subjects[modelIndex];
+            var standings = subject.Traits
                 .Standings(simulation.State.Date, simulation.State.HasResearch)
                 .ToList();
 
@@ -197,7 +222,7 @@ namespace ScalingLaws.UI
                 tiles.Add(BuildTile(modelIndex, standing));
             }
 
-            detail.Add(BuildDetail(modelIndex, model, standings));
+            detail.Add(BuildDetail(subject, standings));
         }
 
         // ---- the wall on the left -----------------------------------------------------------------
@@ -325,7 +350,7 @@ namespace ScalingLaws.UI
         /// ways out. That order is the order somebody actually decides in, and the buttons are last
         /// because a commit button above the numbers it commits to is a trap.
         /// </summary>
-        private VisualElement BuildDetail(int modelIndex, DeployedModel model,
+        private VisualElement BuildDetail(UpgradeSubject subject,
             IReadOnlyList<TraitStanding> standings)
         {
             var panel = new VisualElement();
@@ -335,12 +360,19 @@ namespace ScalingLaws.UI
             kicker.AddToClassList("udet__kicker");
             panel.Add(kicker);
 
-            var name = new Label(model.Name);
+            var name = new Label(subject.Name);
             name.AddToClassList("udet__name");
             panel.Add(name);
 
-            var version = new Label(Loc.T("upgrade.version", model.Line.PreviousName));
+            // A model on the shelf has no version, because nothing has been published under its
+            // name. Saying how long it has been waiting is the figure that belongs in that slot:
+            // it is the cost of the decision the player is standing in the middle of.
+            var version = new Label(subject.OnShelf
+                ? Loc.T("upgrade.waiting", UiFormat.Days(subject.DaysWaiting))
+                : Loc.T("upgrade.version", subject.VersionName));
+
             version.AddToClassList("udet__version");
+            version.EnableInClassList("udet__version--shelved", subject.OnShelf);
             panel.Add(version);
 
             // Beside the model rather than in the page note at the top, because it is a fact about
@@ -349,7 +381,7 @@ namespace ScalingLaws.UI
             par.AddToClassList("udet__par");
             panel.Add(par);
 
-            panel.Add(BuildChip(model));
+            panel.Add(BuildChip(subject));
 
             var picked = standings.Where(entry => chosen.Contains(entry.Trait)).ToList();
 
@@ -359,7 +391,7 @@ namespace ScalingLaws.UI
 
                 hint.AddToClassList("udet__hint");
                 panel.Add(hint);
-                panel.Add(BuildButtons(modelIndex, false, 0L));
+                panel.Add(BuildButtons(subject, false, 0L));
                 return panel;
             }
 
@@ -387,19 +419,17 @@ namespace ScalingLaws.UI
                 days += simulation.ScaleResearchDuration(standing.UpgradeDays);
             }
 
-            var today = simulation.State.Date;
-
             var changes = new VisualElement();
             changes.AddToClassList("udet__changes");
 
-            changes.Add(Row(Loc.T("upgrade.capability"), model.EffectiveCapability(today),
-                model.EffectiveCapability(today) + capability, 1));
+            changes.Add(Row(Loc.T("upgrade.capability"), subject.Capability,
+                subject.Capability + capability, 1));
 
-            changes.Add(Row(Loc.T("upgrade.brand"), model.BrandBonus(today) * 100.0,
-                (model.BrandBonus(today) + brand) * 100.0, 1, "%"));
+            changes.Add(Row(Loc.T("upgrade.brand"), subject.Brand * 100.0,
+                (subject.Brand + brand) * 100.0, 1, "%"));
 
-            changes.Add(Row(Loc.T("upgrade.efficiency"), model.EfficiencyMultiplier(today) * 100.0,
-                (model.EfficiencyMultiplier(today) + efficiency) * 100.0, 1, "%"));
+            changes.Add(Row(Loc.T("upgrade.efficiency"), subject.Efficiency * 100.0,
+                (subject.Efficiency + efficiency) * 100.0, 1, "%"));
 
             panel.Add(changes);
 
@@ -431,7 +461,7 @@ namespace ScalingLaws.UI
                 panel.Add(trouble);
             }
 
-            panel.Add(BuildButtons(modelIndex, true, cash));
+            panel.Add(BuildButtons(subject, true, cash));
             return panel;
         }
 
@@ -442,7 +472,7 @@ namespace ScalingLaws.UI
         /// project and an empty frame in the middle of the panel reads as a failed load. Listed in
         /// Docs/NeededGraphics.md as the one image this screen actually wants.
         /// </summary>
-        private static VisualElement BuildChip(DeployedModel model)
+        private static VisualElement BuildChip(UpgradeSubject model)
         {
             var stage = new VisualElement();
             stage.AddToClassList("uchip");
@@ -483,7 +513,15 @@ namespace ScalingLaws.UI
             return stage;
         }
 
-        private VisualElement BuildButtons(int modelIndex, bool anyPicked, long cash)
+        /// <summary>
+        /// BACK, and the one green button, which does two different things.
+        ///
+        /// **A model on sale goes to the release planner and a model on the shelf does not.** The
+        /// planner exists to name a version and set a price, and neither is a question you can ask
+        /// about something nobody can buy yet. Work commissioned on the shelf simply starts, and
+        /// ships with the model whenever the player decides to release it.
+        /// </summary>
+        private VisualElement BuildButtons(UpgradeSubject subject, bool anyPicked, long cash)
         {
             var row = new VisualElement();
             row.AddToClassList("udet__buttons");
@@ -498,16 +536,28 @@ namespace ScalingLaws.UI
             {
                 if (!affordable)
                 {
-                    problem = $"Needs {UiFormat.Money(cash)} and the company has "
-                        + $"{UiFormat.Money(simulation.State.CashUsd)}.";
+                    // This sentence was an English literal on a Polish screen, and it is the one
+                    // the player reads at the moment the button refuses them.
+                    problem = Loc.T("upgrade.cannot_afford", UiFormat.Money(cash),
+                        UiFormat.Money(simulation.State.CashUsd));
 
                     Refresh();
                     return;
                 }
 
-                planRelease?.Invoke(modelIndex, chosen.ToList());
+                if (subject.OnShelf)
+                {
+                    commissionOnShelf?.Invoke(subject.Index, chosen.ToList());
+                    return;
+                }
+
+                planRelease?.Invoke(subject.Index, chosen.ToList());
             })
-            { text = Loc.T("upgrade.plan_release") };
+            {
+                text = subject.OnShelf
+                    ? Loc.T("upgrade.commission")
+                    : Loc.T("upgrade.plan_release")
+            };
 
             go.AddToClassList("udet__go");
             go.SetEnabled(anyPicked && affordable);
@@ -593,22 +643,24 @@ namespace ScalingLaws.UI
 
         // ---- the model picker ---------------------------------------------------------------------------
 
+        /// <summary>
+        /// The list of things that can be improved, which is now two lists: what is on sale and
+        /// what has finished training and is waiting to ship.
+        ///
+        /// A shelved model is marked in its own row rather than put behind a second control. It
+        /// is the same decision about the same kind of object, and a player who has just finished
+        /// a run goes looking for its name, not for a tab.
+        /// </summary>
         private void RebuildModelChoices()
         {
-            modelIndices.Clear();
-            var labels = new List<string>();
+            subjects = simulation.UpgradeSubjects();
+            var labels = new List<string>(subjects.Count);
 
-            for (var index = 0; index < simulation.State.DeployedModels.Count; index++)
+            foreach (var subject in subjects)
             {
-                var model = simulation.State.DeployedModels[index];
-
-                if (!model.IsLiveOn(simulation.State.Date))
-                {
-                    continue;
-                }
-
-                modelIndices.Add(index);
-                labels.Add(model.Name);
+                labels.Add(subject.OnShelf
+                    ? Loc.T("upgrade.pick_shelved", subject.Name)
+                    : subject.Name);
             }
 
             modelField.choices = labels;
@@ -621,12 +673,12 @@ namespace ScalingLaws.UI
 
         private int SelectedModelIndex()
         {
-            if (modelIndices.Count == 0 || modelField.index < 0)
+            if (subjects.Count == 0 || modelField.index < 0)
             {
                 return -1;
             }
 
-            return modelIndices[Math.Clamp(modelField.index, 0, modelIndices.Count - 1)];
+            return Math.Clamp(modelField.index, 0, subjects.Count - 1);
         }
     }
 }

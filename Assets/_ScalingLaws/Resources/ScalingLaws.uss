@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Scaling Laws theme.
  *
  * Deliberately a first pass in the visual language of the tycoon games this is modelled on:
@@ -9686,6 +9686,14 @@
     -unity-font-style: italic;
     color: rgb(150, 164, 190);
     margin-bottom: 14px;
+}
+
+/* A model that has finished training and not shipped. The line says how long it has been waiting
+   rather than naming a version, and it is warm rather than grey because that wait is costing the
+   player capability every day it continues. */
+.udet__version--shelved {
+    -unity-font-style: normal;
+    color: rgb(226, 168, 92);
 }
 
 /* ---- the picture of the thing being improved -------------------------------------------------- */

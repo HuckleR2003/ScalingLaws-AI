@@ -367,6 +367,10 @@ namespace ScalingLaws.Data
             ["upgrade.level_market"] = "LEVEL {0}   ·   MARKET {1}",
             ["upgrade.none_live"] = "Nothing is live yet. Release a model and this fills up.",
             ["upgrade.version"] = "Version: {0}",
+            ["upgrade.pick_shelved"] = "{0}  (not released)",
+            ["upgrade.waiting"] = "Waiting to ship  {0}",
+            ["upgrade.commission"] = "START THE WORK",
+            ["upgrade.cannot_afford"] = "Needs {0} and the company has {1}.",
             ["upgrade.base"] = "Base",
 
             // ---- the silicon that goes in the cabinets, bought from the room itself -----------
@@ -3237,6 +3241,10 @@ namespace ScalingLaws.Data
             ["upgrade.level_market"] = "POZIOM {0}   ·   RYNEK {1}",
             ["upgrade.none_live"] = "Nic jeszcze nie działa. Wydaj model, a to się zapełni.",
             ["upgrade.version"] = "Wersja: {0}",
+            ["upgrade.pick_shelved"] = "{0}  (niewydany)",
+            ["upgrade.waiting"] = "Czeka na wydanie  {0}",
+            ["upgrade.commission"] = "ROZPOCZNIJ PRACE",
+            ["upgrade.cannot_afford"] = "Potrzeba {0}, a firma ma {1}.",
 
             // ---- the silicon that goes in the cabinets, bought from the room itself -----------
             ["room.build.silicon"] = "CO DO NICH WCHODZI",

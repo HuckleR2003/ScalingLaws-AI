@@ -1717,6 +1717,56 @@ namespace ScalingLaws.Simulation
             return records;
         }
 
+        /// <summary>
+        /// Everything the company can commission engineering work on, in the order the screen
+        /// should offer it: what is on sale first, then what is finished and waiting to ship.
+        ///
+        /// **The shelf belongs here and was missing from the only screen that could reach it.**
+        /// `TryStartUpgrades` has taken an `onShelf` argument since it was written and nothing in
+        /// the interface ever passed it, so a player whose newest model had just finished training
+        /// had to release it before they could improve it, which is backwards: the evaluation work
+        /// is what tells you whether it is worth releasing.
+        /// </summary>
+        public List<UpgradeSubject> UpgradeSubjects()
+        {
+            var subjects = new List<UpgradeSubject>();
+            var today = State.Date;
+
+            for (var index = 0; index < State.DeployedModels.Count; index++)
+            {
+                var model = State.DeployedModels[index];
+                if (model == null || !model.IsLiveOn(today))
+                {
+                    continue;
+                }
+
+                subjects.Add(new UpgradeSubject(index, false, model.Name,
+                    model.Line.PreviousName, model.Traits, model.Type,
+                    model.EffectiveCapability(today), model.BrandBonus(today),
+                    model.EfficiencyMultiplier(today), 0));
+            }
+
+            for (var index = 0; index < State.Shelf.Count; index++)
+            {
+                var model = State.Shelf[index];
+                if (model == null)
+                {
+                    continue;
+                }
+
+                // **What it would be worth released today, not what it measured when it finished.**
+                // A model loses ground while it waits, and quoting the finished figure here would
+                // tell a player that sitting on the shelf costs nothing, which is the one thing
+                // this game is about.
+                subjects.Add(new UpgradeSubject(index, true, model.Name, string.Empty,
+                    model.Traits, model.Type, model.CapabilityIfReleasedOn(today),
+                    model.Traits.BrandBonus(today), model.Traits.EfficiencyMultiplier(today),
+                    model.DaysOnShelf(today)));
+            }
+
+            return subjects;
+        }
+
         // `TryStartUpgrade`, the single-trait form, used to sit here. The player commissions a
         // basket and always has, so this had no caller outside the fixtures. Moved to
         // `Tests/EditMode/SimulationOperators.cs` rather than kept as a second commissioning path.

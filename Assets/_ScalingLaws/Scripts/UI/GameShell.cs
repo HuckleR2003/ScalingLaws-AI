@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ScalingLaws.Core;
@@ -63,14 +63,12 @@ namespace ScalingLaws.UI
                 return false;
             }
 
+            // `Show` refreshes the top bar itself now, for the player as well as for a fixture.
+            // This used to carry its own `RefreshChrome` because only the day rollover redrew the
+            // bar, so a proof frame showed a 2024 page under a day-one money figure. That was the
+            // same fault the player was living with, seen from the one place that had worked
+            // around it.
             Show(screen);
-
-            // **The chrome too, and this is not decoration.** A proof fixture builds a campaign
-            // straight onto the simulation without ticking a day, and only the day rollover
-            // refreshes the top bar. Without this the frame shows a 2024 page under a day-one
-            // money figure, which reads exactly like a bug in the top bar and is not one. It cost
-            // a full investigation once.
-            RefreshChrome();
             return true;
         }
 
@@ -221,7 +219,40 @@ namespace ScalingLaws.UI
         private Button cashButton;
         private Label reputationLabel;
         private Button pointsButton;
+        /// <summary>
+        /// The scroller the open page sits in, kept across a rebuild of the same screen.
+        ///
+        /// **A new one was built on every call, which is where the jump came from.** The reading
+        /// position was captured and put back a frame later, deliberately, because a scroller with
+        /// no laid-out content has no range to scroll within. That worked and it left one rendered
+        /// frame at the top of the page, every single day, which at normal speed is a twitch every
+        /// second and a half. Keeping the scroller means the offset is never lost in the first
+        /// place and there is nothing to put back.
+        /// </summary>
+        private ScrollView pageScroller;
+
+        /// <summary>
+        /// The person card, mounted beside the page rather than inside it. Held so a rebuild that
+        /// keeps the scroller can still take the old one down: it is built fresh each time, and
+        /// the host it goes into is no longer cleared on every pass.
+        /// </summary>
+        private VisualElement personCard;
+
         private VisualElement researchCard;
+
+        /// <summary>
+        /// The node whose card is open, and where the player put it.
+        ///
+        /// **The card is state, not decoration, and it was the only part of the screen that was
+        /// not.** The ring around the picked node already survived a rebuild through
+        /// `selectedResearch`; the card explaining what that node does did not, so a day rolling
+        /// over closed it, and a day rolls over every second and a half at normal speed. Fifty
+        /// paragraphs of the best writing in this project sat behind a card nobody could finish
+        /// reading.
+        /// </summary>
+        private ResearchNodeId openResearchCard = ResearchNodeId.None;
+
+        private Vector2 openResearchCardAt;
         private VisualElement labCard;
 
         // Rebuilt on the day count rather than every frame: the flash is a CSS animation and
@@ -480,14 +511,39 @@ namespace ScalingLaws.UI
             creator.started += () => Show(Screen.Site);
             // UPGRADE hands its basket to the planner rather than commissioning anything itself,
             // so the version is named and priced before a single day of work is paid for.
+            //
+            // **Except for a model that has not shipped**, which has no version to name and no
+            // price to set. That work simply starts and ships with the model, which is the whole
+            // reason `TryStartUpgrades` has carried an `onShelf` argument since it was written.
             upgrades = new UpgradeGridPanel(simulation,
                 (index, traits) =>
                 {
                     releasePlan.Open(index, traits);
-            upgrades.goToCreator = () => Show(Screen.Create);
                     Show(Screen.ReleasePlan);
                 },
-                () => Show(Screen.Site));
+                () => Show(Screen.Site),
+                (index, traits) =>
+                {
+                    if (!simulation.TryStartUpgrades(index, traits, out var why, onShelf: true))
+                    {
+                        AudioDirector.Deny();
+                        upgrades.ReportProblem(why);
+                        return;
+                    }
+
+                    AudioDirector.Confirm();
+
+                    // The room, the same as commissioning a run or a research node: the work is
+                    // weeks long and there is nothing further to do on this screen.
+                    Show(Screen.Site);
+                });
+
+            // **Assigned here rather than inside the lambda above, which is where it was written on
+            // 2026-08-25 and where it has been ever since.** It only ran once the player had
+            // commissioned a release, and the empty state that needs it is the state of a company
+            // that has never had a model, so the door out of an empty UPGRADE screen has never once
+            // been drawn.
+            upgrades.goToCreator = () => Show(Screen.Create);
 
             benefits = new BenefitsPanel(() => simulation, () => Show(Screen.Business));
 
@@ -1296,10 +1352,50 @@ namespace ScalingLaws.UI
             contentHost?.panel?.visualTree?.EnableInClassList("corner-is-free",
                 screen == Screen.Site || screen == Screen.Room);
 
-            contentHost.Clear();
+            // **A rebuild is not a screen change, and the interface has to tell them apart.**
+            // Everything the player is in the middle of reading lives outside the page: the
+            // research card on the shell root, the "(i)" card on the panel root. Both were torn
+            // down here on every call, and every control on every screen answers by calling this,
+            // so a day going past or a slider being nudged closed whatever was open.
+            //
+            // Leaving the screen is the case where they genuinely have to go. A card left hanging
+            // over a different tab is the fault the corner banners had.
+            if (changed)
+            {
+                CloseResearchCard();
+                InsightTip.Hide();
+            }
+            else
+            {
+                InsightTip.BeginRebuild();
+            }
 
-            // A floating card belongs to the screen that opened it. Leaving it up over a different
-            // tab is the same fault the corner banners had.
+            // **Redrawing the page does not have to throw the page away.** The scroller is kept
+            // whenever the same screen is rebuilt, so the reading position is never lost and
+            // nothing has to be restored a frame later. Only its contents go.
+            //
+            // The two rooms are excluded because they are not documents and do not use it, and a
+            // screen change is excluded because a new page should start at its own top.
+            var keepScroller = !changed
+                && pageScroller != null
+                && pageScroller.parent == contentHost
+                && screen is not (Screen.Site or Screen.Room);
+
+            if (keepScroller)
+            {
+                pageScroller.Clear();
+            }
+            else
+            {
+                contentHost.Clear();
+                pageScroller = null;
+            }
+
+            // Built fresh every pass, and the host is no longer cleared every pass, so the one
+            // from last time has to be taken down by hand or they stack up a card a day.
+            personCard?.RemoveFromHierarchy();
+            personCard = null;
+
             researchCard?.RemoveFromHierarchy();
 
             hud.SetActiveSlot(screen);
@@ -1355,10 +1451,16 @@ namespace ScalingLaws.UI
             // Half the tabs had grown past the window and UI Toolkit shrinks children rather than
             // overflowing them, so the bottom of a long page was not clipped, it was squashed. One
             // scroller here rather than one per screen, because the next screen would forget.
-            var scroller = new ScrollView();
-            scroller.AddToClassList("page-scroll");
-            scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
-            scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            var scroller = pageScroller;
+
+            if (scroller == null)
+            {
+                scroller = new ScrollView();
+                scroller.AddToClassList("page-scroll");
+                scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+                scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                pageScroller = scroller;
+            }
 
             // The two rooms are the exception: they fill the window rather than being documents,
             // and putting one in a scroller gives it a scrollbar's worth of nothing to slide.
@@ -1369,7 +1471,7 @@ namespace ScalingLaws.UI
             // empty page underneath. The build rail carries its own scroller, which is the part
             // of that screen that is a document.
             var host = fillsTheWindow ? contentHost : scroller;
-            if (!fillsTheWindow)
+            if (!fillsTheWindow && scroller.parent != contentHost)
             {
                 contentHost.Add(scroller);
             }
@@ -1404,7 +1506,8 @@ namespace ScalingLaws.UI
             // project learned that when the server room's corner banner came out under the floor.
             if (personPanel is { IsOpen: true })
             {
-                contentHost.Add(personPanel.Build());
+                personCard = personPanel.Build();
+                contentHost.Add(personCard);
             }
 
             guide?.Refresh();
@@ -1417,7 +1520,45 @@ namespace ScalingLaws.UI
             // instructions vanish on the tab it just told you to open is no tour at all.
             scroller.EnableInClassList("page-scroll--guided", guide is { IsShowing: true });
 
-            RestoreScrollOffset(wasAt);
+            // Only when the scroller itself was replaced. When it was kept, the offset was never
+            // lost, and setting it again against content that is still being laid out is how the
+            // page ends up somewhere neither the player nor the code asked for.
+            if (!keepScroller)
+            {
+                RestoreScrollOffset(wasAt);
+            }
+
+            // **The bar across the top is part of the screen, and only a day going past used to
+            // redraw it.** Every control in the game answers by calling this method, so buying a
+            // $24.5M office, hiring somebody or paying a demand left the money figure at the top
+            // showing what the company had before. Paused, which is when a player does most of
+            // their spending, it never changed at all: the number only caught up the next time the
+            // clock was allowed to run.
+            //
+            // `OpenScreenByName` already carried this call as a patch of its own, with a comment
+            // saying a full investigation had been spent on the symptom. The patch is gone; there
+            // is one place that does it and every caller gets it.
+            RefreshChrome();
+
+            // **After the page exists, because the card is drawn against the node it belongs to.**
+            // Rebuilt rather than kept: the points it quotes accrue daily, and a card frozen on the
+            // figures it opened with is the one thing the player is waiting to see move.
+            if (screen == Screen.Research)
+            {
+                ReopenResearchCard();
+            }
+            else
+            {
+                CloseResearchCard();
+            }
+
+            // The rebuilt controls have had their chance to take the card back. Anything still
+            // showing belongs to a control that did not come back, so it goes rather than hanging
+            // over the page with nothing under it to close it again.
+            if (!changed)
+            {
+                InsightTip.EndRebuild();
+            }
         }
 
         /// <summary>

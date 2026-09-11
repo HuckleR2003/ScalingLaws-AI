@@ -44,6 +44,14 @@ market how many people were on that *kind* of model and handed the whole of that
 model of that kind. There is one split now, it divides a kind's audience between the lines selling
 it by capability, and the parts add up to exactly what the company holds.
 
+**And the screen stopped taking itself away from you every second and a half.** A day rolling
+over rebuilds whatever page is open, which is right, and it was throwing away everything the
+player was in the middle of: the card opened to read about a four month programme, the "(i)"
+explaining the control under the cursor, and one rendered frame of the reading position. All
+three survive a redraw now. So does the figure at the top of the screen, which used to be the
+opposite problem: it only moved when a day went past, so money spent while paused did not
+show at all.
+
 ### Fixed
 
 - **Every product on sale reports its own audience.** Reported by Natalia. Two general models on
@@ -72,6 +80,32 @@ it by capability, and the parts add up to exactly what the company holds.
   fourth showed its user count as money. The row is now this product's users, its payers, its last
   31 days, and the company's net, which its own footer already said it was.
 
+- **A day going past no longer takes the screen away from you.** The research card you opened to
+  read about a four month programme stayed open for about a second and a half, because a day rolling
+  over rebuilds the page and the card was thrown away with it. The same for the "(i)" cards. Both
+  survive a redraw now and are rebuilt rather than frozen, so the points a card is quoting keep
+  climbing while you read it. Both still close when you leave the screen.
+- **The page no longer jumps when the day changes.** The reading position was captured and put back
+  one frame later, which left a single rendered frame at the top of the page every day. The page
+  keeps its scroller through a redraw now, so the position is never lost and there is nothing to put
+  back.
+- **Money spent shows as spent, without waiting for tomorrow.** Only a day rolling over redrew the
+  bar across the top, so buying a $24.5M office or paying a demand left the figure up there showing
+  what the company had beforehand. Paused, which is when most spending happens, it never caught up
+  at all.
+- **The model you just finished training can be improved before you release it.** Reported by
+  Natalia. With one model on sale and a second finished and waiting, UPGRADE offered only the first,
+  so the only way to reach the new one was to release it, which is the decision the upgrade work is
+  there to inform. It is on the picker now, marked as not released, and the work starts straight
+  away rather than going through the release planner: there is no version to name and no price to
+  set for something nobody can buy yet. The programmes ship with the model.
+- **The way out of an empty UPGRADE screen has never been drawn.** The button that takes a company
+  with no models to the creator was wired inside the handler that opens the release planner, so it
+  only existed once the player had already commissioned a release. Misplaced by one line on
+  2026-08-25.
+- **A refusal on the UPGRADE screen was an English sentence on a Polish build**, and it is the one
+  the player reads at the moment the button turns them down.
+
 ### Save compatibility
 
 **Unchanged, v51.** Nothing new is stored: the split is derived from the market standing and the
@@ -79,7 +113,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,124 EditMode tests**, up from 1,116. `TwoProductsTests` ships two models in separate lines
+- **1,128 EditMode tests and 36 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -90,7 +124,11 @@ model history that saves already carry, so an existing campaign reads correctly 
   company's month stop sharing two fields between four meanings.
 - `Ledger` answers about a day the way it answers about a month: `DayCashFlow`, `DayIncome`,
   `DayCost`, `RecordedDays`.
-- **2,734 phrases per language**, up from 2,723.
+- `DayRolloverTests` is a PlayMode fixture that needs no clock: `Show(current)` **is** the
+  rollover, so opening the tab that is already open runs the identical path a day does.
+- `CompanySimulation.UpgradeSubjects` is one list of everything that can be improved, on sale or
+  on the shelf, so the screen never has to ask which of two types it is holding.
+- **2,738 phrases per language**, up from 2,723.
 
 ---
 ## [0.2.0] - 2026-09-06

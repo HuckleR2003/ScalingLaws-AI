@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -452,6 +452,43 @@ namespace ScalingLaws.UI
             return chip;
         }
 
+        /// <summary>Shuts the card and forgets it, so a rebuild does not bring it back.</summary>
+        private void CloseResearchCard()
+        {
+            researchCard?.RemoveFromHierarchy();
+            researchCard = null;
+            openResearchCard = ResearchNodeId.None;
+        }
+
+        /// <summary>
+        /// Draws the open card again after the page underneath it was rebuilt.
+        ///
+        /// **Rebuilt rather than kept.** The figures on it move while it is open: points accrue
+        /// daily, so a card that said "needs 50 points, you have 12" has to reach "you have 50"
+        /// without the player closing and reopening it, and BEGIN has to light up when it becomes
+        /// affordable. Keeping the element would freeze the one thing the player is waiting for.
+        /// </summary>
+        private void ReopenResearchCard()
+        {
+            if (openResearchCard == ResearchNodeId.None)
+            {
+                return;
+            }
+
+            foreach (var standing in simulation.ResearchBoard())
+            {
+                if (standing.Node.Id == openResearchCard)
+                {
+                    ShowResearchCard(standing, openResearchCardAt);
+                    return;
+                }
+            }
+
+            // The tree no longer carries that node. Nothing removes one today, and a card
+            // pointing at something that has stopped existing is worse than no card.
+            CloseResearchCard();
+        }
+
         /// <summary>
         /// The card that opens when a node is clicked: what it is, what it costs, what it gives.
         ///
@@ -464,6 +501,11 @@ namespace ScalingLaws.UI
             researchCard?.RemoveFromHierarchy();
 
             var node = standing.Node;
+
+            // Remembered so the rebuild can put it back. Which node and where, because a card
+            // that reopens in the corner of the screen has moved away from what it is about.
+            openResearchCard = node.Id;
+            openResearchCardAt = at;
             researchCard = new VisualElement();
             researchCard.AddToClassList("rcard");
 
@@ -591,7 +633,7 @@ namespace ScalingLaws.UI
                     }
 
                     AudioDirector.Confirm();
-                    researchCard?.RemoveFromHierarchy();
+                    CloseResearchCard();
 
                     // Same as starting a run. The work is months long and there is nothing further
                     // to do on this screen, so the room is where the player belongs.
@@ -607,7 +649,7 @@ namespace ScalingLaws.UI
                 buttons.Add(start);
             }
 
-            var close = new Button(() => researchCard?.RemoveFromHierarchy()) { text = Loc.T("common.close") };
+            var close = new Button(CloseResearchCard) { text = Loc.T("common.close") };
             close.AddToClassList("button");
             close.style.marginLeft = 6;
             buttons.Add(close);

@@ -1,4 +1,4 @@
-using ScalingLaws.Data;
+﻿using ScalingLaws.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -51,6 +51,24 @@ namespace ScalingLaws.UI
 
         /// <summary>Which control the open card belongs to. Null when nothing is open.</summary>
         private static VisualElement owner;
+
+        /// <summary>
+        /// What the open card is about, so a control rebuilt underneath it can take it back.
+        ///
+        /// Two controls carrying the same words are the same card from the reader's side, which
+        /// is what makes the title and body usable as an identity: the point is not which element
+        /// object owns the card, it is whether the thing being explained is still on the screen.
+        /// </summary>
+        private static string subject;
+
+        /// <summary>
+        /// True while the open page is being torn down and built again for the same screen.
+        ///
+        /// The card survives that, because the control under the cursor is about to exist again
+        /// and the cursor never moved. Without it a day going past closes whatever the player is
+        /// reading, and at normal speed that is every second and a half.
+        /// </summary>
+        private static bool rebuilding;
         private static Label cardTitle;
         private static Label cardBody;
         private static Label cardWhat;
@@ -82,6 +100,7 @@ namespace ScalingLaws.UI
 
             target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
             target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
+            target.RegisterCallback<AttachToPanelEvent>(_ => Adopt(target, Subject(title, body)));
         }
 
         /// <summary>
@@ -111,6 +130,8 @@ namespace ScalingLaws.UI
 
             target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
             target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
+            target.RegisterCallback<AttachToPanelEvent>(_ => Adopt(target,
+                Subject(Loc.T(titleKey), string.IsNullOrEmpty(bodyKey) ? string.Empty : Loc.T(bodyKey))));
         }
 
         /// <summary>
@@ -176,6 +197,7 @@ namespace ScalingLaws.UI
             target.RegisterCallback<MouseEnterEvent>(_ => Show(target, title, null, reading, placement));
             target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
             target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
+            target.RegisterCallback<AttachToPanelEvent>(_ => Adopt(target, Subject(title, null)));
         }
 
         /// <summary>
@@ -208,8 +230,58 @@ namespace ScalingLaws.UI
         public static void Hide()
         {
             owner = null;
+            subject = null;
             card?.RemoveFromClassList("insight--in");
             card?.RemoveFromHierarchy();
+        }
+
+        /// <summary>What a card is about, as one string. Null when there is nothing to match on.</summary>
+        private static string Subject(string title, string body) =>
+            string.IsNullOrEmpty(title) ? null : title + "\u0000" + (body ?? string.Empty);
+
+        /// <summary>
+        /// The page under the open card is about to be torn down and built again for the same
+        /// screen. Hold the card up across the gap.
+        /// </summary>
+        public static void BeginRebuild() => rebuilding = true;
+
+        /// <summary>
+        /// The page is back. Anything that was going to take the card back has done so by now.
+        ///
+        /// **The card has to be given up if nobody claimed it.** Its owner is an element that
+        /// left the tree, so no MouseLeave and no detach will ever reach it again: left alone it
+        /// would hang over the page for the rest of the campaign with nothing able to close it.
+        /// </summary>
+        public static void EndRebuild()
+        {
+            rebuilding = false;
+
+            if (owner == null || owner.panel == null)
+            {
+                Hide();
+            }
+        }
+
+        /// <summary>
+        /// A control that has just entered the tree takes over a card about the same thing.
+        ///
+        /// This is what makes the card survive a rebuild rather than merely outlive it. The
+        /// element the player hovered is gone and an identical one now stands in its place, so
+        /// the new one becomes the owner and its own leave and detach govern the card from here.
+        /// </summary>
+        private static void Adopt(VisualElement target, string about)
+        {
+            if (card?.panel == null || about == null || about != subject)
+            {
+                return;
+            }
+
+            // Only while the old owner is gone. Two controls with the same words can be on one
+            // page, and the second must not steal a card the first is holding open.
+            if (owner == null || owner.panel == null)
+            {
+                owner = target;
+            }
         }
 
         /// <summary>
@@ -223,6 +295,13 @@ namespace ScalingLaws.UI
         /// </summary>
         private static void HideFor(VisualElement source)
         {
+            // A detach during a rebuild is the page being redrawn, not the player moving away.
+            // `EndRebuild` is the safety net for a control that never comes back.
+            if (rebuilding)
+            {
+                return;
+            }
+
             if (owner == source)
             {
                 Hide();
@@ -254,6 +333,7 @@ namespace ScalingLaws.UI
             Band(lowBand, lowBody, reading.Low);
 
             owner = target;
+            subject = Subject(title, body);
             host.Add(card);
             Place(host, target, placement, reading.IsEmpty ? Width : WideWidth);
 
