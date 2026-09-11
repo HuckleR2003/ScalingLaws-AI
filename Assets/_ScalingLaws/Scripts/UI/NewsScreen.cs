@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -172,10 +172,10 @@ namespace ScalingLaws.UI
             column.AddToClassList("news-col");
             column.AddToClassList("news-col--middle");
 
-            column.Add(Section("SCANDALS", "rule--scandal", NewsSection.Scandals, 4,
+            column.Add(Section(Loc.T("news.scandals"), "rule--scandal", NewsSection.Scandals, 4,
                 "Nothing has gone wrong yet. It will."));
 
-            column.Add(Section("PREMIERES", "rule--premiere", NewsSection.Premieres, 4,
+            column.Add(Section(Loc.T("news.premieres"), "rule--premiere", NewsSection.Premieres, 4,
                 "No launches yet, yours or theirs."));
 
             return column;

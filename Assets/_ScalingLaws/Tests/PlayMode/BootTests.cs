@@ -1,4 +1,5 @@
-using System.Collections;
+﻿using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using UnityEngine;
@@ -147,6 +148,90 @@ namespace ScalingLaws.Tests.PlayMode
             var buttons = root.Query<Button>().ToList();
             Assert.That(buttons.Count, Is.GreaterThan(6),
                 $"Only {buttons.Count} buttons on the game screen; the bottom interface is missing.");
+        }
+
+        /// <summary>
+        /// The bottom bar fits, measured on the bar rather than on the stylesheet.
+        ///
+        /// **There is already a guard for this and it holds a fiction.**
+        /// `ShellChromeTests.TheBottomBarFitsTheWindowItIsDrawnIn` adds up slot widths out of the
+        /// USS and charges the clock and the controls a hard-coded 360px. The controls are text
+        /// buttons, so their real width is the width of the words in them, which no arithmetic
+        /// over a stylesheet can know: raising SKIP DAY and COMPANY INFO from 9px to 11px took
+        /// that block from about 360px to 451px and the old guard could not see a pixel of it.
+        ///
+        /// This reads the resolved layout instead, and the fact it holds is the one that costs a
+        /// player something: **no category is clipped out of the bar.** `.hud__slots` shrinks and
+        /// hides what will not fit, on purpose, which is right for a window nobody planned for and
+        /// is also why an overflow here is silent. A tab that cannot be clicked is the symptom, not
+        /// a row of buttons printed over each other.
+        ///
+        /// **The panel is pinned to the reference resolution first.** Batchmode runs at whatever
+        /// size it likes, and at that size the bar genuinely does clip: the first version of this
+        /// test failed at 9px as well as at 11px, so it was measuring the window rather than the
+        /// layout. Fifteen categories against a 1920 reference is the case the bar is designed for
+        /// and the case worth guarding.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheBottomBarReallyFits()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var document = FindDocument();
+
+            // A runtime copy pointed at a texture, the same trick the proof fixtures use, so the
+            // real asset is never dirtied and the measurement is a known size rather than whatever
+            // the runner happened to open.
+            var settings = Object.Instantiate(document.panelSettings);
+            var texture = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
+            texture.Create();
+
+            settings.targetTexture = texture;
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(1920, 1080);
+            document.panelSettings = settings;
+
+            // Laid out, or every rectangle below is still NaN.
+            for (var frame = 0; frame < 8; frame++)
+            {
+                yield return null;
+            }
+
+            var root = document.rootVisualElement;
+            var slots = root.Query<Button>(className: "hud-slot").ToList();
+
+            Assert.That(slots.Count, Is.GreaterThan(5), "the bottom bar has almost no categories");
+
+            var host = root.Q(className: "hud__slots");
+            Assert.That(host, Is.Not.Null, "the bar has no slot row");
+
+            var box = host.worldBound;
+            Assume.That(float.IsNaN(box.width), Is.False, "the bar has not been laid out");
+
+            var hidden = new List<string>();
+            foreach (var slot in slots)
+            {
+                var rect = slot.worldBound;
+
+                // Half a pixel of slack: the panel scales by a fraction and the edges land on
+                // fractional pixels, which is not a category anybody has lost.
+                if (rect.xMin < box.xMin - 0.5f || rect.xMax > box.xMax + 0.5f)
+                {
+                    hidden.Add(slot.text + " at " + rect.xMin + ".." + rect.xMax);
+                }
+            }
+
+            Assert.That(hidden, Is.Empty,
+                "Categories fall outside the row that holds them, and it clips, so these are not "
+                + "drawn over anything: they are simply not on the screen and cannot be clicked. "
+                + "The row runs " + box.xMin + ".." + box.xMax + "." + System.Environment.NewLine
+                + string.Join(System.Environment.NewLine, hidden));
+
+            Object.DestroyImmediate(texture);
         }
 
         [UnityTest]

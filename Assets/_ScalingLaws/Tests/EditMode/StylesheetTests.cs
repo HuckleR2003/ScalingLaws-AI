@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -23,6 +24,68 @@ namespace ScalingLaws.Tests.EditMode
         private static string Sheet =>
             File.ReadAllText(Path.Combine(Application.dataPath, "_ScalingLaws", "Resources",
                 "ScalingLaws.uss"));
+
+        /// <summary>
+        /// Nothing in the game draws smaller than this.
+        ///
+        /// **Reported as the single biggest problem with the game, from a laptop.** Fifty eight
+        /// rules were setting type between 8 and 10.5px: the day count on an effect badge was 8px,
+        /// the research tree drew its own node names at 11 and the card explaining a four month
+        /// programme at 12.5. A caption nobody can read is not a caption, it is a row of grey marks
+        /// where a figure belongs.
+        ///
+        /// A floor rather than a table of sizes, because a table goes stale at the speed the sheet
+        /// grows and this cannot: a rule added tomorrow at 9px fails here the first time anybody
+        /// runs the suite. The exemption below is the one place in the game where small is a
+        /// measured decision rather than an oversight, and it says which measurement.
+        /// </summary>
+        private static readonly char[] NewlineChars = { '\r', '\n' };
+
+        [Test]
+        public void NothingIsSetSmallerThanTheFloor()
+        {
+            const float floor = 11f;
+
+            // SKIP DAY and COMPANY INFO were cut to 9px to fit fifteen category slots, the clock
+            // and the controls into a 1920 bar that wanted 1710px for the slots alone. The words
+            // themselves are wider than the space at any larger size, and
+            // `TheBottomBarFitsTheWindowItIsDrawnIn` is the measurement that says so.
+            var exempt = new[] { ".hud-skip" };
+
+            var offenders = new List<string>();
+
+            foreach (Match rule in Regex.Matches(Sheet, @"([^{}]+)\{([^}]*)\}"))
+            {
+                var size = Regex.Match(rule.Groups[2].Value, @"font-size:\s*([0-9.]+)px");
+                if (!size.Success)
+                {
+                    continue;
+                }
+
+                var value = float.Parse(size.Groups[1].Value, CultureInfo.InvariantCulture);
+                if (value >= floor)
+                {
+                    continue;
+                }
+
+                // The last line of the selector block, which is the selector this rule belongs to.
+                // A grouped rule spans several lines and only the last one names the thing.
+                var block = rule.Groups[1].Value.Trim();
+                var cut = block.LastIndexOfAny(NewlineChars);
+                var selector = (cut < 0 ? block : block.Substring(cut + 1)).Trim();
+
+                if (System.Array.IndexOf(exempt, selector) >= 0)
+                {
+                    continue;
+                }
+
+                offenders.Add(selector + " at " + size.Groups[1].Value + "px");
+            }
+
+            Assert.That(offenders, Is.Empty,
+                "Set smaller than " + floor + "px, which is under what a laptop screen reads:"
+                + System.Environment.NewLine + string.Join(System.Environment.NewLine, offenders));
+        }
 
         /// <summary>
         /// One rule per selector.

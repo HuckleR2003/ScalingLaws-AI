@@ -360,11 +360,15 @@
 
 /* ---- top bar ---------------------------------------------------------- */
 
+/* 52px rather than 46. The bar carries the money, the valuation, the research points, the
+   standing, the following and every temporary effect the company is under, and all of it except
+   the money was set as grey caption text at 11px or less. Six pixels is what buys the type a
+   size a laptop can read and the effect icons the 30% the author asked for. */
 .topbar {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    height: 46px;
+    height: 52px;
     padding-left: 18px;
     padding-right: 18px;
     background-color: var(--blue-900);
@@ -380,7 +384,7 @@
 .topbar__stat {
     margin-right: 22px;
     -unity-font-style: bold;
-    font-size: 15px;
+    font-size: 17px;
 }
 
 .topbar__stat--muted {
@@ -598,7 +602,7 @@
 
 .field__hint {
     color: var(--ink-faint);
-    font-size: 12px;
+    font-size: 13px;
     white-space: normal;
 }
 
@@ -1538,7 +1542,7 @@
     margin-left: 6px;
     padding-left: 6px;
     padding-right: 6px;
-    font-size: 9px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 0.5px;
     color: rgb(246, 234, 236);
@@ -1632,7 +1636,7 @@
     margin-left: 8px;
     padding-left: 12px;
     padding-right: 12px;
-    font-size: 11px;
+    font-size: 12px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: rgb(190, 202, 220);
@@ -2476,7 +2480,7 @@
 
 .tree-node__label {
     margin-top: 6px;
-    font-size: 11px;
+    font-size: 12.5px;
     letter-spacing: 0.2px;
     color: rgb(150, 164, 186);
     white-space: normal;
@@ -2560,7 +2564,7 @@
     padding-left: 6px;
     padding-right: 6px;
     margin-right: 8px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     -unity-font-style: bold;
     color: rgb(18, 24, 20);
@@ -2716,7 +2720,7 @@
 }
 
 .demo-row__head {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(108, 120, 140);
 }
@@ -2827,7 +2831,7 @@
 }
 
 .pulse__caption {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(112, 124, 144);
 }
@@ -2923,7 +2927,7 @@
 }
 
 .belt-zone {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(104, 114, 132);
 }
@@ -3086,7 +3090,7 @@
 
 .type-tile__note {
     margin-top: 3px;
-    font-size: 10px;
+    font-size: 11px;
     color: rgb(126, 138, 158);
     white-space: normal;
 }
@@ -3172,7 +3176,7 @@
 
 .topbar__arrows {
     margin-left: 6px;
-    font-size: 11px;
+    font-size: 13px;
     -unity-font-style: bold;
     letter-spacing: -1px;
 }
@@ -3275,7 +3279,7 @@
 .finance__group {
     margin-top: 8px;
     margin-bottom: 4px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 2px;
     color: rgb(112, 124, 144);
 }
@@ -3296,7 +3300,7 @@
 }
 
 .finance-row__tag {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(120, 132, 152);
     margin-right: 8px;
@@ -3379,7 +3383,7 @@
 }
 
 .effect-figure__label {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(126, 140, 160);
 }
@@ -3498,7 +3502,7 @@
 }
 
 .fleet-key__label {
-    font-size: 11px;
+    font-size: 12.5px;
     letter-spacing: 1px;
     color: rgb(168, 180, 198);
 }
@@ -3517,11 +3521,22 @@
 /* Standing in the top bar, beside the money. Quiet by default: these are numbers
    a player glances at, and only the direction needs to catch the eye. */
 
+/* REP and the following were two pieces of grey caption text floating between the money and the
+   effects, at 11px, which is how a figure the player is meant to watch ends up looking like a
+   label nobody wrote a value for. They are chips now: same ink, a plate under them, so they read
+   as readings rather than as leftover words. */
 .topbar__standing {
-    margin-left: 14px;
-    font-size: 11px;
-    letter-spacing: 1px;
-    color: rgb(150, 162, 182);
+    margin-left: 10px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 9px;
+    padding-right: 9px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 0.6px;
+    color: rgb(178, 190, 210);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
 }
 
 .topbar__standing--fans {
@@ -3564,20 +3579,30 @@
    is only drawn behind the lettered fallback, where a bare two-letter word in
    the header would read as debris. */
 
+/* **A row, not a column, and that is what buys the icon its 30%.**
+
+   The day count used to sit under the icon inside a 34px badge, which left the art 23px and the
+   number 8px in a 46px bar. There was no room to grow either without the badge outgrowing the
+   bar. Beside it instead: the icon takes the height it needs and the number sits next to it at a
+   size that can be read, and the badge grows sideways into empty bar rather than downward into
+   the page. Nothing to the right of it is anchored to the left, so nothing moves. */
 .fx__badge {
-    width: 30px;
+    flex-direction: row;
     height: 34px;
     margin-top: 0;
     margin-bottom: 0;
     margin-left: 0;
-    margin-right: 4px;
+    margin-right: 10px;
     padding: 0;
     align-items: center;
     justify-content: center;
 }
 
+/* The initials fallback keeps a plate, because letters with no frame in a bar of icons read as
+   text that has escaped from somewhere rather than as a badge. */
 .fx__badge--lettered {
-    width: 34px;
+    padding-left: 7px;
+    padding-right: 7px;
     height: 30px;
     overflow: hidden;
     border-radius: 4px;
@@ -3594,7 +3619,7 @@
 .fx__glyph {
     margin: 0;
     padding: 0;
-    font-size: 10px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 0.2px;
     color: rgb(226, 240, 232);
@@ -3605,8 +3630,8 @@
    at any square size lands right. */
 
 .fx__icon {
-    width: 23px;
-    height: 23px;
+    width: 30px;
+    height: 30px;
     margin: 0;
     padding: 0;
     -unity-background-scale-mode: scale-to-fit;
@@ -3624,8 +3649,10 @@
 
 .fx__days {
     margin: 0;
+    margin-left: 5px;
     padding: 0;
-    font-size: 8px;
+    font-size: 12.5px;
+    -unity-font-style: bold;
     letter-spacing: 0.2px;
     color: rgba(206, 220, 240, 0.70);
 }
@@ -3765,7 +3792,7 @@
 
 .mb-meter__word {
     margin-left: 5px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(96, 100, 110);
 }
@@ -3971,7 +3998,7 @@
 
 .service__caption {
     margin-top: 4px;
-    font-size: 11px;
+    font-size: 13px;
     color: rgb(140, 148, 164);
 }
 
@@ -4094,7 +4121,7 @@
 
 .pack__pitch {
     margin-top: 5px;
-    font-size: 11px;
+    font-size: 12.5px;
     color: rgb(146, 156, 174);
     white-space: normal;
 }
@@ -4285,7 +4312,7 @@
 }
 
 .chart-block__title {
-    font-size: 11px;
+    font-size: 13px;
     color: rgb(150, 164, 188);
     -unity-text-align: middle-center;
 }
@@ -4296,7 +4323,7 @@
 }
 
 .chart-block__foot {
-    font-size: 10px;
+    font-size: 13.5px;
     color: rgb(160, 164, 172);
     -unity-text-align: middle-center;
 }
@@ -4322,14 +4349,14 @@
 }
 
 .topbar__points-icon {
-    width: 17px;
-    height: 17px;
+    width: 21px;
+    height: 21px;
     margin-right: 5px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .topbar__points-value {
-    font-size: 12px;
+    font-size: 14px;
     -unity-font-style: bold;
     color: rgb(126, 196, 250);
 }
@@ -4344,7 +4371,7 @@
 }
 
 .rfund__banked {
-    font-size: 11px;
+    font-size: 13px;
     -unity-font-style: bold;
     color: rgb(126, 196, 250);
 }
@@ -4393,7 +4420,7 @@
 
 .rcard__badge {
     margin-top: 3px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(140, 152, 172);
 }
@@ -4420,7 +4447,7 @@
 }
 
 .rcard__body {
-    font-size: 12.5px;
+    font-size: 13.5px;
     color: rgb(196, 208, 226);
     white-space: normal;
     -unity-paragraph-spacing: 5px;
@@ -5129,7 +5156,7 @@
 }
 
 .nb__kicker {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(226, 120, 104);
@@ -5269,7 +5296,7 @@
 }
 
 .sec__title {
-    font-size: 12px;
+    font-size: 17px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(226, 236, 250);
@@ -5322,7 +5349,7 @@
 }
 
 .wire-row__headline {
-    font-size: 11px;
+    font-size: 13.5px;
     color: rgb(210, 220, 236);
     white-space: normal;
 }
@@ -5333,7 +5360,7 @@
 }
 
 .wire-row__meta {
-    font-size: 11px;
+    font-size: 12px;
     color: rgb(118, 130, 150);
     margin-top: 2px;
 }
@@ -5354,7 +5381,7 @@
 }
 
 .lead__kicker {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgb(140, 152, 172);
@@ -5373,7 +5400,7 @@
 }
 
 .lead__body {
-    font-size: 11px;
+    font-size: 13.5px;
     color: rgb(168, 180, 198);
     margin-top: 6px;
     white-space: normal;
@@ -5394,7 +5421,7 @@
 }
 
 .small__headline {
-    font-size: 12px;
+    font-size: 14px;
     color: rgb(214, 224, 238);
     white-space: normal;
 }
@@ -5405,7 +5432,7 @@
 }
 
 .small__meta {
-    font-size: 11px;
+    font-size: 12px;
     color: rgb(118, 130, 150);
     margin-top: 2px;
 }
@@ -5453,20 +5480,20 @@
 }
 
 .desk__outlet {
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.8px;
     color: rgb(140, 152, 172);
 }
 
 .desk__pitch {
-    font-size: 11px;
+    font-size: 13px;
     color: rgb(160, 172, 190);
     white-space: normal;
     margin-bottom: 10px;
 }
 
 .desk__locked {
-    font-size: 11px;
+    font-size: 12.5px;
     -unity-font-style: bold;
     color: rgb(226, 150, 130);
     white-space: normal;
@@ -5685,7 +5712,7 @@
     padding-top: 3px;
     padding-bottom: 3px;
     border-radius: 3px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
 }
@@ -5717,7 +5744,7 @@
 }
 
 .arch-figure__label {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(140, 152, 172);
@@ -5765,7 +5792,7 @@
 }
 
 .tb__masthead {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(226, 170, 96);
@@ -6419,7 +6446,7 @@
 }
 
 .rcard-figure__label {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(140, 154, 176);
@@ -7242,7 +7269,7 @@
 }
 
 .scale-lock__label {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -7310,7 +7337,7 @@
 }
 
 .family-offers__heading {
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(132, 145, 164);
@@ -7671,7 +7698,7 @@
 }
 
 .tier-plate__locked {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -9174,7 +9201,7 @@
 
 .modelhub__heading {
     align-self: flex-start;
-    font-size: 12px;
+    font-size: 14px;
     letter-spacing: 2.6px;
     -unity-font-style: bold;
     color: rgb(150, 162, 182);
@@ -9188,7 +9215,7 @@
 }
 
 .modelhub__latency {
-    font-size: 12px;
+    font-size: 13px;
     color: rgb(150, 200, 174);
     margin-top: 6px;
 }
@@ -9209,13 +9236,13 @@
 }
 
 .loadbar__caption {
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 1.8px;
     color: rgb(130, 142, 162);
 }
 
 .loadbar__value {
-    font-size: 13px;
+    font-size: 15px;
     -unity-font-style: bold;
     color: rgb(230, 236, 248);
 }
@@ -9305,7 +9332,7 @@
 }
 
 .mrow__under {
-    font-size: 12px;
+    font-size: 13px;
     color: rgb(134, 146, 166);
     margin-top: 2px;
 }
@@ -9685,7 +9712,7 @@
 }
 
 .udet__kicker {
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 3px;
     -unity-font-style: bold;
     color: rgb(140, 152, 174);
@@ -9805,7 +9832,7 @@
 }
 
 .udrow__caption {
-    font-size: 11px;
+    font-size: 12.5px;
     letter-spacing: 1.8px;
     color: rgb(130, 142, 162);
 }
@@ -9860,7 +9887,7 @@
 }
 
 .udet__item {
-    font-size: 11px;
+    font-size: 13px;
     color: rgb(206, 216, 232);
     padding: 5px 9px;
     margin-bottom: 3px;
@@ -9883,7 +9910,7 @@
 }
 
 .udet__cellcaption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     color: rgb(126, 138, 158);
 }
@@ -11715,7 +11742,7 @@
 }
 
 .arx__hint {
-    font-size: 11px;
+    font-size: 13px;
     color: rgb(128, 142, 164);
     white-space: normal;
     margin-top: 8px;
@@ -11765,7 +11792,7 @@
 }
 
 .drow__name {
-    font-size: 12px;
+    font-size: 14px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgb(226, 234, 248);
@@ -11877,7 +11904,7 @@
 }
 
 .agauge__caption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     color: rgb(126, 138, 158);
     margin-top: 1px;
@@ -11908,7 +11935,7 @@
 }
 
 .aband__caption {
-    font-size: 11px;
+    font-size: 12.5px;
     letter-spacing: 1.4px;
     color: rgb(130, 142, 162);
 }
@@ -11955,7 +11982,7 @@
 }
 
 .aband__end {
-    font-size: 11px;
+    font-size: 12px;
     color: rgb(112, 124, 146);
 }
 
@@ -11973,7 +12000,7 @@
 }
 
 .arx__cellcaption {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1.4px;
     color: rgb(126, 138, 158);
 }
@@ -12254,7 +12281,7 @@
 }
 
 .hcard__figurelabel {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     color: rgb(126, 138, 158);
 }
@@ -12377,7 +12404,7 @@
 }
 
 .loanbill__caption {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     color: rgb(126, 138, 158);
 }
@@ -12444,7 +12471,7 @@
 }
 
 .ltile__kicker {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 2.4px;
     -unity-font-style: bold;
     color: rgb(140, 152, 174);
@@ -12605,14 +12632,14 @@
 }
 
 .ustrip__kicker {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
     color: rgb(178, 158, 235);
 }
 
 .ustrip__name {
     -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
-    font-size: 12px;
+    font-size: 14.5px;
     color: rgb(228, 234, 246);
     -unity-font-style: bold;
 }
@@ -12732,7 +12759,7 @@
     margin-left: 6px;
     padding-left: 12px;
     padding-right: 12px;
-    font-size: 10px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     -unity-text-align: middle-center;
@@ -12791,7 +12818,7 @@
     margin-right: 4px;
     padding-left: 16px;
     padding-right: 16px;
-    font-size: 10.5px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1.6px;
     -unity-text-align: middle-center;
@@ -12946,7 +12973,7 @@
     margin: 0;
     margin-right: 8px;
     padding: 0;
-    font-size: 10px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 0.8px;
     -unity-text-align: middle-center;
@@ -12964,7 +12991,7 @@
 /* ---- what they asked for ---- */
 
 .pp__section {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 2.2px;
     color: rgb(120, 132, 152);
     margin-bottom: 10px;
@@ -12992,7 +13019,7 @@
 }
 
 .pp__want-state {
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 0.6px;
     color: rgb(226, 116, 106);
     margin-right: 12px;
@@ -13066,7 +13093,7 @@
     margin: 0;
     margin-right: 8px;
     padding: 0;
-    font-size: 10px;
+    font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
     -unity-text-align: middle-center;
@@ -13117,7 +13144,7 @@
 }
 
 .deal__kicker {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 2.4px;
     color: rgb(226, 78, 62);
     margin-bottom: 6px;
@@ -13400,7 +13427,7 @@
 }
 
 .wb__role {
-    font-size: 10px;
+    font-size: 11px;
     color: rgb(104, 118, 142);
 }
 
@@ -13531,7 +13558,7 @@
 }
 
 .die__stamp {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(126, 140, 166);
     margin-top: 5px;
@@ -13845,7 +13872,7 @@
 }
 
 .sfig__caption {
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 1.3px;
     color: rgb(118, 132, 156);
 }
@@ -13904,7 +13931,7 @@
     margin-bottom: 0;
     margin-right: 16px;
     padding: 0 16px;
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -14057,7 +14084,7 @@
 }
 
 .roombuild__section {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     color: rgb(124, 141, 166);
     margin-top: 14px;
@@ -14597,7 +14624,7 @@
 
 .benefit__note {
     margin-top: 6px;
-    font-size: 10.5px;
+    font-size: 11px;
     color: rgb(140, 152, 172);
     white-space: normal;
 }
@@ -14687,7 +14714,7 @@
 }
 
 .rival__note {
-    font-size: 12px;
+    font-size: 13px;
     color: rgb(150, 160, 180);
     white-space: normal;
     flex-shrink: 0;
@@ -14707,7 +14734,7 @@
 }
 
 .rival__traitshead {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 2px;
     color: rgb(120, 132, 152);
     margin-bottom: 7px;
@@ -14726,7 +14753,7 @@
     padding-right: 10px;
     padding-top: 5px;
     padding-bottom: 5px;
-    font-size: 11.5px;
+    font-size: 13px;
     letter-spacing: 0.4px;
     color: rgb(214, 226, 244);
     background-color: rgba(255, 255, 255, 0.055);
@@ -14787,7 +14814,7 @@
 
 .rival__reason {
     flex-grow: 1;
-    font-size: 12px;
+    font-size: 13px;
     color: rgb(178, 188, 206);
     white-space: normal;
 }
@@ -15868,7 +15895,7 @@
 .achrow__soon {
     flex-shrink: 0;
     margin-left: 10px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1px;
     color: rgb(148, 128, 96);
 }
@@ -16872,7 +16899,7 @@
  */
 .chat__when {
     margin-top: 3px;
-    font-size: 9.5px;
+    font-size: 11px;
     letter-spacing: 0.4px;
     -unity-text-align: middle-right;
 }
@@ -16939,7 +16966,7 @@
 .compose__heading {
     margin-top: 4px;
     margin-bottom: 5px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgba(196, 206, 224, 0.45);
@@ -16978,7 +17005,7 @@
 
 .compose__guideblurb {
     margin-top: 2px;
-    font-size: 10px;
+    font-size: 11px;
     color: rgba(196, 206, 224, 0.6);
     white-space: normal;
 }
@@ -17116,7 +17143,7 @@
 .sboard__reading--bad  { border-left-color: rgb(226, 96, 96); }
 
 .sboard__kicker {
-    font-size: 9.5px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgba(206, 196, 222, 0.55);
@@ -17144,7 +17171,7 @@
 
 .sboard__note {
     margin-top: 7px;
-    font-size: 10.5px;
+    font-size: 11px;
     color: rgba(206, 196, 222, 0.55);
     white-space: normal;
 }
@@ -17247,7 +17274,7 @@
 }
 
 .stile__badge {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgba(120, 206, 156, 0.9);
@@ -17277,7 +17304,7 @@
 
 .stile__costlabel {
     margin-bottom: 9px;
-    font-size: 8.5px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgba(226, 96, 96, 0.75);
@@ -17290,7 +17317,7 @@
 }
 
 .stile__statname {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.2px;
     color: rgba(206, 214, 230, 0.5);
 }
@@ -17304,7 +17331,7 @@
 .stile__blurb {
     margin-top: 8px;
     margin-bottom: 10px;
-    font-size: 10.5px;
+    font-size: 11px;
     color: rgba(206, 214, 230, 0.62);
     white-space: normal;
 }
@@ -17341,7 +17368,7 @@
 
 .stile__why {
     margin-top: 7px;
-    font-size: 10px;
+    font-size: 11px;
     color: rgba(226, 190, 44, 0.85);
     white-space: normal;
 }
@@ -17409,7 +17436,7 @@
 
 .btrio__more {
     margin-top: 9px;
-    font-size: 9.5px;
+    font-size: 11px;
     letter-spacing: 1.6px;
     -unity-font-style: bold;
     color: rgb(226, 190, 44);
@@ -17478,7 +17505,7 @@
     height: 24px;
     margin: 0;
     padding: 0 12px;
-    font-size: 9.5px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -17496,7 +17523,7 @@
 .obuild__section {
     margin-top: 10px;
     margin-bottom: 6px;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 1.8px;
     -unity-font-style: bold;
     color: rgba(206, 214, 230, 0.45);
@@ -17526,7 +17553,7 @@
     height: 28px;
     margin: 8px 0 0 0;
     padding: 0;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
@@ -17571,20 +17598,20 @@
 
 .obuild__blurb {
     margin-top: 3px;
-    font-size: 10px;
+    font-size: 11px;
     color: rgba(206, 214, 230, 0.58);
     white-space: normal;
 }
 
 .obuild__seats {
     margin-top: 3px;
-    font-size: 10px;
+    font-size: 11px;
     -unity-font-style: bold;
     color: rgba(120, 206, 156, 0.9);
 }
 
 .obuild__hint {
-    font-size: 10.5px;
+    font-size: 11px;
     color: rgba(206, 214, 230, 0.55);
     white-space: normal;
 }
@@ -17600,7 +17627,7 @@
     height: 26px;
     margin: 0 5px 0 0;
     padding: 0 8px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.8px;
     -unity-text-align: middle-left;
     color: rgb(226, 234, 246);
@@ -17613,7 +17640,7 @@
     height: 26px;
     margin: 0;
     padding: 0 9px;
-    font-size: 9.5px;
+    font-size: 11px;
     -unity-text-align: middle-center;
     color: rgba(226, 190, 44, 0.9);
     background-color: rgba(226, 190, 44, 0.12);
@@ -17673,7 +17700,7 @@
 }
 
 .vband__kicker {
-    font-size: 9.5px;
+    font-size: 11px;
     letter-spacing: 2.2px;
     -unity-font-style: bold;
     color: rgba(238, 246, 255, 0.72);
@@ -17688,7 +17715,7 @@
 
 .vband__note {
     margin-top: 3px;
-    font-size: 10.5px;
+    font-size: 11px;
     color: rgba(238, 246, 255, 0.7);
     white-space: normal;
 }
@@ -17756,7 +17783,7 @@
 }
 
 .gfig__kicker {
-    font-size: 8.5px;
+    font-size: 11px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
 }

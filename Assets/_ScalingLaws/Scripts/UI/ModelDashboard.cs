@@ -222,13 +222,13 @@ namespace ScalingLaws.UI
             // costs are on the same scale and the gap between them is the thing you see.
             var scale = Math.Max(1L, Math.Max(income, costs));
 
-            panel.Add(Bar("INCOME", UiFormat.Money(income), income / (double)scale, "#5FBF7F"));
-            panel.Add(Bar("COSTS", UiFormat.Money(costs), costs / (double)scale, "#D96A6A"));
+            panel.Add(Bar(Loc.T("model.income"), UiFormat.Money(income), income / (double)scale, "#5FBF7F"));
+            panel.Add(Bar(Loc.T("model.costs"), UiFormat.Money(costs), costs / (double)scale, "#D96A6A"));
 
-            panel.Add(Bar("FROM SUBSCRIPTIONS", UiFormat.Money(product.MonthEarningsUsd),
+            panel.Add(Bar(Loc.T("model.from_subscriptions"), UiFormat.Money(product.MonthEarningsUsd),
                 income <= 0L ? 0.0 : product.MonthEarningsUsd / (double)income, "#D6A03C"));
 
-            panel.Add(Bar("SUBSCRIBERS", UiFormat.Count(subs),
+            panel.Add(Bar(Loc.T("model.subscribers"), UiFormat.Count(subs),
                 Math.Clamp(subs / Math.Max(1.0, company.Sentiment().Users), 0.0, 1.0), "#5B8DEF"));
 
             var net = income - costs;

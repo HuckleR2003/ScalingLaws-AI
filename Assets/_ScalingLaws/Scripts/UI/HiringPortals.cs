@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using ScalingLaws.Data;
@@ -158,9 +158,9 @@ namespace ScalingLaws.UI
             
             // The two numbers that make this a choice rather than a price list: what they ask, and
             // what they are actually worth against the level on the advert.
-            figures.Add(Figure("WAGE",
+            figures.Add(Figure(Loc.T("hire.wage"),
                 channel.WageMultiplier.ToString("0.00", CultureInfo.InvariantCulture) + "x"));
-            figures.Add(Figure("WORTH",
+            figures.Add(Figure(Loc.T("hire.worth"),
                 channel.QualityMultiplier.ToString("0.00", CultureInfo.InvariantCulture) + "x"));
 
             card.Add(figures);

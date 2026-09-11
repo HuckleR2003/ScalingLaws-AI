@@ -58,6 +58,12 @@ fold read as a section that had been cut off. The arrows scroll now, and there i
 the right edge that is drawn over the page rather than beside it, so nothing on the page moves
 when it appears.
 
+**And the type is a size you can read.** Fifty eight rules in the stylesheet were setting text
+between 8 and 10.5px, including the day count on an effect badge and the captions under every
+chart on COMPUTE. There is a floor now, and a test that holds it. The effect icons are 30% larger
+with nothing moved to make room, and the bar across the top reads like a set of figures rather
+than grey text with the money shouting over it.
+
 ### Fixed
 
 - **Every product on sale reports its own audience.** Reported by Natalia. Two general models on
@@ -128,6 +134,26 @@ when it appears.
   it: the only caller anywhere was a test. The four keys the game already had were undiscoverable,
   which is the half of "unplayable without a mouse" that adding more keys would have made worse.
   They are on the settings page now, printed from the table that binds them, in both languages.
+- **Nothing in the game is set smaller than 11px any more.** Reported as the single biggest problem
+  with the game, from a laptop. Fifty eight rules were between 8 and 10.5px: the day count on an
+  effect badge was 8px, the research tree drew its own node names at 11 and the chart captions on
+  COMPUTE at 10. Forty seven more were raised on top of that floor across the nine screens named in
+  the report: the upgrade strip, MODEL, RESEARCH, ARCHITECTURE, UPGRADE, COMPUTE, RIVALS, INTEL and
+  the news. The news section headings went from 12px to 17.
+- **The effect badges are 30% larger and nothing moved to make room.** The day count used to sit
+  under the icon, which left the art 23px and the number 8px inside a 46px bar, so neither could
+  grow without the badge outgrowing the bar. It sits beside the icon now, so the badge grows
+  sideways into empty bar rather than downward into the page.
+- **The bar across the top reads like a set of figures rather than grey text.** The money was the
+  only thing on it set at a readable size; REP and the following were 11px captions floating between
+  the money and the effects. They are chips now, the research points icon is larger, and the bar is
+  52px rather than 46 to carry it.
+- **Thirteen English labels on Polish screens.** INCOME, COSTS, FROM SUBSCRIPTIONS and SUBSCRIBERS
+  on MODEL, named in the report; WAGE and WORTH on HIRING; five readings on the management desk; and
+  SCANDALS and PREMIERES, which were the two English words on a news page whose stories were already
+  Polish. **Six of them already had Polish in the phrase book and no reader at all**, which is the
+  third time this month that a duplicate-key failure has pointed at a screen that was never wired
+  rather than at redundant text.
 
 ### Save compatibility
 
@@ -136,7 +162,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,139 EditMode tests and 38 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,140 EditMode tests and 39 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -156,7 +182,14 @@ model history that saves already carry, so an existing campaign reads correctly 
   the wrong length still looks like a scrollbar.
 - The page scroller is made unfocusable, because UI Toolkit gives a focused one arrow handling of
   its own and two things moving one page is indistinguishable from unreliable keys.
-- **2,747 phrases per language**, up from 2,723.
+- `StylesheetTests.NothingIsSetSmallerThanTheFloor` is a floor rather than a table of sizes: a
+  table goes stale at the speed the sheet grows and a floor cannot, so a rule added tomorrow at
+  9px fails the first time anybody runs the suite.
+- `BootTests.TheBottomBarReallyFits` measures the resolved layout. The guard that already existed
+  adds up slot widths out of the stylesheet and charges the controls a hard-coded 360px; they are
+  text buttons, so their real width is the width of the words in them, and raising two of them
+  took that block to 451px without the old guard seeing a pixel of it.
+- **2,754 phrases per language**, up from 2,723.
 
 ---
 ## [0.2.0] - 2026-09-06

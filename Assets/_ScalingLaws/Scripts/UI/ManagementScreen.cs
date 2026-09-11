@@ -968,18 +968,18 @@ namespace ScalingLaws.UI
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
-            panel.Add(UiParts.ThinBarRow("Reputation", UiFormat.Percent(state.Reputation, 0),
+            panel.Add(UiParts.ThinBarRow(Loc.T("manage.reputation"), UiFormat.Percent(state.Reputation, 0),
                 state.Reputation, Violet));
 
-            panel.Add(UiParts.ThinBarRow("Known", UiFormat.Percent(state.Awareness.Overall, 0),
+            panel.Add(UiParts.ThinBarRow(Loc.T("manage.known"), UiFormat.Percent(state.Awareness.Overall, 0),
                 state.Awareness.Overall, Blue));
 
             var sentiment = simulation.Sentiment();
-            panel.Add(UiParts.ThinBarRow("Satisfaction", UiFormat.Percent(sentiment.Satisfaction, 0),
+            panel.Add(UiParts.ThinBarRow(Loc.T("manage.satisfaction"), UiFormat.Percent(sentiment.Satisfaction, 0),
                 sentiment.Satisfaction, Good));
 
-            panel.Add(UiParts.StatLine("Fans", UiFormat.Count(state.Fans)));
-            panel.Add(UiParts.StatLine("Campaigns running", state.Campaigns.Count.ToString()));
+            panel.Add(UiParts.StatLine(Loc.T("manage.fans"), UiFormat.Count(state.Fans)));
+            panel.Add(UiParts.StatLine(Loc.T("manage.campaigns"), state.Campaigns.Count.ToString()));
 
             var note = new Label(Loc.T("manage.biggest_mover", state.LastStandingChange.Headline));
 
