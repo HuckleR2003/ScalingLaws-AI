@@ -66,6 +66,22 @@ than grey text with the money shouting over it.
 
 ### Fixed
 
+- **The model creator threw away what you set the moment you looked at another page.** Reported by
+  Francisco, 1,391 days into a campaign: set the parameters and the tokens, step over to safety,
+  come back, and both are at their opening values again. Every control in the creator is a shared
+  instance so that it survives a page change, which is the design. The page around it is rebuilt on
+  every visit, which is also right, because the figures printed beside it have moved. But the
+  builder configured the control as well as placing it, so each visit put the handle back where it
+  opened. The model name did the same thing, back to "Muse 1".
+- **And the same fault was cancelling the fleet.** He reported that as a second thing without
+  knowing it was the same one: the capacity goes to 100% and no amount of renting brings it back
+  down, until it suddenly does. The rent slider is the one control in the creator that writes to
+  the company rather than describing a plan, and it opened on 150 petaflops. Worse, a fresh slider
+  runs 0 to 10 until the compute page is built, so a company renting four thousand had its handle
+  clamped to ten and that ten written straight back, in the constructor, before the screen could
+  tell it anything. Opening the creator at all was enough. The handle is seeded from what the
+  company actually rents before anything is built, its range is set before its value is ever read,
+  and it keeps whatever the player leaves it at.
 - **Every product on sale reports its own audience.** Reported by Natalia. Two general models on
   sale both read 1,962,294 users on a measured seventy day campaign; they now read 1,229,389 and
   732,905, and the two add up to the 1,962,294 the company actually has. The same split feeds the
@@ -446,7 +462,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,212 EditMode tests and 50 PlayMode**, up from 1,116 and 31, across 132 fixtures.
+- **1,215 EditMode tests and 50 PlayMode**, up from 1,116 and 31, across 133 fixtures.
 - **An audit pass over everything added this week, reached the way a campaign reaches it.** Not by
   calling the new methods: by playing until the thing turns up. It found that investors really do
   call in a campaign rather than only in a unit test, that an offer that arrives can be taken and
