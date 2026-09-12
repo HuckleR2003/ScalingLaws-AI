@@ -311,12 +311,14 @@ namespace ScalingLaws.UI
                 Refresh();
             }));
 
-            var saving = OfficeCatalog.FurnishedPackListUsd - OfficeCatalog.FurnishedPackUsd;
+            // A premium now rather than a saving. The pack was reversed when the build mode became
+            // permanent: furnishing by hand is the game, and this is the price of not playing it.
+            var premium = OfficeCatalog.FurnishedPackUsd - OfficeCatalog.FurnishedPackListUsd;
 
             var note = new Label(Loc.T("offices.furnish_note",
                 UiFormat.Money(OfficeCatalog.FurnishedPackUsd),
                 UiFormat.Money((long)OfficeCatalog.FurnishedPackListUsd),
-                UiFormat.Money((long)saving)));
+                UiFormat.Money((long)premium)));
 
             note.AddToClassList("offices__furnishnote");
             block.Add(note);

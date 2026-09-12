@@ -232,6 +232,14 @@ than grey text with the money shouting over it.
 - **The calendar is never handed back.** What a cancel buys is not spending the remaining days on a
   plan you no longer want. The days already on the cluster are gone whatever you do, which is what
   keeps this inside the spine rather than turning it into a reroll on every decision in the game.
+- **Furnishing the office yourself is the cheap way, and the pack is the lazy one.** It used to be
+  the other way round: the standard fit-out undercut the same pieces by nine per cent. That held
+  while there was nothing else to do with the room. The build mode is permanent now, so arranging
+  the place is the game and the pack is the way out of playing it, at two and a half times what the
+  pieces cost one at a time. $43k by hand, $107.5k for not having to choose.
+- **And a furnished office is still a room you can rearrange.** Everything the pack delivers is
+  ordinary furniture on the ordinary plan: it can be lifted, stood somewhere else and sold back like
+  anything bought by hand.
 - **The buy and move buttons on the premises page were invisible.** Reported by two testers, one of
   them on his first day, both as clicking a bigger office doing nothing. It did nothing because
   there was nothing there: the row was a fixed 202 pixels that clips, the buttons are the last thing
@@ -361,7 +369,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,210 EditMode tests and 48 PlayMode**, up from 1,116 and 31, across 132 fixtures.
+- **1,211 EditMode tests and 48 PlayMode**, up from 1,116 and 31, across 132 fixtures.
 - **An audit pass over everything added this week, reached the way a campaign reaches it.** Not by
   calling the new methods: by playing until the thing turns up. It found that investors really do
   call in a campaign rather than only in a unit test, that an offer that arrives can be taken and

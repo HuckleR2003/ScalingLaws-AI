@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ScalingLaws.Core;
@@ -143,14 +143,31 @@ namespace ScalingLaws.Data
         public const string CatalogVersion = "2026.08.22";
 
         /// <summary>
+        /// How much more a furnished move costs than doing it yourself.
+        ///
+        /// **This is the opposite of what it was, and the author reversed it deliberately.** The
+        /// pack used to undercut the pieces by nine per cent, on the reasoning that a saving is what
+        /// makes the tick an option rather than a tax. That held while there was nothing else to do
+        /// with the room. Now that the build mode is always open, furnishing by hand is the game and
+        /// the pack is the way out of playing it, so it is priced as convenience rather than as a
+        /// discount: *"wyposażenie to po prostu dla leniwych którzy wolą zapłacić 2-3 razy więcej niż
+        /// meblować samemu."*
+        ///
+        /// Two and a half, the middle of the range he gave. Enough that anybody counting money
+        /// furnishes the place themselves, and not so much that taking it feels like a punishment
+        /// for not wanting to.
+        /// </summary>
+        public const double FurnishedPackMultiple = 2.5;
+
+        /// <summary>
         /// What a furnished move costs on top of the fit-out.
         ///
-        /// **Deliberately less than the pieces are worth.** The pack below lists at $43,000, so
-        /// taking the standard fit-out saves about nine per cent against buying the same things one
-        /// at a time. That is what makes the tick a real option rather than a tax on anybody who
-        /// forgets to untick it: the saving is the price of not choosing.
+        /// **Derived from the pieces rather than typed**, so the two cannot drift apart: a price
+        /// written here by hand would stop being two and a half times anything the first time a sofa
+        /// changed price, and nothing would report it.
         /// </summary>
-        public const long FurnishedPackUsd = 39_000L;
+        public static long FurnishedPackUsd =>
+            (long)Math.Round(FurnishedPackListUsd * FurnishedPackMultiple);
 
         /// <summary>
         /// What arrives with a furnished move.
