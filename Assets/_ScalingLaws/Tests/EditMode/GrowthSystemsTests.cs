@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -77,10 +77,16 @@ namespace ScalingLaws.Tests.EditMode
             const double frontier = 65.0;
             const long revenue = 40_000_000;
 
+            // The same company on both sides, including how well known it is, because what this
+            // measures is the market and not the lab. Trust is a flat multiplier on the story half,
+            // so fixing it leaves every ratio in this fixture exactly where it was.
+            const double Reputation = 0.5;
+            const double Fans = 100_000.0;
+
             var cold = FundingMarket.PreMoneyValuationUsd(
-                GameDate.FromCalendar(2022, 3, 1), capability, frontier, revenue);
+                GameDate.FromCalendar(2022, 3, 1), capability, frontier, revenue, Reputation, Fans);
             var hot = FundingMarket.PreMoneyValuationUsd(
-                GameDate.FromCalendar(2025, 6, 1), capability, frontier, revenue);
+                GameDate.FromCalendar(2025, 6, 1), capability, frontier, revenue, Reputation, Fans);
 
             Assert.That(hot, Is.GreaterThan(cold * 3),
                 $"Cold market ${cold:N0} against hot market ${hot:N0}.");
@@ -92,9 +98,9 @@ namespace ScalingLaws.Tests.EditMode
         public void ValuationFallsAwaySteeplyFromTheFrontier()
         {
             var date = GameDate.FromCalendar(2024, 6, 1);
-            var atParity = FundingMarket.PreMoneyValuationUsd(date, 60, 60, 0);
-            var slightlyBehind = FundingMarket.PreMoneyValuationUsd(date, 48, 60, 0);
-            var wellBehind = FundingMarket.PreMoneyValuationUsd(date, 30, 60, 0);
+            var atParity = FundingMarket.PreMoneyValuationUsd(date, 60, 60, 0, 0.5, 100_000.0);
+            var slightlyBehind = FundingMarket.PreMoneyValuationUsd(date, 48, 60, 0, 0.5, 100_000.0);
+            var wellBehind = FundingMarket.PreMoneyValuationUsd(date, 30, 60, 0, 0.5, 100_000.0);
 
             Assert.That(slightlyBehind, Is.LessThan(atParity / 2), "Twenty percent behind is worth under half.");
             Assert.That(wellBehind, Is.LessThan(atParity / 10), "Half the frontier is worth a rounding error.");
@@ -106,9 +112,12 @@ namespace ScalingLaws.Tests.EditMode
             var date = GameDate.FromCalendar(2026, 8, 1);
 
             var flat = FundingMarket.BuildOffer(
-                FundingStage.SeriesB, date, 60, 70, 20_000_000, lastPostMoneyValuationUsd: 0);
+                FundingStage.SeriesB, date, 60, 70, 20_000_000, lastPostMoneyValuationUsd: 0,
+                reputation: 0.5, fans: 100_000.0);
+
             var down = FundingMarket.BuildOffer(
-                FundingStage.SeriesB, date, 60, 70, 20_000_000, lastPostMoneyValuationUsd: 50_000_000_000);
+                FundingStage.SeriesB, date, 60, 70, 20_000_000,
+                lastPostMoneyValuationUsd: 50_000_000_000, reputation: 0.5, fans: 100_000.0);
 
             Assert.That(down.IsDownRound, Is.True);
             Assert.That(flat.IsDownRound, Is.False);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
@@ -96,18 +96,27 @@ namespace ScalingLaws.Simulation
 
         /// <summary>
         /// What the market would price the company at today, before any new money goes in.
+        ///
+        /// Two halves, and only one of them is discounted. The story is what one model says the
+        /// company might become, and a cheque writer pays for that in proportion to how much
+        /// they trust the company telling it. Revenue is the thing the story was a proxy for and
+        /// counts in full. See `FundingCatalog.TrustIn`.
         /// </summary>
         public static long PreMoneyValuationUsd(
             GameDate date,
             double bestCapability,
             double frontierCapability,
-            long annualRevenueRunRateUsd)
+            long annualRevenueRunRateUsd,
+            double reputation,
+            double fans)
         {
             var frontier = Math.Max(1.0, frontierCapability);
             var ratio = Math.Clamp(bestCapability / frontier, 0.0, 1.25);
 
             var storyValue = FundingCatalog.FrontierParityValuationUsd
-                * Math.Pow(ratio, FundingCatalog.CapabilityValuationExponent);
+                * Math.Pow(ratio, FundingCatalog.CapabilityValuationExponent)
+                * FundingCatalog.TrustIn(reputation, fans);
+
             var revenueValue = Math.Max(0L, annualRevenueRunRateUsd) * FundingCatalog.RevenueMultiple;
 
             var sentiment = FundingCatalog.SentimentOn(date);
@@ -167,10 +176,14 @@ namespace ScalingLaws.Simulation
             double bestCapability,
             double frontierCapability,
             long annualRevenueRunRateUsd,
-            long lastPostMoneyValuationUsd)
+            long lastPostMoneyValuationUsd,
+            double reputation,
+            double fans)
         {
             var definition = FundingCatalog.Get(stage);
-            var preMoney = PreMoneyValuationUsd(date, bestCapability, frontierCapability, annualRevenueRunRateUsd);
+
+            var preMoney = PreMoneyValuationUsd(date, bestCapability, frontierCapability,
+                annualRevenueRunRateUsd, reputation, fans);
 
             // Investors will not write a cheque larger than the company is worth. A small lab in a
             // cold market gets a small round, whatever the stage nominally says.

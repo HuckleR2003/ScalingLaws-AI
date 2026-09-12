@@ -207,6 +207,20 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **What the company is worth stopped reading like a cheat.** Reported. A lab that shipped one model
+  at the frontier in its first year was priced at $1,236,036,036 while holding twenty million
+  dollars and having never invoiced anybody, and then collapsed once rivals shipped. Both halves
+  were the same fault: the price was a story about one model and nothing else held it up.
+  Investors now pay for that story in proportion to how far they trust the company telling it,
+  measured on the two numbers the game already keeps. The same lab is priced at $177,000,360, and
+  once it has earned a reputation and four hundred thousand followers, $878,003,936.
+- **Revenue is not discounted and never was a story.** A company being paid by real customers has
+  already proved the thing reputation stands in for, so its run rate counts in full whoever it is.
+  Being unknown costs you the story, once, rather than twice.
+- **Falling behind still costs, and no longer erases.** A company that stands still while the
+  frontier moves has to lose value, which is the spine of this game. What changed is the size of
+  the drop: revenue and a following are the floor under it now, so six months of standing still is
+  a serious loss rather than the company nearly ceasing to exist.
 - **You can see who works for you.** Reported. The only way to reach a person was to open one
   discipline at a time, so a company of six was six clicks and no way to compare anybody with
   anybody. There is a list now: who, their role, how long they have been here, how loyal they are,
@@ -266,7 +280,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,174 EditMode tests and 44 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,178 EditMode tests and 44 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -279,6 +293,10 @@ model history that saves already carry, so an existing campaign reads correctly 
   The step that follows the offer waits on `arch_built`, and `AlreadyDone` reports it satisfied
   when nothing is running, so a player who declined arrives with nothing in flight and unwinds
   through it. A branch would have been a second shape of step for one decision.
+- `FundingCatalog.TrustIn` is the one place that decides how much of a story a cheque writer pays
+  for. Reputation is weighted 60/40 against the following because an opinion can be bought back in
+  a quarter and a following cannot, and the floor is 10% rather than zero, or the first rung of the
+  funding ladder would be out of reach of every campaign that has not already succeeded.
 - **The proof campaign had no staff, which is why the list of people took a year to exist.** Every
   frame of the team screen was reviewed against an empty roster, so there was nothing on screen to
   miss. It now hires six across six disciplines, and the strongest of them is deliberately not the

@@ -2323,7 +2323,9 @@ namespace ScalingLaws.Simulation
                 State.Date,
                 State.BestCapability,
                 Market.FrontierCapability,
-                State.AnnualRevenueRunRateUsd)
+                State.AnnualRevenueRunRateUsd,
+                State.Reputation,
+                State.Fans)
             * State.Founder.ValuationMultiplier);
 
         /// <summary>
@@ -2372,7 +2374,9 @@ namespace ScalingLaws.Simulation
                 State.BestCapability,
                 Market.FrontierCapability,
                 State.AnnualRevenueRunRateUsd,
-                State.CapTable.LastPostMoneyValuationUsd);
+                State.CapTable.LastPostMoneyValuationUsd,
+                State.Reputation,
+                State.Fans);
 
             State.CurrentFundingOffer = offer;
 

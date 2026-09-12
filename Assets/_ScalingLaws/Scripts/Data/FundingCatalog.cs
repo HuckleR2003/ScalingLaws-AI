@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 
@@ -92,6 +92,51 @@ namespace ScalingLaws.Data
 
         /// <summary>A round priced below the previous one costs this much extra dilution.</summary>
         public const double DownRoundPenalty = 1.45;
+
+        /// <summary>What the story is worth at a lab nobody has heard of.</summary>
+        public const double UnknownLabTrust = 0.10;
+
+        /// <summary>How much of earned trust is opinion rather than a following.</summary>
+        public const double TrustFromReputation = 0.60;
+
+        /// <summary>The following at which the other four tenths are half won.</summary>
+        public const double FansForHalfTrust = 250_000.0;
+
+        /// <summary>
+        /// How much of the story about a company a cheque writer will actually pay for.
+        ///
+        /// **Reported: the valuation reads like a cheat, and it did.** A lab that shipped one
+        /// model at the frontier in its first year was priced at the full parity figure while it
+        /// held twenty million dollars and had never invoiced anybody, and then collapsed once
+        /// rivals shipped. Both halves are the same fault: the price was a story about one model
+        /// and nothing else held it up.
+        ///
+        /// A story is worth what the teller is trusted for, and this game already measures that
+        /// in two numbers that are hard to move and slow to lose. Reputation is what a stranger
+        /// thinks and a following is who stayed, which is why both are in here and weighted
+        /// apart: an opinion can be bought back in a quarter and a following cannot.
+        ///
+        /// **The floor is not zero.** A company with a frontier model and no name is still worth
+        /// something to somebody, and pricing it at nothing would put the first rung of the
+        /// funding ladder out of reach of every campaign that has not already succeeded.
+        ///
+        /// Revenue does not come through here. Being paid is not a story about being good, it is
+        /// the thing the story was a proxy for, so it counts in full whoever you are.
+        /// </summary>
+        public static double TrustIn(double reputation, double fans)
+        {
+            var opinion = Math.Clamp(SimUnits.Finite(reputation), 0.0, 1.0);
+
+            var following = fans <= 0.0
+                ? 0.0
+                : SimUnits.Finite(fans) / (SimUnits.Finite(fans) + FansForHalfTrust);
+
+            var earned = TrustFromReputation * opinion
+                + (1.0 - TrustFromReputation) * Math.Clamp(following, 0.0, 1.0);
+
+            return UnknownLabTrust
+                + (1.0 - UnknownLabTrust) * Math.Clamp(earned, 0.0, 1.0);
+        }
 
         private static readonly (GameDate Date, double Value)[] SentimentKeyframes =
         {
