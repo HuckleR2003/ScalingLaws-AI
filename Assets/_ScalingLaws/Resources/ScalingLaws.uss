@@ -9500,10 +9500,11 @@
    opens in. */
 
 .rmap {
-    /* 400 to 200. Four eras at 400px each is sixteen hundred pixels of tree before the funding
-       panel, and the player scrolled past three eras they cannot touch yet to reach the one they
-       can. Half the height, and the zoom is there for anyone who wants a closer look. */
-    height: 200px;
+    /* 400 to 200, then 200 to 330 when the row of circles became a board of cards. Every board
+       is at most three rows deep by construction (ResearchLayout.MaxRows), which is 322px, so
+       this is the height at which no era is cut off and the zoom is only ever for leaning
+       closer. Taller than this and the player scrolls past eras they cannot touch yet. */
+    height: 330px;
     margin-bottom: 8px;
     border-radius: 5px;
     border-width: 1px;
@@ -18723,4 +18724,123 @@
     border-width: 0;
     border-radius: 3px;
     -unity-text-align: middle-center;
+}
+
+/* ---- the research board -------------------------------------------------------------------
+
+   One era of one track, as cards with the lines between them drawn underneath. The positions
+   come from ResearchLayout and are written onto each card from C#, so nothing here decides
+   where a node goes: these rules are only what a node looks like once it is there.
+
+   A card carries its name, what it gives, and its own picture. The board it replaced was a row
+   of circles with a caption under each, which said nothing about what any of them did and drew
+   no line between a node and the one it needs, although the catalogue has known that all along.
+*/
+.rboard {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.rnode {
+    flex-direction: row;
+    align-items: stretch;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border-width: 1px;
+    border-radius: 7px;
+    border-color: rgba(255, 255, 255, 0.16);
+    background-color: rgba(14, 20, 32, 0.92);
+    transition-property: border-color, background-color, scale;
+    transition-duration: 0.12s;
+}
+
+.rnode:hover {
+    border-color: rgba(252, 214, 58, 0.75);
+    scale: 1.02 1.02;
+}
+
+/* The four states a node can be in, and they have to be tellable apart at a glance or the
+   board is decoration. Done is quiet, running is the accent, ready is lit, locked is dim. */
+.rnode--done {
+    border-color: rgba(104, 206, 126, 0.55);
+    background-color: rgba(16, 34, 26, 0.92);
+}
+
+.rnode--running {
+    border-color: rgb(252, 214, 58);
+    background-color: rgba(38, 30, 10, 0.94);
+}
+
+.rnode--ready {
+    border-color: rgba(120, 176, 255, 0.70);
+}
+
+.rnode--locked {
+    opacity: 0.45;
+}
+
+/* What the player clicked, and in red whatever it is waiting on. Both are a ring rather than a
+   fill, so a state and a selection can be true at the same time. */
+.rnode--picked {
+    border-color: rgb(252, 214, 58);
+    border-width: 2px;
+}
+
+.rnode--needed {
+    border-color: rgb(226, 92, 86);
+    border-width: 2px;
+}
+
+.rnode__body {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    justify-content: space-between;
+    padding-top: 8px;
+    padding-bottom: 7px;
+    padding-left: 10px;
+    padding-right: 7px;
+}
+
+/* 12px with letter spacing broke the longest names inside a word: "UCZENIE ZE WZMOCNIENIE M Z
+   OPINII LUDZI" across four lines, which then pushed the reward icons off the bottom of the
+   card. 11px and no tracking fits the longest name in the tree in three. */
+.rnode__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 11px;
+    -unity-font-style: bold;
+    white-space: normal;
+    color: rgb(228, 234, 246);
+}
+
+.rnode__rewards {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+.rnode__reward {
+    width: 20px;
+    height: 20px;
+    opacity: 0.85;
+    margin-right: 5px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.rnode__icon {
+    width: 60px;
+    flex-shrink: 0;
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.04);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* A node with no art yet keeps its plate rather than leaving a hole, which is the same rule
+   every loader here follows. */
+.rnode__icon--none {
+    background-color: rgba(255, 255, 255, 0.07);
 }

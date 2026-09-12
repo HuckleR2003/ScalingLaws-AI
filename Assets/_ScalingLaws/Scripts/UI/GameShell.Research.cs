@@ -139,20 +139,28 @@ namespace ScalingLaws.UI
                     map.Controls.AddToClassList("rmap__bar--inline");
                     head.Add(map.Controls);
 
-                    var track = new VisualElement();
-                    track.AddToClassList("tree-track");
-
-                    var spine = new VisualElement();
-                    spine.AddToClassList("tree-spine");
-                    track.Add(spine);
-
-                    for (var index = 0; index < nodes.Count; index++)
-                    {
-                        track.Add(BuildTreeNode(nodes[index], index % 2 == 0));
-                    }
-
-                    map.Surface.Add(track);
+                    var capability = BuildBoard(era, ResearchTrack.Capability, nodes);
+                    map.Surface.Add(capability);
+                    map.style.height = capability.BoardHeight + 24f;
                     section.Add(map);
+
+                    // **Where the player left off, not the beginning of an era they finished two
+                    // years ago.** Deferred a frame because nothing has been laid out when this
+                    // returns, so the card it is asked to centre on still has no position; the
+                    // page scroller learned the same lesson the same way.
+                    var lookFor = active?.Node ?? selectedResearch;
+
+                    if (lookFor != ResearchNodeId.None && nodes.Any(s => s.Node.Id == lookFor))
+                    {
+                        var target = lookFor;
+                        map.schedule.Execute(() =>
+                        {
+                            if (treePips.TryGetValue(target, out var card))
+                            {
+                                map.LookAt(card);
+                            }
+                        }).ExecuteLater(1);
+                    }
                 }
 
                 // The second line. A capability node opens a direction the company could not go at
@@ -167,17 +175,7 @@ namespace ScalingLaws.UI
                     bandHeading.AddToClassList("deepening__heading");
                     band.Add(bandHeading);
 
-                    var row = new VisualElement();
-                    row.AddToClassList("deepening__row");
-
-                    foreach (var standing in deepening)
-                    {
-                        var node = BuildTreeNode(standing, false);
-                        node.AddToClassList("tree-node--small");
-                        row.Add(node);
-                    }
-
-                    band.Add(row);
+                    band.Add(BuildBoard(era, ResearchTrack.ModelImprovement, deepening));
                     section.Add(band);
                 }
 
@@ -197,17 +195,7 @@ namespace ScalingLaws.UI
                     bandHeading.AddToClassList("deepening__heading--ops");
                     band.Add(bandHeading);
 
-                    var row = new VisualElement();
-                    row.AddToClassList("deepening__row");
-
-                    foreach (var standing in operations)
-                    {
-                        var node = BuildTreeNode(standing, false);
-                        node.AddToClassList("tree-node--small");
-                        row.Add(node);
-                    }
-
-                    band.Add(row);
+                    band.Add(BuildBoard(era, ResearchTrack.Operations, operations));
                     section.Add(band);
                 }
 
@@ -511,7 +499,7 @@ namespace ScalingLaws.UI
 
             // A finished node reads as finished from the ground up, not from a badge. This is the
             // state a player scans a fifty node tree for.
-            researchCard.EnableInClassList("rcard--done", standing.IsUnlocked);
+            researchCard.EnableInClassList("rnode--done", standing.IsUnlocked);
             researchCard.style.left = Mathf.Clamp(at.x, 8f, 1400f);
             researchCard.style.top = Mathf.Clamp(at.y, 8f, 700f);
 
@@ -519,7 +507,7 @@ namespace ScalingLaws.UI
             head.AddToClassList("rcard__head");
 
             var icon = new VisualElement();
-            icon.AddToClassList("rcard__icon");
+            icon.AddToClassList("rnode__icon");
 
             var art = ResearchIcons.Get(node.Id);
             if (art != null)
@@ -676,63 +664,113 @@ namespace ScalingLaws.UI
             return figure;
         }
 
-        private VisualElement BuildTreeNode(ResearchStanding standing, bool above)
+        /// <summary>
+        /// One track of one era, as a board with the lines drawn on it.
+        ///
+        /// The standings are handed in rather than looked up again, because the caller has
+        /// already filtered and sorted them and two readings of "which nodes are in this era"
+        /// is two chances to disagree. The placement comes from `ResearchLayout`, which is pure
+        /// and tested; nothing here decides where a node goes.
+        /// </summary>
+        private ResearchBoard BuildBoard(ResearchEra era, ResearchTrack track,
+            IReadOnlyList<ResearchStanding> standings)
+        {
+            var byId = standings.ToDictionary(standing => standing.Node.Id);
+            var slots = ResearchLayout.Place(era, track);
+
+            var board = new ResearchBoard();
+
+            board.Fill(slots,
+                id => byId.TryGetValue(id, out var standing) ? BuildBoardCard(standing) : null,
+                id => byId.ContainsKey(id));
+
+            return board;
+        }
+
+        /// <summary>
+        /// One node, as a card that says what it is and what it gives.
+        ///
+        /// **The reward icons are the answer to the report.** A tester asked us to simplify what
+        /// each node does because sometimes you do not know what something does, and the honest
+        /// reading of that is not shorter prose: it is that the board said nothing at all and
+        /// every word about a node lived behind a click. The icons are read off the node by
+        /// `ResearchRewards`, so a node that starts unlocking something new says so without
+        /// anybody remembering to edit a description.
+        /// </summary>
+        private VisualElement BuildBoardCard(ResearchStanding standing)
         {
             var node = standing.Node;
 
-            var column = new VisualElement();
-            column.AddToClassList("tree-node");
-            column.EnableInClassList("tree-node--above", above);
+            var card = new Button();
+            card.AddToClassList("rnode");
 
-            // ShowResearchCard was written in full and never called from anywhere, so clicking a
-            // node only moved a ring and the player was left to guess what the node did. The click
-            // carries its own position, which is why this is a ClickEvent rather than the Button
-            // action: the card opens where the finger is rather than in a fixed corner.
-            var button = new Button();
-            button.RegisterCallback<ClickEvent>(click =>
+            card.RegisterCallback<ClickEvent>(click =>
             {
                 selectedResearch = node.Id;
                 MarkTheRoadTo(node.Id);
                 ShowResearchCard(standing, click.position);
             });
 
-            button.AddToClassList("tree-pip");
-            treePips[node.Id] = button;
-            button.EnableInClassList("tree-pip--done", standing.IsUnlocked);
-            button.EnableInClassList("tree-pip--running", standing.IsInProgress);
-            button.EnableInClassList("tree-pip--ready", !standing.IsUnlocked && standing.CanStart);
+            treePips[node.Id] = card;
 
-            // **And the other half of the same fact.** Lighting the startable nodes without dimming
-            // the rest only makes the tree brighter; the player still clicks three that turn out to
-            // need a node they have not taken, which is what the tutorial kept catching.
-            button.EnableInClassList("tree-pip--locked",
+            card.EnableInClassList("rnode--done", standing.IsUnlocked);
+            card.EnableInClassList("rnode--running", standing.IsInProgress);
+            card.EnableInClassList("rnode--ready", !standing.IsUnlocked && standing.CanStart);
+
+            card.EnableInClassList("rnode--locked",
                 !standing.IsUnlocked && !standing.IsInProgress && !standing.CanStart);
-            button.EnableInClassList("tree-pip--picked", selectedResearch == node.Id);
+
+            card.EnableInClassList("rnode--picked", selectedResearch == node.Id);
+
+            var body = new VisualElement();
+            body.AddToClassList("rnode__body");
+
+            var name = new Label(node.DisplayName.ToUpperInvariant());
+            name.AddToClassList("rnode__name");
+            body.Add(name);
+
+            var rewards = new VisualElement();
+            rewards.AddToClassList("rnode__rewards");
+
+            foreach (var reward in ResearchRewards.Of(node))
+            {
+                var chip = new VisualElement();
+                chip.AddToClassList("rnode__reward");
+
+                var art = UnlockIcons.Get(reward.Kind);
+
+                if (art != null)
+                {
+                    chip.style.backgroundImage = new StyleBackground(art);
+                }
+
+                // The name of the thing, on hover. The icon says what kind it is and the board
+                // has no room for six words; the card behind the click still spells it out.
+                InsightTip.AttachKeyed(chip, Loc.T(UnlockIcons.KeyFor(reward.Kind)), reward.Name);
+
+                rewards.Add(chip);
+            }
+
+            body.Add(rewards);
+            card.Add(body);
 
             var icon = new VisualElement();
-            icon.AddToClassList("tree-pip__icon");
+            icon.AddToClassList("rnode__icon");
 
-            // One icon lookup, and it reads the catalogued names. The lookup this replaced
-            // guessed at names like research_code and research_chat that were never drawn, so every
-            // node fell through to the empty badge while the real files sat in Resources/Research.
-            var art = ResearchIcons.Get(node.Id);
-            if (art != null)
+            var portrait = ResearchIcons.Get(node.Id);
+
+            if (portrait != null)
             {
-                icon.style.backgroundImage = new StyleBackground(art);
+                icon.style.backgroundImage = new StyleBackground(portrait);
             }
             else
             {
-                icon.AddToClassList("tree-pip__icon--none");
+                icon.AddToClassList("rnode__icon--none");
             }
 
-            button.Add(icon);
-            column.Add(button);
+            card.Add(icon);
 
-            var label = new Label(node.DisplayName.ToUpperInvariant());
-            label.AddToClassList("tree-node__label");
-            column.Add(label);
-
-            return column;
+            return card;
         }
 
         /// <summary>Every pip currently on the board, so a selection can light one without a redraw.</summary>
@@ -752,15 +790,15 @@ namespace ScalingLaws.UI
         {
             foreach (var pair in treePips)
             {
-                pair.Value.EnableInClassList("tree-pip--needed", false);
-                pair.Value.EnableInClassList("tree-pip--picked", pair.Key == id);
+                pair.Value.EnableInClassList("rnode--needed", false);
+                pair.Value.EnableInClassList("rnode--picked", pair.Key == id);
             }
 
             foreach (var missing in ResearchTree.MissingPrerequisites(id, simulation.State.HasResearch))
             {
                 if (treePips.TryGetValue(missing, out var pip))
                 {
-                    pip.EnableInClassList("tree-pip--needed", true);
+                    pip.EnableInClassList("rnode--needed", true);
                 }
             }
         }

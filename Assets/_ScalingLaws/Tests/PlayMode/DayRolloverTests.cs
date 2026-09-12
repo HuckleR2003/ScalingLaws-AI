@@ -83,7 +83,7 @@ namespace ScalingLaws.Tests.PlayMode
             Assert.That(shell.OpenScreenByName("Research"), Is.True);
             yield return null;
 
-            var node = root.Q(className: "tree-pip");
+            var node = root.Q(className: "rnode");
             Assert.That(node, Is.Not.Null, "The research tree drew no nodes to click.");
 
             Click(node);
@@ -314,7 +314,7 @@ namespace ScalingLaws.Tests.PlayMode
             Assert.That(shell.OpenScreenByName("Research"), Is.True);
             yield return null;
 
-            var node = root.Q(className: "tree-pip");
+            var node = root.Q(className: "rnode");
             Assert.That(node, Is.Not.Null);
 
             Click(node);

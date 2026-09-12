@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace ScalingLaws.Data
@@ -45,6 +45,25 @@ namespace ScalingLaws.Data
         /// Read down a column and it is a real research programme: know the technique, then make it
         /// work at cluster scale, then make it work well.
         /// </summary>
+        /// <summary>
+        /// What a direction is called, as a phrase-book key.
+        ///
+        /// **Here rather than in the screen that draws the sliders**, because the research board
+        /// names them too: a node that lifts one of these ladders has to be able to say which one,
+        /// and two copies of that mapping is two places for a direction to be renamed in one of
+        /// them. Written out rather than built from the enum name, so
+        /// `LocalisationTests.EveryKeyTheInterfaceAsksForExists` can see every key.
+        /// </summary>
+        public static string KeyFor(ResearchDirection direction) => direction switch
+        {
+            ResearchDirection.Sparsity => "tech.sparsity.title",
+            ResearchDirection.Throughput => "tech.throughput.title",
+            ResearchDirection.Quality => "tech.quality.title",
+            ResearchDirection.Serving => "tech.serving.title",
+            ResearchDirection.Reasoning => "tech.reasoning.title",
+            _ => throw new System.ArgumentOutOfRangeException(nameof(direction), direction, null)
+        };
+
         public static readonly IReadOnlyDictionary<ResearchDirection, (ResearchNodeId Node, double Fraction)[]>
             Ladders = new Dictionary<ResearchDirection, (ResearchNodeId, double)[]>
             {

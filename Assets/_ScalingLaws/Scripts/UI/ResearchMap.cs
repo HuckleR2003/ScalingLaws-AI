@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using ScalingLaws.Data;
 using UnityEngine.UIElements;
@@ -126,6 +126,46 @@ namespace ScalingLaws.UI
         /// Never zooms in past 1.0. A short era filling a wide frame is a row of enormous circles,
         /// and fitting is about seeing all of it rather than about using all the space.
         /// </summary>
+        /// <summary>
+        /// Pans so that one thing on the board is in the middle of the frame.
+        ///
+        /// **Asked for by name**: opening RESEARCH should put the player where they left off
+        /// rather than at the beginning of an era they finished two years ago. It does not
+        /// change the zoom, because the zoom is the player's and a screen that both moved and
+        /// resized itself on every visit would be a screen nobody could keep their place in.
+        /// </summary>
+        public void LookAt(VisualElement target)
+        {
+            if (target == null || content == null)
+            {
+                return;
+            }
+
+            var box = target.layout;
+
+            if (float.IsNaN(box.x) || float.IsNaN(box.width))
+            {
+                return;
+            }
+
+            var frame = resolvedStyle.width;
+            var frameHeight = resolvedStyle.height;
+
+            if (float.IsNaN(frame) || frame <= 1f)
+            {
+                return;
+            }
+
+            var middle = new Vector2(box.x + box.width / 2f, box.y + box.height / 2f) * zoom;
+
+            pan = new Vector2(frame / 2f - middle.x, frameHeight / 2f - middle.y);
+
+            // The board is never dragged so far that it leaves the frame empty, which is the
+            // same rule the drag itself follows.
+            fitted = true;
+            Apply();
+        }
+
         public void Reset()
         {
             if (TryFit())

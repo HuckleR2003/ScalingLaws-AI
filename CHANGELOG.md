@@ -426,6 +426,19 @@ than grey text with the money shouting over it.
 
 ### Changed
 
+- **The research tree is a board you read rather than a row of circles.** Reported by Francisco:
+  *"can you simplify what each research node does? Sometimes you dont really know what something
+  does"*. Every node is a card now with its name, its picture, and a row of small icons saying what
+  it hands over: a family, a corpus, a compute tier, an upgrade line, a kind of model, or a ceiling
+  lifted. **Those icons are read off the node**, not written beside it, so a node that starts
+  unlocking something new says so without anybody remembering to edit a description.
+- **And the lines between nodes are drawn.** Every node has had its prerequisites in the catalogue
+  since the tree was written and the screen had never drawn one of them, so the order a player was
+  meant to read the tree in existed only inside the rules.
+- **Each era reads left to right and opens where you left off.** The board is laid out from the
+  prerequisites: the column is how deep a node sits in the chain, and no board is more than three
+  lanes deep, so an era grows sideways and is scrolled along rather than stacked into a tower.
+  Opening RESEARCH centres the era on whatever is being researched.
 - **The furniture in both rented floors is furniture.** Desks, office chairs in eight colours,
   monitors, a five metre kitchen run with a microwave and a water cooler, shelves, a canteen table,
   a conference table with six chairs, a printer and planted pots, all from packs already in the
