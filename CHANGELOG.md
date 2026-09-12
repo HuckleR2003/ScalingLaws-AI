@@ -435,6 +435,13 @@ than grey text with the money shouting over it.
 - **And the lines between nodes are drawn.** Every node has had its prerequisites in the catalogue
   since the tree was written and the screen had never drawn one of them, so the order a player was
   meant to read the tree in existed only inside the rules.
+- **A node title is 13px and drawn at full size.** The board for era one is about 1,500 pixels wide
+  and the band it sits in is about 1,200, so the map was shrinking the whole era to 85% to show all
+  of it, which took an 11px title to 9.4px. This project set itself a floor of 11px after a report
+  from somebody playing on a laptop, and the board went under it in the one way a stylesheet test
+  cannot see: the rule was obeyed in the sheet and broken by a transform. The board opens at full
+  size and is scrolled along, which is what an era of cards is for; DOPASUJ still gives the
+  overview.
 - **Each era reads left to right and opens where you left off.** The board is laid out from the
   prerequisites: the column is how deep a node sits in the chain, and no board is more than three
   lanes deep, so an era grows sideways and is scrolled along rather than stacked into a tower.

@@ -130,7 +130,10 @@ namespace ScalingLaws.UI
                     // The capability line, on a board you can lean into. It opens showing the whole
                     // era, because a map that starts zoomed in hides the thing the player came for;
                     // the wheel and the drag are for leaning closer, not for finding your way back.
-                    var map = new ResearchMap();
+                    // **At full size, and scrolled along.** Fitting a whole era into the band
+                    // shrinks the node titles below the size this project decided was readable,
+                    // and a board nobody can read is a board that may as well be a list.
+                    var map = new ResearchMap { FitsOnOpen = false };
 
                     // The zoom controls come out of the frame and sit beside the era title. Inside
                     // it they were absolutely positioned at the top right, which is directly over

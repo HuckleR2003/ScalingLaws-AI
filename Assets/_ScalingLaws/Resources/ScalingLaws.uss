@@ -18803,15 +18803,15 @@
     padding-right: 7px;
 }
 
-/* 12px with letter spacing broke the longest names inside a word: "UCZENIE ZE WZMOCNIENIE M Z
-   OPINII LUDZI" across four lines, which then pushed the reward icons off the bottom of the
-   card. 11px and no tracking fits the longest name in the tree in three. */
+/* 13px, on a card made wider to carry it. The node title is the one piece of text on this
+   screen a player has to read every time, and it was the smallest thing on it. Letter spacing
+   stays off: it was what broke the longest names inside a word rather than between them. */
 .rnode__name {
     -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
-    font-size: 11px;
+    font-size: 13px;
     -unity-font-style: bold;
     white-space: normal;
-    color: rgb(228, 234, 246);
+    color: rgb(232, 238, 250);
 }
 
 .rnode__rewards {

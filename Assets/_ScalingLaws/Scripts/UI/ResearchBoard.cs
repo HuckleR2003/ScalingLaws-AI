@@ -23,10 +23,10 @@ namespace ScalingLaws.UI
     public sealed class ResearchBoard : VisualElement
     {
         /// <summary>A card, and the gaps around it. The card is wide because it carries words.</summary>
-        public const float CardWidth = 230f;
+        public const float CardWidth = 258f;
 
-        public const float CardHeight = 92f;
-        public const float ColumnGap = 56f;
+        public const float CardHeight = 100f;
+        public const float ColumnGap = 48f;
         public const float RowGap = 18f;
         public const float Margin = 14f;
 

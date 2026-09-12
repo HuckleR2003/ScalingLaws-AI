@@ -46,6 +46,21 @@ namespace ScalingLaws.UI
 
         private bool dragging;
         private bool fitted;
+
+        /// <summary>
+        /// Whether this map shrinks itself to show everything when it first appears.
+        ///
+        /// **False for the research board, and that is the whole answer to a legibility
+        /// problem.** Fitting a 1,400px era into a 1,200px frame is a zoom of 0.85, which takes
+        /// an 11px node title to 9.4px: under the floor this project set for itself after a
+        /// report from somebody playing on a laptop, and under it in a way no stylesheet test
+        /// could see, because the rule was obeyed in the sheet and broken by a transform.
+        ///
+        /// The board is meant to be scrolled along anyway. That was the request: eras you move
+        /// left and right through, rather than a whole era shrunk to fit a band. DOPASUJ is
+        /// still there for anybody who wants the overview.
+        /// </summary>
+        public bool FitsOnOpen { get; set; } = true;
         private Vector2 grabbedAt;
         private Vector2 panWhenGrabbed;
 
@@ -182,9 +197,21 @@ namespace ScalingLaws.UI
         {
             // Once. After that the zoom belongs to the player, and refitting on every layout pass
             // would undo a drag the moment anything else on the page moved.
-            if (!fitted)
+            if (!fitted && FitsOnOpen)
             {
                 fitted = TryFit();
+                return;
+            }
+
+            // A board that does not fit still has to start somewhere the player can see. The left
+            // edge, with the same margin a fitted one uses, because an era reads left to right and
+            // its first column is where it begins.
+            if (!fitted && !float.IsNaN(resolvedStyle.width) && resolvedStyle.width > 1f)
+            {
+                fitted = true;
+                zoom = 1f;
+                pan = new Vector2(10f, 10f);
+                Apply();
             }
         }
 

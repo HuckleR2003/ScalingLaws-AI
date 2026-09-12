@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using ScalingLaws.Data;
 using UnityEditor;
@@ -32,9 +32,18 @@ namespace ScalingLaws.Editor
                     var columns = ResearchLayout.Columns(slots);
                     var rows = ResearchLayout.Rows(slots);
 
+                    // Read from the board rather than repeated here, or the probe reports the
+                    // size the cards used to be. It already did that once.
+                    var wide = UI.ResearchBoard.Margin * 2f
+                        + columns * (UI.ResearchBoard.CardWidth + UI.ResearchBoard.ColumnGap)
+                        - UI.ResearchBoard.ColumnGap;
+
+                    var tall = UI.ResearchBoard.Margin * 2f
+                        + rows * (UI.ResearchBoard.CardHeight + UI.ResearchBoard.RowGap)
+                        - UI.ResearchBoard.RowGap;
+
                     Debug.Log($"[board] {era}/{track}: {slots.Count} nodes, "
-                        + $"{columns} cols x {rows} rows, "
-                        + $"{columns * 266 - 56 + 28}px wide, {rows * 104 - 18 + 28}px tall");
+                        + $"{columns} cols x {rows} rows, {wide:0}px wide, {tall:0}px tall");
                 }
             }
         }
