@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -72,6 +72,11 @@ namespace ScalingLaws.Tests.EditMode
             static double Play(double price)
             {
                 var simulation = RunFor(400, 515);
+
+                // Metered, said out loud. A company opens on a subscription now, and
+                // `PaidPriceMultiplier` is read only on metered, so inheriting the default
+                // made both arms of this comparison the same company.
+                simulation.State.Monetization.Model = PricingModel.PayPerToken;
                 simulation.State.Monetization.PaidPriceMultiplier = price;
                 Ship(simulation, 60.0);
 

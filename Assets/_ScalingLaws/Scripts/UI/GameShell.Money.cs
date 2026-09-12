@@ -359,93 +359,52 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BuildBusinessScreen()
         {
-            var policy = state.Monetization;
-            var market = simulation.Market;
-
+            // **The strap quoted a price per token and the page opened on billing per token.** A
+            // player never meets a token price anywhere else: the creator asks for a monthly fee,
+            // the release card asks for a monthly fee. The company now bills that way by default
+            // and this page leads with it.
             var page = NewPage(Loc.T("page.business"),
                 Loc.T("page.business.strap",
-                    UiFormat.Money((long)(market.PricePerMillionTokensUsd * 1000))));
+                    UiFormat.Money((long)state.Monetization.SubscriptionPriceUsdPerMonth)));
 
             UiParts.ExplainPage(page, TechNotes.Revenue, TechNotes.Margin, TechNotes.TokenPrice);
 
-            // The two halves of one decision, side by side. What you charge and what you give
-            // away are the same question asked twice, and reading them a screen apart is what makes
-            // a generous free tier look free.
+            // **The pricing column is its own panel now.** It carries a locked slider, the four
+            // figures the official page already draws, and a picker saying which product those
+            // four are about. The lock is state that survives a day rolling over and has to be
+            // drivable from a test, which is more than a local in this method can hold.
+            businessPricing.Refresh();
+
             var priceRow = new VisualElement();
             priceRow.AddToClassList("panel-row");
             priceRow.AddToClassList("price-row");
+            priceRow.Add(businessPricing.Root);
+            page.Add(priceRow);
 
-            var pricing = new VisualElement();
-            pricing.AddToClassList("panel");
-            pricing.AddToClassList("price-row__half");
-            var pricingHeading = new Label(Loc.T("panel.pricing"));
-            pricingHeading.AddToClassList("panel__heading");
-            UiParts.ExplainHeading(pricingHeading, TechNotes.Pricing);
-            pricing.Add(pricingHeading);
+            // **Both marketing sections have gone to MARKETING**, which is what the note asked
+            // for and is plainly right: a tab named after the subject, and a spend panel on a
+            // page about pricing, were two doors into the same decision. What is left here is
+            // one subject, money coming in and the standing cost of the people who make it.
+            //
+            // Benefits stay because they are neither: a monthly cost that scales with headcount
+            // and belongs to no campaign. The team page is about who is here; this is about what
+            // the company spends on them.
+            page.Add(benefits.Build());
 
-            var modelRow = new VisualElement();
-            modelRow.style.flexDirection = FlexDirection.Row;
-            foreach (PricingModel option in Enum.GetValues(typeof(PricingModel)))
-            {
-                var captured = option;
-                var button = new Button(() =>
-                {
-                    policy.Model = captured;
-                    Show(Screen.Business);
-                })
-                { text = MonetizationCatalog.PricingName(option).ToUpperInvariant() };
-                button.AddToClassList("button");
-                button.style.marginRight = 8;
-                button.SetEnabled(policy.Model != option);
-                modelRow.Add(button);
-            }
+            return page;
+        }
 
-            pricing.Add(modelRow);
-
-            if (policy.Model == PricingModel.PayPerToken)
-            {
-                var priceLabel = new Label(
-                    Loc.T("money.your_rate", UiFormat.Number(policy.PaidPriceMultiplier, 2),
-                    UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))));
-                priceLabel.AddToClassList("field__label");
-                priceLabel.style.marginTop = 12;
-                pricing.Add(priceLabel);
-
-                var priceSlider = new Slider(0.1f, 3f) { value = (float)policy.PaidPriceMultiplier };
-                priceSlider.AddToClassList("field");
-                priceSlider.RegisterValueChangedCallback(evt =>
-                {
-                    policy.PaidPriceMultiplier = evt.newValue;
-                    Show(Screen.Business);
-                });
-                pricing.Add(priceSlider);
-                pricing.Add(Hint(Loc.T("money.metered.note")));
-            }
-            else if (policy.Model == PricingModel.Subscription)
-            {
-                var subLabel = new Label(
-                    Loc.T("money.monthly_fee", UiFormat.Money((long)policy.SubscriptionPriceUsdPerMonth),
-                    UiFormat.Money((long)(policy.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd) * 1000))));
-                subLabel.AddToClassList("field__label");
-                subLabel.style.marginTop = 12;
-                pricing.Add(subLabel);
-
-                var subSlider = new Slider(0f, 200f) { value = (float)policy.SubscriptionPriceUsdPerMonth };
-                subSlider.AddToClassList("field");
-                subSlider.RegisterValueChangedCallback(evt =>
-                {
-                    policy.SubscriptionPriceUsdPerMonth = evt.newValue;
-                    Show(Screen.Business);
-                });
-                pricing.Add(subSlider);
-                pricing.Add(Hint(Loc.T("money.subscription_hint")));
-            }
-            else
-            {
-                pricing.Add(Hint(Loc.T("money.free_only_hint")));
-            }
-
-            priceRow.Add(pricing);
+        /// <summary>
+        /// What the company gives away, drawn beside what it charges.
+        ///
+        /// Its own method because the pricing panel asks for it. The two belong side by side, which
+        /// is a decision from August worth keeping: what you charge and what you give away are the
+        /// same question asked twice, and reading them a screen apart is what makes a generous free
+        /// tier look free. The shell builds it because the shell owns the slider that writes it.
+        /// </summary>
+        private VisualElement BuildFreeTierPanel()
+        {
+            var policy = state.Monetization;
 
             var free = new VisualElement();
             free.AddToClassList("panel");
@@ -508,128 +467,9 @@ namespace ScalingLaws.UI
                 Loc.T("money.tokens_value", UiFormat.Billions(state.LifetimeFreeTokensBillions))));
 
             free.Add(Hint(Loc.T("money.free_hint")));
-            free.AddToClassList("price-row__half");
-            priceRow.Add(free);
-            page.Add(priceRow);
-
-            // **Three short cards in a row, not three tall panels stacked.** Each of the three used
-            // to show everything it had, all the time: six channel tiles at 152x208 twice over, then
-            // a list of benefits, so the last of them began about two screens down and a player
-            // gave up before finding the insurance. Nothing here is gone - the card says what is
-            // running and what it costs, and the full panel opens underneath when one is picked.
-            page.Add(BuildBusinessTrio());
-
-            if (businessOpen != BusinessSection.None)
-            {
-                page.Add(BuildOpenBusinessSection());
-            }
-
-            return page;
+            return free;
         }
 
-        /// <summary>Which of the three is expanded. Not saved: it is where the cursor is, not state.</summary>
-        private enum BusinessSection
-        {
-            None = 0,
-            CompanyMarketing = 1,
-            ModelMarketing = 2,
-            Benefits = 3
-        }
-
-        private BusinessSection businessOpen = BusinessSection.None;
-
-        private VisualElement BuildBusinessTrio()
-        {
-            var row = new VisualElement();
-            row.AddToClassList("btrio");
-
-            var policy = state.Monetization;
-
-            // The company/model split lives on the policy as two daily figures. A campaign carries
-            // channels, a target and a term and no kind at all, so counting them per kind would be
-            // a second answer to a question the policy already answers exactly.
-            var company = policy.CompanyMarketingDailyUsd;
-            var model = policy.ModelMarketingDailyUsd;
-
-            row.Add(TrioCard(BusinessSection.CompanyMarketing,
-                Loc.T("biz.company_marketing"),
-                company > 0L ? Loc.T("biz.running") : Loc.T("biz.nothing_running"),
-                UiFormat.Money(company) + Loc.T("biz.a_day"),
-                company > 0L));
-
-            row.Add(TrioCard(BusinessSection.ModelMarketing,
-                Loc.T("biz.model_marketing"),
-                model > 0L ? Loc.T("biz.running") : Loc.T("biz.nothing_running"),
-                UiFormat.Money(model) + Loc.T("biz.a_day"),
-                model > 0L));
-
-            // **The one the author could not find, and its card leads with the per-head price.**
-            // The old panel printed a figure per employee without saying what it was per, which he
-            // reported as the thing that made it unreadable once he had finally scrolled to it.
-            var offered = state.Benefits.Count;
-            var perHead = (long)Math.Round((double)BenefitCatalog.MonthlyCostPerHead(state.Benefits));
-
-            row.Add(TrioCard(BusinessSection.Benefits,
-                Loc.T("biz.benefits"),
-                offered > 0
-                    ? Loc.T("biz.offering", offered.ToString())
-                    : Loc.T("biz.offering_none"),
-                UiFormat.Money(perHead) + Loc.T("biz.per_person_a_month"),
-                offered > 0));
-
-            return row;
-        }
-
-        /// <summary>
-        /// One card. Clicking it opens the panel underneath, or closes it if it is already open.
-        /// </summary>
-        private VisualElement TrioCard(BusinessSection section, string title, string state_,
-            string figure, bool live)
-        {
-            var open = businessOpen == section;
-
-            var card = new Button(() =>
-            {
-                businessOpen = open ? BusinessSection.None : section;
-                Show(Screen.Business);
-            });
-
-            card.AddToClassList("btrio__card");
-            card.EnableInClassList("btrio__card--open", open);
-            card.EnableInClassList("btrio__card--live", live);
-
-            var heading = new Label(title);
-            heading.AddToClassList("btrio__title");
-            card.Add(heading);
-
-            var amount = new Label(figure);
-            amount.AddToClassList("btrio__figure");
-            card.Add(amount);
-
-            var status = new Label(state_);
-            status.AddToClassList("btrio__status");
-            card.Add(status);
-
-            var more = new Label(open ? Loc.T("biz.close") : Loc.T("biz.open"));
-            more.AddToClassList("btrio__more");
-            card.Add(more);
-
-            return card;
-        }
-
-        private VisualElement BuildOpenBusinessSection() => businessOpen switch
-        {
-            BusinessSection.CompanyMarketing => BuildCampaignPanel(CampaignKind.Company,
-                Loc.T("biz.company_marketing"), Loc.T("biz.company_marketing.blurb")),
-
-            BusinessSection.ModelMarketing => BuildCampaignPanel(CampaignKind.Model,
-                Loc.T("biz.model_marketing"), Loc.T("biz.model_marketing.blurb")),
-
-            // Benefits sit on the business page rather than on the team page, because what they are
-            // is a standing monthly cost that scales with headcount. The team page is about who is
-            // here; this is about what the company spends.
-            _ => benefits.Build()
-        };
 
         private VisualElement BuildCampaignPanel(CampaignKind kind, string heading, string blurb)
         {
@@ -668,7 +508,7 @@ namespace ScalingLaws.UI
                     policy.ModelMarketingDailyUsd = 0;
                 }
 
-                Show(Screen.Business);
+                Show(Screen.Marketing);
             })
             { text = Loc.T("common.stop") };
             stop.AddToClassList("card");
@@ -689,7 +529,7 @@ namespace ScalingLaws.UI
                         policy.ModelMarketingDailyUsd = captured.DailyBudgetUsd;
                     }
 
-                    Show(Screen.Business);
+                    Show(Screen.Marketing);
                 });
                 card.AddToClassList("card");
                 card.EnableInClassList("card--ahead", current == campaign.DailyBudgetUsd);
@@ -725,6 +565,30 @@ namespace ScalingLaws.UI
         }
 
         private ReleaseConfirmDialog releaseConfirm;
+
+        /// <summary>
+        /// The pricing column, kept across rebuilds because the lock is state.
+        ///
+        /// Built lazily from `simulation`, which is not assigned when the shell is constructed.
+        /// Holding it rather than rebuilding it is what lets CHANGE survive a day rolling over:
+        /// `Show` runs about every second and a half, and a lock that reset itself on the tick
+        /// would be a control the player can never finish using.
+        /// </summary>
+        private BusinessPricingPanel businessPricingPanel;
+
+        private readonly ConfirmCard businessConfirm = new();
+
+        private BusinessPricingPanel businessPricing =>
+            businessPricingPanel ??= new BusinessPricingPanel(
+                () => simulation,
+                () =>
+                {
+                    RefreshChrome();
+                    Show(Screen.Business);
+                },
+                (title, body, confirmLabel, onYes) =>
+                    businessConfirm.Ask(shellRoot, title, body, confirmLabel, onYes),
+                BuildFreeTierPanel);
 
         private VisualElement BuildReleaseScreen()
         {

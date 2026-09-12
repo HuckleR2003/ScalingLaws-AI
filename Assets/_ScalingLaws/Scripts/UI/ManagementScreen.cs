@@ -25,9 +25,9 @@ namespace ScalingLaws.UI
     /// </summary>
     public sealed class ManagementScreen
     {
-        private static readonly Color Good = new(0.30f, 0.68f, 0.38f);
+        private static readonly Color Good = UiParts.Good;
         private static readonly Color Warn = new(0.86f, 0.62f, 0.22f);
-        private static readonly Color Bad = new(0.82f, 0.28f, 0.26f);
+        private static readonly Color Bad = UiParts.Bad;
         private static readonly Color Blue = new(0.36f, 0.62f, 0.88f);
         private static readonly Color Violet = new(0.58f, 0.48f, 0.86f);
 
@@ -534,8 +534,7 @@ namespace ScalingLaws.UI
             return panel;
         }
 
-        private double PaidShare() =>
-            Math.Clamp(1.0 - simulation.State.Monetization.FreeShareOfTokens, 0.0, 1.0);
+        private double PaidShare() => simulation.State.Monetization.PaidShareOfTokens;
 
         private static VisualElement Plan(string name, string price, string per, string[] lines,
             bool favoured)
@@ -663,7 +662,7 @@ namespace ScalingLaws.UI
 
         private void BuildDesk(ProductStanding product)
         {
-            Root.Add(BuildKpis(product));
+            Root.Add(UiParts.KpiRow(product, PaidShare()));
             Root.Add(BuildFlagshipControl());
             Root.Add(BuildStandingPanel());
             Root.Add(BuildAudienceTable());
@@ -737,11 +736,11 @@ namespace ScalingLaws.UI
             var row = new VisualElement();
             row.AddToClassList("mg-kpis");
 
-            row.Add(Kpi(Loc.T("mg.kpi_shipped"), history.Count.ToString(),
+            row.Add(UiParts.KpiTile(Loc.T("mg.kpi_shipped"), history.Count.ToString(),
                 Loc.T("mg.still_on_sale", live.ToString()), null));
-            row.Add(Kpi(Loc.T("mg.kpi_earned_ever"), UiFormat.Money(earned),
+            row.Add(UiParts.KpiTile(Loc.T("mg.kpi_earned_ever"), UiFormat.Money(earned),
                 Loc.T("mg.across_every_model"), null));
-            row.Add(Kpi(Loc.T("mg.kpi_best_ever"), UiFormat.Number(best),
+            row.Add(UiParts.KpiTile(Loc.T("mg.kpi_best_ever"), UiFormat.Number(best),
                 Loc.T("mg.frontier_is",
                     UiFormat.Number(simulation.Market.FrontierCapability)), null));
 
@@ -858,61 +857,6 @@ namespace ScalingLaws.UI
             Refresh();
         }
 
-        private VisualElement BuildKpis(ProductStanding product)
-        {
-            var hour = 12.0;
-
-            var row = new VisualElement();
-            row.AddToClassList("mg-kpis");
-
-            row.Add(Kpi(Loc.T("mg.kpi_registered"), UiFormat.Count(product.Subscribers),
-                Loc.T("mg.on_at_midday",
-                    UiFormat.Count(Concurrency.OnlineAt(product.Subscribers, hour))),
-                null));
-
-            row.Add(Kpi(Loc.T("mg.kpi_paying"), UiFormat.Count(product.Subscribers * PaidShare()),
-                Loc.T("mg.of_them", UiFormat.Percent(PaidShare(), 0)), null));
-
-            // **The four tiles have to be about the same thing.** The two above are this product
-            // and this one was handed `MonthEarningsUsd`, which on a product tab used to carry the
-            // model's whole lifetime take under a caption saying THIS MONTH, and the fourth tile
-            // carried its user count drawn as money. This one is the product's own recorded month
-            // and the last is the company, which its own foot line already says.
-            row.Add(Kpi(Loc.T("mg.kpi_earned_recent"), UiFormat.Money(product.OwnRecentUsd),
-                Loc.T("mg.lifetime_is", UiFormat.Money(product.OwnLifetimeUsd)), null));
-
-            row.Add(Kpi(Loc.T("mg.kpi_net_month"), UiFormat.Money(product.MonthNetUsd),
-                product.IsProfitable ? Loc.T("mg.in_the_black") : Loc.T("mg.burning_cash"),
-                product.IsProfitable));
-
-            return row;
-        }
-
-        private static VisualElement Kpi(string label, string value, string foot, bool? good)
-        {
-            var tile = new VisualElement();
-            tile.AddToClassList("mg-kpi");
-
-            var caption = new Label(label);
-            caption.AddToClassList("mg-kpi__label");
-            tile.Add(caption);
-
-            var amount = new Label(value);
-            amount.AddToClassList("mg-kpi__value");
-
-            if (good.HasValue)
-            {
-                amount.style.color = good.Value ? Good : Bad;
-            }
-
-            tile.Add(amount);
-
-            var under = new Label(foot);
-            under.AddToClassList("mg-kpi__foot");
-            tile.Add(under);
-
-            return tile;
-        }
 
         /// <summary>
         /// The management bar for the thing currently on sale.

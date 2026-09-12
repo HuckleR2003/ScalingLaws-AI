@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -28,12 +28,24 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         [Test]
-        public void ACompanyStartsMeteredAtTheMarketRateWithNoFreeTier()
+        public void ACompanyStartsOnASubscriptionAtTheMarketRateWithNoFreeTier()
         {
             var policy = new CompanyState("Default").Monetization;
 
-            Assert.That(policy.Model, Is.EqualTo(PricingModel.PayPerToken));
-            Assert.That(policy.PaidPriceMultiplier, Is.EqualTo(1.0).Within(1e-9));
+            // **The claim this test has always made, now said about the right control.** It
+            // read `PayPerToken`, and nothing in the game ever asked the player for a token
+            // price: the creator and the release card both ask for a monthly fee, and that fee
+            // reached the version line and the release screen without ever reaching the till.
+            Assert.That(policy.Model, Is.EqualTo(PricingModel.Subscription),
+                "A company opens on a billing model nothing in the game asks it about.");
+
+            // **At the market rate**, which is the half of the old name worth keeping. Switching
+            // the opening model without this would be a 75% discount nobody chose.
+            Assert.That(
+                policy.RatePerMillionTokensUsd(MarketModel.InitialPricePerMillionTokensUsd),
+                Is.EqualTo(MarketModel.InitialPricePerMillionTokensUsd).Within(1e-9),
+                "A company that has touched nothing is not charging what the market charges, "
+                + "so the opening position is a decision the player never made.");
             Assert.That(policy.FreeTierTokensPerUserPerDay, Is.Zero);
             Assert.That(policy.TotalMarketingDailyUsd, Is.Zero);
             Assert.That(policy.FreeShareOfTokens, Is.EqualTo(MonetizationCatalog.BaseFreeShare).Within(1e-9));
@@ -120,10 +132,15 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void UndercuttingTheMarketWinsShareAndChargingOverItLosesShare()
         {
+            // Metered, stated rather than inherited: `PaidPriceMultiplier` is the metered lever
+            // and a company no longer opens on metered, so leaving this to the default made the
+            // test set a number nothing read and then compare two identical companies.
             var cheap = Live(200_000_000, GameDate.FromCalendar(2024, 6, 1));
+            cheap.State.Monetization.Model = PricingModel.PayPerToken;
             cheap.State.Monetization.PaidPriceMultiplier = 0.35;
 
             var dear = Live(200_000_000, GameDate.FromCalendar(2024, 6, 1));
+            dear.State.Monetization.Model = PricingModel.PayPerToken;
             dear.State.Monetization.PaidPriceMultiplier = 2.5;
 
             var cheapShare = cheap.AdvanceDay().MarketShare;

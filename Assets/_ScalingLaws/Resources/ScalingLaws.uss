@@ -18112,3 +18112,107 @@
     border-radius: 4px;
     background-color: rgb(226, 168, 92);
 }
+
+/* ---- business: what the company charges ---------------------------------------------------
+
+   The lock is the point of this block. A subscription price is the one slip in this game every
+   customer feels the same day, so the slider reads as a control that is off until asked. */
+.bizprice {
+    flex-grow: 1;
+    flex-shrink: 0;
+}
+
+/* The fee and the free tier are one row, and the four figures go the width of both. */
+.bizprice__pair {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+.bizprice__half {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 0;
+    margin-right: 16px;
+}
+
+.bizprice__models {
+    flex-direction: row;
+    margin-bottom: 12px;
+}
+
+.bizprice__model {
+    margin-right: 8px;
+    margin-left: 0;
+    margin-top: 0;
+}
+
+.bizprice__model--on {
+    border-left-color: rgb(226, 168, 92);
+    border-left-width: 3px;
+}
+
+.bizprice__fee {
+    flex-shrink: 0;
+}
+
+.bizprice__reading {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(236, 242, 250);
+    margin-bottom: 2px;
+}
+
+.bizprice__against {
+    font-size: 12px;
+    color: rgb(150, 162, 180);
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.bizprice__against--steep {
+    color: rgb(218, 126, 96);
+}
+
+.bizprice__sliderrow {
+    flex-direction: row;
+    align-items: center;
+}
+
+.bizprice__slider {
+    flex-grow: 1;
+    max-width: none;
+    margin-right: 12px;
+}
+
+.bizprice__act {
+    margin: 0;
+    width: 116px;
+    flex-shrink: 0;
+}
+
+.bizprice__act--armed {
+    background-color: rgb(46, 104, 66);
+    border-left-color: rgb(96, 182, 122);
+}
+
+.bizprice__cancel {
+    margin: 0 0 0 8px;
+    width: 92px;
+    flex-shrink: 0;
+}
+
+.bizprice__scope {
+    margin-top: 16px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.bizprice__picker {
+    max-width: 280px;
+}
+
+/* The confirming card. Same sheet as a notice, and the buttons say which way is which. */
+.notice--ask {
+    border-left-color: rgb(226, 168, 92);
+}

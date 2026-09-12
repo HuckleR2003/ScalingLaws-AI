@@ -207,6 +207,32 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **The price you set when shipping a model is the price the company charges.** It was not.
+  A new company billed per token, and the monthly fee is read only on a subscription, so the
+  figure asked for in the creator and again on the release card reached the version list, was
+  printed back on the release screen as what people pay, and never entered the takings. The
+  company charged the market rate whatever the card said. A company now opens on a subscription,
+  which is the one thing every other screen in the game asks about.
+- **And the opening fee is the market rate, not a quiet discount.** The old default of $20 a
+  month converts to a quarter of what the market charges, so switching billing models on its own
+  would have handed every new campaign a 75% price cut nobody chose. It opens at the figure that
+  charges exactly the going rate on day one, derived from the two numbers behind it rather than
+  typed in.
+- **A consequence worth knowing before you meet it:** the going rate falls by about half a year
+  and a monthly fee does not, so a price left alone becomes an expensive one on its own, and far
+  enough past the market it gets written about. The page says where the fee sits against the
+  market, in a sentence, every time you open it.
+- **The price cannot be changed by brushing the control.** The slider is locked. CHANGE opens it,
+  APPLY commits it, and a card comes up first saying the subscription is one price for everything
+  the company sells. That card appears every time and not only on ALL MODELS, because the change
+  is always the whole catalogue: the game prices one service, on purpose.
+- **The four figures from the official page are on it.** Registered, paying, the last 31 days and
+  the month's net, under the fee rather than a screen away from it, and a picker above them says
+  which product they are about. It is the same element the official page draws, so the two cannot
+  drift apart.
+- **Both marketing sections moved to MARKETING.** A tab named after the subject and a spend panel
+  on the pricing page were two doors into one decision. BUSINESS is now money coming in and the
+  standing cost of the people who make it.
 - **The architecture screen was quoting a length the programme does not run for.** DURATION read
   the designer's own figure, and the founder, the research staff and the home country all move a
   programme's length before it reaches the calendar. A default company opening the screen was told
@@ -220,7 +246,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,162 EditMode tests and 41 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,174 EditMode tests and 41 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -233,6 +259,15 @@ model history that saves already carry, so an existing campaign reads correctly 
   The step that follows the offer waits on `arch_built`, and `AlreadyDone` reports it satisfied
   when nothing is running, so a player who declined arrives with nothing in flight and unwinds
   through it. A branch would have been a second shape of step for one decision.
+- `MonetizationPolicy.OpeningSubscriptionUsdPerMonth` is written as the arithmetic that makes it
+  neutral rather than as a number, so the two constants behind it cannot drift apart without it
+  moving with them. Same rule as safety effort x1 and the skill baseline.
+- `UiParts.KpiRow` and `KpiTile` moved out of `ManagementScreen` rather than being copied, and
+  `MonetizationPolicy.PaidShareOfTokens` replaces the same subtraction written twice.
+- **Two marketing mechanisms still exist and that is now visible on one screen.** Booked channels
+  feed `Awareness`; the flat daily figures feed `MonetizationPolicy.ModelAwareness` and the brand
+  directly. Folding them into one is a balance change rather than a screen change, so it has not
+  been done, and the comment above the moved panel says so.
 - `ArchitectureCreatorPanel.ProgrammeDurationDays` is the one answer to how long a family
   programme takes, and it is the scaled one. The reading and the tour's button read it.
 - The tutorial strip has never been rendered into a frame until now, and it is the one thing in

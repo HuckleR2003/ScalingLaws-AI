@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -282,6 +282,14 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Company();
             simulation.SetRentedPetaflops(300.0);
+
+            // **Metered, and that is the whole of "nothing going wrong".** A company opens on a
+            // subscription now, and the market price halves every year, so a fixed monthly fee
+            // crosses `ModelScandals.PricyAbove` at around day 290 and earns a pricing scandal.
+            // That is the design rather than a fault: on a subscription, standing still is a
+            // decision. This fixture is about incidents, so the company tracks the market and the
+            // two years really are quiet.
+            simulation.State.Monetization.Model = PricingModel.PayPerToken;
 
             simulation.State.AddDeployedModel(new DeployedModel(
                 "Subject", ArchitectureId.DenseTransformer, 40.0,

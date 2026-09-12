@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using System.Linq;
 using ScalingLaws.Data;
@@ -17,6 +17,83 @@ namespace ScalingLaws.UI
     public static class UiParts
     {
         private static readonly Color DefaultFill = new(0.36f, 0.62f, 0.88f);
+
+        /// <summary>The two verdict colours. Public because the screens that draw a figure in
+        /// one of them must not each keep their own idea of what green is.</summary>
+        public static readonly Color Good = new(0.30f, 0.68f, 0.38f);
+
+        public static readonly Color Bad = new(0.82f, 0.28f, 0.26f);
+
+        /// <summary>
+        /// The four figures a product is judged on, in the tiles the official page already drew.
+        ///
+        /// **Moved rather than copied**, which is the rule this file exists for. The BUSINESS
+        /// page was asked for "the same four tiles as the official page" and writing a second set
+        /// would have been four captions and four formats to keep in step with the originals,
+        /// which is precisely how the MODEL table came to quote different figures from the banner
+        /// beside it.
+        ///
+        /// `paidShare` is passed rather than read, because the caller already holds the policy
+        /// and this file has no business deciding which company it is talking about.
+        /// </summary>
+        public static VisualElement KpiRow(ProductStanding product, double paidShare)
+        {
+            // Midday, because a headcount at 4am says nothing about a service.
+            const double Hour = 12.0;
+
+            var row = new VisualElement();
+            row.AddToClassList("mg-kpis");
+
+            row.Add(KpiTile(Loc.T("mg.kpi_registered"), UiFormat.Count(product.Subscribers),
+                Loc.T("mg.on_at_midday",
+                    UiFormat.Count(Concurrency.OnlineAt(product.Subscribers, Hour))),
+                null));
+
+            row.Add(KpiTile(Loc.T("mg.kpi_paying"),
+                UiFormat.Count(product.Subscribers * paidShare),
+                Loc.T("mg.of_them", UiFormat.Percent(paidShare, 0)), null));
+
+            // **The four tiles have to be about the same thing.** The two above are this product
+            // and this one was handed `MonthEarningsUsd`, which on a product tab used to carry
+            // the model's whole lifetime take under a caption saying THIS MONTH, and the fourth
+            // tile carried its user count drawn as money. This one is the product's own recorded
+            // month and the last is the company, which its own foot line already says.
+            row.Add(KpiTile(Loc.T("mg.kpi_earned_recent"), UiFormat.Money(product.OwnRecentUsd),
+                Loc.T("mg.lifetime_is", UiFormat.Money(product.OwnLifetimeUsd)), null));
+
+            row.Add(KpiTile(Loc.T("mg.kpi_net_month"), UiFormat.Money(product.MonthNetUsd),
+                product.IsProfitable ? Loc.T("mg.in_the_black") : Loc.T("mg.burning_cash"),
+                product.IsProfitable));
+
+            return row;
+        }
+
+        /// <summary>One tile: a caption, the figure, and a line saying what it is against.</summary>
+        public static VisualElement KpiTile(string label, string value, string foot, bool? good)
+        {
+            var tile = new VisualElement();
+            tile.AddToClassList("mg-kpi");
+
+            var caption = new Label(label);
+            caption.AddToClassList("mg-kpi__label");
+            tile.Add(caption);
+
+            var amount = new Label(value);
+            amount.AddToClassList("mg-kpi__value");
+
+            if (good.HasValue)
+            {
+                amount.style.color = good.Value ? Good : Bad;
+            }
+
+            tile.Add(amount);
+
+            var under = new Label(foot);
+            under.AddToClassList("mg-kpi__foot");
+            tile.Add(under);
+
+            return tile;
+        }
 
         /// <summary>A caption, a slim proportion bar, and the figure it represents.</summary>
         public static VisualElement ThinBarRow(string label, string value, double fraction,

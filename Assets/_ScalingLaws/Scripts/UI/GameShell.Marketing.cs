@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -62,6 +62,18 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             page.Add(channels);
             page.Add(BuildRunningPanel());
 
+            // **Moved off the BUSINESS page, where it was a second door into this subject.**
+            //
+            // Worth being exact about what this is, because it is not the same machine as the
+            // channels above it and the two now sit on one screen. A campaign books channels at
+            // an audience for a term and feeds `Awareness`. These two are a flat daily figure
+            // that feeds `MonetizationPolicy.ModelAwareness` and the company brand directly.
+            // They are two mechanisms for one subject, which is the thing this project does not
+            // do, and folding them into one is a balance change rather than a screen change.
+            // Putting them where a player looks for marketing is the half that is a screen
+            // change, and the heading says which is which.
+            page.Add(BuildDirectSpend());
+
             // **Out of the flow, pinned to the bottom right.** Booking used to be a panel stacked
             // under the channels, which meant picking a channel scrolled the thing you pick it
             // into off the screen. It is a control surface, not a section, so it behaves like one:
@@ -69,6 +81,34 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             page.Add(BuildBookingPanel());
 
             return page;
+        }
+
+        /// <summary>
+        /// The flat daily spend, company and model, in one row.
+        ///
+        /// Two panels rather than one, because the money lands in two different places: the
+        /// company figure reaches the standing and the model figure reaches the brand through
+        /// an awareness pool that leaks the moment it stops being topped up.
+        /// </summary>
+        private VisualElement BuildDirectSpend()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("panel-row");
+            row.AddToClassList("price-row");
+
+            var company = BuildCampaignPanel(CampaignKind.Company,
+                Loc.T("biz.company_marketing"), Loc.T("biz.company_marketing.blurb"));
+
+            company.AddToClassList("price-row__half");
+            row.Add(company);
+
+            var model = BuildCampaignPanel(CampaignKind.Model,
+                Loc.T("biz.model_marketing"), Loc.T("biz.model_marketing.blurb"));
+
+            model.AddToClassList("price-row__half");
+            row.Add(model);
+
+            return row;
         }
 
         /// <summary>How well known the company is, audience by audience.</summary>

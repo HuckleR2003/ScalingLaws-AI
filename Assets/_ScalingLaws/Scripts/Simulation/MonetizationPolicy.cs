@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
@@ -20,13 +20,46 @@ namespace ScalingLaws.Simulation
     public sealed class MonetizationPolicy
     {
         private double paidPriceMultiplier = 1.0;
-        private double subscriptionPriceUsdPerMonth = 20.0;
+        private double subscriptionPriceUsdPerMonth = OpeningSubscriptionUsdPerMonth;
         private double freeTierTokensPerUserPerDay;
         private long companyMarketingDailyUsd;
         private long modelMarketingDailyUsd;
         private double modelAwareness;
 
-        public PricingModel Model { get; set; } = PricingModel.PayPerToken;
+        /// <summary>
+        /// The monthly fee that charges exactly the market rate on the first day.
+        ///
+        /// **Derived, because the alternative is a silent price cut.** A company opens on a
+        /// subscription now, and the old default of $20 a month converts to $5 per million
+        /// tokens against a market opening at $20, so simply switching which billing model a
+        /// company starts on would have handed every new campaign a 75% discount it never asked
+        /// for and no screen ever mentioned.
+        ///
+        /// This is the neutral-option rule the rest of the game already lives under: safety
+        /// effort x1 is exactly 1.0, the skill baseline is the neutral point rather than the
+        /// floor, and a player who has not touched a control has not made a decision. Written as
+        /// the arithmetic rather than as 80.0 so the two constants behind it cannot drift apart
+        /// without this moving with them.
+        /// </summary>
+        public const double OpeningSubscriptionUsdPerMonth =
+            MarketModel.InitialPricePerMillionTokensUsd
+            * (MonetizationCatalog.TokensPerSubscriberPerMonth / 1_000_000.0);
+
+        /// <summary>
+        /// How the company bills, and it opens on the one the rest of the game asks about.
+        ///
+        /// **It opened on `PayPerToken`, and nothing in the game ever asks for a token price.** The
+        /// creator asks for a monthly subscription, the release card asks for a monthly
+        /// subscription, and the release screen prints that figure back as what people pay. None of
+        /// it reached the till: `RatePerMillionTokensUsd` reads the subscription only on a
+        /// subscription, so a fresh company charged the market rate times one whatever the player
+        /// set, and the only price control the game offers moved no number at all.
+        ///
+        /// Metered and free are still here and still reachable from the BUSINESS page. What changed
+        /// is which one a company starts on, and it is now the one every other screen is written
+        /// for.
+        /// </summary>
+        public PricingModel Model { get; set; } = PricingModel.Subscription;
 
         /// <summary>Position against the market rate. Only used when charging per token.</summary>
         public double PaidPriceMultiplier
@@ -39,7 +72,8 @@ namespace ScalingLaws.Simulation
         public double SubscriptionPriceUsdPerMonth
         {
             get => subscriptionPriceUsdPerMonth;
-            set => subscriptionPriceUsdPerMonth = Math.Clamp(SimUnits.Finite(value, 20.0), 0.0, 2000.0);
+            set => subscriptionPriceUsdPerMonth = Math.Clamp(
+                SimUnits.Finite(value, OpeningSubscriptionUsdPerMonth), 0.0, 2000.0);
         }
 
         /// <summary>Tokens a free account gets each day. Zero means no free tier at all.</summary>
@@ -78,6 +112,15 @@ namespace ScalingLaws.Simulation
         public double ReachMultiplier => Model == PricingModel.FreeOnly
             ? 1.0 + MonetizationCatalog.FreeTierReachBonus
             : 1.0 + MonetizationCatalog.FreeTierReachBonus * Generosity;
+
+        /// <summary>
+        /// Share of served tokens somebody is actually invoiced for.
+        ///
+        /// One line, and it lives here because two screens were each computing it from
+        /// `FreeShareOfTokens` in their own private helper. Two copies of one subtraction is how
+        /// a page ends up quoting a payer count the page beside it disagrees with.
+        /// </summary>
+        public double PaidShareOfTokens => Math.Clamp(1.0 - FreeShareOfTokens, 0.0, 1.0);
 
         /// <summary>Share of served tokens that produce no revenue at all.</summary>
         public double FreeShareOfTokens => Model == PricingModel.FreeOnly
