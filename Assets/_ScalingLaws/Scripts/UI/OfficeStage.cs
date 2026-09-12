@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
@@ -33,6 +33,22 @@ namespace ScalingLaws.UI
 
         private GameObject loadedRoom;
         private OfficeTier? shownTier;
+
+        /// <summary>
+        /// Everything standing in the office that is not a child of the room transform.
+        ///
+        /// **The author furnished the game scene by hand and not all of it landed under one
+        /// parent.** Hiding the baked room walks the renderers under that transform, which is
+        /// most of the house and not the sofa, the nightstand, the vases or the gamepad. Those
+        /// stayed lit after a move and were drawn through the new floor: two offices in one
+        /// frame, and the first thing a player sees on the day they move out.
+        ///
+        /// Collected by where they stand rather than by name or by parent, because the thing
+        /// they have in common is that they are in the room. Collected once, before anything is
+        /// spawned, so the founder, the staff, the racks and the furniture the player buys are
+        /// never in this list: those belong to whichever room is current and are handled by it.
+        /// </summary>
+        private List<MeshRenderer> bakedExtras;
 
         /// <summary>
         /// Binds to whatever the game scene already has.
@@ -196,9 +212,66 @@ namespace ScalingLaws.UI
 
             // The baked room's own geometry is hidden rather than destroyed, because the camera and
             // the key light are its children and destroying it would take the office view with it.
-            SetGeometryVisible(bakedRoom, loadedRoom == null);
+            var showBaked = loadedRoom == null;
+
+            SetGeometryVisible(bakedRoom, showBaked);
+
+            foreach (var stray in Extras())
+            {
+                if (stray != null)
+                {
+                    stray.enabled = showBaked;
+                }
+            }
 
             Frame(view);
+        }
+
+        /// <summary>
+        /// The hand-placed things standing in the office, found once and remembered.
+        ///
+        /// The box is the baked room's own extent, grown by two metres so a piece pushed
+        /// slightly through a wall still counts. Anything outside it is somebody else's scene:
+        /// the city, the basement, the menu.
+        /// </summary>
+        private List<MeshRenderer> Extras()
+        {
+            if (bakedExtras != null)
+            {
+                return bakedExtras;
+            }
+
+            bakedExtras = new List<MeshRenderer>();
+
+            if (bakedRoom == null)
+            {
+                return bakedExtras;
+            }
+
+            var own = bakedRoom.GetComponentsInChildren<MeshRenderer>(true);
+            var room = new Bounds(bakedRoom.position, Vector3.one * 12f);
+
+            foreach (var renderer in own)
+            {
+                room.Encapsulate(renderer.bounds);
+            }
+
+            room.Expand(2f);
+
+            foreach (var renderer in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+            {
+                if (renderer == null || renderer.transform.IsChildOf(bakedRoom))
+                {
+                    continue;
+                }
+
+                if (room.Intersects(renderer.bounds))
+                {
+                    bakedExtras.Add(renderer);
+                }
+            }
+
+            return bakedExtras;
         }
 
         /// <summary>

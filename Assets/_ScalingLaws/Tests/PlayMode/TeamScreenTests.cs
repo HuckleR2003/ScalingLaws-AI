@@ -333,6 +333,75 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// **Moving office takes the old room off the screen.**
+        ///
+        /// The stage loads the new room and hides the one baked into the game scene, which is
+        /// right, and it hides it by walking the renderers under one transform. The author
+        /// furnished that scene by hand, 107 prefab instances of it, and anything he placed
+        /// outside that transform is not walked: it stays lit while the new floor is drawn
+        /// through it, which reads as two offices in one frame.
+        ///
+        /// Measured against the loaded room rather than by name, so it does not care what the
+        /// furniture is called.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator MovingOfficeLeavesNoneOfTheOldRoomOnScreen()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            var simulation = shell.Simulation;
+            simulation.State.CashUsd = 400_000_000L;
+
+            Assume.That(simulation.TryMoveOffice(OfficeTier.Loft, out var why), Is.True, why);
+
+            Assert.That(shell.OpenScreenByName("Site"), Is.True);
+
+            for (var frame = 0; frame < 5; frame++)
+            {
+                yield return null;
+            }
+
+            var loaded = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)
+                .FirstOrDefault(renderer =>
+                    renderer.transform.root.name.Contains("SmallHub")
+                    || renderer.transform.parent != null
+                    && renderer.GetComponentsInParent<Transform>(true)
+                        .Any(step => step.name.Contains("SmallHub")));
+
+            Assume.That(loaded, Is.Not.Null, "the small hub never loaded, so nothing was swapped");
+
+            var room = loaded.GetComponentsInParent<Transform>(true)
+                .First(step => step.name.Contains("SmallHub"));
+
+            var bounds = new Bounds(room.position, Vector3.zero);
+
+            foreach (var inside in room.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                bounds.Encapsulate(inside.bounds);
+            }
+
+            // Anything still lit, standing in the same space, belonging to something else.
+            var strays = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)
+                .Where(renderer => renderer.enabled)
+                .Where(renderer => !renderer.GetComponentsInParent<Transform>(true)
+                    .Any(step => step == room))
+                .Where(renderer => bounds.Intersects(renderer.bounds))
+                .Select(renderer => renderer.transform.name)
+                .Distinct()
+                .Take(8)
+                .ToList();
+
+            Assert.That(strays, Is.Empty,
+                "The company moved out and " + strays.Count + " thing(s) from the old room are "
+                + "still drawn inside the new one: " + string.Join(", ", strays) + ".");
+        }
+
+        /// <summary>
         /// **The way out of an upgrade is on screen and inside its own row.**
         ///
         /// A tester asked for this by name and there was no way to stop one at all. The strip pools

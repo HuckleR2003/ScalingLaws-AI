@@ -396,6 +396,27 @@ than grey text with the money shouting over it.
   that caps hiring, which is why the rule exists. Storing one now says who is sitting there and
   how many desks the company has. Moving a desk around the room is still free, because a piece
   on the cursor has not left the floor until it is put somewhere.
+- **Moving office left the old one on screen.** The company moved into the loft and the sofa,
+  the nightstand, two vases and a gamepad from the house were still drawn, through the new
+  floor: two offices in one frame. Hiding the old room walked the things parented under one
+  transform, and the house was furnished by hand, so whatever was placed outside it stayed lit.
+  What is in the room is now decided by where it stands rather than by what it hangs off.
+  Nobody reported this because until this build nobody could move.
+
+### Changed
+
+- **Both rented floors are rooms now rather than grey boxes.** The author sent two isometric
+  cutaway references and the difference between them and what the game had was not the objects,
+  it was everything around them: one flat slab of floor, one blue stripe for a window, desks at
+  even spacing. So the floor changes material where the room changes purpose (stone at the
+  kitchen, tile under the desks, boards along the route between them), both glazed walls are
+  floor to ceiling with posts every two and a half metres, the kitchen has a stone feature wall
+  behind it, the desks are in benches of four facing each other, both glass rooms are framed and
+  the big floor's second room has a return so it reads as a room rather than a pane of glass
+  standing on the floor, and there are plants in the corners the shop cannot reach.
+- **The floor the player furnishes was left alone on purpose.** Everything above is placed
+  against the room, because the open ground in the middle belongs to the build mode and a
+  builder that drops a plant in it would have the shop growing a coffee bar through it.
 
 ### Save compatibility
 
@@ -414,7 +435,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,212 EditMode tests and 49 PlayMode**, up from 1,116 and 31, across 132 fixtures.
+- **1,212 EditMode tests and 50 PlayMode**, up from 1,116 and 31, across 132 fixtures.
 - **An audit pass over everything added this week, reached the way a campaign reaches it.** Not by
   calling the new methods: by playing until the thing turns up. It found that investors really do
   call in a campaign rather than only in a unit test, that an offer that arrives can be taken and
@@ -440,6 +461,16 @@ model history that saves already carry, so an existing campaign reads correctly 
   products and has a node and an upgrade in flight, so `tab_site.png` shows that corner at its
   worst. Every pass until now reviewed a company doing one thing at a time, which is the state that
   needed no work. Two faults in this list were found by looking at the new frame.
+- **Three passes over the two hub rooms, each one from looking at the render.** The first laid
+  all three floor zones at the same height and came back with a band of stripes where two of
+  them met, ran the stone half the room so it read as a hole, and slid the desk benches along
+  one axis until the last of them hung off the front edge. The second put the benches on a grid
+  and the grid ran through the big floor's second room, cutting a bench of four in half with a
+  glass partition: two things that each know their own rectangle and nothing about each other.
+  Every one of those was invisible in code and obvious in a picture.
+- `MovingOfficeLeavesNoneOfTheOldRoomOnScreen` measures the strays against the loaded room's own
+  bounds rather than by name, so it does not care what the author called the sofa. It named all
+  eight of them on its first run.
 - **The sweep for mechanisms a player cannot reach was run again over the whole of
   `Simulation/`.** 102 public mutators, 36 with no mention anywhere in `UI/`, and reading them
   is the job: most are plumbing called from inside the rules, and several are the known false
