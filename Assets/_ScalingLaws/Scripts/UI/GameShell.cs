@@ -1103,6 +1103,18 @@ namespace ScalingLaws.UI
             bannerStack = new VisualElement();
             bannerStack.AddToClassList("mb-stack");
 
+            // **The lane itself never takes a click, and neither do its slots.** It was given a
+            // bottom as well as a top so it could not reach the bottom bar, which also gave it a
+            // fixed height of about eleven hundred pixels on every screen, and an element with
+            // no background still swallows what lands on it. Measured: the panel is 1,646 wide
+            // and this column covered x 1,309 to 1,625 from top to bottom, so the whole right
+            // third of the model creator, the site rail and everything else over there took no
+            // clicks at all. Reported as totally critical, and it was.
+            //
+            // Ignore on a parent does not stop its children being picked, so every banner and
+            // every button inside them still works.
+            bannerStack.pickingMode = PickingMode.Ignore;
+
             // **Slots, created once and in order, rather than three banners each pinned to a
             // number.** The research banner sat at `top: 214px` and the upgrade banner at
             // `top: 458px` while this column starts at 54 and grows with every product on sale,
@@ -1129,15 +1141,20 @@ namespace ScalingLaws.UI
             bannerBar = new PageScrollbar(products);
             products.hierarchy.Add(bannerBar);
 
+            products.pickingMode = PickingMode.Ignore;
+            products.contentViewport.pickingMode = PickingMode.Ignore;
+
             bannerProducts = products;
             bannerStack.Add(bannerProducts);
 
             bannerResearch = new VisualElement();
             bannerResearch.AddToClassList("mb-stack__slot");
+            bannerResearch.pickingMode = PickingMode.Ignore;
             bannerStack.Add(bannerResearch);
 
             bannerUpgrade = new VisualElement();
             bannerUpgrade.AddToClassList("mb-stack__slot");
+            bannerUpgrade.pickingMode = PickingMode.Ignore;
             bannerStack.Add(bannerUpgrade);
 
             // Under the product, because an upgrade is work happening to the thing above it.
@@ -1158,6 +1175,7 @@ namespace ScalingLaws.UI
             // and left alone.
             bannerPrompts = new VisualElement();
             bannerPrompts.AddToClassList("mb-stack__slot");
+            bannerPrompts.pickingMode = PickingMode.Ignore;
             bannerStack.Add(bannerPrompts);
 
             root.Add(bannerStack);
@@ -1495,6 +1513,25 @@ namespace ScalingLaws.UI
         {
             var changed = current != screen;
 
+            // **Walking to another screen puts the phone down.** It is 330 by 660 in the bottom
+            // right corner of the panel, mounted on the root so it survives a screen change, and it
+            // takes every click that lands on it: NEXT in the model creator and all four icons on
+            // the site rail are underneath it. A player who opened MODEL while it was ringing got a
+            // page that did nothing, which is what was reported.
+            //
+            // An unanswered call from the cousin becomes "call me back", which is a path that
+            // already exists with a chip on the phone dock and a ring-back three days later.
+            // Leaving the room while somebody is on the phone is exactly that answer.
+            if (changed && phone != null && phone.IsOpen)
+            {
+                phone.Close();
+
+                if (state != null && state.Guide.Stage == GuideStage.Talking)
+                {
+                    state.Guide.Stage = GuideStage.Paused;
+                }
+            }
+
             // The model creator gets its own loop and everything else shares the office one.
             // `SetTrack` does nothing when the answer has not changed, which matters here: almost
             // every control on every screen answers by calling `Show(current)`, so this runs
@@ -1550,6 +1587,17 @@ namespace ScalingLaws.UI
             // has followed since it was built, for the same reason and after the same discovery.
             contentHost?.panel?.visualTree?.EnableInClassList("corner-is-free",
                 screen == Screen.Site || screen == Screen.Room);
+
+            // **And the lane is only on the two screens that have anything to put in it.** The
+            // banners inside it already hide themselves per screen, which left an empty column
+            // standing over a third of every other page. Taking it out of layout is the honest
+            // version of that: there is nothing in it, so there is nothing there.
+            if (bannerStack != null)
+            {
+                bannerStack.style.display = screen == Screen.Site || screen == Screen.Room
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
+            }
 
             // **And on the site it goes into the lane rather than beside it.** The column holds
             // the products, the node, the upgrade and the way out of it, and it is bounded by the

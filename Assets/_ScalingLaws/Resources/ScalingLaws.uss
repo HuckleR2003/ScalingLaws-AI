@@ -17173,6 +17173,18 @@
     top: 656px;
 }
 
+/* **The phone gets out of the way of the things that live in that corner.** It is 330 wide at the
+   bottom right and it covered all four icons on the site rail: the map, the premises, the server
+   room and the furnishing took no clicks for as long as it was ringing. Same treatment the prompt
+   card and the task strip already get, and in the same order, so the room wins over the site. */
+.corner-is-free .phone {
+    right: 122px;
+}
+
+.has-right-rail .phone {
+    right: 360px;
+}
+
 .has-right-rail .taskbar {
     right: 344px;
     top: 792px;

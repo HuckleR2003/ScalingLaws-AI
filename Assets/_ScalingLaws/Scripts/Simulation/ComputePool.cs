@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -239,8 +239,18 @@ namespace ScalingLaws.Simulation
         /// and the tariff. Nullable rather than `default` for the reason `ServerHall.HeatRatio`
         /// gives; a null reads as a company that has researched none of it.
         /// </param>
+        /// <param name="rentedInstead">
+        /// Price the fleet as though this much were rented, rather than what is. Null means the
+        /// company as it stands, which is every caller but one.
+        ///
+        /// **For costing a plan the player has not agreed to yet.** The model creator has to
+        /// answer "how long would this take and what would it cost" for a company that has
+        /// rented nothing, and the only honest ways to do that are to rent something on their
+        /// behalf or to ask the question hypothetically. The first is what it used to do, and a
+        /// tester found it: opening the creator quietly changed what the company was paying for.
+        /// </param>
         public ComputeProfile BuildProfile(GameDate date, MarketConditions market,
-            ServerHall hall = null, RoomUpgrades? upgrades = null)
+            ServerHall hall = null, RoomUpgrades? upgrades = null, double? rentedInstead = null)
         {
             var room = upgrades ?? RoomUpgrades.None;
             var ownedAccelerators = 0;
@@ -378,14 +388,18 @@ namespace ScalingLaws.Simulation
                 maintenance += hall.MonthlyUpkeepUsd / DaysPerMonth;
             }
 
+            // What is rented, or what the caller asked to be priced instead. One local, read
+            // everywhere below, so a hypothetical fleet cannot be half applied.
+            var renting = Math.Max(0.0, SimUnits.Finite(rentedInstead ?? RentedPetaflops));
+
             var rentedPetaflops = 0.0;
             var rentedUnits = 0;
-            if (RentedPetaflops > 0.0
+            if (renting > 0.0
                 && HardwareCatalog.TryGet(market.RentableGeneration, out var rented)
                 && rented.PetaflopsPerUnit > 0.0)
             {
-                rentedPetaflops = RentedPetaflops;
-                rentedUnits = (int)Math.Ceiling(RentedPetaflops / rented.PetaflopsPerUnit);
+                rentedPetaflops = renting;
+                rentedUnits = (int)Math.Ceiling(renting / rented.PetaflopsPerUnit);
                 weightedCeiling += rentedPetaflops * rented.UtilizationCeiling;
                 memoryGigabytes += (double)rented.MemoryGigabytes * rentedUnits;
                 cloudRent += rentedPetaflops * market.RentPricePerPetaflopHourUsd * SimUnits.HoursPerDay;

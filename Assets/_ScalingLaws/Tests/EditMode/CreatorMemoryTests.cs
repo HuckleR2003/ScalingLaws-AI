@@ -1,5 +1,6 @@
-using System.Linq;
+﻿using System.Linq;
 using NUnit.Framework;
+using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using ScalingLaws.UI;
 using UnityEngine.UIElements;
@@ -39,6 +40,9 @@ namespace ScalingLaws.Tests.EditMode
 
         /// <summary>The COMPUTE page, which is the one that costs money.</summary>
         private const int ComputeStage = 4;
+
+        /// <summary>The REVIEW page, where the plan is costed and the figures are printed.</summary>
+        private const int ReviewStage = 6;
 
         private static CompanySimulation Ready(double petaflops = 4000.0)
         {
@@ -107,6 +111,47 @@ namespace ScalingLaws.Tests.EditMode
                 "Walking onto the compute page took the company from " + before + " petaflops to "
                 + simulation.State.Pool.RentedPetaflops + ". Nothing was clicked. That is the "
                 + "service pegging at a hundred per cent for no reason the player can see.");
+        }
+
+        /// <summary>
+        /// **A company that has rented nothing is still told what the run would cost.**
+        ///
+        /// Reported: every figure on the creator read "-" until the player happened to walk onto
+        /// the compute page and move a slider, and nothing said that was what it was waiting for.
+        /// Everything on that screen is derived from the fleet, and a new company owns none, so
+        /// with the handle reading the company honestly there was nothing to divide by.
+        ///
+        /// The handle proposes a fleet instead. It is a proposal: the company is billed for
+        /// nothing until the player moves it or starts a run with it.
+        /// </summary>
+        [Test]
+        public void AFreshCompanyIsCostedAgainstAProposalAndBilledForNothing()
+        {
+            var simulation = Ready(0.0);
+            var panel = new ModelCreatorPanel(simulation) { Stage = ReviewStage };
+            panel.Refresh();
+
+            Assert.That(simulation.State.Pool.RentedPetaflops, Is.EqualTo(0.0).Within(0.5),
+                "Opening the creator rented compute the player never asked for.");
+
+            // **The banner under the rail, which is where the report saw the dashes.** It prints
+            // `common.not_yet` for every figure that needs a fleet to be answered, so with the
+            // handle reading a company that owns none, PROJECTED CAPABILITY, TIME TO TRAIN and
+            // CASH IT BURNS were all a dash and only the frontier kept its number.
+            var figures = panel.Root.Query<Label>(className: "effect-figure__value").ToList()
+                .Select(label => label.text)
+                .Where(text => !string.IsNullOrWhiteSpace(text))
+                .ToList();
+
+            Assume.That(figures.Count, Is.GreaterThan(2), "the banner printed almost nothing");
+
+            var pending = Loc.T("common.not_yet");
+            var waiting = figures.Count(text => text == pending);
+
+            Assert.That(waiting, Is.Zero,
+                waiting + " of the " + figures.Count + " figures under the rail read \"" + pending
+                + "\" on a company that has rented nothing: " + string.Join(" | ", figures)
+                + ". The player is being asked to judge a plan against nothing.");
         }
 
         /// <summary>

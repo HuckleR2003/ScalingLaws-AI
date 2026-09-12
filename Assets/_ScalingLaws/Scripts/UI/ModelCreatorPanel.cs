@@ -82,6 +82,31 @@ namespace ScalingLaws.UI
         /// </summary>
         private readonly HashSet<VisualElement> configured = new();
 
+        /// <summary>
+        /// What the creator suggests renting to a company that has rented nothing.
+        ///
+        /// **Because a plan costed against no compute is three dashes.** Everything on this
+        /// screen is derived from the fleet: the capability it projects, the days it takes and
+        /// what it burns. A company on day one owns none, so the whole creator read "-" until the
+        /// player happened to walk onto the compute page and move a slider, and nothing said that
+        /// was what it was waiting for.
+        ///
+        /// 150 petaflops, which is what this control used to open on before it was made to read
+        /// the company. It is a suggestion: see `rentCommitted`.
+        /// </summary>
+        public const float ProposedPetaflops = 150f;
+
+        /// <summary>
+        /// Whether the rent on the slider is something the player asked for.
+        ///
+        /// **The one control here that spends money, so it needs the player's consent.** A
+        /// tester found the reverse of this: repricing wrote the handle to the company on every
+        /// pass, so opening the creator at all cancelled whatever the company had rented and
+        /// pegged its service at a hundred per cent. Now the handle is a proposal until it is
+        /// moved or a run is started with it, and only then does anybody get billed.
+        /// </summary>
+        private bool rentCommitted;
+
         private readonly List<ArchitectureId> architectureOptions = new();
         private readonly Dictionary<DatasetSource, Toggle> dataSourceToggles = new();
 
@@ -232,7 +257,7 @@ namespace ScalingLaws.UI
             // tester who reported the service pegging at a hundred per cent had done nothing but
             // open the creator.
             SyncRentCeiling();
-            rentedSlider.SetValueWithoutNotify((float)simulation.State.Pool.RentedPetaflops);
+            rentedSlider.SetValueWithoutNotify(OpeningRent());
 
             Build();
         }
@@ -251,8 +276,26 @@ namespace ScalingLaws.UI
             // page. So a company renting four thousand petaflops had its handle clamped to ten,
             // and the reprice below wrote that ten straight back to the company.
             SyncRentCeiling();
-            rentedSlider.SetValueWithoutNotify((float)simulation.State.Pool.RentedPetaflops);
+            rentedSlider.SetValueWithoutNotify(OpeningRent());
             Reprice();
+        }
+
+        /// <summary>
+        /// Where the rent handle starts: what the company has, or a suggestion when it has none.
+        ///
+        /// Never below what is already rented, because that would be the creator quietly
+        /// proposing that a company give up compute it is using.
+        /// </summary>
+        /// <summary>
+        /// The fleet this screen is pricing against, or null when that is simply the company.
+        /// </summary>
+        private double? Proposal() => rentCommitted ? null : rentedSlider.value;
+
+        private float OpeningRent()
+        {
+            var held = (float)simulation.State.Pool.RentedPetaflops;
+
+            return rentCommitted || held > 1f ? held : ProposedPetaflops;
         }
 
         /// <summary>
@@ -1778,7 +1821,7 @@ namespace ScalingLaws.UI
             // page. 150 was that number.
             ConfigureSlider(rentedSlider, 0f,
                 (float)RentReadout.CeilingPetaflops(HeldUsers(), simulation.State.Pool.RentedPetaflops),
-                (float)simulation.State.Pool.RentedPetaflops);
+                OpeningRent());
             panel.Add(rentedSlider);
 
             // What the day costs, with a mark at what he tells you to stay under. The one control
@@ -2190,7 +2233,18 @@ namespace ScalingLaws.UI
 
             slider.value = initial;
             slider.AddToClassList("field");
-            slider.RegisterValueChangedCallback(_ => Reprice());
+
+            slider.RegisterValueChangedCallback(_ =>
+            {
+                // Moving the rent handle is the player asking for that fleet. Every other
+                // slider here only describes a plan.
+                if (slider == rentedSlider)
+                {
+                    rentCommitted = true;
+                }
+
+                Reprice();
+            });
         }
 
         private void RebuildArchitectures()
@@ -2460,7 +2514,13 @@ namespace ScalingLaws.UI
             // wrote a rent clamped to a range that had not been set yet.
             SyncRentCeiling();
 
-            simulation.SetRentedPetaflops(rentedSlider.value);
+            // **Only what the player asked for.** Until the handle is moved it is a proposal, so
+            // the numbers on this screen are costed against it while the company is billed for
+            // nothing it did not choose.
+            if (rentCommitted)
+            {
+                simulation.SetRentedPetaflops(rentedSlider.value);
+            }
 
             // **The ceilings run first, before anything reads a slider.**
             //
@@ -2473,8 +2533,12 @@ namespace ScalingLaws.UI
             RefreshTokenCeiling();
 
             var blueprint = CurrentBlueprint();
-            var projection = simulation.Project(blueprint);
-            var profile = simulation.Profile;
+            // **Costed against the handle, which is the company until the player moves it.** While
+            // the rent is still a proposal this prices the plan as though it had been taken, which
+            // is what the screen is for: three dashes and no explanation is not a plan anybody can
+            // judge. Nothing is billed until `rentCommitted`.
+            var projection = simulation.Project(blueprint, Proposal());
+            var profile = simulation.ProfileWith(Proposal());
 
             parameterLabel.text = Loc.T("creator.parameters",
                 UiFormat.Billions(blueprint.ParameterCountBillions));
@@ -2921,6 +2985,15 @@ namespace ScalingLaws.UI
 
         private void StartTraining()
         {
+            // **Starting the run is the other way of agreeing to the fleet it was costed**
+            // against. Without this the plan is checked against the proposal and then run on
+            // whatever the company actually had, which for a new company is nothing at all.
+            if (!rentCommitted)
+            {
+                rentCommitted = true;
+                simulation.SetRentedPetaflops(rentedSlider.value);
+            }
+
             if (!simulation.TryStartTraining(CurrentBlueprint(), out var reason))
             {
                 verdict.RemoveFromClassList("verdict--ok");

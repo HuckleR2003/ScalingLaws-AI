@@ -63,9 +63,19 @@ namespace ScalingLaws.Simulation
         public MarketConditions Market =>
             MarketModel.Evaluate(State.Date, State.Rivals.FrontierCapability(State.Date));
 
-        public ComputeProfile Profile =>
+        public ComputeProfile Profile => ProfileWith(null);
+
+        /// <summary>
+        /// The fleet as it stands, or as it would stand on a different amount of rented compute.
+        ///
+        /// **For pricing something the player has not agreed to.** The model creator has to answer
+        /// how long a run would take and what it would burn before anybody has rented anything, and
+        /// the alternative is renting on their behalf, which is what it used to do and what a
+        /// tester caught: opening that screen changed what the company was paying for.
+        /// </summary>
+        public ComputeProfile ProfileWith(double? rentedInstead) =>
             State.Pool.BuildProfile(
-                State.Date, Market, State.HasServerRoom ? State.Hall : null, Room);
+                State.Date, Market, State.HasServerRoom ? State.Hall : null, Room, rentedInstead);
 
         /// <summary>
         /// What the company has learned about running a room full of machines.
@@ -649,7 +659,11 @@ namespace ScalingLaws.Simulation
         /// <summary>
         /// Projects a blueprint against the fleet as it stands today. Pure: it changes nothing.
         /// </summary>
-        public TrainingProjection Project(ModelBlueprint blueprint)
+        /// <param name="rentedInstead">
+        /// Price it against this much rented compute rather than what the company has. See
+        /// <see cref="ProfileWith"/>. Null for every caller but the creator's proposal.
+        /// </param>
+        public TrainingProjection Project(ModelBlueprint blueprint, double? rentedInstead = null)
         {
             // The pipeline only reaches the fresh end of the range; the catalog decides where
             // that is, so this passes the fact rather than the rule.
@@ -689,7 +703,7 @@ namespace ScalingLaws.Simulation
 
             return TrainingPlanner.Project(
                 blueprint,
-                Profile,
+                ProfileWith(rentedInstead),
                 Market,
                 State.BestCapability,
                 State.TrainingComputeShare,
