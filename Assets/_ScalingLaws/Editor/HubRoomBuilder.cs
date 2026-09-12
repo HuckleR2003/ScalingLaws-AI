@@ -59,6 +59,66 @@ namespace ScalingLaws.Editor
         [MenuItem("Scaling Laws/Build big company hub")]
         public static void BuildBigHub() => Build(Plan.BigHub());
 
+        /// <summary>
+        /// Prints what every piece in the kit actually measures.
+        ///
+        /// **Because a pack models its furniture in whatever unit its author liked**, and this
+        /// project has twice believed a prefab about its own size and been wrong. The numbers this
+        /// prints are what the placements above are written against.
+        /// </summary>
+        [MenuItem("Scaling Laws/Measure the furniture kit")]
+        public static void MeasureKit()
+        {
+            var sets = new (string Name, string[] Paths)[]
+            {
+                ("Desk", Kit.Desk),
+                ("DeskChair", Kit.DeskChair),
+                ("ChairColour", new[] { Kit.ChairColours[0] }),
+                ("Monitor", Kit.Monitor),
+                ("Kitchen", Kit.Kitchen),
+                ("Microwave", Kit.Microwave),
+                ("CoffeePot", Kit.CoffeePot),
+                ("WaterCooler", Kit.WaterCooler),
+                ("Printer", Kit.Printer),
+                ("Bin", Kit.Bin),
+                ("Shelves", Kit.Shelves),
+                ("MeetingTable", Kit.MeetingTable),
+                ("MeetingChair", Kit.MeetingChair),
+                ("BreakTable", Kit.BreakTable),
+                ("Stool", Kit.Stool),
+                ("PlantTall", Kit.PlantTall),
+                ("PlantWide", Kit.PlantWide),
+                ("Laptop", new[] { "Assets/LowPolyOfficeProps_LITE/Prefabs/Laptop_On.prefab" }),
+                ("PotLarge", new[] { "Assets/LowPolyOfficeProps_LITE/Prefabs/PlantPotLargeA.prefab" }),
+                ("PlantA", new[] { "Assets/LowPolyOfficeProps_LITE/Prefabs/PlantTypeA.prefab" }),
+                ("PlantBox", new[] { "Assets/nappin/OfficeEssentialsPack/Prefabs/(Prb)PlantBox.prefab" })
+            };
+
+            foreach (var set in sets)
+            {
+                var prefab = Load(set.Paths);
+
+                if (prefab == null)
+                {
+                    Debug.Log($"[kit] {set.Name}: nothing on this machine");
+                    continue;
+                }
+
+                var piece = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                piece.transform.position = Vector3.zero;
+                piece.transform.rotation = Quaternion.identity;
+                piece.transform.localScale = Vector3.one;
+
+                var bounds = Measure(piece);
+
+                Debug.Log($"[kit] {set.Name}: {prefab.name} "
+                    + $"size {bounds.size.x:0.00} x {bounds.size.y:0.00} x {bounds.size.z:0.00}, "
+                    + $"centre {bounds.center.x:0.00} {bounds.center.y:0.00} {bounds.center.z:0.00}");
+
+                Object.DestroyImmediate(piece);
+            }
+        }
+
         [MenuItem("Scaling Laws/Build both hubs")]
         public static void BuildBoth()
         {
@@ -317,9 +377,9 @@ namespace ScalingLaws.Editor
             // walkway, and in the corner nearest the camera where there is nothing else.
             var spots = new[]
             {
-                new Vector3(plan.Width * 0.24f, 0f, plan.Depth * 0.30f),
-                new Vector3(plan.Width * 0.90f, 0f, plan.Depth * 0.09f),
-                new Vector3(plan.Width * 0.33f, 0f, plan.Depth * 0.08f)
+                new Vector3(plan.Width * 0.26f, 0f, plan.Depth * 0.30f),
+                new Vector3(plan.Width * 0.88f, 0f, plan.Depth * 0.17f),
+                new Vector3(plan.Width * 0.30f, 0f, plan.Depth * 0.16f)
             };
 
             for (var index = 0; index < spots.Length; index++)
@@ -327,12 +387,10 @@ namespace ScalingLaws.Editor
                 var at = spots[index];
                 var tall = index % 2 == 0;
 
-                Box(green, $"Pot{index}", new Vector3(at.x, 0.22f, at.z),
-                    new Vector3(0.52f, 0.44f, 0.52f), palette.Pot);
-
-                Box(green, $"Leaves{index}",
-                    new Vector3(at.x, tall ? 1.15f : 0.85f, at.z),
-                    new Vector3(0.78f, tall ? 1.4f : 0.8f, 0.78f), palette.Foliage);
+                Piece(green, $"Plant{index}", new Vector3(at.x, 0f, at.z),
+                    tall ? new Vector3(0.8f, 1.15f, 0.8f) : new Vector3(1.2f, 0.5f, 1.2f),
+                    tall ? Kit.PlantTall : Kit.PlantWide, palette.Foliage,
+                    index * 40f);
             }
         }
 
@@ -366,23 +424,35 @@ namespace ScalingLaws.Editor
                 new Vector3(originX, GlassHeight, originZ + depth / 2f),
                 new Vector3(0.14f, 0.12f, depth), palette.Metal);
 
-            Box(room, "Table",
-                new Vector3(originX + width / 2f, 0.72f, originZ + depth / 2f),
-                new Vector3(width * 0.55f, 0.08f, depth * 0.4f), palette.Timber);
+            // The table runs along z, which is how the pack models it, so the chairs go down
+            // its two long sides rather than at the width of the room.
+            var tableX = originX + width / 2f;
+            var tableZ = originZ + depth / 2f;
+
+            Piece(room, "Table", new Vector3(tableX, 0f, tableZ),
+                new Vector3(1.5f, 0.75f, 3.0f), Kit.MeetingTable, palette.Timber);
 
             for (var index = 0; index < 6; index++)
             {
                 var side = index % 2 == 0 ? -1f : 1f;
-                var along = originZ + depth * (0.3f + 0.2f * (index / 2));
+                var along = tableZ + (index / 2 - 1) * 0.95f;
 
-                Box(room, $"Chair{index}",
-                    new Vector3(originX + width / 2f + side * width * 0.34f, 0.45f, along),
-                    new Vector3(0.5f, 0.9f, 0.5f), palette.Fabric);
+                Piece(room, $"Chair{index}",
+                    new Vector3(tableX + side * 1.05f, 0f, along),
+                    new Vector3(0.58f, 0.88f, 0.58f), Kit.MeetingChair, palette.Fabric,
+                    side < 0f ? 90f : 270f);
             }
 
+            Piece(room, "Bin", new Vector3(originX + width * 0.9f, 0f, originZ + depth * 0.12f),
+                new Vector3(0.35f, 0.5f, 0.35f), Kit.Bin, palette.Metal);
+
+            // **On the wall that exists.** It used to hang off the room's outer edge, which is the
+            // cutaway side: there is no wall there, so a two and a half metre board floated in the
+            // air and crossed the glass on its way out of the building. The side wall is the one
+            // surface this room actually has.
             Box(room, "Whiteboard",
-                new Vector3(originX + width - 0.1f, 1.7f, originZ + depth / 2f),
-                new Vector3(0.08f, 1.1f, depth * 0.6f), palette.Linen);
+                new Vector3(originX + width * 0.55f, 1.55f, plan.Depth - WallThickness - 0.06f),
+                new Vector3(width * 0.5f, 1.1f, 0.06f), palette.Linen);
 
             // **Posts down the glass, the same as the windows.** Two bare panes read as two
             // sheets of blue standing on the floor; the same panes divided every couple of
@@ -423,27 +493,40 @@ namespace ScalingLaws.Editor
         {
             var area = Group(parent, "BreakArea");
 
-            Box(area, "Counter",
-                new Vector3(1.6f, 0.45f, 1.8f), new Vector3(2.6f, 0.9f, 0.7f), palette.TimberDark);
+            // The run of units along the back wall, with the things that make it a kitchen
+            // rather than a counter standing on it.
+            // **At the size it was modelled**, which is a five metre run of units two and a half
+            // metres tall, stood along the back wall. Asking it to be small is what turned it
+            // into a conveyor belt.
+            Piece(area, "Kitchen", new Vector3(0.75f, 0f, 3.1f),
+                new Vector3(5.6f, 2.5f, 5.6f), Kit.Kitchen, palette.TimberDark);
 
-            Box(area, "Worktop",
-                new Vector3(1.6f, 0.92f, 1.8f), new Vector3(2.7f, 0.06f, 0.78f), palette.Linen);
+            Piece(area, "Microwave", new Vector3(1.0f, 0.95f, 1.5f),
+                new Vector3(0.6f, 0.42f, 0.6f), Kit.Microwave, palette.Metal, 90f);
 
-            Box(area, "Fridge",
-                new Vector3(3.4f, 0.9f, 1.7f), new Vector3(0.7f, 1.8f, 0.7f), palette.Metal);
+            Piece(area, "CoffeePot", new Vector3(1.0f, 0.95f, 4.4f),
+                new Vector3(0.35f, 0.26f, 0.35f), Kit.CoffeePot, palette.Metal, 90f);
 
-            Box(area, "Table",
-                new Vector3(2.2f, 0.72f, 4.0f), new Vector3(1.8f, 0.08f, 0.9f), palette.Timber);
+            Piece(area, "WaterCooler", new Vector3(2.6f, 0f, 0.8f),
+                new Vector3(0.5f, 1.55f, 0.5f), Kit.WaterCooler, palette.Metal, 90f);
+
+            // Somewhere to eat. A floor with nowhere to sit down away from a desk is a render.
+            Piece(area, "Table", new Vector3(2.9f, 0f, 4.6f),
+                new Vector3(1.6f, 0.74f, 1.0f), Kit.BreakTable, palette.Timber, 90f);
 
             for (var index = 0; index < 4; index++)
             {
-                var side = index < 2 ? -0.75f : 0.75f;
-                var along = 3.7f + (index % 2) * 0.7f;
+                var side = index < 2 ? -0.8f : 0.8f;
+                var along = 4.25f + (index % 2 == 0 ? -0.45f : 0.45f);
 
-                Box(area, $"Stool{index}",
-                    new Vector3(2.2f + side, 0.42f, along),
-                    new Vector3(0.42f, 0.84f, 0.42f), palette.Fabric);
+                Piece(area, $"Stool{index}",
+                    new Vector3(2.9f + side, 0f, along),
+                    new Vector3(0.55f, 0.85f, 0.55f), Kit.Stool, palette.Fabric,
+                    side < 0f ? 90f : 270f);
             }
+
+            Piece(area, "Shelves", new Vector3(0.55f, 0f, 6.4f),
+                new Vector3(1.5f, 1.85f, 1.5f), Kit.Shelves, palette.TimberDark, 90f);
 
             // **The feature wall, which is the first thing the eye finds in the reference.** A
             // dark stone panel behind the kitchen, standing slightly proud of the wall it is
@@ -509,21 +592,31 @@ namespace ScalingLaws.Editor
                         var z = benchZ + (side == 0 ? -0.40f : 0.40f);
                         var index = placed++;
 
-                        Box(desks, $"Desk{index}", new Vector3(x, 0.72f, z),
-                            new Vector3(1.3f, 0.07f, 0.74f), palette.Timber);
+                        // **Turned a quarter, because the pack models its desk along z.** Facing
+                        // each other across the bench then adds the half turn for the far side.
+                        var facing = 90f + (side == 0 ? 0f : 180f);
 
-                        Box(desks, $"DeskLegs{index}", new Vector3(x, 0.36f, z),
-                            new Vector3(1.1f, 0.72f, 0.06f), palette.Metal);
+                        Piece(desks, $"Desk{index}", new Vector3(x, 0f, z),
+                            new Vector3(1.5f, 0.75f, 0.82f), Kit.Desk, palette.Timber, facing);
 
-                        // Screens back onto the middle of the bench, which is where the people
-                        // facing each other need something between them.
-                        Box(desks, $"Monitor{index}",
-                            new Vector3(x, 1.05f, z + (side == 0 ? 0.28f : -0.28f)),
-                            new Vector3(0.62f, 0.38f, 0.05f), palette.Screen);
+                        // The screen backs onto the middle of the bench, which is where two
+                        // people sitting opposite each other need something between them.
+                        Piece(desks, $"Monitor{index}",
+                            new Vector3(x, 0.75f, z + (side == 0 ? 0.24f : -0.24f)),
+                            new Vector3(0.7f, 0.5f, 0.3f), Kit.Monitor, palette.Screen, facing);
 
-                        Box(desks, $"Chair{index}",
-                            new Vector3(x, 0.45f, z + (side == 0 ? -0.72f : 0.72f)),
-                            new Vector3(0.52f, 0.9f, 0.52f), palette.Fabric);
+                        // A different colour per seat, which is what stops a bench of four
+                        // reading as one desk copied four times.
+                        var colour = new[]
+                        {
+                            Kit.ChairColours[index % Kit.ChairColours.Length],
+                            Kit.DeskChair[0]
+                        };
+
+                        Piece(desks, $"Chair{index}",
+                            new Vector3(x, 0f, z + (side == 0 ? -0.78f : 0.78f)),
+                            new Vector3(0.66f, 1.05f, 0.66f), colour, palette.Fabric,
+                            side == 0 ? 0f : 180f);
                     }
                 }
             }
@@ -577,13 +670,18 @@ namespace ScalingLaws.Editor
                     new Vector3(0.12f, GlassHeight, 0.10f), palette.Metal);
             }
 
-            Box(room, "Desk",
-                new Vector3(originX + width / 2f, 0.72f, depth * 0.5f),
-                new Vector3(width * 0.6f, 0.08f, 0.8f), palette.TimberDark);
+            // The room somebody runs the company from: one desk, one chair, and a screen on it.
+            Piece(room, "Desk", new Vector3(originX + width / 2f, 0f, depth * 0.52f),
+                new Vector3(1.6f, 0.75f, 0.9f), Kit.Desk, palette.TimberDark, 90f);
 
-            Box(room, "Chair",
-                new Vector3(originX + width / 2f, 0.45f, depth * 0.5f - 0.7f),
-                new Vector3(0.55f, 0.9f, 0.55f), palette.Fabric);
+            Piece(room, "Monitor", new Vector3(originX + width / 2f, 0.75f, depth * 0.52f + 0.2f),
+                new Vector3(0.7f, 0.5f, 0.3f), Kit.Monitor, palette.Screen, 90f);
+
+            Piece(room, "Chair", new Vector3(originX + width / 2f, 0f, depth * 0.52f - 0.75f),
+                new Vector3(0.66f, 1.05f, 0.66f), Kit.DeskChair, palette.Fabric);
+
+            Piece(room, "Printer", new Vector3(originX + width * 0.85f, 0f, depth * 0.14f),
+                new Vector3(1.0f, 1.6f, 1.0f), Kit.Printer, palette.Metal, 90f);
 
             for (var index = 0; index < 4; index++)
             {
@@ -669,6 +767,222 @@ namespace ScalingLaws.Editor
             var marker = new GameObject(name);
             marker.transform.SetParent(parent, false);
             marker.transform.localPosition = position;
+        }
+
+        /// <summary>
+        /// Where the furniture comes from.
+        ///
+        /// **Every entry is a list, and the room survives all of them being absent.** These are
+        /// Asset Store packs: they are gitignored because their licences forbid redistributing
+        /// the source assets and this repository is public, so a fresh clone has none of them.
+        /// A builder that needed them would be a builder nobody else can run, and the room it
+        /// wrote would be a prefab full of missing references with nothing standing in for them.
+        ///
+        /// So `Piece` falls back to the box it replaced. The room is always complete; it is
+        /// better on a machine that has the packs, which is the same rule every loader in this
+        /// project already follows for art.
+        /// </summary>
+        private static class Kit
+        {
+            private const string Nappin = "Assets/nappin/OfficeEssentialsPack/Prefabs/";
+            private const string Lite = "Assets/LowPolyOfficeProps_LITE/Prefabs/";
+
+            public static readonly string[] Desk =
+            {
+                Nappin + "(Prb)Desk1.prefab",
+                Lite + "Table_OfficeDesk.prefab"
+            };
+
+            public static readonly string[] DeskChair =
+            {
+                Nappin + "(Prb)OfficeChair.prefab",
+                Lite + "Chair_Office.prefab"
+            };
+
+            /// <summary>Eight of the same chair in different colours, so a bench is not a clone.</summary>
+            public static readonly string[] ChairColours =
+            {
+                Lite + "Chair_Office_Teal.prefab",
+                Lite + "Chair_Office_Olive.prefab",
+                Lite + "Chair_Office_Violet.prefab",
+                Lite + "Chair_Office_Turquoise.prefab",
+                Lite + "Chair_Office_Red.prefab",
+                Lite + "Chair_Office_Green.prefab",
+                Lite + "Chair_Office_Purple.prefab",
+                Lite + "Chair_Office.prefab"
+            };
+
+            public static readonly string[] Monitor =
+            {
+                Nappin + "(Prb)PC.prefab",
+                Lite + "Laptop_On.prefab"
+            };
+
+            public static readonly string[] Kitchen = { Nappin + "(Prb)KitchenModule.prefab" };
+            public static readonly string[] Microwave = { Nappin + "(Prb)Microwave.prefab" };
+            public static readonly string[] CoffeePot = { Nappin + "(Prb)CoffePot.prefab" };
+            public static readonly string[] WaterCooler = { Nappin + "(Prb)WaterDispenser.prefab" };
+            public static readonly string[] Printer = { Nappin + "(Prb)Printer.prefab" };
+            public static readonly string[] Bin = { Nappin + "(Prb)TrashCan.prefab" };
+            public static readonly string[] Shelves = { Nappin + "(Prb)Shelves1.prefab" };
+
+            public static readonly string[] MeetingTable =
+            {
+                Nappin + "(Prb)ConferenceTable.prefab",
+                Lite + "Table_Conference.prefab"
+            };
+
+            public static readonly string[] MeetingChair =
+            {
+                Lite + "Chair_Conference.prefab",
+                Nappin + "(Prb)OfficeChair.prefab"
+            };
+
+            public static readonly string[] BreakTable = { Nappin + "(Prb)CoffeTable.prefab" };
+
+            /// <summary>A chair, not the beanbag: Fatboy measures 1.85m across.</summary>
+            public static readonly string[] Stool =
+            {
+                Lite + "Chair_Conference_Olive.prefab",
+                Lite + "Chair_Conference.prefab"
+            };
+
+            /// <summary>
+            /// A pot on the floor. The two in the office pack measure half a metre, which is a
+            /// desk plant: blown up to a floor plant it reads as a poinsettia in a bucket.
+            /// </summary>
+            // Measured: PlantTypeA is 0.79m of actual plant, PlantPotLargeA is an empty pot at
+            // 0.37m, and the two in the office pack are half a metre of desk plant.
+            public static readonly string[] PlantTall =
+            {
+                Lite + "PlantTypeA.prefab",
+                Nappin + "(Prb)Plant1.prefab"
+            };
+
+            public static readonly string[] PlantWide =
+            {
+                Nappin + "(Prb)PlantBox.prefab",
+                Lite + "PlantPotLargeA.prefab",
+                Nappin + "(Prb)Plant2.prefab"
+            };
+
+            public static readonly string[] DeskPlant = { Nappin + "(Prb)DeskPlant.prefab" };
+        }
+
+        /// <summary>
+        /// Stands one piece of real furniture, scaled to the space the box used to occupy.
+        ///
+        /// **Measured, never assumed.** A pack models its desk in whatever unit its author
+        /// liked, and this project has already been caught twice believing a prefab about its
+        /// own size: the portraits framed nine characters at the chest because one pack builds
+        /// people at 2.24m, and the glasses were placed twice on guesses before somebody probed
+        /// the mesh and found it centred on the floor. So the renderers are measured and the
+        /// piece is scaled uniformly until its footprint fits, then stood with its base on the
+        /// floor rather than on its own pivot, which is the other half of that lesson.
+        ///
+        /// Uniform, because a desk stretched to fit a footprint is a desk that reads as wrong
+        /// without anybody being able to say why.
+        /// </summary>
+        /// <param name="footprint">What the box was: width, height and depth in metres.</param>
+        private static void Piece(Transform parent, string name, Vector3 centre,
+            Vector3 footprint, string[] candidates, Material fallback, float yaw = 0f)
+        {
+            var prefab = Load(candidates);
+
+            if (prefab == null)
+            {
+                Box(parent, name, centre, footprint, fallback);
+                return;
+            }
+
+            var piece = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+            piece.name = name;
+            piece.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            piece.transform.localScale = Vector3.one;
+
+            var bounds = Measure(piece);
+
+            if (bounds.size.x <= 0.0001f || bounds.size.z <= 0.0001f)
+            {
+                // Nothing to measure means nothing to draw. A prefab that renders no geometry
+                // would leave an invisible hole where a desk belongs, which is worse than a box.
+                Object.DestroyImmediate(piece);
+                Box(parent, name, centre, footprint, fallback);
+                return;
+            }
+
+            // **By height, and the footprint only rescues it.** Fitting the smallest of the
+            // three axes sounds safer and is what the first pass did: the kitchen run is five
+            // metres long, so asking it to fit inside eighty centimetres of depth shrank the
+            // whole unit to fifteen per cent and it drew as a conveyor belt lying against the
+            // wall. Height is the one dimension a person reads without thinking. A desk is
+            // seventy five centimetres tall and that is what makes it a desk.
+            var scale = footprint.y > 0.0001f && bounds.size.y > 0.0001f
+                ? footprint.y / bounds.size.y
+                : 1f;
+
+            // The rescue: if scaling to height leaves something wildly wider than the space it
+            // was given, bring it down. Generously, because a real desk is deeper than the box
+            // that stood in for it and that is fine.
+            var room = Mathf.Max(footprint.x, footprint.z) * 1.8f;
+            var widest = Mathf.Max(bounds.size.x, bounds.size.z) * scale;
+
+            if (room > 0.0001f && widest > room)
+            {
+                scale *= room / widest;
+            }
+
+            piece.transform.localScale = Vector3.one * scale;
+
+            // Re-measured after scaling, because the offset from the pivot scaled with it.
+            bounds = Measure(piece);
+
+            var offset = piece.transform.localPosition - parent.InverseTransformPoint(bounds.center);
+            var baseLift = bounds.size.y / 2f;
+
+            piece.transform.localPosition = new Vector3(centre.x, centre.y + baseLift, centre.z)
+                + offset;
+
+            foreach (var collider in piece.GetComponentsInChildren<Collider>(true))
+            {
+                Object.DestroyImmediate(collider);
+            }
+        }
+
+        /// <summary>The first candidate that is actually on this machine, or null.</summary>
+        private static GameObject Load(string[] candidates)
+        {
+            foreach (var path in candidates)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+
+                if (prefab != null)
+                {
+                    return prefab;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Every renderer under this object, as one box in world space.</summary>
+        private static Bounds Measure(GameObject piece)
+        {
+            var renderers = piece.GetComponentsInChildren<Renderer>(true);
+
+            if (renderers.Length == 0)
+            {
+                return new Bounds(piece.transform.position, Vector3.zero);
+            }
+
+            var bounds = renderers[0].bounds;
+
+            for (var index = 1; index < renderers.Length; index++)
+            {
+                bounds.Encapsulate(renderers[index].bounds);
+            }
+
+            return bounds;
         }
 
         private static void Box(Transform parent, string name, Vector3 centre, Vector3 size,

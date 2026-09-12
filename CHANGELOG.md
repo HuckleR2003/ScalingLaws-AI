@@ -426,6 +426,14 @@ than grey text with the money shouting over it.
 
 ### Changed
 
+- **The furniture in both rented floors is furniture.** Desks, office chairs in eight colours,
+  monitors, a five metre kitchen run with a microwave and a water cooler, shelves, a canteen table,
+  a conference table with six chairs, a printer and planted pots, all from packs already in the
+  project. Every piece is scaled from its own measured height rather than from a guess, because a
+  pack models its desk in whatever unit its author liked: the first pass asked a five metre kitchen
+  run to fit inside eighty centimetres of depth and it drew as a conveyor belt lying against the
+  wall. **A machine without the packs still gets a complete room**, in boxes, which is the same
+  rule every art loader here follows.
 - **Both rented floors are rooms now rather than grey boxes.** The author sent two isometric
   cutaway references and the difference between them and what the game had was not the objects,
   it was everything around them: one flat slab of floor, one blue stripe for a window, desks at
