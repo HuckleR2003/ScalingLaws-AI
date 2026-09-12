@@ -34,6 +34,9 @@ namespace ScalingLaws.UI
         private GameObject loadedRoom;
         private OfficeTier? shownTier;
 
+        /// <summary>The room on screen, kept so the dressing knows what the room already has.</summary>
+        private RoomView shownView;
+
         /// <summary>
         /// Everything standing in the office that is not a child of the room transform.
         ///
@@ -188,6 +191,7 @@ namespace ScalingLaws.UI
         private void SwapRoom(OfficeTier tier)
         {
             var view = RoomCatalog.For(tier);
+            shownView = view;
 
             if (loadedRoom != null)
             {
@@ -340,14 +344,26 @@ namespace ScalingLaws.UI
         /// `ExtraDesks`, and no number in the game moves because they exist. They are what the office
         /// is, the same way its walls are.
         /// </summary>
+        /// <param name="desks">What the lease pays for, before the room is looked at.</param>
         private void StandTierDesks(int desks)
         {
             var room = CurrentRoom;
 
-            if (room == null || desks <= 0)
+            // **Only the ones the room has not already built, which today is none of them.**
+            // `RoomView.FixedDesks` records how many desks the builder actually put on that
+            // floor, and the lease pays for exactly that many, so this stood a second full set
+            // of ten on the small floor and twenty on the big one. They were not even in the
+            // room: the block is laid out from the origin backwards, which is off the floor
+            // entirely, so a company that moved out of the house got a row of white boxes
+            // standing in the dark beside its new office. Two sources for one fact, again.
+            var extra = Mathf.Max(0, desks - shownView.FixedDesks);
+
+            if (room == null || extra <= 0)
             {
                 return;
             }
+
+            desks = extra;
 
             var group = room.Find(FurnitureGroup);
 
@@ -362,12 +378,14 @@ namespace ScalingLaws.UI
                 desk.name = DeskName + index;
                 desk.transform.SetParent(group, false);
 
-                // A block back and to one side of where the founder works, so the room reads as an
-                // office with people in it rather than a showroom.
+                // Inside the room rather than behind its origin. A tier that promises more desks
+                // than its own room builds is the only way to get here, and standing them off the
+                // floor is what made that state look like a rendering fault rather than a
+                // mismatched number.
                 desk.transform.localPosition = new Vector3(
-                    (index % DesksPerRow - (DesksPerRow - 1) * 0.5f) * DeskSpacing,
+                    2.0f + index % DesksPerRow * DeskSpacing,
                     0.36f,
-                    -1.2f - index / DesksPerRow * DeskSpacing);
+                    1.6f + index / DesksPerRow * DeskSpacing);
 
                 desk.transform.localScale = new Vector3(1.5f, 0.72f, 0.75f);
 

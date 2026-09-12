@@ -399,6 +399,30 @@ namespace ScalingLaws.Tests.PlayMode
             Assert.That(strays, Is.Empty,
                 "The company moved out and " + strays.Count + " thing(s) from the old room are "
                 + "still drawn inside the new one: " + string.Join(", ", strays) + ".");
+
+            // **And the other half: nothing of the new room is drawn off its own floor.** The
+            // stage stood a second full set of the lease's desks, laid out backwards from the
+            // room origin, so ten white boxes stood in the dark beside the office. The room
+            // already builds those desks; the lease pays for the ones it built.
+            var floor = room.GetComponentsInChildren<MeshRenderer>(true)
+                .FirstOrDefault(renderer => renderer.transform.name == "Floor");
+
+            Assume.That(floor, Is.Not.Null, "the room has no floor to measure against");
+
+            var footprint = floor.bounds;
+            footprint.Expand(new Vector3(1.5f, 40f, 1.5f));
+
+            var offTheFloor = room.GetComponentsInChildren<MeshRenderer>(true)
+                .Where(renderer => renderer.enabled)
+                .Where(renderer => !footprint.Contains(renderer.bounds.center))
+                .Select(renderer => renderer.transform.name)
+                .Distinct()
+                .Take(8)
+                .ToList();
+
+            Assert.That(offTheFloor, Is.Empty,
+                offTheFloor.Count + " thing(s) in the office are drawn outside the room: "
+                + string.Join(", ", offTheFloor) + ".");
         }
 
         /// <summary>

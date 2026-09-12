@@ -402,6 +402,11 @@ than grey text with the money shouting over it.
   transform, and the house was furnished by hand, so whatever was placed outside it stayed lit.
   What is in the room is now decided by where it stands rather than by what it hangs off.
   Nobody reported this because until this build nobody could move.
+- **And a row of white boxes stood in the dark beside the new office.** Moving in stood the desks
+  the lease pays for, on top of the ones the floor is built with, and laid them out backwards from
+  the room origin, which is off the floor. The lease pays for the desks the room already has, so it
+  stands none of its own; a tier that ever promises more than its room builds now stands the
+  difference inside the room rather than behind it.
 
 ### Changed
 
