@@ -53,6 +53,7 @@ namespace ScalingLaws.UI
                             Math.Min(active.DaysCompleted, active.DurationDays),
                             active.DurationDays));
             UiParts.ExplainPage(page, TechNotes.Eras);
+            page.Add(BuildResearchKey());
 
             var board = simulation.ResearchBoard();
             var funding = BuildResearchFunding();
@@ -665,6 +666,78 @@ namespace ScalingLaws.UI
             figure.Add(amount);
 
             return figure;
+        }
+
+        /// <summary>
+        /// The key: what the colours mean and what the six icons mean.
+        ///
+        /// **A board that reads at a glance needs one, or the glance is a guess.** Every card now
+        /// carries up to six small pictures and four possible colours, none of which a player has
+        /// seen before, and hovering one is a thing you only do once you already suspect it means
+        /// something. Civilization puts its key in the corner of the tree for the same reason.
+        ///
+        /// Built from the same enum the cards read, so a seventh kind of reward cannot appear on
+        /// the board and be missing from the key.
+        /// </summary>
+        private VisualElement BuildResearchKey()
+        {
+            var key = new VisualElement();
+            key.AddToClassList("rkey");
+
+            var states = new (string Key, string Modifier)[]
+            {
+                ("research.key.done", "rkey__swatch--done"),
+                ("research.key.running", "rkey__swatch--running"),
+                ("research.key.ready", "rkey__swatch--ready"),
+                ("research.key.locked", "rkey__swatch--locked")
+            };
+
+            foreach (var (phrase, modifier) in states)
+            {
+                var entry = new VisualElement();
+                entry.AddToClassList("rkey__entry");
+
+                var swatch = new VisualElement();
+                swatch.AddToClassList("rkey__swatch");
+                swatch.AddToClassList(modifier);
+                entry.Add(swatch);
+
+                var label = new Label(Loc.T(phrase));
+                label.AddToClassList("rkey__label");
+                entry.Add(label);
+
+                key.Add(entry);
+            }
+
+            var rule = new VisualElement();
+            rule.AddToClassList("rkey__rule");
+            key.Add(rule);
+
+            foreach (RewardKind kind in Enum.GetValues(typeof(RewardKind)))
+            {
+                var entry = new VisualElement();
+                entry.AddToClassList("rkey__entry");
+
+                var icon = new VisualElement();
+                icon.AddToClassList("rkey__icon");
+
+                var art = UnlockIcons.Get(kind);
+
+                if (art != null)
+                {
+                    icon.style.backgroundImage = new StyleBackground(art);
+                }
+
+                entry.Add(icon);
+
+                var label = new Label(Loc.T(UnlockIcons.KeyFor(kind)));
+                label.AddToClassList("rkey__label");
+                entry.Add(label);
+
+                key.Add(entry);
+            }
+
+            return key;
         }
 
         /// <summary>

@@ -435,6 +435,10 @@ than grey text with the money shouting over it.
 - **And the lines between nodes are drawn.** Every node has had its prerequisites in the catalogue
   since the tree was written and the screen had never drawn one of them, so the order a player was
   meant to read the tree in existed only inside the rules.
+- **The board has a key.** Four colours and six icons a player has never seen, explained in one line
+  above the first era: done, researching, can start, needs something first, then what each reward
+  icon means. Built from the same list the cards read, so a seventh kind of reward cannot appear on
+  the board and be missing from the key.
 - **A node title is 13px and drawn at full size.** The board for era one is about 1,500 pixels wide
   and the band it sits in is about 1,200, so the map was shrinking the whole era to 85% to show all
   of it, which took an 11px title to 9.4px. This project set itself a floor of 11px after a report
