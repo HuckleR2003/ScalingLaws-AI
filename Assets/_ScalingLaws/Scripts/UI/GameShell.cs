@@ -154,6 +154,9 @@ namespace ScalingLaws.UI
 
         /// <summary>The walkthrough on offer, at the bottom of the lane. See <see cref="PromptChips"/>.</summary>
         private VisualElement bannerPrompts;
+
+        /// <summary>The bar for the products half, which is the half that can outgrow the column.</summary>
+        private PageScrollbar bannerBar;
         private UpgradeStrip upgradeStrip;
 
         /// <summary>
@@ -1123,7 +1126,8 @@ namespace ScalingLaws.UI
             products.AddToClassList("mb-stack__slot");
             products.AddToClassList("mb-stack__slot--give");
             products.Add(modelBanner.Root);
-            products.hierarchy.Add(new PageScrollbar(products));
+            bannerBar = new PageScrollbar(products);
+            products.hierarchy.Add(bannerBar);
 
             bannerProducts = products;
             bannerStack.Add(bannerProducts);
@@ -1783,6 +1787,10 @@ namespace ScalingLaws.UI
             // whatever the last page was and the thumb would be sized for that one.
             pageBar?.Refresh();
             pageBar?.schedule.Execute(() => pageBar?.Refresh()).ExecuteLater(1);
+
+            // The corner column for the same reason: how many banners are in it changes when a
+            // product ships rather than when a screen opens, so its bar is measured here too.
+            bannerBar?.Refresh();
         }
 
         /// <summary>

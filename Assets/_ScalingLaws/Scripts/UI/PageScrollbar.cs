@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -61,6 +61,17 @@ namespace ScalingLaws.UI
             view.verticalScroller.valueChanged += _ => Refresh();
             view.contentContainer.RegisterCallback<GeometryChangedEvent>(_ => Refresh());
             view.RegisterCallback<GeometryChangedEvent>(_ => Refresh());
+
+            // **And once on arrival, then again a frame later.** The shell already did this for the
+            // page bar with a comment saying why: nothing is laid out when the bar is added, so the
+            // first measurement is of whatever was there before. The corner column was the second
+            // caller and it hid itself over a list three times its own height, because the geometry
+            // callbacks above all fired while there was nothing in it to measure.
+            RegisterCallback<AttachToPanelEvent>(_ =>
+            {
+                Refresh();
+                schedule.Execute(Refresh).ExecuteLater(1);
+            });
         }
 
         /// <summary>
@@ -107,7 +118,17 @@ namespace ScalingLaws.UI
             // page continues when it does not.
             var needed = height > 0f;
 
-            style.display = needed ? DisplayStyle.Flex : DisplayStyle.None;
+            // **Hidden, not undisplayed, and the difference is a latch.** `display: none` takes an
+            // element out of layout, so the bar's own box became zero, and its box is where the
+            // track length above comes from: once hidden it measured a track of nothing, decided
+            // it was not needed, and could never come back however long the content grew. The page
+            // bars never met it because a new one is built for every page. The corner column keeps
+            // one for the life of the game, and it hid itself over a list three times its height.
+            //
+            // This bar is absolutely positioned and costs no width either way, which is the whole
+            // point of it, so there is nothing to reclaim by dropping it out of layout.
+            style.visibility = needed ? Visibility.Visible : Visibility.Hidden;
+            pickingMode = needed ? PickingMode.Position : PickingMode.Ignore;
 
             if (!needed)
             {

@@ -3716,25 +3716,32 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
+/* **The last light surface in the game, and the one on screen the most.** A near-white card
+   with a maroon slab across the top, sitting in a column beside the research strip, the
+   upgrade card and the offer card, every one of which is a dark card with a hairline and a
+   coloured kicker. This is the palette the news and grant banners on the other side of the
+   screen already use, so the two corners now read as one interface. */
 .mb {
     width: 100%;
     flex-shrink: 0;
     margin-bottom: 8px;
-    background-color: rgb(250, 250, 250);
-    border-width: 2px;
-    border-color: rgb(24, 26, 30);
-    border-radius: 7px;
+    background-color: rgba(10, 12, 18, 0.93);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
     overflow: hidden;
 }
 
 .mb__head {
     flex-direction: row;
     align-items: center;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 10px;
-    padding-right: 8px;
-    background-color: rgb(114, 12, 46);
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 11px;
+    padding-right: 9px;
+    background-color: rgba(116, 14, 48, 0.45);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.10);
 }
 
 .mb__title {
@@ -3768,11 +3775,14 @@
     color: rgb(255, 244, 190);
 }
 
+/* The right side is wider than the left on purpose: the scrollbar for the products column is drawn
+   over this card rather than beside it, which is what keeps it from re-flowing the page, so the
+   card leaves it a gutter. Without it the bar sits on top of the topicality reading. */
 .mb__body {
-    padding-top: 7px;
-    padding-bottom: 7px;
-    padding-left: 9px;
-    padding-right: 9px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 11px;
+    padding-right: 18px;
 }
 
 .mb__meters {
@@ -3781,51 +3791,62 @@
 }
 
 .mb-meter {
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     flex-grow: 1;
     flex-basis: 0;
+    margin-right: 8px;
+}
+
+.mb-meter__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
 }
 
 .mb-meter__label {
     font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 1px;
-    color: rgb(28, 30, 36);
-    margin-right: 5px;
+    color: rgb(150, 158, 172);
+    margin-right: 6px;
 }
 
 .mb-meter__track {
     flex-grow: 1;
-    height: 13px;
-    background-color: rgb(255, 255, 255);
-    border-width: 1px;
-    border-color: rgb(28, 30, 36);
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.09);
+    border-width: 0;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 .mb-meter__fill {
-    height: 11px;
+    height: 8px;
+    border-radius: 4px;
 }
 
 .mb-meter__fill--good {
-    background-color: rgb(52, 176, 82); }
+    background-color: rgb(104, 206, 126); }
 .mb-meter__fill--warm {
-    background-color: rgb(246, 146, 30); }
+    background-color: rgb(248, 170, 74); }
 .mb-meter__fill--bad {
-    background-color: rgb(206, 48, 44); }
+    background-color: rgb(226, 92, 86); }
 
 .mb-meter__word {
-    margin-left: 5px;
+    margin-left: 6px;
     font-size: 11px;
     letter-spacing: 1px;
-    color: rgb(96, 100, 110);
+    color: rgb(132, 140, 156);
 }
 
 .mb__subs {
-    font-size: 11px;
+    font-size: 12px;
     -unity-font-style: bold;
-    color: rgb(114, 12, 46);
-    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+    color: rgb(228, 146, 174);
+    margin-bottom: 5px;
 }
 
 
@@ -3850,30 +3871,38 @@
     font-size: 11px;
     -unity-font-style: bold;
     letter-spacing: 0.5px;
-    color: rgb(92, 96, 104);
+    color: rgb(142, 150, 166);
     margin-right: 0;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
+/* Translucent rather than filled. A solid green chip on a dark card is the brightest thing on
+   the screen, and there are up to five of these cards in one column, so the colour has to say
+   which way the number went without taking the eye off everything else in the corner. */
 .mb-cell__value {
     flex-grow: 1;
-    font-size: 12px;
+    font-size: 14px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    background-color: rgb(232, 232, 232);
-    color: rgb(28, 30, 36);
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgb(228, 234, 246);
 }
 
 .mb-cell__value--good {
-    background-color: rgb(154, 214, 62);
-    color: rgb(18, 46, 14);
+    border-color: rgba(154, 214, 62, 0.40);
+    background-color: rgba(154, 214, 62, 0.16);
+    color: rgb(188, 232, 128);
 }
 
 .mb-cell__value--bad {
-    background-color: rgb(206, 48, 44);
-    color: rgb(255, 236, 234);
+    border-color: rgba(226, 92, 86, 0.45);
+    background-color: rgba(226, 92, 86, 0.16);
+    color: rgb(246, 164, 158);
 }
 
 /* ---- the same strip while a run is in flight ---- */
@@ -3908,9 +3937,10 @@
 .mb-chart {
     height: 54px;
     flex-shrink: 0;
-    background-color: rgb(255, 255, 255);
+    background-color: rgba(255, 255, 255, 0.04);
     border-width: 1px;
-    border-color: rgb(28, 30, 36);
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 4px;
     overflow: hidden;
 }
 

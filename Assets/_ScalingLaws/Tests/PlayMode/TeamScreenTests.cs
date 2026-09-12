@@ -264,6 +264,39 @@ namespace ScalingLaws.Tests.PlayMode
 
             var panels = products.Concat(research).Concat(upgrade).ToList();
 
+            // **The products half says when it continues.** It scrolls now, and a list that carries
+            // on below the fold with nothing to say so is the reported fault this project already
+            // fixed once for pages.
+            //
+            // Asserted as agreement rather than as "the bar is up", because whether three products
+            // fit depends on the window: they do in a tall one, and a bar over a list that fits is
+            // furniture claiming there is more. The invariant is that the two never disagree.
+            var bar = corner.Q(className: "pscroll");
+            Assert.That(bar, Is.Not.Null, "The products half scrolls and has no bar at all.");
+
+            var scroller = corner.Q<ScrollView>();
+            Assert.That(scroller, Is.Not.Null);
+
+            var overflows = scroller.contentContainer.layout.height
+                > scroller.layout.height + 1f;
+
+            var barIsUp = bar.resolvedStyle.visibility == Visibility.Visible
+                && bar.resolvedStyle.display == DisplayStyle.Flex;
+
+            Assert.That(barIsUp, Is.EqualTo(overflows),
+                "The scrollbar and the list disagree about whether there is more to see: "
+                + "content " + scroller.contentContainer.layout.height + ", window "
+                + scroller.layout.height + ", bar up " + barIsUp + ", bar box " + bar.layout + ".");
+
+            if (overflows)
+            {
+                var thumb = bar.Q(className: "pscroll__thumb");
+                Assert.That(thumb, Is.Not.Null);
+
+                Assert.That(thumb.worldBound.height, Is.GreaterThan(1f),
+                    "The bar is drawn and its grip has no height, which is an empty track.");
+            }
+
             // **And the column stays inside its own box.** It is anchored top and bottom now so
             // it cannot reach the bottom bar, which is only true if the part that gives way
             // actually gives way: anything overflowing the box is drawn over the bar.

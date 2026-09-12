@@ -15,9 +15,11 @@ namespace ScalingLaws.UI
     /// </summary>
     public sealed class ProductSparkline : VisualElement
     {
-        private static readonly Color Good = new(0.30f, 0.68f, 0.38f);
-        private static readonly Color Bad = new(0.82f, 0.28f, 0.26f);
-        private static readonly Color Rule = new(0.62f, 0.60f, 0.62f);
+        // Lifted for a dark ground. The card behind this used to be near white, and a bar at 0.30
+        // green on a card at 0.05 is a shape you have to look for rather than read.
+        private static readonly Color Good = new(0.41f, 0.81f, 0.49f);
+        private static readonly Color Bad = new(0.89f, 0.36f, 0.34f);
+        private static readonly Color Rule = new(1f, 1f, 1f, 0.20f);
 
         private long[] values = Array.Empty<long>();
 
@@ -223,10 +225,14 @@ namespace ScalingLaws.UI
             meters.AddToClassList("mb__meters");
             meters.Add(Meter(Loc.T("banner.happiness"), happinessFill, "mb-meter__fill--good"));
 
-            var right = Meter(Loc.T("banner.topicality"), topicalityFill, "mb-meter__fill--warm");
+            // **The word goes on the caption line, not beside the bar.** Both meters share the row
+            // evenly and the bar takes what the caption leaves, so a six letter reading like
+            // OUTDATED took the whole of the right-hand half and the topicality bar was drawn at
+            // nothing. Two of them side by side and one had no bar at all.
             topicalityWord.AddToClassList("mb-meter__word");
-            right.Add(topicalityWord);
-            meters.Add(right);
+
+            meters.Add(Meter(Loc.T("banner.topicality"), topicalityFill, "mb-meter__fill--warm",
+                topicalityWord));
 
             body.Add(meters);
 
@@ -255,14 +261,26 @@ namespace ScalingLaws.UI
             return body;
         }
 
-        private static VisualElement Meter(string caption, VisualElement fill, string fillClass)
+        /// <param name="trailing">Put on the caption line, to the right of it. Optional.</param>
+        private static VisualElement Meter(string caption, VisualElement fill, string fillClass,
+            VisualElement trailing = null)
         {
             var block = new VisualElement();
             block.AddToClassList("mb-meter");
 
+            var head = new VisualElement();
+            head.AddToClassList("mb-meter__head");
+
             var label = new Label(caption);
             label.AddToClassList("mb-meter__label");
-            block.Add(label);
+            head.Add(label);
+
+            if (trailing != null)
+            {
+                head.Add(trailing);
+            }
+
+            block.Add(head);
 
             var track = new VisualElement();
             track.AddToClassList("mb-meter__track");

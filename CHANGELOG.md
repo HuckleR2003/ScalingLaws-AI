@@ -374,6 +374,22 @@ than grey text with the money shouting over it.
   corner, which is the middle of the column on any company selling more than one thing. It is the
   last card in the column on the site and keeps its own place under the room banner in the
   basement, which is the one screen where that corner belongs to something else.
+- **The card a product is managed and sold from is not from a different application any more.**
+  It was the last near-white surface in the game and the one on screen the longest: a cream card
+  with a maroon slab across the top, in a column beside the research strip, the upgrade card and
+  the offer card, every one of which is dark with a hairline and a coloured kicker. Same palette
+  as those and as the news and grant banners on the other side of the screen. The two figures
+  under it are larger and their green and red are the outline and the tint rather than a filled
+  block, because five filled chips in one column is the brightest thing on the page.
+- **The topicality bar was drawn at nothing.** The two meters shared the row evenly and each bar
+  took whatever its caption left, so a reading like OUTDATED took the whole of the right-hand
+  half and one of the two products meters had no bar at all. Caption above bar now, with the
+  reading on the caption line, so both are full width and the same length.
+- **The scrollbar could hide itself and never come back.** It measures the track from its own
+  box and it was hidden by being taken out of layout, which makes that box zero, so once down it
+  stayed down however long the page grew. Every page escaped it by building a new bar each time.
+  The corner column keeps one for the life of the game, and it sat hidden over a list three times
+  its own height. It is hidden by visibility now, which leaves the box it measures.
 
 ### Save compatibility
 
@@ -418,6 +434,13 @@ model history that saves already carry, so an existing campaign reads correctly 
   products and has a node and an upgrade in flight, so `tab_site.png` shows that corner at its
   worst. Every pass until now reviewed a company doing one thing at a time, which is the state that
   needed no work. Two faults in this list were found by looking at the new frame.
+- **The scrollbar is hidden with `visibility`, not `display`.** Taking it out of layout zeroed
+  the box it measures its own track from, which is a latch: hidden once, hidden forever. It also
+  refreshes itself on attach and a frame later, which the shell was already doing by hand for
+  the page bar with a comment saying why. The corner column was the second caller and found
+  both.
+- `ModelBanner.Meter` takes the reading as a trailing element on the caption line rather than
+  having the caller append it beside the bar, so the bar is always the width of the cell.
 - `PromptChips.MoveTo` hands the card to whichever parent owns the corner on that screen, and
   remembers where it was built. Recovering that from `panel.visualTree` instead put it above the
   element the stylesheet is attached to, and it drew as a full-width grey slab across the room:
