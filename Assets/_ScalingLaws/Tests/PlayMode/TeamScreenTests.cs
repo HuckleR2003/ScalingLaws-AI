@@ -1,9 +1,11 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
+using ScalingLaws.Simulation;
 using ScalingLaws.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -143,6 +145,161 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// **Nothing in the corner lands on anything else, however much is happening.**
+        ///
+        /// Reported by a playtester: with models on sale, a run going and a node researching, the
+        /// banners in the top right ran over each other. They did, and by construction: the column
+        /// starts at 54 and grows with every product, while the research banner was pinned to 214
+        /// and the upgrade banner to 458.
+        ///
+        /// The worst case is the one that has to be measured, so this builds it: three products, a
+        /// node, an upgrade, and a run.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheCornerBannersNeverLandOnEachOther()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            TabProofCampaign.Furnish(shell.Simulation);
+
+            var simulation = shell.Simulation;
+            var state = simulation.State;
+            state.CashUsd = 900_000_000L;
+            state.ResearchPoints = 400_000.0;
+
+            // Two more products beside the flagship, each its own line so none supersedes another.
+            for (var index = 0; index < 2; index++)
+            {
+                var extra = new DeployedModel(
+                    "Follower " + (index + 1), ArchitectureId.DenseTransformer, 44.0 + index,
+                    state.Date, 2e10, 1.0, ModelType.General, "Line " + (index + 1));
+
+                state.AddDeployedModel(extra);
+                extra.SeedLine(MonetizationPolicy.OpeningSubscriptionUsdPerMonth, 0.0);
+            }
+
+            simulation.TryStartUpgrades(0, new[] { ModelTrait.Reasoning }, out _);
+
+            foreach (var node in ResearchTree.All)
+            {
+                if (simulation.TryStartResearch(node.Id, out _))
+                {
+                    break;
+                }
+            }
+
+            Assert.That(shell.OpenScreenByName("Site"), Is.True);
+
+            yield return null;
+            yield return null;
+            yield return null;
+
+            var corner = Root.Q(className: "mb-stack");
+            Assert.That(corner, Is.Not.Null, "There is no corner stack.");
+
+            // **Counted by kind, and asserted rather than assumed.** A guard that only counts
+            // banners passes on three products with the research and upgrade strips missing
+            // entirely, which is the regression most likely to arrive here: the two that moved
+            // into slots are the two that could stop being drawn without anything else noticing.
+            // **What the player can see, not what the layout holds.** The product half of the
+            // column is a scroller, so a banner below the fold keeps a world rectangle that runs
+            // straight through the research strip underneath it while being clipped to nothing on
+            // screen. Measuring raw boxes reports that as two banners drawn over each other, which
+            // is a real failure of this test and not of the interface.
+            static Rect Seen(VisualElement element)
+            {
+                var box = element.worldBound;
+
+                for (var parent = element.hierarchy.parent;
+                     parent != null;
+                     parent = parent.hierarchy.parent)
+                {
+                    // Against the scroller's viewport rather than against anything that reports
+                    // itself clipped: `resolvedStyle` carries no overflow, and the viewport is the
+                    // rectangle a scrolled page is actually shown through.
+                    if (parent is not ScrollView scroller)
+                    {
+                        continue;
+                    }
+
+                    var clip = scroller.contentViewport.worldBound;
+
+                    var xMin = Mathf.Max(box.xMin, clip.xMin);
+                    var yMin = Mathf.Max(box.yMin, clip.yMin);
+                    var xMax = Mathf.Min(box.xMax, clip.xMax);
+                    var yMax = Mathf.Min(box.yMax, clip.yMax);
+
+                    box = new Rect(xMin, yMin, Mathf.Max(0f, xMax - xMin),
+                        Mathf.Max(0f, yMax - yMin));
+                }
+
+                return box;
+            }
+
+            List<VisualElement> Up(string css) => Root.Query(className: css)
+                .ToList()
+                .Where(element => element.resolvedStyle.display != DisplayStyle.None)
+                .Where(element => Seen(element).height > 1f)
+                .ToList();
+
+            var products = Up("mb");
+            var research = Up("rb");
+            var upgrade = Up("ub");
+
+            Assert.That(products.Count, Is.GreaterThan(1),
+                "The company is selling three models and fewer than two product banners are up, "
+                + "so the worst case this fixture exists to measure was never built.");
+
+            Assert.That(research.Count, Is.EqualTo(1),
+                "A node is running and its banner is not on screen, so the overlap below is "
+                + "measured over whatever is left rather than over what the playtester saw.");
+
+            Assert.That(upgrade.Count, Is.EqualTo(1),
+                "An upgrade is running and its banner is not on screen, same reading.");
+
+            var panels = products.Concat(research).Concat(upgrade).ToList();
+
+            // **And the column stays inside its own box.** It is anchored top and bottom now so
+            // it cannot reach the bottom bar, which is only true if the part that gives way
+            // actually gives way: anything overflowing the box is drawn over the bar.
+            var stackBox = corner.worldBound;
+
+            foreach (var child in corner.hierarchy.Children())
+            {
+                if (child.worldBound.height <= 1f)
+                {
+                    continue;
+                }
+
+                Assert.That(child.worldBound.yMax, Is.LessThanOrEqualTo(stackBox.yMax + 0.5f),
+                    "The corner column overflows its own box, so its last strip is drawn over "
+                    + "the bottom bar: column " + stackBox + ", child " + child.worldBound + ".");
+            }
+
+            for (var left = 0; left < panels.Count; left++)
+            {
+                for (var right = left + 1; right < panels.Count; right++)
+                {
+                    var a = Seen(panels[left]);
+                    var b = Seen(panels[right]);
+
+                    var overlaps = a.xMin < b.xMax && b.xMin < a.xMax
+                        && a.yMin < b.yMax - 0.5f && b.yMin < a.yMax - 0.5f;
+
+                    Assert.That(overlaps, Is.False,
+                        "Two banners in the corner are drawn over each other: "
+                        + a + " and " + b + ". That is what the playtester saw with three things "
+                        + "happening at once.");
+                }
+            }
+        }
+
+        /// <summary>
         /// **The way out of an upgrade is on screen and inside its own row.**
         ///
         /// A tester asked for this by name and there was no way to stop one at all. The strip pools
@@ -165,10 +322,20 @@ namespace ScalingLaws.Tests.PlayMode
             var simulation = shell.Simulation;
             simulation.State.CashUsd = 400_000_000L;
 
-            var started = simulation.TryStartUpgrades(
-                0, new[] { ModelTrait.Reasoning }, out var why);
+            // **Commissioned only if the campaign is not already running one.** It is now, and
+            // asking for a second on the same model is correctly refused, which turned this
+            // fixture inconclusive rather than red: it went on reporting success while measuring
+            // nothing. What this test needs is a programme in flight, not one it started itself.
+            if (simulation.State.UpgradeProjects.Count == 0)
+            {
+                Assume.That(
+                    simulation.TryStartUpgrades(0, new[] { ModelTrait.Reasoning }, out var why),
+                    Is.True, "no upgrade could be commissioned: " + why);
+            }
 
-            Assume.That(started, Is.True, "no upgrade could be commissioned: " + why);
+            Assert.That(simulation.State.UpgradeProjects.Count, Is.GreaterThan(0),
+                "Nothing is being upgraded, so the strip below is correctly empty and this "
+                + "fixture would pass on a game with no abandon button in it at all.");
 
             Assert.That(shell.OpenScreenByName("Site"), Is.True);
 
@@ -189,6 +356,42 @@ namespace ScalingLaws.Tests.PlayMode
                 + "the office buttons were invisible for months.");
 
             Assert.That(stop.worldBound.width, Is.GreaterThan(1f), "It has no width.");
+
+            // **And the row it sits in has to be on the screen.** Being inside its own card is
+            // what the office buttons failed; being above the bottom bar is the other half, and a
+            // control drawn under the bar is exactly as unreachable as one drawn under a clipping
+            // edge. The corner column grows with everything the company is doing, so this is the
+            // one that goes first.
+            // **Beside the programme, not under it.** A row is a column by default in UI Toolkit,
+            // so the button was laid out below the text inside a box 40px tall, which squashed the
+            // name of the thing being stopped to half a line to make room. Both fitted their own
+            // box and the row read as broken. Centres, because that is what "beside" means and it
+            // does not care what either one is worth in pixels.
+            var rowBox = row.worldBound;
+            var stopBox = stop.worldBound;
+
+            Assert.That(stopBox.center.y, Is.EqualTo(rowBox.center.y).Within(3f),
+                "The abandon button is stacked inside its row rather than sitting beside the "
+                + "programme: row " + rowBox + ", button " + stopBox + ".");
+
+            // The row has to be tall enough for what is written in it. A kicker and a name at
+            // 12px and 14.5px with padding want 45px and the row was 40, so the name of the
+            // programme being stopped was cut across the middle: legible enough to pass a test
+            // that only asked whether it existed, and plainly broken to look at.
+            var name = row.Q(className: "ustrip__name");
+            Assert.That(name, Is.Not.Null, "The row does not say what is being stopped.");
+
+            Assert.That(name.worldBound.yMax, Is.LessThanOrEqualTo(row.worldBound.yMax + 0.5f),
+                "The name of the programme is drawn past the bottom of its own row: row "
+                + row.worldBound + ", name " + name.worldBound + ".");
+
+            var bar = Root.Q(className: "hud__bar");
+            Assert.That(bar, Is.Not.Null, "There is no bottom bar to measure against.");
+
+            Assert.That(stop.worldBound.yMax, Is.LessThanOrEqualTo(bar.worldBound.yMin + 0.5f),
+                "The way out of an upgrade is drawn under the bottom bar, so a player with a "
+                + "busy corner cannot press it: button " + stop.worldBound + ", bar "
+                + bar.worldBound + ".");
         }
 
         /// <summary>

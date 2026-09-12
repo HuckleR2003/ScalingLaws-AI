@@ -3684,12 +3684,36 @@
 
 /* The corner is a stack: one banner per product on sale. The stack owns the position, so the
    banners sit in normal flow inside it and a second one lands under the first rather than on top. */
+/* Bottom as well as top, so the column is bounded by the window rather than by how much the
+   company happens to be doing. The bar is 82px; at three products, a node and an upgrade this
+   ran under it, and every product after that pushed the research and upgrade strips further
+   off the screen. The products half scrolls (below) because it is the half that has no limit. */
 .mb-stack {
     position: absolute;
     top: 54px;
+    bottom: 90px;
     right: 20px;
     width: 316px;
     align-items: stretch;
+}
+
+/* One slot per subject, so filling one can neither reorder the column nor land on the one
+   under it. Empty slots take no height. */
+.mb-stack__slot {
+    flex-shrink: 0;
+    align-items: stretch;
+}
+
+/* The one slot that gives way. `min-height: 0` is load-bearing: a flex child will not shrink
+   below its content without it, so the scroller would size to every banner and push the two
+   fixed slots out of the column exactly as before. */
+.mb-stack__slot--give {
+    flex-shrink: 1;
+    min-height: 0;
+
+    /* The runtime theme gives a ScrollView a light background, which is invisible behind the
+       banners and a grey slab on a screen where they are all hidden. */
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .mb {
@@ -3810,19 +3834,25 @@
     margin-top: 6px;
 }
 
+/* **Stacked, not side by side.** Two captions and two figures on one 268px line overflowed the
+   card: the labels will not shrink below their own text, so the second pair was drawn over the
+   first figure and the last one was cut off by the card edge. `EARNED ALL TIME $67.1LAST 31 DAYS`
+   is what that reads as, and it is the same complaint the corner was rebuilt for. */
 .mb-cell {
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     flex-grow: 1;
     flex-basis: 0;
+    margin-right: 6px;
 }
 
 .mb-cell__label {
     font-size: 11px;
     -unity-font-style: bold;
-    letter-spacing: 1px;
-    color: rgb(28, 30, 36);
-    margin-right: 5px;
+    letter-spacing: 0.5px;
+    color: rgb(92, 96, 104);
+    margin-right: 0;
+    margin-bottom: 2px;
 }
 
 .mb-cell__value {
@@ -7896,12 +7926,12 @@
    Blue, under the model banner, because the two are different things and sharing one corner meant a
    four month node hid the product completely. */
 
+/* In the corner column now rather than pinned to a number. It sat at top 214 while the
+   column starts at 54 and grows with every product on sale, so three things at once printed
+   on top of each other. */
 .rb {
-    position: absolute;
-    right: 22px;
-    top: 214px;
-    width: 268px;
-    margin: 0;
+    width: 100%;
+    margin: 8px 0 0 0;
     padding: 11px 14px 12px 14px;
     align-items: flex-start;
     border-radius: 6px;
@@ -10465,11 +10495,8 @@
    keyframes, so the cycle is a scheduled class swap and the transition does the blending. */
 
 .ub {
-    position: absolute;
-    right: 22px;
-    top: 458px;
-    width: 268px;
-    margin: 0;
+    width: 100%;
+    margin: 8px 0 0 0;
     padding: 11px 14px 12px 14px;
     align-items: flex-start;
     border-radius: 6px;
@@ -12628,12 +12655,21 @@
    the training strip and the research strip already use, because a player should not have to learn
    three ways of being told the same thing. */
 
+/* Never squeezed. The column above it is bounded by the window now, and a flex child gives way
+   by default, so the strip was the thing that shrank: its 40px row was compressed and its own
+   text cut in half. The scroller above is the part that is meant to absorb that. */
 .ustrip {
     margin-top: 5px;
+    flex-shrink: 0;
 }
 
+/* A row, stated. The default is a column, so the abandon button was laid out underneath the
+   programme it stops, inside a box 40px tall, which squashed the text to make room for it and
+   left the button sitting on the bottom edge. */
 .ustrip__row {
-    height: 40px;
+    flex-direction: row;
+    align-items: center;
+    min-height: 48px;
     margin-bottom: 4px;
     background-color: rgba(14, 20, 32, 0.86);
     border-left-width: 2px;
@@ -12665,12 +12701,18 @@
 }
 
 .ustrip__kicker {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 12px;
     letter-spacing: 1px;
     color: rgb(178, 158, 235);
 }
 
 .ustrip__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
     font-size: 14.5px;
     color: rgb(228, 234, 246);
@@ -12678,10 +12720,10 @@
 }
 
 .ustrip__days {
-    font-size: 14px;
+    font-size: 13px;
     -unity-font-style: bold;
     color: rgb(210, 200, 246);
-    margin-left: 10px;
+    margin-left: 8px;
     flex-shrink: 0;
 }
 
@@ -16852,11 +16894,13 @@
  * Green, and it is the only green in the interface. The accent runs coral to violet and the task
  * strip is gold, so a fourth colour used in exactly one place is a colour that means one thing.
  */
+/* In the lane, not pinned inside it. `top: 448px` put this card in the middle of the right-hand
+   column, which holds a banner per product plus the node and the upgrade, so a company selling
+   more than one thing had an offer card printed across a banner. The column is a real container
+   with a slot for this now; the room, which has no such column, restores the absolute placement
+   below. */
 .prompts {
-    position: absolute;
-    right: 22px;
-    top: 448px;
-    width: 268px;
+    width: 100%;
 
     /* Hidden by default and shown on the screens whose corner is actually free. A page that uses
        the full width has content there: a render of the business page caught this card sitting on
@@ -17089,6 +17133,8 @@
  * banner already uses. One number, three tenants.
  */
 .has-right-rail .prompts {
+    position: absolute;
+    width: 268px;
     /* Under the room's own corner banner, which already holds 344 to 680 from y 145 to 635. The
        right side of this screen is fully spoken for: the build rail owns the edge and the banner
        owns the lane inside it, so the only free space is the strip below the banner. */
@@ -18576,12 +18622,13 @@
 /* The way out of an upgrade. Quiet until it is armed, because pressing it twice is the whole
    safety and a red button on a corner strip would read as an alarm. */
 .ustrip__stop {
-    align-self: flex-end;
+    align-self: center;
+    flex-shrink: 0;
     height: 22px;
-    margin: 6px 8px 6px 0;
-    padding: 0 10px;
+    margin: 6px 6px 6px 0;
+    padding: 0 7px;
     font-size: 11px;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     color: rgb(168, 180, 198);
     background-color: rgba(255, 255, 255, 0.05);
     border-width: 0;

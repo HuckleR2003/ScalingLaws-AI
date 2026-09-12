@@ -118,6 +118,16 @@ namespace ScalingLaws.Tests.PlayMode
                 "Kestrel", ArchitectureId.DenseTransformer, 41.0,
                 GameDate.FromCalendar(2023, 2, 14), 2e10, 0.8));
 
+            // **A third line, a node and an upgrade, so the corner is photographed at its worst.**
+            //
+            // A playtester ran three products while training and researching and reported the
+            // banners printing on top of each other. Every proof frame of SITE until now was a
+            // company doing one thing at a time, which is the state that needed no work. The
+            // review sheet is only worth the state it photographs.
+            state.AddDeployedModel(new DeployedModel(
+                "Merlin", ArchitectureId.DenseTransformer, 38.0,
+                GameDate.FromCalendar(2023, 11, 6), 2e10, 0.9));
+
             // **A finished run waiting to ship, which this campaign never had.** RELEASE therefore
             // photographed its own empty state on every pass: the one screen where the player is
             // looking at something they spent two hundred days building was reviewed as a panel
@@ -137,6 +147,20 @@ namespace ScalingLaws.Tests.PlayMode
 
             state.Effects.Add(
                 new ModelEffect(ModelEffectKind.Backlash, state.Date, 120, -0.16), state.Date);
+
+            // Both in flight, and the cluster is large enough that neither finishes during a
+            // review. Research first: it needs points, and a campaign this size has earned some.
+            state.ResearchPoints = 60_000.0;
+
+            foreach (var node in ResearchTree.All)
+            {
+                if (simulation.TryStartResearch(node.Id, out _))
+                {
+                    break;
+                }
+            }
+
+            simulation.TryStartUpgrades(0, new[] { ModelTrait.Reasoning }, out _);
 
             // One tick so everything derived from the above actually exists: market standing, the
             // books, awareness, service quality. Without it half the screens read zero, and the top

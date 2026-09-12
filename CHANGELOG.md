@@ -351,6 +351,29 @@ than grey text with the money shouting over it.
   programme's length before it reaches the calendar. A default company opening the screen was told
   365 days and would have got 317. Both the reading and the new button now say what the
   calendar will do.
+- **The corner stopped printing three things on top of each other.** Reported by Natalia, who had
+  models on sale, a run going and a node running at the same time and got all of it in one place.
+  The product banners grew downward from the top of that corner while the research strip was pinned
+  at 214px and the upgrade strip at 458px, so the more the company was doing the worse it got. That
+  corner is one column now, in a fixed order: the products, the node, the upgrade, the way out of
+  it, and whatever walkthrough is on offer. Filling one part cannot land on another.
+- **And the column can no longer run off the bottom of the screen.** It is bounded by the window
+  rather than by how much is happening, and the products half scrolls, because that is the half
+  with no limit on it: there is one banner per product and no rule about how many a company may
+  sell. The node and the upgrade keep their places whatever is above them.
+- **The two figures under each product were drawn over each other.** `EARNED ALL TIME` and
+  `LAST 31 DAYS` were side by side on a 268px line and captions do not shrink below their own text,
+  so the second pair printed across the first figure and the lead banner cut `SUBS. EARNINGS` off
+  at the card edge. Caption above figure now.
+- **The way out of an upgrade was laid out underneath the thing it stops.** A row is a column
+  unless it says otherwise, so the abandon button sat below the programme name inside a box 40px
+  tall, squashing the name to half a line to make room for it. The button is beside the days now,
+  the row is as tall as what is written in it, and anything still too long ends in an ellipsis
+  rather than mid-word.
+- **The walkthrough card no longer lands on a banner.** It was pinned at `top: 448px` in the same
+  corner, which is the middle of the column on any company selling more than one thing. It is the
+  last card in the column on the site and keeps its own place under the room banner in the
+  basement, which is the one screen where that corner belongs to something else.
 
 ### Save compatibility
 
@@ -369,7 +392,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,211 EditMode tests and 48 PlayMode**, up from 1,116 and 31, across 132 fixtures.
+- **1,211 EditMode tests and 49 PlayMode**, up from 1,116 and 31, across 132 fixtures.
 - **An audit pass over everything added this week, reached the way a campaign reaches it.** Not by
   calling the new methods: by playing until the thing turns up. It found that investors really do
   call in a campaign rather than only in a unit test, that an offer that arrives can be taken and
@@ -379,6 +402,26 @@ model history that saves already carry, so an existing campaign reads correctly 
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
+- **The corner is four slots and a scroller, not four things each pinned to a number.** Filling a
+  slot cannot reorder the column and cannot reach the slot below it, which is the difference
+  between a layout that happens to fit today and one that cannot stop fitting.
+  `TheCornerBannersNeverLandOnEachOther` builds the state that was reported (three products on
+  separate lines, a node, an upgrade), opens the site and compares every visible banner with every
+  other. It measures **what is on screen rather than what the layout holds**: the product half
+  scrolls, so a banner below the fold keeps a rectangle running straight through the strip beneath
+  it while being clipped to nothing, and reporting that is a fault in the test.
+- **That guard has been seen to fail.** It passed on the first run with the fix in, which proves
+  nothing, so it was checked against a broken layout and reported the overlap with both
+  rectangles. It also counts the banners by kind rather than in total: three products with the
+  research and upgrade strips missing entirely would satisfy a count.
+- **The review sheet now photographs the state that was reported.** `TabProofCampaign` sells three
+  products and has a node and an upgrade in flight, so `tab_site.png` shows that corner at its
+  worst. Every pass until now reviewed a company doing one thing at a time, which is the state that
+  needed no work. Two faults in this list were found by looking at the new frame.
+- `PromptChips.MoveTo` hands the card to whichever parent owns the corner on that screen, and
+  remembers where it was built. Recovering that from `panel.visualTree` instead put it above the
+  element the stylesheet is attached to, and it drew as a full-width grey slab across the room:
+  **USS reaches down a tree and not up it.**
 - `CompanySimulation.AudienceOnSale` is the one answer to "how many people are on this model", and
   `MarketedNow` the one answer to "what is on sale". Three callers, where there were three separate
   calculations.

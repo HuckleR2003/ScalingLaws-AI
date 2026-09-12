@@ -142,6 +142,18 @@ namespace ScalingLaws.UI
         private MailScreen mail;
         private OfficeChooser offices;
         private VisualElement bannerStack;
+
+        /// <summary>The products on sale: the flagship and one banner per follower.</summary>
+        private VisualElement bannerProducts;
+
+        /// <summary>The node in flight, under the products it is being paid for by.</summary>
+        private VisualElement bannerResearch;
+
+        /// <summary>Whatever is being improved, under the research.</summary>
+        private VisualElement bannerUpgrade;
+
+        /// <summary>The walkthrough on offer, at the bottom of the lane. See <see cref="PromptChips"/>.</summary>
+        private VisualElement bannerPrompts;
         private UpgradeStrip upgradeStrip;
 
         /// <summary>
@@ -1087,7 +1099,42 @@ namespace ScalingLaws.UI
             // strongest was hiding two of them.
             bannerStack = new VisualElement();
             bannerStack.AddToClassList("mb-stack");
-            bannerStack.Add(modelBanner.Root);
+
+            // **Slots, created once and in order, rather than three banners each pinned to a
+            // number.** The research banner sat at `top: 214px` and the upgrade banner at
+            // `top: 458px` while this column starts at 54 and grows with every product on sale,
+            // so a company selling three models with a run and a node going had them printed on
+            // top of each other. A playtester reported exactly that.
+            //
+            // Filling a slot cannot reorder the column and cannot collide with the slot below
+            // it, which is the difference between a layout that happens to fit today and one
+            // that cannot stop fitting.
+            // **A scroller, because this is the one slot with no ceiling on it.** There is one
+            // banner per product on sale and no rule limiting how many a company may sell, so a
+            // fixed column is a column that eventually pushes the research and upgrade strips off
+            // the bottom of the window. Hidden scrollers, the same as every page here, with the
+            // drawn bar beside them; the theme's own bar takes its width out of the content.
+            var products = new ScrollView(ScrollViewMode.Vertical)
+            {
+                verticalScrollerVisibility = ScrollerVisibility.Hidden,
+                horizontalScrollerVisibility = ScrollerVisibility.Hidden
+            };
+
+            products.AddToClassList("mb-stack__slot");
+            products.AddToClassList("mb-stack__slot--give");
+            products.Add(modelBanner.Root);
+            products.hierarchy.Add(new PageScrollbar(products));
+
+            bannerProducts = products;
+            bannerStack.Add(bannerProducts);
+
+            bannerResearch = new VisualElement();
+            bannerResearch.AddToClassList("mb-stack__slot");
+            bannerStack.Add(bannerResearch);
+
+            bannerUpgrade = new VisualElement();
+            bannerUpgrade.AddToClassList("mb-stack__slot");
+            bannerStack.Add(bannerUpgrade);
 
             // Under the product, because an upgrade is work happening to the thing above it.
             upgradeStrip = new UpgradeStrip(() => simulation.State, index =>
@@ -1101,6 +1148,13 @@ namespace ScalingLaws.UI
                 return true;
             });
             bannerStack.Add(upgradeStrip.Root);
+
+            // The offer card is the last thing in the lane rather than a card pinned at a number
+            // in the middle of it. See PromptChips.MoveTo for why it is not simply parented here
+            // and left alone.
+            bannerPrompts = new VisualElement();
+            bannerPrompts.AddToClassList("mb-stack__slot");
+            bannerStack.Add(bannerPrompts);
 
             root.Add(bannerStack);
 
@@ -1492,6 +1546,13 @@ namespace ScalingLaws.UI
             // has followed since it was built, for the same reason and after the same discovery.
             contentHost?.panel?.visualTree?.EnableInClassList("corner-is-free",
                 screen == Screen.Site || screen == Screen.Room);
+
+            // **And on the site it goes into the lane rather than beside it.** The column holds
+            // the products, the node, the upgrade and the way out of it, and it is bounded by the
+            // window, so a card that joins it cannot land on any of them however much is running.
+            // The room keeps the panel root: there the right edge is the build rail and the chip
+            // has a place of its own under the room banner.
+            prompts?.MoveTo(screen == Screen.Site ? bannerPrompts : null);
 
             // **A rebuild is not a screen change, and the interface has to tell them apart.**
             // Everything the player is in the middle of reading lives outside the page: the
@@ -1945,7 +2006,7 @@ namespace ScalingLaws.UI
             }).Every(1400);
 
             upgradeBanner = banner;
-            shellRoot.Add(banner);
+            bannerUpgrade.Add(banner);
         }
 
         private static string UpgradeTintClass(int step) => step switch
@@ -2957,7 +3018,7 @@ namespace ScalingLaws.UI
             days.AddToClassList("rb__days");
             researchBanner.Add(days);
 
-            shellRoot.Add(researchBanner);
+            bannerResearch.Add(researchBanner);
         }
 
         /// <summary>
@@ -3213,7 +3274,7 @@ namespace ScalingLaws.UI
                         true);
 
                     followerBanners.Add(banner);
-                    bannerStack.Add(banner.Root);
+                    bannerProducts.Add(banner.Root);
                 }
             }
 
