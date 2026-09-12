@@ -361,7 +361,13 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,205 EditMode tests and 47 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,210 EditMode tests and 48 PlayMode**, up from 1,116 and 31, across 132 fixtures.
+- **An audit pass over everything added this week, reached the way a campaign reaches it.** Not by
+  calling the new methods: by playing until the thing turns up. It found that investors really do
+  call in a campaign rather than only in a unit test, that an offer that arrives can be taken and
+  leaves a register that adds up, and that the abandon button on an upgrade shipped disabled
+  because a constructor took a callback and never stored it. A green suite is not a played game,
+  and that is twice this week. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.

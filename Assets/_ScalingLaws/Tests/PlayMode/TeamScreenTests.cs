@@ -143,6 +143,55 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// **The way out of an upgrade is on screen and inside its own row.**
+        ///
+        /// A tester asked for this by name and there was no way to stop one at all. The strip pools
+        /// its rows and rebinds them, which is two chances to draw a button nobody can press: a
+        /// handler bound to a row rather than to the programme it is showing, and a control that
+        /// overflows the strip the way the office buttons overflowed their card.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheUpgradeStripOffersAWayOut()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            TabProofCampaign.Furnish(shell.Simulation);
+
+            var simulation = shell.Simulation;
+            simulation.State.CashUsd = 400_000_000L;
+
+            var started = simulation.TryStartUpgrades(
+                0, new[] { ModelTrait.Reasoning }, out var why);
+
+            Assume.That(started, Is.True, "no upgrade could be commissioned: " + why);
+
+            Assert.That(shell.OpenScreenByName("Site"), Is.True);
+
+            yield return null;
+            yield return null;
+            yield return null;
+
+            var stop = Root.Q<Button>(className: "ustrip__stop");
+            Assert.That(stop, Is.Not.Null, "There is no way to stop an upgrade on screen.");
+
+            Assert.That(stop.enabledSelf, Is.True,
+                "The abandon button is drawn and refuses every press, which is the shape this "
+                + "project has already shipped twice as something a player reads as broken.");
+
+            var row = stop.parent;
+            Assert.That(stop.worldBound.yMax, Is.LessThanOrEqualTo(row.worldBound.yMax + 0.5f),
+                "The abandon button is drawn past the bottom of its own row, which is exactly how "
+                + "the office buttons were invisible for months.");
+
+            Assert.That(stop.worldBound.width, Is.GreaterThan(1f), "It has no width.");
+        }
+
+        /// <summary>
         /// **Every office you could move into has a button you can actually see.**
         ///
         /// Two testers reported that clicking a bigger office does nothing, one of them on day

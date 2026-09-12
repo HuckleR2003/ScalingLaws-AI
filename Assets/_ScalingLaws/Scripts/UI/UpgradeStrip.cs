@@ -40,6 +40,7 @@ namespace ScalingLaws.UI
         public UpgradeStrip(Func<CompanyState> state, Func<int, bool> abandon = null)
         {
             this.state = state ?? throw new ArgumentNullException(nameof(state));
+            this.abandon = abandon;
 
             Root = new VisualElement();
             Root.AddToClassList("ustrip");
