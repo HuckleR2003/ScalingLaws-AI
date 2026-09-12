@@ -6575,10 +6575,17 @@
     background-color: rgba(158, 38, 32, 0.22);
 }
 
+/* **`height` here made the buy and move buttons invisible for months.** The actions are the last
+   thing in the body, the row clips, and a fixed 202px cut them off by sixty four pixels: the
+   buttons were in the tree, laid out and enabled, and no player ever saw one. Two testers reported
+   it as clicking an office doing nothing, one of them on his first day.
+
+   A minimum rather than a height. The picture still fills whatever the row turns out to be, and a
+   longer description in any language can no longer take the controls off the card. */
 .office-row {
     flex-direction: row;
     flex-shrink: 0;
-    height: 202px;
+    min-height: 202px;
     margin-bottom: 12px;
     background-color: rgb(15, 18, 25);
     border-width: 1px;
@@ -6695,6 +6702,12 @@
     font-size: 11px;
     color: rgb(186, 132, 120);
     margin-top: 14px;
+}
+
+/* The whole card is the target, so it says so on hover. */
+.office-row--open:hover {
+    background-color: rgb(21, 26, 36);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .office-row__move {

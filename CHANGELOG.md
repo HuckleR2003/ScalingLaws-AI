@@ -207,6 +207,13 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **The buy and move buttons on the premises page were invisible.** Reported by two testers, one of
+  them on his first day, both as clicking a bigger office doing nothing. It did nothing because
+  there was nothing there: the row was a fixed 202 pixels that clips, the buttons are the last thing
+  in it, and they were drawn sixty four pixels below the bottom edge. They were in the page, laid
+  out and enabled, the whole time. The row sizes to what is in it now.
+- **And the card itself opens the deal.** One of the two said plainly that he assumed you buy an
+  office by clicking the office. He was reaching for the obvious control and there was not one.
 - **The tower had no room in it.** It was added to the office ladder in August, and the lookup that
   answers "which room am I looking at" falls back to the house when a tier has no entry. So a
   company that leased the largest building in the game, at $380M, walked into an empty frame.
@@ -325,7 +332,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,196 EditMode tests and 45 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,196 EditMode tests and 47 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -338,6 +345,10 @@ model history that saves already carry, so an existing campaign reads correctly 
   The step that follows the offer waits on `arch_built`, and `AlreadyDone` reports it satisfied
   when nothing is running, so a player who declined arrives with nothing in flight and unwinds
   through it. A branch would have been a second shape of step for one decision.
+- **Every test of the premises page passed while it was broken**, because they all asked whether the
+  button existed. It did. `EveryOfficeYouCanMoveIntoShowsItsButtons` measures the button against its
+  own row's box in a real panel, which is the only question worth asking about a control inside
+  something that clips.
 - **A guard said it held this and could not see it.** `EveryTierHasARoomToLookAt` read the room for
   each tier and checked the camera and the desk count on whatever came back. The lookup falls back
   to the garage, which has both, so the test passed on another building's numbers every run while

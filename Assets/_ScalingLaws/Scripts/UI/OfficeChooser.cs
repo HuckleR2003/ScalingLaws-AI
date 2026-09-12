@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
@@ -337,6 +337,17 @@ namespace ScalingLaws.UI
             row.AddToClassList("office-row");
             row.EnableInClassList("office-row--here", here);
 
+            // **The card itself opens the deal, because that is what a player tries first.** One of
+            // the two testers who reported this said plainly: "I guess that to buy a new office you
+            // just need to click the new office. I tried it and it doesn't work." He was reaching
+            // for the obvious control and there was not one. The buttons stop the click reaching
+            // here, or pressing one would open the card and then this would shut it again.
+            if (openYet && !(here && company.Staff.Owns(place.Tier)))
+            {
+                row.AddToClassList("office-row--open");
+                row.RegisterCallback<ClickEvent>(_ => Open(place.Tier));
+            }
+
             // Where you are is marked by a lit edge rather than by a coral outline round the whole
             // card. One row in three with a full border on it made the page read as a warning.
             var edge = new VisualElement();
@@ -502,6 +513,7 @@ namespace ScalingLaws.UI
             buy.AddToClassList("office-row__move");
             buy.AddToClassList("office-row__buy");
             buy.SetEnabled(canAfford);
+            buy.RegisterCallback<ClickEvent>(click => click.StopPropagation());
 
             if (!canAfford)
             {
@@ -566,6 +578,7 @@ namespace ScalingLaws.UI
 
             move.AddToClassList("office-row__move");
             move.SetEnabled(affordable);
+            move.RegisterCallback<ClickEvent>(click => click.StopPropagation());
 
             if (!affordable)
             {

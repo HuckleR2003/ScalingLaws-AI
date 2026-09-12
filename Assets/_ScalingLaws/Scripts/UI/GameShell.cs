@@ -52,6 +52,16 @@ namespace ScalingLaws.UI
         public CompanySimulation Simulation => simulation;
 
         /// <summary>
+        /// The premises page, for tooling.
+        ///
+        /// **Two testers reported that clicking a bigger office does nothing**, and the chooser
+        /// renders perfectly when a proof builds it on its own. That is the whole problem: the
+        /// difference between the two is what it is mounted inside, so a picture of it has to come
+        /// through the real shell rather than beside it. Same reason `Simulation` is public here.
+        /// </summary>
+        public OfficeChooser Offices => offices;
+
+        /// <summary>
         /// Opens a screen by name. False when there is no such screen, rather than an exception:
         /// the caller is usually iterating <see cref="ScreenNames"/> and a typo should read as a
         /// missing picture, not as a crashed run.

@@ -143,6 +143,123 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// **Every office you could move into has a button you can actually see.**
+        ///
+        /// Two testers reported that clicking a bigger office does nothing, one of them on day
+        /// zero. It does nothing because there is nothing there: `.office-row` is a fixed 202px
+        /// with `overflow: hidden`, and the actions are the last thing in the row, so they are
+        /// drawn under the bottom edge. From the player's chair a card of figures with no control
+        /// on it is a card you click and nothing happens.
+        ///
+        /// Measured against the row's own box rather than the window: the button was always in the
+        /// tree and always laid out, and a test that only asked whether it existed passed the whole
+        /// time this was broken.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator EveryOfficeYouCanMoveIntoShowsItsButtons()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            TabProofCampaign.Furnish(shell.Simulation);
+
+            Assert.That(shell.OpenScreenByName("Offices"), Is.True, "There is no premises page.");
+
+            yield return null;
+            yield return null;
+            yield return null;
+
+            var rows = Root.Query(className: "office-row").ToList();
+            Assert.That(rows, Is.Not.Empty, "The premises page drew no offices.");
+
+            var checkedAny = false;
+
+            foreach (var row in rows)
+            {
+                var buttons = row.Query<Button>(className: "office-row__move").ToList();
+                if (buttons.Count == 0)
+                {
+                    continue;
+                }
+
+                checkedAny = true;
+                var box = row.worldBound;
+
+                foreach (var button in buttons)
+                {
+                    var seat = button.worldBound;
+
+                    Assert.That(seat.yMax, Is.LessThanOrEqualTo(box.yMax + 0.5f),
+                        "\"" + button.text + "\" is drawn to y=" + seat.yMax + " inside a row "
+                        + "that ends at " + box.yMax + " and clips, so the player sees a card of "
+                        + "numbers with no control on it and clicking it does nothing.");
+
+                    Assert.That(seat.width, Is.GreaterThan(1f), "The button has no width.");
+                }
+            }
+
+            Assert.That(checkedAny, Is.True,
+                "Not one office on the page offers a move or a purchase, so this measured nothing.");
+        }
+
+        /// <summary>
+        /// **Two testers reported that clicking a bigger office does nothing.**
+        ///
+        /// The chooser renders perfectly when a proof builds it on its own, so the fault is in what
+        /// it is mounted inside. This opens the page through the real shell, opens the deal the way
+        /// the button does, and photographs the whole window, because what has to be true is not
+        /// that the card exists but that it is where the player is looking.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOfficeDealLandsWhereThePlayerIsLooking()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            TabProofCampaign.Furnish(shell.Simulation);
+
+            Assert.That(shell.OpenScreenByName("Offices"), Is.True, "There is no premises page.");
+
+            yield return null;
+            yield return null;
+
+            shell.Offices.Open(OfficeTier.Floor);
+
+            yield return null;
+            yield return null;
+            yield return null;
+
+            var card = Object.FindFirstObjectByType<UIDocument>().rootVisualElement
+                .Q(className: "deal");
+
+            Assert.That(card, Is.Not.Null, "Pressing the office button built no card at all.");
+
+            var where = card.worldBound;
+            var panel = Object.FindFirstObjectByType<UIDocument>().rootVisualElement.worldBound;
+
+            // **The claim the testers are making, as a number.** A card that exists and sits below
+            // the window is indistinguishable from a button that does nothing, and pressing again
+            // shuts it, which is what "I clicked repeatedly and nothing happened" is.
+            Assert.That(where.yMax, Is.LessThanOrEqualTo(panel.yMax),
+                "The confirmation card runs to y=" + where.yMax + " in a window that ends at "
+                + panel.yMax + ", so the player pressed the button and the card opened off the "
+                + "bottom of the screen.");
+
+            Assert.That(where.yMin, Is.GreaterThanOrEqualTo(panel.yMin),
+                "The card opens above the top of the window.");
+
+            Assert.That(where.height, Is.GreaterThan(0f), "The card has no height.");
+        }
+
+        /// <summary>
         /// The eighth job is on the screen, and it did not become an eighth founder skill.
         /// </summary>
         [UnityTest]
