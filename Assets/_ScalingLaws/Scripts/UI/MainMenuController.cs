@@ -675,6 +675,25 @@ namespace ScalingLaws.UI
             introContinue.style.display = DisplayStyle.None;
             column.Add(introContinue);
 
+            // **Reported: thirty seconds you cannot get out of.** Two ways past it now, and they
+            // answer two different players. Clicking anywhere finishes the typing at once, which is
+            // what anybody who has read it does on instinct. And somebody who has been through the
+            // opening before is offered the whole thing skipped, from the first frame.
+            var skip = new Button(SkipTheOpening) { text = Loc.T("menu.skip_opening") };
+            skip.AddToClassList("button");
+
+            // Its own class: `.intro-skip` is the film's skip, pinned to the bottom right corner,
+            // and giving two different buttons in two different places one name is how a rule gets
+            // edited and appears to do nothing.
+            skip.AddToClassList("intro-skipall");
+            skip.style.display = GameSettings.HasSeenOpening
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+
+            column.Add(skip);
+
+            column.RegisterCallback<ClickEvent>(_ => FinishTypingNow());
+
             PrepareIntroFilm();
 
             introLine = 0;
@@ -689,11 +708,56 @@ namespace ScalingLaws.UI
         /// Each line gets a budget proportional to its length rather than a fixed rate, so the whole
         /// opening lands in about the same time however the copy is edited later.
         /// </summary>
+        /// <summary>
+        /// Puts every remaining line up at once and offers CONTINUE.
+        ///
+        /// **The typing is a flourish, not a gate.** Anybody who has read this before should be one
+        /// click from the end of it, and a click on the text is where a reader reaches first.
+        /// Harmless when it is already finished: the loop has run out and the button is already up.
+        /// </summary>
+        private void FinishTypingNow()
+        {
+            if (introLine >= IntroLines.Length)
+            {
+                return;
+            }
+
+            introTypist?.Stop();
+            introTypist = null;
+
+            while (introLine < IntroLines.Length)
+            {
+                AddIntroLabel().text = IntroLines[introLine];
+                introLine++;
+            }
+
+            introContinue.style.display = DisplayStyle.Flex;
+        }
+
+        /// <summary>
+        /// Straight past the opening and the film, for somebody who has seen both.
+        ///
+        /// It goes through the same door CONTINUE and the film's own skip already use, so there is
+        /// one way into the creator rather than a second that has to be kept in step.
+        /// </summary>
+        private void SkipTheOpening()
+        {
+            introTypist?.Stop();
+            introTypist = null;
+            introLine = IntroLines.Length;
+
+            // Through the same door the film's own skip uses. `introFilm?.Stop()` on a player that
+            // never started is harmless, and there is one way into the creator rather than a second
+            // that has to be kept in step with it.
+            FinishIntroFilm();
+        }
+
         private void TypeNextIntroLine()
         {
             if (introLine >= IntroLines.Length)
             {
                 introContinue.style.display = DisplayStyle.Flex;
+                GameSettings.MarkOpeningSeen();
                 return;
             }
 
@@ -1481,8 +1545,22 @@ namespace ScalingLaws.UI
             var body = new VisualElement();
             body.AddToClassList("region__body");
 
+            var mapColumn = new VisualElement();
+            mapColumn.AddToClassList("region__map");
+
+            // **Reported: once you pick a region there is no way out of it.** The map leans in on
+            // whatever is chosen, which is the right thing for reading a region and means the other
+            // two are then off the edge of the picture, so the only move left is to pick one of the
+            // countries in front of you. The tester read that as unintended and he is right.
+            //
+            // Three chips rather than a zoom control: what he needed was a way back to the other
+            // regions, and naming them is plainer than a pair of magnifier buttons that have to be
+            // discovered before they can help.
+            mapColumn.Add(BuildRegionChips());
+
             var map = new WorldMapElement(chosenRegion, chosenCountry, PickRegion, PickCountry);
-            body.Add(map);
+            mapColumn.Add(map);
+            body.Add(mapColumn);
 
             var list = new VisualElement();
             list.AddToClassList("region__list");
@@ -1517,6 +1595,46 @@ namespace ScalingLaws.UI
             section.Add(BuildRegionEffects());
 
             return section;
+        }
+
+        /// <summary>
+        /// The three regions, always on screen, whichever one the map is leaning in on.
+        ///
+        /// The one in force is lit rather than disabled: a control that vanishes when it is the
+        /// answer teaches the player it was never a control.
+        /// </summary>
+        private VisualElement BuildRegionChips()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("region__chips");
+
+            foreach (var definition in WorldRegionCatalog.All)
+            {
+                var captured = definition.Region;
+
+                var chip = new Button(() => PickRegion(captured))
+                {
+                    text = definition.DisplayName.ToUpperInvariant()
+                };
+
+                chip.AddToClassList("region__chip");
+                chip.EnableInClassList("region__chip--on", chosenRegion == captured);
+                row.Add(chip);
+            }
+
+            // And the whole map back, which is the state a player cannot otherwise return to once
+            // they have chosen anything at all.
+            var world = new Button(() => PickRegion(WorldRegion.None))
+            {
+                text = Loc.T("creator.whole_world")
+            };
+
+            world.AddToClassList("region__chip");
+            world.AddToClassList("region__chip--world");
+            world.EnableInClassList("region__chip--on", chosenRegion == WorldRegion.None);
+            row.Add(world);
+
+            return row;
         }
 
         private VisualElement BuildRegionEffects()

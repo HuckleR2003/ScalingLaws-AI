@@ -207,6 +207,15 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **You can get back out of a region on the map.** Reported. The map leans in on whatever you pick,
+  which is right for reading one region and takes the other two off the picture, so the only move
+  left was to choose one of the countries in front of you. The three regions are named above the
+  map now, always, along with the whole world, so switching is one click rather than a zoom control
+  that has to be found first.
+- **The opening is skippable.** Reported: thirty seconds of text you have already read. Clicking
+  anywhere puts the rest of it up at once, and anybody who has been through it before is offered the
+  whole opening skipped from the first frame. Whether you have seen it belongs to the player rather
+  than to a campaign, so it is remembered the way the achievements are.
 - **Anything running can be abandoned, and abandoning it costs.** Asked for by a tester who gave the
   numbers with the request: he misclicked into a two hundred day run he did not want and had to
   watch it finish. All three could already be thrown away, which was the opposite fault, because

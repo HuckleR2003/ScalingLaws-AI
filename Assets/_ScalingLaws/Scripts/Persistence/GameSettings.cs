@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Data;
 using UnityEngine;
 
@@ -20,6 +20,7 @@ namespace ScalingLaws.Persistence
         private const string ReduceMotionKey = Prefix + "ReduceMotion";
         private const string LanguageKey = Prefix + "Language";
         private const string AutosaveKey = Prefix + "AutosaveMinutes";
+        private const string SeenOpeningKey = Prefix + "SeenOpening";
 
         public const float DefaultMasterVolume = 0.8f;
 
@@ -108,6 +109,31 @@ namespace ScalingLaws.Persistence
         /// </summary>
         public static Language Language { get; private set; } = Language.English;
 
+        /// <summary>
+        /// Whether this player has sat through the cold open before.
+        ///
+        /// **A player fact, not a campaign one**, which is why it is here and not in the save: the
+        /// thirty seconds is wasted on the second campaign as much as on the second load of the
+        /// first. Same reasoning as the achievements, which are `PlayerPrefs` for the same reason.
+        ///
+        /// Reported: *"The text about 11 months wastes 30 seconds if you have already seen it so I
+        /// would make it skippable after the first playthrough."*
+        /// </summary>
+        public static bool HasSeenOpening { get; private set; }
+
+        /// <summary>Remembers that the opening has been read. Called once, when it finishes.</summary>
+        public static void MarkOpeningSeen()
+        {
+            if (HasSeenOpening)
+            {
+                return;
+            }
+
+            HasSeenOpening = true;
+            PlayerPrefs.SetInt(SeenOpeningKey, 1);
+            PlayerPrefs.Save();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitializeBeforeFirstScene() => Reload();
 
@@ -117,6 +143,7 @@ namespace ScalingLaws.Persistence
             MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumeKey, DefaultMusicVolume));
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, 1) == 1;
             ReduceMotion = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
+            HasSeenOpening = PlayerPrefs.GetInt(SeenOpeningKey, 0) == 1;
 
             // Defaults to the machine's own language on a first run, so somebody in Poland does not
             // have to find a settings screen written in English in order to say they read Polish.

@@ -18593,3 +18593,57 @@
     color: rgb(240, 196, 184);
     background-color: rgba(150, 70, 70, 0.34);
 }
+
+/* ---- picking where the company sits --------------------------------------------------------
+
+   The map leans in on the chosen region, which takes the other two off the picture, so the way
+   back to them is named rather than left to a zoom control nobody found. */
+.region__map {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.region__chips {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.region__chip {
+    height: 26px;
+    margin: 0 8px 0 0;
+    padding: 0 14px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(168, 180, 198);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.region__chip--on {
+    color: rgb(20, 26, 38);
+    background-color: rgb(226, 168, 92);
+}
+
+.region__chip--world {
+    margin-left: 6px;
+}
+
+/* Quiet, top of the column, and only for somebody who has read it once. It is a way out rather
+   than an invitation: a bright button here would read as the game apologising for its own opening. */
+.intro-skipall {
+    align-self: flex-start;
+    height: 24px;
+    margin: 0 0 22px 0;
+    padding: 0 12px;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: rgb(122, 134, 152);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 0;
+    border-radius: 3px;
+    -unity-text-align: middle-center;
+}
