@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 
@@ -19,7 +19,20 @@ namespace ScalingLaws.Data
         Concept = 4,
         Software = 5,
         DataEngineering = 6,
-        Safety = 7
+        Safety = 7,
+
+        /// <summary>
+        /// A job, and deliberately not a founder skill.
+        ///
+        /// **This enum is two things now and the split is the point.** It is the founder's seven
+        /// skills, and it is the id a hire's position is written into the save as. Support is a
+        /// discipline a company hires and the founder does not personally have, so it is in the
+        /// second set and not the first: `PlayerSkillCatalog.All` is still seven and the creator
+        /// still asks for two hundred points across seven rows.
+        ///
+        /// Appended, never renumbered, because `(int)hire.Position` is in every save file.
+        /// </summary>
+        Support = 8
     }
 
     /// <summary>

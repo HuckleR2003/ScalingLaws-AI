@@ -2881,7 +2881,7 @@ namespace ScalingLaws.Simulation
                 var letter = State.Mail.Add(MailKind.JobOffer, State.Date, candidate.Name,
                     $"Re: {definition.Title} position",
                     $"Thank you for considering me for the open position. I have {candidate.TrueLevel} "
-                    + $"in {PlayerSkillCatalog.Get(candidate.Position).DisplayName} and I am "
+                    + $"in {definition.Title} and I am "
                     + $"available from next week. Let us discuss the wage for this job.\n\n"
                     + $"Found through {channel.SiteName}. Advertised at {candidate.AdvertisedLevel}, "
                     + $"assessed at {candidate.TrueLevel} after the {channel.DisplayName.ToLowerInvariant()} "
@@ -4961,7 +4961,7 @@ namespace ScalingLaws.Simulation
                 $"Speculative application: {position.Title}",
                 $"You have not advertised, but I wanted to write anyway. I have "
                 + $"{candidate.TrueLevel} in "
-                + $"{PlayerSkillCatalog.Get(candidate.Position).DisplayName.ToLowerInvariant()} "
+                + $"{position.Title.ToLowerInvariant()} "
                 + $"and I am looking for my next thing.\n\nI am asking "
                 + $"${candidate.AskingHourlyUsd:N2} an hour, which is "
                 + $"{Usd(candidate.AnnualSalaryUsd(candidate.AskingHourlyUsd))} a year. I know that "

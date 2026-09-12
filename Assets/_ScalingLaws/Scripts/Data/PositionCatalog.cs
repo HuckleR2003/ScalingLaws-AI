@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -40,6 +40,13 @@ namespace ScalingLaws.Data
         /// One per founder skill, which is the whole design of this catalog, so the stem follows
         /// the skill rather than the legacy role: two positions can share a role.
         /// </summary>
+        /// <summary>
+        /// **Every arm written out, and the default is a fault rather than a fallback.** A `_`
+        /// arm here is how all five Statecraft research nodes shipped drawing era one's name:
+        /// a default is a valid answer with real words behind it, so nothing fails and the
+        /// screen is simply wrong. Adding the eighth position to a switch with a catch-all
+        /// would have put SUPPORT on screen as "Coordinator".
+        /// </summary>
         private static string KeyFor(PlayerSkill skill) => skill switch
         {
             PlayerSkill.Development => "job.mlengineer",
@@ -48,7 +55,10 @@ namespace ScalingLaws.Data
             PlayerSkill.DataEngineering => "job.data",
             PlayerSkill.Safety => "job.safety",
             PlayerSkill.Management => "job.operations",
-            _ => "job.coordinator"
+            PlayerSkill.Teamwork => "job.coordinator",
+            PlayerSkill.Support => "job.support",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(skill), skill, "No job is written for this position.")
         };
 
         /// <summary>
@@ -101,7 +111,18 @@ namespace ScalingLaws.Data
                 152.0, "#E0883C"),
 
             new PositionDefinition(PlayerSkill.Teamwork, StaffRole.GoToMarket,
-                118.0, "#7FBF5F")
+                118.0, "#7FBF5F"),
+
+            // **The eighth, and it lands on a department that already exists.** Everything the
+            // roster does is written against `StaffRole`, and support is the customer-facing
+            // work, so it counts where the rest of the customer-facing work counts. Inventing a
+            // role for it would have meant inventing a balance number for a job whose design is
+            // still ahead of it; this way hiring one does something real on the day it ships.
+            //
+            // The cheapest position in the game on purpose. It is the one a young company can
+            // afford, which is the point of having it at all.
+            new PositionDefinition(PlayerSkill.Support, StaffRole.GoToMarket,
+                96.0, "#4FA3C7")
         };
 
         public static IReadOnlyList<PositionDefinition> All => Entries;

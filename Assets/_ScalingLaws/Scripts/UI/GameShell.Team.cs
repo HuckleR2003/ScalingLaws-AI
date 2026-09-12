@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -49,13 +49,16 @@ namespace ScalingLaws.UI
 
             UiParts.ExplainPage(page, TechNotes.Wage);
 
-            page.Add(BuildPositionGrid());
-            page.Add(BuildHireButtons());
-
-            if (roster.Headcount > 0)
-            {
-                page.Add(BuildPayrollList());
-            }
+            // **The list and the jobs share a line now.** Reported: the position tiles were too
+            // big, over half of each one was empty, and there was no way to see the people at
+            // all without opening a discipline one at a time. The tiles are the narrow column
+            // on the right because there are eight of them and they are a menu; who works here
+            // is the wide column on the left because it is the thing being read.
+            var crew = new VisualElement();
+            crew.AddToClassList("team__row");
+            crew.Add(BuildCrewPanel());
+            crew.Add(BuildPositionGrid());
+            page.Add(crew);
 
             // The two bottom panels share a line. What the team is worth is a table of six
             // readings and wants the width; where you work is one line and a picture and does not.
@@ -106,16 +109,23 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// Seven tiles, one per discipline, in two rows.
+        /// Eight jobs, two rows of four, in a column beside the people.
         ///
-        /// The count sits in a ring in the corner in the position's own colour, so the shape of the
-        /// company is readable without reading a single word: four blue and nothing else is a lab
-        /// that has never hired anybody to sell anything.
+        /// **Reported: the tiles were too big and half of each one was empty.** They carried the
+        /// icon, the title and the whole blurb stacked vertically, which is three lines of
+        /// reading for something that is a menu. The blurb moved into the card that opens when
+        /// one is clicked, which is where somebody deciding whether to hire is actually looking,
+        /// and the tile is an icon with its title and count beside it.
+        ///
+        /// The count still sits in the position's own colour, so the shape of the company is
+        /// readable without reading a word: four blue and nothing else is a lab that has never
+        /// hired anybody to sell anything.
         /// </summary>
         private VisualElement BuildPositionGrid()
         {
             var panel = new VisualElement();
             panel.AddToClassList("panel");
+            panel.AddToClassList("team__jobs");
 
             var heading = new Label(Loc.T("panel.positions"));
             heading.AddToClassList("panel__heading");
@@ -134,55 +144,54 @@ namespace ScalingLaws.UI
             return panel;
         }
 
+        /// <summary>
+        /// One job: the icon, its name and how many of them there are, side by side.
+        ///
+        /// **Always openable, which is the change that matters.** It used to disable itself when
+        /// nobody held the job, so the one state where the player wants to know what the job is
+        /// and what it costs was the one state that refused every click. A tile that reads as an
+        /// option and does nothing reads as a bug, which this project has now shipped twice.
+        /// </summary>
         private VisualElement BuildPositionTile(PositionDefinition position)
         {
             var count = state.Staff.CountOfPosition(position.Skill);
 
-            // A button rather than a plate. The count was already the most useful thing on the
-            // tile and it was the one thing you could not act on: seeing "3" and having no way to
-            // find out who the three are is a dead end on the screen that is about people.
-            var tile = new Button(() => ShowRoster(position.Skill));
+            var tile = new Button(() => ShowPositionCard(position.Skill));
             tile.AddToClassList("postile");
             tile.EnableInClassList("postile--staffed", count > 0);
-            tile.SetEnabled(count > 0);
 
             if (ColorUtility.TryParseHtmlString(position.AccentHex, out var accent))
             {
                 tile.style.borderLeftColor = accent;
             }
 
-            // 52 to 62: the tiles got narrower so all seven fit on one line, and the icon was
-            // the one thing that must not shrink with them.
-            var icon = SkillIcons.Badge(position.Skill, 62);
+            var icon = SkillIcons.Badge(position.Skill, 28);
             icon.AddToClassList("postile__icon");
             tile.Add(icon);
 
+            var words = new VisualElement();
+            words.AddToClassList("postile__words");
+
             var title = new Label(position.Title.ToUpperInvariant());
             title.AddToClassList("postile__title");
-            tile.Add(title);
+            words.Add(title);
 
-            var blurb = new Label(position.Blurb);
-            blurb.AddToClassList("postile__blurb");
-            tile.Add(blurb);
+            var rate = new Label(Loc.T("mail.per_hour",
+                UiFormat.Number(position.BaseHourlyWageUsd, 0)));
 
-            // The ring is out of flow so it sits in the corner rather than pushing the title down.
-            var ring = new VisualElement();
-            ring.AddToClassList("postile__ring");
-
-            if (ColorUtility.TryParseHtmlString(position.AccentHex, out var ringColour))
-            {
-                ring.style.borderTopColor = ringColour;
-                ring.style.borderBottomColor = ringColour;
-                ring.style.borderLeftColor = ringColour;
-                ring.style.borderRightColor = ringColour;
-                ring.style.color = ringColour;
-            }
+            rate.AddToClassList("postile__rate");
+            words.Add(rate);
+            tile.Add(words);
 
             var number = new Label(count.ToString());
             number.AddToClassList("postile__count");
-            ring.Add(number);
 
-            tile.Add(ring);
+            if (ColorUtility.TryParseHtmlString(position.AccentHex, out var ringColour))
+            {
+                number.style.color = ringColour;
+            }
+
+            tile.Add(number);
 
             InsightTip.Attach(tile, position.Title.ToUpperInvariant(),
                 Loc.T("team.position.note", position.Blurb,
@@ -199,7 +208,7 @@ namespace ScalingLaws.UI
         /// dismissed by clicking away from it. Reusing that shape means one veil, one card, one set
         /// of manners, rather than a second modal that behaves almost the same.
         /// </summary>
-        private void ShowRoster(PlayerSkill position)
+        public void ShowPositionCard(PlayerSkill position)
         {
             rosterCard?.RemoveFromHierarchy();
 
@@ -254,12 +263,33 @@ namespace ScalingLaws.UI
 
             card.Add(head);
 
+            // **The two ways to fill the job, at the top, on the card about the job.** Hiring
+            // used to be one bar under the grid that said nothing about which discipline it was
+            // going to fill, so picking a job and hiring somebody were two unrelated actions on
+            // one screen. One door per subject.
+            card.Add(BuildPositionHiring());
+
+            // What the job is, which is the line that used to be squeezed onto the tile at a
+            // size nobody read it at.
+            var blurb = new Label(definition.Blurb);
+            blurb.AddToClassList("roster__blurb");
+            card.Add(blurb);
+
             var list = new ScrollView();
             list.AddToClassList("roster__list");
 
             foreach (var slot in people)
             {
                 list.Add(BuildRosterRow(slot));
+            }
+
+            // **Said rather than left blank.** An empty list under a heading that says how many
+            // people are in the role reads as a panel that failed to load.
+            if (people.Count == 0)
+            {
+                var none = new Label(Loc.T("team.nobody_in_role"));
+                none.AddToClassList("roster__empty");
+                list.Add(none);
             }
 
             card.Add(list);
@@ -342,7 +372,15 @@ namespace ScalingLaws.UI
         /// how many remote contracts are left. A hire button that opens a screen only to say no
         /// wastes the click that was the whole point of the screen.
         /// </summary>
-        private VisualElement BuildHireButtons()
+        /// <summary>
+        /// Full time or remote, on the card for the job being filled.
+        ///
+        /// **Full time is the one that can be refused, and it says why.** A company in the
+        /// garage has no desks, so the button is off and names the reason on hover rather than
+        /// sitting there grey: a disabled control with no explanation is the shape this project
+        /// has already shipped twice as something a player reads as broken.
+        /// </summary>
+        private VisualElement BuildPositionHiring()
         {
             var row = new VisualElement();
             row.AddToClassList("hirebar");
@@ -359,7 +397,10 @@ namespace ScalingLaws.UI
             onSite.AddToClassList("hirebar__button--main");
             onSite.SetEnabled(free > 0);
 
-            InsightTip.Attach(onSite, Loc.T("team.hire_office.title"), Loc.T("team.hire_office.note"));
+            InsightTip.Attach(onSite, Loc.T("team.hire_office.title"),
+                free > 0
+                    ? Loc.T("team.hire_office.note")
+                    : Loc.T("team.no_desks_here"));
 
             row.Add(onSite);
 
@@ -391,21 +432,71 @@ namespace ScalingLaws.UI
         /// The source is a coloured tag rather than a word in a sentence, because the one thing a
         /// player wants from this list at a glance is how much of their company is the cheap kind.
         /// </summary>
-        private VisualElement BuildPayrollList()
+        /// <summary>
+        /// What a column is ordered by. Public because the header buttons are the only callers
+        /// and an EditMode element has no panel to dispatch a click through.
+        /// </summary>
+        public enum CrewSort
+        {
+            /// <summary>Longest serving first, which is the order the list opens in.</summary>
+            Tenure = 0,
+            Loyalty = 1,
+            Level = 2,
+            Wage = 3
+        }
+
+        private CrewSort crewSort = CrewSort.Tenure;
+
+        /// <summary>
+        /// Orders the list by one column, largest first.
+        ///
+        /// **Always descending, and that is deliberate rather than unfinished.** Every column
+        /// here answers "who is most" - longest here, most loyal, most skilled, dearest - and a
+        /// second click that flips to "who is least" would mean the same header means two things
+        /// depending on a state nothing on screen shows. Picking a different column is the
+        /// question; there is no second question.
+        /// </summary>
+        public void SortCrewBy(CrewSort column)
+        {
+            crewSort = column;
+            Show(Screen.Team);
+        }
+
+        /// <summary>
+        /// Who works here, in an order the player chooses.
+        ///
+        /// **Reported: there was no way to see the team at all.** The only route to a person was
+        /// opening one discipline at a time, so a company of twelve was twelve clicks and no way
+        /// to compare anybody with anybody. What a player wants from a staff list is who has been
+        /// here longest, who is about to leave, who is carrying the work and what each of them
+        /// costs an hour, so those are the four columns and each one orders the list.
+        /// </summary>
+        private VisualElement BuildCrewPanel()
         {
             var roster = state.Staff;
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
+            panel.AddToClassList("team__crew");
 
             var heading = new Label(Loc.T("panel.payroll"));
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
+            if (roster.Headcount == 0)
+            {
+                var alone = new Label(Loc.T("team.nobody_yet"));
+                alone.AddToClassList("field__hint");
+                panel.Add(alone);
+                return panel;
+            }
+
+            panel.Add(BuildCrewHeader());
+
             var list = new VisualElement();
             list.AddToClassList("crew");
 
-            for (var index = 0; index < roster.Headcount; index++)
+            foreach (var index in CrewOrder())
             {
                 var slot = index;
                 var hire = roster.Hires[index];
@@ -449,6 +540,23 @@ namespace ScalingLaws.UI
 
                 job.AddToClassList("crew__job");
                 row.Add(job);
+
+                // **Three readings, in the order the headers name them.** The hourly rate was
+                // asked for by name and it is the one the player negotiated, so it is the one
+                // shown rather than the salary it works out to.
+                var years = new Label(UiFormat.Days(
+                    Math.Max(0, state.Date.DayIndex - hire.StartedOn.DayIndex)));
+
+                years.AddToClassList("crew__since");
+                row.Add(years);
+
+                var loyal = new Label(Loyalty.NameOf(Loyalty.BandFor(LoyaltyOf(hire))));
+                loyal.AddToClassList("crew__loyalty");
+                row.Add(loyal);
+
+                var level = new Label(hire.Skill.ToString());
+                level.AddToClassList("crew__level");
+                row.Add(level);
 
                 var pay = new Label(hire.HourlyWageUsd > 0.0
                     ? Loc.T("mail.per_hour", UiFormat.Number(hire.HourlyWageUsd, 2))
@@ -542,6 +650,103 @@ namespace ScalingLaws.UI
             veil.Add(card);
             hiringChoice = veil;
             shellRoot.Add(veil);
+        }
+
+        /// <summary>
+        /// The four headers, and pressing one orders the list by it.
+        ///
+        /// The lit one is the column in force, because a list that has silently reordered itself
+        /// and does not say why is worse than one that never reorders at all.
+        /// </summary>
+        private VisualElement BuildCrewHeader()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("crew__header");
+
+            // The two leading cells match the row: the icon and the source tag carry no
+            // heading, because neither is something to order by.
+            var lead = new Label(Loc.T("team.column.person"));
+            lead.AddToClassList("crew__headlead");
+            row.Add(lead);
+
+            var job = new Label(Loc.T("team.column.role"));
+            job.AddToClassList("crew__headjob");
+            row.Add(job);
+
+            row.Add(CrewHeaderButton(Loc.T("team.column.since"), CrewSort.Tenure, "crew__since"));
+            row.Add(CrewHeaderButton(Loc.T("team.column.loyalty"), CrewSort.Loyalty,
+                "crew__loyalty"));
+
+            row.Add(CrewHeaderButton(Loc.T("team.column.level"), CrewSort.Level, "crew__level"));
+            row.Add(CrewHeaderButton(Loc.T("team.column.wage"), CrewSort.Wage, "crew__pay"));
+
+            var spacer = new VisualElement();
+            spacer.AddToClassList("crew__headspacer");
+            row.Add(spacer);
+
+            return row;
+        }
+
+        private Button CrewHeaderButton(string caption, CrewSort column, string widthClass)
+        {
+            var button = new Button(() => SortCrewBy(column)) { text = caption };
+            button.AddToClassList("crew__head");
+            button.AddToClassList(widthClass);
+            button.EnableInClassList("crew__head--on", crewSort == column);
+            return button;
+        }
+
+        /// <summary>
+        /// The slots of everybody on the payroll, in the order the player asked for.
+        ///
+        /// **Slots, not hires.** Every row on this screen addresses a person by their index in
+        /// the roster, and so does letting one go, so an ordering that handed back copies would
+        /// open the wrong card the moment the list was not in roster order.
+        /// </summary>
+        private List<int> CrewOrder()
+        {
+            var roster = state.Staff;
+            var slots = new List<int>(roster.Headcount);
+
+            for (var index = 0; index < roster.Headcount; index++)
+            {
+                slots.Add(index);
+            }
+
+            slots.Sort((left, right) => Key(right).CompareTo(Key(left)));
+            return slots;
+
+            double Key(int slot)
+            {
+                var hire = roster.Hires[slot];
+
+                return crewSort switch
+                {
+                    CrewSort.Loyalty => LoyaltyOf(hire),
+                    CrewSort.Level => hire.Skill,
+                    CrewSort.Wage => hire.HourlyWageUsd > 0.0
+                        ? hire.HourlyWageUsd
+                        : hire.SalaryPerYearUsd / PositionCatalog.PaidHoursPerYear,
+
+                    // Longest here is the largest number of days ago, so the day index is
+                    // negated rather than the comparison being reversed for one arm.
+                    _ => -hire.StartedOn.DayIndex
+                };
+            }
+        }
+
+        /// <summary>
+        /// One person's loyalty, read the way the person card reads it.
+        ///
+        /// The benefits and the market salary are what make the figure mean anything, and both
+        /// are company-wide, so this is the one place that assembles them for a list.
+        /// </summary>
+        private double LoyaltyOf(Hire hire)
+        {
+            var offered = state.Benefits;
+
+            return Loyalty.For(hire, state.Date, BenefitCatalog.PointsFor(offered),
+                StaffCatalog.Get(hire.Role).SalaryPerYearUsd(hire.Skill), offered);
         }
 
         private VisualElement BuildChoiceTile(HireSource source, string title, string blurb,

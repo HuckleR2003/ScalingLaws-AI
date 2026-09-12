@@ -8149,10 +8149,14 @@
    and the title still have room; and the blurb is gone from the tile because at this width it was
    three words a line. It lives in the tooltip, which is where it was always more useful. */
 .postile {
-    width: 13.6%;
-    height: 186px;
-    margin: 0 0.5% 0 0.5%;
-    padding: 14px 10px 12px 10px;
+    width: 23.5%;
+    height: 76px;
+    padding-left: 8px;
+    padding-right: 6px;
+    flex-direction: row;
+    align-items: center;
+    margin: 0 1% 8px 0;
+    padding: 0 10px 0 12px;
     border-radius: 5px;
     border-left-width: 3px;
     border-left-color: rgba(255, 255, 255, 0.2);
@@ -8164,13 +8168,18 @@
     background-color: rgba(255, 255, 255, 0.065);
 }
 
+/* No bottom margin: the icon sits beside the words now rather than over them. */
 .postile__icon {
-    margin-bottom: 8px;
+    margin-bottom: 0;
+    flex-shrink: 0;
 }
 
+/* **The longest title decides the width of the box, not the shortest.** At 12px OPERATIONS LEAD
+   broke across the middle of the word and TEAM COORDINATOR took three lines and pushed its own
+   hourly rate out of the tile. */
 .postile__title {
-    font-size: 12px;
-    letter-spacing: 0.6px;
+    font-size: 11px;
+    letter-spacing: 0;
     -unity-font-style: bold;
     color: rgb(234, 239, 248);
     white-space: normal;
@@ -8196,10 +8205,15 @@
     background-color: rgba(8, 11, 18, 0.85);
 }
 
+/* Its own column at the end of the tile rather than a ring in the corner: the tile is a row now
+   and an absolutely positioned badge would sit on top of the title. */
 .postile__count {
-    font-size: 16px;
+    width: 20px;
+    flex-shrink: 0;
+    font-size: 17px;
     -unity-font-style: bold;
     color: rgb(238, 242, 250);
+    -unity-text-align: middle-right;
 }
 
 /* ---- the two hire buttons ----------------------------------------------------------------- */
@@ -8287,14 +8301,19 @@
     flex-shrink: 0;
 }
 
+/* **The name takes the slack and everything else is stated.** With four measured columns
+   added beside it, a percentage width plus a growing job column pushed the LET GO button
+   clean out of the panel and over the one next to it. */
 .crew__name {
-    width: 30%;
+    flex-grow: 1;
+    flex-shrink: 1;
     font-size: 13px;
     color: rgb(230, 236, 246);
 }
 
 .crew__job {
-    flex-grow: 1;
+    width: 130px;
+    flex-shrink: 0;
     font-size: 12px;
     color: rgb(140, 152, 172);
 }
@@ -8309,6 +8328,7 @@
 
 .crew__release {
     width: 80px;
+    flex-shrink: 0;
     height: 26px;
     font-size: 12px;
     letter-spacing: 1px;
@@ -18215,4 +18235,131 @@
 /* The confirming card. Same sheet as a notice, and the buttons say which way is which. */
 .notice--ask {
     border-left-color: rgb(226, 168, 92);
+}
+
+/* ---- the team: the people on the left, the jobs on the right ------------------------------------
+
+   Reported: the position tiles were too big with half of each one empty, and there was no way to
+   see the staff at all. The tiles are a menu and take the narrow column; the list is the thing
+   being read and takes the width. */
+.team__row {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+.team__crew {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 1;
+    margin-right: 14px;
+}
+
+/* **The width is stated, and it has to be.** Left to grow, the jobs panel took the whole line and
+   squeezed the list beside it to about twenty pixels, which drew the empty-state sentence one
+   letter per row. Narrow because it is a menu of eight short things. */
+.team__jobs {
+    width: 47%;
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
+.postile__words {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 7px;
+    margin-right: 2px;
+    overflow: hidden;
+}
+
+
+.postile__rate {
+    font-size: 11px;
+    color: rgb(142, 156, 176);
+    margin: 0;
+}
+
+/* The header row. Each cell is the width of the column it names, or the words sit over the
+   wrong figures the moment a name is longer than expected. */
+.crew__header {
+    flex-direction: row;
+    align-items: center;
+    height: 26px;
+    padding: 0 10px;
+    margin-bottom: 4px;
+}
+
+.crew__headlead {
+    flex-grow: 1;
+    flex-shrink: 1;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(132, 146, 166);
+}
+
+.crew__head {
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(132, 146, 166);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-text-align: middle-left;
+}
+
+.crew__head--on {
+    color: rgb(226, 168, 92);
+    -unity-font-style: bold;
+}
+
+/* Matches the LET GO button at the end of every row, so the headings line up with the figures. */
+/* Exactly the LET GO button at the end of every row, or the headings sit one column off. */
+.crew__headspacer {
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.crew__headjob {
+    width: 130px;
+    flex-shrink: 0;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(132, 146, 166);
+}
+
+.crew__since {
+    width: 104px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: rgb(176, 189, 208);
+}
+
+.crew__loyalty {
+    width: 104px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: rgb(176, 189, 208);
+}
+
+.crew__level {
+    width: 62px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: rgb(176, 189, 208);
+}
+
+/* The card that opens on a job: what it is, and who is in it. */
+.roster__blurb {
+    font-size: 13px;
+    white-space: normal;
+    color: rgb(176, 189, 208);
+    margin: 12px 0 10px 0;
+}
+
+.roster__empty {
+    font-size: 13px;
+    color: rgb(142, 156, 176);
+    padding: 12px 4px;
 }

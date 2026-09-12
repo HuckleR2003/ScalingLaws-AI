@@ -207,6 +207,26 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **You can see who works for you.** Reported. The only way to reach a person was to open one
+  discipline at a time, so a company of six was six clicks and no way to compare anybody with
+  anybody. There is a list now: who, their role, how long they have been here, how loyal they are,
+  their level and what they cost an hour. Pressing a heading orders the list by it.
+- **The job tiles are a quarter of the height and half the width.** Reported: they were too big and
+  over half of each one was empty. Eight of them now sit in two rows of four in a narrow column on
+  the right, icon and name side by side with the count and the hourly rate, and the sentence that
+  used to be squeezed onto the tile moved to the card that opens when you press one.
+- **A job nobody holds can be opened.** The tile used to disable itself when the count was zero,
+  which is exactly the state where a player wants to know what the job is and what it costs. The
+  card says what the job does, offers full time and remote, and lists whoever is in it or says
+  plainly that nobody is.
+- **Hiring moved onto the card for the job being filled.** It was a bar under the grid that said
+  nothing about which discipline it was going to fill, so choosing a job and hiring somebody were
+  two unrelated actions on one screen. Full time is refused with the reason named when there are no
+  desks, rather than sitting there grey.
+- **SUPPORT is the eighth job.** The cheapest position in the game, and it counts where the rest of
+  the customer-facing work counts, so hiring one does something real rather than waiting for a
+  system that has not been built yet. It is a job the company hires and not an eighth founder
+  skill: the creator still asks for two hundred points across seven.
 - **The price you set when shipping a model is the price the company charges.** It was not.
   A new company billed per token, and the monthly fee is read only on a subscription, so the
   figure asked for in the creator and again on the release card reached the version list, was
@@ -246,7 +266,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,174 EditMode tests and 41 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,174 EditMode tests and 44 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -259,6 +279,14 @@ model history that saves already carry, so an existing campaign reads correctly 
   The step that follows the offer waits on `arch_built`, and `AlreadyDone` reports it satisfied
   when nothing is running, so a player who declined arrives with nothing in flight and unwinds
   through it. A branch would have been a second shape of step for one decision.
+- **The proof campaign had no staff, which is why the list of people took a year to exist.** Every
+  frame of the team screen was reviewed against an empty roster, so there was nothing on screen to
+  miss. It now hires six across six disciplines, and the strongest of them is deliberately not the
+  dearest: the first cast had one person top every column and the new fixture refused to run,
+  because ordering by wage and ordering by level gave the same list.
+- `PositionCatalog.KeyFor` has every arm written out and throws on anything else. A `_` arm is how
+  five research nodes shipped drawing another node's name, and it would have put SUPPORT on screen
+  as "Coordinator".
 - `MonetizationPolicy.OpeningSubscriptionUsdPerMonth` is written as the arithmetic that makes it
   neutral rather than as a number, so the two constants behind it cannot drift apart without it
   moving with them. Same rule as safety effort x1 and the skill baseline.

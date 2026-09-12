@@ -45,6 +45,47 @@ namespace ScalingLaws.Tests.PlayMode
 
             simulation.SetRentedPetaflops(1_250.0);
 
+            // **A company with staff, because until now this one had none.** Every proof frame of
+            // the team screen was reviewed against an empty roster, which is why the list of people
+            // who work here went a year without existing: there was nothing on screen to miss. Six
+            // across six disciplines, with different tenures, levels and wages, so the ordering
+            // has something to order and no two rows read the same.
+            //
+            // **The best person is deliberately not the dearest.** The first cast had the
+            // longest-serving, highest-paid and highest-level person be one woman, and the
+            // team fixture correctly refused to run: ordering by wage and ordering by level
+            // gave the same list, so neither column proved anything. Hanna is the strongest
+            // and among the cheapest, which is also the more interesting company.
+            simulation.TryMoveOffice(OfficeTier.Loft, out _);
+
+            var crew = new (string Name, PlayerSkill Job, StaffRole Role, int Skill, int Day,
+                HireSource From, double Hourly)[]
+            {
+                ("Iwona Krajewska", PlayerSkill.Concept, StaffRole.ResearchScientist, 4,
+                    GameDate.FromCalendar(2022, 3, 14).DayIndex, HireSource.Specialist, 264.0),
+
+                ("Tomasz Bąk", PlayerSkill.Development, StaffRole.ResearchScientist, 4,
+                    GameDate.FromCalendar(2022, 11, 2).DayIndex, HireSource.Agency, 181.0),
+
+                ("Marek Dudek", PlayerSkill.Software, StaffRole.InfrastructureEngineer, 3,
+                    GameDate.FromCalendar(2023, 5, 20).DayIndex, HireSource.Agency, 152.0),
+
+                ("Hanna Lis", PlayerSkill.DataEngineering, StaffRole.DataEngineer, 5,
+                    GameDate.FromCalendar(2023, 9, 8).DayIndex, HireSource.Remote, 121.0),
+
+                ("Paweł Nowak", PlayerSkill.Safety, StaffRole.SafetyEngineer, 2,
+                    GameDate.FromCalendar(2024, 1, 30).DayIndex, HireSource.Agency, 149.0),
+
+                ("Ada Wrona", PlayerSkill.Support, StaffRole.GoToMarket, 3,
+                    GameDate.FromCalendar(2024, 4, 3).DayIndex, HireSource.Remote, 88.0)
+            };
+
+            foreach (var person in crew)
+            {
+                state.Staff.Add(new Hire(person.Role, person.Skill, new GameDate(person.Day),
+                    person.Name, person.Job, person.From, person.Hourly));
+            }
+
             state.Pool.AddAsset(new HardwareAsset(
                 HardwareGenerationId.AcceleratorH100, ComputeTier.ColocatedServers, 384,
                 GameDate.FromCalendar(2023, 4, 11), 33_000, 45));

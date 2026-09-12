@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ScalingLaws.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -25,7 +25,8 @@ namespace ScalingLaws.UI
             { PlayerSkill.Concept, "concept" },
             { PlayerSkill.Software, "software" },
             { PlayerSkill.DataEngineering, "data_engineering" },
-            { PlayerSkill.Safety, "safety" }
+            { PlayerSkill.Safety, "safety" },
+            { PlayerSkill.Support, "support" }
         };
 
         private static readonly Dictionary<PlayerSkill, Texture2D> Loaded = new();
