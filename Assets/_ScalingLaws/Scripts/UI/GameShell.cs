@@ -1090,7 +1090,16 @@ namespace ScalingLaws.UI
             bannerStack.Add(modelBanner.Root);
 
             // Under the product, because an upgrade is work happening to the thing above it.
-            upgradeStrip = new UpgradeStrip(() => simulation.State);
+            upgradeStrip = new UpgradeStrip(() => simulation.State, index =>
+            {
+                if (!simulation.TryCancelUpgrade(index, out _, out _))
+                {
+                    return false;
+                }
+
+                RefreshChrome();
+                return true;
+            });
             bannerStack.Add(upgradeStrip.Root);
 
             root.Add(bannerStack);

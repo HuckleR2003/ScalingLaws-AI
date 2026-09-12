@@ -329,6 +329,16 @@ namespace ScalingLaws.Simulation
         /// <summary>Who owns the company after every round raised so far.</summary>
         public CapTable CapTable { get; }
 
+        /// <summary>
+        /// What a cancelled research node kept, so it starts there next time.
+        ///
+        /// **Causal, not derived, so it has to be saved.** There is nothing else in the campaign
+        /// that records a node was abandoned part way: the project is gone and the tree only
+        /// knows finished from unfinished. Eighth time in this project that something which
+        /// looked like a detail turned out to be the only copy of a fact.
+        /// </summary>
+        public Dictionary<ResearchNodeId, ResearchBank> BankedResearch { get; } = new();
+
         /// <summary>The term sheets on the table, from firms that came to you.</summary>
         public InvestorDesk Investors { get; } = new();
 

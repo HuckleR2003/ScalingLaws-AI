@@ -207,6 +207,22 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **Anything running can be abandoned, and abandoning it costs.** Asked for by a tester who gave the
+  numbers with the request: he misclicked into a two hundred day run he did not want and had to
+  watch it finish. All three could already be thrown away, which was the opposite fault, because
+  they could be thrown away for nothing at all.
+- **A research node keeps four fifths of itself.** Abandon one two hundred days in and it comes back
+  at one hundred and sixty, which is his own example. The money it was started with does not come
+  back, so stopping and starting is never free.
+- **A run, an upgrade or a family programme costs a tenth to walk away from**, charged on what it
+  has already spent rather than on what it was going to cost. A misclick noticed on the first
+  morning is nearly free, which is the case he was describing, and abandoning a run six months in
+  is expensive.
+- **Upgrades could not be stopped at all.** Four months and most of a quarter, committed, with no
+  way out. There is an abandon on every programme in the corner strip now, armed before it fires.
+- **The calendar is never handed back.** What a cancel buys is not spending the remaining days on a
+  plan you no longer want. The days already on the cluster are gone whatever you do, which is what
+  keeps this inside the spine rather than turning it into a reroll on every decision in the game.
 - **The buy and move buttons on the premises page were invisible.** Reported by two testers, one of
   them on his first day, both as clicking a bigger office doing nothing. It did nothing because
   there was nothing there: the row was a fixed 202 pixels that clips, the buttons are the last thing
@@ -321,6 +337,10 @@ than grey text with the money shouting over it.
 
 ### Save compatibility
 
+**Save v54.** What an abandoned research node kept, plus everything v53 added below.
+A v53 campaign banks nothing, which is the only true reading: the old rule threw the whole node
+away and left no record it had ever been started.
+
 **Save v53.** The register of who owns the company, and the term sheets on the table.
 A v52 campaign that has never raised gets Emil's two per cent stated; one that has already raised
 does not, because a v52 file records one number and nothing about who holds the rest, and naming
@@ -332,7 +352,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,196 EditMode tests and 47 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,205 EditMode tests and 47 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.

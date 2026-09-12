@@ -417,7 +417,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 53;
+        public const int CurrentVersion = 54;
 
         public int version = CurrentVersion;
 
@@ -533,6 +533,14 @@ namespace ScalingLaws.Persistence
         public List<double> deskEquityAsked = new();
         public List<double> deskSentiment = new();
         public List<bool> deskIsDownRound = new();
+
+        // ---- added in v54: what an abandoned research node kept ----
+
+        /// <summary>Node ids, as ResearchNodeId values. One entry per list across all three.</summary>
+        public List<int> bankedResearchNodes = new();
+
+        public List<int> bankedResearchDays = new();
+        public List<double> bankedResearchPetaflopDays = new();
 
         /// <summary>Kept so a v22 file can still be read. v23 writes <see cref="memberships"/>.</summary>
         public int intelSubscription;

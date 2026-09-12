@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -25,9 +25,19 @@ namespace ScalingLaws.UI
     public sealed class UpgradeStrip
     {
         private readonly Func<CompanyState> state;
+        private readonly Func<int, bool> abandon;
         private readonly List<Row> rows = new();
 
-        public UpgradeStrip(Func<CompanyState> state)
+        /// <summary>
+        /// Which row is asking a second time, or minus one.
+        ///
+        /// **Armed before it fires**, the same two-click shape the run and the family programme
+        /// already use, because nothing comes back: the days on the cluster are spent and the fee
+        /// is charged on top of them.
+        /// </summary>
+        private int armed = -1;
+
+        public UpgradeStrip(Func<CompanyState> state, Func<int, bool> abandon = null)
         {
             this.state = state ?? throw new ArgumentNullException(nameof(state));
 
@@ -72,10 +82,18 @@ namespace ScalingLaws.UI
                 text.Add(left);
                 text.Add(Days);
                 Root.Add(text);
+
+                // **A tester asked for this by name, alongside training and research.** There was
+                // no way to stop an upgrade at all: a company could commit four months and most
+                // of a quarter to one it regretted on the first day and had to watch it finish.
+                Stop = new Button { text = Loc.T("common.stop") };
+                Stop.AddToClassList("ustrip__stop");
+                Root.Add(Stop);
             }
 
             public VisualElement Root { get; }
             public VisualElement Fill { get; }
+            public Button Stop { get; }
             public Label Kicker { get; }
             public Label Name { get; }
             public Label Days { get; }
@@ -113,7 +131,49 @@ namespace ScalingLaws.UI
 
                 row.Root.style.display = DisplayStyle.Flex;
                 Fill(row, company, projects[index]);
+                WireStop(row, index);
             }
+        }
+
+        /// <summary>
+        /// Rebinds one row's abandon button to the programme it is currently showing.
+        ///
+        /// **Rebound every refresh, not wired once.** The rows are pooled and reused, so row two
+        /// is a different programme the moment one finishes, and a handler captured when the row
+        /// was built would stop whatever happened to be second that day.
+        /// </summary>
+        private void WireStop(Row row, int index)
+        {
+            row.Stop.clickable = new Clickable(() =>
+            {
+                if (armed != index)
+                {
+                    armed = index;
+                    Refresh();
+                    return;
+                }
+
+                armed = -1;
+
+                if (abandon != null && abandon(index))
+                {
+                    AudioDirector.Confirm();
+                }
+                else
+                {
+                    AudioDirector.Deny();
+                }
+
+                Refresh();
+            });
+
+            row.Stop.text = armed == index
+                ? Loc.T("ustrip.stop_sure")
+                : Loc.T("common.stop");
+
+            row.Stop.EnableInClassList("ustrip__stop--armed", armed == index);
+            row.Stop.SetEnabled(abandon != null);
+            row.Stop.tooltip = Loc.T("ustrip.stop_note");
         }
 
         private static void Fill(Row row, CompanyState company, ModelUpgradeProject project)

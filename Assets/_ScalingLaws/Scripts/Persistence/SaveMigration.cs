@@ -154,6 +154,7 @@ namespace ScalingLaws.Persistence
                     50 => UpgradeV50ToV51(current),
                     51 => UpgradeV51ToV52(current),
                     52 => UpgradeV52ToV53(current),
+                    53 => UpgradeV53ToV54(current),
                     _ => current
                 };
             }
@@ -1817,6 +1818,30 @@ namespace ScalingLaws.Persistence
         /// No term sheets are on the table: in v52 there was one offer at a time and it is
         /// already carried by its own fields.
         /// </summary>
+        /// <summary>
+        /// v53 to v54: nothing is banked, because nothing could be.
+        ///
+        /// **The only true reading.** In v53 abandoning a node threw the whole of it away and left
+        /// no record that it had ever been started, so there is nothing in the file to reconstruct
+        /// a banked figure from and no honest way to invent one. A campaign that abandoned research
+        /// under the old rule lost it, which is what it was playing.
+        /// </summary>
+        public static SaveData UpgradeV53ToV54(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 54;
+
+            data.bankedResearchNodes = new List<int>();
+            data.bankedResearchDays = new List<int>();
+            data.bankedResearchPetaflopDays = new List<double>();
+
+            return data;
+        }
+
         public static SaveData UpgradeV52ToV53(SaveData data)
         {
             if (data == null)

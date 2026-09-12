@@ -873,7 +873,13 @@ namespace ScalingLaws.UI
                     if (abandonArmed)
                     {
                         abandonArmed = false;
-                        simulation.CancelArchitectureProgramme();
+
+                        // A tenth of what the programme has cost. Free was the old behaviour and it
+                        // made a year of the company a thing you could undo for nothing.
+                        if (!simulation.TryCancelArchitecture(out _, out var why))
+                        {
+                            problem = why;
+                        }
                     }
                     else
                     {

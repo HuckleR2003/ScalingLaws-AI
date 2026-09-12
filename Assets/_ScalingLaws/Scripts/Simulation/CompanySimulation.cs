@@ -1092,7 +1092,74 @@ namespace ScalingLaws.Simulation
         public System.Collections.Generic.List<RivalStaffMember> RosterOf(CompetitorId lab) =>
             RivalStaff.RosterFor(lab, State.Date, State.RosterSeed, State.PoachedRivalStaff);
 
-        /// <summary>Cancels the run in flight. The compute already burned does not come back.</summary>
+        /// <summary>
+        /// What walking away from the run in flight would cost today.
+        ///
+        /// Charged on what it has spent rather than on what it was going to, so a misclick
+        /// noticed on the first morning is nearly free and six months in is not. Public because
+        /// the button has to say the number before the player presses it.
+        /// </summary>
+        public long TrainingAbandonFeeUsd()
+        {
+            var run = State.ActiveRun;
+
+            return run == null
+                ? 0L
+                : CancellationPolicy.FeeOn(run.DataCostPaidUsd + run.ComputeCashSpentUsd);
+        }
+
+        /// <summary>
+        /// Abandons the run, for a fee.
+        ///
+        /// **The days do not come back and are not meant to.** What the fee buys is not spending
+        /// the remaining ones on a plan the player no longer wants, which is the whole of what a
+        /// cancel should be in a game whose spine is that capital is timed.
+        /// </summary>
+        public bool TryCancelTraining(out long feeUsd, out string failureReason)
+        {
+            feeUsd = 0L;
+            failureReason = string.Empty;
+
+            var run = State.ActiveRun;
+            if (run == null)
+            {
+                failureReason = Loc.T("cancel.nothing_running");
+                return false;
+            }
+
+            feeUsd = TrainingAbandonFeeUsd();
+
+            if (State.CashUsd < feeUsd)
+            {
+                failureReason = Loc.T("fail.needs_cash", UiMoney(feeUsd), UiMoney(State.CashUsd));
+                feeUsd = 0L;
+                return false;
+            }
+
+            if (feeUsd > 0L)
+            {
+                // There is no line for a run: its compute is CloudRent and its corpus is
+                // DataAcquisition. Walking away from one is a research cost, which is where the
+                // family programme books the same fee.
+                State.PostCash(LedgerLine.Research, feeUsd);
+            }
+
+            var name = run.Blueprint.Name;
+            var days = run.DaysCompleted;
+
+            State.ActiveRun = null;
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.Notice,
+                State.Date,
+                Loc.T("cancel.training_done", name, Loc.Counted(days, "noun.day"),
+                    UiMoney(feeUsd)),
+                feeUsd));
+
+            return true;
+        }
+
+        /// <summary>Kept so older callers and tests still compile. Charges nothing.</summary>
         public bool CancelTraining()
         {
             if (State.ActiveRun == null)
@@ -2019,12 +2086,27 @@ namespace ScalingLaws.Simulation
             var node = ResearchTree.Get(active.Node);
             var days = active.DaysCompleted;
 
+            // **Most of it is still there next time, and that is the tester's own number.** A node
+            // is a named thing on a tree that the company will almost certainly come back to, so
+            // what abandoning it costs is progress rather than a fee. The cash it was started
+            // with is not banked with it: restarting charges the node again, which is the other
+            // half of what stops a player flipping between two of them for nothing.
+            var kept = new ResearchBank(
+                CancellationPolicy.DaysKept(days),
+                CancellationPolicy.ComputeKept(active.PetaflopDaysCompleted));
+
+            if (kept.IsWorthSomething)
+            {
+                State.BankedResearch[active.Node] = kept;
+            }
+
             State.ActiveResearch = null;
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchCancelled,
                 State.Date,
-                $"{node.DisplayName} abandoned after {days} days. Nothing spent on it comes back."));
+                Loc.T("cancel.research_done", node.DisplayName,
+                    Loc.Counted(days, "noun.day"), Loc.Counted(kept.Days, "noun.day"))));
 
             return true;
         }
@@ -2073,11 +2155,21 @@ namespace ScalingLaws.Simulation
                 ? Math.Min(standing.DurationDays, GuideProgress.FavourDays)
                 : standing.DurationDays;
 
-            State.ActiveResearch = new ResearchProject(
+            var project = new ResearchProject(
                 nodeId, State.Date, days,
                 free ? node.PetaflopDaysRequired * GuideProgress.FavourComputeShare
                      : node.PetaflopDaysRequired,
                 free ? 0L : cash);
+
+            // **A node abandoned once starts where it was left, less the fifth it forfeited.**
+            // Taken out of the bank rather than left in it, or the next cancel would bank a
+            // figure that already included this one and a player could ratchet it upwards.
+            if (State.BankedResearch.Remove(nodeId, out var banked))
+            {
+                project.Restore(banked.Days, banked.PetaflopDays);
+            }
+
+            State.ActiveResearch = project;
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchStarted,
@@ -2237,6 +2329,114 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>Abandons the programme. The money and the compute already spent do not come back.</summary>
+        /// <summary>What abandoning one upgrade programme would cost today.</summary>
+        public long UpgradeAbandonFeeUsd(int index) =>
+            index < 0 || index >= State.UpgradeProjects.Count
+                ? 0L
+                : CancellationPolicy.FeeOn(State.UpgradeProjects[index].CashPaidUsd);
+
+        /// <summary>
+        /// Abandons one upgrade programme, for a fee.
+        ///
+        /// **There was no way to stop one at all**, which the tester listed alongside training and
+        /// research. A company could commit four months and most of a quarter to an upgrade it
+        /// regretted on the first day and had to watch it finish.
+        ///
+        /// Nothing is banked, for the same reason a family programme banks nothing: the basket of
+        /// traits was assembled once on the upgrade screen and there is no rung to put it against.
+        /// </summary>
+        public bool TryCancelUpgrade(int index, out long feeUsd, out string failureReason)
+        {
+            feeUsd = 0L;
+            failureReason = string.Empty;
+
+            if (index < 0 || index >= State.UpgradeProjects.Count)
+            {
+                failureReason = Loc.T("cancel.nothing_running");
+                return false;
+            }
+
+            var project = State.UpgradeProjects[index];
+            feeUsd = CancellationPolicy.FeeOn(project.CashPaidUsd);
+
+            if (State.CashUsd < feeUsd)
+            {
+                failureReason = Loc.T("fail.needs_cash", UiMoney(feeUsd), UiMoney(State.CashUsd));
+                feeUsd = 0L;
+                return false;
+            }
+
+            if (feeUsd > 0L)
+            {
+                State.PostCash(LedgerLine.Research, feeUsd);
+            }
+
+            var days = project.DaysCompleted;
+            State.RemoveUpgradeProject(project);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.Notice,
+                State.Date,
+                Loc.T("cancel.upgrade_done", Loc.Counted(days, "noun.day"), UiMoney(feeUsd)),
+                feeUsd));
+
+            return true;
+        }
+
+        /// <summary>What abandoning the family programme would cost today.</summary>
+        public long ArchitectureAbandonFeeUsd() =>
+            State.ActiveArchitectureProject == null
+                ? 0L
+                : CancellationPolicy.FeeOn(State.ActiveArchitectureProject.CashPaidUsd);
+
+        /// <summary>
+        /// Abandons the family programme, for a fee.
+        ///
+        /// **Nothing is banked, unlike a research node, and the reason is not convenience.** A
+        /// node is a named rung the company comes back to; a family programme is a bespoke plan
+        /// off five sliders that will never exist again, so there is nothing for the progress to
+        /// be banked against.
+        /// </summary>
+        public bool TryCancelArchitecture(out long feeUsd, out string failureReason)
+        {
+            feeUsd = 0L;
+            failureReason = string.Empty;
+
+            var project = State.ActiveArchitectureProject;
+            if (project == null)
+            {
+                failureReason = Loc.T("cancel.nothing_running");
+                return false;
+            }
+
+            feeUsd = ArchitectureAbandonFeeUsd();
+
+            if (State.CashUsd < feeUsd)
+            {
+                failureReason = Loc.T("fail.needs_cash", UiMoney(feeUsd), UiMoney(State.CashUsd));
+                feeUsd = 0L;
+                return false;
+            }
+
+            if (feeUsd > 0L)
+            {
+                State.PostCash(LedgerLine.Research, feeUsd);
+            }
+
+            var days = project.DaysCompleted;
+            State.ActiveArchitectureProject = null;
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.Notice,
+                State.Date,
+                Loc.T("cancel.architecture_done", Loc.Counted(days, "noun.day"),
+                    UiMoney(feeUsd)),
+                feeUsd));
+
+            return true;
+        }
+
+        /// <summary>Kept so older callers and tests still compile. Charges nothing.</summary>
         public bool CancelArchitectureProgramme()
         {
             if (State.ActiveArchitectureProject == null)

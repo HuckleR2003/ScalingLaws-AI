@@ -18572,3 +18572,24 @@
     margin-left: 0;
     align-self: flex-start;
 }
+
+/* The way out of an upgrade. Quiet until it is armed, because pressing it twice is the whole
+   safety and a red button on a corner strip would read as an alarm. */
+.ustrip__stop {
+    align-self: flex-end;
+    height: 22px;
+    margin: 6px 8px 6px 0;
+    padding: 0 10px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(168, 180, 198);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 0;
+    border-radius: 3px;
+    -unity-text-align: middle-center;
+}
+
+.ustrip__stop--armed {
+    color: rgb(240, 196, 184);
+    background-color: rgba(150, 70, 70, 0.34);
+}

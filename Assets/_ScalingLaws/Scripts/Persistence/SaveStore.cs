@@ -694,6 +694,19 @@ namespace ScalingLaws.Persistence
 
             data.lastInvestorCallDayIndex = state.LastInvestorCallDayIndex;
 
+            // **Causal, so it has to be saved.** Nothing else records that a node was abandoned
+            // part way: the project is gone and the tree only knows finished from unfinished.
+            data.bankedResearchNodes.Clear();
+            data.bankedResearchDays.Clear();
+            data.bankedResearchPetaflopDays.Clear();
+
+            foreach (var pair in state.BankedResearch)
+            {
+                data.bankedResearchNodes.Add((int)pair.Key);
+                data.bankedResearchDays.Add(pair.Value.Days);
+                data.bankedResearchPetaflopDays.Add(pair.Value.PetaflopDays);
+            }
+
             data.deskInvestors.Clear();
             data.deskStages.Clear();
             data.deskOpenedDayIndex.Clear();
@@ -1620,6 +1633,24 @@ namespace ScalingLaws.Persistence
 
             state.CapTable.Restore(history, safe.founderEquity, register);
             state.LastInvestorCallDayIndex = safe.lastInvestorCallDayIndex;
+
+            state.BankedResearch.Clear();
+            var bankedCount = safe.bankedResearchNodes?.Count ?? 0;
+
+            for (var index = 0; index < bankedCount; index++)
+            {
+                var raw = safe.bankedResearchNodes[index];
+                if (!Enum.IsDefined(typeof(ResearchNodeId), raw))
+                {
+                    continue;
+                }
+
+                state.BankedResearch[(ResearchNodeId)raw] = new ResearchBank(
+                    index < safe.bankedResearchDays.Count ? safe.bankedResearchDays[index] : 0,
+                    index < safe.bankedResearchPetaflopDays.Count
+                        ? safe.bankedResearchPetaflopDays[index]
+                        : 0.0);
+            }
 
             var desk = new List<FundingOffer>();
             var deskCount = safe.deskInvestors?.Count ?? 0;

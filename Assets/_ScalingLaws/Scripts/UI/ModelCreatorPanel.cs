@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -2827,7 +2827,21 @@ namespace ScalingLaws.UI
             }
 
             abandonArmed = false;
-            simulation.CancelTraining();
+
+            // **It costs something now, and the arming step is where the number is read.** A tester
+            // asked for this and supplied the shape: a cancel that is free is a reroll on every
+            // decision in the game, and one that is impossible makes a misclick cost two hundred
+            // days. The fee is a tenth of what the run has already spent, so the morning it starts
+            // is nearly free.
+            if (!simulation.TryCancelTraining(out _, out var why))
+            {
+                AudioDirector.Deny();
+                verdict.RemoveFromClassList("verdict--ok");
+                verdict.AddToClassList("verdict--blocked");
+                verdict.text = why;
+                return;
+            }
+
             Reprice();
         }
 

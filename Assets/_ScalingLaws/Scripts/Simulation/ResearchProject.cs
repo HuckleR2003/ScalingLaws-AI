@@ -1,9 +1,32 @@
-using System;
+﻿using System;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
+    /// <summary>
+    /// What an abandoned node left behind.
+    ///
+    /// A readonly struct because it is a record the interface is handed rather than a thing it
+    /// can move, which is the rule every snapshot here follows.
+    /// </summary>
+    public readonly struct ResearchBank
+    {
+        public ResearchBank(int days, double petaflopDays)
+        {
+            Days = Math.Max(0, days);
+            PetaflopDays = Math.Max(0.0, SimUnits.Finite(petaflopDays));
+        }
+
+        public int Days { get; }
+
+        public double PetaflopDays { get; }
+
+        public bool IsWorthSomething => Days > 0 || PetaflopDays > 0.0;
+
+        public override string ToString() => $"{Days} days, {PetaflopDays:N0} PF-days";
+    }
+
     /// <summary>
     /// A technology tree node being researched. Calendar and compute, like everything else that
     /// competes for the cluster, and it competes with training, upgrades and family programmes.
