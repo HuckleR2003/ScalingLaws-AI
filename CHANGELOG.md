@@ -419,6 +419,12 @@ than grey text with the money shouting over it.
   behind it, the desks are in benches of four facing each other, both glass rooms are framed and
   the big floor's second room has a return so it reads as a room rather than a pane of glass
   standing on the floor, and there are plants in the corners the shop cannot reach.
+- **Both rented floors have a photograph on the premises page.** `office_smallhub` and
+  `office_bighub` have been named in the catalogue and missing from disk since the tiers were
+  written, so two of the three rows a player chooses between carried a caption saying the picture
+  did not exist yet. They are a crop of the room's own render, which is the only version of that
+  picture that cannot go out of date when the room changes: it comes out of the same prefab the
+  player moves into. `Tools/office_cards.py` makes them.
 - **The floor the player furnishes was left alone on purpose.** Everything above is placed
   against the room, because the open ground in the middle belongs to the build mode and a
   builder that drops a plant in it would have the shop growing a coffee bar through it.

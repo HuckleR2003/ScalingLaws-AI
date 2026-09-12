@@ -44,8 +44,8 @@ nazwane przez kod: 50 z 50      węzły bez ikony: brak
 | poziom | plik | jest? |
 |---|---|---|
 | LVL 0 Garaż | `office_house` | ✅ |
-| LVL 1 Small office hub | `office_smallhub` | ❌ **nazwany w katalogu, pliku nie ma** |
-| LVL 2 Big company hub | `office_bighub` | ❌ **nazwany w katalogu, pliku nie ma** |
+| LVL 1 Small office hub | `office_smallhub` | ✅ kadr z własnego renderu pokoju, 1072x460 |
+| LVL 2 Big company hub | `office_bighub` | ✅ kadr z własnego renderu pokoju, 1072x460 |
 | LVL 3 Campus | — | ❌ nie ma nawet nazwy |
 | LVL 4 Multi-site | — | ❌ nie ma nawet nazwy |
 
@@ -108,10 +108,14 @@ Edge tier, Bulk allocation). Ekran MOC rysuje je dziś bez rozróżnienia.
 
 ## Kolejność, gdybym miał wybierać
 
-1. **`office_smallhub` i `office_bighub`** — nazwane, brakujące, na często odwiedzanym ekranie
-2. **`chip_model`** — jedyne widoczne „tu miało coś być"
-3. **Pięć banerów** — kosmetyka, ale wyrównuje grę do jednego poziomu
-4. **Trzeci hosting** — najmniej pilne
+1. **`chip_model`** — jedyne widoczne „tu miało coś być"
+2. **Pięć banerów** — kosmetyka, ale wyrównuje grę do jednego poziomu
+3. **Trzeci hosting** — najmniej pilne
+
+`office_smallhub` i `office_bighub` spadły z listy 12.09: są kadrem z renderu samego pokoju,
+a nie rysunkiem. To jedyna wersja tego zdjęcia, która nie zdezaktualizuje się, kiedy pokój się
+zmieni, bo powstaje z tego samego prefabu, w który gracz się wprowadza. Robi to
+`Tools/office_cards.py` z `HubProof~`, po `Scaling Laws > Snapshot the hubs`.
 
 Ikony badań spadły z tej listy — są zrobione.
 
