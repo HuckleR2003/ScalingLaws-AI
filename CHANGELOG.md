@@ -66,6 +66,22 @@ than grey text with the money shouting over it.
 
 ### Fixed
 
+- **The model creator took no clicks at all, and neither did the corner of the site screen.**
+  Reported as totally critical: the whole BRANDING page was dead, including the name field and
+  NEXT, while the stage rail above it and the bar below it worked. Two invisible things were lying
+  on top of them. The corner banner column was given a bottom edge so it could not reach the bottom
+  bar, which also gave it a fixed height on every screen: measured, it covered x 1,309 to 1,625 of
+  a 1,646 wide panel from top to bottom, so the right third of every page took no clicks. It no
+  longer takes a click where it draws nothing, and it is not there at all on screens with no
+  banners. The phone is the other one: 330 by 660 in the same corner, over NEXT and over all four
+  site icons. Walking to another screen puts it down, and an unanswered call from the cousin
+  becomes "call me back", which already existed.
+- **A new company is told what a run would cost before it has rented anything.** PROJECTED
+  CAPABILITY, TIME TO TRAIN and CASH IT BURNS all read "-" until the player happened to walk onto
+  the compute page and move a slider, and nothing said that was what the screen was waiting for.
+  Everything there is derived from the fleet and a company on day one owns none. The creator prices
+  the plan against a proposed 150 petaflops and **bills nothing for it**: the rent is a proposal
+  until the player moves the handle or starts the run.
 - **The model creator threw away what you set the moment you looked at another page.** Reported by
   Francisco, 1,391 days into a campaign: set the parameters and the tokens, step over to safety,
   come back, and both are at their opening values again. Every control in the creator is a shared
