@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace ScalingLaws.Data
 {
@@ -112,6 +112,14 @@ namespace ScalingLaws.Data
                 new RoomView("Rooms/SmallHub", 7.0f, 8.0f, 5.5f, 10, 1.6f, 6.9f, 8.0f, 3.6f),
 
             [OfficeTier.Floor] =
+                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 2.2f, 8.8f, 11.0f, 4.4f),
+
+            // **The tower was added to the office ladder on 2026-08-28 and never got a room.**
+            // `RoomFor` falls back to the garage, whose view loads no prefab at all, so a company
+            // that reached the largest building it can lease would have walked into an empty
+            // frame. It shares the big hub with the two above it until a tower is modelled, which
+            // is the same thing those two do and is honest about the art that exists.
+            [OfficeTier.Tower] =
                 new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 2.2f, 8.8f, 11.0f, 4.4f),
 
             [OfficeTier.Campus] =

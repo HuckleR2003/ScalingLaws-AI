@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -265,11 +265,28 @@ namespace ScalingLaws.Tests.EditMode
             }
         }
 
+        /// <summary>
+        /// **This asserted the wrong thing and let a tier ship without a room.**
+        ///
+        /// It read `RoomCatalog.For(tier)` and checked the camera and the desk count on whatever
+        /// came back. `For` falls back to the garage when a tier has no entry, and the garage has a
+        /// perfectly good camera and four desks, so the tower was added to the office ladder in
+        /// August, had no room of its own, and this passed on the garage's numbers every run.
+        ///
+        /// The fact worth holding is membership: every tier has an entry of its own. The properties
+        /// are worth holding too, but only once it is the tier's own properties being read.
+        /// </summary>
         [Test]
         public void EveryTierHasARoomToLookAt()
         {
+            var known = new System.Collections.Generic.HashSet<OfficeTier>(RoomCatalog.Tiers);
+
             foreach (OfficeTier tier in System.Enum.GetValues(typeof(OfficeTier)))
             {
+                Assert.That(known.Contains(tier), Is.True,
+                    $"{tier} has no room of its own, so the office view falls back to the garage "
+                    + "and a player who moved there is looking at somebody else's building.");
+
                 var room = RoomCatalog.For(tier);
 
                 Assert.That(room.CameraSize, Is.GreaterThan(0f), $"{tier} has no camera framing.");

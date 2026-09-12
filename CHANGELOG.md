@@ -207,6 +207,15 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **The tower had no room in it.** It was added to the office ladder in August, and the lookup that
+  answers "which room am I looking at" falls back to the house when a tier has no entry. So a
+  company that leased the largest building in the game, at $380M, walked into an empty frame.
+  Nothing failed: the stage loaded nothing and drew the floor it already had.
+- **Moving out of the first office works, and now there are tests that say so.** Players report that
+  the starting house makes hiring impossible, which is true and is the design: it has no desks. What
+  had never been checked is that leaving is affordable on day one with the money the company is
+  handed, that the move actually hands over the desks, and that somebody can then be hired into one.
+  All three hold.
 - **GRANTS AND DONATIONS stopped being the ugly half of that page.** Reported. The tier was an 11px
   gold caption carrying two facts under the title; it is a rank on the heading line now, right
   aligned, with what opens the next rung on the hover rather than competing with the line above it.
@@ -311,7 +320,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,188 EditMode tests and 45 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,194 EditMode tests and 45 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -324,6 +333,12 @@ model history that saves already carry, so an existing campaign reads correctly 
   The step that follows the offer waits on `arch_built`, and `AlreadyDone` reports it satisfied
   when nothing is running, so a player who declined arrives with nothing in flight and unwinds
   through it. A branch would have been a second shape of step for one decision.
+- **A guard said it held this and could not see it.** `EveryTierHasARoomToLookAt` read the room for
+  each tier and checked the camera and the desk count on whatever came back. The lookup falls back
+  to the garage, which has both, so the test passed on another building's numbers every run while
+  the tower had no entry at all. It asserts membership now, and the comment in `RoomCatalog` that
+  claimed a test held this is finally true. Removing the fix turns both guards red, which was
+  checked rather than assumed.
 - **One term sheet type, two ways of being handed one.** A round the player goes looking for and a
   firm that turns up unasked are the same piece of paper with a different name at the top, and
   `CloseRound` is the only place equity moves. Building a second type for the second case is how a
