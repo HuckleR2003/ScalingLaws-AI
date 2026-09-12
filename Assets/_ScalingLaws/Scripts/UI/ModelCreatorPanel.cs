@@ -61,6 +61,27 @@ namespace ScalingLaws.UI
         private readonly Label tokenLabel = new();
         private readonly Label rentedLabel = new();
 
+        /// <summary>
+        /// Controls that have had their opening value and their callback set.
+        ///
+        /// **A control here is a field and the panel around it is not.** Every stage panel is
+        /// rebuilt from scratch each time the player opens that stage, which is right: the
+        /// numbers on it have moved. The controls are shared instances precisely so the answers
+        /// survive that. But the builder also configured them, so every visit put the parameter
+        /// slider back to its opening value, the token slider back to its opening value, the
+        /// model name back to "Muse 1", and the rent slider back to 150 petaflops.
+        ///
+        /// A tester reported the first of those. The last one is worse and he reported that too
+        /// without knowing they were the same thing: repricing writes the rent slider to the
+        /// company, so walking onto the COMPUTE page of the creator cancelled whatever the
+        /// company had rented and pegged its service at a hundred per cent until something
+        /// resynchronised the handle.
+        ///
+        /// Bounds still move on every build, because the ceiling grows with the company. The
+        /// value and the callback are set once, because they are the player's.
+        /// </summary>
+        private readonly HashSet<VisualElement> configured = new();
+
         private readonly List<ArchitectureId> architectureOptions = new();
         private readonly Dictionary<DatasetSource, Toggle> dataSourceToggles = new();
 
@@ -204,6 +225,15 @@ namespace ScalingLaws.UI
             this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
             root = new VisualElement();
             root.AddToClassList("content");
+
+            // **Before anything is built, because building reprices and repricing writes the rent
+            // slider to the company.** A fresh handle reads zero, so constructing this panel took
+            // the fleet to nothing before the screen it belongs to had a chance to refresh it. The
+            // tester who reported the service pegging at a hundred per cent had done nothing but
+            // open the creator.
+            SyncRentCeiling();
+            rentedSlider.SetValueWithoutNotify((float)simulation.State.Pool.RentedPetaflops);
+
             Build();
         }
 
@@ -214,9 +244,26 @@ namespace ScalingLaws.UI
         {
             RebuildArchitectures();
             RebuildDataSources();
+
+            // **The ceiling before the handle, or the handle is clamped to a range nobody set.**
+            // A fresh Slider is 0 to 10, and this control is only given its real range when the
+            // COMPUTE page is built, which has not happened on the first visit to any other
+            // page. So a company renting four thousand petaflops had its handle clamped to ten,
+            // and the reprice below wrote that ten straight back to the company.
+            SyncRentCeiling();
             rentedSlider.SetValueWithoutNotify((float)simulation.State.Pool.RentedPetaflops);
             Reprice();
         }
+
+        /// <summary>
+        /// Points the rent slider's upper end at what this company could plausibly rent.
+        ///
+        /// Read from the pool rather than from the handle, so it is the same answer before and
+        /// after the handle is written, and there is no loop between the two.
+        /// </summary>
+        private void SyncRentCeiling() =>
+            rentedSlider.highValue = (float)RentReadout.CeilingPetaflops(
+                HeldUsers(), simulation.State.Pool.RentedPetaflops);
 
         private void Build()
         {
@@ -993,24 +1040,35 @@ namespace ScalingLaws.UI
         {
             var panel = NewPanel(Loc.T("create.identity"));
 
+            // The label is re-set every build so it follows the language. The name is not: it is
+            // what the player typed, and this ran every time they walked back onto this page.
             nameField.label = Loc.T("create.model_name");
-            nameField.value = "Muse 1";
-            nameField.AddToClassList("field");
-            nameField.RegisterValueChangedCallback(_ =>
-            {
-                if (laptopName != null)
-                {
-                    laptopName.text = DisplayName();
-                }
 
-                RefreshBranding();
-                Reprice();
-            });
+            if (configured.Add(nameField))
+            {
+                nameField.value = "Muse 1";
+                nameField.AddToClassList("field");
+                nameField.RegisterValueChangedCallback(_ =>
+                {
+                    if (laptopName != null)
+                    {
+                        laptopName.text = DisplayName();
+                    }
+
+                    RefreshBranding();
+                    Reprice();
+                });
+            }
+
             panel.Add(nameField);
 
             architectureField.label = Loc.T("create.architecture");
-            architectureField.AddToClassList("field");
-            architectureField.RegisterValueChangedCallback(_ => Reprice());
+
+            if (configured.Add(architectureField))
+            {
+                architectureField.AddToClassList("field");
+                architectureField.RegisterValueChangedCallback(_ => Reprice());
+            }
             panel.Add(architectureField);
 
             // The sentence lives in the tooltip rather than on the page. The same rule the founder
@@ -1713,9 +1771,14 @@ namespace ScalingLaws.UI
             // Sized from the company rather than fixed, the same way the compute tab's is. A fixed
             // twenty five thousand is six hundred million accounts, which is not a decision a lab
             // with no product is making.
+            // **Opens on what the company is already renting, not on a number.** The handle is
+            // only given a starting value the first time it is configured, and this is the one
+            // control in the creator that writes to the company rather than describing a plan,
+            // so a starting value of its own would cancel the fleet on the first visit to this
+            // page. 150 was that number.
             ConfigureSlider(rentedSlider, 0f,
                 (float)RentReadout.CeilingPetaflops(HeldUsers(), simulation.State.Pool.RentedPetaflops),
-                150f);
+                (float)simulation.State.Pool.RentedPetaflops);
             panel.Add(rentedSlider);
 
             // What the day costs, with a mark at what he tells you to stay under. The one control
@@ -2113,10 +2176,18 @@ namespace ScalingLaws.UI
                     : Loc.T("create.locked_cap", UiFormat.Billions(ceiling));
         }
 
+        /// <param name="initial">Where the handle starts, on the first build and never again.</param>
         private void ConfigureSlider(Slider slider, float low, float high, float initial)
         {
+            // The ends move with the company, so they are set every time.
             slider.lowValue = low;
             slider.highValue = high;
+
+            if (!configured.Add(slider))
+            {
+                return;
+            }
+
             slider.value = initial;
             slider.AddToClassList("field");
             slider.RegisterValueChangedCallback(_ => Reprice());
@@ -2384,6 +2455,11 @@ namespace ScalingLaws.UI
 
         private void Reprice()
         {
+            // Before the handle is read, for the reason written on `Refresh`. This used to
+            // happen at the far end of this method, so the first reprice of a fresh panel
+            // wrote a rent clamped to a range that had not been set yet.
+            SyncRentCeiling();
+
             simulation.SetRentedPetaflops(rentedSlider.value);
 
             // **The ceilings run first, before anything reads a slider.**
@@ -2413,14 +2489,12 @@ namespace ScalingLaws.UI
 
             RefreshSpend(SimUnitsToDaily(profile));
 
-            var rentCeiling = RentReadout.CeilingPetaflops(
-                HeldUsers(), simulation.State.Pool.RentedPetaflops);
-
-            rentedSlider.highValue = (float)rentCeiling;
+            SyncRentCeiling();
 
             rentMeters.Clear();
             rentMeters.Add(RentReadout.Meters(
-                profile, simulation.Market, simulation.State.Pool.RentedPetaflops, rentCeiling));
+                profile, simulation.Market, simulation.State.Pool.RentedPetaflops,
+                rentedSlider.highValue));
 
             BeginReadouts();
             AddReadout(Loc.T("create.projected"), UiFormat.Number(projection.ProjectedCapability), Tone.Neutral);
