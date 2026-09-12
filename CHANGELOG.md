@@ -207,6 +207,15 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **GRANTS AND DONATIONS stopped being the ugly half of that page.** Reported. The tier was an 11px
+  gold caption carrying two facts under the title; it is a rank on the heading line now, right
+  aligned, with what opens the next rung on the hover rather than competing with the line above it.
+- **The torn plates are gone.** Every award title and all four of its figures sat on a drawn ragged
+  shape. A torn edge is a voice, and it reads as handwriting on the tutorial and as damage on a page
+  of contracts. The titles are rectangles that run out to the card's own edge, so the title and the
+  coloured rule down its side are one object instead of two things near each other.
+- **And the four figures were being clipped.** The plate used to overhang its own box, so at 46px
+  the descender came off every number. They are 56px and readable.
 - **You can see who owns your company.** Reported. The screen gave a founder percentage and nothing
   else: no names, no idea what anybody paid, no sense that an investor is a person on your board
   rather than an abstraction you dilute yourself against. There is a bar now, always the whole

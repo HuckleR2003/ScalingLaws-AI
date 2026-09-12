@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -23,25 +23,38 @@ namespace ScalingLaws.UI
             var panel = new VisualElement();
             panel.AddToClassList("panel");
 
+            // **The rung is a rank, on the heading, and it reads as one thing rather than a
+            // sentence.** It used to be a small gold line under the title carrying both the level
+            // and the condition for the next one, which is two facts at the size of a caption on
+            // the one number a player wants to see from across the room.
+            var head = new VisualElement();
+            head.AddToClassList("grant__head");
+
             var heading = new Label(Loc.T("grant.section"));
             heading.AddToClassList("panel__heading");
-            panel.Add(heading);
+            heading.AddToClassList("grant__headline");
+            head.Add(heading);
+
+            var reached = simulation.GrantTierReached();
+
+            var rank = new Label(Loc.T("grant.tier", reached));
+            rank.AddToClassList("grant__rank");
+            head.Add(rank);
+
+            // What opens the next rung, on the rank rather than beside it. Without it the player
+            // has no way of knowing that finishing one award is what makes the larger bodies
+            // write at all, and with it on screen it was a second sentence competing with the
+            // one above it.
+            InsightTip.Attach(rank, Loc.T("grant.tier", reached),
+                reached < GrantCatalog.TopTier
+                    ? Loc.T("grant.tier.locked", reached)
+                    : Loc.T("grant.tier.top"));
+
+            panel.Add(head);
 
             var strap = new Label(Loc.T("grant.subtitle"));
             strap.AddToClassList("panel__strap");
             panel.Add(strap);
-
-            // Where the company sits on the ladder, and what opens the next rung. Without this the
-            // player has no way of knowing that finishing one award is what makes the larger
-            // bodies write at all.
-            var reached = simulation.GrantTierReached();
-
-            var rung = new Label(reached < GrantCatalog.TopTier
-                ? Loc.T("grant.tier", reached) + "  ·  " + Loc.T("grant.tier.locked", reached)
-                : Loc.T("grant.tier", reached));
-
-            rung.AddToClassList("grant__rung");
-            panel.Add(rung);
 
             BuildHeldGrants(panel);
             BuildOfferedGrants(panel);
@@ -143,12 +156,16 @@ namespace ScalingLaws.UI
         /// <summary>
         /// A heading on a torn plate.
         ///
-        /// **Drawn, because USS has neither a clip path nor a mask.** Same trick as the cousin's
-        /// name block: a Painter2D shape behind the words, with the tear derived from the vertex
-        /// index so it does not reshuffle on every repaint. The grants page repaints every
-        /// simulated day, and a flickering edge would be the loudest thing on the screen.
+        /// **Rectangular, and joined to the line down the side of the card.** It was a drawn
+        /// ragged shape, the same trick as the cousin's name block, and the author reported it as
+        /// the thing that made this panel unpleasant to look at. A torn edge is a voice: it reads
+        /// as handwriting on the tutorial and as damage on a page of contracts.
+        ///
+        /// The plate runs out to the card's own edge rather than sitting inside its padding, so
+        /// the title and the coloured rule beside it are one object instead of two things that
+        /// happen to be near each other.
         /// </summary>
-        private static VisualElement TornHeading(string text, Color plate, Color ink,
+        private static VisualElement PlateHeading(string text, Color plate, Color ink,
             string extraClass = null)
         {
             var wrap = new VisualElement();
@@ -159,7 +176,7 @@ namespace ScalingLaws.UI
                 wrap.AddToClassList(extraClass);
             }
 
-            wrap.Add(new TornPlate(plate));
+            wrap.style.backgroundColor = plate;
 
             var label = new Label(text);
             label.AddToClassList("gplate__text");
@@ -169,21 +186,17 @@ namespace ScalingLaws.UI
             return wrap;
         }
 
-        /// <summary>One figure on its own coloured plate: what it is, and how much.</summary>
-        private static VisualElement TornFigure(string caption, string value, Color plate, Color ink,
-            bool torn)
+        /// <summary>
+        /// One figure on its own plate: what it is, and how much.
+        ///
+        /// **No torn variant any more.** Four ragged rectangles carrying the only four numbers on
+        /// the card was the loudest thing on the page and none of the noise meant anything.
+        /// </summary>
+        private static VisualElement Figure(string caption, string value, Color plate, Color ink)
         {
             var wrap = new VisualElement();
             wrap.AddToClassList("gfig");
-
-            if (torn)
-            {
-                wrap.Add(new TornPlate(plate));
-            }
-            else
-            {
-                wrap.style.backgroundColor = plate;
-            }
+            wrap.style.backgroundColor = plate;
 
             var words = new VisualElement();
             words.AddToClassList("gfig__words");
@@ -208,6 +221,7 @@ namespace ScalingLaws.UI
         private static readonly Color CompletionGreen = new(0.10f, 0.33f, 0.22f);
         private static readonly Color PointsBlue = new(0.16f, 0.36f, 0.64f);
         private static readonly Color OnDark = new(0.95f, 0.98f, 0.96f);
+        private static readonly Color TermPlate = new(0.13f, 0.16f, 0.22f);
 
         private VisualElement BuildOfferCard(GrantDefinition definition, bool canAccept, string why)
         {
@@ -217,7 +231,7 @@ namespace ScalingLaws.UI
 
             // The name on torn paper, black on white, which is the one thing on the card that has
             // to be read before anything else.
-            card.Add(TornHeading(Loc.T(definition.NameKey), Paper, PaperInk, "gplate--title"));
+            card.Add(PlateHeading(Loc.T(definition.NameKey), Paper, PaperInk, "gplate--title"));
 
             // The rung rather than a countdown. A programme on the board does not expire: it is
             // there until it is taken, finished, or put away, which is what a register is.
@@ -248,17 +262,19 @@ namespace ScalingLaws.UI
             var figures = new VisualElement();
             figures.AddToClassList("gcard__plates");
 
-            figures.Add(TornFigure(Loc.T("grant.advance"),
-                UiFormat.Money(definition.AdvanceUsd), AdvanceGreen, PaperInk, true));
+            figures.Add(Figure(Loc.T("grant.advance"),
+                UiFormat.Money(definition.AdvanceUsd), AdvanceGreen, PaperInk));
 
-            figures.Add(TornFigure(Loc.T("grant.completion"),
-                UiFormat.Money(definition.CompletionUsd), CompletionGreen, OnDark, false));
+            figures.Add(Figure(Loc.T("grant.completion"),
+                UiFormat.Money(definition.CompletionUsd), CompletionGreen, OnDark));
 
-            figures.Add(TornFigure(Loc.T("grant.points"),
-                UiFormat.Number(definition.ResearchPoints, 0), PointsBlue, OnDark, false));
+            figures.Add(Figure(Loc.T("grant.points"),
+                UiFormat.Number(definition.ResearchPoints, 0), PointsBlue, OnDark));
 
-            figures.Add(TornFigure(Loc.T("grant.term"),
-                Loc.T("grant.days", definition.TermDays), Paper, PaperInk, true));
+            // The term is the one that is not money, so it reads as a plain card rather than
+            // another coloured plate competing with the two that are.
+            figures.Add(Figure(Loc.T("grant.term"),
+                Loc.T("grant.days", definition.TermDays), TermPlate, OnDark));
 
             card.Add(figures);
 

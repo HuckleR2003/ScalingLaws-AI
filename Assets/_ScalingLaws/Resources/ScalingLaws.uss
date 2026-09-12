@@ -16530,12 +16530,32 @@
 
 /* Which rung the company is on. Gold, because it belongs with the grant banner rather than with
    the page's own grey furniture. */
-.grant__rung {
-    font-size: 11px;
-    letter-spacing: 1.2px;
-    color: rgb(226, 178, 44);
-    margin-bottom: 10px;
-    white-space: normal;
+/* **The rank reads from across the room, and it cannot run off the right edge.** It was an 11px
+   gold caption under the title carrying two facts; the second one is on the hover now. */
+.grant__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.grant__headline {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-bottom: 0;
+}
+
+.grant__rank {
+    flex-shrink: 0;
+    margin-left: 14px;
+    padding: 3px 12px;
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 1.4px;
+    color: rgb(246, 249, 255);
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: rgb(240, 208, 96);
 }
 
 
@@ -17741,10 +17761,14 @@
 }
 
 /* ---- grant cards -------------------------------------------------------------------------------- */
+/* Out to the card's own edges rather than inside its padding, so the plate and the coloured rule
+   beside it are one object instead of two things that happen to be near each other. */
 .gplate {
-    height: 30px;
-    margin-bottom: 6px;
+    height: 32px;
+    margin: -13px -15px 10px -15px;
     justify-content: center;
+    border-top-right-radius: 6px;
+    border-top-left-radius: 0;
     flex-shrink: 0;
 }
 
@@ -17761,8 +17785,8 @@
 }
 
 .gplate__text {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 15px;
+    padding-right: 15px;
     font-size: 14px;
     letter-spacing: 1.2px;
     -unity-font-style: bold;
@@ -17785,21 +17809,21 @@
     flex-shrink: 0;
 }
 
+/* 46px cut the descenders off every figure once the plate stopped being drawn: the torn
+   version overhung its own box and the plain one does not. */
 .gfig {
     width: 48%;
-    height: 46px;
+    height: 56px;
     margin-bottom: 6px;
     justify-content: center;
     border-radius: 4px;
     flex-shrink: 0;
 }
 
+/* Even padding now. The right-hand allowance was room for a torn edge that has gone. */
 .gfig__words {
-    padding-left: 13px;
-
-    /* The torn edge wanders inward by up to fourteen per cent of the plate's height, so the words
-       need more room on the right than on the left or the last character sits in the tear. */
-    padding-right: 20px;
+    padding-left: 14px;
+    padding-right: 14px;
 }
 
 .gfig__kicker {

@@ -2145,6 +2145,7 @@ namespace ScalingLaws.Data
             ["grant.banner.tier"] = "TIER {0}",
             ["grant.tier"] = "Tier {0}",
             ["grant.tier.locked"] = "Finish something on tier {0} and the next bodies start writing.",
+            ["grant.tier.top"] = "The top of the ladder. Nobody writes larger cheques than this.",
 
             ["grant.safestart.name"] = "Safe first release",
             ["grant.safestart.body"] = "{0}: Ministry of Digital Affairs",
@@ -5124,6 +5125,7 @@ namespace ScalingLaws.Data
             ["grant.banner.tier"] = "POZIOM {0}",
             ["grant.tier"] = "Poziom {0}",
             ["grant.tier.locked"] = "Dowieź cokolwiek z poziomu {0}, a zaczną pisać kolejne instytucje.",
+            ["grant.tier.top"] = "Szczyt drabiny. Większych czeków nikt już nie wypisuje.",
 
             ["grant.safestart.name"] = "Bezpieczne pierwsze wydanie",
             ["grant.safestart.body"] = "{0}: Ministerstwo Cyfryzacji",
