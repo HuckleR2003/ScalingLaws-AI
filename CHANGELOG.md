@@ -211,6 +211,11 @@ than grey text with the money shouting over it.
   answers "which room am I looking at" falls back to the house when a tier has no entry. So a
   company that leased the largest building in the game, at $380M, walked into an empty frame.
   Nothing failed: the stage loaded nothing and drew the floor it already had.
+- **Buying an office outright works too.** Reported by a tester as not working. Two of the six
+  places carry a purchase price and the screen draws a buy button only for those, so the likeliest
+  reading is a button that was never there rather than one that refused. Both halves are now held by
+  a test: the two that are for sale really change hands and stop charging rent, and the four that
+  are not refuse with a reason.
 - **Moving out of the first office works, and now there are tests that say so.** Players report that
   the starting house makes hiring impossible, which is true and is the design: it has no desks. What
   had never been checked is that leaving is affordable on day one with the money the company is
@@ -320,7 +325,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,194 EditMode tests and 45 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,196 EditMode tests and 45 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.

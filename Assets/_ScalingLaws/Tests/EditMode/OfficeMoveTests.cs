@@ -131,6 +131,64 @@ namespace ScalingLaws.Tests.EditMode
             }
         }
 
+        /// <summary>
+        /// Buying one outright, which a tester reported as not working.
+        ///
+        /// **It works, and this is the evidence.** Two of the six places carry a purchase price and
+        /// the chooser draws a buy button only for those, so the likeliest reading of the report is
+        /// a button that was never there rather than one that refused. Written so the next person to
+        /// hear it can answer with a number.
+        /// </summary>
+        [Test]
+        public void AnOfficeWithAPriceOnItCanActuallyBeBought()
+        {
+            var simulation = Fresh();
+            var loft = OfficeCatalog.Get(OfficeTier.Loft);
+
+            Assume.That(loft.CanBeBought, Is.True, "the first office is not for sale at all");
+
+            simulation.State.CashUsd = loft.PurchasePriceUsd + loft.FitOutCostUsd + 1_000_000L;
+
+            Assert.That(simulation.TryBuyOffice(OfficeTier.Loft, null, out var why), Is.True, why);
+
+            Assert.That(simulation.State.Staff.Owns(OfficeTier.Loft), Is.True,
+                "The purchase reported success and the company does not own the place.");
+
+            Assert.That(simulation.State.Staff.Office, Is.EqualTo(OfficeTier.Loft),
+                "It bought the office and stayed in the house.");
+
+            Assert.That(simulation.State.Staff.DailyRentUsd, Is.Zero,
+                "It owns the building and is still paying rent on it, which is the whole return "
+                + "on the purchase.");
+        }
+
+        /// <summary>
+        /// **Four of the six cannot be bought at all**, and the screen has to keep saying so by
+        /// drawing no button rather than by refusing a click. A row that reads as an option and
+        /// turns down every press reads as a bug, which is how this project has shipped the
+        /// complaint twice before.
+        /// </summary>
+        [Test]
+        public void AnOfficeWithNoPriceIsNotOfferedForSale()
+        {
+            var simulation = Fresh();
+            simulation.State.CashUsd = 900_000_000L;
+
+            foreach (var place in OfficeCatalog.All)
+            {
+                if (place.CanBeBought)
+                {
+                    continue;
+                }
+
+                Assert.That(simulation.TryBuyOffice(place.Tier, null, out var why), Is.False,
+                    place.DisplayName + " has no purchase price and sold itself anyway.");
+
+                Assert.That(why, Is.Not.Empty,
+                    place.DisplayName + " refused the sale and said nothing about why.");
+            }
+        }
+
         /// <summary>The ladder goes up, and each rung really is bigger than the one below it.</summary>
         [Test]
         public void EveryRungHoldsMorePeopleThanTheOneBelow()
