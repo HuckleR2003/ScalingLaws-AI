@@ -1158,19 +1158,6 @@ namespace ScalingLaws.Simulation
 
             return true;
         }
-
-        /// <summary>Kept so older callers and tests still compile. Charges nothing.</summary>
-        public bool CancelTraining()
-        {
-            if (State.ActiveRun == null)
-            {
-                return false;
-            }
-
-            State.ActiveRun = null;
-            return true;
-        }
-
         /// <summary>Contracts for a given throughput. Billed daily, cancellable daily.</summary>
         public void SetRentedPetaflops(double petaflops) => State.Pool.SetRentedPetaflops(petaflops);
 
@@ -2435,19 +2422,6 @@ namespace ScalingLaws.Simulation
 
             return true;
         }
-
-        /// <summary>Kept so older callers and tests still compile. Charges nothing.</summary>
-        public bool CancelArchitectureProgramme()
-        {
-            if (State.ActiveArchitectureProject == null)
-            {
-                return false;
-            }
-
-            State.ActiveArchitectureProject = null;
-            return true;
-        }
-
         private void AdvanceArchitecture(double petaflopDays)
         {
             var project = State.ActiveArchitectureProject;
@@ -3314,23 +3288,36 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Takes a piece off the floor.
+        /// Why this piece cannot come off the floor, or nothing.
         ///
-        /// Blocked when a desk is being sat at, because removing it would leave somebody employed
-        /// with nowhere to sit and the hiring cap is the one number the shop can actually break.
+        /// **Its own method because two screens ask and only one of them used to.** The rule was
+        /// written inside `TryStoreFurniture`, which the build mode never calls: it moves pieces
+        /// through `DecorPlan` directly, so a player could stash every desk in the office with six
+        /// people sitting at them. The hiring cap is the one number the furniture can break, which
+        /// is exactly why the rule was written, and it was guarding a door nobody used.
         /// </summary>
-        public string TryStoreFurniture(DecorItem item)
+        public string WhyFurnitureCannotBeStored(DecorItem item)
         {
             if (State.Decor == null || item == null)
             {
-                return "Nothing to store.";
+                return Loc.T("build.nothing_to_store");
             }
 
             var seats = item.Definition.DeskSeats;
-            if (seats > 0 && State.Staff.Desks - seats < State.Staff.Headcount)
+
+            return seats > 0 && State.Staff.Desks - seats < State.Staff.Headcount
+                ? Loc.T("build.desk_in_use", State.Staff.Headcount, State.Staff.Desks)
+                : string.Empty;
+        }
+
+        /// <summary>Takes a piece off the floor, if the rule above allows it.</summary>
+        public string TryStoreFurniture(DecorItem item)
+        {
+            var refused = WhyFurnitureCannotBeStored(item);
+
+            if (refused.Length > 0)
             {
-                return $"Somebody is sitting there. The company has {State.Staff.Headcount} people "
-                    + $"and {State.Staff.Desks} desks.";
+                return refused;
             }
 
             State.Decor.Store(item);

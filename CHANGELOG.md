@@ -390,6 +390,12 @@ than grey text with the money shouting over it.
   stayed down however long the page grew. Every page escaped it by building a new bar each time.
   The corner column keeps one for the life of the game, and it sat hidden over a list three times
   its own height. It is hidden by visibility now, which leaves the box it measures.
+- **Every desk in the office could be put into storage with people sitting at them.** The rule
+  against it was written when the furniture shop was, and the build mode never asked: it moves
+  pieces directly and the rule lived behind a method nothing called. Desks are the one thing
+  that caps hiring, which is why the rule exists. Storing one now says who is sitting there and
+  how many desks the company has. Moving a desk around the room is still free, because a piece
+  on the cursor has not left the floor until it is put somewhere.
 
 ### Save compatibility
 
@@ -408,7 +414,7 @@ model history that saves already carry, so an existing campaign reads correctly 
 
 ### Under the hood
 
-- **1,211 EditMode tests and 49 PlayMode**, up from 1,116 and 31, across 132 fixtures.
+- **1,212 EditMode tests and 49 PlayMode**, up from 1,116 and 31, across 132 fixtures.
 - **An audit pass over everything added this week, reached the way a campaign reaches it.** Not by
   calling the new methods: by playing until the thing turns up. It found that investors really do
   call in a campaign rather than only in a unit test, that an offer that arrives can be taken and
@@ -434,6 +440,16 @@ model history that saves already carry, so an existing campaign reads correctly 
   products and has a node and an upgrade in flight, so `tab_site.png` shows that corner at its
   worst. Every pass until now reviewed a company doing one thing at a time, which is the state that
   needed no work. Two faults in this list were found by looking at the new frame.
+- **The sweep for mechanisms a player cannot reach was run again over the whole of
+  `Simulation/`.** 102 public mutators, 36 with no mention anywhere in `UI/`, and reading them
+  is the job: most are plumbing called from inside the rules, and several are the known false
+  positive where the route is one public method to another. Two were worth acting on. The desk
+  rule above is one. The other is `CancelTraining` and `CancelArchitectureProgramme`, which have
+  been dead since the paid versions were built: they are deleted rather than left as the free
+  door somebody wires by mistake.
+- `WhyFurnitureCannotBeStored` is the one place that decides, and a test asserts the seat
+  arithmetic appears exactly once in the rules, so the screen and the simulation cannot come to
+  different answers.
 - **The scrollbar is hidden with `visibility`, not `display`.** Taking it out of layout zeroed
   the box it measures its own track from, which is a latch: hidden once, hidden forever. It also
   refreshes itself on attach and a frame later, which the shell was already doing by hand for

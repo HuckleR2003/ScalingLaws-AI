@@ -1,5 +1,8 @@
 ﻿using System.Linq;
+using System.IO;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
+using UnityEngine;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -156,8 +159,9 @@ namespace ScalingLaws.Tests.EditMode
         ///
         /// **`TryPlaceFurniture` had no caller anywhere, including tests.** Found by the sweep before
         /// the 0.2.0 build: `TryStoreFurniture` takes a piece off the floor and nothing put one back,
-        /// so the pair was half a mechanism. It is dormant rather than broken, because
-        /// `GameShell.FurnishingShopIsOpen` is false and neither half is reachable today.
+        /// so the pair was half a mechanism. It was dormant rather than broken while
+        /// `GameShell.FurnishingShopIsOpen` was false; the build mode is permanent now, so both
+        /// halves are things a player does with the mouse.
         ///
         /// **Not deleted, and that is the point.** Removing the placing half would leave a shop that
         /// can store and cannot restore on the day it is switched back on, which is exactly the shape
@@ -206,6 +210,38 @@ namespace ScalingLaws.Tests.EditMode
                 "Storing that desk leaves somebody employed with nowhere to sit.");
 
             Assert.That(desk.IsPlaced, Is.True);
+        }
+
+        /// <summary>
+        /// **And the screen that moves furniture asks that question.**
+        ///
+        /// The fixture above proves the rule works. It proved that while the build mode moved
+        /// pieces through `DecorPlan` directly and never asked: `TryStoreFurniture` was a door
+        /// nobody used, so a player could put every desk in the office into storage with six
+        /// people sitting at them. The hiring cap is the one number the furniture can break, and
+        /// it is the reason the rule exists at all.
+        ///
+        /// Read from the source because an EditMode test has no panel and a click is never
+        /// dispatched, which is the same reason the office buttons were invisible for months
+        /// while every test of that page passed.
+        /// </summary>
+        [Test]
+        public void TheBuildModeAsksWhetherAPieceMayLeaveTheFloor()
+        {
+            var build = File.ReadAllText(Path.Combine(
+                Application.dataPath, "_ScalingLaws", "Scripts", "UI", "GameShell.Build.cs"));
+
+            Assert.That(build, Does.Contain("WhyFurnitureCannotBeStored"),
+                "The build mode takes pieces off the floor without asking whether they may go, "
+                + "so the desk rule guards a door nobody walks through.");
+
+            var rules = File.ReadAllText(Path.Combine(
+                Application.dataPath, "_ScalingLaws", "Scripts", "Simulation",
+                "CompanySimulation.cs"));
+
+            Assert.That(Regex.Matches(rules, @"Staff\.Desks - seats").Count, Is.EqualTo(1),
+                "The seat arithmetic is written twice, so the screen and the simulation can "
+                + "disagree about whether a desk may be taken away.");
         }
 
         [Test]

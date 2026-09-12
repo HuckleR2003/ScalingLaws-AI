@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
@@ -201,11 +201,27 @@ namespace ScalingLaws.UI
             Show(Screen.Site);
         }
 
-        /// <summary>Puts the carried piece in the store room. The money stays spent.</summary>
+        /// <summary>
+        /// Puts the carried piece in the store room. The money stays spent.
+        ///
+        /// **This is the moment a piece leaves the floor**, because lifting one is marked rather
+        /// than performed: a carried piece is still standing on its old square until it is put
+        /// down somewhere else. So this is where the desk rule is asked, and moving a desk around
+        /// the room stays free.
+        /// </summary>
         private void StoreCarried()
         {
             if (carryingPiece == null)
             {
+                return;
+            }
+
+            var refused = simulation.WhyFurnitureCannotBeStored(carryingPiece);
+
+            if (refused.Length > 0)
+            {
+                decorProblem = refused;
+                Show(Screen.Site);
                 return;
             }
 
