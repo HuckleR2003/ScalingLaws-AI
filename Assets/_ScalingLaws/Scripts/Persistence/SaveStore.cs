@@ -675,6 +675,47 @@ namespace ScalingLaws.Persistence
 
             data.founderEquity = state.CapTable.FounderEquity;
             data.lastRoundClosedDayIndex = state.LastRoundClosedOn.DayIndex;
+
+            // **The register, and it has to be saved.** It is not derivable from the rounds: two
+            // rounds of the same size led by different firms leave a different company, and Emil
+            // holds a slice no round ever created.
+            data.holderInvestors.Clear();
+            data.holderFractions.Clear();
+            data.holderPaidUsd.Clear();
+            data.holderSinceDayIndex.Clear();
+
+            foreach (var holding in state.CapTable.Holders)
+            {
+                data.holderInvestors.Add((int)holding.Investor);
+                data.holderFractions.Add(holding.Fraction);
+                data.holderPaidUsd.Add(holding.PaidUsd);
+                data.holderSinceDayIndex.Add(holding.Since.DayIndex);
+            }
+
+            data.lastInvestorCallDayIndex = state.LastInvestorCallDayIndex;
+
+            data.deskInvestors.Clear();
+            data.deskStages.Clear();
+            data.deskOpenedDayIndex.Clear();
+            data.deskExpiresDayIndex.Clear();
+            data.deskRaiseUsd.Clear();
+            data.deskPreMoneyUsd.Clear();
+            data.deskEquityAsked.Clear();
+            data.deskSentiment.Clear();
+            data.deskIsDownRound.Clear();
+
+            foreach (var standing in state.Investors.Open)
+            {
+                data.deskInvestors.Add((int)standing.Investor);
+                data.deskStages.Add((int)standing.Stage);
+                data.deskOpenedDayIndex.Add(standing.OpenedOn.DayIndex);
+                data.deskExpiresDayIndex.Add(standing.ExpiresOn.DayIndex);
+                data.deskRaiseUsd.Add(standing.RaiseUsd);
+                data.deskPreMoneyUsd.Add(standing.PreMoneyValuationUsd);
+                data.deskEquityAsked.Add(standing.EquitySold);
+                data.deskSentiment.Add(standing.Sentiment);
+                data.deskIsDownRound.Add(standing.IsDownRound);
+            }
             data.intelSubscription = 0;
             data.memberships.Clear();
             foreach (var tier in state.Memberships)
@@ -1557,7 +1598,56 @@ namespace ScalingLaws.Persistence
                     round.wasDownRound));
             }
 
-            state.CapTable.Restore(history, safe.founderEquity);
+            var register = new List<Holding>();
+            var holderCount = safe.holderInvestors?.Count ?? 0;
+
+            for (var index = 0; index < holderCount; index++)
+            {
+                var raw = safe.holderInvestors[index];
+                if (!Enum.IsDefined(typeof(InvestorId), raw) || (InvestorId)raw == InvestorId.None)
+                {
+                    continue;
+                }
+
+                register.Add(new Holding(
+                    (InvestorId)raw,
+                    index < safe.holderFractions.Count ? safe.holderFractions[index] : 0.0,
+                    index < safe.holderPaidUsd.Count ? safe.holderPaidUsd[index] : 0L,
+                    new GameDate(index < safe.holderSinceDayIndex.Count
+                        ? safe.holderSinceDayIndex[index]
+                        : 0)));
+            }
+
+            state.CapTable.Restore(history, safe.founderEquity, register);
+            state.LastInvestorCallDayIndex = safe.lastInvestorCallDayIndex;
+
+            var desk = new List<FundingOffer>();
+            var deskCount = safe.deskInvestors?.Count ?? 0;
+
+            for (var index = 0; index < deskCount; index++)
+            {
+                var rawInvestor = safe.deskInvestors[index];
+                var rawStage = index < safe.deskStages.Count ? safe.deskStages[index] : 0;
+
+                if (!Enum.IsDefined(typeof(InvestorId), rawInvestor)
+                    || !Enum.IsDefined(typeof(FundingStage), rawStage))
+                {
+                    continue;
+                }
+
+                desk.Add(new FundingOffer(
+                    (FundingStage)rawStage,
+                    new GameDate(index < safe.deskOpenedDayIndex.Count ? safe.deskOpenedDayIndex[index] : 0),
+                    new GameDate(index < safe.deskExpiresDayIndex.Count ? safe.deskExpiresDayIndex[index] : 0),
+                    index < safe.deskRaiseUsd.Count ? safe.deskRaiseUsd[index] : 0L,
+                    index < safe.deskPreMoneyUsd.Count ? safe.deskPreMoneyUsd[index] : 0L,
+                    index < safe.deskEquityAsked.Count ? safe.deskEquityAsked[index] : 0.0,
+                    index < safe.deskSentiment.Count ? safe.deskSentiment[index] : 1.0,
+                    index < safe.deskIsDownRound.Count && safe.deskIsDownRound[index],
+                    (InvestorId)rawInvestor));
+            }
+
+            state.Investors.Restore(desk);
             state.LastRoundClosedOn = new GameDate(safe.lastRoundClosedDayIndex);
             foreach (var raw in safe.memberships)
             {

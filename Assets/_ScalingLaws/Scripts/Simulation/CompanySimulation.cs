@@ -604,6 +604,7 @@ namespace ScalingLaws.Simulation
             State.Relations.Advance();
             State.Effects.Advance(State.Date);
             AwardSafeHarbourIfEarned();
+            AdvanceInvestorDesk();
             RollForViral();
 
             // The world moving on, and the company's own dealings with it. All of it after the
@@ -2368,15 +2369,26 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            var offer = FundingMarket.BuildOffer(
-                availability.Stage,
-                State.Date,
-                State.BestCapability,
-                Market.FrontierCapability,
-                State.AnnualRevenueRunRateUsd,
-                State.CapTable.LastPostMoneyValuationUsd,
-                State.Reputation,
-                State.Fans);
+            // **Somebody leads every round, including the ones you go looking for.** Shares are
+            // issued to a name, so a term sheet with nobody at the top of it diluted nothing at all:
+            // the founders kept the whole company and the money still arrived. The test that asks
+            // whether signing dilutes caught that on the first run.
+            //
+            // Who it is comes from the same pool that calls unasked, so there is one roster of
+            // firms rather than a second anonymous one behind the button.
+            var lead = State.Investors.WhoCalls(State.RosterSeed, State.Date);
+
+            var offer = lead == InvestorId.None
+                ? FundingMarket.BuildOffer(
+                    availability.Stage,
+                    State.Date,
+                    State.BestCapability,
+                    Market.FrontierCapability,
+                    State.AnnualRevenueRunRateUsd,
+                    State.CapTable.LastPostMoneyValuationUsd,
+                    State.Reputation,
+                    State.Fans)
+                : BuildInvestorOffer(lead, availability.Stage);
 
             State.CurrentFundingOffer = offer;
 
@@ -2411,24 +2423,10 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            State.PostCash(LedgerLine.Funding, offer.RaiseUsd);
-            State.CapTable.Record(new FundingRoundRecord(
-                offer.Stage,
-                State.Date,
-                offer.RaiseUsd,
-                offer.PostMoneyValuationUsd,
-                offer.EquitySold,
-                offer.IsDownRound));
-
-            State.CurrentFundingOffer = FundingOffer.None;
-            State.LastRoundClosedOn = State.Date;
-
-            State.RaiseEvent(new CompanyEvent(
-                CompanyEventType.FundingClosed,
-                State.Date,
-                $"{FundingCatalog.Get(offer.Stage).DisplayName} closed. Founders now hold {State.CapTable.FounderEquity:P1}.",
-                offer.RaiseUsd));
-
+            // **One body for taking money.** A round the player went looking for and a firm that
+            // turned up unasked are the same piece of paper, and two accept paths would be two
+            // places to get dilution wrong.
+            CloseRound(offer);
             return true;
         }
 

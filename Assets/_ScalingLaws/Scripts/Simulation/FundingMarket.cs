@@ -15,8 +15,10 @@ namespace ScalingLaws.Simulation
             long preMoneyValuationUsd,
             double equitySold,
             double sentiment,
-            bool isDownRound)
+            bool isDownRound,
+            InvestorId investor = InvestorId.None)
         {
+            Investor = investor;
             Stage = stage;
             OpenedOn = openedOn;
             ExpiresOn = expiresOn;
@@ -40,6 +42,16 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Priced below the last round. Same money, considerably more of the company.</summary>
         public bool IsDownRound { get; }
+
+        /// <summary>
+        /// Who is writing it.
+        ///
+        /// **One term sheet type, two ways of being handed one.** A round the player goes looking
+        /// for and a firm that turns up unasked are the same piece of paper with a different name
+        /// at the top, and building a second type for the second case is how a game ends up with
+        /// two accept paths that disagree about what dilution means.
+        /// </summary>
+        public InvestorId Investor { get; }
 
         public long PostMoneyValuationUsd => PreMoneyValuationUsd + RaiseUsd;
 

@@ -777,6 +777,49 @@ namespace ScalingLaws.Tests.PlayMode
             yield return Capture(host, "guide_waiting.png");
         }
 
+        /// <summary>
+        /// The term sheets on the table, which is the screen the whole investor change is for.
+        ///
+        /// **Seeded rather than played to.** Waiting for four firms to call takes years of game
+        /// time and the frame is about whether four rows read side by side, not about the cadence,
+        /// which `InvestorTests` measures.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOfferBookDraws()
+        {
+            var simulation = Campaign();
+            var today = simulation.State.Date;
+
+            var cast = new[]
+            {
+                InvestorId.SequelPartners, InvestorId.MeridianPension,
+                InvestorId.TigrisGlobal, InvestorId.FoundersFoundry
+            };
+
+            foreach (var who in cast)
+            {
+                var terms = InvestorCatalog.Get(who);
+
+                simulation.State.Investors.Add(new FundingOffer(
+                    FundingStage.SeriesB,
+                    today,
+                    today.AddDays(terms.PatienceDays),
+                    (long)(80_000_000 * terms.TicketShare),
+                    (long)(900_000_000 * terms.Appetite),
+                    0.07 / terms.Appetite,
+                    1.0,
+                    who == InvestorId.MeridianPension,
+                    who));
+            }
+
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            new OfferBook(() => simulation, () => { }).Show(host);
+
+            yield return Capture(host, "offer_book.png");
+        }
+
         /// <summary>The same map before anything is picked, which is what a new player meets.</summary>
         [UnityTest]
         public IEnumerator TheWorldMapDrawsBeforeAnythingIsPicked()

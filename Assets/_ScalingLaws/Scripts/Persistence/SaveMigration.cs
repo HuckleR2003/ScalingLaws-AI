@@ -153,6 +153,7 @@ namespace ScalingLaws.Persistence
                     49 => UpgradeV49ToV50(current),
                     50 => UpgradeV50ToV51(current),
                     51 => UpgradeV51ToV52(current),
+                    52 => UpgradeV52ToV53(current),
                     _ => current
                 };
             }
@@ -1799,6 +1800,63 @@ namespace ScalingLaws.Persistence
         /// false would restart terms mid-campaign and hand the player back days they have already
         /// used, on awards they signed under the old rule.
         /// </summary>
+        /// <summary>
+        /// v52 to v53: the company gets a register, and nobody is offering yet.
+        ///
+        /// **The founders keep exactly what the old file said they kept.** A v52 save records one
+        /// number, the founders' share, and nothing at all about who holds the rest, so there is
+        /// no honest way to name the other holders after the fact. Emil's two per cent is seeded
+        /// only into companies that still hold everything, because a campaign that has already
+        /// raised has diluted him along with everybody else and inventing a figure for that would
+        /// be reconstructing a number nobody can check.
+        ///
+        /// The rest of the register is left empty rather than filled with a guess. The bar on the
+        /// screen reads what it can name and calls the remainder what it is, which is the least
+        /// flattering reading that is still defensible.
+        ///
+        /// No term sheets are on the table: in v52 there was one offer at a time and it is
+        /// already carried by its own fields.
+        /// </summary>
+        public static SaveData UpgradeV52ToV53(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 53;
+
+            data.holderInvestors = new List<int>();
+            data.holderFractions = new List<double>();
+            data.holderPaidUsd = new List<long>();
+            data.holderSinceDayIndex = new List<int>();
+
+            data.deskInvestors = new List<int>();
+            data.deskStages = new List<int>();
+            data.deskOpenedDayIndex = new List<int>();
+            data.deskExpiresDayIndex = new List<int>();
+            data.deskRaiseUsd = new List<long>();
+            data.deskPreMoneyUsd = new List<long>();
+            data.deskEquityAsked = new List<double>();
+            data.deskSentiment = new List<double>();
+            data.deskIsDownRound = new List<bool>();
+
+            data.lastInvestorCallDayIndex = -1;
+
+            // Untouched ownership, so the favour was never diluted and can be stated.
+            if (data.founderEquity >= 0.9999 && (data.fundingRounds?.Count ?? 0) == 0)
+            {
+                data.holderInvestors.Add((int)InvestorId.ESolutions);
+                data.holderFractions.Add(InvestorCatalog.FriendsAndFamilyStake);
+                data.holderPaidUsd.Add(0L);
+                data.holderSinceDayIndex.Add(0);
+
+                data.founderEquity = 1.0 - InvestorCatalog.FriendsAndFamilyStake;
+            }
+
+            return data;
+        }
+
         public static SaveData UpgradeV51ToV52(SaveData data)
         {
             if (data == null)

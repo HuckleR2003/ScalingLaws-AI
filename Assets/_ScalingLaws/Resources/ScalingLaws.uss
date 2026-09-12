@@ -18363,3 +18363,175 @@
     color: rgb(142, 156, 176);
     padding: 12px 4px;
 }
+
+/* ---- who owns the company -------------------------------------------------------------------
+
+   One bar that is always the whole company, so the remainder gets a segment rather than being
+   left off and the reader doing the arithmetic. */
+.ownbar {
+    margin-top: 14px;
+    flex-shrink: 0;
+}
+
+.ownbar__heading {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    color: rgb(150, 162, 180);
+    margin-bottom: 6px;
+}
+
+.ownbar__track {
+    flex-direction: row;
+    height: 26px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ownbar__slice {
+    height: 100%;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.ownbar__slicelabel {
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(14, 20, 32);
+}
+
+.ownrow {
+    flex-direction: row;
+    align-items: center;
+    height: 26px;
+    margin-top: 4px;
+}
+
+.ownrow__who {
+    flex-grow: 1;
+    flex-shrink: 1;
+    font-size: 12px;
+    color: rgb(222, 230, 242);
+}
+
+.ownrow__share {
+    width: 66px;
+    flex-shrink: 0;
+    font-size: 12px;
+    -unity-text-align: middle-right;
+    color: rgb(236, 242, 250);
+}
+
+.ownrow__worth {
+    width: 104px;
+    flex-shrink: 0;
+    font-size: 12px;
+    -unity-text-align: middle-right;
+    color: rgb(176, 189, 208);
+}
+
+.ownrow__earned {
+    width: 230px;
+    flex-shrink: 0;
+    font-size: 11px;
+    -unity-text-align: middle-right;
+    color: rgb(142, 156, 176);
+}
+
+.ownrow__earned--down {
+    color: rgb(218, 126, 96);
+}
+
+/* ---- the book of term sheets ---------------------------------------------------------------- */
+.offerbook {
+    width: 1080px;
+    max-width: 94%;
+}
+
+.offerbook__list {
+    max-height: 540px;
+    margin-top: 12px;
+}
+
+.offerrow {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+/* A floor under the width, or a three-word name folds the column to nothing and the row with it. */
+.offerrow__words {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 300px;
+    margin-right: 14px;
+}
+
+.offerrow__name {
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 0.8px;
+    color: rgb(236, 242, 250);
+}
+
+.offerrow__pitch {
+    font-size: 11.5px;
+    white-space: normal;
+    color: rgb(150, 162, 180);
+    margin-top: 3px;
+}
+
+.offerrow__terms {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.offerrow__cell {
+    width: 118px;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+.offerrow__figure {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(228, 236, 248);
+}
+
+.offerrow__caption {
+    font-size: 11px;
+    color: rgb(140, 152, 172);
+    margin-top: 2px;
+}
+
+.offerrow__take {
+    width: 104px;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.offerrow__down {
+    font-size: 11px;
+    white-space: normal;
+    color: rgb(218, 126, 96);
+    margin-top: 6px;
+}
+
+.offerrow__problem {
+    width: 100%;
+    font-size: 11px;
+    color: rgb(218, 126, 96);
+    margin-top: 6px;
+}
+
+.ownbar__offers {
+    margin-top: 12px;
+    margin-left: 0;
+    align-self: flex-start;
+}

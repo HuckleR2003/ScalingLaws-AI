@@ -566,6 +566,16 @@ namespace ScalingLaws.UI
 
         private ReleaseConfirmDialog releaseConfirm;
 
+        /// <summary>The term sheets on the table, over the screen. Held so it survives a rebuild.</summary>
+        private OfferBook offerBookCard;
+
+        private OfferBook offerBook =>
+            offerBookCard ??= new OfferBook(() => simulation, () =>
+            {
+                RefreshChrome();
+                Show(Screen.Funding);
+            });
+
         /// <summary>
         /// The pricing column, kept across rebuilds because the lock is state.
         ///
@@ -706,6 +716,21 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
             panel.Add(Row(Loc.T("bank.run_rate"), UiFormat.Money(state.AnnualRevenueRunRateUsd)));
             panel.Add(Row(Loc.T("bank.founder_stake"),
                 UiFormat.Money(capTable.FounderStakeValueUsd(simulation.CurrentValuationUsd()))));
+
+            // **Who owns it, as a bar, with the names under it.** A single founder percentage said
+            // nothing about who had the rest or what it was earning them, so an investor was an
+            // abstraction the player diluted themselves against rather than somebody on their board.
+            panel.Add(OwnershipBar.Build(simulation));
+
+            var browse = new Button(() => offerBook.Show(shellRoot))
+            {
+                text = Loc.T("own.browse_offers") + "  (" + state.Investors.Count + ")"
+            };
+
+            browse.AddToClassList("button");
+            browse.AddToClassList("ownbar__offers");
+            browse.SetEnabled(state.Investors.Count > 0);
+            panel.Add(browse);
 
             var offer = state.CurrentFundingOffer;
             if (offer.IsOpen)

@@ -207,6 +207,22 @@ than grey text with the money shouting over it.
   it, and the tour never came back to it. Two answers now: start it, which quotes how long it
   takes and actually commissions it, or not now. Saying yes keeps him there until the family
   lands. Saying no walks straight on.
+- **You can see who owns your company.** Reported. The screen gave a founder percentage and nothing
+  else: no names, no idea what anybody paid, no sense that an investor is a person on your board
+  rather than an abstraction you dilute yourself against. There is a bar now, always the whole
+  company, with the names under it and what each slice is worth.
+- **Emil holds two per cent from the first day.** Somebody believed in this before there was
+  anything to believe in. It is seeded rather than raised, priced at nothing, and it is the favour
+  the whole tutorial stands on.
+- **Every investor says what they have made from you, today and this month.** Their share of the
+  profit rather than of the revenue, so a bad month costs them too and the figure goes red.
+- **BROWSE OFFERS, and there is more than one.** There used to be a single term sheet from nobody,
+  which is a yes or a no rather than a decision. Twelve named firms now turn up unasked, between two
+  and twenty days apart, up to ten standing at once, and none of them is the same money: the ones
+  that pay the most want the most of you and give you a fortnight, and a pension board will lowball
+  you and then wait five months for an answer.
+- **Who turns up replays identically.** The schedule is derived from the campaign seed and the day
+  of the last call, so reloading cannot re-roll the firm that just offered you a bad price.
 - **What the company is worth stopped reading like a cheat.** Reported. A lab that shipped one model
   at the frontier in its first year was priced at $1,236,036,036 while holding twenty million
   dollars and having never invoiced anybody, and then collapsed once rivals shipped. Both halves
@@ -275,12 +291,18 @@ than grey text with the money shouting over it.
 
 ### Save compatibility
 
-**Unchanged, v51.** Nothing new is stored: the split is derived from the market standing and the
+**Save v53.** The register of who owns the company, and the term sheets on the table.
+A v52 campaign that has never raised gets Emil's two per cent stated; one that has already raised
+does not, because a v52 file records one number and nothing about who holds the rest, and naming
+them after the fact would be inventing figures nobody can check. Everything else is unchanged and
+an existing campaign reads correctly the moment it loads.
+
+**Previously unchanged, v51.** Nothing new is stored: the split is derived from the market standing and the
 model history that saves already carry, so an existing campaign reads correctly the moment it loads.
 
 ### Under the hood
 
-- **1,178 EditMode tests and 44 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
+- **1,188 EditMode tests and 45 PlayMode**, up from 1,116 and 31. `TwoProductsTests` ships two models in separate lines
   and
   requires their figures to differ, requires them to add up to the company, and requires no user
   count to equal a money field. `FinanceDayViewTests` drives the real report panel.
@@ -293,6 +315,17 @@ model history that saves already carry, so an existing campaign reads correctly 
   The step that follows the offer waits on `arch_built`, and `AlreadyDone` reports it satisfied
   when nothing is running, so a player who declined arrives with nothing in flight and unwinds
   through it. A branch would have been a second shape of step for one decision.
+- **One term sheet type, two ways of being handed one.** A round the player goes looking for and a
+  firm that turns up unasked are the same piece of paper with a different name at the top, and
+  `CloseRound` is the only place equity moves. Building a second type for the second case is how a
+  game ends up with two accept paths that disagree about what dilution means.
+- **A round with nobody at the top of it diluted nothing at all.** New shares are issued to a name,
+  so an unnamed term sheet left the founders owning the whole company while the money still landed.
+  The test that asks whether signing dilutes caught it on the first run, and every round has a lead
+  now.
+- `NoInvestorIsSimplyBetterThanAnother` failed on its first run against the catalogue it was written
+  for: the state fund paid more, wrote more and waited longer than the angel fund, so nobody would
+  ever have taken the second one. Same guard the marketing channels carry.
 - `FundingCatalog.TrustIn` is the one place that decides how much of a story a cheque writer pays
   for. Reputation is weighted 60/40 against the following because an opinion can be bought back in
   a quarter and a following cannot, and the floor is 10% rather than zero, or the first rung of the

@@ -417,7 +417,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 52;
+        public const int CurrentVersion = 53;
 
         public int version = CurrentVersion;
 
@@ -509,6 +509,30 @@ namespace ScalingLaws.Persistence
         public double offerEquitySold;
         public double offerSentiment = 1.0;
         public bool offerIsDownRound;
+
+        // ---- added in v53: who owns the company, and who is offering to ----
+
+        /// <summary>One entry per name on the register, as InvestorId values.</summary>
+        public List<int> holderInvestors = new();
+
+        public List<double> holderFractions = new();
+        public List<long> holderPaidUsd = new();
+        public List<int> holderSinceDayIndex = new();
+
+        /// <summary>The day somebody last called. Minus one when nobody ever has.</summary>
+        public int lastInvestorCallDayIndex = -1;
+
+        /// <summary>The term sheets on the table, one entry per list across all of these.</summary>
+        public List<int> deskInvestors = new();
+
+        public List<int> deskStages = new();
+        public List<int> deskOpenedDayIndex = new();
+        public List<int> deskExpiresDayIndex = new();
+        public List<long> deskRaiseUsd = new();
+        public List<long> deskPreMoneyUsd = new();
+        public List<double> deskEquityAsked = new();
+        public List<double> deskSentiment = new();
+        public List<bool> deskIsDownRound = new();
 
         /// <summary>Kept so a v22 file can still be read. v23 writes <see cref="memberships"/>.</summary>
         public int intelSubscription;

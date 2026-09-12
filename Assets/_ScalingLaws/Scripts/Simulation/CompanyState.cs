@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -51,6 +51,11 @@ namespace ScalingLaws.Simulation
             Rivals = CompetitorField.CreateFromCatalog();
             Segments = new SegmentMarket(Rivals.Agents.Count);
             CapTable = new CapTable();
+
+            // **Somebody believed in this before there was anything to believe in.** Emil's two per
+            // cent is seeded rather than raised: no round was ever signed for it, it was priced at
+            // nothing, and it is the favour the whole tutorial stands on.
+            CapTable.SeedFriendsAndFamily(Date);
             UnlockedResearch = new HashSet<ResearchNodeId> { ResearchTree.StartingNode };
             Founder = FounderProfile.Neutral;
         }
@@ -323,6 +328,17 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Who owns the company after every round raised so far.</summary>
         public CapTable CapTable { get; }
+
+        /// <summary>The term sheets on the table, from firms that came to you.</summary>
+        public InvestorDesk Investors { get; } = new();
+
+        /// <summary>
+        /// The day somebody last called.
+        ///
+        /// Saved, and it is the only part of the desk's schedule that is: the gap to the next
+        /// caller is drawn from the seed and this day, so a reload cannot re-roll who turns up.
+        /// </summary>
+        public int LastInvestorCallDayIndex { get; set; } = -1;
 
         /// <summary>Every loan being serviced. Non-dilutive money on a schedule that never pauses.</summary>
         public LoanBook Loans { get; } = new();

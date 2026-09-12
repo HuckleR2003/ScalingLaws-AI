@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -338,9 +338,14 @@ namespace ScalingLaws.Tests.EditMode
             var bridge = LoanCatalog.Get(LoanProduct.BridgeFacility);
 
             var borrower = Company(80_000_000, date, capability: 45.0);
+
+            // Measured before rather than compared against one, because a company does not start
+            // whole any more: Emil holds two per cent from the day it is founded.
+            var ownedBefore = borrower.State.CapTable.FounderEquity;
+
             borrower.TryTakeLoan(LoanProduct.BridgeFacility, out _);
 
-            Assert.That(borrower.State.CapTable.FounderEquity, Is.EqualTo(1.0),
+            Assert.That(borrower.State.CapTable.FounderEquity, Is.EqualTo(ownedBefore),
                 "A facility must never touch ownership.");
             Assert.That(borrower.State.Loans.TotalOutstandingUsd,
                 Is.EqualTo(bridge.TotalRepaymentUsd),

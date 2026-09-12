@@ -51,6 +51,10 @@ namespace ScalingLaws.Tests.EditMode
             var simulation = ShippedCompany();
             var cashBefore = simulation.State.CashUsd;
 
+            // A company does not start whole: Emil holds two per cent before anybody is asked for
+            // anything, so the dilution is measured against what the founders had rather than one.
+            var ownedBefore = simulation.State.CapTable.FounderEquity;
+
             Assert.That(simulation.NextRoundAvailability().IsAvailable, Is.True);
             Assert.That(simulation.TryOpenFundingRound(out var openReason), Is.True, openReason);
 
@@ -62,9 +66,17 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(simulation.TryAcceptFundingOffer(out var signReason), Is.True, signReason);
 
             Assert.That(simulation.State.CashUsd, Is.EqualTo(cashBefore + offer.RaiseUsd));
-            Assert.That(simulation.State.CapTable.FounderEquity, Is.LessThan(1.0));
+            Assert.That(simulation.State.CapTable.FounderEquity, Is.LessThan(ownedBefore));
             Assert.That(simulation.State.CapTable.FounderEquity,
-                Is.EqualTo(1.0 - offer.EquitySold).Within(1e-9));
+                Is.EqualTo(ownedBefore * (1.0 - offer.EquitySold)).Within(1e-9),
+                "New shares dilute everybody who was already here, so the founders keep their "
+                + "share of what is left rather than the whole of it.");
+
+            // And the register has to add up to a company.
+            Assert.That(simulation.State.CapTable.FounderEquity
+                + simulation.State.CapTable.InvestorEquity,
+                Is.EqualTo(1.0).Within(1e-9),
+                "The founders and the named holders between them do not own the company.");
             Assert.That(simulation.State.CapTable.LastStage, Is.EqualTo(FundingStage.SeriesA));
             Assert.That(simulation.State.CurrentFundingOffer.IsOpen, Is.False);
         }
