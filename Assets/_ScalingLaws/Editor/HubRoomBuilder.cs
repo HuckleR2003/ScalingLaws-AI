@@ -758,8 +758,9 @@ namespace ScalingLaws.Editor
             // fractions of the room with nothing standing on either of them, which is what put
             // the founder in mid air: the routine asks for `UpstairsDesk` on a working day, and
             // `Desk` is the older name the house still uses.
-            Marker(parent, "Desk", plan.BossChair);
-            Marker(parent, "UpstairsDesk", plan.BossChair);
+            // Facing the desk, which is at +z from the chair on both floors.
+            Marker(parent, "Desk", plan.BossChair, 0f);
+            Marker(parent, "UpstairsDesk", plan.BossChair, 0f);
 
             Marker(parent, "Bench", new Vector3(2.2f, 0f, 4.6f));
             Marker(parent, "Sofa", new Vector3(2.2f, 0f, 4.6f));
@@ -822,11 +823,28 @@ namespace ScalingLaws.Editor
             return group.transform;
         }
 
-        private static void Marker(Transform parent, string name, Vector3 position)
+        /// <summary>
+        /// One walking point. A seat also says which way the chair points.
+        ///
+        /// <paramref name="seatFacing"/> is degrees about y and it is read on arrival. It carries
+        /// a <see cref="UI.SeatFacing"/> rather than being inferred from the rotation, because the
+        /// chair on both floors faces +z, which is identity: "somebody set this" and "this is
+        /// turned" are different questions and the second one answers no exactly here.
+        /// </summary>
+        private static void Marker(Transform parent, string name, Vector3 position,
+            float? seatFacing = null)
         {
             var marker = new GameObject(name);
             marker.transform.SetParent(parent, false);
             marker.transform.localPosition = position;
+
+            if (!seatFacing.HasValue)
+            {
+                return;
+            }
+
+            marker.transform.localRotation = Quaternion.Euler(0f, seatFacing.Value, 0f);
+            marker.AddComponent<UI.SeatFacing>();
         }
 
         /// <summary>

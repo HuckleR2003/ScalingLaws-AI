@@ -29,8 +29,23 @@ namespace ScalingLaws.UI
         /// <summary>How close counts as arrived. Larger than it looks, because the model has width.</summary>
         public const float ArriveDistance = 0.18f;
 
-        /// <summary>Degrees a second the model turns to face where it is going.</summary>
-        public const float TurnSpeed = 520f;
+        /// <summary>
+        /// Degrees a second the model turns to face where it is going.
+        ///
+        /// **220, down from 520, which was a snap.** Half a turn in a tenth of a second is a
+        /// direction change between two frames, so a walk across the floor read as a series of
+        /// instant decisions rather than as somebody walking. A person turns about this fast.
+        /// </summary>
+        public const float TurnSpeed = 220f;
+
+        /// <summary>
+        /// How much of the walking speed is left while the model is still turning.
+        ///
+        /// **Because it used to leave at full speed facing the wrong way**, which is a person
+        /// sliding sideways for a fifth of a second at every corner. Slowing into a turn and
+        /// gathering speed out of it is most of what makes a walk look deliberate.
+        /// </summary>
+        public const float TurningSpeedFloor = 0.3f;
 
         [SerializeField] private Transform waypointRoot;
         [SerializeField] private Animator animator;
@@ -167,19 +182,45 @@ namespace ScalingLaws.UI
 
             if (flat.sqrMagnitude <= ArriveDistance * ArriveDistance)
             {
-                transform.position = there;
                 leg++;
 
-                if (HasArrived)
+                if (!HasArrived)
                 {
-                    SetBool("Walking", false);
-                    Play(FounderRoutine.ClipFor(task));
+                    // **A corner is not an arrival.** Snapping onto every waypoint on the way
+                    // jumped the model up to eighteen centimetres each time it rounded one, which
+                    // at this camera is a visible twitch. Only the end of a route is a place the
+                    // model has to be exactly.
+                    return;
                 }
+
+                transform.position = there;
+
+                // A seat says which way it faces. Without this the founder sat down facing
+                // whichever way they last walked in from, which from the front aisle is sideways
+                // to their own monitor.
+                if (target.GetComponent<SeatFacing>() != null)
+                {
+                    transform.rotation = target.rotation;
+                }
+
+                SetBool("Walking", false);
+                Play(FounderRoutine.ClipFor(task));
 
                 return;
             }
 
-            var step = WalkSpeed * Time.deltaTime;
+            var facing = Quaternion.LookRotation(flat.normalized, Vector3.up);
+
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation, facing, TurnSpeed * Time.deltaTime);
+
+            // How much of the turn is done. The dot product of two normalised directions is the
+            // cosine of the angle between them, so this is 1 facing the target and 0 at a right
+            // angle to it.
+            var aligned = Mathf.Clamp01(Vector3.Dot(transform.forward, flat.normalized));
+
+            var step = WalkSpeed * Time.deltaTime * Mathf.Lerp(TurningSpeedFloor, 1f, aligned);
+
             transform.position = Vector3.MoveTowards(here, new Vector3(there.x, here.y, there.z), step);
 
             // The stairs are the one place the height has to be taken as well, and taking it
@@ -187,10 +228,6 @@ namespace ScalingLaws.UI
             // moment it starts walking towards them.
             transform.position += Vector3.up * Mathf.Clamp(
                 (there.y - transform.position.y) * step * 2f, -step, step);
-
-            var facing = Quaternion.LookRotation(flat.normalized, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation, facing, TurnSpeed * Time.deltaTime);
         }
 
         /// <summary>A parameter, if the controller has one. Silent when it does not.</summary>

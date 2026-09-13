@@ -38,6 +38,19 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.4.0] - 2026-09-13
+
+**The server room can be filled by hand.** Buying silicon put it in the company's books and the
+floor arranged itself overnight, so the one decision a room full of cabinets is supposed to be about
+did not exist. The opened cabinet now lists everything the company owns down its left side, and a
+card goes into the cabinet you are looking at by button, by double click or by dragging the row onto
+it. The reason it never worked is underneath: the floor emptied every cabinet and refilled it from
+scratch on every tick, so anything placed by hand was wiped a fraction of a second later.
+
 ### Added
 
 - **Offices are researched before they are rented.** A small map of its own on the research
@@ -75,6 +88,10 @@ go in. This file is the draft for the store update post, so anything vague here 
   management desk, which that banner's own button opens.
 - **Emil mentions the premises research** on the way past the office screen, since both places are
   locked the first time a player sees it.
+- **The founder walks like somebody walking.** They turned half a circle between two frames at
+  every corner and left at full speed facing the wrong way, which is a person sliding sideways. The
+  turn takes about as long as a turn, the walk slows into one and gathers speed out of it, and
+  sitting down at a desk now faces the desk rather than whichever way they came in from.
 - **The room stops rearranging itself every night.** The floor used to empty every cabinet and
   refill them from scratch on every tick, which is why anything placed by hand was gone a moment
   later. It now keeps what is standing where it stands and only corrects what is actually wrong:
@@ -102,7 +119,23 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Save compatibility
 
-Unchanged. Saves from 0.3.1 load.
+**Unchanged, v56.** A 0.3.1 save loads, and so does a 0.2.0 one. A campaign saved before this build
+arrives without the premises research, which is the only true reading of a game that had none: the
+first node is a month and a hundred points, and the company is in whatever office it was already in.
+
+### Under the hood
+
+`ResearchTrack.Premises` and `Data/OfficeUnlocks.cs` are one table read by the rule and by the
+screen, so the premises page cannot name one node while the till waits on another. Twenty existing
+fixtures moved office directly and went red on the gate; they say `LearnedToRent()` now, which is the
+same repair the scale ceiling needed in July, where the scripted operator could not use a control and
+the control was not wrong.
+
+`OfficePeopleTests` holds that a person standing in the office is not switched off when the company
+moves. Two older room guards went red on that fix and were taught the distinction rather than
+loosened.
+
+1,278 EditMode tests and 60 PlayMode tests.
 
 ---
 
