@@ -73,6 +73,8 @@ go in. This file is the draft for the store update post, so anything vague here 
   had not released yet were drawn under the model it had not released. Both cells are the
   product's: what it has earned all time, and in the last 31 days. The company's month is on the
   management desk, which that banner's own button opens.
+- **Emil mentions the premises research** on the way past the office screen, since both places are
+  locked the first time a player sees it.
 - **The room stops rearranging itself every night.** The floor used to empty every cabinet and
   refill them from scratch on every tick, which is why anything placed by hand was gone a moment
   later. It now keeps what is standing where it stands and only corrects what is actually wrong:
