@@ -713,6 +713,10 @@ namespace ScalingLaws.UI
             {
                 daysSinceAutoSave = 0;
                 SaveStore.Save(state);
+
+                // Quieter than the button, and said for the same reason: an autosave the player
+                // cannot see is an autosave they do not know they have.
+                Toast.Show(Loc.T("save.auto", state.Date.ToString()));
             }
 
             // Only the screen in front needs repricing; the others rebuild when they are opened.
@@ -1358,8 +1362,12 @@ namespace ScalingLaws.UI
             // bar is what the player reads while the dial is what they operate.
             var save = new Button(() =>
             {
+                // **It said nothing at all.** The file was written and not one pixel moved, so the
+                // only way to know whether a campaign had been saved was to quit and find out,
+                // which is the one moment a player cannot afford to be wrong about it.
                 SaveStore.Save(state);
                 daysSinceAutoSave = 0;
+                Toast.Show(Loc.T("save.done", state.Date.ToString()));
             })
             { text = Loc.T("common.save") };
             save.AddToClassList("topbar__action");
@@ -3795,7 +3803,7 @@ namespace ScalingLaws.UI
             RefreshStanding(state);
             effectBadges?.Refresh(state);
 
-            pointsLabel.text = UiFormat.Number(state.ResearchPoints, 0);
+            pointsLabel.text = UiFormat.Points(state.ResearchPoints);
             pointsButton.tooltip = state.ResearchPointsToday > 0.0
                 ? Loc.T("shell.earning_points", UiFormat.Number(state.ResearchPointsToday, 1))
                 : Loc.T("shell.learning_nothing");

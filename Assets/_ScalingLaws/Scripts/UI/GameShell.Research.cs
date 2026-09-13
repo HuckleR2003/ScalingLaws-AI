@@ -52,7 +52,10 @@ namespace ScalingLaws.UI
                             UiFormat.Percent(active.Progress, 0),
                             Math.Min(active.DaysCompleted, active.DurationDays),
                             active.DurationDays));
-            UiParts.ExplainPage(page, TechNotes.Eras);
+            // **No ERAS chip.** Asked for by name after the tree became a board: the eras are
+            // drawn across the top of the board, each one with its own heading and its own
+            // stretch of the map, so a chip under the title defining the word was explaining
+            // something the player was already looking at.
             page.Add(BuildResearchKey());
 
             var board = simulation.ResearchBoard();
@@ -351,7 +354,7 @@ namespace ScalingLaws.UI
             head.Add(heading);
 
             var banked = new Label(Loc.T("research.points_banked",
-                UiFormat.Number(state.ResearchPoints, 0),
+                UiFormat.Points(state.ResearchPoints),
                 UiFormat.Number(state.ResearchPointsToday, 1)));
 
             banked.AddToClassList("rfund__banked");
@@ -582,7 +585,11 @@ namespace ScalingLaws.UI
             var cost = new VisualElement();
             cost.AddToClassList("rcard__costs");
 
-            cost.Add(RCardFigure(Loc.T("research.points"), $"{points:N0}",
+            // **A raw `:N0` follows the machine culture and this one is Polish**, which is the
+            // fourth time that fault has turned up in this project. It also has to agree with the
+            // figure on the line below it, and `Count` was compacting that one to "59.6k" while
+            // this one printed every digit.
+            cost.Add(RCardFigure(Loc.T("research.points"), UiFormat.Points(points),
                 simulation.State.ResearchPoints >= points));
 
             cost.Add(RCardFigure(Loc.T("research.cash"), UiFormat.Money(cash),
@@ -593,7 +600,7 @@ namespace ScalingLaws.UI
             researchCard.Add(cost);
 
             var have = new Label(
-                Loc.T("research.you_have", UiFormat.Count(simulation.State.ResearchPoints),
+                Loc.T("research.you_have", UiFormat.Points(simulation.State.ResearchPoints),
                 UiFormat.Money(simulation.State.CashUsd)));
 
             have.AddToClassList("rcard__have");
@@ -712,6 +719,27 @@ namespace ScalingLaws.UI
             var rule = new VisualElement();
             rule.AddToClassList("rkey__rule");
             key.Add(rule);
+
+            // **A node needs a calendar and a cluster, and only the calendar passes on its own.**
+            // That is the one thing about this screen a player cannot guess and the reason a node
+            // reads "0 days left" and sits there: the petaflop-days it also owes have not been
+            // paid, because training is taking the fleet. It replaced the ERAS chip, which defined
+            // a word the board already spells across the top of itself.
+            var compute = new VisualElement();
+            compute.AddToClassList("rkey__entry");
+
+            var computeWord = new Label(TechNotes.PetaflopDay.Title);
+            computeWord.AddToClassList("rkey__label");
+            compute.Add(computeWord);
+
+            compute.Add(InsightTip.InfoBadge(TechNotes.PetaflopDay.Title,
+                new InsightTip.Reading(
+                    TechNotes.PetaflopDay.What,
+                    TechNotes.PetaflopDay.Affects,
+                    TechNotes.PetaflopDay.High,
+                    TechNotes.PetaflopDay.Low)));
+
+            key.Add(compute);
 
             foreach (RewardKind kind in Enum.GetValues(typeof(RewardKind)))
             {

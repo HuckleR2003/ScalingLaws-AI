@@ -80,6 +80,17 @@ namespace ScalingLaws.UI
                 : billions.ToString("0.##", Culture) + "B";
         }
 
+        /// <summary>
+        /// Research points, grouped.
+        ///
+        /// **The bar read `59585`.** `Number(x, 0)` is `F0`, which has no thousands separator, so
+        /// the one figure on the top bar that regularly reaches five and six digits was the one
+        /// printed as an unbroken run of them. Grouped rather than compacted to `59.6k`, because
+        /// a node costs a specific number of points and the player is comparing against it.
+        /// </summary>
+        public static string Points(double points) =>
+            SimUnits.Finite(points).ToString("N0", Culture);
+
         public static string Percent(double fraction, int decimals = 1) =>
             (fraction * 100.0).ToString("F" + decimals, Culture) + "%";
 

@@ -19429,3 +19429,26 @@
 .estate__status--on {
     color: rgb(154, 214, 62);
 }
+
+/* ---- a line that says something happened -----------------------------------------------------
+
+   Under the top bar on the right, which is where SAVE is, so the answer appears next to the thing
+   that was pressed. Absolutely positioned and never picking, because the two buttons a player
+   presses most are directly underneath it. */
+.toast {
+    position: absolute;
+    top: 58px;
+    right: 22px;
+    padding: 8px 16px;
+    font-size: 12.5px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    color: rgb(20, 22, 28);
+    background-color: rgb(154, 214, 62);
+    border-radius: 5px;
+}
+
+.toast--warn {
+    color: rgb(245, 240, 234);
+    background-color: rgb(198, 74, 66);
+}

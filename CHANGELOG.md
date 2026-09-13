@@ -83,6 +83,21 @@ out loud.
 
 ### Fixed
 
+- **SAVE said nothing at all.** It wrote the file and moved not one pixel, so the only way to find
+  out whether a campaign had been saved was to quit and look, which is the one moment a player
+  cannot afford to be wrong about it. Both the button and the autosave put a line under the top bar
+  now, and it can never take a click from the two buttons underneath it.
+- **The ERAS card is gone from the research screen.** Asked for by name: the board spells every era
+  across the top of itself, so a chip underneath the title defining the word was explaining
+  something the player was already looking at. The slot went to PETAFLOP-DAY, which is the one
+  thing on that page nobody can guess and the reason a node can read "0 days left" and sit there.
+- **Research points printed as `59585`.** No thousands separator anywhere they appeared, and the
+  node card's own figure was built with a raw format string, which follows the machine's language
+  and would have read `59 585` on a Polish machine running the game in English. Grouped, from one
+  place, and the "you have" line underneath no longer rounds the same number to `59.6k`.
+- **The data stage measured a corpus in `1,4 PB`.** Same fault, fifth time: four raw format strings
+  in the creator followed the machine's language instead of the game's.
+
 - **Nothing said the power ceiling existed.** FLEET prints what the site supplies against what the
   fleet is drawing now, and turns amber past four fifths of it, which is where the next purchase is
   the one that gets refused.

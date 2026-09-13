@@ -1517,12 +1517,15 @@ namespace ScalingLaws.UI
         {
             var bytes = Math.Max(0.0, tokensBillions) * 1e9 * 4.0;
 
+            // **Through `UiFormat`, because a raw `:0.0` follows the machine culture** and this
+            // one is Polish, so these four read "1,4 PB" on the DATA stage of a game in English.
+            // Fifth time this project has been bitten by exactly that.
             return bytes switch
             {
-                >= 1e15 => $"{bytes / 1e15:0.0} PB",
-                >= 1e12 => $"{bytes / 1e12:0.0} TB",
-                >= 1e9 => $"{bytes / 1e9:0.0} GB",
-                _ => $"{bytes / 1e6:0.0} MB"
+                >= 1e15 => UiFormat.Number(bytes / 1e15) + " PB",
+                >= 1e12 => UiFormat.Number(bytes / 1e12) + " TB",
+                >= 1e9 => UiFormat.Number(bytes / 1e9) + " GB",
+                _ => UiFormat.Number(bytes / 1e6) + " MB"
             };
         }
 
