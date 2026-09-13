@@ -1663,8 +1663,16 @@
    65px plate; the slots themselves keep their 88px, because a Polish label
    ("ARCHITEKTURA") needs every one of them and `.hud-slot` clips. */
 
+/* **They give way rather than falling off the end.** The row is `justify-content: flex-end` with
+   `overflow: hidden`, and these were a fixed 88px that could not shrink, so on any window narrower
+   than about 1,860 virtual pixels the left-hand slots were laid out past the left edge of the row
+   and clipped away: on a 16:10 window, and on the panel a test runs in, SITE and MODEL were simply
+   not on the bar and nothing said so. A minimum of 62px fits all fifteen in 1,380, which leaves the
+   clock and the controls their room on anything the game is likely to run in. */
 .hud-slot {
     width: 88px;
+    min-width: 62px;
+    flex-shrink: 1;
     height: 76px;
     margin: 0;
     overflow: hidden;
@@ -10988,10 +10996,13 @@
    that the player is watching somebody else's phone unlock.
    ============================================================================================ */
 
+/* Above the bar, not on it. At `bottom: 12px` the handset's own body reached down into the
+   category row and took four of the fifteen buttons with it, on every screen it was up on. The bar
+   is 82px. */
 .phone {
     position: absolute;
     right: 14px;
-    bottom: 12px;
+    bottom: 94px;
     width: 330px;
     height: 660px;
     border-radius: 38px;

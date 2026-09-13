@@ -66,6 +66,13 @@ than grey text with the money shouting over it.
 
 ### Fixed
 
+- **Two of the fifteen bottom bar buttons were unreachable on a narrow window.** The row is aligned
+  to the right and clips what does not fit, and the slots were a fixed 88px that could not shrink,
+  so on anything under about 1,860 virtual pixels the left-hand ones were laid out past the edge of
+  the row and clipped away. On a 16:10 window, and in the panel a test runs in, SITE and MODEL were
+  simply not on the bar and nothing said so. They give way now, down to 62px, which fits all
+  fifteen with room for the clock.
+- **The phone stood on the bottom bar and took four categories with it.** It is above the bar now.
 - **A day stopped costing more the longer you played.** Measured: one simulated day cost 0.14ms at
   ten live models and **9.7ms at 339**, which is more than half a frame, on every day the clock
   turns over, at a speed that runs three of them a second. All of it was four places that walked
