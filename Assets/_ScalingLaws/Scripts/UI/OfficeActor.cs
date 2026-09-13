@@ -66,6 +66,35 @@ namespace ScalingLaws.UI
             Send(FounderTask.Working);
         }
 
+        /// <summary>
+        /// Points the actor at a different room's walking points and restarts the current walk.
+        ///
+        /// **Called whenever the lease changes.** Without it the founder keeps the points they
+        /// were indexed with at spawn, which is the house, and a rented floor has no mezzanine to
+        /// put a bed on: the founder sat down three metres above the floor.
+        ///
+        /// Idempotent. Handing it the group it already has does nothing, so the shell can offer it
+        /// every frame without restarting a walk halfway through.
+        /// </summary>
+        public void UseWaypoints(Transform root)
+        {
+            if (root == null || ReferenceEquals(root, waypointRoot))
+            {
+                return;
+            }
+
+            waypointRoot = root;
+            IndexWaypoints();
+
+            // The route is a list of transforms from the old room, every one of them now in the
+            // wrong place or gone. Rebuilt against the new room by asking for the same task again.
+            var current = task;
+            route.Clear();
+            leg = 0;
+            task = FounderTask.Away;
+            Send(current);
+        }
+
         private void IndexWaypoints()
         {
             waypoints.Clear();

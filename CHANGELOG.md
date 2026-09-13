@@ -112,6 +112,24 @@ screen where the money is committed.
 
 ### Fixed
 
+- **The founder was standing in mid air on a rented floor.** The actor found its walking points
+  with a search of the whole scene, and the house is never destroyed when the company moves, only
+  hidden, so a company renting an office was walking the house's points. The house keeps its bed
+  and its upstairs desk on a mezzanine three metres up, and a rented floor has no mezzanine. The
+  room on screen supplies the points now, and a lease change re-points the walk.
+- **And the staff walked the founder's route, through each other.** They are made from the same
+  prefab, which carries the routine component, so eleven people asked for one desk, one bed and
+  one car and went there in step. They stand on their grid, which is what this was always built
+  to do.
+- **Buying silicon in the room said nothing and happened too easily.** The whole card was the
+  button, so sixty four accelerators left the account on a click anywhere on it, including the
+  figures a player clicks to read them; a tester bought about a thousand by accident. The purchase
+  is a button with the price on it, and a line across the top says what was ordered, what it cost
+  and when it arrives.
+- **And the room never said where an order went.** The opened cabinet lists what the company owns,
+  how much of it is in these cabinets, how much is housed elsewhere and what is still in transit
+  with the date it lands.
+
 - **Skipping the tutorial cost you the free research node.** The cousin hands it over on the step
   where he offers it, so pressing SKIP on the first screen walked past it: the task list went on
   saying to start researching, the tree said it needed points a new company cannot have, and there

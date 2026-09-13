@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine.UIElements;
@@ -54,6 +55,7 @@ namespace ScalingLaws.UI
 
             card.Add(BuildHead(definition));
             card.Add(BuildStateBanner(simulation, column, row));
+            card.Add(BuildStock(simulation));
             card.Add(BuildSlots(simulation, square, definition));
             card.Add(BuildStats(simulation, square, definition));
             card.Add(BuildActions(simulation, column, row, square));
@@ -102,6 +104,110 @@ namespace ScalingLaws.UI
             band.Add(note);
 
             return band;
+        }
+
+        /// <summary>
+        /// What the company owns, how much of it is on this floor, and what is still in transit.
+        ///
+        /// **Reported plainly: "I bought about a thousand and I cannot see where they are."**
+        /// Nothing in the room ever listed the silicon the company had paid for. The rail says how
+        /// many are housed and the cabinet says how many are in it, and between those two numbers
+        /// a player who has just spent forty million has no idea whether the order exists.
+        ///
+        /// Newest first, which is the order they were bought in and the order that matters: the
+        /// thing a player is looking for after a purchase is the purchase.
+        ///
+        /// **It does not offer to put a card in this cabinet, and that is honest rather than
+        /// missing.** The hall spreads every owned accelerator across every cabinet in proportion
+        /// to what each one can hold, on every tick; there is no per-cabinet placement in the
+        /// simulation to expose. A button that appeared to put one here and then watched the next
+        /// day move it would be worse than no button. Naming what is owned is the half that is
+        /// true today.
+        /// </summary>
+        private static VisualElement BuildStock(CompanySimulation simulation)
+        {
+            var state = simulation.State;
+
+            var block = new VisualElement();
+            block.AddToClassList("rackmodal__stock");
+
+            var heading = new Label(Loc.T("rack.stock"));
+            heading.AddToClassList("panel__heading");
+            block.Add(heading);
+
+            var online = 0;
+            var waiting = 0;
+
+            var rows = new List<(string Name, int Units, bool Waiting, GameDate Arrives)>();
+
+            foreach (var asset in state.Pool.Assets)
+            {
+                if (asset.Units <= 0
+                    || !HardwareCatalog.TryGet(asset.GenerationId, out var generation)
+                    || generation.Class != HardwareClass.Accelerator)
+                {
+                    continue;
+                }
+
+                var here = asset.IsOnline(state.Date);
+
+                if (here)
+                {
+                    online += asset.Units;
+                }
+                else
+                {
+                    waiting += asset.Units;
+                }
+
+                rows.Add((generation.DisplayName, asset.Units, !here, asset.CommissionDate));
+            }
+
+            if (rows.Count == 0)
+            {
+                var none = new Label(Loc.T("rack.stock.none"));
+                none.AddToClassList("field__hint");
+                block.Add(none);
+
+                return block;
+            }
+
+            // The three numbers a player is actually asking for: what is here, what is in the
+            // cabinets on this floor, and what is sitting in a datacenter somewhere else.
+            var housed = state.Hall.HousedAccelerators;
+
+            block.Add(UiParts.StatLine(Loc.T("rack.stock.owned"), online.ToString()));
+            block.Add(UiParts.StatLine(Loc.T("rack.stock.here"), housed.ToString()));
+
+            block.Add(UiParts.StatLine(Loc.T("rack.stock.elsewhere"),
+                Math.Max(0, online - housed).ToString()));
+
+            if (waiting > 0)
+            {
+                block.Add(UiParts.StatLine(Loc.T("rack.stock.waiting"), waiting.ToString()));
+            }
+
+            // Newest order first, which is what somebody who just bought is looking for.
+            rows.Reverse();
+
+            var list = new VisualElement();
+            list.AddToClassList("rackstock");
+
+            for (var index = 0; index < rows.Count && index < 6; index++)
+            {
+                var (name, units, later, arrives) = rows[index];
+
+                var line = new Label(later
+                    ? Loc.T("rack.stock.row_waiting", units, name, arrives.ToString())
+                    : Loc.T("rack.stock.row", units, name));
+
+                line.AddToClassList("rackstock__row");
+                line.EnableInClassList("rackstock__row--waiting", later);
+                list.Add(line);
+            }
+
+            block.Add(list);
+            return block;
         }
 
         private VisualElement BuildHead(ServerRackDefinition definition)

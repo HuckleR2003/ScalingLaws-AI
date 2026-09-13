@@ -55,12 +55,24 @@ namespace ScalingLaws.UI
         private bool shopOpen;
 
         public ServerRoomScreen(System.Func<CompanySimulation> company, System.Action changed,
-            System.Action leave = null)
+            System.Action leave = null, System.Action<string, string> announce = null)
         {
             this.company = company;
             this.changed = changed;
             this.leave = leave;
+            this.announce = announce;
         }
+
+        /// <summary>
+        /// Says something happened, across the top of the screen.
+        ///
+        /// **Reported plainly: the player buys and barely knows they bought.** Sixty four
+        /// accelerators leave the account on one click and the only thing that changes is a
+        /// figure in a rail. Same notice the upgrade screen raises when a programme starts, for
+        /// the same reason: money leaving with no acknowledgement is money the player is not sure
+        /// they spent.
+        /// </summary>
+        private readonly System.Action<string, string> announce;
 
         /// <summary>
         /// The way out, back to the office.
@@ -169,7 +181,7 @@ namespace ScalingLaws.UI
             // it were a shelf rather than a shop and showed three of twenty two generations.
             if (shopOpen)
             {
-                shop ??= new PartsShop(simulation, () => changed?.Invoke());
+                shop ??= new PartsShop(simulation, () => changed?.Invoke(), announce);
 
                 var sheet = new VisualElement();
                 sheet.AddToClassList("shopsheet");
@@ -725,14 +737,11 @@ namespace ScalingLaws.UI
         private VisualElement SiliconRow(
             CompanySimulation simulation, HardwareGeneration generation, ComputeTier tier)
         {
-            var card = new Button(() =>
-            {
-                if (simulation.TryBuyHardware(generation.Id, SiliconBatch, tier, out _))
-                {
-                    changed?.Invoke();
-                }
-            });
-
+            // **The whole card used to be the button.** Sixty four accelerators left the account
+            // on one click anywhere on it, including the part a player clicks to read the figures,
+            // and a tester bought about a thousand of them without meaning to. The card is a card;
+            // the purchase is a button on it with the price written on the button.
+            var card = new VisualElement();
             card.AddToClassList("roombuild__card");
 
             var name = new Label(generation.DisplayName.ToUpperInvariant());
@@ -752,6 +761,41 @@ namespace ScalingLaws.UI
                 projected.AddToClassList("roombuild__hint");
                 card.Add(projected);
             }
+
+            var tierDefinition = ComputeTierCatalog.Get(tier);
+
+            var price = MarketModel.PurchasePricePerUnitUsd(
+                    generation, tierDefinition, MarketModel.ScarcityOn(simulation.State.Date))
+                * simulation.State.Founder.HardwarePriceMultiplier
+                * simulation.State.Home.HardwarePriceMultiplier;
+
+            var total = (long)System.Math.Round(price * SiliconBatch);
+
+            var buy = new Button(() =>
+            {
+                if (!simulation.TryBuyHardware(generation.Id, SiliconBatch, tier, out var why))
+                {
+                    AudioDirector.Deny();
+                    problem = why;
+                    changed?.Invoke();
+                    return;
+                }
+
+                AudioDirector.Confirm();
+
+                announce?.Invoke(Loc.T("room.bought.title"),
+                    Loc.T("room.bought.note", SiliconBatch, generation.DisplayName,
+                        UiFormat.Money(total), tierDefinition.LeadTimeDays));
+
+                changed?.Invoke();
+            })
+            {
+                text = UiFormat.Money(total)
+            };
+
+            buy.AddToClassList("roombuild__buy");
+            buy.SetEnabled(simulation.State.CashUsd >= total);
+            card.Add(buy);
 
             card.tooltip = generation.DisplayName + ". " + Loc.T("room.silicon.buy_note");
 

@@ -32,6 +32,15 @@ namespace ScalingLaws.UI
         private OfficeActor actor;
         private bool searched;
 
+        /// <summary>
+        /// Where the room currently on screen keeps its walking points.
+        ///
+        /// Set by the shell, which is the only thing that knows which room is loaded. Optional, so
+        /// the probes and proof renders that build a founder on their own do not have to invent a
+        /// stage; the actor then keeps whatever it found at spawn.
+        /// </summary>
+        public Func<Transform> waypoints;
+
         public FounderPresence(Func<CompanyState> state)
         {
             this.state = state;
@@ -180,6 +189,11 @@ namespace ScalingLaws.UI
             {
                 return;
             }
+
+            // **The room the company is actually in.** Offered every day rather than once at
+            // spawn, because a lease changes and the actor is not told; `UseWaypoints` does
+            // nothing when it is already pointed at this group.
+            actor.UseWaypoints(waypoints?.Invoke());
 
             actor.Send(Task);
 

@@ -19596,3 +19596,54 @@
     color: rgb(132, 140, 156);
     white-space: normal;
 }
+
+/* ---- what the company owns, in the cabinet it opened -----------------------------------------
+
+   A tester bought about a thousand accelerators and could not find them. Nothing in the room
+   listed what had been paid for: the rail says how many are housed and the cabinet says how
+   many are in it, and between those two there was no answer to 'where did my order go'. */
+.rackmodal__stock {
+    margin-bottom: 12px;
+}
+
+.rackstock {
+    margin-top: 6px;
+}
+
+.rackstock__row {
+    font-size: 11.5px;
+    margin-bottom: 2px;
+    color: rgb(168, 180, 198);
+}
+
+/* In transit reads differently from on the floor, because the difference is the whole reason
+   somebody is looking at this list. */
+.rackstock__row--waiting {
+    color: rgb(214, 158, 62);
+}
+
+/* The purchase, on its own control with the price on it. The whole card used to be the button
+   and sixty four accelerators left the account on a click anywhere, including on the figures a
+   player clicks to read them. */
+.roombuild__buy {
+    height: 30px;
+    margin: 8px 0 0 0;
+    padding: 0 10px;
+    font-size: 11.5px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    -unity-text-align: middle-center;
+    color: rgb(20, 22, 28);
+    background-color: rgb(154, 214, 62);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.roombuild__buy:hover {
+    background-color: rgb(178, 232, 96);
+}
+
+.roombuild__buy:disabled {
+    color: rgb(150, 158, 172);
+    background-color: rgba(255, 255, 255, 0.07);
+}

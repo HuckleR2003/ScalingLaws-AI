@@ -135,6 +135,22 @@ namespace ScalingLaws.UI
             var person = UnityEngine.Object.Instantiate(prefab, group);
             person.name = NamePrefix + index;
 
+            // **They are not the founder, and the prefab they are made from is.**
+            //
+            // Reported plainly: the staff walk upstairs in a rented floor and stand inside each
+            // other. `Founder.prefab` carries an `OfficeActor`, so every copy of it woke up with
+            // the founder's routine, asked for the founder's waypoints and walked the founder's
+            // route: eleven people going to one desk, one bed and one car, in step, through each
+            // other. The grid below is the placement this class is built on and it is the one that
+            // must survive.
+            //
+            // Destroyed rather than disabled. A disabled `OfficeActor` still runs `Awake`, which
+            // is where it indexes the waypoints and sends itself walking.
+            if (person.TryGetComponent<OfficeActor>(out var routine))
+            {
+                UnityEngine.Object.DestroyImmediate(routine);
+            }
+
             // A grid behind where the founder works, stepped back a row so nobody stands inside
             // them on an empty roster.
             person.transform.localPosition = new Vector3(

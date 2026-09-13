@@ -1027,12 +1027,16 @@ namespace ScalingLaws.UI
             // The basement. Built here rather than lazily, because the corner banner in it reads the
             // live simulation and a screen constructed on first open would miss the day it opened.
             serverRoom = new ServerRoomScreen(() => simulation, () => Show(Screen.Room),
-                () => Show(Screen.Site));
+                () => Show(Screen.Site),
+                (title, note) => startedNotice?.Show(title, note));
 
             officeStage = new OfficeStage(GameObject.Find(OfficeStageRoot));
             officeStage.Show(state.Staff.Office, state.Decor);
 
-            founder = new FounderPresence(() => state);
+            founder = new FounderPresence(() => state)
+            {
+                waypoints = () => officeStage?.WaypointRoot
+            };
 
             // **The room has had a Staff group since it was generated and only ever held the
             // founder.** A company could hire twelve people and the office they were in was empty.

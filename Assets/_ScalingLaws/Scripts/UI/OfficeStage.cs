@@ -31,6 +31,31 @@ namespace ScalingLaws.UI
         private readonly Camera camera;
         private readonly Transform bakedRoom;
 
+        /// <summary>The name of the group every room builder writes its walking points into.</summary>
+        public const string WaypointGroup = "Waypoints";
+
+        /// <summary>
+        /// The walking points of the room that is actually on screen.
+        ///
+        /// **The founder was standing in the air**, and this is why. `OfficeActor` found its points
+        /// with `GameObject.Find("Waypoints")`, which searches the whole scene and answers with
+        /// whichever it reaches first. The house is never destroyed when the company moves, only
+        /// its geometry is hidden, so its group is still there: a company renting a floor was
+        /// walking the house's points, and the house keeps `Bed` and `UpstairsDesk` on a mezzanine
+        /// three metres up. A rented floor has no mezzanine, so the founder sat down in mid air at
+        /// the height the bedroom used to be.
+        ///
+        /// Null until a room is shown, which is what the actor treats as "stay where you are".
+        /// </summary>
+        public Transform WaypointRoot
+        {
+            get
+            {
+                var room = loadedRoom != null ? loadedRoom.transform : bakedRoom;
+                return room == null ? null : room.Find(WaypointGroup);
+            }
+        }
+
         private GameObject loadedRoom;
         private OfficeTier? shownTier;
 

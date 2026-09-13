@@ -51,6 +51,9 @@ namespace ScalingLaws.UI
         private readonly CompanySimulation simulation;
         private readonly Action changed;
 
+        /// <summary>Says the purchase went through, across the top of the screen.</summary>
+        private readonly Action<string, string> announce;
+
         private readonly VisualElement rows = new();
         private readonly Label subtitle = new();
 
@@ -74,10 +77,12 @@ namespace ScalingLaws.UI
             }
         }
 
-        public PartsShop(CompanySimulation simulation, Action changed)
+        public PartsShop(CompanySimulation simulation, Action changed,
+            Action<string, string> announce = null)
         {
             this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
             this.changed = changed;
+            this.announce = announce;
 
             Root = new VisualElement();
             Root.AddToClassList("shop");
@@ -311,6 +316,14 @@ namespace ScalingLaws.UI
                 if (simulation.TryBuyHardware(generation.Id, batch, Tier, out var why))
                 {
                     AudioDirector.Confirm();
+
+                    // **Money left the account and the only thing that moved was a figure in a
+                    // rail.** Reported as buying without knowing you bought.
+                    announce?.Invoke(Loc.T("room.bought.title"),
+                        Loc.T("room.bought.note", batch, generation.DisplayName,
+                            UiFormat.Money(total),
+                            ComputeTierCatalog.Get(Tier).LeadTimeDays));
+
                     changed?.Invoke();
                     Refresh();
                     return;
