@@ -589,7 +589,7 @@ namespace ScalingLaws.UI
             // commissioned a release, and the empty state that needs it is the state of a company
             // that has never had a model, so the door out of an empty UPGRADE screen has never once
             // been drawn.
-            upgrades.goToCreator = () => Show(Screen.Create);
+            upgrades.goToCreator = DesignANewModel;
 
             benefits = new BenefitsPanel(() => simulation, () => Show(Screen.Business));
 
@@ -1012,7 +1012,7 @@ namespace ScalingLaws.UI
                 walkthrough => phone.OpenGuide(walkthrough), RefreshChrome,
                 () => guide is { IsWalking: true });
 
-            modelHub = new ModelDashboard(() => simulation, () => Show(Screen.Create),
+            modelHub = new ModelDashboard(() => simulation, DesignANewModel,
                 () => Show(Screen.Upgrade), () => Show(Screen.Release));
 
             // The basement. Built here rather than lazily, because the corner banner in it reads the
@@ -2212,6 +2212,20 @@ namespace ScalingLaws.UI
         /// back until the last programme completed would mean a price change nobody could make
         /// without also committing to three months of engineering.
         /// </summary>
+        /// <summary>
+        /// Opens the creator on its first page, which is what every "new model" door means.
+        ///
+        /// **The bottom bar is deliberately not one of them.** Walking back into the creator from
+        /// the bar is resuming a plan and has to land where the plan was left; pressing NEW MODEL
+        /// is starting one. Reported as landing on AFTER THE RUN, which is the last page of a form
+        /// the player had not filled in.
+        /// </summary>
+        private void DesignANewModel()
+        {
+            creator.StartFresh();
+            Show(Screen.Create);
+        }
+
         private void ShipTheVersion(string versionName)
         {
             var index = releasePlan.ModelIndex;

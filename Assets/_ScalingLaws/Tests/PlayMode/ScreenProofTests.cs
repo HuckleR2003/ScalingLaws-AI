@@ -254,6 +254,46 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The last page of the creator with the comparison turned on.
+        ///
+        /// **The one thing a picture can answer here**: whether the rival figure and the name of
+        /// whose it is fit beside the player's own number, or whether a long model name pushes the
+        /// figure off its card. Four figures share a row, so there is not much width to lose.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheReviewStageDrawsTheComparison()
+        {
+            // **Its own company, not the shared one.** The comparison has nothing to say until
+            // somebody else has shipped, and the rival field builds its live models as the days
+            // pass rather than from the date alone, so this needs a clock that has actually run.
+            // `Campaign` is assembled to look right on one frame and never ticks. Two frames of
+            // this came back with the button lit and no figures beside it, which reads exactly
+            // like the feature failing rather than like a company with nobody to measure against.
+            var simulation = new CompanySimulation(new CompanyState("Prometheus AI", 12)
+            {
+                CashUsd = 4_000_000_000L
+            });
+
+            simulation.Advance(GameDate.FromCalendar(2024, 6, 1).DayIndex
+                - simulation.State.Date.DayIndex);
+
+            var panel = new ModelCreatorPanel(simulation)
+            {
+                Stage = ModelCreatorPanel.ReviewStage
+            };
+
+            panel.Refresh();
+
+            yield return Capture(panel.Root, "create_review.png");
+
+            // The button is the only way in and an EditMode element dispatches no clicks, so the
+            // frame is taken through the same method the button calls.
+            panel.ShowVersus(true);
+
+            yield return Capture(panel.Root, "create_review_versus.png");
+        }
+
+        /// <summary>
         /// The BRANDING stage in a year where every architecture family is published, so the
         /// licensing list is at its longest.
         ///

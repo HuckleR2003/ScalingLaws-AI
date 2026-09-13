@@ -627,7 +627,7 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
                 emptyBody.AddToClassList("emptystate__body");
                 empty.Add(emptyBody);
 
-                var go = new Button(() => Show(Screen.Create)) { text = Loc.T("release.empty.go") };
+                var go = new Button(DesignANewModel) { text = Loc.T("release.empty.go") };
                 go.AddToClassList("button");
                 go.AddToClassList("button--primary");
                 go.AddToClassList("emptystate__go");

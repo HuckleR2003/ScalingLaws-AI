@@ -19518,3 +19518,81 @@
     color: rgb(20, 22, 28);
     background-color: rgb(226, 140, 120);
 }
+
+/* The way past the walk, under the identity panel on the first page. Quiet: it is a shortcut
+   for somebody who has been here before, not the thing a new player should press. */
+.brand-reuse {
+    margin-top: 12px;
+    flex-shrink: 0;
+}
+
+.brand-reuse__go {
+    height: 34px;
+    margin: 0 0 6px 0;
+    padding: 0 16px;
+    font-size: 11.5px;
+    -unity-font-style: bold;
+    letter-spacing: 1.2px;
+    -unity-text-align: middle-center;
+    color: rgb(232, 238, 250);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.16);
+    border-radius: 5px;
+}
+
+.brand-reuse__go:hover {
+    border-color: rgba(252, 214, 58, 0.6);
+}
+
+/* ---- how the plan measures up ----------------------------------------------------------------
+
+   The projection says 15.2 and nothing on the screen said whether that was good. The button is
+   on the left of the footer, opposite the two that move the player through the form, because it
+   changes what the figures say rather than where the player is. `margin-right: auto` is what
+   keeps BACK and NEXT on the right without a spacer element. */
+.stage-versus {
+    height: 34px;
+    margin: 0 auto 0 0;
+    padding: 0 18px;
+    font-size: 11.5px;
+    -unity-font-style: bold;
+    letter-spacing: 1.4px;
+    -unity-text-align: middle-center;
+    color: rgb(252, 214, 58);
+    background-color: rgba(252, 214, 58, 0.10);
+    border-width: 1px;
+    border-color: rgba(252, 214, 58, 0.55);
+    border-radius: 5px;
+}
+
+.stage-versus:hover {
+    background-color: rgba(252, 214, 58, 0.20);
+}
+
+.stage-versus--on {
+    color: rgb(20, 22, 28);
+    background-color: rgb(252, 214, 58);
+}
+
+/* Beside the player's own figure, on its own line so a long model name cannot push the number
+   off the card. Red because it is the thing to beat, not the thing that was achieved. */
+.effect-figure__versus {
+    flex-direction: row;
+    align-items: baseline;
+    margin-top: 2px;
+}
+
+.effect-figure__rival {
+    font-size: 15px;
+    -unity-font-style: bold;
+    margin-right: 6px;
+    color: rgb(226, 92, 84);
+}
+
+.effect-figure__whose {
+    flex-shrink: 1;
+    font-size: 11px;
+    color: rgb(132, 140, 156);
+    white-space: normal;
+}

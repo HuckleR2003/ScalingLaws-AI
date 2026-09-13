@@ -333,6 +333,15 @@ namespace ScalingLaws.UI
             var footer = new VisualElement();
             footer.AddToClassList("stage-footer");
 
+            // **On the left, opposite the two that move the player through the form.** It changes
+            // what the figures say rather than where the player is, and putting it beside NEXT
+            // would make it read as a third way forward.
+            versusButton.text = Loc.T("create.versus");
+            versusButton.AddToClassList("stage-versus");
+            versusButton.clicked += () => ShowVersus(!versus);
+
+            footer.Add(versusButton);
+
             backButton.text = Loc.T("common.back");
             backButton.AddToClassList("menu-button");
             backButton.AddToClassList("menu-button--quiet");
@@ -411,8 +420,41 @@ namespace ScalingLaws.UI
         /// <summary>How many stages there are, so a caller can walk them without knowing the list.</summary>
         public static int StageCount => StageNames.Length;
 
+        /// <summary>
+        /// REVIEW, which is the last page a player decides anything on.
+        ///
+        /// **Named rather than counted from the end.** AFTER THE RUN is the eighth stage and the
+        /// last one, and it is not where anybody compares a plan against the field: the plan is
+        /// already committed by then. The first version of the comparison button used
+        /// `StageCount - 1` and put it on the wrong page.
+        /// </summary>
+        public static int ReviewStage => StageNames.Length - 2;
+
+        /// <summary>
+        /// Opens the creator on the first page, for a player who came here to design a model.
+        ///
+        /// **The creator remembers where it was left, and that is right for the bottom bar and
+        /// wrong for every door that says "new model".** Reported plainly: pressing NEW MODEL, or
+        /// DESIGN A MODEL on an empty release screen, dropped the player on AFTER THE RUN, which
+        /// is the last page of a form they had not filled in.
+        ///
+        /// The controls keep their values on purpose, which is the fix a tester asked for after
+        /// losing his parameters and tokens to a page change. So this moves the page and nothing
+        /// else; <see cref="BuildReuseButton"/> is how a player skips the walk.
+        /// </summary>
+        public void StartFresh()
+        {
+            Stage = 0;
+        }
+
         private void ShowStage()
         {
+            // Only the last page. Everywhere else the player is still deciding what the model is,
+            // and there is nothing to compare yet.
+            versusButton.style.display = stage == ReviewStage
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+
             stageRail.Clear();
             for (var index = 0; index < StageNames.Length; index++)
             {
@@ -533,6 +575,7 @@ namespace ScalingLaws.UI
             var right = new VisualElement();
             right.AddToClassList("brand-stage__side");
             right.Add(BuildIdentityPanel());
+            right.Add(BuildReuseButton());
 
             var silicon = NewPanel(Loc.T("create.branding.silicon"));
             silicon.AddToClassList("brand-silicon");
@@ -550,6 +593,51 @@ namespace ScalingLaws.UI
 
             RefreshBranding();
             return row;
+        }
+
+        /// <summary>
+        /// The way past the walk, for somebody who has done it before.
+        ///
+        /// **Asked for in as many words**: so the player does not have to click through everything
+        /// from the start unless they want to. Every control in this screen is a shared instance
+        /// that keeps what was last set on it, so the plan from the last model is already loaded;
+        /// what was missing was a way to say "that one again" without pressing NEXT six times.
+        ///
+        /// It goes to the last page rather than starting the run, because the last page is where
+        /// the bill and the projection are and nobody should commit a hundred million dollars from
+        /// a button on the first screen.
+        ///
+        /// **Only for a company that has designed one before.** On a first model the values behind
+        /// it are the defaults rather than a previous plan, and a button offering to reuse
+        /// something that does not exist is the shape this project has already shipped twice.
+        /// </summary>
+        private VisualElement BuildReuseButton()
+        {
+            var host = new VisualElement();
+            host.AddToClassList("brand-reuse");
+
+            var designedBefore = simulation.State.ReleasedModelCount > 0
+                || simulation.State.Shelf.Count > 0
+                || simulation.State.ActiveRun != null;
+
+            if (!designedBefore)
+            {
+                return host;
+            }
+
+            var reuse = new Button(() => Stage = ReviewStage)
+            {
+                text = Loc.T("create.reuse")
+            };
+
+            reuse.AddToClassList("brand-reuse__go");
+            host.Add(reuse);
+
+            var note = new Label(Loc.T("create.reuse.note"));
+            note.AddToClassList("field__hint");
+            host.Add(note);
+
+            return host;
         }
 
         /// <summary>
@@ -2688,15 +2776,26 @@ namespace ScalingLaws.UI
             // Each figure carries a bar rather than a sentence. The bar is measured against the thing
             // that makes the number mean something: capability against the frontier it has to beat,
             // the bill against the money actually in the account.
+            // **The best thing anybody else has on the market today**, when the player asked
+            // for it. Only capability gets a rival figure, and that is the honest answer rather
+            // than a gap in the design: nobody publishes what a rival's run cost or how long it
+            // took, so inventing a number for TIME TO TRAIN and CASH IT BURNS would be the game
+            // passing a guess off as a fact. The two that can be compared are compared.
+            var best = versus ? BestOnTheMarket() : default;
+            var hasRival = versus && !string.IsNullOrEmpty(best.Name);
+
             SetFigure(0, Loc.T("create.fig_capability"),
                 measured ? UiFormat.Number(projection.ProjectedCapability) : pending,
-                measured ? projection.ProjectedCapability / frontier : 0.0, FigureTone.Cool, delta);
+                measured ? projection.ProjectedCapability / frontier : 0.0, FigureTone.Cool, delta,
+                hasRival ? UiFormat.Number(best.Capability) : string.Empty,
+                hasRival ? best.Name : string.Empty);
 
             // The frontier is a market fact and is known whether or not a run has been shaped, so it
             // keeps its number while the other three go quiet.
             SetFigure(1, Loc.T("create.fig_frontier"),
                 UiFormat.Number(simulation.Market.FrontierCapability),
-                simulation.Market.FrontierCapability / 100.0, FigureTone.Cool, 0.0);
+                simulation.Market.FrontierCapability / 100.0, FigureTone.Cool, 0.0,
+                string.Empty, hasRival ? best.Name : string.Empty);
 
             SetFigure(2, Loc.T("create.fig_time"),
                 measured ? UiFormat.Days(projection.TrainingDays) : pending,
@@ -2722,11 +2821,63 @@ namespace ScalingLaws.UI
 
         // The same pooling as the readout table, for the same reason: this banner sat under a slider
         // and was rebuilt from nothing on every frame of every drag.
-        private readonly List<(Label Name, Label Value, VisualElement Fill)> figures = new();
+        private readonly List<(Label Name, Label Value, VisualElement Fill, Label Rival,
+            Label Whose)> figures = new();
+
         private readonly Label blockedLabel = new();
 
+        /// <summary>
+        /// Whether the figures are showing what the best thing on the market does.
+        ///
+        /// **Asked for by name, and it is the comparison this screen was missing.** The projection
+        /// says 15.2 and the player has no way to know whether that is good without leaving the
+        /// screen. Off by default: the four figures are about the plan, and a second number beside
+        /// each of them is a thing to turn on rather than a thing to read past.
+        /// </summary>
+        private bool versus;
+
+        /// <summary>The button that turns it on, kept because only the last stage shows it.</summary>
+        private readonly Button versusButton = new();
+
+        /// <summary>
+        /// Turns the comparison on or off, which is what the button does.
+        ///
+        /// Public for the same reason `ManagementScreen.ShowDesk` and `FinanceReport.ShowDays` are:
+        /// an element with no panel dispatches no clicks, so a frame or a test that could only
+        /// press the button would measure nothing.
+        /// </summary>
+        public void ShowVersus(bool on)
+        {
+            versus = on;
+            versusButton.EnableInClassList("stage-versus--on", versus);
+            Reprice();
+        }
+
+        /// <summary>
+        /// The strongest model any rival has live today, with whose it is.
+        ///
+        /// Read from the same list the market is served from, so the figure beside the player's
+        /// own cannot disagree with the field they are about to ship against.
+        /// </summary>
+        private (string Name, double Capability) BestOnTheMarket()
+        {
+            var best = (Name: string.Empty, Capability: 0.0);
+
+            foreach (var rival in simulation.State.Rivals.LiveModels(simulation.State.Date))
+            {
+                if (rival.Capability <= best.Capability)
+                {
+                    continue;
+                }
+
+                best = (rival.DisplayName, rival.Capability);
+            }
+
+            return best;
+        }
+
         private void SetFigure(int slot, string label, string value, double fraction, FigureTone tone,
-            double delta)
+            double delta, string rival = "", string whose = "")
         {
             while (figures.Count <= slot)
             {
@@ -2735,18 +2886,48 @@ namespace ScalingLaws.UI
                 var built = EffectFigure(string.Empty, string.Empty, 0.0, tone, 0.0);
                 effectBanner.Add(built);
 
+                // The comparison, built with the figure and hidden until it is asked for. Built
+                // once rather than added and removed, for the same reason the rest of this banner
+                // is pooled: it sits under a slider and would otherwise churn on every frame of a
+                // drag.
+                var rivalLabel = new Label { text = string.Empty };
+                rivalLabel.AddToClassList("effect-figure__rival");
+
+                var whoseLabel = new Label { text = string.Empty };
+                whoseLabel.AddToClassList("effect-figure__whose");
+
+                var beside = (VisualElement)built.ElementAt(1).parent;
+                var row = new VisualElement();
+                row.AddToClassList("effect-figure__versus");
+                row.Add(rivalLabel);
+                row.Add(whoseLabel);
+                beside.Insert(2, row);
+
                 figures.Add((
                     (Label)built.ElementAt(0),
                     (Label)built.ElementAt(1),
-                    built.ElementAt(2).ElementAt(0)));
+                    built.ElementAt(3).ElementAt(0),
+                    rivalLabel,
+                    whoseLabel));
             }
 
-            var (name, amount, fill) = figures[slot];
+            var (name, amount, fill, rivalValue, whoseName) = figures[slot];
 
             name.text = label;
             amount.text = value;
             amount.EnableInClassList("effect-figure__value--up", delta > 0.05);
             amount.EnableInClassList("effect-figure__value--down", delta < -0.05);
+
+            rivalValue.text = rival;
+            whoseName.text = whose;
+
+            rivalValue.style.display = string.IsNullOrEmpty(rival)
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
+
+            whoseName.style.display = string.IsNullOrEmpty(whose)
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
 
             fill.style.width = Length.Percent(
                 (float)(Math.Clamp(Core.SimUnits.Finite(fraction), 0.0, 1.0) * 100.0));

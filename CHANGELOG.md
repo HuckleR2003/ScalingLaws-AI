@@ -104,7 +104,20 @@ cover the office, map, server room and bed buttons on the side rail. Each subjec
 the product keeps the corner, the work stands to its left, and the whole column starts left of the
 rail so nothing can reach it.
 
+**The model creator can tell you how the plan measures up.** VS TOP MODEL on the review page puts
+the strongest thing anybody else has on the market beside your own projection, in red, with whose
+it is underneath. Capability only: nobody publishes what a rival's run cost them or how long it
+took, and a figure under TIME TO TRAIN would be the game passing a guess off as a fact on the
+screen where the money is committed.
+
 ### Fixed
+
+- **NEW MODEL dropped you on the last page of the creator.** Pressing it, or DESIGN A MODEL on an
+  empty release screen, opened AFTER THE RUN, which is the end of a form nobody had filled in. The
+  creator still remembers where it was left when you walk back in from the bottom bar, because
+  losing that is what a tester reported in the first place; every door that says "new model" now
+  means the first page. And for anybody who does not want the walk again, BRANDING carries USE THE
+  PREVIOUS VALUES, which goes straight to the review with everything still set.
 
 - **There were two upgrade banners in the corner at once.** One said WORKING ON UPGRADE and one
   said UPGRADE IN PROGRESS, both about the same programme, both with their own bar. The second is
