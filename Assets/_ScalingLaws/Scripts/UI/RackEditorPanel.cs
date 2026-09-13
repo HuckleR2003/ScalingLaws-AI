@@ -53,11 +53,55 @@ namespace ScalingLaws.UI
             var definition = ServerRackCatalog.Get(square.Rack);
 
             card.Add(BuildHead(definition));
+            card.Add(BuildStateBanner(simulation, column, row));
             card.Add(BuildSlots(simulation, square, definition));
             card.Add(BuildStats(simulation, square, definition));
             card.Add(BuildActions(simulation, column, row, square));
 
             return veil;
+        }
+
+        /// <summary>
+        /// What this cabinet is doing, in a band the colour of the strip on its own front.
+        ///
+        /// **The panel used to answer this only in numbers.** Heat, cooling and throughput were
+        /// all on it, in kilowatts, and working out from those three whether the cabinet was
+        /// fine is arithmetic the player has to do while the room is getting hot. The colour is
+        /// the answer and the sentence is what to do about it; the kilowatts stay underneath
+        /// for whoever wants to check.
+        ///
+        /// The state comes from <see cref="ServerHall.HeatAt"/>, which is the same reading the
+        /// floor paints, so this band and the cabinet behind it cannot disagree.
+        /// </summary>
+        private VisualElement BuildStateBanner(CompanySimulation simulation, int column, int row)
+        {
+            var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
+
+            var state = simulation.State.Hall.HeatAt(
+                column, row, known ? part.PowerKilowatts : 0.0, simulation.Room);
+
+            return HeatBand(state);
+        }
+
+        /// <summary>
+        /// One state as a coloured band. Public and static because the room draws the same band
+        /// in its legend, and two of these would be two places to get a colour wrong.
+        /// </summary>
+        public static VisualElement HeatBand(ServerRackCatalog.RackHeat state)
+        {
+            var band = new VisualElement();
+            band.AddToClassList("rheat");
+            band.AddToClassList(ServerRackCatalog.ClassFor(state));
+
+            var word = new Label(Loc.T(ServerRackCatalog.KeyFor(state)));
+            word.AddToClassList("rheat__word");
+            band.Add(word);
+
+            var note = new Label(Loc.T(ServerRackCatalog.KeyFor(state) + ".note"));
+            note.AddToClassList("rheat__note");
+            band.Add(note);
+
+            return band;
         }
 
         private VisualElement BuildHead(ServerRackDefinition definition)

@@ -136,9 +136,15 @@ namespace ScalingLaws.UI
             // is cooking and three are cold reads as comfortable, which is the one thing it is not.
             var hottest = HottestRatio(hall, part, simulation.Room);
 
+            var worst = HottestState(hall, part, simulation.Room);
+
             temperature.text = UiFormat.Percent(hottest, 0);
-            temperatureNote.text = Loc.T("room.banner.of_max", "100%");
-            temperature.style.color = HeatTone(hottest);
+
+            // The word rather than "of 100%", because a reading of 0% under a heading saying HEAT
+            // is a room nobody can tell apart from a room that is merely cold. An empty floor says
+            // so in the same five words the cabinets and the legend use.
+            temperatureNote.text = Loc.T(ServerRackCatalog.KeyFor(worst));
+            temperature.style.color = RackHeatPalette.Of(worst);
 
             // ---- power ---------------------------------------------------------------------------
             // The tariff comes from the pool, which is where the bill is actually raised. It was a
@@ -188,11 +194,27 @@ namespace ScalingLaws.UI
             return Math.Clamp(worst / ServerRackCatalog.ThrottleFreeHeadroom, 0.0, 1.6);
         }
 
-        private static Color HeatTone(double ratio) =>
-            ratio > 1.15 ? new Color(0.85f, 0.31f, 0.29f)
-            : ratio > 1.0 ? new Color(0.91f, 0.55f, 0.24f)
-            : ratio > 0.85 ? new Color(0.89f, 0.75f, 0.27f)
-            : new Color(0.49f, 0.78f, 0.60f);
+        /// <summary>
+        /// The worst cabinet's state, from the raw ratio rather than the reported one.
+        ///
+        /// **This was a fourth copy of the colour mapping and it was reading the wrong number.**
+        /// <see cref="HottestRatio"/> divides by `ThrottleFreeHeadroom` so the bar can show 100% at
+        /// the edge; the thresholds beside it were written for the undivided ratio, so the banner
+        /// turned amber at a load the floor still drew green. One reading, one palette.
+        /// </summary>
+        private static ServerRackCatalog.RackHeat HottestState(ServerHall hall,
+            HardwareGeneration part, RoomUpgrades upgrades)
+        {
+            var worst = 0.0;
+
+            foreach (var square in hall.Occupied())
+            {
+                worst = Math.Max(worst,
+                    hall.HeatRatio(square.Column, square.Row, part.PowerKilowatts, upgrades));
+            }
+
+            return ServerRackCatalog.HeatOf(worst);
+        }
 
         private static Color LoadTone(float load) =>
             load > 0.95f ? new Color(0.85f, 0.31f, 0.29f)

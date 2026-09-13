@@ -19172,3 +19172,93 @@
     border-width: 0;
     border-radius: 5px;
 }
+
+/* ---- what a cabinet is doing -----------------------------------------------------------------
+
+   Five states, five colours, and the same five the 3D room paints on the strip down each
+   cabinet. White is a cabinet producing nothing, which is an invitation rather than an alarm;
+   blue and green both mean it is working and are told apart by whether anything else will fit
+   in it; yellow is the last state before the room starts losing work it is billed for, and red
+   is that loss happening. `ServerRackCatalog.ClassFor` is the only thing that picks one. */
+.rheat {
+    flex-direction: row;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 12px;
+    border-radius: 5px;
+    background-color: rgb(237, 240, 245);
+}
+
+.rheat__word {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    color: rgb(20, 22, 28);
+}
+
+.rheat__note {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 12px;
+    font-size: 11.5px;
+    white-space: normal;
+    color: rgba(20, 22, 28, 0.78);
+}
+
+.rheat--idle {
+    background-color: rgb(237, 240, 245);
+}
+
+.rheat--cool {
+    background-color: rgb(120, 189, 237);
+}
+
+.rheat--ok {
+    background-color: rgb(125, 199, 153);
+}
+
+.rheat--warm {
+    background-color: rgb(237, 209, 77);
+}
+
+.rheat--hot {
+    background-color: rgb(217, 79, 71);
+}
+
+/* The legend under the room. Small squares rather than five more banners: it is a key to a
+   picture, and a key the size of the thing it explains is not a key. */
+.hkey {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0 0 8px 0;
+}
+
+.hkey__title {
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-right: 12px;
+    color: rgb(120, 128, 144);
+}
+
+.hkey__item {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 16px;
+}
+
+.hkey__chip {
+    width: 13px;
+    height: 13px;
+    margin-right: 6px;
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0.35);
+}
+
+.hkey__word {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: rgb(168, 180, 198);
+}

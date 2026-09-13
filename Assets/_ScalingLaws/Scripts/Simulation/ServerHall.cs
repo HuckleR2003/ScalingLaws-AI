@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -301,10 +301,7 @@ namespace ScalingLaws.Simulation
                 return 0;
             }
 
-            var total = ServerRackCatalog.Get(racks[index]).Slots;
-            var used = accelerators[index] + fans[index] * ServerRackCatalog.FanSlots;
-
-            return Math.Max(0, total - used);
+            return Math.Max(0, CardCapacity(index) - accelerators[index]);
         }
 
         /// <summary>Fits one fan, if the cabinet has room for it.</summary>
@@ -438,7 +435,7 @@ namespace ScalingLaws.Simulation
                     continue;
                 }
 
-                var capacity = ServerRackCatalog.Get(racks[index]).Slots;
+                var capacity = CardCapacity(index);
                 var share = (int)((long)capacity * Math.Min(wanted, slots) / slots);
 
                 accelerators[index] = share;
@@ -454,7 +451,7 @@ namespace ScalingLaws.Simulation
                     continue;
                 }
 
-                var capacity = ServerRackCatalog.Get(racks[index]).Slots;
+                var capacity = CardCapacity(index);
                 if (accelerators[index] >= capacity)
                 {
                     continue;
@@ -468,17 +465,38 @@ namespace ScalingLaws.Simulation
             return housed;
         }
 
+        /// <summary>
+        /// How many accelerators one cabinet can hold today, fans included in the arithmetic.
+        ///
+        /// **This is the slot a fan costs, and for a while nothing charged it.**
+        /// <see cref="FreeSlots"/> subtracted the fans, so the cabinet panel told the player a
+        /// fan takes a slot; <see cref="Stock"/> and <see cref="TotalSlots"/> did not, so the
+        /// daily refill put a full set of cards back in around it. The trade the whole cooling
+        /// mechanic stands on, one card for one fan, was therefore never actually made: a fan
+        /// was more cooling for no cards, and the catalog table promising "3 cards + 1 fan" was
+        /// describing a game the code was not playing.
+        /// </summary>
+        private int CardCapacity(int index)
+        {
+            if (racks[index] == ServerRack.None)
+            {
+                return 0;
+            }
+
+            return Math.Max(0,
+                ServerRackCatalog.Get(racks[index]).Slots
+                - fans[index] * ServerRackCatalog.FanSlots);
+        }
+
+        /// <summary>Every slot on the floor a card could stand in. See <see cref="CardCapacity"/>.</summary>
         public int TotalSlots
         {
             get
             {
                 var slots = 0;
-                foreach (var rack in racks)
+                for (var index = 0; index < racks.Length; index++)
                 {
-                    if (rack != ServerRack.None)
-                    {
-                        slots += ServerRackCatalog.Get(rack).Slots;
-                    }
+                    slots += CardCapacity(index);
                 }
 
                 return slots;

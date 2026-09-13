@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 
@@ -234,26 +234,53 @@ namespace ScalingLaws.Data
         /// which, and "over its rating" and "half speed" are different problems with different
         /// fixes.
         /// </summary>
+        /// <summary>
+        /// What one cabinet is doing, in five states, and they are five because they are five
+        /// colours.
+        ///
+        /// **<see cref="Idle"/> is the one that was missing and it was the one worth having.**
+        /// A cabinet with no silicon in it read as <c>Comfortable</c>, which is green, which is
+        /// the same answer a cabinet doing full work under its rating gets. So a room where
+        /// half the cabinets were empty looked like a room that was fine, and the player had
+        /// nothing to click. An empty cabinet is not running cool. It is not running.
+        ///
+        /// The order is the scale, coldest first, so a worst-cabinet comparison is a
+        /// comparison rather than a table.
+        /// </summary>
         public enum RackHeat
         {
-            /// <summary>Inside its rating. Nothing to do.</summary>
-            Comfortable = 0,
+            /// <summary>Nothing in it, or nothing standing on the square. Produces no power.</summary>
+            Idle = 0,
 
-            /// <summary>Near the top of what it can shed. Still full output, no headroom left.</summary>
-            Warm = 1,
+            /// <summary>
+            /// Working, with room for half as many cards again inside its own rating.
+            /// </summary>
+            Cool = 1,
 
-            /// <summary>Past the headroom, losing throughput. A fan buys it back.</summary>
-            Throttling = 2,
+            /// <summary>Working normally. Inside its rating, no headroom worth planning around.</summary>
+            Comfortable = 2,
 
-            /// <summary>Far past it. The power is still being paid for and the work is not done.</summary>
-            Cooking = 3
+            /// <summary>Near the top of what it can shed. Still full output, nothing left over.</summary>
+            Warm = 3,
+
+            /// <summary>
+            /// Past the headroom and losing throughput. The power is still being paid for and
+            /// the work is not being done, which is the whole cost of overfilling a cabinet.
+            /// </summary>
+            Cooking = 4
         }
 
-        /// <summary>Where the room turns amber, and where it turns red.</summary>
-        public const double WarmAbove = 0.85;
+        /// <summary>
+        /// Where a cabinet stops having room worth planning around.
+        ///
+        /// **Two thirds, derived rather than chosen**: at this load half as many cards again
+        /// would still sit inside the cabinet's own rating, which is what "there is room in
+        /// here" has to mean to somebody deciding where the next purchase goes.
+        /// </summary>
+        public const double CoolBelow = 2.0 / 3.0;
 
-        /// <inheritdoc cref="WarmAbove"/>
-        public const double CookingAbove = 1.15;
+        /// <summary>Where the room turns amber. Past <see cref="ThrottleFreeHeadroom"/> it is red.</summary>
+        public const double WarmAbove = 0.85;
 
         /// <summary>
         /// The heat ratio turned into a colour, and it is the only place that mapping is made.
@@ -267,18 +294,52 @@ namespace ScalingLaws.Data
         {
             var heat = SimUnits.Finite(ratio);
 
-            if (heat > CookingAbove)
+            // **Zero is not cold, it is off.** `HeatRatio` answers zero for an empty square and
+            // for a cabinet holding no silicon, and both of those used to come back green.
+            if (heat <= 0.0)
             {
-                return RackHeat.Cooking;
+                return RackHeat.Idle;
             }
 
             if (heat > ThrottleFreeHeadroom)
             {
-                return RackHeat.Throttling;
+                return RackHeat.Cooking;
             }
 
-            return heat > WarmAbove ? RackHeat.Warm : RackHeat.Comfortable;
+            if (heat > WarmAbove)
+            {
+                return RackHeat.Warm;
+            }
+
+            return heat > CoolBelow ? RackHeat.Comfortable : RackHeat.Cool;
         }
+
+        /// <summary>
+        /// The phrase-book stem for a state, so the word and the colour cannot drift.
+        ///
+        /// Written out rather than built from the enum name, for the reason every catalog here
+        /// already follows: a key assembled by concatenation is invisible to
+        /// <c>LocalisationTests.EveryKeyTheInterfaceAsksForExists</c>, and this project has
+        /// shipped a screen of raw keys once already.
+        /// </summary>
+        public static string KeyFor(RackHeat heat) => heat switch
+        {
+            RackHeat.Cool => "rack.state.cool",
+            RackHeat.Comfortable => "rack.state.ok",
+            RackHeat.Warm => "rack.state.warm",
+            RackHeat.Cooking => "rack.state.hot",
+            _ => "rack.state.idle"
+        };
+
+        /// <summary>The class the interface paints a state with. One mapping, same as the word.</summary>
+        public static string ClassFor(RackHeat heat) => heat switch
+        {
+            RackHeat.Cool => "rheat--cool",
+            RackHeat.Comfortable => "rheat--ok",
+            RackHeat.Warm => "rheat--warm",
+            RackHeat.Cooking => "rheat--hot",
+            _ => "rheat--idle"
+        };
 
         /// <summary>
         /// What a rack actually delivers when it is asked to shed more heat than it can.

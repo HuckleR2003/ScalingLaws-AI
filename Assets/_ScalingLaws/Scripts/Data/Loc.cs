@@ -1762,6 +1762,20 @@ namespace ScalingLaws.Data
             ["rack.enclosed"] = "Enclosed rack",
             ["rack.highdensity"] = "High density",
             ["rack.immersion"] = "Immersion tank",
+
+            // The five states one cabinet can be in. The word and the colour come from the
+            // same switch in `ServerRackCatalog`, so a yellow banner cannot read NORMAL.
+            ["rack.state.idle"] = "NOT RUNNING",
+            ["rack.state.idle.note"] = "Nothing in this cabinet. It produces no compute and still draws its idle.",
+            ["rack.state.cool"] = "ROOM TO GROW",
+            ["rack.state.cool.note"] = "Working, with space for half as many cards again before the heat starts to matter.",
+            ["rack.state.ok"] = "NORMAL",
+            ["rack.state.ok.note"] = "Working normally, inside what it can cool.",
+            ["rack.state.warm"] = "NEAR THE LIMIT",
+            ["rack.state.warm.note"] = "Full output, and nothing left over. One more card in here costs throughput.",
+            ["rack.state.hot"] = "LOSING POWER",
+            ["rack.state.hot.note"] = "Past what it can shed. The power bill is for all of it and some of the work is not being done.",
+            ["room.legend"] = "WHAT THE COLOURS MEAN",
             ["part.fan"] = "Fan",
             ["part.fan.desc"] = "Moves heat out of the cabinet and takes a slot doing it. The trade is silicon against air in the same box, which is the only decision this room asks you to make twice.",
 
@@ -4780,6 +4794,18 @@ namespace ScalingLaws.Data
             ["rack.enclosed"] = "Szafa zamknięta",
             ["rack.highdensity"] = "Wysoka gęstość",
             ["rack.immersion"] = "Wanna immersyjna",
+
+            ["rack.state.idle"] = "NIE PRACUJE",
+            ["rack.state.idle.note"] = "W tej szafie nic nie stoi. Nie produkuje mocy, a i tak pobiera prąd na biegu jałowym.",
+            ["rack.state.cool"] = "DUŻY ZAPAS",
+            ["rack.state.cool.note"] = "Pracuje, a zmieści się jeszcze połowa tego, co już w niej stoi, zanim ciepło zacznie mieć znaczenie.",
+            ["rack.state.ok"] = "NORMALNIE",
+            ["rack.state.ok.note"] = "Pracuje normalnie, w granicach tego, co potrafi schłodzić.",
+            ["rack.state.warm"] = "BLISKO GRANICY",
+            ["rack.state.warm.note"] = "Pełna moc i ani odrobiny zapasu. Kolejna karta w tej szafie kosztuje wydajność.",
+            ["rack.state.hot"] = "TRACI MOC",
+            ["rack.state.hot.note"] = "Powyżej tego, co potrafi odprowadzić. Rachunek za prąd jest za całość, a część pracy nie jest wykonywana.",
+            ["room.legend"] = "CO ZNACZĄ KOLORY",
             ["part.fan"] = "Wentylator",
             ["part.fan.desc"] = "Wyciąga ciepło z szafy i zabiera na to slot. Handel to krzem kontra powietrze w tym samym pudle i to jedyna decyzja, którą ta sala każe podjąć dwa razy.",
 

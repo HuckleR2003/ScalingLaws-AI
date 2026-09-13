@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ScalingLaws.Core;
@@ -57,6 +57,23 @@ namespace ScalingLaws.UI
         private PartsOrder order = PartsOrder.Newest;
         private int batch = 4;
 
+        /// <summary>
+        /// Which column the shelf is sorted by.
+        ///
+        /// Settable because an EditMode element has no panel, so a click sent to a sort chip is
+        /// never dispatched and the lambda behind it goes unmeasured. Same shape as
+        /// <see cref="ManagementScreen.ShowDesk"/> and <see cref="FinanceReport.ShowDays"/>.
+        /// </summary>
+        public PartsOrder Order
+        {
+            get => order;
+            set
+            {
+                order = value;
+                Refresh();
+            }
+        }
+
         public PartsShop(CompanySimulation simulation, Action changed)
         {
             this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
@@ -72,6 +89,33 @@ namespace ScalingLaws.UI
 
         /// <summary>The tier a room purchase lands in. The room is colocated by definition.</summary>
         private const ComputeTier Tier = ComputeTier.ColocatedServers;
+
+        /// <summary>
+        /// Whether the company is allowed to buy silicon at all today.
+        ///
+        /// **The colocated tier asks for a shipped model and five million in the bank**, so a
+        /// company that has just been given the room by Emil is refused at the till whatever is
+        /// on the shelf. A shop whose every BUY fails silently is the shape this project has
+        /// already shipped twice: a control no reachable state enables is not a button.
+        /// </summary>
+        public bool CanBuy => Gate().IsUnlocked;
+
+        /// <summary>Why not, in the tier's own words. Empty when it is open.</summary>
+        public string LockReason => Gate().LockReason;
+
+        /// <summary>
+        /// The gate, read from the tier rather than re-derived.
+        ///
+        /// Two readings of one rule is the disagreement with a date on it: the shop would go on
+        /// saying the shelf is open for a week after the till started refusing it.
+        /// </summary>
+        private ComputeTierStatus Gate()
+        {
+            var state = simulation.State;
+
+            return ComputeTierCatalog.Get(Tier).Evaluate(
+                state.Date, state.CashUsd, state.ReleasedModelCount, state.LifetimeRevenueUsd);
+        }
 
         private void Build()
         {
@@ -195,7 +239,9 @@ namespace ScalingLaws.UI
             var state = simulation.State;
             var stock = OnSale();
 
-            subtitle.text = Loc.T("shop.subtitle", stock.Count, UiFormat.Money(state.CashUsd));
+            subtitle.text = CanBuy
+                ? Loc.T("shop.subtitle", stock.Count, UiFormat.Money(state.CashUsd))
+                : LockReason;
 
             foreach (var chip in Root.Query<Button>(className: "shop__chip").ToList())
             {
@@ -216,7 +262,7 @@ namespace ScalingLaws.UI
         {
             var price = UnitPriceUsd(generation);
             var total = price * batch;
-            var affordable = simulation.State.CashUsd >= total;
+            var affordable = simulation.State.CashUsd >= total && CanBuy;
 
             var row = new VisualElement();
             row.AddToClassList("shoprow");

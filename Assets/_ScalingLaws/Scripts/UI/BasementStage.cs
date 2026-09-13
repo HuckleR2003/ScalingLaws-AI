@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine;
@@ -528,20 +528,22 @@ namespace ScalingLaws.UI
             });
 
         /// <summary>
-        /// Green, amber, red, and the two red states share a colour on the floor.
+        /// The five states as five colours, and this is the only place in the 3D room that
+        /// decides one.
         ///
-        /// The player reads the room at a glance and opens whichever cabinet is red. Which kind of
-        /// red it is belongs in the panel that opens, where there is room to say what to do about
-        /// it.
+        /// White reads as blank rather than as an alarm, which is right: an empty cabinet is not
+        /// a fault, it is an invitation. Blue and green both mean the cabinet is working, and
+        /// they are told apart by whether there is room to put anything else in it. Yellow is
+        /// the last state before the cabinet starts losing work it is being billed for, and red
+        /// is that loss happening.
+        ///
+        /// **The `.rheat--*` rules in the stylesheet carry the same five colours**, because the
+        /// floor tile, the cabinet panel and the corner banner all describe one square, and a
+        /// tile that is green beside a panel saying the rack is losing power is a disagreement
+        /// with no owner. That is the author's own SF-07, in his own game.
         /// </summary>
         private static Material HeatPaint(ServerRackCatalog.RackHeat heat) =>
-            Paint("heat-" + heat, heat switch
-            {
-                ServerRackCatalog.RackHeat.Warm => new Color(0.89f, 0.75f, 0.27f),
-                ServerRackCatalog.RackHeat.Throttling => new Color(0.91f, 0.55f, 0.24f),
-                ServerRackCatalog.RackHeat.Cooking => new Color(0.85f, 0.31f, 0.29f),
-                _ => new Color(0.49f, 0.78f, 0.60f)
-            });
+            Paint("heat-" + heat, RackHeatPalette.Of(heat));
 
         /// <summary>
         /// One material per colour, shared and cached.

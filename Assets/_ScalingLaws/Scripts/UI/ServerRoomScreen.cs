@@ -149,6 +149,8 @@ namespace ScalingLaws.UI
             strap.AddToClassList("page-subtitle");
             page.Add(strap);
 
+            page.Add(BuildHeatLegend());
+
             var floor = new VisualElement();
             floor.AddToClassList("roomfloor");
             floor.Add(BuildStage(simulation));
@@ -209,6 +211,52 @@ namespace ScalingLaws.UI
             GuideOverlay.KeepClear?.Invoke(open.HasValue || shopOpen);
 
             return page;
+        }
+
+        /// <summary>
+        /// What the colours on the cabinets mean, as five squares on one line.
+        ///
+        /// **A room read at a glance needs a key or it is decoration.** The floor turns a
+        /// cabinet white, blue, green, yellow or red and nothing on the screen said which of
+        /// those was a problem, so the only way to find out was to open every cabinet in turn,
+        /// which is the opposite of what colouring the room is for.
+        ///
+        /// It walks the enum rather than listing five, so a sixth state cannot be added without
+        /// appearing here.
+        /// </summary>
+        private static VisualElement BuildHeatLegend()
+        {
+            var key = new VisualElement();
+            key.AddToClassList("hkey");
+
+            var title = new Label(Loc.T("room.legend"));
+            title.AddToClassList("hkey__title");
+            key.Add(title);
+
+            foreach (ServerRackCatalog.RackHeat state
+                in System.Enum.GetValues(typeof(ServerRackCatalog.RackHeat)))
+            {
+                var item = new VisualElement();
+                item.AddToClassList("hkey__item");
+
+                var chip = new VisualElement();
+                chip.AddToClassList("hkey__chip");
+                chip.AddToClassList(ServerRackCatalog.ClassFor(state));
+                item.Add(chip);
+
+                var word = new Label(Loc.T(ServerRackCatalog.KeyFor(state)));
+                word.AddToClassList("hkey__word");
+                item.Add(word);
+
+                // Both arguments are keys, never sentences: a card built from resolved copy
+                // freezes in the language it was built in, which is nine faults in this project.
+                InsightTip.AttachKeyed(item, ServerRackCatalog.KeyFor(state),
+                    ServerRackCatalog.KeyFor(state) + ".note");
+
+                key.Add(item);
+            }
+
+            return key;
         }
 
         // ---- the room ---------------------------------------------------------------------------

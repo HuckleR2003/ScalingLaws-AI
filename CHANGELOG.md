@@ -64,8 +64,31 @@ chart on COMPUTE. There is a floor now, and a test that holds it. The effect ico
 with nothing moved to make room, and the bar across the top reads like a set of figures rather
 than grey text with the money shouting over it.
 
+**The server room says what every cabinet is doing, in five colours.** A cabinet with nothing in
+it used to be drawn the same green as one working happily under its rating, so a half empty room
+read as a room that was fine and there was nothing to click. White is a cabinet producing nothing,
+light blue is one working with space for half as many cards again, green is normal, yellow is full
+output with no headroom left, and red is a cabinet past what it can cool and losing work you are
+still paying the power bill for. The key is printed above the floor, the cabinet you open carries
+the same band, and the corner banner reads the same word.
+
 ### Fixed
 
+- **A fan was cooling that cost nothing.** The cabinet panel said a fan takes a slot and it did,
+  right up until the next day: the nightly refill put a full set of cards back into the cabinet
+  around it, so the floor held as many accelerators with fans as without. The whole cooling trade,
+  one card given up for one fan, was never actually charged, and the catalog's own table promising
+  "3 cards + 1 fan" on a 2027 generation was describing a game the code was not playing. One
+  reading of how many cards a cabinet holds now, and everything asks it.
+- **The parts shop refused to sell without saying why.** Silicon for the room is bought at the
+  colocated tier, which asks for one shipped model and five million in the bank, so a company
+  handed the room at the end of the tutorial had every BUY button in the shop fail at the till.
+  The shop reads the gate now, says which condition is missing in the tier's own words, and the
+  buttons are off rather than dead.
+- **The corner banner's heat colour turned amber at a different load from the floor.** It compared
+  a ratio that had already been scaled to the throttling point against thresholds written for the
+  unscaled one. There is one palette now and one place that picks from it, and a test reads the
+  five colours back out of the stylesheet and compares them with the ones the room paints.
 - **There are only so many people.** The author said the user numbers felt wrong against how many
   people really use AI, and he was right, in the opposite direction: measured over a played
   campaign, the game's whole market reached 1.86 billion users at the end of 2024, 6.79 billion in
