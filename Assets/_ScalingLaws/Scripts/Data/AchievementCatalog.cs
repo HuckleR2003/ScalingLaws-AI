@@ -267,14 +267,27 @@ namespace ScalingLaws.Data
             // a starting balance.
             new(AchievementId.Cash1, "ACH_CASH_1", AchievementGroup.Cash, 1,
                 AchievementMetric.CashUsd, 25_000_000, "ach.cash1.name", "ach.cash1.note"),
+            // **Re-measured 2026-09-13 and moved for the second time.** The old ladder topped out
+            // at $500M because the best campaign anybody had run reached $71M; the probe that said
+            // so was a cruder operator than the ones there are now. Nine campaigns across three
+            // operators and three seeds peak between $2.10bn and $7.80bn, so every rung of the old
+            // ladder was cleared by every style, including the worst of them, with room to spare.
+            //
+            // The band is anchored on the disciplined one product line operator, which peaks at
+            // $2.94bn to $3.18bn and is the closest thing here to a competent player. The top rung
+            // sits above every script on purpose: a person does better than one of these, and the
+            // note in `CLAUDE.md` is the rule, that they do better but not seven hundred times
+            // better. **Re-measure with `DeepCampaignProbe` before moving any of these again**, and
+            // remember these are peaks: an achievement fires the moment a number is touched, and a
+            // company that reached three billion and spent it on a power station still earned it.
             new(AchievementId.Cash2, "ACH_CASH_2", AchievementGroup.Cash, 2,
-                AchievementMetric.CashUsd, 50_000_000, "ach.cash2.name", "ach.cash2.note"),
+                AchievementMetric.CashUsd, 250_000_000, "ach.cash2.name", "ach.cash2.note"),
             new(AchievementId.Cash3, "ACH_CASH_3", AchievementGroup.Cash, 3,
-                AchievementMetric.CashUsd, 75_000_000, "ach.cash3.name", "ach.cash3.note"),
+                AchievementMetric.CashUsd, 1_000_000_000, "ach.cash3.name", "ach.cash3.note"),
             new(AchievementId.Cash4, "ACH_CASH_4", AchievementGroup.Cash, 4,
-                AchievementMetric.CashUsd, 100_000_000, "ach.cash4.name", "ach.cash4.note"),
+                AchievementMetric.CashUsd, 3_000_000_000, "ach.cash4.name", "ach.cash4.note"),
             new(AchievementId.Cash5, "ACH_CASH_5", AchievementGroup.Cash, 5,
-                AchievementMetric.CashUsd, 500_000_000, "ach.cash5.name", "ach.cash5.note"),
+                AchievementMetric.CashUsd, 10_000_000_000, "ach.cash5.name", "ach.cash5.note"),
             new(AchievementId.Model1, "ACH_MODEL_1", AchievementGroup.Models, 1,
                 AchievementMetric.ReleasedModels, 1, "ach.model1.name", "ach.model1.note"),
             new(AchievementId.Model2, "ACH_MODEL_2", AchievementGroup.Models, 2,

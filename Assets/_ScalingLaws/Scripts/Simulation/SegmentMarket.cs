@@ -373,6 +373,52 @@ namespace ScalingLaws.Simulation
         /// Moves every audience one day toward what its buyers would prefer today, and returns the
         /// player's share of the whole market, which is what the rest of the simulation consumes.
         /// </summary>
+        /// <summary>
+        /// How much of a company's own catalogue competes with itself before it competes with
+        /// anybody else.
+        ///
+        /// **This closes the largest hole ever measured in this economy.** Every product on
+        /// sale added its own score into its owner's bucket and into the denominator, so a
+        /// company fielding three hundred products scored three hundred times over against
+        /// rivals fielding one. Measured across three seeds of fourteen years: an operator that
+        /// gave every release a name of its own finished with **339 products on sale, 221.8
+        /// million users and a peak of $127.7bn**, while the same operator keeping one product
+        /// line reached **24.4 million users and $3.1bn**. Forty one times the money for a
+        /// worse strategy.
+        ///
+        /// This file already fixed exactly this fault one level down, inside a line, and the
+        /// comment there says why: *a buyer choosing between your last four releases is not
+        /// four separate chances at their business.* Neither is a buyer choosing between your
+        /// four product lines.
+        ///
+        /// ### The shape, and why this one
+        ///
+        /// A nested logit, which is the standard way to say "these two things are closer
+        /// substitutes for each other than for the rest of the field". Within one owner and
+        /// one model type, scores combine as
+        ///
+        ///     bucket = (sum of score^(1/CatalogueNesting))^CatalogueNesting
+        ///
+        /// so `n` identical products are worth `n^CatalogueNesting` of one. At 1.0 the products
+        /// are independent, which is the behaviour being replaced; approaching 0 they are
+        /// perfect substitutes and breadth buys nothing at all.
+        ///
+        /// **0.35 is measured, not taste.** Two genuinely different products are worth 1.27 of
+        /// one, four are worth 1.62, and the three hundred and thirty nine above are worth 7.3
+        /// rather than 339. Shipping a second product still pays; shipping the same product
+        /// three hundred times does not.
+        ///
+        /// **A company with one product in a type is arithmetically untouched**, because
+        /// `(s^(1/L))^L` is `s`. So is every rival, all of which field one model. That is what
+        /// made this safe to change: it can only ever reduce a company that was being paid for
+        /// breadth it did not have.
+        ///
+        /// The nest is **owner and type together**, not owner alone. A coding model and a
+        /// general model are not the same product wearing two names, and the whole audience
+        /// system exists to say so. Specialising still pays; duplicating does not.
+        /// </summary>
+        public const double CatalogueNesting = 0.35;
+
         public double Advance(IReadOnlyList<MarketEntrant> entrants, GameDate date,
             double totalTokensPerDay, Awareness playerAwareness = null)
         {
@@ -419,8 +465,26 @@ namespace ScalingLaws.Simulation
                         continue;
                     }
 
-                    target[owner * typeCount + TypeIndex(entrants[entry].Type)] += score;
-                    sum += score;
+                    // Raised into the nest rather than added raw. See
+                    // <see cref="CatalogueNesting"/>: this is the half of a nested logit that
+                    // runs inside one owner and one type, and the bucket is brought back out
+                    // of it below.
+                    target[owner * typeCount + TypeIndex(entrants[entry].Type)] +=
+                        Math.Pow(score, 1.0 / CatalogueNesting);
+                }
+
+                // Out of the nest, one bucket at a time, and only now into the denominator.
+                // Summing the raw scores above is what paid a company for having three hundred
+                // of the same product.
+                for (var bucket = 0; bucket < target.Length; bucket++)
+                {
+                    if (target[bucket] <= 0.0)
+                    {
+                        continue;
+                    }
+
+                    target[bucket] = Math.Pow(target[bucket], CatalogueNesting);
+                    sum += target[bucket];
                 }
 
                 // The audience always has the option of buying nothing, and it competes with the

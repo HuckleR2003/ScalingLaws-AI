@@ -98,6 +98,20 @@ namespace ScalingLaws.Editor
             Debug.Log(report.ToString());
         }
 
+        /// <summary>The largest share any one company holds of the people being served.</summary>
+        private static double LeaderShare(CompanySimulation simulation)
+        {
+            var breakdown = simulation.MarketByType();
+            var best = 0.0;
+
+            for (var owner = 0; owner < breakdown.OwnerUsersOverall.Count; owner++)
+            {
+                best = Math.Max(best, breakdown.OverallShareOf(owner));
+            }
+
+            return best;
+        }
+
         private static void RunOne(int seed, StringBuilder report)
         {
             var simulation = new CompanySimulation(new CompanyState("Prometheus AI", (uint)seed));
@@ -206,18 +220,27 @@ namespace ScalingLaws.Editor
                         + "rep {5:0.00}  nodes {6,2}  live {7,3}  load {8,5:P0}  ms {9,5:0}  "
                         + "marketed {10,3}  WORLD {11,15:N0}  our share {12,6:P1}  "
                         + "kW {13,9:N0}  power/day {14,12}  = {15,6:P1} of fleet, "
-                        + "fleet {16,12}/day, revenue {17,12}/day",
+                        + "fleet {16,12}/day, revenue {17,12}/day, "
+                        + "SERVED {18,15:N0} of the world, unserved {19,6:P1}, leader {20,6:P1}",
                         state.Date, Money(state.CashUsd), state.BestCapability,
                         rank.Position, standing.Subscribers, state.Reputation,
                         state.UnlockedResearch.Count, state.DeployedModels.Count,
                         state.LastQuality.Utilisation, state.LastQuality.ResponseMilliseconds,
                         simulation.MarketedModels().Count,
-                        simulation.MarketByType().TotalUsersOverall,
+                        simulation.MarketByType().AddressableUsers,
                         simulation.MarketByType().OverallShareOf(0),
                         fleet.PowerDrawKilowatts,
                         Money((long)fleet.Bill.ElectricityUsd), powerShare,
                         Money((long)fleet.Bill.TotalUsd),
-                        Money((long)(standing.MonthEarningsUsd / 30.0))));
+                        Money((long)(standing.MonthEarningsUsd / 30.0)),
+
+                        // **Who actually holds the people, against how many people there are.**
+                        // The five year guard reads the player's share of all demand and nothing
+                        // said how much of that demand anybody at all was serving, so a share of
+                        // nothing and a share of everything looked the same.
+                        simulation.MarketByType().TotalUsersOverall,
+                        simulation.MarketByType().UnservedShare,
+                        LeaderShare(simulation)));
                 }
             }
 

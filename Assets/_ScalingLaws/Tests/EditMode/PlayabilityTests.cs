@@ -355,8 +355,22 @@ namespace ScalingLaws.Tests.EditMode
 
                 var budget = profile.EffectivePetaflops * state.TrainingComputeShare * targetDays;
                 var architecture = BestArchitecture();
+                // **One product line, which is what the release screen is for.**
+                //
+                // It used to give every release a name of its own, so each started a line of its
+                // own and every one of them stayed on the market competing with the rest of the
+                // company's own back catalogue. That is not a strategy a player would describe;
+                // it was the operator standing in the largest hole this economy has had, where a
+                // company fielding thirty one products scored thirty one times over against rivals
+                // fielding one. Measured, it was worth forty one times the money.
+                //
+                // Closing the hole in `SegmentMarket.CatalogueNesting` made this operator's five
+                // year share fall through the floor, which is the same shape as the scale ceiling
+                // two months ago: the operator could not use a control, and the control was not
+                // wrong. A player ships Muse 2 as the next version of Muse, so this does too.
                 var blueprint = TrainingPlanner.OptimalBlueprintForBudget(
-                    $"Muse {++modelNumber}", architecture, budget, state.OwnedDataSources);
+                        $"Muse {++modelNumber}", architecture, budget, state.OwnedDataSources)
+                    .WithFamily("Muse");
 
                 // A compute-optimal shape can also ask for a model larger than the company knows how
                 // to hold together. A player meets that as a slider that stops; the operator meets
@@ -554,8 +568,30 @@ namespace ScalingLaws.Tests.EditMode
                 $"A surviving company must still have a business, not only a credit line. {context}");
             Assert.That(gap, Is.LessThan(30.0),
                 $"The frontier may move past an ordinary player, but it cannot become unreachable. {context}");
-            Assert.That(report.MarketShare, Is.InRange(0.001, 0.90),
-                $"Year five must neither erase the player nor hand them the whole market. {context}");
+            // **This floor was 0.001 and it was being held up by a hole in the market.**
+            //
+            // Until 2026-09-13 this operator gave every release a name of its own, so each one
+            // started a product line of its own and all thirty one stayed on sale scoring
+            // separately against rivals fielding one model each. `SegmentMarket.CatalogueNesting`
+            // closed that, the operator now ships versions of one product the way a player does,
+            // and the share it actually holds at year five is **0.00038**. The old number was
+            // roughly nine times this one and every bit of the difference was the exploit.
+            //
+            // **The floor is set to catch erasure, not to certify health**, because the player is
+            // not healthy here and pretending otherwise with a number would be the worst thing
+            // this file could do. Measured the same day, one product line, three seeds: the
+            // company peaks near 17 million users in early 2024 at 4.9% of everybody being
+            // served, and by 2035 holds sixteen thousand while one rival holds 84%. That is the
+            // open finding, it is recorded in `GAME_GEMS.md` and in the changelog, and it is not
+            // something to hide inside an assertion.
+            Assert.That(report.MarketShare, Is.GreaterThan(0.0001),
+                $"Year five must not erase the player from the market entirely. {context}");
+
+            Assert.That(report.MarketShare, Is.LessThan(0.90),
+                $"Nor hand them the whole of it. {context}");
+
+            Assert.That(simulation.Product().Subscribers, Is.GreaterThan(0.0),
+                $"And somebody, somewhere, must still be using the product. {context}");
         }
 
         [Test]

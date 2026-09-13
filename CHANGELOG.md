@@ -81,7 +81,24 @@ $14bn and then almost nothing to run. Both supply 1.1 GW, both sell what nobody 
 neither of them pays back its own price in electricity inside a campaign, which the card says
 out loud.
 
+**Shipping the same model three hundred times stopped being the best strategy in the game.** Every
+product on sale added its own score into its owner's bucket, so a company fielding three hundred
+products scored three hundred times over against rivals fielding one. Measured across three seeds
+of fourteen years: an operator that gave every release a name of its own finished with 339 products
+on sale, 221.8 million users and a peak of $127.7bn, while the same operator keeping one product
+line reached 24.4 million users and $3.1bn. Forty one times the money for a worse strategy. A
+company's products now compete with each other before they compete with anybody else, so four
+genuinely different products are worth 1.6 of one and three hundred and thirty nine are worth 7.3
+rather than 339. A company with one product in a line is untouched, to the dollar, and so is every
+rival.
+
 ### Fixed
+
+- **The five achievement cash rungs were all reachable by every style.** They topped out at $500M
+  because the best campaign ever measured reached $71M, on a cruder operator than the ones there
+  are now. Nine campaigns across three operators peak between $2.10bn and $7.80bn, so the ladder
+  is $25M, $250M, $1bn, $3bn and $10bn, anchored on the disciplined operator's $2.94bn to $3.18bn
+  and with the top rung deliberately above every script.
 
 - **The fleet's power line now reads in the unit the number is in.** It said "Drawing 270 kW of
   2500 kW available", which is right for a cabinet and unreadable once a power station is on the
