@@ -849,7 +849,8 @@ namespace ScalingLaws.UI
             // founder spawns so they walk into the floor the company is actually renting rather
             // than into the garage it left three years ago.
             portals = new HiringPortals(() => state, simulation, () => Show(Screen.Hiring),
-                () => Show(Screen.Mail));
+                () => Show(Screen.Mail),
+                (title, note) => startedNotice?.Show(title, note));
 
             phone = new PhonePanel(root, AnswerTheCousin, () => simulation)
             {
@@ -1671,6 +1672,26 @@ namespace ScalingLaws.UI
             personCard = null;
 
             researchCard?.RemoveFromHierarchy();
+
+            // **And the two cards that sit on the shell rather than on the page.**
+            //
+            // Reported plainly: click a job in TEAM, press HIRE NOW, choose EMPLOYMENT AGENCY, and
+            // the job card is still there over the hiring screen with its own HIRE NOW on it. It
+            // was never taken down, because the only things that closed it were its own cross and
+            // its own veil, and choosing an agency is neither. A card about a job on the team
+            // screen has no business surviving the walk to another screen.
+            //
+            // Only on an actual screen change. `Show(current)` is the day rollover, and taking a
+            // card down every simulated day would close the one the player is reading about once
+            // a second and a half.
+            if (changed)
+            {
+                rosterCard?.RemoveFromHierarchy();
+                rosterCard = null;
+
+                hiringChoice?.RemoveFromHierarchy();
+                hiringChoice = null;
+            }
 
             hud.SetActiveSlot(screen);
 

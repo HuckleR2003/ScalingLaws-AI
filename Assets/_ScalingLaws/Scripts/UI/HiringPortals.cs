@@ -46,6 +46,17 @@ namespace ScalingLaws.UI
         private readonly Action refresh;
         private readonly Action openMail;
 
+        /// <summary>
+        /// Says something happened, across the top of the screen.
+        ///
+        /// **Writing to somebody looked exactly like nothing.** The candidate left the shortlist,
+        /// which is correct and which a player reads as the row having vanished, and the reply
+        /// arrives in the inbox two to four days later with nothing in between to say it is
+        /// coming. Same notice the upgrade screen raises when a programme starts, for the same
+        /// reason: an action with a delay has to confirm itself at the moment it is taken.
+        /// </summary>
+        private readonly Action<string, string> announce;
+
         private readonly Dictionary<HireSource, List<Candidate>> shortlists = new();
 
         private PlayerSkill chosen = PlayerSkill.Development;
@@ -53,12 +64,13 @@ namespace ScalingLaws.UI
         private string problem = string.Empty;
 
         public HiringPortals(Func<CompanyState> state, CompanySimulation simulation, Action refresh,
-            Action openMail)
+            Action openMail, Action<string, string> announce = null)
         {
             this.state = state;
             this.simulation = simulation;
             this.refresh = refresh;
             this.openMail = openMail;
+            this.announce = announce;
         }
 
         /// <summary>Which site is open. Set by the shell before it asks for a page.</summary>
@@ -496,6 +508,14 @@ namespace ScalingLaws.UI
                     {
                         pair.Value.Remove(candidate);
                     }
+
+                    // **The window comes from the rule that rolls it**, not from a sentence. Every
+                    // route into hiring waits the same two to four days and no screen is allowed
+                    // to quietly promise a faster one.
+                    announce?.Invoke(Loc.T("hire.written.title"),
+                        Loc.T("hire.written.note", candidate.Name,
+                            HiringChannels.FastestContactDays,
+                            HiringChannels.SlowestContactDays));
                 }
 
                 refresh();

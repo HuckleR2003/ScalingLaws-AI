@@ -92,6 +92,14 @@ namespace ScalingLaws.UI
         private Typewriter menuTypist;
         private Button introContinue;
         private bool introHookShown;
+
+        /// <summary>
+        /// Whether the sentence between the opening and the film has been got past.
+        ///
+        /// Two things can end it, the timer and a click, and whichever arrives first has to stop
+        /// the other starting the film a second time.
+        /// </summary>
+        private bool introHookDone;
         private VideoPlayer introFilm;
         private bool introFilmPlayed;
 
@@ -692,7 +700,13 @@ namespace ScalingLaws.UI
 
             column.Add(skip);
 
-            column.RegisterCallback<ClickEvent>(_ => FinishTypingNow());
+            // **On the whole screen, not on the column.** The column is 760 pixels wide in the
+            // middle of a black window, so a click anywhere else, which is most of the screen and
+            // where most people click, landed on nothing. Reported as the opening not always
+            // skipping. `ClickEvent` bubbles, so the buttons inside still get their own press
+            // first and this runs as well, which is harmless: finishing the typing before
+            // CONTINUE does its job is what CONTINUE wanted anyway.
+            root.RegisterCallback<ClickEvent>(_ => FinishTypingNow());
 
             PrepareIntroFilm();
 
@@ -812,9 +826,27 @@ namespace ScalingLaws.UI
             var typed = 0;
             var full = Loc.T("intro.hook");
 
+            // **A click anywhere goes straight to the film.** This sentence types itself, waits two
+            // seconds and fades, and there was nothing at all a player could do to it. Asked for
+            // by name alongside the opening and the film: wherever you click, it is skipped.
+            //
+            // `introHookDone` rather than a stopped schedule, because two things can finish this:
+            // the timer that was always there and the click that was not, and whichever arrives
+            // first has to stop the other from starting the film a second time.
+            root.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (introHookDone)
+                {
+                    return;
+                }
+
+                introHookDone = true;
+                StartIntroFilm();
+            });
+
             hook.schedule.Execute(() =>
             {
-                if (typed >= full.Length)
+                if (introHookDone || typed >= full.Length)
                 {
                     return;
                 }
@@ -828,6 +860,12 @@ namespace ScalingLaws.UI
                     // the timing lives beside the look rather than in two places.
                     hook.schedule.Execute(() =>
                     {
+                        if (introHookDone)
+                        {
+                            return;
+                        }
+
+                        introHookDone = true;
                         root.AddToClassList("intro-hook-out");
                         root.schedule.Execute(StartIntroFilm).ExecuteLater(700);
                     }).ExecuteLater(2000);
@@ -857,6 +895,12 @@ namespace ScalingLaws.UI
             skip.AddToClassList("button");
             skip.AddToClassList("intro-skip");
             root.Add(skip);
+
+            // **And the whole screen is the skip.** The button in the corner was the only way out
+            // of the film, and a player who wants past a cut scene clicks the middle of it.
+            // `FinishIntroFilm` returns unless the game is still on the intro stage, so pressing
+            // the button, which also bubbles to here, cannot run it twice.
+            root.RegisterCallback<ClickEvent>(_ => FinishIntroFilm());
 
             introFilm.loopPointReached += _ => FinishIntroFilm();
             introFilm.errorReceived += (_, message) =>

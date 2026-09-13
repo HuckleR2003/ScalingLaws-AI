@@ -112,6 +112,25 @@ screen where the money is committed.
 
 ### Fixed
 
+- **The opening only skipped if you clicked the words.** The click that finishes the typing was
+  registered on the 760px column in the middle of a black window, so clicking anywhere else, which
+  is most of the screen, landed on nothing. The sentence between the opening and the film had no
+  way past it at all, and the film could only be skipped from the button in its corner. All three
+  go on a click anywhere now.
+- **The job card stayed on screen after you chose where to look.** Click a job in TEAM, press HIRE
+  NOW, choose EMPLOYMENT AGENCY, and the job card was still there over the hiring screen with its
+  own HIRE NOW on it. It was only ever closed by its own cross and its own veil, and walking to
+  another screen is neither.
+- **Writing to a candidate looked exactly like nothing.** They leave the shortlist, which is right
+  and which reads as the row vanishing, and the reply lands in the inbox days later. A line across
+  the top now says who was written to and that they answer in two to four days, which are the
+  numbers the rule actually rolls.
+- **The two corpora with a price on them and nothing behind it.** Every corpus is opened by a
+  research node that grants it on completion, so the money can never buy one: before the node it
+  is refused and after it the company already owns it. The price is drawn flat, the way the
+  architecture families and the announced offices already are, and the line above it names the
+  node. Third time this shape has been found here.
+
 - **NEW MODEL dropped you on the last page of the creator.** Pressing it, or DESIGN A MODEL on an
   empty release screen, opened AFTER THE RUN, which is the end of a form nobody had filled in. The
   creator still remembers where it was left when you walk back in from the bottom bar, because

@@ -2477,10 +2477,31 @@ namespace ScalingLaws.UI
             words.Add(note);
             row.Add(words);
 
-            // **A refused purchase needs no message of its own.** The rebuild redraws this row,
-            // and the row's second line is already `CanAcquireDataSource`'s reason, so the answer
-            // lands exactly where the player was looking. A panel-level line would also have been
-            // wiped by `Reprice`, which owns the verdict.
+            // **The price is drawn flat when it cannot be paid**, exactly as the architecture
+            // rows already do, and for the same reason.
+            //
+            // Reported plainly: *there is a price on the right and nothing happens with it.* Every
+            // corpus is gated by a research node that grants it on completion, so before the node
+            // the money cannot buy it and after the node the company already owns it. A priced
+            // button that is disabled for the whole campaign reads as something broken rather than
+            // as something waiting, which is the shape this project has now shipped three times:
+            // the announced offices, the architecture families, and this.
+            //
+            // The row's second line is already `CanAcquireDataSource`'s own reason, so it names
+            // the node without a second reading of the same five conditions.
+            if (!buyable)
+            {
+                var price = new Label(UiFormat.Money(definition.AcquisitionCostUsd));
+                price.AddToClassList("corpus-row__price");
+                row.Add(price);
+
+                return row;
+            }
+
+            // Still built for the case that is real: a campaign saved before research delivered its
+            // own unlocks holds the node and not the corpus, and this is its way back to what it
+            // has already paid for. A refused purchase needs no message of its own, because the
+            // rebuild redraws this row and the second line is the answer.
             var buy = new Button(() =>
             {
                 simulation.TryAcquireDataSource(definition.Flag, out _);
@@ -2492,7 +2513,6 @@ namespace ScalingLaws.UI
             };
 
             buy.AddToClassList("corpus-row__buy");
-            buy.SetEnabled(buyable);
             row.Add(buy);
 
             return row;
