@@ -1200,6 +1200,11 @@ namespace ScalingLaws.Data
             ["tech.instalment.affects"] = "The daily burn, from the day the loan lands until the day it is settled. Both are charged whether or not the quarter went well.",
             ["tech.instalment.high"] = "You borrowed a lot, so you can do something big right now. The bill arrives every month for years and does not care what you did with the money.",
             ["tech.instalment.low"] = "Almost nothing owed, which is freedom, and it also means you are building at the speed your own revenue allows.",
+            ["tech.sitepower.title"] = "SITE POWER",
+            ["tech.sitepower.what"] = "Everything this company is physically allowed to draw. Renting adds none of it; a colocation contract supplies 2,500 kW, your own datacenter 40,000, and a power station 1.1 GW.",
+            ["tech.sitepower.affects"] = "Whether an accelerator purchase is accepted at all. A batch that would take the fleet past this line is refused, whatever is in the bank.",
+            ["tech.sitepower.high"] = "Room to grow into, paid for in advance. A datacenter or a station is capital that earns nothing until the cluster that needs it exists.",
+            ["tech.sitepower.low"] = "Nothing idle, and a wall you will meet without warning. A company that owns its silicon reaches the colocation ceiling in about three years.",
             ["tech.petaflop.title"] = "PETAFLOP-DAY",
             ["tech.petaflop.what"] = "The unit training is measured in, the way a builder measures in man-days. One petaflop-day is a machine doing a thousand million million sums a second, for a day.",
             ["tech.petaflop.affects"] = "How long a run takes and what it costs. A model needs a fixed number of these, so twice the fleet is half the wait and the same bill.",
@@ -1551,7 +1556,7 @@ namespace ScalingLaws.Data
 
             // ---- the server room, the racks and the cooling ------------------------------------------
             ["room.title"] = "SERVER ROOM",
-            ["compute.power_draw"] = "Drawing {0} kW of {1} kW available.",
+            ["compute.power_draw"] = "Drawing {0} of the {1} this site supplies.",
             ["compute.over_budget"] = "  OVER BUDGET: capacity is being wasted.",
             ["regulatory.underway"] = "Inspection and clarification underway...   {0} left",
             ["manage.on_sale_now"] = "ON SALE NOW: {0}",
@@ -4259,6 +4264,11 @@ namespace ScalingLaws.Data
             ["tech.instalment.affects"] = "Dzienny koszt, od dnia wypłaty kredytu do dnia spłaty. Oba są pobierane niezależnie od tego, jaki był kwartał.",
             ["tech.instalment.high"] = "Pożyczka jest duża, więc możesz zrobić teraz coś dużego. Rachunek przychodzi co miesiąc przez lata i nie interesuje go, na co poszły pieniądze.",
             ["tech.instalment.low"] = "Prawie nic nie wisisz, czyli wolność, i to też znaczy, że budujesz w tempie, na jakie pozwala twój własny przychód.",
+            ["tech.sitepower.title"] = "MOC PRZYŁĄCZA",
+            ["tech.sitepower.what"] = "Wszystko, co ta firma może fizycznie pobrać. Wynajem nie dodaje nic; umowa kolokacyjna daje 2500 kW, własne centrum danych 40 000, a elektrownia 1,1 GW.",
+            ["tech.sitepower.affects"] = "To, czy zakup akceleratorów w ogóle przejdzie. Partia, która przekroczyłaby tę linię, zostaje odrzucona, choćby na koncie było wszystko.",
+            ["tech.sitepower.high"] = "Zapas na przyszłość, opłacony z góry. Centrum danych albo elektrownia to kapitał, który nic nie zarabia, dopóki nie powstanie klaster, dla którego był.",
+            ["tech.sitepower.low"] = "Nic nie stoi bezczynnie i ściana, na którą wpadniesz bez ostrzeżenia. Firma z własnym sprzętem dochodzi do sufitu kolokacji w jakieś trzy lata.",
             ["tech.petaflop.title"] = "PETAFLOP-DZIEŃ",
             ["tech.petaflop.what"] = "Jednostka, w której mierzy się trening, tak jak budowlaniec mierzy w roboczodniówkach. Jeden petaflop-dzień to maszyna licząca tysiąc bilionów działań na sekundę, przez dobę.",
             ["tech.petaflop.affects"] = "Ile trwa trening i ile kosztuje. Model potrzebuje ich ustalonej liczby, więc dwa razy większa flota to o połowę krótsze czekanie i ten sam rachunek.",
@@ -4610,7 +4620,7 @@ namespace ScalingLaws.Data
 
             // ---- the server room, the racks and the cooling ------------------------------------------
             ["room.title"] = "SERWEROWNIA",
-            ["compute.power_draw"] = "Pobór {0} kW z dostępnych {1} kW.",
+            ["compute.power_draw"] = "Pobór {0} z {1}, które daje to przyłącze.",
             ["compute.over_budget"] = "  PONAD LIMIT: moc się marnuje.",
             ["regulatory.underway"] = "Trwa kontrola i wyjaśnienia...   zostało {0}",
             ["manage.on_sale_now"] = "W SPRZEDAŻY: {0}",

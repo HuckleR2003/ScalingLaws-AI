@@ -116,31 +116,10 @@ namespace ScalingLaws.UI
             UiParts.ExplainHeading(ladderHeading, TechNotes.PetaflopDay);
             ladder.Add(ladderHeading);
 
-            // **The ceiling, before the ladder, because nobody knew it was there.** Measured over
-            // nine scripted campaigns: a company that buys its own accelerators stops growing at
-            // 2,500 kW at the end of its third year and stays there for eleven, and the only
-            // notice it ever got was a purchase being refused. A line that says what the site
-            // supplies and what it is already drawing turns a wall into a plan.
-            var supply = simulation.SitePowerCapacityKilowatts();
-
-            var powerRow = new VisualElement();
-            powerRow.AddToClassList("readout");
-            powerRow.Add(new Label(Loc.T("plant.ceiling")));
-
-            var powerValue = new Label(supply > 0.0
-                ? UiFormat.Kilowatts(simulation.Profile.PowerDrawKilowatts)
-                    + "  /  " + UiFormat.Kilowatts(supply)
-                : Loc.T("plant.ceiling.empty"));
-
-            powerValue.AddToClassList("readout__value");
-
-            // Amber past four fifths, because the next purchase is the one that gets refused.
-            powerValue.EnableInClassList("readout__value--warn",
-                supply > 0.0 && simulation.Profile.PowerDrawKilowatts > supply * 0.80);
-
-            powerRow.Add(powerValue);
-            InsightTip.AttachKeyed(powerRow, "plant.ceiling", "plant.ceiling.note");
-            ladder.Add(powerRow);
+            // **The ceiling is not printed here.** It was, for about an hour, and it was a second
+            // copy: the bill panel at the top of this same screen has said "Drawing X of the Y
+            // this site supplies" since it was written. Two statements of one fact on one screen
+            // is the disagreement with a date on it, and the older one is in the better place.
 
             foreach (var status in state.ComputeTierLadder())
             {

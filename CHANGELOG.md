@@ -83,6 +83,12 @@ out loud.
 
 ### Fixed
 
+- **The fleet's power line now reads in the unit the number is in.** It said "Drawing 270 kW of
+  2500 kW available", which is right for a cabinet and unreadable once a power station is on the
+  site: the same sentence would have printed 1100000 kW. It turns amber at four fifths of the
+  supply, which is where the next purchase is the one that gets refused, and the card beside it
+  says what the ceiling is and what lifts it.
+
 - **SAVE said nothing at all.** It wrote the file and moved not one pixel, so the only way to find
   out whether a campaign had been saved was to quit and look, which is the one moment a player
   cannot afford to be wrong about it. Both the button and the autosave put a line under the top bar

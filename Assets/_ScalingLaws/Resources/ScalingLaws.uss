@@ -19452,3 +19452,10 @@
     color: rgb(245, 240, 234);
     background-color: rgb(198, 74, 66);
 }
+
+/* The draw against what the site supplies, with the card that says what lifts it. A row so the
+   badge sits on the line rather than under it. */
+.fleet-bill__powerrow {
+    flex-direction: row;
+    align-items: center;
+}

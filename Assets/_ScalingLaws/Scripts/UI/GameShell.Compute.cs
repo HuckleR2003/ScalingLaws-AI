@@ -515,15 +515,45 @@ namespace ScalingLaws.UI
             legend.Add(BillKey(Loc.T("bill.upkeep"), profile.Bill.MaintenanceUsd, FleetBillBar.UpkeepColour));
             block.Add(legend);
 
-            // Power is the one that can stop the fleet rather than only cost money.
+            // **Power is the one that can stop the fleet rather than only cost money**, and
+            // nine measured campaigns say it does: a company that buys its own accelerators stops
+            // growing here at the end of its third year and the only notice it ever got was a
+            // purchase being refused. So the line turns amber at four fifths, which is where the
+            // next purchase is the one that gets turned down, and the card beside it says what the
+            // number is and what lifts it.
+            //
+            // Through `UiFormat.Kilowatts` rather than a raw figure with "kW" in the phrase: a
+            // power station is 1.1 GW and that same sentence would have read "1100000 kW".
+            var tight = !profile.IsOverPowerBudget
+                && profile.PowerCapacityKilowatts > 0.0
+                && profile.PowerDrawKilowatts > profile.PowerCapacityKilowatts * 0.80;
+
+            var powerRow = new VisualElement();
+            powerRow.AddToClassList("fleet-bill__powerrow");
+
             var power = new Label(
-                Loc.T("compute.power_draw", UiFormat.Number(profile.PowerDrawKilowatts, 0),
-                    UiFormat.Number(profile.PowerCapacityKilowatts, 0))
+                Loc.T("compute.power_draw",
+                    UiFormat.Kilowatts(profile.PowerDrawKilowatts),
+                    UiFormat.Kilowatts(profile.PowerCapacityKilowatts))
                 + (profile.IsOverPowerBudget ? Loc.T("compute.over_budget") : string.Empty));
 
             power.AddToClassList("fleet-bill__power");
-            power.EnableInClassList("fleet-bill__power--over", profile.IsOverPowerBudget);
-            block.Add(power);
+            power.EnableInClassList("fleet-bill__power--over",
+                profile.IsOverPowerBudget || tight);
+
+            powerRow.Add(power);
+
+            // A whole reading, not a sentence with three empty bands. `InfoCoverageTests` opens
+            // every badge on every screen and fails one that comes up half filled, which is what
+            // the first version of this was.
+            powerRow.Add(InsightTip.InfoBadge(TechNotes.SitePower.Title,
+                new InsightTip.Reading(
+                    TechNotes.SitePower.What,
+                    TechNotes.SitePower.Affects,
+                    TechNotes.SitePower.High,
+                    TechNotes.SitePower.Low)));
+
+            block.Add(powerRow);
 
             return block;
         }

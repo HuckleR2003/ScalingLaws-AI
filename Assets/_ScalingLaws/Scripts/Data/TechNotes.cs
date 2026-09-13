@@ -108,6 +108,11 @@ namespace ScalingLaws.Data
 
         public static Note PetaflopDay => From("tech.petaflop");
 
+        /// <summary>
+        /// What the company is allowed to draw, which is the ceiling a fleet actually stops at.
+        /// </summary>
+        public static Note SitePower => From("tech.sitepower");
+
         public static Note RentOrOwn => From("tech.rentbuy");
 
         public static Note ReservedCapacity => From("tech.reserved");
