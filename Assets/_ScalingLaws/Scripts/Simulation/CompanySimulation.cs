@@ -3165,6 +3165,37 @@ namespace ScalingLaws.Simulation
         /// Nobody is hired here. This opens a conversation that answers in two to four days, and
         /// the letter it produces is where the money is agreed.
         /// </summary>
+        /// <summary>
+        /// Hands over the cousin's favour to somebody who skipped his tour, and writes to say so.
+        ///
+        /// **Reported plainly: skipping the tutorial loses the free node and the task list still
+        /// says to start researching.** The favour is granted on the step where he offers it, so a
+        /// player who pressed SKIP on the first screen never reached it, walked into RESEARCH
+        /// being told they needed points they had no way to have, and had nothing to click.
+        ///
+        /// The letter is the whole of the design the author asked for: one message from Emil about
+        /// somebody owing him. It is mail rather than a notice across the top because it is waiting
+        /// when the player gets to the research screen rather than three screens ago, and because
+        /// mail is already saved, so this needs no field of its own and no migration.
+        ///
+        /// Idempotent, through the same `FavourGranted` flag the tour uses. Skipping twice is not
+        /// two favours, and skipping after taking it is not a second one.
+        /// </summary>
+        public bool TryGiveTheSkippedFavour()
+        {
+            if (!State.Guide.GrantFavourNow())
+            {
+                return false;
+            }
+
+            State.Mail.Add(MailKind.Notice, State.Date,
+                Loc.T("guide.name"),
+                Loc.T("guide.favour.subject"),
+                Loc.T("guide.favour.body"));
+
+            return true;
+        }
+
         public string TryApproach(Candidate candidate)
         {
             if (candidate == null)

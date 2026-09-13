@@ -886,6 +886,14 @@ namespace ScalingLaws.UI
                 () => Show(current),
                 AlreadyDone);
 
+            guide.skippedTheTour = () =>
+            {
+                if (simulation.TryGiveTheSkippedFavour())
+                {
+                    RefreshChrome();
+                }
+            };
+
             // **Once, and only for the room.** The basement is reached from one icon on the site
             // rail and nothing else in the game points at it, so a player who has just been walked
             // through it would have to go looking.

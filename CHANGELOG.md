@@ -112,6 +112,12 @@ screen where the money is committed.
 
 ### Fixed
 
+- **Skipping the tutorial cost you the free research node.** The cousin hands it over on the step
+  where he offers it, so pressing SKIP on the first screen walked past it: the task list went on
+  saying to start researching, the tree said it needed points a new company cannot have, and there
+  was nothing to click. He writes instead, one letter, saying a lab two streets over owes him a
+  favour and the first node is on them.
+
 - **The opening only skipped if you clicked the words.** The click that finishes the typing was
   registered on the 760px column in the middle of a black window, so clicking anywhere else, which
   is most of the screen, landed on nothing. The sentence between the opening and the film had no

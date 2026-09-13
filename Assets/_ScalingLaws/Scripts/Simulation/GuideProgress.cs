@@ -126,14 +126,30 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public bool GrantGiftsUpTo(int stepIndex)
         {
-            if (FavourGranted)
+            var gift = GuideScript.IndexOf(GuideScript.GiftStepId);
+
+            if (gift < 0 || stepIndex < gift)
             {
                 return false;
             }
 
-            var gift = GuideScript.IndexOf(GuideScript.GiftStepId);
+            return GrantFavourNow();
+        }
 
-            if (gift < 0 || stepIndex < gift)
+        /// <summary>
+        /// Hands the favour over regardless of which step the tour reached.
+        ///
+        /// **For the player who skips.** The gift used to be reachable only by walking to the step
+        /// that offers it, so pressing SKIP on the first screen lost it, and the task list went on
+        /// telling that player to start researching with no way to pay for it.
+        ///
+        /// The same `FavourGranted` latch guards both routes, so a player who skips after taking it
+        /// is not given a second one, and the tour reaching the step after a skip hands over
+        /// nothing new.
+        /// </summary>
+        public bool GrantFavourNow()
+        {
+            if (FavourGranted)
             {
                 return false;
             }

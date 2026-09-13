@@ -86,6 +86,14 @@ namespace ScalingLaws.UI
         /// <summary>Opens the basement. Set by the shell, because only it can move money.</summary>
         public Action handOverBasement;
 
+        /// <summary>
+        /// Hands over the cousin's favour to somebody who never walked to the step that offers it.
+        ///
+        /// Set by the shell, for the same reason the basement is: this ends in a letter and a
+        /// promise the company has to keep, and neither belongs to an overlay.
+        /// </summary>
+        public Action skippedTheTour;
+
         /// <summary>One extra button a step may offer, or null. Set by the shell.</summary>
         public Func<GuideStep, GuideOffer?> offerFor;
 
@@ -1102,6 +1110,12 @@ namespace ScalingLaws.UI
             }
 
             var state = progress();
+
+            // **Skipping used to cost the player the free node.** The favour is handed over at the
+            // step where he offers it, so pressing SKIP on the first screen walked past it, and
+            // the task list went on saying to start researching against a tree where nothing was
+            // affordable. He writes instead.
+            skippedTheTour?.Invoke();
 
             state.Stage = GuideStage.Finished;
 

@@ -804,6 +804,9 @@ namespace ScalingLaws.Data
             ["trait.ecosystem.desc"] = "SDKs, integrations, everyone else building on top of you. Slow to grow and slow to lose.",
 
             // ---- Emil, the phone and the tour --------------------------------------------------------
+            ["guide.name"] = "Emil",
+            ["guide.favour.subject"] = "Somebody owes me one",
+            ["guide.favour.body"] = "You did not want the tour, fair enough.\n\nThere is a lab two streets over that owes me a favour from years ago, and I have just called it in. Your first research node is on them: no points, no invoice, and it is done in a week instead of four months.\n\nOpen RESEARCH and start whichever one you like. After that you are paying like everybody else.",
             ["guide.cousin.name"] = "Emil",
             ["guide.cousin.handle"] = "Emil bro",
             ["guide.cousin.relation"] = "Cousin :3",
@@ -3876,6 +3879,9 @@ namespace ScalingLaws.Data
             ["trait.ecosystem.desc"] = "SDK, integracje, wszyscy budujący na tobie. Wolno rośnie i wolno się traci.",
 
             // ---- Emil, the phone and the tour --------------------------------------------------------
+            ["guide.name"] = "Emil",
+            ["guide.favour.subject"] = "Ktoś jest mi winien przysługę",
+            ["guide.favour.body"] = "Nie chciało ci się oprowadzania, spoko.\n\nDwie ulice dalej jest laboratorium, które jest mi winne przysługę sprzed lat, i właśnie po nią sięgnąłem. Pierwszy węzeł badań idzie na ich koszt: zero punktów, zero faktury, i robi się w tydzień zamiast w cztery miesiące.\n\nWejdź w BADANIA i zacznij dowolny. Potem płacisz jak każdy.",
             ["guide.cousin.name"] = "Emil",
             ["guide.cousin.handle"] = "Emil ziomek",
             ["guide.cousin.relation"] = "Kuzyn :3",
