@@ -509,6 +509,41 @@ namespace ScalingLaws.Tests.PlayMode
             yield return Capture(screen.Build(), "cabinets.png");
         }
 
+        /// <summary>
+        /// The silicon shop.
+        ///
+        /// **The screen this was reported about.** The parts could not be browsed from the room
+        /// they go in, and a shop is judged on whether two rows can be compared at a glance, which
+        /// is a thing only a picture can answer.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheSiliconShopDraws()
+        {
+            var simulation = Campaign();
+            simulation.State.CashUsd = 900_000_000L;
+
+            // Far enough in that most of the catalogue has shipped, or the shop is three rows and
+            // the sorting it is here to show has nothing to sort.
+            simulation.State.Date = GameDate.FromCalendar(2029, 6, 1);
+
+            var shop = new PartsShop(simulation, () => { });
+            shop.Refresh();
+
+            var host = new VisualElement();
+            host.AddToClassList("shopsheet");
+            host.style.position = Position.Relative;
+
+            // The width the sheet actually has in the room: inset forty pixels each side of the
+            // panel. Left to grow, the frame is as wide as the proof texture and the row stretches
+            // with it, which measures a shop nobody will ever see.
+            host.style.width = 1240;
+            host.style.height = 700;
+
+            host.Add(shop.Root);
+
+            yield return Capture(host, "silicon_shop.png");
+        }
+
         /// <summary>The pause menu, which is what Escape opens.</summary>
         [UnityTest]
         public IEnumerator ThePauseMenuDraws()

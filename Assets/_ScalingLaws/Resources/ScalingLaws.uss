@@ -18939,3 +18939,236 @@
     margin-right: 18px;
     background-color: rgba(255, 255, 255, 0.14);
 }
+
+/* ---- the silicon shop ----------------------------------------------------------------------
+
+   A window, because the parts could not be browsed from the room they go in and the only door
+   anybody found was a pair of cards at the foot of the compute page. A row is wide and shallow
+   on purpose: the decision is a comparison between generations, so the figures line up in
+   columns and the eye runs down one of them rather than reading each card whole. */
+.shop {
+    flex-grow: 1;
+    padding: 14px 16px;
+}
+
+.shop__head {
+    margin-bottom: 12px;
+}
+
+.shop__title {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 20px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    color: rgb(232, 238, 250);
+}
+
+.shop__subtitle {
+    font-size: 12px;
+    margin-top: 3px;
+    color: rgb(150, 158, 172);
+    white-space: normal;
+}
+
+.shop__sort {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.shop__sortlabel {
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-right: 10px;
+    color: rgb(120, 128, 144);
+}
+
+.shop__chip {
+    height: 26px;
+    margin: 0 6px 0 0;
+    padding: 0 11px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    -unity-text-align: middle-center;
+    color: rgb(168, 180, 198);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 13px;
+}
+
+.shop__chip:hover {
+    color: rgb(232, 238, 250);
+    border-color: rgba(252, 214, 58, 0.55);
+}
+
+.shop__chip--on {
+    color: rgb(20, 22, 28);
+    background-color: rgb(252, 214, 58);
+    border-color: rgb(252, 214, 58);
+}
+
+.shop__chip--batch {
+    min-width: 44px;
+}
+
+.shop__rows {
+    flex-grow: 1;
+}
+
+/* One generation. Columns rather than a card, so two of them can be compared without reading
+   either one in full. */
+.shoprow {
+    flex-direction: row;
+    align-items: center;
+    min-height: 62px;
+    margin-bottom: 6px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.shoprow:hover {
+    border-color: rgba(120, 176, 255, 0.55);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Out of reach today. Dimmed rather than hidden: what the company cannot afford yet is half of
+   what a shop is for. */
+.shoprow--dear {
+    opacity: 0.55;
+}
+
+/* Past the point where real products are known. The catalogue carries the flag; the row has to
+   show it, or the game is passing its own guess off as a dated announcement. */
+.shoprow--projected {
+    border-left-width: 3px;
+    border-left-color: rgba(214, 158, 62, 0.75);
+}
+
+.shoprow__identity {
+    width: 230px;
+    flex-shrink: 0;
+}
+
+.shoprow__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+    white-space: normal;
+}
+
+.shoprow__vendor {
+    font-size: 11px;
+    margin-top: 2px;
+    color: rgb(132, 140, 156);
+}
+
+.shoprow__cell {
+    width: 104px;
+    flex-shrink: 0;
+}
+
+.shoprow__label {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: rgb(120, 128, 144);
+}
+
+.shoprow__figure {
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-top: 2px;
+    color: rgb(214, 224, 240);
+}
+
+.shoprow__cost {
+    flex-grow: 1;
+    align-items: flex-end;
+    padding-right: 12px;
+}
+
+.shoprow__each {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.shoprow__sum {
+    font-size: 11px;
+    margin-top: 2px;
+    color: rgb(150, 158, 172);
+}
+
+.shoprow__buy {
+    width: 96px;
+    height: 34px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(20, 22, 28);
+    background-color: rgb(154, 214, 62);
+    border-width: 0;
+    border-radius: 5px;
+}
+
+.shoprow__buy:hover {
+    background-color: rgb(178, 232, 96);
+}
+
+.shoprow__buy:disabled {
+    color: rgb(150, 158, 172);
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+/* The shop sheet: over the room, like the cabinet editor, because the parts go in the cabinets on
+   the floor behind it. */
+.shopsheet {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    top: 40px;
+    bottom: 40px;
+    padding-bottom: 12px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.16);
+    background-color: rgba(10, 12, 18, 0.97);
+}
+
+.shopsheet__close {
+    align-self: center;
+    width: 200px;
+    height: 34px;
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(168, 180, 198);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+}
+
+/* The door out of the build rail and into the shop. */
+.roombuild__open {
+    height: 34px;
+    margin: 8px 0 0 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(20, 22, 28);
+    background-color: rgb(252, 214, 58);
+    border-width: 0;
+    border-radius: 5px;
+}

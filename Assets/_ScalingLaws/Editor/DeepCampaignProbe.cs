@@ -35,15 +35,36 @@ namespace ScalingLaws.Editor
 
         private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
+        /// <summary>
+        /// Whether the operator keeps one product line or starts a new one every time.
+        ///
+        /// **This is the difference between a strategy and the game.** A release that is given a
+        /// name of its own starts a line of its own, and a line is a product: nothing supersedes
+        /// anything, so fourteen years of shipping leaves three hundred products dividing one
+        /// company's audience between them. That is what the first operator did, and reading its
+        /// last place as "the game cannot be won" would have been wrong.
+        /// </summary>
+        private static bool oneLine;
+
         [MenuItem("Scaling Laws/Play a deep campaign")]
         public static void Play()
         {
             var report = new StringBuilder();
             var clock = Stopwatch.StartNew();
 
-            foreach (var seed in new[] { 4242, 9001, 1337 })
+            foreach (var disciplined in new[] { false, true })
             {
-                RunOne(seed, report);
+                oneLine = disciplined;
+
+                report.AppendLine();
+                report.AppendLine(disciplined
+                    ? "================ ONE PRODUCT LINE, each release replacing the last"
+                    : "================ A NEW LINE EVERY TIME, nothing ever superseded");
+
+                foreach (var seed in new[] { 4242, 9001, 1337 })
+                {
+                    RunOne(seed, report);
+                }
             }
 
             clock.Stop();
@@ -264,6 +285,14 @@ namespace ScalingLaws.Editor
                 if (blueprint.TrainingTokensBillions > supply)
                 {
                     blueprint = blueprint.WithTokens(supply * 0.98);
+                }
+
+                // One line means each release replaces the one before it on the market, which is
+                // what a product is. Without it every release is a separate product competing
+                // with the company's own back catalogue.
+                if (oneLine)
+                {
+                    blueprint = blueprint.WithFamily("Aurora");
                 }
 
                 if (simulation.TryStartTraining(blueprint, out var trainWhy))

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -47,6 +47,12 @@ namespace ScalingLaws.UI
         private readonly ServerRoomBanner banner = new();
         private readonly BasementStage stage = new();
         private RackEditorPanel editor;
+
+        /// <summary>The silicon shop, built once and kept, because it holds the sort and the batch.</summary>
+        private PartsShop shop;
+
+        /// <summary>Whether the shop is open over the room.</summary>
+        private bool shopOpen;
 
         public ServerRoomScreen(System.Func<CompanySimulation> company, System.Action changed,
             System.Action leave = null)
@@ -156,6 +162,34 @@ namespace ScalingLaws.UI
             banner.Refresh(simulation);
             page.Add(banner.Root);
 
+            // **Over the room, like the cabinet editor.** The parts go in the cabinets on this
+            // floor, so this is where a player looks for them; the two cards in the rail beside
+            // it were a shelf rather than a shop and showed three of twenty two generations.
+            if (shopOpen)
+            {
+                shop ??= new PartsShop(simulation, () => changed?.Invoke());
+
+                var sheet = new VisualElement();
+                sheet.AddToClassList("shopsheet");
+
+                var close = new Button(() =>
+                {
+                    shopOpen = false;
+                    changed?.Invoke();
+                })
+                {
+                    text = Loc.T("common.close")
+                };
+
+                close.AddToClassList("shopsheet__close");
+
+                shop.Refresh();
+                sheet.Add(shop.Root);
+                sheet.Add(close);
+
+                page.Add(sheet);
+            }
+
             if (open.HasValue)
             {
                 editor ??= new RackEditorPanel(company, () => changed?.Invoke());
@@ -172,7 +206,7 @@ namespace ScalingLaws.UI
             // **The tour bar owns the bottom of the screen and so does this panel.** The bar is on
             // the panel root, so it paints after anything in the page and no z-order here can beat
             // it. It moves to the top while a cabinet is open, which is where the room has nothing.
-            GuideOverlay.KeepClear?.Invoke(open.HasValue);
+            GuideOverlay.KeepClear?.Invoke(open.HasValue || shopOpen);
 
             return page;
         }
@@ -608,12 +642,26 @@ namespace ScalingLaws.UI
             // a shop that opens on five year old silicon is a shop nobody reads twice.
             newest.Sort((left, right) => right.ReleaseDate.DayIndex.CompareTo(left.ReleaseDate.DayIndex));
 
-            // Three of them. The fleet screen is the place to read twenty two generations; the room
-            // needs the ones a player would actually put in a rack today.
-            for (var index = 0; index < newest.Count && index < 3; index++)
+            // Two of them, as a shortcut to the newest silicon, and a door to the rest. The rail
+            // is 306 pixels wide and there are twenty two generations: reading them here was
+            // never going to work, and until the shop existed there was nowhere else to read them
+            // from the room at all.
+            for (var index = 0; index < newest.Count && index < 2; index++)
             {
                 panel.Add(SiliconRow(simulation, newest[index], tier));
             }
+
+            var browse = new Button(() =>
+            {
+                shopOpen = true;
+                changed?.Invoke();
+            })
+            {
+                text = Loc.T("shop.open")
+            };
+
+            browse.AddToClassList("roombuild__open");
+            panel.Add(browse);
 
             return panel;
         }
