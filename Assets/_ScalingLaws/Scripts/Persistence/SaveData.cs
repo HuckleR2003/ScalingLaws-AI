@@ -260,6 +260,15 @@ namespace ScalingLaws.Persistence
         // expects and every other grid in this file is already shaped this way.
         public List<int> stepTraits = new();
         public List<int> stepTargetLevels = new();
+
+        // ---- the release waiting on it, v56 ------------------------------------------------------
+        //
+        // **Causal, not derived, which is the eighth time in this project.** The version is
+        // published on the day the programme lands, so a save that forgot this would either ship a
+        // version nobody named or never ship one at all, and the player paid for it either way.
+        public string plannedVersionName = string.Empty;
+        public double plannedPriceUsdPerMonth;
+        public double plannedFreeTokensPerDay;
     }
 
     /// <summary>One closed round. Added in v3.</summary>
@@ -417,7 +426,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 55;
+        public const int CurrentVersion = 56;
 
         public int version = CurrentVersion;
 

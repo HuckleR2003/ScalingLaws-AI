@@ -120,6 +120,34 @@ namespace ScalingLaws.Simulation
         public ServerStock Warehouse { get; } = new();
 
         /// <summary>
+        /// Whether a version the player has already named and priced is waiting on engineering.
+        ///
+        /// **One release plan at a time.** Reported as part of "we can do almost everything at
+        /// once": PLAN THE RELEASE was live while a planned release was still being worked on, so a
+        /// player could queue several versions of the same product and watch them land on top of
+        /// each other. Shelf work is deliberately not covered, because a programme on a model
+        /// nobody can buy yet names no version and blocks no release.
+        ///
+        /// Here rather than in the button, so the screen that greys the control and the method that
+        /// commits it are reading one fact.
+        /// </summary>
+        public bool ReleaseProgrammeInFlight
+        {
+            get
+            {
+                foreach (var project in UpgradeProjects)
+                {
+                    if (project is { OnShelf: false, HasPlannedRelease: true })
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Power stations the company has commissioned.
         ///
         /// **Built because owning compute has a ceiling and nothing said so.** Measured over nine

@@ -3696,13 +3696,44 @@
    company happens to be doing. The bar is 82px; at three products, a node and an upgrade this
    ran under it, and every product after that pushed the research and upgrade strips further
    off the screen. The products half scrolls (below) because it is the half that has no limit. */
+/* **A row of lanes, not a column of slots.** Three subjects used to stack down the right edge
+   and a company doing all three at once pushed the column far enough to cover the office and
+   map buttons on the side rail. The product keeps the corner; the work happening to it stands
+   to its left, so a second and a third subject cost width rather than height and nothing can
+   reach the rail. */
+/* **The rail owns the right edge and the banners start left of it.** The office, map, server room
+   and bed icons sit against the right side and the corner column was over them, so a player
+   reported being unable to press them at all. Stopping the column above the rail was the other
+   answer and it costs 365px of a 1233px panel, which is most of the room the products have.
+   Moving left costs width and nothing else. 150px rather than the 112 the rail measures to: the
+   panel scales to a 1920 reference and is nearer 1646 on a 16:10 window, so a value derived from
+   the rail in stylesheet pixels lands short of it in real ones. Measured against the rail in a
+   PlayMode test instead of computed here. */
 .mb-stack {
     position: absolute;
     top: 54px;
     bottom: 90px;
-    right: 20px;
-    width: 316px;
+    right: 150px;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-end;
+}
+
+/* One subject, one lane. An empty lane takes no width at all, so a company with nothing
+   running looks exactly as it did before any of this existed. */
+.mb-stack__lane {
+    width: 306px;
+    flex-shrink: 0;
+    margin-left: 10px;
     align-items: stretch;
+}
+
+/* The product lane is the one that has to fit the window, because there is one banner per
+   product on sale and no rule about how many a company may sell. */
+.mb-stack__lane--product {
+    width: 316px;
+    margin-left: 0;
+    align-self: stretch;
 }
 
 /* One slot per subject, so filling one can neither reorder the column nor land on the one
@@ -19455,4 +19486,35 @@
 .fleet-bill__powerrow {
     flex-direction: row;
     align-items: center;
+}
+
+/* PLAN THE RELEASE while a version the player already named is still being built. Disabled, and
+   wide enough for the sentence that replaces the two words, because a button whose label is a
+   reason has to be able to hold the reason. */
+.udet__go--busy {
+    min-width: 330px;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+}
+
+/* The way out of a programme, on the card that names it. Quiet until the cursor is on it: the
+   card is a link to the upgrade screen and this is the one part of it that does something else. */
+.ub__stop {
+    align-self: flex-start;
+    height: 24px;
+    margin: 8px 0 0 0;
+    padding: 0 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(226, 140, 120);
+    background-color: rgba(0, 0, 0, 0.28);
+    border-width: 1px;
+    border-color: rgba(226, 140, 120, 0.45);
+    border-radius: 4px;
+}
+
+.ub__stop:hover {
+    color: rgb(20, 22, 28);
+    background-color: rgb(226, 140, 120);
 }

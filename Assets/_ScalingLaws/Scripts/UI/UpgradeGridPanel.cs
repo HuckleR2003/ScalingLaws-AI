@@ -532,6 +532,14 @@ namespace ScalingLaws.UI
 
             var affordable = simulation.State.CashUsd >= cash;
 
+            // **The team is already on a job.** Reported with the rest of "we can do almost
+            // everything at once": the button was live while a programme was running, and the
+            // simulation would have refused it at the till. A control whose only answer is a
+            // refusal is not a control, so it says which model the team is on instead.
+            // A version the player already named and priced is still being built. Only the
+            // release path is blocked: work on a model nobody can buy yet names no version.
+            var busy = !subject.OnShelf && simulation.State.ReleaseProgrammeInFlight;
+
             var go = new Button(() =>
             {
                 if (!affordable)
@@ -554,13 +562,16 @@ namespace ScalingLaws.UI
                 planRelease?.Invoke(subject.Index, chosen.ToList());
             })
             {
-                text = subject.OnShelf
-                    ? Loc.T("upgrade.commission")
-                    : Loc.T("upgrade.plan_release")
+                text = busy
+                    ? Loc.T("upgrade.team_busy")
+                    : subject.OnShelf
+                        ? Loc.T("upgrade.commission")
+                        : Loc.T("upgrade.plan_release")
             };
 
             go.AddToClassList("udet__go");
-            go.SetEnabled(anyPicked && affordable);
+            go.EnableInClassList("udet__go--busy", busy);
+            go.SetEnabled(anyPicked && affordable && !busy);
             row.Add(go);
 
             return row;

@@ -92,7 +92,26 @@ genuinely different products are worth 1.6 of one and three hundred and thirty n
 rather than 339. A company with one product in a line is untouched, to the dollar, and so is every
 rival.
 
+**A version now ships when the work that produces it lands.** Naming a version, pricing it and
+pressing PLAN THE RELEASE put the new version on the market the same instant, while the engineering
+it was supposed to come out of ran for weeks afterwards. The plan travels with the programme, the
+price goes with it, and only one release can be planned at a time: the button says to wait and
+names why instead of being live and refused.
+
+**And the corner of the office grows sideways instead of downwards.** A company with a product on
+sale, a node running and an upgrade in flight stacked all three down the right edge, far enough to
+cover the office, map, server room and bed buttons on the side rail. Each subject has a lane now,
+the product keeps the corner, the work stands to its left, and the whole column starts left of the
+rail so nothing can reach it.
+
 ### Fixed
+
+- **There were two upgrade banners in the corner at once.** One said WORKING ON UPGRADE and one
+  said UPGRADE IN PROGRESS, both about the same programme, both with their own bar. The second is
+  gone and its STOP moved onto the first, because losing the way out of an upgrade would take back
+  something a tester asked for by name.
+- **Unity's analytics define is out of the standalone build.** `SENTIS_ANALYTICS_ENABLED` was being
+  added to the player's scripting defines by the editor and nothing in this project reads it.
 
 - **Two of the three reserved capacity packages were off the bottom of their own panel.** Reserved
   and rented capacity sat side by side at half a page each, and three cards do not fit in half a
@@ -652,6 +671,12 @@ shape of it.
   colours in the server room.
 
 ### Save compatibility
+
+**Save v56.** The version an upgrade programme was commissioned to produce, with its price and its
+free tier. Causal, not derived: it publishes on the day the work lands, so a save that dropped it
+would take a release the player named and paid for. A v55 programme gets none, which is the only
+true reading: in v55 the version was published on the click that commissioned the work, so it is
+already on the market and planning one now would publish it twice.
 
 **Save v55.** Power stations the company has commissioned and the day each one opens. A v54
 campaign owns none, which is the only true reading: in v54 one could not be commissioned at all, so

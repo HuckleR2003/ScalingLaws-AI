@@ -96,6 +96,28 @@ namespace ScalingLaws.Simulation
         /// <summary>True when the model is still on the shelf rather than on sale.</summary>
         public bool OnShelf { get; set; }
 
+        /// <summary>
+        /// The version this programme was commissioned to produce, published the day it lands.
+        ///
+        /// **The screen is called PLAN THE RELEASE and it used to ship it.** Naming a version,
+        /// setting its price and pressing the button published the new version on the market the
+        /// same instant, while the work that was supposed to produce it ran for weeks afterwards.
+        /// A tester reported it plainly: the version is on sale although it is not finished.
+        ///
+        /// Empty when nothing was planned, which is the case for every programme commissioned on
+        /// the shelf and for anything a test starts directly.
+        /// </summary>
+        public string PlannedVersionName { get; set; } = string.Empty;
+
+        /// <summary>What the new version will be priced at. Applied with it, not before it.</summary>
+        public double PlannedPriceUsdPerMonth { get; set; }
+
+        /// <inheritdoc cref="PlannedPriceUsdPerMonth"/>
+        public double PlannedFreeTokensPerDay { get; set; }
+
+        /// <summary>Whether this programme has a release waiting on it.</summary>
+        public bool HasPlannedRelease => !string.IsNullOrEmpty(PlannedVersionName);
+
         /// <summary>Everything this programme will apply, in the order the player picked it.</summary>
         public IReadOnlyList<UpgradeStep> Steps => steps;
 

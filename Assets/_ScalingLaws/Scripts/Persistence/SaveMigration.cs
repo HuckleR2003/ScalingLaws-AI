@@ -156,6 +156,7 @@ namespace ScalingLaws.Persistence
                     52 => UpgradeV52ToV53(current),
                     53 => UpgradeV53ToV54(current),
                     54 => UpgradeV54ToV55(current),
+                    55 => UpgradeV55ToV56(current),
                     _ => current
                 };
             }
@@ -1834,6 +1835,38 @@ namespace ScalingLaws.Persistence
         /// not be commissioned at all, so a campaign that would have built one never had the
         /// chance. Handing one over now would be inventing a decision nobody made, and a $3bn one.
         /// </summary>
+        /// <summary>
+        /// v55 to v56: a programme in flight has no release waiting on it.
+        ///
+        /// **The only true reading, and it is the generous one for once.** In v55 the version was
+        /// published on the click that commissioned the work, so a v55 programme has already put
+        /// its version on the market. Giving it a planned release now would publish the same
+        /// version a second time when the work lands.
+        /// </summary>
+        public static SaveData UpgradeV55ToV56(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 56;
+
+            foreach (var project in data.upgrades)
+            {
+                if (project == null)
+                {
+                    continue;
+                }
+
+                project.plannedVersionName = string.Empty;
+                project.plannedPriceUsdPerMonth = 0.0;
+                project.plannedFreeTokensPerDay = 0.0;
+            }
+
+            return data;
+        }
+
         public static SaveData UpgradeV54ToV55(SaveData data)
         {
             if (data == null)

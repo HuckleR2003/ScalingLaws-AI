@@ -649,7 +649,14 @@ namespace ScalingLaws.Persistence
                     petaflopDaysCompleted = project.PetaflopDaysCompleted,
                     daysCompleted = project.DaysCompleted,
                     cashPaidUsd = project.CashPaidUsd,
-                    onShelf = project.OnShelf
+                    onShelf = project.OnShelf,
+
+                    // The version waiting on this programme. Causal: it publishes on the day the
+                    // work lands, so a save that dropped it would take a release the player paid
+                    // for and named.
+                    plannedVersionName = project.PlannedVersionName,
+                    plannedPriceUsdPerMonth = project.PlannedPriceUsdPerMonth,
+                    plannedFreeTokensPerDay = project.PlannedFreeTokensPerDay
                 };
 
                 foreach (var step in project.Steps)
@@ -1595,7 +1602,12 @@ namespace ScalingLaws.Persistence
                     upgrade.durationDays,
                     upgrade.petaflopDaysRequired,
                     upgrade.cashPaidUsd)
-                { OnShelf = upgrade.onShelf };
+                {
+                    OnShelf = upgrade.onShelf,
+                    PlannedVersionName = upgrade.plannedVersionName ?? string.Empty,
+                    PlannedPriceUsdPerMonth = upgrade.plannedPriceUsdPerMonth,
+                    PlannedFreeTokensPerDay = upgrade.plannedFreeTokensPerDay
+                };
 
                 project.Restore(upgrade.daysCompleted, upgrade.petaflopDaysCompleted);
                 state.AddUpgradeProject(project);
@@ -2024,6 +2036,7 @@ namespace ScalingLaws.Persistence
             {
                 upgrade.stepTraits ??= new List<int>();
                 upgrade.stepTargetLevels ??= new List<int>();
+                upgrade.plannedVersionName ??= string.Empty;
             }
             safe.fundingRounds ??= new List<FundingRoundData>();
             safe.rivals ??= new List<CompetitorAgentData>();

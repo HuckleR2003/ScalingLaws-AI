@@ -4134,6 +4134,35 @@ namespace ScalingLaws.Simulation
                 // amount per trait would make a four-card basket a skill exploit.
                 State.AwardSkill(PlayerSkill.Software, 320 + 90 * (project.Steps.Count - 1));
 
+                // **The version the work was commissioned for, published now that it exists.**
+                //
+                // This used to happen in the interface, on the click that paid for the programme,
+                // so the new version went on the market the same instant and the weeks of work
+                // that were supposed to produce it ran afterwards. A tester reported exactly that.
+                // The price and the free tier travel with it: the screen is called PLAN THE
+                // RELEASE, and a plan that took effect immediately was not a plan.
+                if (!project.OnShelf && project.HasPlannedRelease
+                    && project.ModelIndex < State.DeployedModels.Count)
+                {
+                    var shipped = State.DeployedModels[project.ModelIndex];
+
+                    State.Monetization.SubscriptionPriceUsdPerMonth =
+                        project.PlannedPriceUsdPerMonth;
+
+                    State.Monetization.FreeTierTokensPerUserPerDay =
+                        project.PlannedFreeTokensPerDay;
+
+                    shipped.Line.Publish(project.PlannedVersionName, State.Date,
+                        shipped.EffectiveCapability(State.Date),
+                        project.PlannedPriceUsdPerMonth, project.PlannedFreeTokensPerDay);
+
+                    State.RaiseEvent(new CompanyEvent(
+                        CompanyEventType.ModelReleased, State.Date,
+                        Loc.T("shell.version_shipped",
+                            shipped.Name + " " + project.PlannedVersionName),
+                        0L));
+                }
+
                 // **One message for one programme.** Four traits used to mean four of these on the
                 // same day, which is what turned the mail into noise the player learned to skip.
                 State.RaiseEvent(new CompanyEvent(

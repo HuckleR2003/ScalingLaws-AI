@@ -157,7 +157,11 @@ namespace ScalingLaws.UI
 
         /// <summary>The bar for the products half, which is the half that can outgrow the column.</summary>
         private PageScrollbar bannerBar;
-        private UpgradeStrip upgradeStrip;
+        // `upgradeStrip` used to live here. There were two upgrade banners in the corner at
+        // once: this one, which printed UPGRADE IN PROGRESS with a bar and a STOP, and the `ub`
+        // card, which says WORKING ON UPGRADE and is the one the author wanted kept. Two cards
+        // about one programme is not a layout problem, it is two answers to one question, and the
+        // STOP moved onto the card that stayed rather than being lost with the one that went.
 
         /// <summary>
         /// One banner per product on sale, after the lead one.
@@ -1149,30 +1153,35 @@ namespace ScalingLaws.UI
             products.contentViewport.pickingMode = PickingMode.Ignore;
 
             bannerProducts = products;
-            bannerStack.Add(bannerProducts);
 
+            // **The corner grows sideways now, not downwards.**
+            //
+            // Reported after a long session: a company with a product on sale, a node running and
+            // an upgrade in flight stacked all three down the right edge, and the column reached
+            // far enough to cover the office and map buttons on the side rail. Every one of those
+            // is a different subject, and the author's own proposal is the right one: the product
+            // stays in the corner and the work happening to it stands beside it, upgrade nearest
+            // the product and research beyond that. Nothing pushes anything down, so nothing can
+            // reach the rail.
+            //
+            // Added left to right, so the order here is the order on screen.
             bannerResearch = new VisualElement();
-            bannerResearch.AddToClassList("mb-stack__slot");
+            bannerResearch.AddToClassList("mb-stack__lane");
             bannerResearch.pickingMode = PickingMode.Ignore;
             bannerStack.Add(bannerResearch);
 
             bannerUpgrade = new VisualElement();
-            bannerUpgrade.AddToClassList("mb-stack__slot");
+            bannerUpgrade.AddToClassList("mb-stack__lane");
             bannerUpgrade.pickingMode = PickingMode.Ignore;
             bannerStack.Add(bannerUpgrade);
 
-            // Under the product, because an upgrade is work happening to the thing above it.
-            upgradeStrip = new UpgradeStrip(() => simulation.State, index =>
-            {
-                if (!simulation.TryCancelUpgrade(index, out _, out _))
-                {
-                    return false;
-                }
-
-                RefreshChrome();
-                return true;
-            });
-            bannerStack.Add(upgradeStrip.Root);
+            // The product and whatever is being offered about it are one column, because the offer
+            // card is about the product rather than about the work.
+            var productLane = new VisualElement();
+            productLane.AddToClassList("mb-stack__lane");
+            productLane.AddToClassList("mb-stack__lane--product");
+            productLane.pickingMode = PickingMode.Ignore;
+            productLane.Add(bannerProducts);
 
             // The offer card is the last thing in the lane rather than a card pinned at a number
             // in the middle of it. See PromptChips.MoveTo for why it is not simply parented here
@@ -1180,7 +1189,9 @@ namespace ScalingLaws.UI
             bannerPrompts = new VisualElement();
             bannerPrompts.AddToClassList("mb-stack__slot");
             bannerPrompts.pickingMode = PickingMode.Ignore;
-            bannerStack.Add(bannerPrompts);
+            productLane.Add(bannerPrompts);
+
+            bannerStack.Add(productLane);
 
             root.Add(bannerStack);
 
@@ -2060,6 +2071,45 @@ namespace ScalingLaws.UI
             days.AddToClassList("ub__days");
             banner.Add(days);
 
+            // **The way out, on the card that stayed.**
+            //
+            // There were two upgrade banners in this corner: this one and a strip that printed the
+            // same programme again with its own bar. The strip is gone and this is where its STOP
+            // lives now, because losing it would take back something a tester asked for by name:
+            // there was no way to stop an upgrade at all, so a company could commit four months to
+            // one it regretted on the first day and had to watch it finish.
+            //
+            // It stops the programme this card names, which is the slowest. With more than one
+            // running the kicker says so and the next one becomes the slowest, so every programme
+            // is reachable from here one at a time, and the screen behind the card has the rest.
+            var index = -1;
+
+            for (var at = 0; at < state.UpgradeProjects.Count; at++)
+            {
+                if (ReferenceEquals(state.UpgradeProjects[at], slowest))
+                {
+                    index = at;
+                    break;
+                }
+            }
+
+            if (index >= 0)
+            {
+                var stop = new Button(() =>
+                {
+                    if (simulation.TryCancelUpgrade(index, out _, out _))
+                    {
+                        RefreshChrome();
+                    }
+                })
+                {
+                    text = Loc.T("common.stop")
+                };
+
+                stop.AddToClassList("ub__stop");
+                banner.Add(stop);
+            }
+
             // The cycle. Scheduled on the banner itself, so it dies with it and never leaves a
             // callback pointing at an element that has left the tree.
             banner.schedule.Execute(() =>
@@ -2175,6 +2225,18 @@ namespace ScalingLaws.UI
             var model = state.DeployedModels[index];
             var refused = new List<string>();
 
+            // The same fact the button greys itself on, checked where the commitment is made. A
+            // rule that lives only in the control is a suggestion the moment anything else reaches
+            // this method.
+            if (state.ReleaseProgrammeInFlight)
+            {
+                startedNotice?.Show(Loc.T("upgrade.team_busy"),
+                    Loc.T("upgrade.one_release_note"));
+
+                Show(Screen.Upgrade);
+                return;
+            }
+
             // **The whole basket as one programme.** This looped and commissioned one per trait, so
             // four picks became four programmes each ticking the same calendar, landing together,
             // and filling the mail with four separate completions.
@@ -2184,19 +2246,44 @@ namespace ScalingLaws.UI
                 refused.Add(reason);
             }
 
-            state.Monetization.SubscriptionPriceUsdPerMonth = releasePlan.PriceUsdPerMonth;
-            state.Monetization.FreeTierTokensPerUserPerDay = releasePlan.FreeTokensPerDay;
+            // **The version ships when the work does.**
+            //
+            // This published it here, on the click that paid for the programme, so a tester
+            // reported the new version on sale while the engineering that was supposed to produce
+            // it still had weeks to run. The plan is handed to the programme and the simulation
+            // publishes it on the day it lands; the price and the free tier go with it, because a
+            // release plan that took effect before the release was not a plan.
+            //
+            // With nothing in the basket there is no work to wait for, so a rename or a repricing
+            // still takes effect now, which is the only reading of it that makes sense.
+            var planned = releasePlan.Basket.Count > 0 && refused.Count == 0
+                ? simulation.State.UpgradeProjects.Count > 0
+                    ? simulation.State.UpgradeProjects[^1]
+                    : null
+                : null;
 
-            model.Line.Publish(versionName, state.Date, model.EffectiveCapability(state.Date),
-                releasePlan.PriceUsdPerMonth, releasePlan.FreeTokensPerDay);
+            if (planned != null)
+            {
+                planned.PlannedVersionName = versionName;
+                planned.PlannedPriceUsdPerMonth = releasePlan.PriceUsdPerMonth;
+                planned.PlannedFreeTokensPerDay = releasePlan.FreeTokensPerDay;
+            }
+            else
+            {
+                state.Monetization.SubscriptionPriceUsdPerMonth = releasePlan.PriceUsdPerMonth;
+                state.Monetization.FreeTierTokensPerUserPerDay = releasePlan.FreeTokensPerDay;
 
-            simulation.State.RaiseEvent(new CompanyEvent(
-                CompanyEventType.ModelReleased, state.Date,
-                refused.Count == 0
-                    ? Loc.T("shell.version_shipped", model.Name + " " + versionName)
-                    : Loc.T("shell.version_shipped_but", model.Name + " " + versionName,
-                        string.Join("  ", refused)),
-                0L));
+                model.Line.Publish(versionName, state.Date, model.EffectiveCapability(state.Date),
+                    releasePlan.PriceUsdPerMonth, releasePlan.FreeTokensPerDay);
+
+                simulation.State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.ModelReleased, state.Date,
+                    refused.Count == 0
+                        ? Loc.T("shell.version_shipped", model.Name + " " + versionName)
+                        : Loc.T("shell.version_shipped_but", model.Name + " " + versionName,
+                            string.Join("  ", refused)),
+                    0L));
+            }
 
             if (refused.Count == 0)
             {
@@ -3796,7 +3883,6 @@ namespace ScalingLaws.UI
 
         private void RefreshChrome()
         {
-            upgradeStrip?.Refresh();
 
             cashLabel.text = UiFormat.Money(state.CashUsd);
             RefreshCashArrows(state);

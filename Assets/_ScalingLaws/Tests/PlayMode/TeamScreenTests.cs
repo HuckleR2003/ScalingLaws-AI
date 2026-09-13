@@ -469,47 +469,32 @@ namespace ScalingLaws.Tests.PlayMode
             yield return null;
             yield return null;
 
-            var stop = Root.Q<Button>(className: "ustrip__stop");
+            // **One card, not two.** The corner used to carry this programme twice: a strip that
+            // printed UPGRADE IN PROGRESS with its own bar and STOP, and the `ub` card that says
+            // WORKING ON UPGRADE. The author asked for the strip to go and the card to stay, so
+            // the way out moved onto the card rather than leaving with the strip. That is the
+            // thing this fixture exists to hold: the button survives the redesign.
+            var stop = Root.Q<Button>(className: "ub__stop");
             Assert.That(stop, Is.Not.Null, "There is no way to stop an upgrade on screen.");
 
             Assert.That(stop.enabledSelf, Is.True,
                 "The abandon button is drawn and refuses every press, which is the shape this "
                 + "project has already shipped twice as something a player reads as broken.");
 
-            var row = stop.parent;
-            Assert.That(stop.worldBound.yMax, Is.LessThanOrEqualTo(row.worldBound.yMax + 0.5f),
-                "The abandon button is drawn past the bottom of its own row, which is exactly how "
-                + "the office buttons were invisible for months.");
+            var card = stop.parent;
+
+            Assert.That(stop.worldBound.yMax, Is.LessThanOrEqualTo(card.worldBound.yMax + 0.5f),
+                "The abandon button is drawn past the bottom of its own card, which is exactly "
+                + "how the office buttons were invisible for months.");
 
             Assert.That(stop.worldBound.width, Is.GreaterThan(1f), "It has no width.");
 
-            // **And the row it sits in has to be on the screen.** Being inside its own card is
-            // what the office buttons failed; being above the bottom bar is the other half, and a
-            // control drawn under the bar is exactly as unreachable as one drawn under a clipping
-            // edge. The corner column grows with everything the company is doing, so this is the
-            // one that goes first.
-            // **Beside the programme, not under it.** A row is a column by default in UI Toolkit,
-            // so the button was laid out below the text inside a box 40px tall, which squashed the
-            // name of the thing being stopped to half a line to make room. Both fitted their own
-            // box and the row read as broken. Centres, because that is what "beside" means and it
-            // does not care what either one is worth in pixels.
-            var rowBox = row.worldBound;
-            var stopBox = stop.worldBound;
+            var name = card.Q(className: "ub__name");
+            Assert.That(name, Is.Not.Null, "The card does not say what is being stopped.");
 
-            Assert.That(stopBox.center.y, Is.EqualTo(rowBox.center.y).Within(3f),
-                "The abandon button is stacked inside its row rather than sitting beside the "
-                + "programme: row " + rowBox + ", button " + stopBox + ".");
-
-            // The row has to be tall enough for what is written in it. A kicker and a name at
-            // 12px and 14.5px with padding want 45px and the row was 40, so the name of the
-            // programme being stopped was cut across the middle: legible enough to pass a test
-            // that only asked whether it existed, and plainly broken to look at.
-            var name = row.Q(className: "ustrip__name");
-            Assert.That(name, Is.Not.Null, "The row does not say what is being stopped.");
-
-            Assert.That(name.worldBound.yMax, Is.LessThanOrEqualTo(row.worldBound.yMax + 0.5f),
-                "The name of the programme is drawn past the bottom of its own row: row "
-                + row.worldBound + ", name " + name.worldBound + ".");
+            Assert.That(name.worldBound.yMax, Is.LessThanOrEqualTo(card.worldBound.yMax + 0.5f),
+                "The name of the programme is drawn past the bottom of its own card: card "
+                + card.worldBound + ", name " + name.worldBound + ".");
 
             var bar = Root.Q(className: "hud__bar");
             Assert.That(bar, Is.Not.Null, "There is no bottom bar to measure against.");
@@ -518,6 +503,23 @@ namespace ScalingLaws.Tests.PlayMode
                 "The way out of an upgrade is drawn under the bottom bar, so a player with a "
                 + "busy corner cannot press it: button " + stop.worldBound + ", bar "
                 + bar.worldBound + ".");
+
+            // **And nothing in the corner reaches the side rail.** The lanes exist because a
+            // company doing three things at once stacked all three down the right edge until the
+            // column covered the office, map, server room and bed icons, and a player reported
+            // being unable to press them. Measured against the whole corner rather than one card,
+            // because any of them coming back is the same fault.
+            var rail = Root.Q(className: "site-rail");
+            var corner = Root.Q(className: "mb-stack");
+
+            if (rail != null && corner != null && rail.worldBound.height > 1f)
+            {
+                Assert.That(corner.worldBound.xMax,
+                    Is.LessThanOrEqualTo(rail.worldBound.xMin + 0.5f),
+                    "The corner column covers the side rail, so the office and map buttons cannot "
+                    + "be pressed: corner " + corner.worldBound + ", rail " + rail.worldBound
+                    + ".");
+            }
         }
 
         /// <summary>
