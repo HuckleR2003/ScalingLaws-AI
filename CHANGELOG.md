@@ -469,6 +469,16 @@ than grey text with the money shouting over it.
 
 ### Changed
 
+- **The parts have a shop.** Reported: the silicon could not be browsed or bought from the room it
+  goes into, and the only door anybody found was a pair of cards at the foot of the compute page.
+  The room did have a shop, showing three of the twenty two generations in a rail 306 pixels wide,
+  which is a shelf. There is a window now, opened from the build rail and drawn over the floor the
+  parts stand on: every generation on sale, ordered by whichever column the player asks for
+  (newest, power, price, petaflops per million, memory, heat), bought one, four, sixteen or sixty
+  four at a time, with the batch total under the unit price. Silicon the game invented rather than
+  remembers keeps its projection mark.
+- **The price on the row is the price at the till.** It is the same call the purchase makes, with
+  the founder and the home country on it, so scarcity cannot move one without the other.
 - **The research tree is a board you read rather than a row of circles.** Reported by Francisco:
   *"can you simplify what each research node does? Sometimes you dont really know what something
   does"*. Every node is a card now with its name, its picture, and a row of small icons saying what
