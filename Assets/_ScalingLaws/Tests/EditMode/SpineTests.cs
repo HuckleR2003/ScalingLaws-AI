@@ -50,7 +50,7 @@ namespace ScalingLaws.Tests.EditMode
             // company that stops making decisions, not a hermit with the lights off: the hermit
             // survives, and the design has never claimed otherwise.
             simulation.SetRentedAccelerators(24);
-            simulation.TryMoveOffice(OfficeTier.Loft, out _);
+            simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out _);
 
             for (var index = 0; index < CoastingHeadcount; index++)
             {

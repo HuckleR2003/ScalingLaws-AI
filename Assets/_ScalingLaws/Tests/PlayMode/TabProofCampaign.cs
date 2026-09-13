@@ -56,7 +56,7 @@ namespace ScalingLaws.Tests.PlayMode
             // team fixture correctly refused to run: ordering by wage and ordering by level
             // gave the same list, so neither column proved anything. Hanna is the strongest
             // and among the cheapest, which is also the more interesting company.
-            simulation.TryMoveOffice(OfficeTier.Loft, out _);
+            simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out _);
 
             var crew = new (string Name, PlayerSkill Job, StaffRole Role, int Skill, int Day,
                 HireSource From, double Hourly)[]

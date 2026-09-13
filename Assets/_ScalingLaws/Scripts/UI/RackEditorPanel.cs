@@ -32,6 +32,14 @@ namespace ScalingLaws.UI
         /// <summary>Set by the screen, so the cross closes the right thing.</summary>
         public Action Close { get; set; }
 
+        /// <summary>
+        /// Says what happened, across the top of the screen.
+        ///
+        /// Fitting a card moves one thing by one slot in a picture the player may not be looking
+        /// at, and selling a batch moves money and nothing else. Both need a sentence.
+        /// </summary>
+        public Action<string, string> announce { get; set; }
+
         public VisualElement Build(int column, int row)
         {
             var simulation = company();
@@ -55,10 +63,26 @@ namespace ScalingLaws.UI
 
             card.Add(BuildHead(definition));
             card.Add(BuildStateBanner(simulation, column, row));
-            card.Add(BuildStock(simulation));
-            card.Add(BuildSlots(simulation, square, definition));
-            card.Add(BuildStats(simulation, square, definition));
-            card.Add(BuildActions(simulation, column, row, square));
+
+            // **Two columns: the parts on the left, the cabinet on the right.**
+            //
+            // Reported twice, the second time as still broken: you can buy silicon and there is no
+            // way to put it anywhere. The bay is the answer, and it is on the left because that is
+            // where the author asked for it and because the thing being filled should be the thing
+            // in the middle of the screen.
+            var body = new VisualElement();
+            body.AddToClassList("rackmodal__body");
+
+            body.Add(BuildPartsBay(simulation, column, row));
+
+            var cabinet = new VisualElement();
+            cabinet.AddToClassList("rackmodal__cabinet");
+            cabinet.Add(BuildSlots(simulation, square, definition));
+            cabinet.Add(BuildStats(simulation, square, definition));
+            cabinet.Add(BuildActions(simulation, column, row, square));
+
+            body.Add(cabinet);
+            card.Add(body);
 
             return veil;
         }
@@ -106,108 +130,212 @@ namespace ScalingLaws.UI
             return band;
         }
 
+        // `BuildStock` stood here: a read-only list of what the company owned, added when a
+        // tester could not find a thousand accelerators he had bought. It answered "where are
+        // they" and nothing else, and the next report was that there is still no way to put one
+        // anywhere. `BuildPartsBay` is the same list with the two things you can do to a row on
+        // it, so this one is gone rather than left beside it saying the same thing twice.
+
         /// <summary>
-        /// What the company owns, how much of it is on this floor, and what is still in transit.
+        /// Everything the company owns, sorted, with a way to put one in this cabinet.
         ///
-        /// **Reported plainly: "I bought about a thousand and I cannot see where they are."**
-        /// Nothing in the room ever listed the silicon the company had paid for. The rail says how
-        /// many are housed and the cabinet says how many are in it, and between those two numbers
-        /// a player who has just spent forty million has no idea whether the order exists.
+        /// **Strongest first**, by petaflops a card, because that is the order a player thinks in
+        /// when deciding what goes in the cabinet they are looking at. What is still in transit is
+        /// listed underneath with its date, greyed, because it is the answer to "where did my order
+        /// go" and it is not something that can be fitted yet.
         ///
-        /// Newest first, which is the order they were bought in and the order that matters: the
-        /// thing a player is looking for after a purchase is the purchase.
-        ///
-        /// **It does not offer to put a card in this cabinet, and that is honest rather than
-        /// missing.** The hall spreads every owned accelerator across every cabinet in proportion
-        /// to what each one can hold, on every tick; there is no per-cabinet placement in the
-        /// simulation to expose. A button that appeared to put one here and then watched the next
-        /// day move it would be worse than no button. Naming what is owned is the half that is
-        /// true today.
+        /// A row does three things and the author asked for all three: **double click fits one**,
+        /// the FIT button fits one, and SELL sells the whole batch at today's residual. Dragging a
+        /// row onto the cabinet is not built.
         /// </summary>
-        private static VisualElement BuildStock(CompanySimulation simulation)
+        private VisualElement BuildPartsBay(CompanySimulation simulation, int column, int row)
         {
             var state = simulation.State;
 
-            var block = new VisualElement();
-            block.AddToClassList("rackmodal__stock");
+            var bay = new VisualElement();
+            bay.AddToClassList("rackbay");
 
             var heading = new Label(Loc.T("rack.stock"));
             heading.AddToClassList("panel__heading");
-            block.Add(heading);
+            bay.Add(heading);
 
-            var online = 0;
-            var waiting = 0;
+            // One line per generation rather than per purchase order, because two orders of the
+            // same card are the same card and a player counting their A100s does not care which
+            // invoice they arrived on. The index of the first batch is kept for the sale.
+            var online = new List<(HardwareGeneration Part, int Units, int Asset)>();
+            var waiting = new List<(HardwareGeneration Part, int Units, GameDate Arrives)>();
 
-            var rows = new List<(string Name, int Units, bool Waiting, GameDate Arrives)>();
-
-            foreach (var asset in state.Pool.Assets)
+            for (var index = 0; index < state.Pool.Assets.Count; index++)
             {
+                var asset = state.Pool.Assets[index];
+
                 if (asset.Units <= 0
-                    || !HardwareCatalog.TryGet(asset.GenerationId, out var generation)
-                    || generation.Class != HardwareClass.Accelerator)
+                    || !HardwareCatalog.TryGet(asset.GenerationId, out var part)
+                    || part.Class != HardwareClass.Accelerator)
                 {
                     continue;
                 }
 
-                var here = asset.IsOnline(state.Date);
-
-                if (here)
+                if (!asset.IsOnline(state.Date))
                 {
-                    online += asset.Units;
+                    waiting.Add((part, asset.Units, asset.CommissionDate));
+                    continue;
+                }
+
+                var at = online.FindIndex(line => line.Part.Id == part.Id);
+
+                if (at >= 0)
+                {
+                    online[at] = (part, online[at].Units + asset.Units, online[at].Asset);
                 }
                 else
                 {
-                    waiting += asset.Units;
+                    online.Add((part, asset.Units, index));
                 }
-
-                rows.Add((generation.DisplayName, asset.Units, !here, asset.CommissionDate));
             }
 
-            if (rows.Count == 0)
+            online.Sort((left, right) =>
+                right.Part.PetaflopsPerUnit.CompareTo(left.Part.PetaflopsPerUnit));
+
+            if (online.Count == 0 && waiting.Count == 0)
             {
                 var none = new Label(Loc.T("rack.stock.none"));
                 none.AddToClassList("field__hint");
-                block.Add(none);
+                bay.Add(none);
 
-                return block;
+                return bay;
             }
 
-            // The three numbers a player is actually asking for: what is here, what is in the
-            // cabinets on this floor, and what is sitting in a datacenter somewhere else.
             var housed = state.Hall.HousedAccelerators;
+            var owned = simulation.OnlineAccelerators();
 
-            block.Add(UiParts.StatLine(Loc.T("rack.stock.owned"), online.ToString()));
-            block.Add(UiParts.StatLine(Loc.T("rack.stock.here"), housed.ToString()));
+            bay.Add(UiParts.StatLine(Loc.T("rack.stock.here"),
+                state.Hall.At(column, row).Accelerators.ToString()));
 
-            block.Add(UiParts.StatLine(Loc.T("rack.stock.elsewhere"),
-                Math.Max(0, online - housed).ToString()));
+            bay.Add(UiParts.StatLine(Loc.T("rack.stock.elsewhere"),
+                Math.Max(0, housed - state.Hall.At(column, row).Accelerators).ToString()));
 
-            if (waiting > 0)
+            bay.Add(UiParts.StatLine(Loc.T("rack.stock.loose"),
+                Math.Max(0, owned - housed).ToString()));
+
+            var list = new ScrollView(ScrollViewMode.Vertical)
             {
-                block.Add(UiParts.StatLine(Loc.T("rack.stock.waiting"), waiting.ToString()));
+                verticalScrollerVisibility = ScrollerVisibility.Auto,
+                horizontalScrollerVisibility = ScrollerVisibility.Hidden
+            };
+
+            list.AddToClassList("rackbay__list");
+
+            foreach (var line in online)
+            {
+                list.Add(PartRow(simulation, column, row, line.Part, line.Units, line.Asset));
             }
 
-            // Newest order first, which is what somebody who just bought is looking for.
-            rows.Reverse();
-
-            var list = new VisualElement();
-            list.AddToClassList("rackstock");
-
-            for (var index = 0; index < rows.Count && index < 6; index++)
+            foreach (var line in waiting)
             {
-                var (name, units, later, arrives) = rows[index];
+                var coming = new Label(Loc.T("rack.stock.row_waiting",
+                    line.Units, line.Part.DisplayName, line.Arrives.ToString()));
 
-                var line = new Label(later
-                    ? Loc.T("rack.stock.row_waiting", units, name, arrives.ToString())
-                    : Loc.T("rack.stock.row", units, name));
-
-                line.AddToClassList("rackstock__row");
-                line.EnableInClassList("rackstock__row--waiting", later);
-                list.Add(line);
+                coming.AddToClassList("rackstock__row");
+                coming.AddToClassList("rackstock__row--waiting");
+                list.Add(coming);
             }
 
-            block.Add(list);
-            return block;
+            bay.Add(list);
+
+            var note = new Label(Loc.T("rack.fit_note"));
+            note.AddToClassList("field__hint");
+            bay.Add(note);
+
+            return bay;
+        }
+
+        /// <summary>One generation the company owns, with the two things that can be done to it.</summary>
+        private VisualElement PartRow(CompanySimulation simulation, int column, int row,
+            HardwareGeneration part, int units, int asset)
+        {
+            var line = new VisualElement();
+            line.AddToClassList("rackbay__row");
+
+            var words = new VisualElement();
+            words.AddToClassList("rackbay__words");
+
+            var name = new Label(units + "x  " + part.DisplayName);
+            name.AddToClassList("rackbay__name");
+            words.Add(name);
+
+            var spec = new Label(UiFormat.Petaflops(part.PetaflopsPerUnit)
+                + "  ·  " + UiFormat.Kilowatts(part.PowerKilowatts));
+
+            spec.AddToClassList("rackbay__spec");
+            words.Add(spec);
+
+            line.Add(words);
+
+            var fit = new Button(() => Fit(simulation, column, row, part))
+            {
+                text = Loc.T("rack.fit")
+            };
+
+            fit.AddToClassList("rackbay__fit");
+            line.Add(fit);
+
+            var sell = new Button(() =>
+            {
+                if (simulation.TrySellHardware(asset, units, out var proceeds, out var why))
+                {
+                    AudioDirector.Confirm();
+                    announce?.Invoke(Loc.T("rack.sold"),
+                        Loc.T("rack.sold_note", units, part.DisplayName,
+                            UiFormat.Money(proceeds)));
+                }
+                else
+                {
+                    AudioDirector.Deny();
+                    announce?.Invoke(Loc.T("rack.sell_cards"), why);
+                }
+
+                changed?.Invoke();
+            })
+            {
+                text = Loc.T("rack.sell_cards")
+            };
+
+            sell.AddToClassList("rackbay__sell");
+            line.Add(sell);
+
+            // **Double click fits one**, which is what the author asked for by name and what a
+            // player tries before they find a button.
+            line.RegisterCallback<ClickEvent>(click =>
+            {
+                if (click.clickCount >= 2)
+                {
+                    Fit(simulation, column, row, part);
+                }
+            });
+
+            return line;
+        }
+
+        /// <summary>Puts one card in the cabinet on screen and says so.</summary>
+        private void Fit(CompanySimulation simulation, int column, int row, HardwareGeneration part)
+        {
+            if (simulation.TryFitCard(column, row, out var why))
+            {
+                AudioDirector.Confirm();
+
+                announce?.Invoke(Loc.T("rack.fit"),
+                    Loc.T("rack.fitted", part.DisplayName,
+                        ServerRackCatalog.Get(simulation.State.Hall.At(column, row).Rack)
+                            .DisplayName));
+            }
+            else
+            {
+                AudioDirector.Deny();
+                announce?.Invoke(Loc.T("rack.fit"), why);
+            }
+
+            changed?.Invoke();
         }
 
         private VisualElement BuildHead(ServerRackDefinition definition)

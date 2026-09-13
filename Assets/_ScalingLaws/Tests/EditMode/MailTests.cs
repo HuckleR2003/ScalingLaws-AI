@@ -250,7 +250,7 @@ namespace ScalingLaws.Tests.EditMode
 
             // Somewhere to put them. Applications arrive at the house too, deliberately, but
             // accepting one there is refused and that is a different test.
-            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
+            Assert.IsTrue(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
 
             var offer = FirstOfKind(simulation, MailKind.JobOffer);
             Assert.IsNotNull(offer);
@@ -301,7 +301,7 @@ namespace ScalingLaws.Tests.EditMode
         public void HagglingEitherLandsRefusesOrLosesThem()
         {
             var simulation = Earning(1011, 400);
-            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
+            Assert.IsTrue(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
 
             var offer = FirstOfKind(simulation, MailKind.JobOffer);
             Assert.IsNotNull(offer);
@@ -345,7 +345,7 @@ namespace ScalingLaws.Tests.EditMode
         public void HagglingRunsOutOfRope()
         {
             var simulation = Earning(1012, 400);
-            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
+            Assert.IsTrue(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var moveReason), moveReason);
 
             var offer = FirstOfKind(simulation, MailKind.JobOffer);
             Assert.IsNotNull(offer);

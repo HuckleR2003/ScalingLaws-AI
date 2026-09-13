@@ -26,6 +26,17 @@ namespace ScalingLaws.UI
         private readonly Func<OfficeTier, bool, string> tryBuy;
         private readonly Action closed;
 
+        /// <summary>
+        /// Walks the player to the node that opens a place, with it lit.
+        ///
+        /// **A row that refuses a click and does not say why reads as a bug**, and this project has
+        /// already shipped that twice: the announced offices and the architecture licences. So the
+        /// locked row names the research, explains that a move is more than a bill, and carries the
+        /// way there. Null when nobody wired it, in which case the row still explains itself and
+        /// simply has no button.
+        /// </summary>
+        private readonly Action<ResearchNodeId> openResearch;
+
         // Nullable rather than a None member, because OfficeTier values live in saves
         // and Garage is legitimately zero.
         //
@@ -37,12 +48,14 @@ namespace ScalingLaws.UI
         private string problem = string.Empty;
 
         public OfficeChooser(Func<CompanyState> state, Func<OfficeTier, bool, string> tryMove,
-            Action closed, Func<OfficeTier, bool, string> tryBuy = null)
+            Action closed, Func<OfficeTier, bool, string> tryBuy = null,
+            Action<ResearchNodeId> openResearch = null)
         {
             this.state = state;
             this.tryMove = tryMove;
             this.tryBuy = tryBuy ?? ((_, _) => Loc.T("offices.buy_unwired"));
             this.closed = closed;
+            this.openResearch = openResearch;
 
             Root = new VisualElement();
             Root.AddToClassList("offices");
@@ -335,16 +348,23 @@ namespace ScalingLaws.UI
 
             var openYet = company.Date.IsOnOrAfter(place.EarliestDate);
 
+            // What the company has learned about occupying somewhere like this. The rule is in
+            // `CompanySimulation`; this is the same table read for the row's own sake, so the
+            // screen can say which node rather than only that the till said no.
+            var gate = OfficeUnlocks.RequiredFor(place.Tier);
+            var understood = gate == ResearchNodeId.None || company.HasResearch(gate);
+
             var row = new VisualElement();
             row.AddToClassList("office-row");
             row.EnableInClassList("office-row--here", here);
+            row.EnableInClassList("office-row--locked", !understood);
 
             // **The card itself opens the deal, because that is what a player tries first.** One of
             // the two testers who reported this said plainly: "I guess that to buy a new office you
             // just need to click the new office. I tried it and it doesn't work." He was reaching
             // for the obvious control and there was not one. The buttons stop the click reaching
             // here, or pressing one would open the card and then this would shut it again.
-            if (openYet && !(here && company.Staff.Owns(place.Tier)))
+            if (openYet && understood && !(here && company.Staff.Owns(place.Tier)))
             {
                 row.AddToClassList("office-row--open");
                 row.RegisterCallback<ClickEvent>(_ => Open(place.Tier));
@@ -398,7 +418,9 @@ namespace ScalingLaws.UI
 
             body.Add(figures);
 
-            body.Add(BuildActions(place, company, here, affordable, openYet));
+            body.Add(understood
+                ? BuildActions(place, company, here, affordable, openYet)
+                : BuildLocked(gate));
             row.Add(body);
 
             // ---- the right: the place itself --------------------------------------------------
@@ -454,6 +476,46 @@ namespace ScalingLaws.UI
         /// comes back and ends the rent forever. Putting them in one button with a toggle would hide
         /// exactly the comparison the player is here to make.
         /// </summary>
+        /// <summary>
+        /// The row for a place the company has not learned to take on yet.
+        ///
+        /// It says the same thing the simulation would say if the player pressed RENT, before they
+        /// press it. Naming the node is the whole point: "needs research" over a tree of fifty nine
+        /// of them is not an instruction.
+        /// </summary>
+        private VisualElement BuildLocked(ResearchNodeId gate)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("office-locked");
+
+            var kicker = new Label(Loc.T("offices.locked"));
+            kicker.AddToClassList("office-locked__kicker");
+            block.Add(kicker);
+
+            var node = ResearchTree.Get(gate);
+
+            var note = new Label(Loc.T("offices.locked_note", node.DisplayName));
+            note.AddToClassList("office-locked__note");
+            block.Add(note);
+
+            if (openResearch == null)
+            {
+                return block;
+            }
+
+            var go = new Button(() => openResearch(gate)) { text = Loc.T("offices.go_research") };
+            go.AddToClassList("office-row__move");
+            go.AddToClassList("office-locked__go");
+
+            // The card underneath opens the deal, and this row's deal is not available. Without
+            // this the walk to the research screen would also open a card about a place the
+            // company cannot take.
+            go.RegisterCallback<ClickEvent>(click => click.StopPropagation());
+            block.Add(go);
+
+            return block;
+        }
+
         private VisualElement BuildActions(OfficeDefinition place, CompanyState company, bool here,
             bool affordable, bool openYet)
         {

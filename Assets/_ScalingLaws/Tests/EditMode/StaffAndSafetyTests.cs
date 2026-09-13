@@ -67,7 +67,7 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(simulation.TryApproach(Somebody()), Does.Contain("desk"),
                 "Nobody can be seated at home, so nobody can be approached for a seat there.");
 
-            Assert.That(simulation.TryMoveOffice(OfficeTier.Loft, out var moveReason), Is.True, moveReason);
+            Assert.That(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var moveReason), Is.True, moveReason);
 
             var desks = simulation.State.Staff.Desks;
             for (var index = 0; index < desks; index++)
@@ -80,7 +80,7 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.That(simulation.State.Staff.Headcount, Is.EqualTo(desks));
 
-            Assert.That(simulation.TryMoveOffice(OfficeTier.Floor, out var bigger), Is.True, bigger);
+            Assert.That(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Floor, out var bigger), Is.True, bigger);
             Assert.That(simulation.TryApproach(Somebody()), Is.Empty,
                 "A bigger lease has to actually free the constraint.");
         }
@@ -123,7 +123,7 @@ namespace ScalingLaws.Tests.EditMode
         public void PayrollAndRentLeaveTheAccountEveryDay()
         {
             var staffed = Company(60_000_000, GameDate.Start);
-            staffed.TryMoveOffice(OfficeTier.Loft, out _);
+            staffed.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out _);
             for (var index = 0; index < 6; index++)
             {
                 staffed.State.Staff.Add(new Hire(StaffRole.ResearchScientist, 4, GameDate.Start));
@@ -217,13 +217,13 @@ namespace ScalingLaws.Tests.EditMode
         public void YouCannotMoveIntoAnOfficeSmallerThanTheTeam()
         {
             var simulation = Company(400_000_000, GameDate.FromCalendar(2024, 1, 1));
-            simulation.TryMoveOffice(OfficeTier.Floor, out _);
+            simulation.LearnedToRent().TryMoveOffice(OfficeTier.Floor, out _);
             for (var index = 0; index < 10; index++)
             {
                 simulation.State.Staff.Add(new Hire(StaffRole.GoToMarket, 1, GameDate.Start));
             }
 
-            Assert.That(simulation.TryMoveOffice(OfficeTier.Garage, out var reason), Is.False);
+            Assert.That(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Garage, out var reason), Is.False);
             Assert.That(reason, Does.Contain("holds 0"));
         }
 
@@ -404,7 +404,7 @@ namespace ScalingLaws.Tests.EditMode
         public void TheTeamTheOfficeAndTheRecordSurviveASaveAndReload()
         {
             var simulation = Company(300_000_000, GameDate.FromCalendar(2024, 6, 1), capability: 60.0);
-            simulation.TryMoveOffice(OfficeTier.Floor, out _);
+            simulation.LearnedToRent().TryMoveOffice(OfficeTier.Floor, out _);
             simulation.State.Staff.Add(new Hire(StaffRole.ResearchScientist, 5, GameDate.Start));
             simulation.State.Staff.Add(new Hire(StaffRole.SafetyEngineer, 3, GameDate.Start));
             simulation.State.Staff.Add(new Hire(StaffRole.GoToMarket, 2, GameDate.Start));

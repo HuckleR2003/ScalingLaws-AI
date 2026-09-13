@@ -41,7 +41,20 @@ namespace ScalingLaws.Data
         /// a sixth era, because the eras are a calendar and a technique belongs in the year it was
         /// real; cooling and substations land in the middle of it.
         /// </summary>
-        Operations = 3
+        Operations = 3,
+
+        /// <summary>
+        /// Where the company works. One node per office on the ladder, and nothing else.
+        ///
+        /// **Not Operations, although both are about the company rather than the model.** An
+        /// operations node changes a number the company already lives with: the cooling, the
+        /// tariff, what a cabinet sheds. These change nothing at all on their own. Each one opens
+        /// a door, and the whole of what it costs is paid on the other side of it, in rent.
+        ///
+        /// They are also the only nodes drawn away from the eras, beside the funding panel, because
+        /// a lease is not a technique and does not belong on a calendar of techniques.
+        /// </summary>
+        Premises = 4
     }
 
     public enum ResearchEra
@@ -166,6 +179,14 @@ namespace ScalingLaws.Data
         AirflowModelling = 802,
         OwnSubstation = 803,
         RackTelemetry = 804,
+
+        // 10xx is the Premises track: one per office on the ladder. Numbered apart for the same
+        // reason 8xx is, and one number per office rather than a range, so adding an office is
+        // adding the next number here and the row beside it. **Not 9xx**, which era five already
+        // has: the compiler caught the collision as an unreachable switch arm, which is the fourth
+        // time `ResearchNodeId` numbers have been sat on twice.
+        LeaseASmallHub = 1001,
+        LeaseABigHub = 1002,
 
         // Era 4, the end game.
         HybridArchitectures = 401,
@@ -334,6 +355,10 @@ namespace ScalingLaws.Data
             ResearchNodeId.AirflowModelling => "node.airflow",
             ResearchNodeId.OwnSubstation => "node.substation",
             ResearchNodeId.RackTelemetry => "node.racktelemetry",
+
+            // The Premises track. Where the company works.
+            ResearchNodeId.LeaseASmallHub => "node.smallhub",
+            ResearchNodeId.LeaseABigHub => "node.bighub",
 
             // **Era five had no arms at all until 2026-09-04**, so all five statecraft nodes fell
             // through the default and drew as "Fine-tuning and prompting" with era one's
@@ -1063,7 +1088,48 @@ namespace ScalingLaws.Data
                 warning: "The power bill is the one cost that grows with the thing the player is "
                     + "proudest of. This does nothing at all for a company that owns no room.",
                 optionalTechnology: true,
-                track: ResearchTrack.Operations)
+                track: ResearchTrack.Operations),
+
+            // ---- premises ------------------------------------------------------------------
+            //
+            // **Cheap, early, and one per office.** A move used to be a cheque and a click, which
+            // made the largest recurring cost in the game the one decision with nothing in front
+            // of it: a company could be signing for a floor before it knew what a floor was for.
+            //
+            // The first is 100 research points and $135k. Those two figures are one number: the
+            // tree derives points and cash from `CostUsd` by rule, so a node needs one figure
+            // rather than two and the pair can never disagree. 900,000 is the number that puts
+            // the points at exactly 100.
+            //
+            // Both are optionalTechnology. A company that means to stay in the garage gets
+            // nothing at all from either, so the scripted operator in the balance suite skips
+            // them the same way it skips the architecture ladders.
+
+            new(ResearchNodeId.LeaseASmallHub, ResearchEra.Foundations,
+                "Leasing and fit-out",
+                "What a commercial lease actually says, what a fit-out costs before anybody sits "
+                + "down, and how many desks a company this size needs before it needs them. Nobody "
+                + "is born knowing how to rent a floor; the first one is learned expensively by "
+                + "everyone who has ever done it.",
+                GameDate.Start, costUsd: 900_000, durationDays: 30,
+                petaflopDaysRequired: 0,
+                warning: "Opens the small hub. It buys no capability and no capacity: what it "
+                    + "buys is the right to start paying rent.",
+                optionalTechnology: true,
+                track: ResearchTrack.Premises),
+
+            new(ResearchNodeId.LeaseABigHub, ResearchEra.Foundations,
+                "Running a floor",
+                "Twenty people in one room is a different job from ten. Facilities, a plan for "
+                + "who sits beside whom, and the first month where somebody has to own the "
+                + "question of whose desk is whose.",
+                GameDate.Start, costUsd: 2_700_000, durationDays: 60,
+                petaflopDaysRequired: 0,
+                requires: new[] { ResearchNodeId.LeaseASmallHub },
+                warning: "Opens the big hub, which is three times the rent of the small one. A "
+                    + "company that cannot fill it is paying for empty desks.",
+                optionalTechnology: true,
+                track: ResearchTrack.Premises)
         };
 
         private static readonly Dictionary<ResearchNodeId, ResearchNode> ById = BuildIndex();

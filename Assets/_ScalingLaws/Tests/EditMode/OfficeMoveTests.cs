@@ -50,7 +50,7 @@ namespace ScalingLaws.Tests.EditMode
                 + "that blocks hiring cannot be left until the company earns, and it cannot earn "
                 + "at full strength until it leaves.");
 
-            Assert.That(simulation.TryMoveOffice(OfficeTier.Loft, out var why), Is.True, why);
+            Assert.That(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var why), Is.True, why);
 
             Assert.That(simulation.State.Staff.Office, Is.EqualTo(OfficeTier.Loft),
                 "The move reported success and the company is still in the house.");
@@ -67,7 +67,7 @@ namespace ScalingLaws.Tests.EditMode
         public void AfterMovingSomebodyCanBeHiredIntoADesk()
         {
             var simulation = Fresh();
-            Assert.That(simulation.TryMoveOffice(OfficeTier.Loft, out var why), Is.True, why);
+            Assert.That(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var why), Is.True, why);
 
             var seated = simulation.State.Staff.Add(new Hire(
                 StaffRole.ResearchScientist, 3, simulation.State.Date, "Iwona Krajewska",
@@ -149,7 +149,7 @@ namespace ScalingLaws.Tests.EditMode
 
             simulation.State.CashUsd = loft.PurchasePriceUsd + loft.FitOutCostUsd + 1_000_000L;
 
-            Assert.That(simulation.TryBuyOffice(OfficeTier.Loft, null, out var why), Is.True, why);
+            Assert.That(simulation.LearnedToRent().TryBuyOffice(OfficeTier.Loft, null, out var why), Is.True, why);
 
             Assert.That(simulation.State.Staff.Owns(OfficeTier.Loft), Is.True,
                 "The purchase reported success and the company does not own the place.");

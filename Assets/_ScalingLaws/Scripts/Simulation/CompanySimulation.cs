@@ -419,6 +419,69 @@ namespace ScalingLaws.Simulation
         /// cabinet returns its fans to stock; charging again to refit them would make rearranging
         /// the room a purchase, which is the opposite of what a build mode is for.
         /// </summary>
+        /// <summary>
+        /// How many accelerators the company has online today, wherever they are standing.
+        ///
+        /// One reading, because the cabinet panel prints it, the fitting rule is bounded by it and
+        /// the daily stock call is driven by it. Three copies of this loop would be three chances
+        /// to disagree about how big the fleet is.
+        /// </summary>
+        public int OnlineAccelerators()
+        {
+            var units = 0;
+
+            foreach (var asset in State.Pool.Assets)
+            {
+                if (!asset.IsOnline(State.Date)
+                    || !HardwareCatalog.TryGet(asset.GenerationId, out var generation)
+                    || generation.Class != HardwareClass.Accelerator)
+                {
+                    continue;
+                }
+
+                units += asset.Units;
+            }
+
+            return units;
+        }
+
+        /// <summary>
+        /// Puts one card into one cabinet, by hand.
+        ///
+        /// **Reported twice: you can buy silicon and you cannot put it anywhere.** The floor
+        /// arranged itself and there was no way to say which cabinet a card went into, which is
+        /// the one decision a room full of cabinets exists to offer.
+        ///
+        /// The rule lives in the hall, which owns the slots, and the fleet size comes from here,
+        /// which owns the books. Neither knows the other's half.
+        /// </summary>
+        public bool TryFitCard(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.none");
+                return false;
+            }
+
+            return State.Hall.TryFitCard(column, row, OnlineAccelerators(), out failureReason);
+        }
+
+        /// <inheritdoc cref="ServerHall.TryPullCard"/>
+        public bool TryPullCard(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.none");
+                return false;
+            }
+
+            return State.Hall.TryPullCard(column, row, out failureReason);
+        }
+
         public bool TryFitFan(int column, int row, out string failureReason)
         {
             failureReason = string.Empty;
@@ -2943,6 +3006,33 @@ namespace ScalingLaws.Simulation
         public bool TryBuyOffice(OfficeTier tier, out string failureReason) =>
             TryBuyOffice(tier, null, out failureReason);
 
+        /// <summary>
+        /// Whether the company has learned how to occupy this kind of place.
+        ///
+        /// **Rent is the largest recurring cost in the game and moving used to be a cheque and a
+        /// click.** One node per office, cheap and early, so the decision has something in front
+        /// of it rather than only a price. The reason travels back out as a sentence the premises
+        /// page prints, because a row that refuses a click and does not say why reads as a bug.
+        ///
+        /// Enforced here rather than on the screen. A cap that lives only in the interface is a
+        /// suggestion the moment there is a second way to commit, and there are two here already:
+        /// renting and buying.
+        /// </summary>
+        private bool OfficeIsUnderstood(OfficeTier tier, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            var required = OfficeUnlocks.RequiredFor(tier);
+
+            if (required == ResearchNodeId.None || State.HasResearch(required))
+            {
+                return true;
+            }
+
+            failureReason = Loc.T("office.needs_research", ResearchTree.Get(required).DisplayName);
+            return false;
+        }
+
         /// <inheritdoc cref="TryMoveOffice(OfficeTier, DecorZone?, out string)"/>
         public bool TryBuyOffice(OfficeTier tier, DecorZone? furnishWith, out string failureReason)
         {
@@ -2969,6 +3059,11 @@ namespace ScalingLaws.Simulation
             if (State.Date.IsBefore(definition.EarliestDate))
             {
                 failureReason = Loc.T("office.not_before", definition.EarliestDate);
+                return false;
+            }
+
+            if (!OfficeIsUnderstood(tier, out failureReason))
+            {
                 return false;
             }
 
@@ -3054,6 +3149,11 @@ namespace ScalingLaws.Simulation
             if (State.Date.IsBefore(definition.EarliestDate))
             {
                 failureReason = Loc.T("office.not_before", definition.EarliestDate);
+                return false;
+            }
+
+            if (!OfficeIsUnderstood(tier, out failureReason))
+            {
                 return false;
             }
 

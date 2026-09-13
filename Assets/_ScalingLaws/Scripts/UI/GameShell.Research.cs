@@ -106,6 +106,11 @@ namespace ScalingLaws.UI
                             operations.Add(standing);
                             break;
 
+                        // Drawn beside the funding panel rather than in an era band. A lease is
+                        // not a technique and does not belong on a calendar of techniques.
+                        case ResearchTrack.Premises:
+                            break;
+
                         default:
                             nodes.Add(standing);
                             break;
@@ -219,7 +224,23 @@ namespace ScalingLaws.UI
 
                     section.AddToClassList("era--beside");
                     row.Add(section);
-                    row.Add(funding);
+
+                    // **Funding, and the premises map under it.** The author asked for the offices
+                    // to sit literally under the funding section, which is also the only column on
+                    // this screen that is not a calendar: what the company can spend, and where it
+                    // can work.
+                    var side = new VisualElement();
+                    side.AddToClassList("rside");
+                    side.Add(funding);
+
+                    var premises = BuildPremisesBoard(board);
+
+                    if (premises != null)
+                    {
+                        side.Add(premises);
+                    }
+
+                    row.Add(side);
                     page.Add(row);
                 }
                 else
@@ -233,6 +254,13 @@ namespace ScalingLaws.UI
                     stateBoard ??= new StateBoard(() => simulation, () => Show(Screen.Research));
                     section.Add(stateBoard.Build());
                 }
+
+                // **The same width as era one**, which is the only one with anything beside it.
+                // Reported as the lower half of the screen being very hard to scroll: a full-width
+                // board leaves no page left of it or right of it, and the wheel over a board is
+                // the zoom. Era one was always scrollable past its funding panel; every era has
+                // that margin now.
+                section.AddToClassList("era--alone");
 
                 page.Add(section);
                 }
@@ -342,7 +370,6 @@ namespace ScalingLaws.UI
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
-            panel.AddToClassList("rfund-half");
 
             var head = new VisualElement();
             head.AddToClassList("rfund__head");
@@ -450,9 +477,43 @@ namespace ScalingLaws.UI
         /// <summary>Shuts the card and forgets it, so a rebuild does not bring it back.</summary>
         private void CloseResearchCard()
         {
+            shellRoot?.UnregisterCallback<PointerDownEvent>(
+                CloseResearchCardOnAClickElsewhere, TrickleDown.TrickleDown);
+
             researchCard?.RemoveFromHierarchy();
             researchCard = null;
             openResearchCard = ResearchNodeId.None;
+        }
+
+        /// <summary>
+        /// Any click that is not on the card shuts the card.
+        ///
+        /// **Reported as the card being almost permanently on screen.** It had a cross and a CLOSE
+        /// button and nothing else took it down, so the one thing every player tries first, click
+        /// somewhere else, left it sitting over the tree while they scrolled. A card opened by
+        /// pointing at something has to close by pointing at something else.
+        ///
+        /// On the way down rather than on the way up, so a control underneath still receives the
+        /// click that closed the card: dismissing is not a turn the player has to spend. The node
+        /// that opens a card opens it on <c>ClickEvent</c>, which is the pointer coming back up,
+        /// so this cannot close the card the same press just opened.
+        /// </summary>
+        private void CloseResearchCardOnAClickElsewhere(PointerDownEvent down)
+        {
+            if (researchCard == null)
+            {
+                return;
+            }
+
+            for (var step = down.target as VisualElement; step != null; step = step.parent)
+            {
+                if (step == researchCard)
+                {
+                    return;
+                }
+            }
+
+            CloseResearchCard();
         }
 
         /// <summary>
@@ -655,6 +716,16 @@ namespace ScalingLaws.UI
 
             researchCard.Add(buttons);
             shellRoot.Add(researchCard);
+
+            // Registered here rather than once at startup, because it is only ever interesting
+            // while a card is open, and `CloseResearchCard` is the one place it comes off again.
+            // Unregistering first is what keeps a rebuild from stacking a second copy of it: the
+            // page is rebuilt every simulated day and the card is redrawn with it.
+            shellRoot.UnregisterCallback<PointerDownEvent>(
+                CloseResearchCardOnAClickElsewhere, TrickleDown.TrickleDown);
+
+            shellRoot.RegisterCallback<PointerDownEvent>(
+                CloseResearchCardOnAClickElsewhere, TrickleDown.TrickleDown);
         }
 
         /// <summary>One figure on the card, greyed when the company cannot cover it.</summary>
@@ -766,6 +837,50 @@ namespace ScalingLaws.UI
             }
 
             return key;
+        }
+
+        /// <summary>
+        /// The offices, as a small map of their own.
+        ///
+        /// **One node per office, and the whole of it is one row.** Rent is the largest recurring
+        /// cost in the game and moving used to be a cheque and a click; this is the one decision in
+        /// front of it. The nodes carry the photograph of the place they open rather than a drawn
+        /// icon, because the question a player is answering here is which room.
+        ///
+        /// Null when the tree has none, so a build with no premises nodes in it draws nothing
+        /// rather than an empty heading.
+        /// </summary>
+        private VisualElement BuildPremisesBoard(IReadOnlyList<ResearchStanding> board)
+        {
+            var premises = board
+                .Where(standing => standing.Node.Track == ResearchTrack.Premises)
+                .ToList();
+
+            if (premises.Count == 0)
+            {
+                return null;
+            }
+
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+            panel.AddToClassList("rpremises");
+
+            var heading = new Label(Loc.T("research.premises"));
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            // **Fitted, unlike the eras.** The rule there is that a whole era shrunk into a band
+            // takes the titles under the size this project decided was readable. Two cards in this
+            // column is a zoom of about 0.93, which is a thirteen pixel title at twelve.
+            var map = new ResearchMap { FitsOnOpen = true };
+            map.Controls.AddToClassList("rmap__bar--inline");
+
+            var cards = BuildBoard(premises[0].Node.Era, ResearchTrack.Premises, premises);
+            map.Surface.Add(cards);
+            map.style.height = cards.BoardHeight + 24f;
+            panel.Add(map);
+
+            return panel;
         }
 
         /// <summary>

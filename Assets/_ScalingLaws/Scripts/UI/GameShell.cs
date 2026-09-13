@@ -1116,7 +1116,17 @@ namespace ScalingLaws.UI
                 (tier, furnished) =>
                     simulation.TryBuyOffice(tier, FurnishZone(tier, furnished), out var why)
                         ? string.Empty
-                        : why);
+                        : why,
+
+                // A locked place walks the player to the node that opens it, lit. `Show` is what
+                // draws the board, so the selection is set first: the node is marked as the board
+                // is built rather than afterwards, and `MarkTheRoadTo` then has pips to mark.
+                node =>
+                {
+                    selectedResearch = node;
+                    Show(Screen.Research);
+                    MarkTheRoadTo(node);
+                });
 
             news = new NewsScreen(simulation, (tier, joined) =>
             {

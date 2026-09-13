@@ -723,11 +723,28 @@ namespace ScalingLaws.Tests.PlayMode
         public IEnumerator TheOfficeChooserDraws()
         {
             var simulation = Campaign();
+
+            // Wired the way the shell wires it, so the frame shows the locked row with its way out
+            // of itself on it rather than a row that explains and then stops.
             var chooser = new OfficeChooser(
-                () => simulation.State, (_, _) => string.Empty, () => { });
+                () => simulation.State, (_, _) => string.Empty, () => { }, null, _ => { });
             chooser.Refresh();
 
             yield return Capture(chooser.Root, "offices.png");
+
+            // **The gate, which is the state a campaign opens in.** The assembled company has the
+            // premises research; a company that has not studied leasing is what the first hour of
+            // a campaign looks like, and it is the frame worth checking.
+            foreach (var node in ResearchTree.All)
+            {
+                if (node.Track == ResearchTrack.Premises)
+                {
+                    simulation.State.UnlockedResearch.Remove(node.Id);
+                }
+            }
+
+            chooser.Refresh();
+            yield return Capture(chooser.Root, "offices_locked.png");
 
             // And the deal card, which is the half a list of rows cannot show. Opened through the
             // same method the row's button calls, because an EditMode or PlayMode proof dispatches

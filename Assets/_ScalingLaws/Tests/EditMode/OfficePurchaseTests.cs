@@ -66,7 +66,7 @@ namespace ScalingLaws.Tests.EditMode
             var simulation = Rich();
             var place = OfficeCatalog.Get(OfficeTier.Loft);
 
-            Assert.IsTrue(simulation.TryBuyOffice(OfficeTier.Loft, out var why), why);
+            Assert.IsTrue(simulation.LearnedToRent().TryBuyOffice(OfficeTier.Loft, out var why), why);
 
             Assert.IsTrue(simulation.State.Staff.Owns(OfficeTier.Loft));
             Assert.AreEqual(OfficeTier.Loft, simulation.State.Staff.Office,
@@ -84,7 +84,7 @@ namespace ScalingLaws.Tests.EditMode
         public void RentingTheSamePlaceStillCosts()
         {
             var simulation = Rich();
-            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out var why), why);
+            Assert.IsTrue(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var why), why);
 
             Assert.IsFalse(simulation.State.Staff.Owns(OfficeTier.Loft));
             Assert.Greater(simulation.State.Staff.DailyRentUsd, 0L);
@@ -95,7 +95,7 @@ namespace ScalingLaws.Tests.EditMode
         {
             var simulation = Rich(cash: 1_000_000);
 
-            Assert.IsFalse(simulation.TryBuyOffice(OfficeTier.Loft, out var why));
+            Assert.IsFalse(simulation.LearnedToRent().TryBuyOffice(OfficeTier.Loft, out var why));
             Assert.IsNotEmpty(why);
             Assert.IsFalse(simulation.State.Staff.Owns(OfficeTier.Loft));
         }
@@ -104,8 +104,8 @@ namespace ScalingLaws.Tests.EditMode
         public void BuyingTwiceIsRefused()
         {
             var simulation = Rich();
-            Assert.IsTrue(simulation.TryBuyOffice(OfficeTier.Loft, out _));
-            Assert.IsFalse(simulation.TryBuyOffice(OfficeTier.Loft, out var why));
+            Assert.IsTrue(simulation.LearnedToRent().TryBuyOffice(OfficeTier.Loft, out _));
+            Assert.IsFalse(simulation.LearnedToRent().TryBuyOffice(OfficeTier.Loft, out var why));
             StringAssert.Contains("already owns", why);
         }
 
@@ -116,8 +116,8 @@ namespace ScalingLaws.Tests.EditMode
             // small hub and later moves up still owns it, and moving back has to be free.
             var simulation = Rich(cash: 900_000_000);
 
-            Assert.IsTrue(simulation.TryBuyOffice(OfficeTier.Loft, out _));
-            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Floor, out var why), why);
+            Assert.IsTrue(simulation.LearnedToRent().TryBuyOffice(OfficeTier.Loft, out _));
+            Assert.IsTrue(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Floor, out var why), why);
 
             Assert.Greater(simulation.State.Staff.DailyRentUsd, 0L,
                 "The company is renting the big hub now and should be paying for it.");
@@ -125,7 +125,7 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsTrue(simulation.State.Staff.Owns(OfficeTier.Loft),
                 "It sold the building by walking out of it.");
 
-            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, out _));
+            Assert.IsTrue(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out _));
             Assert.AreEqual(0L, simulation.State.Staff.DailyRentUsd,
                 "Moving back into a place it owns should cost nothing to keep.");
         }
@@ -134,10 +134,10 @@ namespace ScalingLaws.Tests.EditMode
         public void BuyingThePlaceTheCompanyIsAlreadyInSkipsTheFitOut()
         {
             var moved = Rich();
-            Assert.IsTrue(moved.TryMoveOffice(OfficeTier.Loft, out _));
+            Assert.IsTrue(moved.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out _));
             var afterMove = moved.State.CashUsd;
 
-            Assert.IsTrue(moved.TryBuyOffice(OfficeTier.Loft, out _));
+            Assert.IsTrue(moved.LearnedToRent().TryBuyOffice(OfficeTier.Loft, out _));
 
             var place = OfficeCatalog.Get(OfficeTier.Loft);
             Assert.AreEqual(afterMove - place.PurchasePriceUsd, moved.State.CashUsd,
@@ -150,7 +150,7 @@ namespace ScalingLaws.Tests.EditMode
         public void OwnershipSurvivesASave()
         {
             var simulation = Rich();
-            Assert.IsTrue(simulation.TryBuyOffice(OfficeTier.Loft, out _));
+            Assert.IsTrue(simulation.LearnedToRent().TryBuyOffice(OfficeTier.Loft, out _));
 
             var restored = SaveStore.Restore(SaveStore.Capture(simulation.State));
 
@@ -178,7 +178,7 @@ namespace ScalingLaws.Tests.EditMode
 
             var zone = new DecorZone(room.DecorX, room.DecorZ, room.DecorWidth, room.DecorDepth);
 
-            Assert.IsTrue(simulation.TryMoveOffice(OfficeTier.Loft, zone, out var why), why);
+            Assert.IsTrue(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, zone, out var why), why);
 
             Assert.That(simulation.State.Decor, Is.Not.Null);
 
@@ -194,13 +194,13 @@ namespace ScalingLaws.Tests.EditMode
         public void AnUnfurnishedMoveCostsLessAndDeliversNothing()
         {
             var bare = Rich();
-            Assert.IsTrue(bare.TryMoveOffice(OfficeTier.Loft, null, out _));
+            Assert.IsTrue(bare.LearnedToRent().TryMoveOffice(OfficeTier.Loft, null, out _));
 
             var room = RoomCatalog.For(OfficeTier.Loft);
             var zone = new DecorZone(room.DecorX, room.DecorZ, room.DecorWidth, room.DecorDepth);
 
             var furnished = Rich();
-            Assert.IsTrue(furnished.TryMoveOffice(OfficeTier.Loft, zone, out _));
+            Assert.IsTrue(furnished.LearnedToRent().TryMoveOffice(OfficeTier.Loft, zone, out _));
 
             Assert.That(bare.State.CashUsd - furnished.State.CashUsd,
                 Is.EqualTo(OfficeCatalog.FurnishedPackUsd),
@@ -260,7 +260,7 @@ namespace ScalingLaws.Tests.EditMode
             var room = RoomCatalog.For(OfficeTier.Loft);
             var floor = new DecorZone(room.DecorX, room.DecorZ, room.DecorWidth, room.DecorDepth);
 
-            Assert.That(simulation.TryMoveOffice(OfficeTier.Loft, floor, out var why), Is.True, why);
+            Assert.That(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, floor, out var why), Is.True, why);
 
             var plan = simulation.State.Decor;
 

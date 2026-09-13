@@ -357,7 +357,7 @@ namespace ScalingLaws.Tests.PlayMode
             var simulation = shell.Simulation;
             simulation.State.CashUsd = 400_000_000L;
 
-            Assume.That(simulation.TryMoveOffice(OfficeTier.Loft, out var why), Is.True, why);
+            Assume.That(simulation.LearnedToRent().TryMoveOffice(OfficeTier.Loft, out var why), Is.True, why);
 
             Assert.That(shell.OpenScreenByName("Site"), Is.True);
 

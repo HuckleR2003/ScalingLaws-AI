@@ -107,8 +107,23 @@ namespace ScalingLaws.UI
             { ResearchNodeId.RackTelemetry, "research_telemetry" },
             { ResearchNodeId.AirflowModelling, "research_airflow" },
             { ResearchNodeId.LiquidLoops, "research_liquidloops" },
-            { ResearchNodeId.OwnSubstation, "research_substation" }
+            { ResearchNodeId.OwnSubstation, "research_substation" },
+
+            // **The premises nodes wear the photograph of the place they open**, which is what the
+            // author asked for and is also the only honest picture: a lease has no icon, and the
+            // question the node answers is "which room". A value carrying a folder is loaded from
+            // that folder instead of from Research/, so these are the chooser's own pictures
+            // rather than a second copy of them.
+            { ResearchNodeId.LeaseASmallHub, "Offices/office_smallhub" },
+            { ResearchNodeId.LeaseABigHub, "Offices/office_bighub" }
         };
+
+        /// <summary>
+        /// Where a file lives. Bare names are in Research/; anything with a folder in it is a path
+        /// already, which is how the premises nodes borrow the office photographs.
+        /// </summary>
+        private static string PathTo(string file) =>
+            file.Contains('/') ? file : ResourceFolder + file;
 
         private static readonly Dictionary<ResearchNodeId, Texture2D> Loaded = new();
 
@@ -140,7 +155,7 @@ namespace ScalingLaws.UI
                 return cached;
             }
 
-            var loaded = Resources.Load<Texture2D>(ResourceFolder + file);
+            var loaded = Resources.Load<Texture2D>(PathTo(file));
             ByFile[file] = loaded;
             return loaded;
         }
@@ -153,7 +168,7 @@ namespace ScalingLaws.UI
             }
 
             var texture = FileNames.TryGetValue(node, out var file)
-                ? Resources.Load<Texture2D>(ResourceFolder + file)
+                ? Resources.Load<Texture2D>(PathTo(file))
                 : null;
 
             Loaded[node] = texture;

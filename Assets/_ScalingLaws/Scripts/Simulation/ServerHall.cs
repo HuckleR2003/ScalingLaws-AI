@@ -315,6 +315,10 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
+            // **A full cabinet still refuses.** Making it evict a card looked like a kindness and
+            // `AFanWillNotFitInAFullRack` said no within a minute: the player takes a card out and
+            // then puts the fan in, which is two deliberate clicks rather than one that quietly
+            // spends compute. `TryPullCard` is the other half and it exists for this.
             if (FreeSlots(column, row) < ServerRackCatalog.FanSlots)
             {
                 failureReason = Loc.T("room.rack_full");
@@ -322,6 +326,40 @@ namespace ScalingLaws.Simulation
             }
 
             fans[IndexOf(column, row)]++;
+            return true;
+        }
+
+        /// <summary>
+        /// Takes one card out of one cabinet.
+        ///
+        /// **The other half of <see cref="TryFitCard"/>, and the reason a fan can go into a full
+        /// cabinet at all.** Air and silicon share the slots, so the player takes a card out and
+        /// then puts the fan in. Two clicks, both deliberate.
+        ///
+        /// The card is not destroyed. It becomes homeless, and the next stock pass puts it wherever
+        /// there is room, which is usually the slot it just left unless something else has taken
+        /// it. That is the honest behaviour: an empty slot in a cabinet a company owns is a slot
+        /// the company fills.
+        /// </summary>
+        public bool TryPullCard(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!Contains(column, row) || racks[IndexOf(column, row)] == ServerRack.None)
+            {
+                failureReason = Loc.T("room.no_rack_here");
+                return false;
+            }
+
+            var index = IndexOf(column, row);
+
+            if (accelerators[index] <= 0)
+            {
+                failureReason = Loc.T("rack.none_here");
+                return false;
+            }
+
+            accelerators[index]--;
             return true;
         }
 
@@ -399,70 +437,189 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Fills the halls's racks with a number of accelerators, front to back.
+        /// Brings the floor into line with a fleet: trims what cannot be there and tops up the rest.
         ///
-        /// The player does not place accelerators one at a time; they own a fleet and the hall holds
-        /// as much of it as it has slots for. Returns how many actually fit, so the caller can say
-        /// what is standing in the yard with nowhere to go.
+        /// **It used to clear every cabinet and refill from scratch, every tick.** That was fine
+        /// while nothing but this method ever decided where a card stood, and it is the reason a
+        /// player could not put one anywhere: any arrangement made by hand was wiped a fraction of
+        /// a second later. Reported as the server room not doing its job, twice.
+        ///
+        /// So what is on the floor is kept. Three passes and each one is a different question:
+        ///
+        /// 1. **Can it be there.** A cabinet that lost slots to a fan, or was sold, gives its cards
+        ///    back.
+        /// 2. **Is it owned.** Selling silicon has to empty the cabinets it was standing in, and
+        ///    the cards come off the fullest first so the room thins out rather than one cabinet
+        ///    emptying completely.
+        /// 3. **What is left over.** Anything owned and not yet housed is spread across the free
+        ///    capacity, in proportion to how much free capacity each cabinet has.
+        ///
+        /// **On an empty room the third pass gives exactly what the old proportional fill gave**,
+        /// because every cabinet starts at zero and its free capacity is its whole capacity. That
+        /// spread was a deliberate decision and the comment that explained it is kept below: a room
+        /// that crams everything into rack one and leaves rack two empty is not a room anybody
+        /// runs, and it made the choice of cabinet invisible.
+        ///
+        /// Returns how many are housed, so the caller can say what is standing in the yard.
         /// </summary>
         public int Stock(int available)
         {
             var wanted = Math.Max(0, available);
-            var slots = TotalSlots;
 
-            if (slots <= 0)
+            // ---- 1. nothing may stand where it cannot ----------------------------------------
+            for (var index = 0; index < accelerators.Length; index++)
             {
-                for (var index = 0; index < accelerators.Length; index++)
-                {
-                    accelerators[index] = 0;
-                }
-
-                return 0;
+                accelerators[index] = Math.Clamp(accelerators[index], 0, CardCapacity(index));
             }
 
-            var housed = 0;
-            var remainder = Math.Min(wanted, slots);
+            // ---- 2. nothing may stand that is not owned --------------------------------------
+            var housed = HousedAccelerators;
 
-            // Spread in proportion to each rack's own capacity rather than filling the first one
-            // until it cooks. A room that crams everything into rack one and leaves rack two empty
-            // is not a room anybody runs, and it made the rack choice invisible: the heat landed
-            // wherever the array happened to start.
+            while (housed > wanted)
+            {
+                var fullest = -1;
+
+                for (var index = 0; index < accelerators.Length; index++)
+                {
+                    if (accelerators[index] > 0
+                        && (fullest < 0 || accelerators[index] > accelerators[fullest]))
+                    {
+                        fullest = index;
+                    }
+                }
+
+                if (fullest < 0)
+                {
+                    break;
+                }
+
+                accelerators[fullest]--;
+                housed--;
+            }
+
+            // ---- 3. and whatever is owned and homeless goes in ---------------------------------
+            var free = 0;
+
             for (var index = 0; index < racks.Length; index++)
             {
-                if (racks[index] == ServerRack.None)
+                free += CardCapacity(index) - accelerators[index];
+            }
+
+            var spare = Math.Min(wanted - housed, free);
+
+            if (spare <= 0)
+            {
+                return housed;
+            }
+
+            // Spread in proportion to the room each cabinet has left rather than filling the first
+            // one until it cooks. A room that crams everything into rack one and leaves rack two
+            // empty is not a room anybody runs, and it made the rack choice invisible: the heat
+            // landed wherever the array happened to start.
+            var placed = 0;
+
+            for (var index = 0; index < racks.Length && free > 0; index++)
+            {
+                var room = CardCapacity(index) - accelerators[index];
+
+                if (room <= 0)
                 {
-                    accelerators[index] = 0;
                     continue;
                 }
 
-                var capacity = CardCapacity(index);
-                var share = (int)((long)capacity * Math.Min(wanted, slots) / slots);
+                var share = (int)((long)room * spare / free);
 
-                accelerators[index] = share;
-                housed += share;
-                remainder -= share;
+                accelerators[index] += share;
+                placed += share;
             }
 
             // Whatever the division left over, one at a time into whatever still has room.
-            for (var index = 0; index < racks.Length && remainder > 0; index++)
+            for (var index = 0; index < racks.Length && placed < spare; index++)
             {
-                if (racks[index] == ServerRack.None)
-                {
-                    continue;
-                }
-
-                var capacity = CardCapacity(index);
-                if (accelerators[index] >= capacity)
+                if (accelerators[index] >= CardCapacity(index))
                 {
                     continue;
                 }
 
                 accelerators[index]++;
-                housed++;
-                remainder--;
+                placed++;
             }
 
-            return housed;
+            return housed + placed;
+        }
+
+        /// <summary>
+        /// Puts one card into one cabinet, taking it from wherever it is standing now.
+        ///
+        /// **This is the thing the room was missing.** Buying silicon put it in the company's
+        /// books and the floor arranged itself; there was no way to say which cabinet a card went
+        /// into, which is the one decision a room full of cabinets is supposed to be about.
+        ///
+        /// It never creates a card. When there is nothing homeless it takes one from the fullest
+        /// cabinet that is not this one, so fitting is always a move rather than a purchase, and a
+        /// player cannot conjure compute by clicking.
+        /// </summary>
+        /// <param name="owned">Accelerators the company has online today.</param>
+        public bool TryFitCard(int column, int row, int owned, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!Contains(column, row))
+            {
+                failureReason = Loc.T("room.no_rack_here");
+                return false;
+            }
+
+            var index = IndexOf(column, row);
+
+            if (racks[index] == ServerRack.None)
+            {
+                failureReason = Loc.T("room.no_rack_here");
+                return false;
+            }
+
+            if (FreeSlots(column, row) <= 0)
+            {
+                failureReason = Loc.T("rack.full");
+                return false;
+            }
+
+            if (Math.Max(0, owned) <= 0)
+            {
+                failureReason = Loc.T("rack.nothing_owned");
+                return false;
+            }
+
+            // Homeless first. Only when everything the company owns is already standing somewhere
+            // does this become a move, and then it comes off whichever cabinet has the most.
+            if (HousedAccelerators >= owned)
+            {
+                var fullest = -1;
+
+                for (var other = 0; other < accelerators.Length; other++)
+                {
+                    if (other == index || accelerators[other] <= 0)
+                    {
+                        continue;
+                    }
+
+                    if (fullest < 0 || accelerators[other] > accelerators[fullest])
+                    {
+                        fullest = other;
+                    }
+                }
+
+                if (fullest < 0)
+                {
+                    failureReason = Loc.T("rack.all_here");
+                    return false;
+                }
+
+                accelerators[fullest]--;
+            }
+
+            accelerators[index]++;
+            return true;
         }
 
         /// <summary>

@@ -6504,9 +6504,32 @@
     padding-right: 20px;
 }
 
-.era-row .rfund-half {
+/* The right-hand column of the research screen: what the company can spend, and where it can
+   work. The funding panel used to be the whole of it and carried the width itself; it is inside
+   this now, so the width is stated once, here, and the panel fills it. */
+.rside {
     width: 34%;
     flex-shrink: 0;
+}
+
+.rside .panel {
+    width: 100%;
+}
+
+.rpremises {
+    margin-top: 12px;
+}
+
+
+/* Every other era, at era one's width.
+
+   The funding panel takes 34% beside the first era, so that era has always had a margin of page
+   to put the cursor on. The rest ran the full width, and the wheel over a board is the zoom, so
+   there was nowhere on the lower half of the screen to scroll from. Same number, stated once
+   here and once above; they are the same measurement and they have to stay equal. */
+.era--alone {
+    width: 66%;
+    padding-right: 20px;
 }
 
 /* ---- the card that opens under the cursor ----
@@ -6801,6 +6824,37 @@
     font-size: 11px;
     color: rgb(186, 132, 120);
     margin-top: 14px;
+}
+
+/* A place the company has not learned to take on. Not greyed out: a row nobody can read is a row
+   nobody can act on, and the whole point of this state is that it explains itself and carries the
+   way out of itself. */
+.office-row--locked {
+    border-color: rgba(126, 196, 250, 0.30);
+}
+
+.office-locked {
+    margin-top: 14px;
+    align-items: flex-start;
+}
+
+.office-locked__kicker {
+    font-size: 11px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgb(126, 196, 250);
+    margin-bottom: 4px;
+}
+
+.office-locked__note {
+    font-size: 11.5px;
+    color: rgb(168, 180, 200);
+    white-space: normal;
+    margin-bottom: 9px;
+}
+
+.office-locked__go {
+    margin: 0;
 }
 
 /* The whole card is the target, so it says so on hover. */
@@ -14429,8 +14483,11 @@
     background-color: rgba(4, 6, 11, 0.78);
 }
 
+/* **Wide enough for two columns.** It was 560px, which is the width of one cabinet, and the
+   parts bay on the left takes 334 of that: the uplink strip is a fixed 384px and it overhung the
+   left column, drawing the fabric ports over the list of what the company owns. */
 .rackmodal__card {
-    width: 560px;
+    width: 920px;
     padding: 20px 22px 18px 22px;
     border-radius: 10px;
     background-color: rgb(17, 21, 30);
@@ -14466,6 +14523,14 @@
 
 .rackmodal__slots {
     margin-bottom: 14px;
+}
+
+/* The cabinet drawing is 560px tall on the floor, where it is the subject. Inside the modal it
+   shares the card with the parts bay and the stats, and at its full height the card ran from the
+   top of the window to the bottom with the bay mostly empty beside it. Two classes, so it outranks
+   `.rackface` wherever that rule happens to sit. */
+.rackmodal__cabinet .rackface {
+    height: 430px;
 }
 
 /* The cabinet as a column of bars: nine lit and three empty answers "will the fan fit" without
@@ -19646,4 +19711,115 @@
 .roombuild__buy:disabled {
     color: rgb(150, 158, 172);
     background-color: rgba(255, 255, 255, 0.07);
+}
+
+/* ---- the cabinet, opened -----------------------------------------------------------------
+
+   Two columns. What the company owns on the left, the cabinet being filled on the right. The
+   left one is where a player looks for the thing they just bought and the right one is what
+   they are putting it into, so they have to be side by side rather than one above the other. */
+.rackmodal__body {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.rackmodal__cabinet {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.rackbay {
+    width: 300px;
+    flex-shrink: 0;
+    margin-right: 18px;
+    padding-right: 16px;
+    border-right-width: 1px;
+    border-right-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Bounded, because there is no rule about how many generations a company may own and a bay
+   that grows with the catalogue pushes the buttons under the bottom of the card. */
+.rackbay__list {
+    max-height: 300px;
+    margin: 10px 0 8px 0;
+}
+
+.rackbay__row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 5px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.rackbay__row:hover {
+    border-color: rgba(120, 176, 255, 0.55);
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.rackbay__words {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.rackbay__name {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+    white-space: normal;
+}
+
+.rackbay__spec {
+    font-size: 11px;
+    margin-top: 1px;
+    color: rgb(132, 140, 156);
+}
+
+.rackbay__fit {
+    width: 54px;
+    height: 28px;
+    margin: 0 5px 0 6px;
+    padding: 0;
+    flex-shrink: 0;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    -unity-text-align: middle-center;
+    color: rgb(20, 22, 28);
+    background-color: rgb(154, 214, 62);
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.rackbay__fit:hover {
+    background-color: rgb(178, 232, 96);
+}
+
+.rackbay__sell {
+    width: 72px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    -unity-text-align: middle-center;
+    color: rgb(226, 140, 120);
+    background-color: rgba(0, 0, 0, 0.25);
+    border-width: 1px;
+    border-color: rgba(226, 140, 120, 0.45);
+    border-radius: 4px;
+}
+
+.rackbay__sell:hover {
+    color: rgb(20, 22, 28);
+    background-color: rgb(226, 140, 120);
 }

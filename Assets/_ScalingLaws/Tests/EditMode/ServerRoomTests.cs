@@ -266,7 +266,11 @@ namespace ScalingLaws.Tests.EditMode
             // **Take a card out, put a fan in.** That is the whole decision and there is no other
             // way to make it: air and silicon share the cabinet, so cooling is always paid for in
             // compute rather than only in money.
-            hall.Stock(hall.TotalSlots - 1);
+            // **Out of this cabinet, by name.** It used to drop the fleet by one and trust the
+            // refill to leave the gap here, which it did by where the rounding fell rather than
+            // because anything said so. `TryPullCard` is what a player presses and it is the only
+            // thing that frees a slot in the cabinet they are looking at.
+            Assert.IsTrue(simulation.TryPullCard(3, 3, out var pulled), pulled);
 
             var fitted = 0;
 

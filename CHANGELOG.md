@@ -38,7 +38,46 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Offices are researched before they are rented.** A small map of its own on the research
+  screen, under the funding panel, one node per place on the ladder. The first is 100 research
+  points and $135k and takes a month. Rent is the largest recurring cost in the game and moving
+  used to be a cheque and a click, so the one decision that can quietly end a company had nothing
+  in front of it. A place the company has not studied says so on the premises page, names the
+  research, and carries the way to it.
+
+- **You can put a card in a cabinet.** The opened cabinet has a list down the left of every
+  accelerator the company owns, strongest first, with what is still in transit underneath it and
+  the date it arrives. FIT puts one in the cabinet you are looking at, SELL sells the batch, and
+  double clicking a row fits one. Until now the server room could only be bought from: silicon
+  arrived, the floor arranged itself overnight, and there was no way to say which cabinet anything
+  went into.
+
+### Changed
+
+- **The room stops rearranging itself every night.** The floor used to empty every cabinet and
+  refill them from scratch on every tick, which is why anything placed by hand was gone a moment
+  later. It now keeps what is standing where it stands and only corrects what is actually wrong:
+  cards in a cabinet that lost its slot to a fan, cards that are no longer owned, and cards with
+  nowhere to live. A room that has never been touched fills exactly the way it always did.
+
+### Fixed
+
+- **The research info card would not go away.** It had a cross and a CLOSE button and nothing
+  else took it down, so the thing every player tries first, clicking somewhere else, left it
+  sitting over the tree. Any click outside it closes it now, and the click still reaches whatever
+  was under it.
+- **The lower half of the research screen could barely be scrolled.** The wheel over a board is
+  the zoom, and every era but the first ran the full width of the page, so there was nowhere left
+  to put the cursor. Every era is now the width of ERA 1 FOUNDATIONS, which has always had the
+  funding panel beside it and therefore a margin to scroll from.
+- **The opened cabinet drew its fabric switch over the parts list.** The card is 920px wide now.
+  It was 560, which is the width of one cabinet and 334px short of also holding the list.
+
+### Save compatibility
+
+Unchanged. Saves from 0.3.1 load.
 
 ---
 

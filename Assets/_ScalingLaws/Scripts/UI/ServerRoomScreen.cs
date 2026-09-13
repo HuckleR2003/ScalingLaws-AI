@@ -206,7 +206,10 @@ namespace ScalingLaws.UI
 
             if (open.HasValue)
             {
-                editor ??= new RackEditorPanel(company, () => changed?.Invoke());
+                editor ??= new RackEditorPanel(company, () => changed?.Invoke())
+                {
+                    announce = announce
+                };
 
                 editor.Close = () =>
                 {
