@@ -66,6 +66,13 @@ than grey text with the money shouting over it.
 
 ### Fixed
 
+- **A day stopped costing more the longer you played.** Measured: one simulated day cost 0.14ms at
+  ten live models and **9.7ms at 339**, which is more than half a frame, on every day the clock
+  turns over, at a speed that runs three of them a second. All of it was four places that walked
+  every model the company had ever released to answer a question about one of them, inside a loop
+  over every model. The rule they answer is unchanged; it is worked out once per pass now. 339
+  models: **9.7ms to 2.0ms**, and the growth is linear rather than square. Sixty staff and a full
+  basement cost nothing measurable, then and now.
 - **The model creator took no clicks at all, and neither did the corner of the site screen.**
   Reported as totally critical: the whole BRANDING page was dead, including the name field and
   NEXT, while the stage rail above it and the bar below it worked. Two invisible things were lying

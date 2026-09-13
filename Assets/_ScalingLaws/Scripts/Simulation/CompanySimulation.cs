@@ -1675,20 +1675,87 @@ namespace ScalingLaws.Simulation
 
         private static string UsdText(long amount) => "$" + amount.ToString("N0");
 
-        /// <summary>Everything the company has on sale today, in the order the state holds it.</summary>
+        /// <summary>
+        /// Everything the company has on sale today, in the order the state holds it.
+        ///
+        /// **One pass, because this used to be one pass per model.** `IsSupersededInItsLine`
+        /// walks every deployed model to answer a question about one of them, and this asked it
+        /// once per model, so the cost of a day grew with the square of how much the company had
+        /// ever released. Measured before the change: 0.14 ms a day at ten live models, 2.4 at a
+        /// hundred and fifty, and 9.7 at three hundred and thirty nine, which is more than half
+        /// a frame on every day the clock turns over. Nothing else in a day came close; sixty
+        /// staff and a full basement cost nothing measurable.
+        ///
+        /// A company reaches those numbers by playing normally. Nothing retires a model and a
+        /// release that is given a new name starts a new line, so a player who names each one
+        /// after itself has as many lines as releases.
+        ///
+        /// **The rule is unchanged**: one line sells its strongest live model, ties go to the
+        /// newer one and then to the name. That total order is the whole reason the rule works,
+        /// and `Leads` below is the same comparison written once instead of inside a loop.
+        /// </summary>
         private List<DeployedModel> MarketedNow()
         {
             var marketed = new List<DeployedModel>();
+            var leaders = new Dictionary<string, DeployedModel>();
+
+            // Who leads each line. A model with no line of its own is never superseded, so it
+            // goes straight through, which is what the old check answered first.
+            foreach (var model in State.DeployedModels)
+            {
+                if (model == null || !model.IsLiveOn(State.Date) || model.Family.Length == 0)
+                {
+                    continue;
+                }
+
+                if (!leaders.TryGetValue(model.Family, out var best) || Leads(model, best))
+                {
+                    leaders[model.Family] = model;
+                }
+            }
 
             foreach (var model in State.DeployedModels)
             {
-                if (model != null && model.IsLiveOn(State.Date) && !IsSupersededInItsLine(model))
+                if (model == null || !model.IsLiveOn(State.Date))
+                {
+                    continue;
+                }
+
+                if (model.Family.Length == 0
+                    || (leaders.TryGetValue(model.Family, out var best)
+                        && ReferenceEquals(best, model)))
                 {
                     marketed.Add(model);
                 }
             }
 
             return marketed;
+        }
+
+        /// <summary>
+        /// Whether the first of these two leads its line, on the total order the design needs.
+        ///
+        /// Capability, then the later release, then the name. The last step is not tidiness:
+        /// without it two models of equal capability released on the same day each failed to
+        /// supersede the other and both stayed on sale, which is exactly the state a player
+        /// creates by experimenting.
+        /// </summary>
+        private bool Leads(DeployedModel model, DeployedModel against)
+        {
+            var mine = model.EffectiveCapability(State.Date);
+            var theirs = against.EffectiveCapability(State.Date);
+
+            if (Math.Abs(mine - theirs) > double.Epsilon)
+            {
+                return mine > theirs;
+            }
+
+            if (model.ReleaseDate.DayIndex != against.ReleaseDate.DayIndex)
+            {
+                return model.ReleaseDate.DayIndex > against.ReleaseDate.DayIndex;
+            }
+
+            return string.CompareOrdinal(model.Name, against.Name) > 0;
         }
 
         /// <summary>
@@ -1762,6 +1829,16 @@ namespace ScalingLaws.Simulation
             var onSale = MarketedNow();
             var audience = AudienceOnSale(onSale);
 
+            // Which slot each model holds, looked up once. This was `onSale.IndexOf(model)`
+            // inside the loop below, so finding the audience for three hundred models meant
+            // three hundred scans of a list of three hundred.
+            var slots = new Dictionary<DeployedModel, int>(onSale.Count);
+
+            for (var index = 0; index < onSale.Count; index++)
+            {
+                slots[onSale[index]] = index;
+            }
+
             for (var index = 0; index < State.DeployedModels.Count; index++)
             {
                 var model = State.DeployedModels[index];
@@ -1771,7 +1848,7 @@ namespace ScalingLaws.Simulation
                 }
 
                 var live = model.IsLiveOn(State.Date);
-                var slot = onSale.IndexOf(model);
+                var slot = slots.TryGetValue(model, out var found) ? found : -1;
 
                 records.Add(new ModelRecord(index, model, live, slot >= 0,
                     slot < 0 ? 0.0 : audience[slot],
@@ -4101,6 +4178,9 @@ namespace ScalingLaws.Simulation
         {
             var entrants = new List<MarketEntrant>(State.DeployedModels.Count + rivals.Count);
 
+            // What is on sale, once, for the loop below to read.
+            var onSaleNow = new HashSet<DeployedModel>(MarketedNow());
+
             foreach (var model in State.DeployedModels)
             {
                 if (model == null || !model.IsLiveOn(State.Date))
@@ -4112,7 +4192,11 @@ namespace ScalingLaws.Simulation
                 // is not four separate chances at their business, and without this a company could
                 // raise its standing simply by never withdrawing anything: every live model added its
                 // own score to the same bucket, so shipping often beat shipping well.
-                if (IsSupersededInItsLine(model))
+                //
+                // Read from the set worked out above rather than asked per model: this walked the
+                // whole fleet to answer a question about one of them, inside a loop over the
+                // whole fleet.
+                if (!onSaleNow.Contains(model))
                 {
                     continue;
                 }
@@ -4240,13 +4324,10 @@ namespace ScalingLaws.Simulation
             DeployedModel best = null;
             var bestCapability = double.NegativeInfinity;
 
-            foreach (var model in State.DeployedModels)
+            // What is on sale, worked out once, rather than asking each model whether anything
+            // else supersedes it and walking the whole fleet to answer.
+            foreach (var model in MarketedNow())
             {
-                if (model == null || !model.IsLiveOn(State.Date) || IsSupersededInItsLine(model))
-                {
-                    continue;
-                }
-
                 var capability = model.EffectiveCapability(State.Date);
                 if (capability > bestCapability)
                 {
