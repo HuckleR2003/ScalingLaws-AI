@@ -46,32 +46,54 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static bool oneLine;
 
+        /// <summary>
+        /// Whether the operator buys its compute or only rents it.
+        ///
+        /// **Both earlier operators rented, always, and it hid a third of the game.** Fourteen
+        /// years of every seed reported `kW 0` and a power bill of nothing, because nothing was
+        /// ever owned: no accelerators, no server room, no cabinets, no heat, and therefore no
+        /// answer at all to whether electricity is a burden. The one part of this economy the
+        /// author was asking about was the part the probe could not see.
+        /// </summary>
+        private static bool ownsCompute;
+
         [MenuItem("Scaling Laws/Play a deep campaign")]
         public static void Play()
         {
             var report = new StringBuilder();
             var clock = Stopwatch.StartNew();
+            var campaigns = 0;
 
-            foreach (var disciplined in new[] { false, true })
+            // Three operators, and the third is the one that owns anything.
+            foreach (var (disciplined, owner, heading) in new[]
+            {
+                (false, false, "A NEW LINE EVERY TIME, nothing ever superseded, renting"),
+                (true, false, "ONE PRODUCT LINE, each release replacing the last, renting"),
+                (true, true, "ONE PRODUCT LINE, and it owns its own silicon and a server room")
+            })
             {
                 oneLine = disciplined;
+                ownsCompute = owner;
 
                 report.AppendLine();
-                report.AppendLine(disciplined
-                    ? "================ ONE PRODUCT LINE, each release replacing the last"
-                    : "================ A NEW LINE EVERY TIME, nothing ever superseded");
+                report.AppendLine("================ " + heading);
 
                 foreach (var seed in new[] { 4242, 9001, 1337 })
                 {
                     RunOne(seed, report);
+                    campaigns++;
                 }
             }
 
             clock.Stop();
 
             report.AppendLine();
-            report.AppendLine($"three campaigns of {Days} days in {clock.ElapsedMilliseconds} ms "
-                + $"({clock.ElapsedMilliseconds / (3.0 * Days):0.00} ms a day)");
+            // Nine, not three: three operators over three seeds. The count is derived from the
+            // run rather than written beside it, because it said "three" for a week after it
+            // became six.
+            report.AppendLine($"{campaigns} campaigns of {Days} days in "
+                + $"{clock.ElapsedMilliseconds} ms "
+                + $"({clock.ElapsedMilliseconds / (double)Math.Max(1, campaigns * Days):0.00} ms a day)");
 
             Debug.Log(report.ToString());
         }
@@ -170,17 +192,32 @@ namespace ScalingLaws.Editor
                 {
                     var rank = simulation.Ranking().FirstOrDefault(entry => entry.IsPlayer);
 
+                    // **The power bill, because nobody could say whether it bites.** The room is
+                    // billed at a domestic tariff and a datacenter at a contract one, and the only
+                    // honest way to know whether either one is a real burden is to read it against
+                    // what the fleet costs and against what the company took that month.
+                    var fleet = simulation.Profile;
+                    var powerShare = fleet.Bill.TotalUsd > 0.0
+                        ? fleet.Bill.ElectricityUsd / fleet.Bill.TotalUsd
+                        : 0.0;
+
                     yearly.Add(string.Format(Culture,
                         "      {0}  cash {1,14}  cap {2,6:0.0}  rank {3,2}  users {4,12:N0}  "
                         + "rep {5:0.00}  nodes {6,2}  live {7,3}  load {8,5:P0}  ms {9,5:0}  "
-                        + "marketed {10,3}  WORLD {11,15:N0}  our share {12,6:P1}",
+                        + "marketed {10,3}  WORLD {11,15:N0}  our share {12,6:P1}  "
+                        + "kW {13,9:N0}  power/day {14,12}  = {15,6:P1} of fleet, "
+                        + "fleet {16,12}/day, revenue {17,12}/day",
                         state.Date, Money(state.CashUsd), state.BestCapability,
                         rank.Position, standing.Subscribers, state.Reputation,
                         state.UnlockedResearch.Count, state.DeployedModels.Count,
                         state.LastQuality.Utilisation, state.LastQuality.ResponseMilliseconds,
                         simulation.MarketedModels().Count,
                         simulation.MarketByType().TotalUsersOverall,
-                        simulation.MarketByType().OverallShareOf(0)));
+                        simulation.MarketByType().OverallShareOf(0),
+                        fleet.PowerDrawKilowatts,
+                        Money((long)fleet.Bill.ElectricityUsd), powerShare,
+                        Money((long)fleet.Bill.TotalUsd),
+                        Money((long)(standing.MonthEarningsUsd / 30.0))));
                 }
             }
 
@@ -229,6 +266,125 @@ namespace ScalingLaws.Editor
                 {
                     report.AppendLine(line);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Buying the cluster instead of hiring it, the way a company with money actually does.
+        ///
+        /// Three purchases, in the order their returns arrive. The room is first because it is
+        /// the cheapest housing this company will ever have and it is the one that needs a
+        /// calendar to fill. Cabinets next, because silicon with nowhere to stand is silicon
+        /// paying a datacenter to hold it. Then the cards.
+        ///
+        /// **A tenth of the balance a month, never more.** An operator that converts its whole
+        /// account into accelerators is not measuring the economy, it is measuring one bad
+        /// decision, and hardware is the one purchase in this game that cannot be undone at
+        /// anything like its price.
+        /// </summary>
+        private static void OwnSomething(CompanySimulation simulation, Action<string, string> refused)
+        {
+            var state = simulation.State;
+
+            if (state.Date.DayIndex % 30 != 0 || state.CashUsd < 20_000_000L)
+            {
+                return;
+            }
+
+            if (!state.HasServerRoom && !simulation.TryOpenServerRoom(false, out var roomWhy))
+            {
+                refused("open the room", roomWhy);
+            }
+
+            // One cabinet a month onto the first free square. High density, because the floor is
+            // sixteen squares and the binding constraint down there is always the floor.
+            if (state.HasServerRoom)
+            {
+                for (var column = 0; column < CompanyState.BasementColumns; column++)
+                {
+                    var placed = false;
+
+                    for (var row = 0; row < CompanyState.BasementRows; row++)
+                    {
+                        if (!state.Hall.At(column, row).IsEmpty)
+                        {
+                            continue;
+                        }
+
+                        if (!simulation.TryBuyRack(ServerRack.HighDensity, out var buyWhy))
+                        {
+                            refused("a cabinet", buyWhy);
+                        }
+                        else if (!simulation.TryStandRack(column, row, ServerRack.HighDensity,
+                                     out var standWhy))
+                        {
+                            refused("standing a cabinet", standWhy);
+                        }
+                        else
+                        {
+                            placed = true;
+                        }
+
+                        break;
+                    }
+
+                    if (placed)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            // ---- and the silicon ---------------------------------------------------------------
+            //
+            // Newest first, which is what a shop opens on and what a company buying once a month
+            // would take. The batch is whatever a tenth of the balance pays for.
+            HardwareGeneration newest = default;
+            var found = false;
+
+            foreach (var generation in HardwareCatalog.All)
+            {
+                if (generation.Class != HardwareClass.Accelerator
+                    || !generation.IsAvailableOn(state.Date))
+                {
+                    continue;
+                }
+
+                if (!found || generation.ReleaseDate.DayIndex > newest.ReleaseDate.DayIndex)
+                {
+                    newest = generation;
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                return;
+            }
+
+            var tier = ComputeTierCatalog.Get(ComputeTier.ColocatedServers);
+
+            var unit = MarketModel.PurchasePricePerUnitUsd(
+                    newest, tier, MarketModel.ScarcityOn(state.Date))
+                * state.Founder.HardwarePriceMultiplier
+                * state.Home.HardwarePriceMultiplier;
+
+            if (unit <= 0.0)
+            {
+                return;
+            }
+
+            var units = (int)(state.CashUsd * 0.10 / unit);
+
+            if (units <= 0)
+            {
+                return;
+            }
+
+            if (!simulation.TryBuyHardware(newest.Id, units, ComputeTier.ColocatedServers,
+                    out var siliconWhy))
+            {
+                refused("silicon", siliconWhy);
             }
         }
 
@@ -334,8 +490,16 @@ namespace ScalingLaws.Editor
             // ---- rent to what the run needs ----------------------------------------------------
             if (state.Date.DayIndex % 30 == 0)
             {
-                var affordable = state.CashUsd / 40_000.0;
+                // An owner rents the shortfall rather than the whole cluster. Renting the same
+                // amount and *also* buying would be a company with two clusters and one
+                // workload, which is not a strategy anybody plays.
+                var affordable = state.CashUsd / (ownsCompute ? 160_000.0 : 40_000.0);
                 simulation.SetRentedPetaflops(Math.Clamp(affordable, 120.0, 60_000.0));
+            }
+
+            if (ownsCompute)
+            {
+                OwnSomething(simulation, refused);
             }
 
             // ---- spend what is left ------------------------------------------------------------

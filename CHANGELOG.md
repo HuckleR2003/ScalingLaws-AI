@@ -74,6 +74,15 @@ the same band, and the corner banner reads the same word.
 
 ### Fixed
 
+- **Nothing in the balance probe had ever owned an accelerator.** Both scripted operators rented,
+  every year of every seed, so fourteen years of measurement reported a power draw of zero and a
+  power bill of nothing, and the room, the cabinets, the heat and the electricity were the part of
+  this economy that no measurement could see. There is a third operator now that buys its silicon
+  and fills a basement, and it found the thing the tariff question was really about: a company
+  that owns its compute stops growing at **2,500 kW** at the end of its third year, because that
+  is what the colocated tier supplies and it does not rise however much is bought. Power runs
+  between 0.8% and 15% of the fleet bill and sits around 3%. The rate is not the problem.
+
 - **A fan was cooling that cost nothing.** The cabinet panel said a fan takes a slot and it did,
   right up until the next day: the nightly refill put a full set of cards back into the cabinet
   around it, so the floor held as many accelerators with fans as without. The whole cooling trade,
