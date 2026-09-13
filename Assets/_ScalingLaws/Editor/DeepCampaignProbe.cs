@@ -152,12 +152,14 @@ namespace ScalingLaws.Editor
                     yearly.Add(string.Format(Culture,
                         "      {0}  cash {1,14}  cap {2,6:0.0}  rank {3,2}  users {4,12:N0}  "
                         + "rep {5:0.00}  nodes {6,2}  live {7,3}  load {8,5:P0}  ms {9,5:0}  "
-                        + "marketed {10,3}",
+                        + "marketed {10,3}  WORLD {11,15:N0}  our share {12,6:P1}",
                         state.Date, Money(state.CashUsd), state.BestCapability,
                         rank.Position, standing.Subscribers, state.Reputation,
                         state.UnlockedResearch.Count, state.DeployedModels.Count,
                         state.LastQuality.Utilisation, state.LastQuality.ResponseMilliseconds,
-                        simulation.MarketedModels().Count));
+                        simulation.MarketedModels().Count,
+                        simulation.MarketByType().TotalUsersOverall,
+                        simulation.MarketByType().OverallShareOf(0)));
                 }
             }
 

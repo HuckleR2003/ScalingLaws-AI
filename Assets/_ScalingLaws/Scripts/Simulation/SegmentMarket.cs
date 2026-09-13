@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -548,7 +548,13 @@ namespace ScalingLaws.Simulation
             {
                 var row = shares[index];
                 var users = segments[index].UsersFor(total * segmentShares[index], date.Year);
-                addressable += users;
+
+                // **The population, not the count.** This used to add up the same derived users it
+                // was about to divide by, so "the unserved share of the market" compared a number
+                // with itself and could only ever read zero.
+                addressable += segments[index].PeopleCeiling > 0.0
+                    ? segments[index].PeopleCeiling
+                    : users;
 
                 for (var owner = 0; owner < ownerCount; owner++)
                 {

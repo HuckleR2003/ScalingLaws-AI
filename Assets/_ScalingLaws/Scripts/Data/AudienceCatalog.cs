@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 
@@ -39,8 +39,10 @@ namespace ScalingLaws.Data
             double willingnessToPay, double adoptionRatePerDay, double brandWeight,
             double servingCostWeight, double tokensPerUserPerDay,
             (int Year, double Weight)[] anchors,
-            double reservationCapability = 0.0, double intensityGrowthPerYear = 1.0)
+            double reservationCapability = 0.0, double intensityGrowthPerYear = 1.0,
+            double peopleCeiling = 0.0)
         {
+            PeopleCeiling = Math.Max(0.0, peopleCeiling);
             TokensPerUserPerDay = Math.Max(1.0, tokensPerUserPerDay);
             AdoptionRatePerDay = Math.Clamp(adoptionRatePerDay, 0.002, 0.5);
             BrandWeight = Math.Clamp(brandWeight, 0.0, 2.5);
@@ -100,20 +102,65 @@ namespace ScalingLaws.Data
         public double TokensPerUserPerDay { get; }
 
         /// <summary>
+        /// The most people this segment can ever be.
+        ///
+        /// **Because there are only so many of them.** A user here is token demand divided by how
+        /// much one person gets through, and demand grows faster than appetite does, so the count
+        /// had no limit: measured over a played campaign, the game's whole market reached 1.86
+        /// billion people at the end of 2024, 6.79 billion in 2026 and 11.99 billion in 2028,
+        /// which is half again every human alive. For scale, the real figures around the same
+        /// dates are roughly 100 million weekly users of the largest assistant at the end of 2023
+        /// and a few hundred million across everything by 2025, against about 5.5 billion people
+        /// on the internet at all.
+        ///
+        /// These five numbers are **projections and are marked as such**: an upper bound on a
+        /// population, not a forecast of adoption. Consumer is most of the connected world;
+        /// developers are the tens of millions the industry surveys count; enterprise is seats
+        /// rather than companies, so it is knowledge workers; creative is professionals and the
+        /// people who work like them; agentic is not people at all but the organisations running
+        /// them, which is why it is the smallest number and the heaviest per head.
+        ///
+        /// The curve approaches this rather than stopping dead at it, so a saturated market reads
+        /// as saturated instead of as a wall.
+        /// </summary>
+        public double PeopleCeiling { get; }
+
+        /// <summary>
         /// How many people that many tokens represents. The pool is in billions per day, which is
         /// the unit the rest of the market speaks, so the conversion lives here rather than at every
         /// call site where it could be got wrong once and never noticed.
         /// </summary>
         public double UsersFor(double billionTokensPerDay) =>
-            Math.Max(0.0, billionTokensPerDay) * SimUnits.TokensPerBillion / TokensPerUserPerDay;
+            Hold(Math.Max(0.0, billionTokensPerDay) * SimUnits.TokensPerBillion
+                / TokensPerUserPerDay);
 
         /// <summary>
         /// How many people that much demand represents in a given year. This is the one the game
         /// uses; the year free version above is the 2022 baseline and is kept for the curve tests.
         /// </summary>
         public double UsersFor(double billionTokensPerDay, int year) =>
-            Math.Max(0.0, billionTokensPerDay) * SimUnits.TokensPerBillion
-            / Math.Max(1.0, IntensityIn(year));
+            Hold(Math.Max(0.0, billionTokensPerDay) * SimUnits.TokensPerBillion
+                / Math.Max(1.0, IntensityIn(year)));
+
+        /// <summary>
+        /// Bends a raw headcount towards the ceiling instead of letting it walk past.
+        ///
+        /// **Asymptotic rather than clamped**, because a hard stop makes every further point of
+        /// demand worth exactly nothing and the last stretch of a market should get harder rather
+        /// than end. Below about half the ceiling this changes almost nothing; above it, each
+        /// further person costs more demand than the one before.
+        /// </summary>
+        private double Hold(double people)
+        {
+            if (PeopleCeiling <= 0.0 || people <= 0.0)
+            {
+                return Math.Max(0.0, people);
+            }
+
+            // people / (1 + people / ceiling): equals `people` when people is small against the
+            // ceiling and approaches the ceiling from below however large it gets.
+            return people / (1.0 + people / PeopleCeiling);
+        }
 
         /// <summary>Raw size at each anchor year. Read through <see cref="AudienceCatalog"/>.</summary>
         public (int Year, double Weight)[] Anchors { get; }
@@ -207,7 +254,10 @@ namespace ScalingLaws.Data
                     (2022, 30), (2023, 62), (2024, 74), (2026, 82),
                     (2029, 88), (2032, 92), (2036, 95)
                 },
-                reservationCapability: 6.0, intensityGrowthPerYear: 1.28),
+                reservationCapability: 6.0, intensityGrowthPerYear: 1.28,
+                // Most of the connected world. About 5.5 billion people are on the
+                // internet at all, and not all of them will ever touch this.
+                peopleCeiling: 4_000_000_000),
 
             new(AudienceSegment.Developer, willingnessToPay: 1.20, adoptionRatePerDay: 0.090, brandWeight: 0.55,
                 servingCostWeight: 0.35, tokensPerUserPerDay: 180_000,
@@ -216,7 +266,9 @@ namespace ScalingLaws.Data
                     (2022, 4), (2023, 14), (2024, 26), (2025, 34), (2027, 40),
                     (2030, 42), (2036, 44)
                 },
-                reservationCapability: 11.0, intensityGrowthPerYear: 1.32),
+                reservationCapability: 11.0, intensityGrowthPerYear: 1.32,
+                // The industry surveys count developers in the tens of millions.
+                peopleCeiling: 45_000_000),
 
             new(AudienceSegment.Enterprise, willingnessToPay: 1.65, adoptionRatePerDay: 0.012, brandWeight: 1.15,
                 servingCostWeight: 0.25, tokensPerUserPerDay: 900_000,
@@ -224,7 +276,9 @@ namespace ScalingLaws.Data
                 {
                     (2022, 3), (2024, 9), (2026, 20), (2028, 30), (2031, 38), (2036, 44)
                 },
-                reservationCapability: 26.0, intensityGrowthPerYear: 1.24),
+                reservationCapability: 26.0, intensityGrowthPerYear: 1.24,
+                // Seats rather than companies, so this is knowledge workers.
+                peopleCeiling: 900_000_000),
 
             new(AudienceSegment.Creative, willingnessToPay: 1.05, adoptionRatePerDay: 0.060, brandWeight: 1.00,
                 servingCostWeight: 0.85, tokensPerUserPerDay: 40_000,
@@ -232,7 +286,9 @@ namespace ScalingLaws.Data
                 {
                     (2022, 6), (2023, 12), (2025, 16), (2028, 17), (2036, 18)
                 },
-                reservationCapability: 9.0, intensityGrowthPerYear: 1.26),
+                reservationCapability: 9.0, intensityGrowthPerYear: 1.26,
+                // Professionals and the people who work like them.
+                peopleCeiling: 350_000_000),
 
             new(AudienceSegment.Agentic, willingnessToPay: 2.10, adoptionRatePerDay: 0.030, brandWeight: 0.70,
                 servingCostWeight: 1.30, tokensPerUserPerDay: 3_000_000,
@@ -240,7 +296,10 @@ namespace ScalingLaws.Data
                 {
                     (2022, 0), (2024, 1), (2026, 6), (2028, 18), (2030, 34), (2033, 52), (2036, 64)
                 },
-                reservationCapability: 44.0, intensityGrowthPerYear: 1.18)
+                reservationCapability: 44.0, intensityGrowthPerYear: 1.18,
+                // Not people at all: the organisations running agents, which is why this is
+                // the smallest population and by far the heaviest per head.
+                peopleCeiling: 250_000_000)
         };
 
         private static readonly Dictionary<AudienceSegment, AudienceSegmentDefinition> BySegment = BuildIndex();

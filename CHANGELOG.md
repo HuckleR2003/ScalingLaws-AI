@@ -66,6 +66,19 @@ than grey text with the money shouting over it.
 
 ### Fixed
 
+- **There are only so many people.** The author said the user numbers felt wrong against how many
+  people really use AI, and he was right, in the opposite direction: measured over a played
+  campaign, the game's whole market reached 1.86 billion users at the end of 2024, 6.79 billion in
+  2026 and **11.99 billion in 2028**, which is half again every human alive. A user is token demand
+  divided by how much one person gets through, demand grows faster than appetite does, and nothing
+  ever said there was a limit. Each audience now carries the most people it can ever be, and the
+  count approaches it instead of walking past: consumer 4 billion, enterprise 900 million as seats
+  rather than companies, creative 350 million, agentic 250 million because those are organisations
+  and not people, developers 45 million because that is what the industry surveys count. The same
+  campaign now reads 1.30 billion at the end of 2024 and 3.27 billion in 2028.
+- **And "the unserved share of the market" meant nothing.** It divided the derived user count by a
+  number that was the same derived user count, so it could only ever read zero. It is measured
+  against the population now, which is what its name always said.
 - **Two of the fifteen bottom bar buttons were unreachable on a narrow window.** The row is aligned
   to the right and clips what does not fit, and the slots were a fixed 88px that could not shrink,
   so on anything under about 1,860 virtual pixels the left-hand ones were laid out past the edge of

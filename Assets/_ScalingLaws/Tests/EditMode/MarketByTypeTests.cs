@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -159,8 +159,22 @@ namespace ScalingLaws.Tests.EditMode
             var consumer = AudienceCatalog.Get(AudienceSegment.Consumer);
             var expected = 1.0 * SimUnits.TokensPerBillion / consumer.TokensPerUserPerDay;
 
-            Assert.AreEqual(expected, consumer.UsersFor(1.0), 1e-6);
+            // **Within a hundredth of a per cent rather than to the atom**, because the count is
+            // now held under a population as well as derived from tokens. Far below that ceiling
+            // the bend is invisible, which is what this tolerance says: eighty three thousand
+            // people out of four billion is bent by less than two of them.
+            Assert.AreEqual(expected, consumer.UsersFor(1.0), expected * 0.0001);
             Assert.AreEqual(0.0, consumer.UsersFor(-5.0), 1e-9, "Negative demand is not negative people.");
+
+            // And the other half of it: no amount of demand buys more people than exist.
+            Assert.That(consumer.UsersFor(1e12), Is.LessThan(consumer.PeopleCeiling),
+                "A thousand billion tokens a day bought more consumers than the segment can hold. "
+                + "Measured before this existed, the game's whole market reached twelve billion "
+                + "people in 2028, which is half again the human population.");
+
+            Assert.That(consumer.UsersFor(1e12), Is.GreaterThan(consumer.PeopleCeiling * 0.9),
+                "The ceiling is approached, not merely never reached: a market that saturates has "
+                + "to read as saturated.");
         }
 
         [Test]
