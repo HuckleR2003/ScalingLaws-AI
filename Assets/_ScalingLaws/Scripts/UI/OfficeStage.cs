@@ -218,6 +218,21 @@ namespace ScalingLaws.UI
             var view = RoomCatalog.For(tier);
             shownView = view;
 
+            // **Before anything is instantiated, and this line is the whole fix.**
+            //
+            // `Extras()` sweeps every renderer in the scene that is not part of the house and
+            // stands inside the house's own box, and it remembers the answer forever. A loaded
+            // room is instantiated at exactly the house's position, so every piece of it is inside
+            // that box and none of it is a child of the house: if the sweep runs for the first
+            // time with a room already loaded, it collects that room as somebody else's furniture
+            // and hides it.
+            //
+            // A new campaign never hit it. It opens in the garage, which is not a loaded room, so
+            // the sweep ran with nothing to eat and the answer was cached before the company ever
+            // moved. **Loading a save into an office hit it every time**, because the first room
+            // ever shown was a loaded one. Reported as the office simply not being there.
+            Extras();
+
             if (loadedRoom != null)
             {
                 Object.Destroy(loadedRoom);
@@ -290,6 +305,16 @@ namespace ScalingLaws.UI
             foreach (var renderer in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
             {
                 if (renderer == null || renderer.transform.IsChildOf(bakedRoom))
+                {
+                    continue;
+                }
+
+                // **Never the room the company is standing in.** The call above is ordered so this
+                // cannot happen, and this is the second belt: a loaded room sits at the house's
+                // own position, so it is inside the box and it is not part of the house, which is
+                // exactly the shape of a stray. One reordering of `SwapRoom` would otherwise hide
+                // the whole office again.
+                if (loadedRoom != null && renderer.transform.IsChildOf(loadedRoom.transform))
                 {
                     continue;
                 }

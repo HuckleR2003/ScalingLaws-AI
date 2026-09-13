@@ -221,7 +221,36 @@ namespace ScalingLaws.UI
         private const int DaysBeforeHeRingsBack = 3;
 
         /// <summary>The day the player stepped out, so he does not ring the same afternoon.</summary>
+        /// <summary>
+        /// The day he was last put off, as a day index.
+        ///
+        /// **Two things pause him and only one of them used to write this down.** Pressing "I'll
+        /// take it from here" recorded the day; walking to another screen while the phone was
+        /// ringing set the stage to paused and left this alone. On a fresh session it is zero, so
+        /// the "has it been three days" test compared against day zero and answered yes
+        /// immediately: the player refused one call and the next one started ringing on the
+        /// following frame. Reported as two phones at once.
+        ///
+        /// **A day index, not the day of the month.** `Date.Day` is 1 to 31, so across a month
+        /// boundary the subtraction went negative and he would never ring back at all. That one
+        /// was older than this session.
+        ///
+        /// Seeded at startup rather than left at zero, so loading a save that was left mid-call
+        /// gives him three days rather than ringing on the first frame.
+        /// </summary>
         private int pausedOn;
+
+        /// <summary>
+        /// Puts him off until three days have passed, from wherever that decision was made.
+        ///
+        /// One method, because the last time these two lines were written separately one of the
+        /// callers forgot the second and the phone rang twice.
+        /// </summary>
+        private void PutTheCousinOff()
+        {
+            state.Guide.Stage = GuideStage.Paused;
+            pausedOn = state.Date.DayIndex;
+        }
 
         /// <summary>The quiet strip under the corner banners with the next task on it.</summary>
         private TaskBanner tasks;
@@ -552,6 +581,11 @@ namespace ScalingLaws.UI
 
             simulation = new CompanySimulation(state);
             clock = new SimClock(state.Date, SimSpeed.Paused);
+
+            // **Today, not day zero.** A save left mid-call loads with the guide paused, and an
+            // unseeded counter would make "three days since he was put off" true on the first
+            // frame: he would ring the moment the campaign opened.
+            pausedOn = state.Date.DayIndex;
 
             creator = new ModelCreatorPanel(simulation);
             creator.started += () => Show(Screen.Site);
@@ -985,10 +1019,7 @@ namespace ScalingLaws.UI
                 return null;
             };
 
-            guide.leftForNow = () =>
-            {
-                pausedOn = state.Date.Day;
-            };
+            guide.leftForNow = PutTheCousinOff;
 
             // **He does not leave when the tour ends.** Pressing "I'll take it from here" in the
             // first minute used to skip the tutorial permanently with no way back to it, which is a
@@ -1560,7 +1591,7 @@ namespace ScalingLaws.UI
 
                 if (state != null && state.Guide.Stage == GuideStage.Talking)
                 {
-                    state.Guide.Stage = GuideStage.Paused;
+                    PutTheCousinOff();
                 }
             }
 
@@ -2181,7 +2212,7 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            if (paused && state.Date.Day - pausedOn < DaysBeforeHeRingsBack)
+            if (paused && state.Date.DayIndex - pausedOn < DaysBeforeHeRingsBack)
             {
                 return;
             }

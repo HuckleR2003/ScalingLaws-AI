@@ -42,6 +42,42 @@ Nothing yet.
 
 ---
 
+## [0.3.1] - 2026-09-13
+
+A patch. Two faults found by the author within an hour of 0.3.0 going up, both of them only
+reachable by loading a save rather than starting a campaign.
+
+### Fixed
+
+- **Loading a save put you in an office that was not there.** A wall, a few pieces of furniture and
+  a bench, no floor and no desks. Nothing failed and nothing was logged, because the room hid
+  itself: the sweep that dims the hand-placed things in the house so they do not show through a
+  rented floor runs once and remembers its answer, and a loaded room stands in exactly the house's
+  own space. Run for the first time with a room already loaded, it collected that room as somebody
+  else's furniture. A new campaign could never hit it, because it opens in the garage and the sweep
+  had nothing to eat. Measured on the way to the fix: 96 of the 115 pieces of the office were
+  switched off.
+- **Two calls from the cousin at once.** Walking to another screen while the phone was ringing puts
+  him off until three days have passed, which is right, and it did not write down which day that
+  was. Against an unset counter the test for "has it been three days" answered yes immediately, so
+  refusing one call started the next on the following frame. The same comparison was also counting
+  in days of the month, so across a month boundary it went negative and he would never have rung
+  back at all.
+
+### Save compatibility
+
+**Unchanged, v56.** Both faults are in the interface. A 0.3.0 save loads and so does a 0.2.0 one.
+
+### Under the hood
+
+`OfficeStageFirstRoomTests` shows a room as the first thing a stage is ever asked to draw, which is
+what loading a save does and what every existing office test skipped by starting in the garage and
+moving. It was run against the broken code first and reported 96 of 115 pieces dark.
+
+1,273 EditMode tests and 59 PlayMode tests.
+
+---
+
 ## [0.3.0] - 2026-09-13
 
 **Two products stopped being one product printed twice.** A company selling a second model watched
