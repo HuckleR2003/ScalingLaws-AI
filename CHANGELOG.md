@@ -38,6 +38,12 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.3.0] - 2026-09-13
+
 **Two products stopped being one product printed twice.** A company selling a second model watched
 both corner banners report the same audience to the last decimal, because the archive asked the
 market how many people were on that *kind* of model and handed the whole of that answer to every
