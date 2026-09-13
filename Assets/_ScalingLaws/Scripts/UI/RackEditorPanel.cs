@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -31,6 +32,18 @@ namespace ScalingLaws.UI
 
         /// <summary>Set by the screen, so the cross closes the right thing.</summary>
         public Action Close { get; set; }
+
+        /// <summary>
+        /// The right-hand column, which is what a row is dragged onto.
+        ///
+        /// Held rather than passed, because the rows are built before the cabinet is: the bay goes
+        /// in on the left first. A row only asks for this when the pointer is released, by which
+        /// time the whole card exists.
+        /// </summary>
+        private VisualElement cabinetColumn;
+
+        /// <summary>The card under the cursor while a row is being dragged, or null.</summary>
+        private VisualElement carried;
 
         /// <summary>
         /// Says what happened, across the top of the screen.
@@ -77,6 +90,7 @@ namespace ScalingLaws.UI
 
             var cabinet = new VisualElement();
             cabinet.AddToClassList("rackmodal__cabinet");
+            cabinetColumn = cabinet;
             cabinet.Add(BuildSlots(simulation, square, definition));
             cabinet.Add(BuildStats(simulation, square, definition));
             cabinet.Add(BuildActions(simulation, column, row, square));
@@ -314,7 +328,114 @@ namespace ScalingLaws.UI
                 }
             });
 
+            Draggable(line, simulation, column, row, part);
+
             return line;
+        }
+
+        /// <summary>
+        /// Lets a row be dragged out of the list and dropped on the cabinet.
+        ///
+        /// **Asked for by name**, alongside the button and the double click, and it is the one of
+        /// the three a player tries without being told. Three things make it work and each of them
+        /// is a way it goes wrong without:
+        ///
+        /// - **The pointer is captured on the first move, never on the press.** A row is also a
+        ///   double click target and a card with two buttons on it; capturing on the press would
+        ///   swallow both.
+        /// - **What follows the cursor is a copy**, mounted on the panel root and ignoring pointer
+        ///   events. Moving the row itself takes it out of the list under the cursor, and a ghost
+        ///   that can be hit by the pointer is a ghost that lands on itself.
+        /// - **The drop is tested against the cabinet column's world rectangle**, not against
+        ///   whatever the pointer is over. UI Toolkit reports the topmost element under the
+        ///   pointer, which during a drag is frequently the ghost.
+        /// </summary>
+        private void Draggable(VisualElement line, CompanySimulation simulation, int column,
+            int row, HardwareGeneration part)
+        {
+            var from = Vector2.zero;
+            var dragging = false;
+
+            line.RegisterCallback<PointerDownEvent>(down =>
+            {
+                if (down.button != 0)
+                {
+                    return;
+                }
+
+                from = down.position;
+                dragging = false;
+            });
+
+            line.RegisterCallback<PointerMoveEvent>(move =>
+            {
+                if (move.pressedButtons != 1)
+                {
+                    return;
+                }
+
+                if (!dragging)
+                {
+                    // Far enough that it is a drag rather than a hand shaking on a click. Six
+                    // pixels is about what a double click survives.
+                    if ((move.position - (Vector3)from).sqrMagnitude < 36f)
+                    {
+                        return;
+                    }
+
+                    dragging = true;
+                    line.CapturePointer(move.pointerId);
+                    carried = Ghost(part);
+                }
+
+                if (carried == null)
+                {
+                    return;
+                }
+
+                carried.style.left = move.position.x + 14f;
+                carried.style.top = move.position.y - 12f;
+            });
+
+            line.RegisterCallback<PointerUpEvent>(up =>
+            {
+                if (!dragging)
+                {
+                    return;
+                }
+
+                dragging = false;
+                line.ReleasePointer(up.pointerId);
+
+                var onCabinet = cabinetColumn != null
+                    && cabinetColumn.worldBound.Contains(up.position);
+
+                carried?.RemoveFromHierarchy();
+                carried = null;
+
+                if (onCabinet)
+                {
+                    Fit(simulation, column, row, part);
+                }
+            });
+        }
+
+        /// <summary>The copy that follows the cursor. Null when there is nowhere to mount it.</summary>
+        private static VisualElement Ghost(HardwareGeneration part)
+        {
+            var host = InsightTip.Host;
+
+            if (host == null)
+            {
+                return null;
+            }
+
+            var ghost = new Label(part.DisplayName);
+            ghost.AddToClassList("rackbay__ghost");
+            ghost.pickingMode = PickingMode.Ignore;
+
+            host.Add(ghost);
+            return ghost;
         }
 
         /// <summary>Puts one card in the cabinet on screen and says so.</summary>

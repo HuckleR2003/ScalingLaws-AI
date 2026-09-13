@@ -1071,7 +1071,9 @@ namespace ScalingLaws.UI
 
             // **The room has had a Staff group since it was generated and only ever held the
             // founder.** A company could hire twelve people and the office they were in was empty.
-            staff = new StaffPresence(() => state);
+            // The room on screen, so people stand at the desks that room was built with rather
+            // than on a grid at the house's origin, which on a rented floor is outside the room.
+            staff = new StaffPresence(() => state, () => officeStage?.CurrentRoom);
             founder.Spawn();
             AddHudSlots();
             root.Add(hud.Root);

@@ -386,10 +386,18 @@ namespace ScalingLaws.Tests.PlayMode
             }
 
             // Anything still lit, standing in the same space, belonging to something else.
+            //
+            // **People excepted, and that is the whole distinction this guard is about.** The
+            // founder and the staff stand in the house's `Staff` group, which is not part of the
+            // room they are standing in, and a name plate is a `TextMesh` and therefore a
+            // `MeshRenderer` inside the new room's own bounds. They used to fail this test by
+            // being switched off, which is what took the founder's name away on a move.
             var strays = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)
                 .Where(renderer => renderer.enabled)
                 .Where(renderer => !renderer.GetComponentsInParent<Transform>(true)
                     .Any(step => step == room))
+                .Where(renderer => !renderer.GetComponentsInParent<Transform>(true)
+                    .Any(step => step.name == OfficeStage.PeopleGroup))
                 .Where(renderer => bounds.Intersects(renderer.bounds))
                 .Select(renderer => renderer.transform.name)
                 .Distinct()

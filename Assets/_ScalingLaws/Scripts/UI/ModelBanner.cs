@@ -244,18 +244,23 @@ namespace ScalingLaws.UI
             var footer = new VisualElement();
             footer.AddToClassList("mb__footer");
 
-            // The lead banner reports the company: what came in and what is left of it. A follower
-            // reports the model, at two horizons: everything it has taken since it went on sale,
-            // and the last month of it, which is the pair that answers whether this product is
-            // still the one carrying the company or only the one that used to.
+            // **Every banner reports its own model, at two horizons**: everything it has taken
+            // since it went on sale, and the last month of it. That pair answers whether this
+            // product is still the one carrying the company or only the one that used to.
+            //
+            // The lead banner used to report the *company* here, NET INCOME and SUBS. EARNINGS,
+            // inside a card with a model's name at the top of it. Reported by the author: the
+            // banner is aimed at the model and counts the whole of everything. Both readings were
+            // right, and the numbers were not wrong so much as about somebody else: a company
+            // that had spent four months training and shipped nothing drew that spend under the
+            // model it had not released yet. The company's month is on the management desk, which
+            // this banner's own button opens, under a heading that says MANAGEMENT.
             //
             // **The first cell used to be the user count on a follower**, which is the same figure
             // the subscriber line above already carries, drawn a second time as money because the
             // cell is a money cell. Four cells of information, three of them the same two numbers.
-            footer.Add(FooterCell(
-                compact ? Loc.T("banner.earned_total") : Loc.T("banner.net_income"), net));
-            footer.Add(FooterCell(
-                compact ? Loc.T("banner.earned_recent") : Loc.T("banner.subs_earnings"), earnings));
+            footer.Add(FooterCell(Loc.T("banner.earned_total"), net));
+            footer.Add(FooterCell(Loc.T("banner.earned_recent"), earnings));
             body.Add(footer);
 
             return body;
@@ -404,30 +409,16 @@ namespace ScalingLaws.UI
 
             chart.Set(dailySeries());
 
-            // A follower draws the product, the lead draws the company, and the two never share a
-            // field: the sign and the profit colour belong to a net, which a product does not have
-            // because the fleet bill is not attributed per model and inventing a split would be a
-            // figure with nothing behind it.
-            if (compact)
-            {
-                net.text = UiFormat.Money(standing.OwnLifetimeUsd);
-                net.EnableInClassList("mb-cell__value--good", standing.OwnLifetimeUsd > 0L);
-                net.EnableInClassList("mb-cell__value--bad", false);
+            // **The product's own take, on both banners.** There is no sign and no profit colour
+            // here, because that belongs to a net and a product does not have one: the fleet bill
+            // is not attributed per model, and splitting it would be a figure with nothing behind
+            // it. What a product does have is what it has been paid, which is what these are.
+            net.text = UiFormat.Money(standing.OwnLifetimeUsd);
+            net.EnableInClassList("mb-cell__value--good", standing.OwnLifetimeUsd > 0L);
+            net.EnableInClassList("mb-cell__value--bad", false);
 
-                earnings.text = UiFormat.Money(standing.OwnRecentUsd);
-                earnings.EnableInClassList("mb-cell__value--good", standing.OwnRecentUsd > 0L);
-            }
-            else
-            {
-                net.text = (standing.MonthNetUsd >= 0 ? "+" : "-")
-                    + UiFormat.Money(Math.Abs(standing.MonthNetUsd));
-
-                net.EnableInClassList("mb-cell__value--good", standing.IsProfitable);
-                net.EnableInClassList("mb-cell__value--bad", !standing.IsProfitable);
-
-                earnings.text = UiFormat.Money(standing.MonthEarningsUsd);
-                earnings.EnableInClassList("mb-cell__value--good", standing.MonthEarningsUsd > 0L);
-            }
+            earnings.text = UiFormat.Money(standing.OwnRecentUsd);
+            earnings.EnableInClassList("mb-cell__value--good", standing.OwnRecentUsd > 0L);
 
             // The age goes through `UiFormat.Days` rather than into the sentence as a number,
             // because Polish has three plural forms and "1 dni" is what writing it inline produces.

@@ -19819,6 +19819,19 @@
     border-radius: 4px;
 }
 
+/* What follows the cursor while a row is being dragged onto the cabinet. Mounted on the panel
+   root, so it is positioned in panel space and cannot be clipped by the list it came out of. */
+.rackbay__ghost {
+    position: absolute;
+    padding: 5px 9px;
+    font-size: 11.5px;
+    -unity-font-style: bold;
+    color: rgb(20, 22, 28);
+    background-color: rgb(154, 214, 62);
+    border-radius: 4px;
+    opacity: 0.92;
+}
+
 .rackbay__sell:hover {
     color: rgb(20, 22, 28);
     background-color: rgb(226, 140, 120);

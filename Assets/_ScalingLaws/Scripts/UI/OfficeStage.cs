@@ -35,6 +35,15 @@ namespace ScalingLaws.UI
         public const string WaypointGroup = "Waypoints";
 
         /// <summary>
+        /// The group the founder and the staff are spawned into.
+        ///
+        /// Named here as well as on <see cref="FounderPresence"/> because this class has to know
+        /// what is not furniture, and it is reached from the room rather than by a scene-wide
+        /// search.
+        /// </summary>
+        public const string PeopleGroup = FounderPresence.StaffGroup;
+
+        /// <summary>
         /// The walking points of the room that is actually on screen.
         ///
         /// **The founder was standing in the air**, and this is why. `OfficeActor` found its points
@@ -319,6 +328,16 @@ namespace ScalingLaws.UI
                     continue;
                 }
 
+                // **And never a person.** Same reasoning as `SetGeometryVisible`: a name plate is
+                // a `MeshRenderer` standing exactly where somebody is standing, which is inside
+                // the room by definition. A founder spawned before the first room swap would
+                // otherwise be collected here and switched off with the furniture.
+                if (renderer.GetComponentInParent<OfficeActor>() != null
+                    || renderer.GetComponentInParent<NamePlate>() != null)
+                {
+                    continue;
+                }
+
                 if (room.Intersects(renderer.bounds))
                 {
                     bakedExtras.Add(renderer);
@@ -329,10 +348,19 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// Hides a room's meshes while leaving its cameras and lights alone.
+        /// Hides a room's meshes while leaving its cameras, its lights and its people alone.
         ///
         /// Renderers rather than the GameObject, for exactly that reason: switching the garage off
         /// wholesale would switch off the camera that is rendering the office.
+        ///
+        /// **And never the people.** Reported as the founder losing their name plate the moment
+        /// the company moved into a rented floor. `Staff` is a child of the house, the plate is
+        /// two `TextMesh` objects and a quad, and a `TextMesh` carries a `MeshRenderer`, so hiding
+        /// the house's geometry switched the name off. The founder's own body survived because a
+        /// character is a `SkinnedMeshRenderer`, which this sweep does not touch, so what the
+        /// player saw was a person with no name rather than no person. The staff kept theirs only
+        /// by accident of timing: they are respawned whenever the roster changes, which is after
+        /// the move.
         /// </summary>
         private static void SetGeometryVisible(Transform room, bool visible)
         {
@@ -341,8 +369,15 @@ namespace ScalingLaws.UI
                 return;
             }
 
+            var people = room.Find(PeopleGroup);
+
             foreach (var renderer in room.GetComponentsInChildren<MeshRenderer>(true))
             {
+                if (people != null && renderer.transform.IsChildOf(people))
+                {
+                    continue;
+                }
+
                 renderer.enabled = visible;
             }
         }

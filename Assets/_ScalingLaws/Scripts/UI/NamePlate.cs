@@ -72,6 +72,17 @@ namespace ScalingLaws.UI
         private string dutyTitle = string.Empty;
 
         private Transform plate;
+
+        /// <summary>
+        /// The camera the plate turns to face, found once.
+        ///
+        /// **Kept, because a person turns.** The facing used to be set once when the plate was
+        /// built, as a world rotation on a child of the model: correct for anybody standing still
+        /// and wrong for the founder, who walks. Every turn they made turned the name with them,
+        /// so it read across the room at whatever angle they last walked in.
+        /// </summary>
+        private Camera facing;
+
         private TextMesh nameMesh;
         private TextMesh titleMesh;
         private Transform rule;
@@ -250,14 +261,38 @@ namespace ScalingLaws.UI
             // **The camera that renders the room, not `Camera.main`.** See the note on the class:
             // the office camera is parented inside the room and carries no tag, so `Camera.main`
             // returned the game's camera and every plate faced a direction nobody was looking from.
-            var camera = RoomCamera();
+            facing = RoomCamera();
 
-            host.transform.rotation = camera != null
-                ? camera.transform.rotation
-                : Quaternion.Euler(30f, -45f, 0f);
+            host.transform.rotation = Facing();
 
             return host.transform;
         }
+
+        /// <summary>
+        /// Kept square to the camera every frame, because the person underneath turns.
+        ///
+        /// `LateUpdate` rather than `Update`, so it runs after whatever moved them. It is a
+        /// rotation assignment on a handful of objects and this room holds at most twenty one
+        /// people, so there is nothing here worth caching a frame of.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (plate == null)
+            {
+                return;
+            }
+
+            plate.rotation = Facing();
+        }
+
+        /// <summary>
+        /// Which way is square to the reader.
+        ///
+        /// The fallback is the room's own camera angle written out, so a plate in a scene with no
+        /// camera in it still reads rather than facing world forward.
+        /// </summary>
+        private Quaternion Facing() =>
+            facing != null ? facing.transform.rotation : Quaternion.Euler(30f, -45f, 0f);
 
         /// <summary>
         /// The camera drawing the room this person is standing in.

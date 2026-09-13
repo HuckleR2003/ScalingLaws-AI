@@ -44,15 +44,36 @@ namespace ScalingLaws.UI
         /// <summary>Rows before the grid wraps. Wide rather than deep: the camera looks along z.</summary>
         public const int PerRow = 5;
 
+        /// <summary>The desks the room itself was built with, and what a chair is called.</summary>
+        public const string DeskGroup = "FixedDesks";
+
+        /// <inheritdoc cref="DeskGroup"/>
+        public const string ChairPrefix = "Chair";
+
         private readonly Func<CompanyState> state;
+
+        /// <summary>
+        /// The room that is actually on screen, or null when there is none.
+        ///
+        /// **Reported as the staff standing outside the scene, on the left.** They were placed on
+        /// a grid in the `Staff` group's own local space, which is the house's origin: fine in a
+        /// twelve metre garage and, on a sixteen metre floor, a row of people standing two metres
+        /// in front of the near wall, off the floor, in the dark, with their name plates the only
+        /// thing the player could see of them.
+        ///
+        /// A room knows where its own desks are. This is how to ask it.
+        /// </summary>
+        private readonly Func<Transform> room;
+
         private readonly List<GameObject> spawned = new();
 
         private int shownCount = -1;
         private string shownSignature = string.Empty;
 
-        public StaffPresence(Func<CompanyState> state)
+        public StaffPresence(Func<CompanyState> state, Func<Transform> room = null)
         {
             this.state = state;
+            this.room = room;
         }
 
         /// <summary>How many people are actually standing in the room. Read by the guard.</summary>
@@ -123,6 +144,51 @@ namespace ScalingLaws.UI
             return text.ToString();
         }
 
+        /// <summary>
+        /// Puts one person somewhere a person could be.
+        ///
+        /// **At their own chair when the room has one**, which is the whole point of a lease that
+        /// says how many desks it comes with: the tenth hire sits at the tenth desk. A chair found
+        /// by name, because the builder writes `FixedDesks/Chair0` upward and the lease charges
+        /// for exactly that many.
+        ///
+        /// The grid is the fallback and stays honest about being one: a company with more people
+        /// than desks has people standing, which is also what the desk cap is supposed to feel
+        /// like. It is placed inside the room now rather than at the house's origin.
+        /// </summary>
+        private void Stand(Transform person, int index)
+        {
+            var floor = room?.Invoke();
+            var chair = Seat(floor, index);
+
+            if (chair != null)
+            {
+                // Behind the chair rather than on it: the character is standing, and a standing
+                // model dropped onto a seat is a person growing out of the furniture. The chair's
+                // own facing is where the desk is, so stepping back along it is the aisle side.
+                person.position = chair.position - chair.forward * 0.32f;
+                person.rotation = chair.rotation;
+                return;
+            }
+
+            var origin = floor != null ? floor.position : person.parent.position;
+
+            // Along the front of whatever room this is, which is the open side: the camera looks
+            // from high x and low z, so this row is the nearest floor to the player.
+            person.position = origin + new Vector3(
+                1.6f + index % PerRow * Spacing,
+                0f,
+                1.0f + index / PerRow * Spacing);
+        }
+
+        /// <summary>The chair the room built for this hire, or null when it built none.</summary>
+        private static Transform Seat(Transform floor, int index)
+        {
+            var desks = floor == null ? null : floor.Find(DeskGroup);
+
+            return desks == null ? null : desks.Find(ChairPrefix + index);
+        }
+
         private void Spawn(Transform group, Hire hire, int index)
         {
             var prefab = Resources.Load<GameObject>(FounderPresence.PrefabPath);
@@ -151,12 +217,7 @@ namespace ScalingLaws.UI
                 UnityEngine.Object.DestroyImmediate(routine);
             }
 
-            // A grid behind where the founder works, stepped back a row so nobody stands inside
-            // them on an empty roster.
-            person.transform.localPosition = new Vector3(
-                (index % PerRow - (PerRow - 1) * 0.5f) * Spacing,
-                0f,
-                -2.0f - index / PerRow * Spacing);
+            Stand(person.transform, index);
 
             person.AddComponent<NamePlate>().Set(
                 hire.Name,

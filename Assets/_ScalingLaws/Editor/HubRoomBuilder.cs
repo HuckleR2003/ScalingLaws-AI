@@ -160,6 +160,37 @@ namespace ScalingLaws.Editor
             /// <summary>Twenty desks, a second meeting room and a storage bay.</summary>
             public static Plan BigHub() => new("BigHub", 22f, 14f, 20, 4, true, 9.0f);
 
+            /// <summary>
+            /// The corner the founder actually works in, on the floor.
+            ///
+            /// **Reported as the founder sitting in mid air.** The `Desk` waypoint used to be a
+            /// fraction of the room with nothing standing on it, so the sit clip played on an
+            /// empty patch of floor beside the kitchen. A person sitting needs something to sit
+            /// at, and the house has had one since it was generated.
+            ///
+            /// Front-right, which is the corner nearest an orthographic camera at X 30, Y -45, so
+            /// the desk the player owns is the one closest to them. The big floor already has a
+            /// glazed room in that corner and the desk in it is this desk.
+            /// </summary>
+            public Vector3 BossDesk => SecondMeetingRoom
+                ? new Vector3(Width - Width * 0.24f / 2f, 0f, Depth * 0.30f * 0.52f)
+                : new Vector3(Width * 0.86f, 0f, Depth * 0.16f);
+
+            /// <summary>Where the chair is, which is where the founder is asked to walk.</summary>
+            public Vector3 BossChair => BossDesk - new Vector3(0f, 0f, 0.75f);
+
+            /// <summary>
+            /// The open aisle across the front of the floor, at the left end of it.
+            ///
+            /// A rented floor has no stairs, and the routine routes through `StairFoot` and
+            /// `StairHead` on the way to everywhere. Putting both of them here turns those two
+            /// markers into the corner of the aisle, so the walk from the break area to the desk
+            /// runs along the front of the room instead of diagonally through a bench of four.
+            /// **That is as far as it goes: nothing avoids anything it was not routed around**,
+            /// and walking here is waypoints rather than a navmesh by design.
+            /// </summary>
+            public Vector3 Aisle => new(Width * 0.20f, 0f, Depth * 0.12f);
+
             public string PrefabPath => $"{PrefabFolder}/{Name}.prefab";
             public string ScenePath => $"{ScenesFolder}/{Name}.unity";
         }
@@ -187,6 +218,10 @@ namespace ScalingLaws.Editor
             if (plan.SecondMeetingRoom)
             {
                 BuildSecondRoom(root.transform, plan, palette);
+            }
+            else
+            {
+                BuildBossCorner(root.transform, plan, palette);
             }
 
             // The three groups the runtime fills. Furniture is empty on purpose: the decorator owns
@@ -683,17 +718,34 @@ namespace ScalingLaws.Editor
             Piece(room, "Printer", new Vector3(originX + width * 0.85f, 0f, depth * 0.14f),
                 new Vector3(1.0f, 1.6f, 1.0f), Kit.Printer, palette.Metal, 90f);
 
-            for (var index = 0; index < 4; index++)
-            {
-                var stack = index / 2;
-                var height = index % 2;
+            // **The four crates are gone.** They were `Box` primitives: four grey boxes
+            // stacked two by two on open floor in the middle of the frame, and the only thing
+            // left in either room that was not a modelled piece. Reported as the blocks behind
+            // the founder. Nothing replaces them, because an empty patch of floor in a room with
+            // a kitchen, a meeting room and twenty desks in it does not read as unfinished.
+        }
 
-                Box(room, $"Crate{index}",
-                    new Vector3(plan.Width * 0.30f + stack * 0.85f,
-                        0.35f + height * 0.7f,
-                        plan.Depth * 0.10f),
-                    new Vector3(0.7f, 0.65f, 0.7f), palette.Cardboard);
-            }
+        /// <summary>
+        /// One desk, one chair, one screen, in the corner nearest the camera.
+        ///
+        /// The small floor is one room and does not get a glazed office, and it still has to have
+        /// somewhere the founder sits: the alternative, and what shipped, is a person playing a
+        /// sitting animation on bare floor. No partition, because a wall around one desk on a ten
+        /// desk floor is a manager who has stopped working with anybody.
+        /// </summary>
+        private static void BuildBossCorner(Transform parent, Plan plan, HubPalette palette)
+        {
+            var corner = Group(parent, "BossCorner");
+            var desk = plan.BossDesk;
+
+            Piece(corner, "Desk", desk,
+                new Vector3(1.6f, 0.75f, 0.9f), Kit.Desk, palette.TimberDark, 90f);
+
+            Piece(corner, "Monitor", desk + new Vector3(0f, 0.75f, 0.2f),
+                new Vector3(0.7f, 0.5f, 0.3f), Kit.Monitor, palette.Screen, 90f);
+
+            Piece(corner, "Chair", plan.BossChair,
+                new Vector3(0.66f, 1.05f, 0.66f), Kit.DeskChair, palette.Fabric);
         }
 
         private static void BuildWaypoints(Transform parent, Plan plan)
@@ -701,18 +753,26 @@ namespace ScalingLaws.Editor
             // The same names the house uses, because FounderRoutine walks by name and a floor that
             // called them something else would put the founder at the origin.
             Marker(parent, "Door", new Vector3(plan.Width - 1.2f, 0f, 0.8f));
-            Marker(parent, "Desk", new Vector3(plan.Width * 0.14f, 0f, plan.Depth * 0.30f));
+
+            // **Both desk markers are the chair in the boss corner.** They used to be two
+            // fractions of the room with nothing standing on either of them, which is what put
+            // the founder in mid air: the routine asks for `UpstairsDesk` on a working day, and
+            // `Desk` is the older name the house still uses.
+            Marker(parent, "Desk", plan.BossChair);
+            Marker(parent, "UpstairsDesk", plan.BossChair);
+
             Marker(parent, "Bench", new Vector3(2.2f, 0f, 4.6f));
             Marker(parent, "Sofa", new Vector3(2.2f, 0f, 4.6f));
             Marker(parent, "Racks", new Vector3(plan.Width - 1.4f, 0f, plan.Depth * 0.62f));
 
-            // A rented floor has no stairs and no bed. The routine still asks for them, so they point
-            // at the break area: the founder takes their break where the sofa is rather than walking
-            // through a wall to a bedroom this lease does not have.
-            Marker(parent, "StairFoot", new Vector3(plan.Width * 0.5f, 0f, 1.6f));
-            Marker(parent, "StairHead", new Vector3(plan.Width * 0.5f, 0f, 1.6f));
+            // A rented floor has no stairs and no bed. The routine still asks for them, so they
+            // point at the corner of the front aisle: every route it builds runs through these
+            // two on the way to somewhere, which is what keeps the walk out of the benches. The
+            // bed is the break area, so the founder takes their break where the sofa is rather
+            // than walking through a wall to a bedroom this lease does not have.
+            Marker(parent, "StairFoot", plan.Aisle);
+            Marker(parent, "StairHead", plan.Aisle);
             Marker(parent, "Bed", new Vector3(2.2f, 0f, 4.6f));
-            Marker(parent, "UpstairsDesk", new Vector3(plan.Width * 0.14f, 0f, plan.Depth * 0.52f));
 
             Marker(parent, "Garage", new Vector3(plan.Width + 1.4f, 0f, 0.4f));
             Marker(parent, "Car", new Vector3(plan.Width + 2.8f, 0f, -1.2f));

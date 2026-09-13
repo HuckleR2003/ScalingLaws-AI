@@ -46,7 +46,8 @@ go in. This file is the draft for the store update post, so anything vague here 
   used to be a cheque and a click, so the one decision that can quietly end a company had nothing
   in front of it. A place the company has not studied says so on the premises page, names the
   research, and carries the way to it.
-
+- **A card can be dragged onto the cabinet.** Pick a row up out of the list and drop it on the
+  cabinet in the middle of the card. The button and the double click both still work.
 - **You can put a card in a cabinet.** The opened cabinet has a list down the left of every
   accelerator the company owns, strongest first, with what is still in transit underneath it and
   the date it arrives. FIT puts one in the cabinet you are looking at, SELL sells the batch, and
@@ -56,6 +57,22 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Changed
 
+- **The founder has a desk to sit at.** The small floor gets a corner with a desk, a chair and a
+  screen in it, nearest the camera, and both desk waypoints are that chair. The big floor already
+  had a glazed office and now the founder actually sits in it.
+- **Staff stand at the desks the lease paid for.** They were placed on a grid measured from the
+  house, which on a sixteen metre floor is a row of people standing outside the room, in the dark,
+  with only their name plates visible. The tenth hire sits at the tenth desk; anybody past the
+  desk count stands along the front of the room.
+- **The founder walks around the desks rather than through them.** Every route runs through the
+  corner of the front aisle, which is where a rented floor's two stair markers now point. This is
+  routing, not avoidance: walking here is waypoints by design and nothing steps around anything it
+  was not routed around.
+- **The SITE banner reports its own model.** It carried NET INCOME and SUBS. EARNINGS for the
+  whole company inside a card with one model's name on it, so four months of training a company
+  had not released yet were drawn under the model it had not released. Both cells are the
+  product's: what it has earned all time, and in the last 31 days. The company's month is on the
+  management desk, which that banner's own button opens.
 - **The room stops rearranging itself every night.** The floor used to empty every cabinet and
   refill them from scratch on every tick, which is why anything placed by hand was gone a moment
   later. It now keeps what is standing where it stands and only corrects what is actually wrong:
@@ -64,6 +81,12 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Fixed
 
+- **The founder lost their name over their head after moving office.** The name plate is a mesh
+  and it stands in the group the room hides when a rented floor is loaded over the house. The body
+  survived because a character is a different kind of renderer, so what showed was a person with
+  no name rather than no person.
+- **Four grey boxes stood on the floor of the big hub.** They were the last primitive left in
+  either room.
 - **The research info card would not go away.** It had a cross and a CLOSE button and nothing
   else took it down, so the thing every player tries first, clicking somewhere else, left it
   sitting over the tree. Any click outside it closes it now, and the click still reaches whatever

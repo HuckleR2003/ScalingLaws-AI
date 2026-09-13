@@ -108,7 +108,14 @@ namespace ScalingLaws.Tests.PlayMode
                 yield return null;
             }
 
-            var house = root.GetComponentsInChildren<MeshRenderer>(true);
+            // The house's own geometry, which does not include whoever is standing in it: the
+            // `Staff` group is a child of the house and a name plate is a mesh, so counting the
+            // room's renderers wholesale counts the founder's name as part of the floor. Hiding
+            // it is exactly the fault that took that name away after a move.
+            var house = root.GetComponentsInChildren<MeshRenderer>(true)
+                .Where(renderer => !renderer.GetComponentsInParent<Transform>(true)
+                    .Any(step => step.name == OfficeStage.PeopleGroup))
+                .ToArray();
 
             Assume.That(house.Length, Is.GreaterThan(0), "the house has no geometry to hide");
 
