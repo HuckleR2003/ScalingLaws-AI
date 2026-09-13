@@ -72,7 +72,23 @@ output with no headroom left, and red is a cabinet past what it can cool and los
 still paying the power bill for. The key is printed above the floor, the cabinet you open carries
 the same band, and the corner banner reads the same word.
 
+**A company can build its own power station, and it is the ceiling it buys rather than the
+income.** Nine measured campaigns say a lab that owns its accelerators stops growing at 2,500 kW
+at the end of its third year, because that is what a colocation contract supplies, and until now
+the only notice of that was a purchase being refused. Two sites: gas turbines by the river, two
+and a half years and $3bn and a fuel bill forever, or a nuclear block on the coast, nine years and
+$14bn and then almost nothing to run. Both supply 1.1 GW, both sell what nobody is using, and
+neither of them pays back its own price in electricity inside a campaign, which the card says
+out loud.
+
 ### Fixed
+
+- **Nothing said the power ceiling existed.** FLEET prints what the site supplies against what the
+  fleet is drawing now, and turns amber past four fifths of it, which is where the next purchase is
+  the one that gets refused.
+- **A power station printed as `1100000.0 kW`.** Kilowatts are right for a cabinet and useless a
+  million times over; the unit scales to MW and GW now, and the server room keeps kilowatts because
+  a rack is two of them.
 
 - **Nothing in the balance probe had ever owned an accelerator.** Both scripted operators rented,
   every year of every seed, so fourteen years of measurement reported a power draw of zero and a
@@ -80,8 +96,10 @@ the same band, and the corner banner reads the same word.
   this economy that no measurement could see. There is a third operator now that buys its silicon
   and fills a basement, and it found the thing the tariff question was really about: a company
   that owns its compute stops growing at **2,500 kW** at the end of its third year, because that
-  is what the colocated tier supplies and it does not rise however much is bought. Power runs
-  between 0.8% and 15% of the fleet bill and sits around 3%. The rate is not the problem.
+  is what the colocated tier supplies and it does not rise however much is bought. The way past it
+  is the $80M own datacenter at 40,000 kW, which the FLEET screen does offer; what nothing does is
+  say the ceiling is there before a purchase is refused by it. Power runs between 0.8% and 15% of
+  the fleet bill and sits around 3%. The rate is not the problem.
 
 - **A fan was cooling that cost nothing.** The cabinet panel said a fan takes a slot and it did,
   right up until the next day: the nightly refill put a full set of cards back into the cabinet
@@ -585,6 +603,10 @@ shape of it.
   colours in the server room.
 
 ### Save compatibility
+
+**Save v55.** Power stations the company has commissioned and the day each one opens. A v54
+campaign owns none, which is the only true reading: in v54 one could not be commissioned at all, so
+handing a station over now would be inventing a three billion dollar decision nobody made.
 
 **Save v54.** What an abandoned research node kept, plus everything v53 added below.
 A v53 campaign banks nothing, which is the only true reading: the old rule threw the whole node

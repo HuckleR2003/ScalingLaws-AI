@@ -155,6 +155,7 @@ namespace ScalingLaws.Persistence
                     51 => UpgradeV51ToV52(current),
                     52 => UpgradeV52ToV53(current),
                     53 => UpgradeV53ToV54(current),
+                    54 => UpgradeV54ToV55(current),
                     _ => current
                 };
             }
@@ -1826,6 +1827,28 @@ namespace ScalingLaws.Persistence
         /// a banked figure from and no honest way to invent one. A campaign that abandoned research
         /// under the old rule lost it, which is what it was playing.
         /// </summary>
+        /// <summary>
+        /// v54 to v55: the company owns no power station, because there were none to own.
+        ///
+        /// The only true reading, and the same one the basement got at v45: in v54 a station could
+        /// not be commissioned at all, so a campaign that would have built one never had the
+        /// chance. Handing one over now would be inventing a decision nobody made, and a $3bn one.
+        /// </summary>
+        public static SaveData UpgradeV54ToV55(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 55;
+
+            data.powerPlantSites = new List<int>();
+            data.powerPlantReadyDays = new List<int>();
+
+            return data;
+        }
+
         public static SaveData UpgradeV53ToV54(SaveData data)
         {
             if (data == null)

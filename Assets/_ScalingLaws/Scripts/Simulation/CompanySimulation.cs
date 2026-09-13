@@ -75,7 +75,8 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public ComputeProfile ProfileWith(double? rentedInstead) =>
             State.Pool.BuildProfile(
-                State.Date, Market, State.HasServerRoom ? State.Hall : null, Room, rentedInstead);
+                State.Date, Market, State.HasServerRoom ? State.Hall : null, Room, rentedInstead,
+                State.Power.CapacityKilowatts(State.Date));
 
         /// <summary>
         /// What the company has learned about running a room full of machines.
@@ -495,7 +496,8 @@ namespace ScalingLaws.Simulation
             // The hall goes in here too. It was passed to the read-only accessor and not to the
             // day that actually runs, so the room could show capacity the market never received.
             var profile = State.Pool.BuildProfile(
-                State.Date, market, State.HasServerRoom ? State.Hall : null, Room);
+                State.Date, market, State.HasServerRoom ? State.Hall : null, Room, null,
+                State.Power.CapacityKilowatts(State.Date));
 
             State.SkillsLevelledToday.Clear();
             State.AchievementMomentsToday.Clear();
@@ -546,13 +548,27 @@ namespace ScalingLaws.Simulation
                 + State.DailyBenefitCostUsd;
             var marketingCost = State.Monetization.TotalMarketingDailyUsd;
 
-            var operatingCost = servingCost + intelCost + salaryCost + marketingCost;
+            // **The company's own generation, before the tax line, because it is income.**
+            //
+            // The four bills below are the fleet's charged total split by the same scale, so the
+            // rate the plant is credited at has to come from the same place: `billScale` is worked
+            // out once here and read twice, rather than the plant inventing a tariff of its own.
+            // That is the rule this room has already been caught breaking four times.
+            var bill = profile.Bill;
+            var billScale = bill.TotalUsd > 0.0 ? servingCost / bill.TotalUsd : 0.0;
+
+            var plantCost = SimUnits.ToDollars(State.Power.DailyRunningCostUsd(State.Date));
+
+            var plantValue = SimUnits.ToDollars(State.Power.DailyValueUsd(
+                State.Date, profile.PowerDrawKilowatts, bill.ElectricityUsd * billScale));
+
+            var operatingCost = servingCost + intelCost + salaryCost + marketingCost + plantCost;
             var depreciation = SimUnits.ToDollars(profile.DailyDepreciationUsd);
 
             // Tax is charged on profit, not on turnover, so a loss-making year is not made worse
             // by where the company is registered. It is the only cost in the game the player can
             // reduce by choosing a place rather than by spending money.
-            var taxable = Math.Max(0L, revenue - operatingCost);
+            var taxable = Math.Max(0L, revenue + plantValue - operatingCost);
             var tax = (long)Math.Round(taxable * State.Home.TaxRate);
 
             // The books, written from the same numbers the cash movement uses rather than from a
@@ -568,9 +584,6 @@ namespace ScalingLaws.Simulation
             // the last one taken as the remainder so the parts add up to the whole exactly. Rounding
             // four numbers independently and hoping they match the fifth is how a report drifts a few
             // cents a day and a few thousand a decade.
-            var bill = profile.Bill;
-            var billScale = bill.TotalUsd > 0.0 ? servingCost / bill.TotalUsd : 0.0;
-
             var rent = (long)Math.Round(bill.CloudRentUsd * billScale);
             var power = (long)Math.Round(bill.ElectricityUsd * billScale);
             var housing = (long)Math.Round(bill.HousingUsd * billScale);
@@ -583,6 +596,19 @@ namespace ScalingLaws.Simulation
             State.PostCash(LedgerLine.Electricity, power);
             State.PostCash(LedgerLine.Housing, housing);
             State.PostCash(LedgerLine.Maintenance, upkeep);
+
+            // A station earns every day it is running and costs every day it is running, and the
+            // two are separate lines because netting them would hide which of the two a player is
+            // looking at. Nothing is posted for a company that owns no station.
+            if (plantValue > 0L)
+            {
+                State.PostCash(LedgerLine.PowerGeneration, plantValue);
+            }
+
+            if (plantCost > 0L)
+            {
+                State.PostCash(LedgerLine.PowerPlantUpkeep, plantCost);
+            }
 
             // A memo rather than a payment. The free tier sends no invoice of its own, it eats a
             // share of the fleet bill already counted above.
@@ -1239,7 +1265,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            var capacityAfter = State.Pool.PowerCapacityKilowatts();
+            var capacityAfter = SitePowerCapacityKilowatts();
             if (!HasAssetsInTier(tier))
             {
                 capacityAfter += tierDefinition.PowerCapacityKilowatts;
@@ -1312,6 +1338,79 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>Signs for the building. Money leaves now, the site opens after the lead time.</summary>
+        /// <summary>
+        /// Everything the company is allowed to draw today: the tiers it has hardware in, plus
+        /// anything its own stations are generating.
+        ///
+        /// **One reading, because the purchase and the readout both need it.** `TryBuyHardware`
+        /// refuses over this number and the fleet screen prints it, and two copies would be a
+        /// player told they have headroom by a screen that the till disagrees with.
+        /// </summary>
+        public double SitePowerCapacityKilowatts() =>
+            State.Pool.PowerCapacityKilowatts() + State.Power.CapacityKilowatts(State.Date);
+
+        /// <summary>
+        /// Commissions a power station.
+        ///
+        /// **The ceiling is what is being bought.** A company that owns its accelerators stops
+        /// growing at 2,500 kW, which is what the colocated tier supplies, and at 40,000 kW with
+        /// its own datacenter. A station is 1.1 GW, and it is the only thing in the game that lifts
+        /// that number without another tier underneath it.
+        ///
+        /// The income is real and it is small on purpose. See `PowerPlantCatalog` for why a plant
+        /// that paid for itself in electricity would be the one guaranteed return in a game whose
+        /// whole design is that there is none.
+        ///
+        /// Paid in full on the day, like the datacenter and unlike an office: there is no rented
+        /// power station, and a facility financed over its build would need a second debt
+        /// mechanism for one purchase.
+        /// </summary>
+        public bool TryBuildPowerPlant(PowerPlantSite site, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            var plant = PowerPlantCatalog.Get(site);
+
+            if (State.Power.Owns(site))
+            {
+                failureReason = Loc.T("plant.already");
+                return false;
+            }
+
+            if (State.Date.DayIndex < plant.Earliest.DayIndex)
+            {
+                failureReason = Loc.T("plant.too_early", plant.Earliest.ToString());
+                return false;
+            }
+
+            if (State.CashUsd < plant.CapexUsd)
+            {
+                failureReason = Loc.T("fail.needs_cash",
+                    UiMoney(plant.CapexUsd), UiMoney(State.CashUsd));
+
+                return false;
+            }
+
+            var ready = State.Date.AddDays(plant.BuildDays);
+
+            if (!State.Power.TryCommission(site, ready))
+            {
+                failureReason = Loc.T("plant.already");
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Facilities, plant.CapexUsd);
+            State.LifetimeCapitalSpentUsd += plant.CapexUsd;
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.HardwareOrdered,
+                State.Date,
+                Loc.T("plant.commissioned", plant.DisplayName, ready.ToString()),
+                plant.CapexUsd));
+
+            return true;
+        }
+
         public bool TryOrderDatacenter(out string failureReason)
         {
             failureReason = string.Empty;

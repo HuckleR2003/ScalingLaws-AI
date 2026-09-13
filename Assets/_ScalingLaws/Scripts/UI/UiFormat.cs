@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using ScalingLaws.Core;
 using ScalingLaws.Data;
 
 namespace ScalingLaws.UI
@@ -109,8 +110,27 @@ namespace ScalingLaws.UI
         /// this one is Polish. Every number the player reads goes through this file for exactly
         /// that reason and it has caught the same fault three times.
         /// </summary>
-        public static string Kilowatts(double kilowatts) =>
-            Number(kilowatts, 1) + " kW";
+        public static string Kilowatts(double kilowatts)
+        {
+            var power = SimUnits.Finite(kilowatts);
+            var size = Math.Abs(power);
+
+            // **A power station is a million times a cabinet and one unit cannot carry both.**
+            // The first render of the property tab printed "1100000.0 kW" for a plant, which is a
+            // number nobody reads as 1.1 gigawatts. The room keeps kilowatts, because a rack is
+            // two of them and megawatts there would be "0.0 MW" on every cabinet in the game.
+            if (size >= 1_000_000.0)
+            {
+                return Number(power / 1_000_000.0, 2) + " GW";
+            }
+
+            if (size >= 10_000.0)
+            {
+                return Number(power / 1_000.0, 1) + " MW";
+            }
+
+            return Number(power, 1) + " kW";
+        }
 
         /// <summary>Milliseconds, whole. Same reason.</summary>
         public static string Milliseconds(double milliseconds) =>

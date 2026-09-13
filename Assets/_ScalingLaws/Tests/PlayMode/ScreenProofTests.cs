@@ -448,6 +448,31 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The property tab, where the power stations are.
+        ///
+        /// **Two states in two frames, because the interesting one is the second.** An empty
+        /// estate has to read as an invitation rather than as a broken page, and a company that
+        /// has commissioned a station has to be able to tell at a glance whether it is running
+        /// yet, which is a colour and a sentence rather than a number.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ThePropertyTabDraws()
+        {
+            var simulation = Campaign();
+            simulation.State.CashUsd = 40_000_000_000L;
+
+            var screen = new InvestingScreen(() => simulation, () => { });
+            screen.ShowProperty(true);
+
+            yield return Capture(screen.Root, "estate_empty.png");
+
+            simulation.TryBuildPowerPlant(PowerPlantSite.Riverside, out _);
+            screen.ShowProperty(true);
+
+            yield return Capture(screen.Root, "estate_building.png");
+        }
+
+        /// <summary>
         /// The cabinet, opened, with the drawn parts in it.
         ///
         /// **The one frame that cannot be replaced by a test.** Whether the sleds line up inside

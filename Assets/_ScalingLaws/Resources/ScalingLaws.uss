@@ -19262,3 +19262,170 @@
     letter-spacing: 0.5px;
     color: rgb(168, 180, 198);
 }
+
+/* ---- shares, and what the company owns -------------------------------------------------------
+
+   Two tabs on one screen, because the question they answer is the same one: where is this
+   company putting money that is not a model. */
+.invest__tabs {
+    flex-direction: row;
+    align-items: center;
+    margin: 0 0 12px 0;
+}
+
+.invest__tab {
+    height: 30px;
+    margin: 0 8px 0 0;
+    padding: 0 16px;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(150, 158, 172);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 4px;
+}
+
+.invest__tab:hover {
+    color: rgb(232, 238, 250);
+}
+
+.invest__tab--on {
+    color: rgb(20, 22, 28);
+    background-color: rgb(252, 214, 58);
+    border-color: rgb(252, 214, 58);
+}
+
+.estate {
+    flex-grow: 1;
+}
+
+.estate__strap {
+    font-size: 12.5px;
+    max-width: 900px;
+    margin-bottom: 14px;
+    white-space: normal;
+    color: rgb(150, 158, 172);
+}
+
+/* The ceiling, printed before anything is for sale. It is the number the tab is about and
+   until this existed nothing in the game said it was there. */
+.estate__ceiling {
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+    min-height: 44px;
+    padding: 8px 18px;
+    margin-bottom: 14px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(120, 176, 255, 0.35);
+    background-color: rgba(120, 176, 255, 0.08);
+}
+
+.estate__ceilinglabel {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    margin-right: 16px;
+    color: rgb(150, 172, 208);
+}
+
+.estate__ceilingvalue {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+}
+
+.estate__none {
+    font-size: 12px;
+    margin-bottom: 12px;
+    white-space: normal;
+    color: rgb(132, 140, 156);
+}
+
+.estate__note {
+    font-size: 12px;
+    margin-bottom: 12px;
+    white-space: normal;
+    color: rgb(226, 140, 120);
+}
+
+.estate__rows {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.estate__card {
+    width: 430px;
+    flex-shrink: 0;
+    margin: 0 16px 16px 0;
+    padding: 16px 18px;
+    border-radius: 7px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.035);
+}
+
+.estate__name {
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: rgb(232, 238, 250);
+    white-space: normal;
+}
+
+.estate__body {
+    font-size: 12px;
+    margin: 6px 0 12px 0;
+    white-space: normal;
+    color: rgb(150, 158, 172);
+}
+
+.estate__figures {
+    margin-bottom: 10px;
+}
+
+.estate__payback {
+    font-size: 11.5px;
+    margin-bottom: 12px;
+    white-space: normal;
+    color: rgb(214, 158, 62);
+}
+
+.estate__buy {
+    height: 38px;
+    margin: 0;
+    padding: 0 18px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1.5px;
+    -unity-text-align: middle-center;
+    color: rgb(20, 22, 28);
+    background-color: rgb(154, 214, 62);
+    border-width: 0;
+    border-radius: 5px;
+}
+
+.estate__buy:hover {
+    background-color: rgb(178, 232, 96);
+}
+
+.estate__buy:disabled {
+    color: rgb(150, 158, 172);
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.estate__status {
+    font-size: 12px;
+    -unity-font-style: bold;
+    white-space: normal;
+    color: rgb(214, 158, 62);
+}
+
+.estate__status--on {
+    color: rgb(154, 214, 62);
+}

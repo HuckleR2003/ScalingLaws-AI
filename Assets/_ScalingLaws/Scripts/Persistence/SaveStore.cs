@@ -465,6 +465,7 @@ namespace ScalingLaws.Persistence
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
             state.Hall.Capture(data.hallRacks, data.hallAccelerators, data.hallFans);
             state.Warehouse.Capture(data.storeRackKinds, data.storeRackCounts, out data.storeFans);
+            state.Power.Capture(data.powerPlantSites, data.powerPlantReadyDays);
 
             foreach (var approach in state.Hiring.Approaches)
             {
@@ -1193,6 +1194,7 @@ namespace ScalingLaws.Persistence
             state.ServerRoomWasAGift = safe.serverRoomWasAGift;
             state.Hall.Restore(safe.hallRacks, safe.hallAccelerators, safe.hallFans);
             state.Warehouse.Restore(safe.storeRackKinds, safe.storeRackCounts, safe.storeFans);
+            state.Power.Restore(safe.powerPlantSites, safe.powerPlantReadyDays);
             state.Staff.Owned.Clear();
             if (safe.ownedOffices != null)
             {

@@ -249,8 +249,14 @@ namespace ScalingLaws.Simulation
         /// behalf or to ask the question hypothetically. The first is what it used to do, and a
         /// tester found it: opening the creator quietly changed what the company was paying for.
         /// </param>
+        /// <param name="generatedKilowatts">
+        /// What the company's own power stations supply on this date. Added to the site's capacity
+        /// rather than subtracted from the draw, because a station does not make the cluster use
+        /// less: it makes the cluster allowed to exist. See `PowerEstate`.
+        /// </param>
         public ComputeProfile BuildProfile(GameDate date, MarketConditions market,
-            ServerHall hall = null, RoomUpgrades? upgrades = null, double? rentedInstead = null)
+            ServerHall hall = null, RoomUpgrades? upgrades = null, double? rentedInstead = null,
+            double generatedKilowatts = 0.0)
         {
             var room = upgrades ?? RoomUpgrades.None;
             var ownedAccelerators = 0;
@@ -439,7 +445,7 @@ namespace ScalingLaws.Simulation
                 scaling,
                 memoryGigabytes,
                 powerDraw,
-                PowerCapacityKilowatts(),
+                PowerCapacityKilowatts() + Math.Max(0.0, SimUnits.Finite(generatedKilowatts)),
                 operatingCost,
                 depreciation,
                 residualValue,

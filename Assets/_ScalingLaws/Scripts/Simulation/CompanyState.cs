@@ -119,6 +119,17 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public ServerStock Warehouse { get; } = new();
 
+        /// <summary>
+        /// Power stations the company has commissioned.
+        ///
+        /// **Built because owning compute has a ceiling and nothing said so.** Measured over nine
+        /// campaigns: a company that buys its own accelerators stops at 2,500 kW in its third year,
+        /// because that is what the colocated tier supplies, and the one step past it is a $80M
+        /// datacenter at 40,000 kW. A station is the step after that, and it is the reason the real
+        /// labs started signing for generation.
+        /// </summary>
+        public PowerEstate Power { get; } = new();
+
         /// <summary>True once there is somewhere to stand a rack.</summary>
         public bool HasServerRoom { get; set; }
 

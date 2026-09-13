@@ -35,6 +35,24 @@ namespace ScalingLaws.UI
 
         private string note = string.Empty;
 
+        /// <summary>
+        /// Which half of the screen is showing: the register of other companies, or what this
+        /// company owns.
+        ///
+        /// **A method rather than only a tab, for the reason `ManagementScreen.ShowDesk` is
+        /// one:** an EditMode element has no panel, so a click sent to a tab is never
+        /// dispatched and the lambda behind it goes unmeasured.
+        /// </summary>
+        private bool estate;
+
+        /// <inheritdoc cref="estate"/>
+        public void ShowProperty(bool on)
+        {
+            estate = on;
+            note = string.Empty;
+            Refresh();
+        }
+
         public InvestingScreen(Func<CompanySimulation> company, Action changed)
         {
             this.company = company;
@@ -61,6 +79,13 @@ namespace ScalingLaws.UI
             var simulation = company();
 
             Root.Add(BuildHeader(simulation));
+            Root.Add(BuildTabs());
+
+            if (estate)
+            {
+                Root.Add(BuildEstate(simulation));
+                return;
+            }
 
             var body = new VisualElement();
             body.AddToClassList("invest__body");
@@ -69,6 +94,193 @@ namespace ScalingLaws.UI
             body.Add(BuildDetail(simulation));
 
             Root.Add(body);
+        }
+
+        // ---- shares, or what the company owns ---------------------------------------------
+
+        private VisualElement BuildTabs()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("invest__tabs");
+
+            row.Add(Tab("plant.tab_shares", false));
+            row.Add(Tab("plant.tab_estate", true));
+
+            return row;
+        }
+
+        private Button Tab(string key, bool property)
+        {
+            var tab = new Button(() => ShowProperty(property)) { text = Loc.T(key) };
+
+            tab.AddToClassList("invest__tab");
+            tab.EnableInClassList("invest__tab--on", estate == property);
+
+            return tab;
+        }
+
+        /// <summary>
+        /// What the company owns, which today is power stations and nothing else.
+        ///
+        /// **The ceiling is printed first and the income second, in that order on purpose.**
+        /// Nine measured campaigns say a company that owns its accelerators stops growing at
+        /// 2,500 kW in its third year and nothing in the game ever told it so; a station is
+        /// what moves that number. The wholesale income is real, small, and stated as small,
+        /// because a purchase this size with a hidden payback would be the one guaranteed
+        /// return in a game whose whole design is that there is none.
+        /// </summary>
+        private VisualElement BuildEstate(CompanySimulation simulation)
+        {
+            var state = simulation.State;
+
+            var page = new VisualElement();
+            page.AddToClassList("estate");
+
+            var strap = new Label(Loc.T("plant.strap"));
+            strap.AddToClassList("estate__strap");
+            page.Add(strap);
+
+            // What the company may draw today against what it is drawing, which is the number
+            // this whole tab is about.
+            var ceiling = new VisualElement();
+            ceiling.AddToClassList("estate__ceiling");
+
+            var ceilingLabel = new Label(Loc.T("plant.ceiling"));
+            ceilingLabel.AddToClassList("estate__ceilinglabel");
+            ceiling.Add(ceilingLabel);
+
+            // **A company that rents everything has no site at all**, and printing that as
+            // "0.0 kW / 0.0 kW" reads as a broken figure rather than as the true answer.
+            var supply = simulation.SitePowerCapacityKilowatts();
+
+            var ceilingValue = new Label(supply > 0.0
+                ? UiFormat.Kilowatts(simulation.Profile.PowerDrawKilowatts)
+                    + "  /  " + UiFormat.Kilowatts(supply)
+                : Loc.T("plant.ceiling.empty"));
+
+            ceilingValue.AddToClassList("estate__ceilingvalue");
+            ceiling.Add(ceilingValue);
+
+            InsightTip.AttachKeyed(ceiling, "plant.ceiling", "plant.ceiling.note");
+            page.Add(ceiling);
+
+            if (state.Power.Count == 0)
+            {
+                var none = new Label(Loc.T("plant.none"));
+                none.AddToClassList("estate__none");
+                page.Add(none);
+            }
+
+            if (!string.IsNullOrEmpty(note))
+            {
+                var why = new Label(note);
+                why.AddToClassList("estate__note");
+                page.Add(why);
+            }
+
+            var rows = new VisualElement();
+            rows.AddToClassList("estate__rows");
+
+            foreach (var plant in PowerPlantCatalog.All)
+            {
+                rows.Add(BuildPlant(simulation, plant));
+            }
+
+            page.Add(rows);
+            return page;
+        }
+
+        private VisualElement BuildPlant(CompanySimulation simulation, PowerPlantDefinition plant)
+        {
+            var state = simulation.State;
+
+            var card = new VisualElement();
+            card.AddToClassList("estate__card");
+
+            var name = new Label(plant.DisplayName.ToUpperInvariant());
+            name.AddToClassList("estate__name");
+            card.Add(name);
+
+            var body = new Label(plant.Description);
+            body.AddToClassList("estate__body");
+            card.Add(body);
+
+            var figures = new VisualElement();
+            figures.AddToClassList("estate__figures");
+
+            figures.Add(UiParts.StatLine(Loc.T("plant.output"),
+                UiFormat.Kilowatts(plant.Kilowatts)));
+
+            figures.Add(UiParts.StatLine(Loc.T("plant.build"),
+                Loc.Counted(plant.BuildDays, "noun.day")));
+
+            figures.Add(UiParts.StatLine(Loc.T("plant.fuel"),
+                UiFormat.Money((long)Math.Round(
+                    plant.Kilowatts * 24.0 * plant.FuelCostPerKilowattHourUsd))
+                + " " + Loc.T("common.a_day")));
+
+            figures.Add(UiParts.StatLine(Loc.T("plant.upkeep"),
+                UiFormat.Money((long)Math.Round(
+                    PowerPlantCatalog.DailyRunningCostUsd(plant)))
+                + " " + Loc.T("common.a_day")));
+
+            card.Add(figures);
+
+            // **What it earns, said out loud, against what it cost.** A card that printed only
+            // the output would let a player read a three billion dollar purchase as an
+            // investment, and this one takes about a century to come back on power alone.
+            var yearly = (long)Math.Round(
+                plant.Kilowatts * 24.0 * 365.0
+                * PowerPlantCatalog.WholesalePricePerKilowattHourUsd
+                - PowerPlantCatalog.DailyRunningCostUsd(plant) * 365.0);
+
+            var payback = new Label(Loc.T("plant.payback",
+                UiFormat.Money(yearly), UiFormat.Money(plant.CapexUsd)));
+
+            payback.AddToClassList("estate__payback");
+            card.Add(payback);
+
+            var ready = state.Power.ReadyDate(plant.Site);
+
+            if (ready.HasValue)
+            {
+                var days = Math.Max(0, ready.Value.DayIndex - state.Date.DayIndex);
+
+                var status = new Label(days > 0
+                    ? Loc.T("plant.building", ready.Value.ToString(),
+                        Loc.Counted(days, "noun.day"))
+                    : Loc.T("plant.online", ready.Value.ToString()));
+
+                status.AddToClassList("estate__status");
+                status.EnableInClassList("estate__status--on", days == 0);
+                card.Add(status);
+
+                return card;
+            }
+
+            var commission = new Button(() =>
+            {
+                if (simulation.TryBuildPowerPlant(plant.Site, out var why))
+                {
+                    AudioDirector.Confirm();
+                }
+                else
+                {
+                    note = why;
+                    AudioDirector.Deny();
+                }
+
+                changed?.Invoke();
+            })
+            {
+                text = Loc.T("plant.capex", UiFormat.Money(plant.CapexUsd))
+            };
+
+            commission.AddToClassList("estate__buy");
+            commission.SetEnabled(state.CashUsd >= plant.CapexUsd);
+            card.Add(commission);
+
+            return card;
         }
 
         // ---- the strip across the top -------------------------------------------------------------

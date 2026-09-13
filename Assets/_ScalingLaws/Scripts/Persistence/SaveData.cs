@@ -417,7 +417,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 54;
+        public const int CurrentVersion = 55;
 
         public int version = CurrentVersion;
 
@@ -948,6 +948,19 @@ namespace ScalingLaws.Persistence
         public List<int> storeRackKinds = new();
         public List<int> storeRackCounts = new();
         public int storeFans;
+
+        /// <summary>
+        /// Power stations the company has commissioned, and the day each one opens.
+        ///
+        /// Two parallel lists rather than a struct, which is the shape every other collection in
+        /// this file already uses: `JsonUtility` will not serialise a dictionary and a list of
+        /// custom types is one more thing to keep in step with the class it mirrors.
+        ///
+        /// **The ready date is the whole record.** A site is either building or running and which
+        /// it is depends only on the date, so nothing else has to be stored and nothing can drift.
+        /// </summary>
+        public List<int> powerPlantSites = new();
+        public List<int> powerPlantReadyDays = new();
 
         public bool actionOpen;
 

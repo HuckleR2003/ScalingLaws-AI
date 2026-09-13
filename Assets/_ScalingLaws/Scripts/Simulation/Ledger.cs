@@ -63,7 +63,21 @@ namespace ScalingLaws.Simulation
         StateProgramme = 28,
 
         /// <summary>An advance given back because the term was missed.</summary>
-        GrantRepaid = 27
+        GrantRepaid = 27,
+
+        /// <summary>
+        /// What the company's own generation was worth today.
+        ///
+        /// **Two things in one line, and the caption says so.** Power the company burned itself is
+        /// worth the tariff it did not pay, and that tariff is already sitting in `Electricity` a
+        /// few rows up; power nobody used goes to the grid at the wholesale price. Netting the
+        /// first against `Electricity` instead would make a plant look like a discount on a bill
+        /// rather than an asset that earns, and the player could never see what the site produced.
+        /// </summary>
+        PowerGeneration = 29,
+
+        /// <summary>Fuel and fixed costs for a station, charged whether anybody used the power.</summary>
+        PowerPlantUpkeep = 30
     }
 
     /// <summary>What a line is called and which side of the report it sits on.</summary>
@@ -141,7 +155,10 @@ namespace ScalingLaws.Simulation
             new(LedgerLine.Investment, "Shares and acquisitions", "Capital", false, false),
             new(LedgerLine.GrantAward, "Grants awarded", "Capital", true, true),
             new(LedgerLine.GrantRepaid, "Grant advances returned", "Capital", false, true),
-            new(LedgerLine.StateProgramme, "State programme", "Trading", true, true)
+            new(LedgerLine.StateProgramme, "State programme", "Trading", true, true),
+            new(LedgerLine.PowerGeneration, "Own generation, sold and self supplied", "Fleet",
+                true, true),
+            new(LedgerLine.PowerPlantUpkeep, "Power station fuel and upkeep", "Fleet", false, true)
         };
 
         /// <summary>month index (year * 12 + month - 1) to the totals for that month.</summary>
