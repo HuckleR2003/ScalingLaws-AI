@@ -562,6 +562,28 @@ the same band, and the corner banner reads the same word.
   against the room, because the open ground in the middle belongs to the build mode and a
   builder that drops a plant in it would have the shop growing a coffee bar through it.
 
+### Who found what
+
+Asked for on 2026-09-13, and it is worth keeping: most of the list above came from somebody
+sitting down with the build rather than from reading the code. Every entry in this file already
+names its source in its own line; this is the same information gathered so a reader can see the
+shape of it.
+
+- **Francisco** played 1,391 days in one sitting and reported two things that turned out to be one:
+  the model creator losing the parameters and the tokens on a page change, and the capacity
+  sticking at 100% however much compute was rented. Both are the same rebuilt control. He also
+  asked, in plain words, what each research node actually does, which is why the research tree is
+  a board with reward icons on it now instead of a row of circles.
+- **Natalia** found the corner banners printing on top of each other, two products reporting the
+  same audience to the last decimal, UPGRADE ignoring a model that had finished training and was
+  waiting on the shelf, and the tax demand that grew in an envelope nobody opened.
+- **Two testers** reported the buy and move buttons on the premises page as not working. They were
+  drawn and they were invisible.
+- **The author** asked whether the user numbers were credible (they were not, by a factor of
+  three), reported BY DAY in the finance report doing nothing, asked for the game to be playable
+  without a mouse, and asked the questions that produced the third balance operator and the five
+  colours in the server room.
+
 ### Save compatibility
 
 **Save v54.** What an abandoned research node kept, plus everything v53 added below.
