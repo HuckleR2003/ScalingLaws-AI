@@ -94,6 +94,17 @@ rival.
 
 ### Fixed
 
+- **Two of the three reserved capacity packages were off the bottom of their own panel.** Reserved
+  and rented capacity sat side by side at half a page each, and three cards do not fit in half a
+  page, so the stylesheet turned the row into a column and the packages became full-width slabs
+  stacked down the panel. Only the first was ever on screen. Choosing between three things you have
+  to scroll past each other is not choosing. They are a row across the page again, at the width
+  their covers were cropped for.
+- **The world map had a blank corner and 177 clickable shapes.** Nothing said that clicking a
+  country picks it and clicking anywhere else leans in on the region. The corner was already
+  reserved for the name of whatever the cursor is over; when it is over nothing it says what the
+  cursor is for.
+
 - **The five achievement cash rungs were all reachable by every style.** They topped out at $500M
   because the best campaign ever measured reached $71M, on a cruder operator than the ones there
   are now. Nine campaigns across three operators peak between $2.10bn and $7.80bn, so the ladder

@@ -106,8 +106,9 @@ namespace ScalingLaws.UI
             // The name of whatever the cursor is over, in the corner. Not painted into the map: a
             // label drawn at a country's centroid is unreadable at this size for anywhere smaller
             // than Brazil, and 177 of them is a wall of text over a picture.
-            caption = new Label(string.Empty);
+            caption = new Label(Loc.T("map.legend"));
             caption.AddToClassList("world-map__caption");
+            caption.AddToClassList("world-map__caption--on");
             caption.pickingMode = PickingMode.Ignore;
             Add(caption);
 
@@ -458,16 +459,27 @@ namespace ScalingLaws.UI
             SetHover(Country.None, string.Empty);
         }
 
+        /// <summary>
+        /// The corner of the map, which says what the cursor is over or, when it is over nothing,
+        /// what the cursor is for.
+        ///
+        /// **The empty state used to be empty**, so a map with 177 clickable shapes on it and a
+        /// blank corner gave a player no way to find out that clicking a country picks it and
+        /// clicking anywhere else leans in on a region. Both facts are one sentence and the corner
+        /// was already reserved for it.
+        /// </summary>
         private void SetHover(Country over, string name)
         {
-            if (hovered == over && caption.text == name)
+            var text = string.IsNullOrEmpty(name) ? Loc.T("map.legend") : name;
+
+            if (hovered == over && caption.text == text)
             {
                 return;
             }
 
             hovered = over;
-            caption.text = name;
-            caption.EnableInClassList("world-map__caption--on", !string.IsNullOrEmpty(name));
+            caption.text = text;
+            caption.EnableInClassList("world-map__caption--hint", string.IsNullOrEmpty(name));
 
             MarkDirtyRepaint();
         }

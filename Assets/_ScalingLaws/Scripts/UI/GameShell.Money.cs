@@ -95,18 +95,18 @@ namespace ScalingLaws.UI
             split.AddToClassList("panel--inset");
             rental.Add(split);
 
-            // Reserved beside rented, half the page each. They are the same question asked two ways,
-            // and reading them one under the other made the comparison a scroll rather than a look.
-            var capacityRow = new VisualElement();
-            capacityRow.AddToClassList("panel-row");
-
-            var reserved = BuildPackagePanel();
-            reserved.AddToClassList("fleet-half");
-            rental.AddToClassList("fleet-half");
-
-            capacityRow.Add(reserved);
-            capacityRow.Add(rental);
-            page.Add(capacityRow);
+            // **The three reserved blocks across the page, side by side, which is the shape the
+            // decision has.** They were half the page each with the rented panel, and three cards
+            // do not fit in half a page: the stylesheet turned the row into a column, so the
+            // packages became three full-width slabs stacked down the panel and only the first one
+            // was on screen. Choosing between three things you have to scroll past each other is
+            // not choosing, and the author asked for the row back by name.
+            //
+            // 290px a card is the width the covers were cropped for, and three of them plus the
+            // margins sit inside the page with room to spare. Rented capacity keeps the whole width
+            // underneath, where its slider and the figure it moves are still on one line.
+            page.Add(BuildPackagePanel());
+            page.Add(rental);
 
             var ladder = new VisualElement();
             ladder.AddToClassList("panel");

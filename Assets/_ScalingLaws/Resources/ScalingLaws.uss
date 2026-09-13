@@ -16710,21 +16710,11 @@
     border-left-color: rgb(224, 132, 108);
 }
 
-.fleet-half {
-    width: 49%;
-    margin-right: 1%;
-}
-
-/* Three package cards used to have the whole page; they have half of it now, so they wrap to a
-   column instead of squeezing to a third of a half. */
-.fleet-half .pack-row {
-    flex-direction: column;
-}
-
-.fleet-half .pack {
-    width: 100%;
-    margin-right: 0;
-}
+/* `.fleet-half` and the two rules under it are gone, and so is the arrangement they were for.
+   Reserved capacity and rented capacity sat side by side at half a page each, and three package
+   cards do not fit in half a page: these rules turned the row into a column, so the three covers
+   became full-width slabs stacked down the panel and only the first was ever on screen. The
+   packages have the whole width back and the row is a row again. */
 
 
 /* ---- the phone's home screen ----------------------------------------------------------------- */
@@ -17226,6 +17216,13 @@
 
 .world-map__caption--on {
     opacity: 1;
+}
+
+/* The same corner, saying what the cursor is for rather than what it is over. Quieter, and with no
+   accent edge, so a country name still reads as the louder of the two. */
+.world-map__caption--hint {
+    color: rgb(158, 170, 190);
+    border-left-color: rgba(120, 206, 156, 0.28);
 }
 
 /* The last era reads differently from the four before it, because it is the only one whose subject
