@@ -28,6 +28,9 @@ namespace ScalingLaws.UI
         private readonly Action changed;
 
         private CompetitorId selected = CompetitorId.OpenAi;
+
+        /// <summary>Says shares changed hands. Set by the shell.</summary>
+        public Action<string, string, NoticeTone> announce;
         private bool selling;
 
         /// <summary>How much of the available parcel the slider is asking for, 0 to 1.</summary>
@@ -639,11 +642,24 @@ namespace ScalingLaws.UI
             {
                 if (selling)
                 {
-                    simulation.TrySellShares(selected, shares, out _, out note);
+                    if (simulation.TrySellShares(selected, shares, out var proceeds, out note))
+                    {
+                        announce?.Invoke(Loc.T("notice.shares_sold"),
+                            Loc.T("notice.shares_sold.note", UiFormat.Compact(shares),
+                                CompetitorCatalog.NameOf(selected), UiFormat.Money(proceeds)),
+                            NoticeTone.Standard);
+                    }
                 }
-                else if (!simulation.TryBuyShares(selected, shares, out _, out var why))
+                else if (!simulation.TryBuyShares(selected, shares, out var cost, out var why))
                 {
                     note = why;
+                }
+                else
+                {
+                    announce?.Invoke(Loc.T("notice.shares_bought"),
+                        Loc.T("notice.shares_bought.note", UiFormat.Compact(shares),
+                            CompetitorCatalog.NameOf(selected), UiFormat.Money(cost)),
+                        NoticeTone.Standard);
                 }
 
                 changed?.Invoke();

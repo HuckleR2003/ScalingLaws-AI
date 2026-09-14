@@ -88,6 +88,7 @@ namespace ScalingLaws.UI
                 var nodes = new List<ResearchStanding>();
                 var deepening = new List<ResearchStanding>();
                 var operations = new List<ResearchStanding>();
+                var safety = new List<ResearchStanding>();
 
                 foreach (var standing in board)
                 {
@@ -96,28 +97,36 @@ namespace ScalingLaws.UI
                         continue;
                     }
 
-                    switch (standing.Node.Track)
+                    // **Asked of `ResearchSurfaces`, never decided by a default arm.** The safety
+                    // nodes went into `nodes` through `default:` and the era board, which lays out
+                    // capability nodes only, left every one of them out.
+                    switch (ResearchSurfaces.Of(standing.Node))
                     {
-                        case ResearchTrack.ModelImprovement:
+                        case ResearchSurface.EraCapability:
+                            nodes.Add(standing);
+                            break;
+
+                        case ResearchSurface.EraDeepening:
                             deepening.Add(standing);
                             break;
 
-                        case ResearchTrack.Operations:
+                        case ResearchSurface.EraOperations:
                             operations.Add(standing);
                             break;
 
-                        // Drawn beside the funding panel rather than in an era band. A lease is
-                        // not a technique and does not belong on a calendar of techniques.
-                        case ResearchTrack.Premises:
+                        case ResearchSurface.EraSafety:
+                            safety.Add(standing);
                             break;
 
-                        default:
-                            nodes.Add(standing);
+                        // Premises and safety are drawn in the column beside the funding panel. A
+                        // lease and a safety ladder are not techniques on a calendar of techniques.
+                        case ResearchSurface.PremisesPanel:
+                        case ResearchSurface.SafetyPanel:
                             break;
                     }
                 }
 
-                if (nodes.Count == 0 && deepening.Count == 0 && operations.Count == 0)
+                if (nodes.Count == 0 && deepening.Count == 0 && operations.Count == 0 && safety.Count == 0)
                 {
                     continue;
                 }
@@ -211,6 +220,24 @@ namespace ScalingLaws.UI
                     section.Add(band);
                 }
 
+                // **Safety research that is not a level of a creator module.** Era five's oversight
+                // and redundancy nodes are read by the state programme and were drawn nowhere: they
+                // went through the same `default:` arm as the module levels. Laid out from exactly the
+                // nodes sent here, so a module level in the same era cannot leave a hole in the band.
+                if (safety.Count > 0)
+                {
+                    var band = new VisualElement();
+                    band.AddToClassList("deepening");
+
+                    var bandHeading = new Label(Loc.T("research.safety_band"));
+                    bandHeading.AddToClassList("deepening__heading");
+                    bandHeading.AddToClassList("deepening__heading--safety");
+                    band.Add(bandHeading);
+
+                    band.Add(BuildBoardOf(safety));
+                    section.Add(band);
+                }
+
                 // Funding rides alongside the first era rather than sitting above everything. It is
                 // a setting the player touches twice a campaign and the tree is what they came for,
                 // so the tree starts at the top of the screen and the setting fills the gap beside
@@ -239,6 +266,9 @@ namespace ScalingLaws.UI
                     {
                         side.Add(premises);
                     }
+
+                    // Under the premises, where the author asked for it: the safety ladders.
+                    side.Add(BuildSafetyBoard(board));
 
                     row.Add(side);
                     page.Add(row);
@@ -399,11 +429,19 @@ namespace ScalingLaws.UI
 
             panel.Add(modes);
 
+            // Worked out before either slider, because the points now sit on the same line as the
+            // money rather than in a paragraph under the slider.
+            var budget = ResearchBudget.MonthlyBudgetUsd(state.ResearchFunding,
+                state.ResearchMonthlyUsd, state.ResearchRevenueShare,
+                simulation.MonthlyRevenueUsd());
+
+            var points = ResearchBudget.PointsFromFunding(budget);
+
             if (state.ResearchFunding == ResearchFundingMode.Fixed)
             {
                 var label = new Label(Loc.T("research.a_month", UiFormat.Money(state.ResearchMonthlyUsd)));
                 label.AddToClassList("field__label");
-                panel.Add(label);
+                panel.Add(FundingLine(label, points));
 
                 // Logarithmic, because the range runs from a thousand to five million and a linear
                 // slider would spend nine tenths of its travel on amounts that change nothing.
@@ -434,7 +472,7 @@ namespace ScalingLaws.UI
                     UiFormat.Money((long)Math.Round(revenue * state.ResearchRevenueShare))));
 
                 label.AddToClassList("field__label");
-                panel.Add(label);
+                panel.Add(FundingLine(label, points));
 
                 var slider = new Slider(0f, 0.5f) { value = (float)state.ResearchRevenueShare };
                 slider.AddToClassList("field");
@@ -447,17 +485,28 @@ namespace ScalingLaws.UI
                 panel.Add(slider);
             }
 
-            var budget = ResearchBudget.MonthlyBudgetUsd(state.ResearchFunding,
-                state.ResearchMonthlyUsd, state.ResearchRevenueShare,
-                simulation.MonthlyRevenueUsd());
-
-            var hint = new Label(Loc.T("research.funding_note",
-                UiFormat.Number(ResearchBudget.PointsFromFunding(budget), 0)));
-
-            hint.AddToClassList("field__hint");
-            panel.Add(hint);
-
             return panel;
+        }
+
+        /// <summary>
+        /// The money and the points it buys, on one line above the slider.
+        ///
+        /// **Asked for by the author**: the paragraph under the slider went, and the points it
+        /// described sit beside the monthly figure in blue. The paragraph survives as the tooltip,
+        /// because "four times the money buys twice the points" is still the rule worth knowing.
+        /// </summary>
+        private static VisualElement FundingLine(Label money, double points)
+        {
+            var line = new VisualElement();
+            line.AddToClassList("rfund__amount");
+            line.Add(money);
+
+            var earned = new Label(Loc.T("research.points_a_month", UiFormat.Number(points, 0)));
+            earned.AddToClassList("rfund__points");
+            earned.tooltip = Loc.T("research.funding_note", UiFormat.Number(points, 0));
+            line.Add(earned);
+
+            return line;
         }
 
         private Button FundingChip(string text, ResearchFundingMode mode, bool on)
@@ -695,6 +744,10 @@ namespace ScalingLaws.UI
                     AudioDirector.Confirm();
                     CloseResearchCard();
 
+                    startedNotice?.Show(Loc.T("notice.research_started"),
+                        Loc.T("notice.research_started.note", node.DisplayName,
+                            UiFormat.Count(points), UiFormat.Money(cash)));
+
                     // Same as starting a run. The work is months long and there is nothing further
                     // to do on this screen, so the room is where the player belongs.
                     Show(Screen.Site);
@@ -881,6 +934,168 @@ namespace ScalingLaws.UI
             panel.Add(map);
 
             return panel;
+        }
+
+        /// <summary>
+        /// The safety research, as three tiles under the premises map.
+        ///
+        /// **Francisco reported these as nowhere to be found, and they were not.** The ten nodes
+        /// went to the era board through a `default:` arm, and the era board lays out capability
+        /// nodes only. The creator's SAFETY stage said "needs research" over its modules while no
+        /// screen in the game had that research on it.
+        ///
+        /// Tiles rather than a map, as the author sketched them: a module is a ladder, not a tree,
+        /// and four rungs in a column say that better than lines between cards.
+        /// </summary>
+        private VisualElement BuildSafetyBoard(IReadOnlyList<ResearchStanding> board)
+        {
+            var standings = new Dictionary<ResearchNodeId, ResearchStanding>();
+
+            foreach (var standing in board)
+            {
+                if (standing.Node.Track == ResearchTrack.Safety)
+                {
+                    standings[standing.Node.Id] = standing;
+                }
+            }
+
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+            panel.AddToClassList("rsafety");
+
+            var heading = new Label(Loc.T("research.safety"));
+            heading.AddToClassList("panel__heading");
+            panel.Add(heading);
+
+            var note = new Label(Loc.T("research.safety.note"));
+            note.AddToClassList("field__hint");
+            panel.Add(note);
+
+            var tiles = new VisualElement();
+            tiles.AddToClassList("rsafety__tiles");
+
+            foreach (SafetyModule module in Enum.GetValues(typeof(SafetyModule)))
+            {
+                tiles.Add(BuildSafetyTile(module, standings));
+            }
+
+            panel.Add(tiles);
+            return panel;
+        }
+
+        /// <summary>One module: its name, what the company has of it, and its four levels.</summary>
+        private VisualElement BuildSafetyTile(SafetyModule module,
+            IReadOnlyDictionary<ResearchNodeId, ResearchStanding> standings)
+        {
+            var tile = new VisualElement();
+            tile.AddToClassList("rsafety__tile");
+            tile.tooltip = SafetyModuleCatalog.PitchOf(module);
+
+            var name = new Label(SafetyModuleCatalog.NameOf(module));
+            name.AddToClassList("rsafety__name");
+            tile.Add(name);
+
+            var have = Loc.T("safety.none_yet");
+            var tiers = SafetyModuleCatalog.TiersOf(module);
+
+            foreach (var tier in tiers)
+            {
+                if (simulation.State.HasResearch(tier.Requires))
+                {
+                    have = tier.DisplayName;
+                }
+            }
+
+            var current = new Label(have);
+            current.AddToClassList("rsafety__current");
+            tile.Add(current);
+
+            foreach (var tier in tiers)
+            {
+                tile.Add(BuildSafetyStep(tier, standings));
+            }
+
+            return tile;
+        }
+
+        /// <summary>
+        /// One level. A level that needs research opens the same card a node on the board opens, and
+        /// lights the road to it the same way.
+        /// </summary>
+        private VisualElement BuildSafetyStep(SafetyTier tier,
+            IReadOnlyDictionary<ResearchNodeId, ResearchStanding> standings)
+        {
+            var step = new Button();
+            step.AddToClassList("rsafety__step");
+
+            var icon = new VisualElement();
+            icon.AddToClassList("rsafety__icon");
+            icon.pickingMode = PickingMode.Ignore;
+
+            var art = ResearchIcons.ByName(tier.Icon);
+            if (art != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(art);
+            }
+
+            step.Add(icon);
+
+            var level = new Label(tier.Tier == 0
+                ? Loc.T("safety.step.default")
+                : Loc.T("safety.step.level", tier.Tier));
+
+            level.AddToClassList("rsafety__level");
+            level.pickingMode = PickingMode.Ignore;
+            step.Add(level);
+
+            var owned = simulation.State.HasResearch(tier.Requires);
+            step.EnableInClassList("rsafety__step--owned", owned);
+
+            if (tier.Requires == ResearchNodeId.None)
+            {
+                step.tooltip = Loc.T("safety.step.free");
+                return step;
+            }
+
+            step.tooltip = tier.DisplayName;
+
+            if (!standings.TryGetValue(tier.Requires, out var standing))
+            {
+                step.EnableInClassList("rsafety__step--locked", !owned);
+                return step;
+            }
+
+            var id = tier.Requires;
+
+            step.EnableInClassList("rsafety__step--running", standing.IsInProgress);
+            step.EnableInClassList("rsafety__step--ready", !owned && standing.CanStart);
+            step.EnableInClassList("rsafety__step--locked",
+                !owned && !standing.IsInProgress && !standing.CanStart);
+
+            step.RegisterCallback<ClickEvent>(click =>
+            {
+                selectedResearch = id;
+                MarkTheRoadTo(id);
+                ShowResearchCard(standing, click.position);
+            });
+
+            treePips[id] = step;
+            return step;
+        }
+
+        /// <summary>A board laid out from exactly the nodes handed to it.</summary>
+        private ResearchBoard BuildBoardOf(IReadOnlyList<ResearchStanding> standings)
+        {
+            var byId = standings.ToDictionary(standing => standing.Node.Id);
+            var slots = ResearchLayout.Place(standings.Select(standing => standing.Node).ToList());
+
+            var board = new ResearchBoard();
+
+            board.Fill(slots,
+                id => byId.TryGetValue(id, out var standing) ? BuildBoardCard(standing) : null,
+                id => byId.ContainsKey(id));
+
+            return board;
         }
 
         /// <summary>

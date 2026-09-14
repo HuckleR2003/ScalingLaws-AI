@@ -19836,3 +19836,298 @@
     color: rgb(20, 22, 28);
     background-color: rgb(226, 140, 120);
 }
+
+/* ---- notices: the gold one and the red one -------------------------------------------------
+
+   Gold is for occasions and red is for things that happen to the company. Both are rationed on
+   purpose: a notice system where everything is gold is a notice system where nothing is. The gold
+   ground itself is a texture baked by StartedNotice, because USS has no gradients. */
+.started--special {
+    border-width: 1px;
+    border-color: rgb(246, 196, 72);
+    background-color: rgba(40, 26, 6, 0.97);
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.started--special .started__title {
+    color: rgb(255, 226, 140);
+}
+
+.started--special .started__note {
+    color: rgb(238, 216, 172);
+}
+
+.started--special .started__fill {
+    background-color: rgb(236, 150, 40);
+}
+
+.started--special .started__fill--run {
+    background-color: rgb(255, 214, 90);
+}
+
+/* The flash is the background swapping to white and back. The transition is kept short so it reads
+   as a blink rather than a pulse. */
+.started--alert {
+    border-width: 2px;
+    border-color: rgb(236, 72, 72);
+    background-color: rgba(96, 12, 16, 0.97);
+    transition-property: opacity, translate, background-color;
+    transition-duration: 0.12s;
+}
+
+.started--alert .started__title {
+    color: rgb(255, 236, 236);
+}
+
+.started--alert .started__note {
+    color: rgb(255, 208, 208);
+}
+
+.started--alert .started__fill {
+    background-color: rgb(236, 72, 72);
+}
+
+.started--alert .started__fill--run {
+    background-color: rgb(255, 176, 176);
+}
+
+.started--alert.started--flash {
+    background-color: rgba(250, 244, 244, 0.97);
+}
+
+.started--alert.started--flash .started__title {
+    color: rgb(170, 20, 28);
+}
+
+.started--alert.started--flash .started__note {
+    color: rgb(120, 30, 34);
+}
+
+.started__action {
+    align-self: center;
+    margin: 12px 0 0 0;
+    padding: 6px 26px 6px 26px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    background-color: rgb(196, 40, 48);
+    border-width: 0;
+    border-radius: 6px;
+}
+
+.started__action:hover {
+    background-color: rgb(226, 64, 72);
+}
+
+/* ---- the server load, in the top bar --------------------------------------------------------
+
+   Asked for by name: the load has to be readable at a glance from any screen, and at 100% the whole
+   section goes red, because a full fleet is the moment requests queue and people start leaving. */
+.topbar__load {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 18px;
+    padding: 4px 10px 4px 10px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.topbar__load-caption {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    -unity-font-style: bold;
+    color: rgb(150, 162, 184);
+    margin-right: 8px;
+}
+
+.topbar__load-track {
+    width: 96px;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.topbar__load-fill {
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgb(96, 176, 255);
+}
+
+.topbar__load-fill--warn {
+    background-color: rgb(240, 180, 60);
+}
+
+.topbar__load-fill--hot {
+    background-color: rgb(240, 110, 60);
+}
+
+.topbar__load-value {
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-left: 8px;
+    min-width: 40px;
+    color: rgb(226, 234, 248);
+}
+
+.topbar__load--full {
+    border-color: rgb(250, 110, 110);
+    background-color: rgb(186, 32, 38);
+}
+
+.topbar__load--full .topbar__load-caption {
+    color: rgb(255, 222, 222);
+}
+
+.topbar__load--full .topbar__load-track {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.topbar__load--full .topbar__load-fill {
+    background-color: rgb(255, 255, 255);
+}
+
+.topbar__load--full .topbar__load-value {
+    color: rgb(255, 255, 255);
+}
+
+/* ---- research: the model safety tiles -------------------------------------------------------
+
+   Three tiles close together, bluer than the rest of the side column, the way the author drew them:
+   the module, what the company has of it, and the four levels with their pictures. */
+.rsafety {
+    margin-top: 12px;
+}
+
+.rsafety__tiles {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.rsafety__tile {
+    width: 32.5%;
+    padding: 10px 8px 8px 8px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(110, 170, 255, 0.40);
+    background-color: rgba(30, 64, 120, 0.30);
+}
+
+.rsafety__name {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(170, 208, 255);
+    white-space: normal;
+}
+
+.rsafety__current {
+    font-size: 12px;
+    color: rgb(236, 244, 255);
+    margin-top: 3px;
+    margin-bottom: 8px;
+    min-height: 30px;
+    white-space: normal;
+}
+
+.rsafety__step {
+    flex-direction: row;
+    align-items: center;
+    height: 30px;
+    margin: 0 0 4px 0;
+    padding: 2px 6px 2px 6px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(0, 0, 0, 0.22);
+    background-image: none;
+}
+
+.rsafety__step:hover {
+    border-color: rgba(140, 196, 255, 0.85);
+}
+
+.rsafety__icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.rsafety__level {
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    -unity-font-style: bold;
+    color: rgb(170, 184, 206);
+}
+
+.rsafety__step--owned {
+    border-color: rgba(150, 200, 255, 0.75);
+    background-color: rgba(60, 130, 230, 0.45);
+}
+
+.rsafety__step--owned .rsafety__level {
+    color: rgb(255, 255, 255);
+}
+
+.rsafety__step--running {
+    border-color: rgb(150, 120, 255);
+}
+
+.rsafety__step--ready {
+    border-color: rgba(120, 220, 160, 0.75);
+}
+
+.rsafety__step--locked {
+    opacity: 0.55;
+}
+
+/* ---- research funding: the points beside the money ------------------------------------------ */
+.rfund__amount {
+    flex-direction: row;
+    align-items: center;
+}
+
+.rfund__points {
+    margin-left: 10px;
+    font-size: 13px;
+    color: rgb(126, 196, 250);
+}
+
+/* ---- the loans: when the first instalment starts -------------------------------------------- */
+.loanbill__from {
+    font-size: 11px;
+    color: rgb(150, 164, 186);
+    margin-top: 1px;
+}
+
+/* ---- the money chart: a date under each bar ------------------------------------------------- */
+.finance-chart__labels {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-top: -8px;
+    margin-bottom: 10px;
+}
+
+.finance-chart__label {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 11px;
+    color: rgb(140, 150, 170);
+    -unity-text-align: upper-center;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* The safety band under an era, blue like the safety tiles in the side column. */
+.deepening__heading--safety {
+    color: rgb(150, 196, 255);
+}

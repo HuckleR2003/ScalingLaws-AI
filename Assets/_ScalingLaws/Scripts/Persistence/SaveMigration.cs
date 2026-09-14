@@ -157,6 +157,7 @@ namespace ScalingLaws.Persistence
                     53 => UpgradeV53ToV54(current),
                     54 => UpgradeV54ToV55(current),
                     55 => UpgradeV55ToV56(current),
+                    56 => UpgradeV56ToV57(current),
                     _ => current
                 };
             }
@@ -1866,6 +1867,55 @@ namespace ScalingLaws.Persistence
 
             return data;
         }
+
+        /// <summary>
+        /// v56 to v57: office rent has its own line in the books.
+        ///
+        /// **Padded, not dropped.** The new line is the last column, so every v56 month is an exact
+        /// prefix of a v57 month and the missing column is a true zero: in v56 the rent was posted
+        /// under salaries and that money is still there, under salaries. Splitting it back out would
+        /// be inventing a breakdown the file never recorded. A ledger of any other width is left
+        /// alone and the load drops it, the rule `Ledger.Restore` already follows.
+        /// </summary>
+        public static SaveData UpgradeV56ToV57(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 57;
+
+            var months = data.ledgerMonths;
+            var amounts = data.ledgerAmounts;
+
+            if (months != null && amounts != null && months.Count > 0
+                && amounts.Count == months.Count * LedgerColumnsV56)
+            {
+                var widened = new List<long>(months.Count * (LedgerColumnsV56 + 1));
+
+                for (var month = 0; month < months.Count; month++)
+                {
+                    for (var column = 0; column < LedgerColumnsV56; column++)
+                    {
+                        widened.Add(amounts[month * LedgerColumnsV56 + column]);
+                    }
+
+                    widened.Add(0L);
+                }
+
+                data.ledgerAmounts = widened;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v56 to v57: office rent has its own line in the books from the next day played. "
+                + "Earlier months keep it inside salaries, which is where it was recorded.");
+
+            return data;
+        }
+
+        /// <summary>How many columns a v56 ledger month had. Kept as a number, like the old shapes.</summary>
+        private const int LedgerColumnsV56 = 26;
 
         public static SaveData UpgradeV54ToV55(SaveData data)
         {

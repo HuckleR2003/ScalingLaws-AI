@@ -38,7 +38,59 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Model safety has its research on the research screen.** A small blue board under PREMISES,
+  three tiles for self auditing, red teaming and data protection, each with what the company
+  already has and its four levels with their pictures. A level that needs research opens the same
+  card any other node opens. Until now the SAFETY stage of the creator said "needs research" and
+  none of the ten safety nodes was drawn anywhere: they were handed to a board that only lays out
+  one kind of node. Reported by Francisco. The same fault had also hidden two statecraft nodes,
+  continuous oversight and redundant inference, which are on a safety band under era five now.
+- **The top bar shows how full the servers are**, on every screen, and the whole section turns red
+  at 100%. It reads yesterday's load, the same figure your customers react to.
+- **Notices for the moments that had none.** Starting research, finishing it, starting a training
+  run, changing the subscription price, releasing a model, taking a loan (with the instalment, the
+  day it starts, the commission and the total owed), signing a grant, buying or selling shares,
+  and booking a campaign. Somebody joining the team, a campaign and a new level of grants get a
+  gold notice kept for occasions. A scandal gets a red one that flashes, stays two and a half times
+  as long, and carries a SEE button that opens the news.
+- **WHERE THE MONEY WENT has a date under every bar.** Rest the pointer on a bar and the figures
+  underneath turn to that month, click it to keep it there.
+
+### Changed
+
+- **The day view is the last thirty days**, not the days of the current month, so it no longer
+  shrinks to a single bar on the first of every month. It also moves on its own when a day passes;
+  it used to change only when a toggle was pressed again.
+- **Office rent is its own line in the books.** It was posted inside Salaries, so moving into a
+  bigger office looked like a pay rise.
+- The research funding panel shows the points a month in blue beside the money, instead of a
+  paragraph under the slider.
+
+### Fixed
+
+- **MONTHLY INSTALMENT read $0 right after taking a loan**, beside a commission of $72k. A new loan
+  is in its grace period, so nothing is charged yet; the panel now shows the instalment that is
+  coming and the day it starts.
+- **The books never showed the fleet.** Cloud rent, electricity, housing, hardware upkeep and a
+  power station were in the bank balance and missing from the report that explains it, because the
+  report drew three of the ledger's five groups.
+
+### Save compatibility
+
+**Save v57.** A 0.4.0 save loads with its whole financial history: every recorded month is kept
+and gains an empty office rent line. Rent paid before this version stays inside Salaries, which is
+where it was recorded.
+
+### Under the hood
+
+`ResearchSurfaces` is the one answer to where a research node is drawn, and
+`ResearchSurfacesTests` walks every node in the tree against it. The day-of-month questions on the
+ledger are translated into the rolling window rather than removed, so nothing that asked them before
+had to change.
+
+1,298 EditMode tests and 60 PlayMode tests.
 
 ---
 

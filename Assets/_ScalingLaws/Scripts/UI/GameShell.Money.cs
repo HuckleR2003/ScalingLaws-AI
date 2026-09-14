@@ -564,7 +564,10 @@ namespace ScalingLaws.UI
         {
             releaseConfirm ??= new ReleaseConfirmDialog(() => simulation,
                 _ => Show(Screen.Site),
-                () => Show(Screen.Release));
+                () => Show(Screen.Release))
+            {
+                announce = (title, note, tone) => startedNotice?.Show(title, note, tone)
+            };
 
             releaseConfirm.Show(shellRoot, slot);
         }
@@ -603,7 +606,10 @@ namespace ScalingLaws.UI
                 },
                 (title, body, confirmLabel, onYes) =>
                     businessConfirm.Ask(shellRoot, title, body, confirmLabel, onYes),
-                BuildFreeTierPanel);
+                BuildFreeTierPanel)
+            {
+                announce = (title, note, tone) => startedNotice?.Show(title, note, tone)
+            };
 
         private VisualElement BuildReleaseScreen()
         {
@@ -879,8 +885,34 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
                 var summary = new VisualElement();
                 summary.AddToClassList("loanbill");
 
-                summary.Add(LoanFigure(Loc.T("loan.monthly_instalment"),
-                    UiFormat.Money(book.MonthlyInstalmentUsd(state.Date)), false));
+                // **It read $0 beside a $72k commission**, because a facility just drawn is in its
+                // grace period and nothing is being charged yet. The instalment that is coming is the
+                // one a borrower plans around, so it is shown with the day it starts.
+                var instalment = book.MonthlyInstalmentUsd(state.Date);
+                GameDate? instalmentFrom = null;
+
+                if (instalment == 0L)
+                {
+                    var scheduled = book.ScheduledMonthlyInstalmentUsd();
+
+                    if (scheduled > 0L)
+                    {
+                        instalment = scheduled;
+                        instalmentFrom = book.FirstInstalmentAfterGrace(state.Date);
+                    }
+                }
+
+                var instalmentFigure = LoanFigure(Loc.T("loan.monthly_instalment"),
+                    UiFormat.Money(instalment), false);
+
+                if (instalmentFrom.HasValue)
+                {
+                    var from = new Label(Loc.T("loan.instalment_from", instalmentFrom.Value.ToString()));
+                    from.AddToClassList("loanbill__from");
+                    instalmentFigure.Add(from);
+                }
+
+                summary.Add(instalmentFigure);
 
                 summary.Add(LoanFigure(Loc.T("loan.monthly_commission"),
                     UiFormat.Money(book.MonthlyCommissionUsd()), true));
@@ -962,13 +994,34 @@ UiParts.ExplainPage(page, TechNotes.MarketPar, TechNotes.WaitingToRelease);
             return block;
         }
 
+        /// <summary>
+        /// What a loan just did to the company, said once: the money in, the instalment and when it
+        /// starts, the commission, and the whole sum owed. Asked for by name, with those figures.
+        /// </summary>
+        private void AnnounceLoan(LoanProduct product)
+        {
+            var definition = LoanCatalog.Get(product);
+
+            startedNotice?.Show(Loc.T("notice.loan"),
+                Loc.T("notice.loan.note", definition.DisplayName,
+                    UiFormat.Money(definition.PrincipalUsd),
+                    UiFormat.Money(definition.MonthlyInstalmentUsd),
+                    simulation.State.Date.AddDays(definition.GraceDays).ToString(),
+                    UiFormat.Money(definition.MonthlyCommissionUsd),
+                    UiFormat.Money(definition.TotalRepaymentUsd)));
+        }
+
         private VisualElement BuildLoanCard(LoanAvailability offer)
         {
             var definition = LoanCatalog.Get(offer.Product);
 
             var card = new Button(() =>
             {
-                simulation.TryTakeLoan(offer.Product, out _);
+                if (simulation.TryTakeLoan(offer.Product, out _))
+                {
+                    AnnounceLoan(offer.Product);
+                }
+
                 Show(Screen.Funding);
             });
 

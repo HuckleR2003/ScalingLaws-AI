@@ -321,6 +321,14 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
                 simulation.State.AddCampaign(new MarketingCampaign(
                     pickedChannels, pickedAudience, pickedTerm, simulation.State.Date));
 
+                // Gold, as asked: a campaign is the other occasion on this list besides a hire.
+                startedNotice?.Show(Loc.T("notice.campaign"),
+                    Loc.T("notice.campaign.note",
+                        string.Join(", ", pickedChannels.Select(channel =>
+                            MarketingCatalog.Get(channel).DisplayName)),
+                        UiFormat.Money(daily)),
+                    NoticeTone.Special);
+
                 pickedChannels.Clear();
                 Show(Screen.Marketing);
             })

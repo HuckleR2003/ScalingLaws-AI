@@ -61,6 +61,9 @@ namespace ScalingLaws.UI
         private int scope = EverythingOnSale;
 
         /// <param name="ask">Title, body, confirm caption, and what to run on yes.</param>
+        /// <summary>Says the price moved. Set by the shell.</summary>
+        public Action<string, string, NoticeTone> announce;
+
         public BusinessPricingPanel(Func<CompanySimulation> company, Action changed,
             Action<string, string, string, Action> ask, Func<VisualElement> aside = null)
         {
@@ -148,6 +151,10 @@ namespace ScalingLaws.UI
             unlocked = false;
 
             AudioDirector.Confirm();
+
+            announce?.Invoke(Loc.T("notice.price_changed"),
+                Loc.T("notice.price_changed.note", UiFormat.Money((long)Math.Round(price))),
+                NoticeTone.Standard);
             changed?.Invoke();
         }
 

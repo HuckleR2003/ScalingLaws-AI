@@ -139,6 +139,17 @@ namespace ScalingLaws.UI
         /// <summary>The year's tax, counting down, under the grants panel.</summary>
         private TaxBanner taxBanner;
         private StartedNotice startedNotice;
+
+        // The server load in the top bar. Built once with the bar and refreshed with it.
+        private VisualElement loadBox;
+        private VisualElement loadFill;
+        private Label loadValue;
+        private Label loadCaption;
+
+        // What the day's notices compare against, so they announce what changed today rather than
+        // everything a loaded campaign already had.
+        private int grantTierSeen;
+        private readonly HashSet<ResearchNodeId> researchSeen = new();
         private MailScreen mail;
         private OfficeChooser offices;
         private VisualElement bannerStack;
@@ -587,8 +598,21 @@ namespace ScalingLaws.UI
             // frame: he would ring the moment the campaign opened.
             pausedOn = state.Date.DayIndex;
 
+            // Seeded from the campaign as it opens, or loading a save would announce every node and
+            // every grant level the company already had.
+            grantTierSeen = simulation.GrantTierReached();
+            researchSeen.UnionWith(state.UnlockedResearch);
+
             creator = new ModelCreatorPanel(simulation);
-            creator.started += () => Show(Screen.Site);
+            creator.started += () =>
+            {
+                var run = state.ActiveRun;
+
+                startedNotice?.Show(Loc.T("notice.training_started"),
+                    run != null ? Loc.T("notice.training_started.note", run.Blueprint.Name) : null);
+
+                Show(Screen.Site);
+            };
             // UPGRADE hands its basket to the planner rather than commissioning anything itself,
             // so the version is named and priced before a single day of work is paid for.
             //
@@ -1104,7 +1128,10 @@ namespace ScalingLaws.UI
                 () => Show(Screen.Fleet),
                 () => Show(Screen.Upgrade));
 
-            mail = new MailScreen(simulation, RefreshChrome);
+            mail = new MailScreen(simulation, RefreshChrome)
+            {
+                announce = (title, note, tone) => startedNotice?.Show(title, note, tone)
+            };
 
             // The simulation is told where the furniture goes rather than working it out, because it
             // knows which tier the company is in and nothing about the shape of the room.
@@ -1346,6 +1373,68 @@ namespace ScalingLaws.UI
                 financeReport.Open();
             }
         }
+        /// <summary>
+        /// How full the fleet was yesterday, in the top bar, on every screen.
+        ///
+        /// **Asked for as badly needed.** The load lived on the compute page, the management desk
+        /// and the server room, so a player on any other screen could not see the one number that
+        /// decides whether the product is still usable. It reads yesterday's `LastQuality`, the same
+        /// reading the customers react to, so the bar and the market cannot disagree.
+        /// </summary>
+        private VisualElement BuildServerLoad()
+        {
+            loadBox = new VisualElement();
+            loadBox.AddToClassList("topbar__load");
+
+            loadCaption = new Label();
+            loadCaption.AddToClassList("topbar__load-caption");
+            loadBox.Add(loadCaption);
+
+            var track = new VisualElement();
+            track.AddToClassList("topbar__load-track");
+
+            loadFill = new VisualElement();
+            loadFill.AddToClassList("topbar__load-fill");
+            track.Add(loadFill);
+            loadBox.Add(track);
+
+            loadValue = new Label();
+            loadValue.AddToClassList("topbar__load-value");
+            loadBox.Add(loadValue);
+
+            return loadBox;
+        }
+
+        private void RefreshServerLoad()
+        {
+            if (loadBox == null)
+            {
+                return;
+            }
+
+            // **The words are set here, not where the bar is built.** The top bar is built once, and
+            // the first Polish proof frame came back reading SERVERS beside a Polish date.
+            loadCaption.text = Loc.T("hud.load");
+            loadBox.tooltip = Loc.T("hud.load.tip");
+
+            var load = Mathf.Clamp01((float)state.LastQuality.Utilisation);
+
+            loadFill.style.width = Length.Percent(load * 100f);
+            loadValue.text = UiFormat.Percent(load, 0);
+
+            // Full is the whole section, not only the bar, because the bar is the part that is hardest
+            // to see at exactly the moment it matters.
+            var full = load >= 0.995f;
+
+            loadBox.EnableInClassList("topbar__load--full", full);
+
+            loadFill.EnableInClassList("topbar__load-fill--hot",
+                !full && load > (float)ServiceQuality.CriticalAbove);
+
+            loadFill.EnableInClassList("topbar__load-fill--warn",
+                load > (float)ServiceQuality.UnstableAbove && load <= (float)ServiceQuality.CriticalAbove);
+        }
+
         private VisualElement BuildTopBar()
         {
             var bar = new VisualElement();
@@ -1421,6 +1510,7 @@ namespace ScalingLaws.UI
             dateLabel = new Label();
             dateLabel.AddToClassList("topbar__stat");
             dateLabel.AddToClassList("topbar__stat--muted");
+            right.Add(BuildServerLoad());
             right.Add(rankLabel);
             right.Add(companyLabel);
             right.Add(dateLabel);
@@ -2019,7 +2109,10 @@ namespace ScalingLaws.UI
                     host.Add(BuildRankingScreen());
                     break;
                 case Screen.Investing:
-                    investing ??= new InvestingScreen(() => simulation, () => Show(Screen.Investing));
+                    investing ??= new InvestingScreen(() => simulation, () => Show(Screen.Investing))
+                    {
+                        announce = (title, note, tone) => startedNotice?.Show(title, note, tone)
+                    };
                     investing.Refresh();
                     host.Add(investing.Root);
                     break;
@@ -3572,6 +3665,8 @@ namespace ScalingLaws.UI
                     ShowGrantCompleted(companyEvent.Message, companyEvent.AmountUsd);
                 }
 
+                AnnounceEvent(companyEvent);
+
                 // A year's tax pushed into the next year because nobody answered the letter. The
                 // surcharge is the number the player has to see, and it used to be a rate quietly
                 // compounding in an inbox.
@@ -3610,7 +3705,70 @@ namespace ScalingLaws.UI
                 PlayEventCue(companyEvent.Type);
             }
 
+            // Anything unlocked without a completion event, a grant's node for one, is taken as known
+            // here, so the next finished node does not announce it as well.
+            researchSeen.UnionWith(state.UnlockedResearch);
+
             SyncAchievements();
+        }
+
+        /// <summary>
+        /// The notices for things the day decided, rather than things the player clicked.
+        ///
+        /// Read off the events the rules already raise, so a notice cannot announce something the
+        /// simulation did not do. Finished research is found by comparing what the company knows
+        /// against what it knew, not by reading the event's sentence, which is English and written
+        /// for the wire.
+        /// </summary>
+        private void AnnounceEvent(CompanyEvent companyEvent)
+        {
+            switch (companyEvent.Type)
+            {
+                case CompanyEventType.ResearchCompleted:
+                {
+                    var finished = new List<string>();
+
+                    foreach (var id in state.UnlockedResearch)
+                    {
+                        if (id != ResearchNodeId.None && researchSeen.Add(id))
+                        {
+                            finished.Add(ResearchTree.Get(id).DisplayName);
+                        }
+                    }
+
+                    if (finished.Count > 0)
+                    {
+                        startedNotice?.Show(Loc.T("notice.research_done"),
+                            Loc.T("notice.research_done.note", string.Join(", ", finished)));
+                    }
+
+                    break;
+                }
+
+                // Gold, and kept for this: a level of grants is the one thing on the funding screen
+                // that is earned rather than signed for.
+                case CompanyEventType.GrantCompleted:
+                {
+                    var reached = simulation.GrantTierReached();
+
+                    if (reached > grantTierSeen)
+                    {
+                        grantTierSeen = reached;
+
+                        startedNotice?.Show(Loc.T("notice.grant_tier", reached),
+                            Loc.T("notice.grant_tier.note", Loc.T("hud.capital")), NoticeTone.Special);
+                    }
+
+                    break;
+                }
+
+                // **The one that happens to the company.** Red, longer, and with the way to the story
+                // on it, because a scandal found a week later is a scandal nobody answered.
+                case CompanyEventType.ModelScandal:
+                    startedNotice?.Show(Loc.T("notice.scandal"), companyEvent.Message, NoticeTone.Alert,
+                        Loc.T("notice.see"), () => Show(Screen.Feed));
+                    break;
+            }
         }
 
         /// <summary>
@@ -4032,6 +4190,15 @@ namespace ScalingLaws.UI
 
             var position = RankingBoard.PlayerPosition(simulation.Ranking());
             rankLabel.text = position > 0 ? Loc.T("hud.rank", position) : Loc.T("hud.unranked");
+
+            RefreshServerLoad();
+
+            // **The books follow the company while they are open.** They only redrew when a toggle
+            // was pressed, so a day view left open was a day behind by the next morning.
+            if (financeHost != null && financeHost.style.display != DisplayStyle.None)
+            {
+                financeReport?.Refresh();
+            }
 
             hud.Refresh(state.Date, clock.Speed, clock.DayProgress);
 

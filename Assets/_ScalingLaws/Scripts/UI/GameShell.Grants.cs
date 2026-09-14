@@ -283,7 +283,12 @@ namespace ScalingLaws.UI
 
             var sign = new Button(() =>
             {
-                simulation.TryAcceptGrant(definition.Id, out _);
+                if (simulation.TryAcceptGrant(definition.Id, out _))
+                {
+                    startedNotice?.Show(Loc.T("notice.grant_signed"),
+                        Loc.T("notice.grant_signed.note", Loc.T(definition.NameKey), definition.TermDays));
+                }
+
                 Show(Screen.Funding);
             })
             { text = Loc.T("grant.accept") };

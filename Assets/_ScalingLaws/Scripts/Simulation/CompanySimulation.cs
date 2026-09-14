@@ -607,8 +607,13 @@ namespace ScalingLaws.Simulation
             // are charged for every head whether or not that head uses them, which is the entire
             // shape of the decision.
             var salaryCost = SimUnits.ToDollars(
-                State.Staff.DailyCostUsd * State.Founder.OperatingCostMultiplier)
+                State.Staff.DailyPayrollUsd * State.Founder.OperatingCostMultiplier)
                 + State.DailyBenefitCostUsd;
+
+            // **The lease, on its own line.** It rode with the salaries through `DailyCostUsd`, which
+            // is payroll plus rent, so moving office looked like a pay rise on the books.
+            var officeRentCost = SimUnits.ToDollars(
+                State.Staff.DailyRentUsd * State.Founder.OperatingCostMultiplier);
             var marketingCost = State.Monetization.TotalMarketingDailyUsd;
 
             // **The company's own generation, before the tax line, because it is income.**
@@ -625,7 +630,8 @@ namespace ScalingLaws.Simulation
             var plantValue = SimUnits.ToDollars(State.Power.DailyValueUsd(
                 State.Date, profile.PowerDrawKilowatts, bill.ElectricityUsd * billScale));
 
-            var operatingCost = servingCost + intelCost + salaryCost + marketingCost + plantCost;
+            var operatingCost = servingCost + intelCost + salaryCost + officeRentCost + marketingCost
+                + plantCost;
             var depreciation = SimUnits.ToDollars(profile.DailyDepreciationUsd);
 
             // Tax is charged on profit, not on turnover, so a loss-making year is not made worse
@@ -677,6 +683,7 @@ namespace ScalingLaws.Simulation
             // share of the fleet bill already counted above.
             State.PostNonCash(LedgerLine.ServingFree, freeServing);
             State.PostCash(LedgerLine.Salaries, salaryCost);
+            State.PostCash(LedgerLine.OfficeRent, officeRentCost);
             State.PostCash(LedgerLine.Marketing, marketingCost);
             State.PostCash(LedgerLine.Intelligence, intelCost);
             // Accrued, not paid. The demand arrives in January and the money has to still be

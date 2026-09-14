@@ -258,9 +258,9 @@ namespace ScalingLaws.Data
         /// </summary>
         public static string NameOf(SafetyModule module) => module switch
         {
-            SafetyModule.Assa => "SELF AUDITING",
-            SafetyModule.RedTeam => "RED TEAMING",
-            _ => "DATA PROTECTION"
+            SafetyModule.Assa => Loc.T("safety.module.assa"),
+            SafetyModule.RedTeam => Loc.T("safety.module.red"),
+            _ => Loc.T("safety.module.data")
         };
 
         /// <summary>
@@ -268,9 +268,9 @@ namespace ScalingLaws.Data
         /// </summary>
         public static string PitchOf(SafetyModule module) => module switch
         {
-            SafetyModule.Assa => "Stops incidents happening at all.",
-            SafetyModule.RedTeam => "Does nothing about the risk. Talks you out of the penalty.",
-            _ => "Aimed at the one leak that ends companies."
+            SafetyModule.Assa => Loc.T("safety.module.assa.pitch"),
+            SafetyModule.RedTeam => Loc.T("safety.module.red.pitch"),
+            _ => Loc.T("safety.module.data.pitch")
         };
 
         private static Dictionary<(SafetyModule, int), SafetyTier> BuildIndex()

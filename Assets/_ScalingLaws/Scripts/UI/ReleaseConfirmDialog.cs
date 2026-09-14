@@ -33,6 +33,9 @@ namespace ScalingLaws.UI
         private VisualElement mounted;
         private int shelfIndex = -1;
 
+        /// <summary>Says the model is out. Set by the shell.</summary>
+        public Action<string, string, NoticeTone> announce;
+
         private float price;
         private float freeTokens;
         private bool freeTierOn;
@@ -127,6 +130,9 @@ namespace ScalingLaws.UI
 
             var index = shelfIndex;
 
+            // Read before the release, because releasing takes the model off the shelf it is named on.
+            var releasedName = simulation.State.Shelf[index].Name;
+
             if (!simulation.TryReleaseModel(index, simulation.State.DefaultPriceMultiplier,
                     out failureReason))
             {
@@ -135,6 +141,10 @@ namespace ScalingLaws.UI
             }
 
             AudioDirector.Confirm();
+
+            announce?.Invoke(Loc.T("notice.released"),
+                Loc.T("notice.released.note", releasedName, UiFormat.Money((long)Math.Round(price))),
+                NoticeTone.Standard);
             Close();
             released?.Invoke(index);
             return true;

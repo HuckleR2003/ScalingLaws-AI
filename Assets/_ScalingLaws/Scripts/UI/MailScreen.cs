@@ -60,6 +60,9 @@ namespace ScalingLaws.UI
         /// <summary>What the candidate said about the last offer. Cleared when a new one opens.</summary>
         private string negotiationNote = string.Empty;
 
+        /// <summary>Says somebody joined. Set by the shell.</summary>
+        public Action<string, string, NoticeTone> announce;
+
         /// <summary>Opens one letter. Public so a notification can deep link into it later.</summary>
         public void Select(int mailId)
         {
@@ -627,8 +630,12 @@ namespace ScalingLaws.UI
         /// <summary>Public so a test can negotiate without a panel to dispatch clicks into.</summary>
         public OfferVerdict SendOffer(MailItem letter)
         {
+            var before = simulation.State.Staff.Headcount;
+
             var verdict = simulation.Negotiate(letter, offerHourly, (long)Math.Round(offerBonus),
                 out var note);
+
+            AnnounceHire(before);
 
             negotiationNote = note;
 
@@ -674,7 +681,9 @@ namespace ScalingLaws.UI
                 {
                     if (letter.Candidate != null && captured == MailAction.Accept)
                     {
+                        var before = simulation.State.Staff.Headcount;
                         simulation.AcceptAsking(letter, out var note);
+                        AnnounceHire(before);
                         negotiationNote = note;
                         openOffer = 0;
                         Refresh();
@@ -747,11 +756,44 @@ namespace ScalingLaws.UI
         /// <summary>Public so a test can drive the button without a panel to dispatch clicks into.</summary>
         public void Act(int mailId, MailAction action)
         {
+            var before = simulation.State.Staff.Headcount;
             problem = simulation.TryActOnMail(mailId, action, out var reason) ? string.Empty : reason;
+            AnnounceHire(before);
             selected = mailId;
 
             Refresh();
             repaint?.Invoke();
+        }
+
+        /// <summary>
+        /// Gold, with who and on what terms, when a letter ends in somebody joining.
+        ///
+        /// Found by the headcount moving rather than by which button was pressed, because three
+        /// buttons can end in a hire (accept, a haggle that lands, and the old one-shot letters) and
+        /// a bonus paid to somebody already here raises the same event without adding anybody.
+        /// </summary>
+        private void AnnounceHire(int headcountBefore)
+        {
+            var staff = simulation.State.Staff;
+
+            if (announce == null || staff.Headcount <= headcountBefore || staff.Hires.Count == 0)
+            {
+                return;
+            }
+
+            var hire = staff.Hires[staff.Hires.Count - 1];
+
+            var job = hire.Position != PlayerSkill.None
+                      && PositionCatalog.TryGet(hire.Position, out var position)
+                ? position.Title
+                : StaffCatalog.Get(hire.Role).DisplayName;
+
+            var note = hire.HourlyWageUsd > 0.0
+                ? Loc.T("notice.hired.note", hire.Skill, job,
+                    UiFormat.Money((long)Math.Round(hire.HourlyWageUsd)))
+                : Loc.T("notice.hired.note_legacy", hire.Skill, job);
+
+            announce(Loc.T("notice.hired", hire.Label.ToUpperInvariant()), note, NoticeTone.Special);
         }
 
         private static string Initial(string sender) =>

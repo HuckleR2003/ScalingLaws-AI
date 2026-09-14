@@ -211,6 +211,52 @@ namespace ScalingLaws.Simulation
             return SimUnits.ToDollars(total);
         }
 
+        /// <summary>
+        /// What the open facilities will charge a month once every grace period is over.
+        ///
+        /// **The screen read $0 for a loan that had just been drawn**, with the commission beside it
+        /// reading $72k, because <see cref="MonthlyInstalmentUsd"/> is what is being charged today and
+        /// a new facility is in its grace period. True and useless: the number a borrower plans around
+        /// is the instalment that is coming, so the screen shows this one, with the date it starts.
+        /// </summary>
+        public long ScheduledMonthlyInstalmentUsd()
+        {
+            var total = 0.0;
+
+            foreach (var loan in loans)
+            {
+                if (!loan.IsSettled)
+                {
+                    total += loan.DailyInstalmentUsd * 30.4375;
+                }
+            }
+
+            return SimUnits.ToDollars(total);
+        }
+
+        /// <summary>The first day an instalment falls due on a facility still in its grace period.</summary>
+        public GameDate? FirstInstalmentAfterGrace(GameDate date)
+        {
+            GameDate? first = null;
+
+            foreach (var loan in loans)
+            {
+                if (loan.IsSettled || !loan.IsInGracePeriod(date))
+                {
+                    continue;
+                }
+
+                var due = loan.TakenOn.AddDays(loan.GraceDays);
+
+                if (first == null || due < first.Value)
+                {
+                    first = due;
+                }
+            }
+
+            return first;
+        }
+
         public bool Has(LoanProduct product)
         {
             foreach (var loan in loans)

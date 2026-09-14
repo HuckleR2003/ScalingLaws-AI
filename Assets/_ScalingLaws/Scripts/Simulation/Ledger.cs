@@ -77,7 +77,17 @@ namespace ScalingLaws.Simulation
         PowerGeneration = 29,
 
         /// <summary>Fuel and fixed costs for a station, charged whether anybody used the power.</summary>
-        PowerPlantUpkeep = 30
+        PowerPlantUpkeep = 30,
+
+        /// <summary>
+        /// The lease on the office.
+        ///
+        /// **It was inside Salaries.** `StaffRoster.DailyCostUsd` is payroll plus rent, and that sum
+        /// was posted as one line, so a company that moved into a floor watched its wage bill jump
+        /// by the rent and had no way to tell which of the two it was paying. Reported by the author
+        /// as rent and other costs seeming to merge into Salaries. They did.
+        /// </summary>
+        OfficeRent = 31
     }
 
     /// <summary>What a line is called and which side of the report it sits on.</summary>
@@ -117,7 +127,7 @@ namespace ScalingLaws.Simulation
     /// with the cash balance. A report that recalculates its own totals is a second copy of the
     /// arithmetic and it will eventually tell the player something the bank does not.
     ///
-    /// Kept as monthly totals with the current month also held day by day. A full daily history for a
+    /// Kept as monthly totals with the last two months also held day by day. A full daily history for a
     /// fifteen year game is a hundred and fifty thousand numbers to save and nobody reads day 412.
     /// </summary>
     public sealed class Ledger
@@ -158,16 +168,32 @@ namespace ScalingLaws.Simulation
             new(LedgerLine.StateProgramme, "State programme", "Trading", true, true),
             new(LedgerLine.PowerGeneration, "Own generation, sold and self supplied", "Fleet",
                 true, true),
-            new(LedgerLine.PowerPlantUpkeep, "Power station fuel and upkeep", "Fleet", false, true)
+            new(LedgerLine.PowerPlantUpkeep, "Power station fuel and upkeep", "Fleet", false, true),
+
+            // **Appended, never inserted.** A saved month is a row of totals in this order, so a
+            // line added anywhere but the end would shift every column after it and put last year's
+            // electricity under somebody's wages. v56 to v57 pads each old row with one zero.
+            new(LedgerLine.OfficeRent, "Office rent", "Company", false, true)
         };
 
         /// <summary>month index (year * 12 + month - 1) to the totals for that month.</summary>
         private readonly Dictionary<int, long[]> months = new();
 
-        /// <summary>Day of the current month, one based, to that day's totals.</summary>
-        private readonly Dictionary<int, long[]> currentMonthDays = new();
+        /// <summary>
+        /// How many days are held day by day, counting back from the newest one posted.
+        ///
+        /// **Sixty two, so the report can show the last thirty days whatever the calendar says.**
+        /// Only the current month used to be held, and it was emptied the moment a new month began,
+        /// so on the first of a month the day view drew one bar and the thirty before it were gone.
+        /// Not saved, the same as before: day detail starts again from the next day played.
+        /// </summary>
+        public const int DaysKept = 62;
+
+        /// <summary>Day index to that day's totals, for the newest <see cref="DaysKept"/> days.</summary>
+        private readonly Dictionary<int, long[]> dayRows = new();
 
         private int currentMonthKey = -1;
+        private int latestDayIndex = int.MinValue;
 
         /// <summary>
         /// Net cash from every month that has been dropped off the back of the history.
@@ -209,14 +235,16 @@ namespace ScalingLaws.Simulation
             }
 
             var key = MonthKeyOf(date);
-            if (key != currentMonthKey)
-            {
-                currentMonthKey = key;
-                currentMonthDays.Clear();
-            }
+            currentMonthKey = key;
 
             Bucket(months, key)[IndexOf(line)] += Math.Abs(amountUsd);
-            Bucket(currentMonthDays, date.Day)[IndexOf(line)] += Math.Abs(amountUsd);
+            Bucket(dayRows, date.DayIndex)[IndexOf(line)] += Math.Abs(amountUsd);
+
+            if (date.DayIndex > latestDayIndex)
+            {
+                latestDayIndex = date.DayIndex;
+                TrimDays();
+            }
 
             Trim();
         }
@@ -226,8 +254,11 @@ namespace ScalingLaws.Simulation
             months.TryGetValue(monthKey, out var row) ? row[IndexOf(line)] : 0L;
 
         /// <summary>Total for one line on one day of the month currently being recorded.</summary>
-        public long DayTotal(int day, LedgerLine line) =>
-            currentMonthDays.TryGetValue(day, out var row) ? row[IndexOf(line)] : 0L;
+        public long DayTotal(int day, LedgerLine line) => DayIndexTotal(DayIndexOf(day), line);
+
+        /// <summary>Total for one line on any day still held, by day index.</summary>
+        public long DayIndexTotal(int dayIndex, LedgerLine line) =>
+            dayRows.TryGetValue(dayIndex, out var row) ? row[IndexOf(line)] : 0L;
 
         /// <summary>
         /// Everything the books account for, including months whose detail has been dropped. This plus
@@ -270,11 +301,14 @@ namespace ScalingLaws.Simulation
         public long MonthCost(int monthKey) => Side(monthKey, false);
 
         // A day is read exactly the way a month is, through the same three questions, because the
-        // report asks the same three questions of it. Only the current month is kept day by day,
-        // which is why there is no key: there is only one month it could mean.
+        // report asks the same three questions of it. The day-of-month versions mean the month
+        // being recorded; the day-index versions reach back across the start of a month.
 
         /// <summary>Income minus cash costs on one day of the month being recorded.</summary>
-        public long DayCashFlow(int day)
+        public long DayCashFlow(int day) => DayIndexCashFlow(DayIndexOf(day));
+
+        /// <summary>Income minus cash costs on one day still held, by day index.</summary>
+        public long DayIndexCashFlow(int dayIndex)
         {
             var total = 0L;
             foreach (var entry in Catalog)
@@ -284,25 +318,29 @@ namespace ScalingLaws.Simulation
                     continue;
                 }
 
-                var amount = DayTotal(day, entry.Line);
+                var amount = DayIndexTotal(dayIndex, entry.Line);
                 total += entry.IsIncome ? amount : -amount;
             }
 
             return total;
         }
 
-        public long DayIncome(int day) => DaySide(day, true);
+        public long DayIncome(int day) => DaySide(DayIndexOf(day), true);
 
-        public long DayCost(int day) => DaySide(day, false);
+        public long DayCost(int day) => DaySide(DayIndexOf(day), false);
 
-        private long DaySide(int day, bool income)
+        public long DayIndexIncome(int dayIndex) => DaySide(dayIndex, true);
+
+        public long DayIndexCost(int dayIndex) => DaySide(dayIndex, false);
+
+        private long DaySide(int dayIndex, bool income)
         {
             var total = 0L;
             foreach (var entry in Catalog)
             {
                 if (entry.IsCash && entry.IsIncome == income)
                 {
-                    total += DayTotal(day, entry.Line);
+                    total += DayIndexTotal(dayIndex, entry.Line);
                 }
             }
 
@@ -312,9 +350,69 @@ namespace ScalingLaws.Simulation
         /// <summary>Days of the current month that recorded anything, earliest first.</summary>
         public List<int> RecordedDays()
         {
-            var days = new List<int>(currentMonthDays.Keys);
+            var days = new List<int>();
+
+            foreach (var dayIndex in dayRows.Keys)
+            {
+                var date = new GameDate(dayIndex);
+
+                if (MonthKeyOf(date) == currentMonthKey)
+                {
+                    days.Add(date.Day);
+                }
+            }
+
             days.Sort();
             return days;
+        }
+
+        /// <summary>Whether any day is held at all. False on a fresh ledger and after a load.</summary>
+        public bool HasRecordedDays => dayRows.Count > 0;
+
+        /// <summary>The newest day posted, by day index. Meaningful only when a day is held.</summary>
+        public int LastRecordedDayIndex => latestDayIndex;
+
+        /// <summary>
+        /// The day index of a day of the month being recorded, or a value no held day can have.
+        ///
+        /// The day-of-month questions predate the rolling window and everything that asks them
+        /// still means this month, so they are translated here rather than removed.
+        /// </summary>
+        private int DayIndexOf(int dayOfMonth)
+        {
+            if (currentMonthKey < 0)
+            {
+                return int.MinValue;
+            }
+
+            var year = currentMonthKey / 12;
+            var month = currentMonthKey % 12 + 1;
+
+            if (dayOfMonth < 1 || dayOfMonth > DateTime.DaysInMonth(year, month))
+            {
+                return int.MinValue;
+            }
+
+            return GameDate.FromCalendar(year, month, dayOfMonth).DayIndex;
+        }
+
+        private void TrimDays()
+        {
+            var oldestKept = latestDayIndex - (DaysKept - 1);
+            var stale = new List<int>();
+
+            foreach (var dayIndex in dayRows.Keys)
+            {
+                if (dayIndex < oldestKept)
+                {
+                    stale.Add(dayIndex);
+                }
+            }
+
+            foreach (var dayIndex in stale)
+            {
+                dayRows.Remove(dayIndex);
+            }
         }
 
         /// <summary>Month keys that recorded anything, oldest first.</summary>
@@ -351,8 +449,9 @@ namespace ScalingLaws.Simulation
             long carriedForwardUsd = 0L)
         {
             months.Clear();
-            currentMonthDays.Clear();
+            dayRows.Clear();
             currentMonthKey = -1;
+            latestDayIndex = int.MinValue;
             CarriedForwardUsd = carriedForwardUsd;
 
             if (monthKeys == null || amounts == null)
