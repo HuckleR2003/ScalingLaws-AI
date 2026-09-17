@@ -52,20 +52,28 @@ namespace ScalingLaws.Tests.EditMode
         /// Scene zero is what a player sees when the exe starts. Putting `Game` there drops them
         /// into an unconfigured campaign with no founder, which does not throw and does not look
         /// like a mistake, it looks like the game is broken.
+        ///
+        /// **Three scenes since the city map became reachable from the office rather than only
+        /// from the editor menu.** `City` has to ship too, or the map button loads nothing the
+        /// moment a player reaches it — the same failure this test already existed to catch for
+        /// `Game`.
         /// </summary>
         [Test]
         public void TheBuildOpensOnTheMenuAndCarriesTheGameWithIt()
         {
             var scenes = ScalingLaws.Editor.BuildPlayer.ScenesInOrder();
 
-            Assert.That(scenes.Length, Is.EqualTo(2),
-                "Expected the menu and the game: " + string.Join(", ", scenes));
+            Assert.That(scenes.Length, Is.EqualTo(3),
+                "Expected the menu, the game and the city map: " + string.Join(", ", scenes));
 
             Assert.That(Path.GetFileNameWithoutExtension(scenes[0]), Is.EqualTo("MainMenu"),
                 "The first scene in the build is what the executable starts on.");
 
             Assert.That(scenes.Any(scene => scene.EndsWith("Game.unity")), Is.True,
                 "The game scene is not in the build, so NEW GAME would load nothing.");
+
+            Assert.That(scenes.Any(scene => scene.EndsWith("City.unity")), Is.True,
+                "The city map scene is not in the build, so the map button would load nothing.");
         }
 
         /// <summary>
