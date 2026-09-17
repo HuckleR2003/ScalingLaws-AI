@@ -629,8 +629,7 @@ screen where the money is committed.
   state in the opening hour, because a new company has rented nothing, and the strip reported it as a
   fact with no way out. It carries a button that opens COMPUTE and lights the rent panel for two
   seconds.
-- **The BANK tab said BANK and the screen it opens said BANK AND DONATIONS.** The tab agrees with
-  the
+- **The BANK tab said BANK and the screen it opens said BANK AND DONATIONS.** The tab agrees with the
   page now.
 - **Corporation tax is a decision now, and both answers are one click away.** Reported by Natalia.
   The demand arrived as a strip and a letter: POSTPONE was a button on the strip and PAY meant
@@ -1149,8 +1148,7 @@ otherwise.
 
 ### Added
 
-- **The server room sells what goes in the cabinets.** Everything the room offered was furniture:
-  buy
+- **The server room sells what goes in the cabinets.** Everything the room offered was furniture: buy
   a cabinet, carry it, stand it, sell it, fit a fan. The accelerators those cabinets exist to hold
   were bought on a different screen and the room never mentioned them, so a basement opened early was
   four empty frames with no parts and no way to get any. The build rail now says how many cards the
@@ -1204,8 +1202,7 @@ otherwise.
   rival can take off you. It ships sooner than anybody, every 180 days, and gains least per release,
   because copying an answer is cheaper than finding one and it does not put you in front.
 
-- **A lab you smeared can write, ring and sue you.** Paying to make a rival look bad used to move
-  two
+- **A lab you smeared can write, ring and sue you.** Paying to make a rival look bad used to move two
   numbers and end there: nobody on the other end ever reacted. A campaign that is traced back now
   brings a notice before action from their lawyers with a sum on it and thirty days to answer, a
   phone call from their counsel the same day, and a case in front of a court if you refuse or say
@@ -1284,8 +1281,7 @@ otherwise.
 - **The person walking around your office has their name over their head.** One line, no plate
   behind it, no border. The room is grey boxes and low-poly furniture, and a label with a background
   would be the loudest thing in the frame.
-- **Tutorials you can ask for again.** Short walkthroughs of one screen, offered from a green card
-  in
+- **Tutorials you can ask for again.** Short walkthroughs of one screen, offered from a green card in
   the corner rather than being part of the opening. The first walks the server room: buy a cabinet,
   stand it on the floor, open it, put a fan in it. While one is running the bottom bar is held on
   that screen, because a three-minute walkthrough somebody wanders out of halfway is worse than none
@@ -1335,8 +1331,7 @@ otherwise.
   buying a piece put it wherever the plan felt like. Right click to pick something up, left click a
   lit square to put it down, right click anywhere to put it in storage. The same grammar the server
   room already uses, and the squares only light up while you are carrying something.
-- **A way out of the basement.** Every other screen is left through the bottom bar it is standing
-  on.
+- **A way out of the basement.** Every other screen is left through the bottom bar it is standing on.
   A room needs a door you can see.
 - **The name over somebody's head says what they do**, in the colour of the job, with a hairline
   under the name. The founder gets their own colour and "CEO of <company>".
@@ -1455,8 +1450,7 @@ otherwise.
 - **COMPUTE fits more on a line.** The user charts moved up beside the load dial at a third of the
   width, and the cluster split moved under the capacity band it decides, from three sections higher
   up the page.
-- **The lab page lost its strap**, which restated what four labelled tiles and a map already said
-  and
+- **The lab page lost its strap**, which restated what four labelled tiles and a map already said and
   pushed START below the fold on a short window.
 - **BUSINESS opens on one screen.** It was three full-width panels stacked, each showing everything
   it had all the time, so the staff benefits began about two screens down and most players never
@@ -1521,8 +1515,7 @@ otherwise.
   Found by changing the "done" colour, rendering the board and measuring the pixel: it came back at
   the same plate as before.
 
-- **The cabinet shop clipped its own rows.** Each card protected its children from being squeezed
-  and
+- **The cabinet shop clipped its own rows.** Each card protected its children from being squeezed and
   nothing protected the card, so a full rail compressed the cards themselves and the last line of
   every cabinet, the price, disappeared under the next one. Section headings did the same.
 
@@ -1613,8 +1606,7 @@ otherwise.
   names in the phrase book beside the set that had been there since August. One fact at two
   addresses; it now reads the older key, which is the one whose Polish was written with the
   explanation in front of it.
-- **Sixty events were kept in memory for a screen that was never built.** `recentEvents` was
-  appended
+- **Sixty events were kept in memory for a screen that was never built.** `recentEvents` was appended
   to and trimmed and never once read.
 
 - **The official page was always about the newest model.** With two products on sale, clicking the
@@ -1723,8 +1715,7 @@ otherwise.
 - **The server room's capacity figure was worked out from a card the company does not own** —
   whatever the clouds happened to be renting that month, rather than the fleet actually in the room.
 - **The bottom bar kept whatever language it was built in.**
-- **Eighteen readings printed with a comma on a Polish machine** (`0,70x`, `$20,00`, `1 234`),
-  across
+- **Eighteen readings printed with a comma on a Polish machine** (`0,70x`, `$20,00`, `1 234`), across
   the model creator, the inbox, the team page and the office.
 
 ### Save compatibility
@@ -1900,13 +1891,11 @@ looks.
   from where it stopped rather than from the beginning.
 - **A server room.** Four cabinets in a basement, a floor of sixteen squares, and cooling that costs
   a slot. It is the first compute the company physically owns.
-- **Fifty research nodes** across four eras and three tracks. Every architecture, corpus, upgrade
-  line
+- **Fifty research nodes** across four eras and three tracks. Every architecture, corpus, upgrade line
   and compute tier sits behind one.
 - **Fourteen rival labs**, each with a dated history. Three of them come apart during the campaign,
   over the same exposures that can end the player's company.
-- **Two languages.** Polish and English, 1,321 phrases, switchable from settings at any time
-  including
+- **Two languages.** Polish and English, 1,321 phrases, switchable from settings at any time including
   mid-conversation.
 - **Interface audio.** Synthesised at runtime rather than sampled, so the build carries no licensed
   audio and a missing file cannot break a screen.
