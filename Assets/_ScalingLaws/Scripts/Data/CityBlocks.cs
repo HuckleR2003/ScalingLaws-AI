@@ -237,8 +237,9 @@ namespace ScalingLaws.Data
     public static class CityBlocks
     {
         /// <summary>
-        /// Ten subdivisions: six across the two residential districts, and four grown later onto
-        /// the south bank, above the river mouth and beside the west road.
+        /// Twelve subdivisions: six across the two residential districts, and six grown later onto
+        /// the south bank, above the river mouth, beside the west road, along the media coast and on
+        /// the hillside behind Silicon Valley.
         ///
         /// Greendale gets the big lots on the hillside; Riverdale gets four tighter ones, which is
         /// what the author asked for and also what actually happens: the cheap suburb is denser.
@@ -282,7 +283,18 @@ namespace ScalingLaws.Data
             // West End: the flat strip between the media grid's north-west corner and the edge of the
             // map, beside the west road, which again takes the collector's place.
             new("media_west_end", "media", 140f, 1100f, 180f, 120f, 95.7f,
-                76f, 22f, 10f, 0, false)
+                76f, 22f, 10f, 0, false),
+
+            // Media Shore: one street of houses along the coast west of the media grid, the grid's own
+            // western street standing in for the collector.
+            new("media_shore", "media", 55f, 730f, 110f, 380f, 90f,
+                76f, 22f, 10f, 0, false),
+
+            // Valley Heights: the gentle hillside between the south bank and Silicon Valley, where the
+            // people who work on the bay live. East of the south bank road, joined to Southbank Hill
+            // by a short street.
+            new("valley_heights", "silicon", 1195f, -170f, 240f, 430f, 8f,
+                76f, 22f, 10f, 1, false)
         };
 
         /// <summary>The parts of the city that are on a grid rather than on a lane.</summary>
@@ -318,7 +330,18 @@ namespace ScalingLaws.Data
             // The Gallery Quarter: small blocks of shops and flats on the empty ground between Midtown
             // and the gallery's car park, turned like Midtown.
             new("gallery_quarter", "downtown", 560f, 1100f, 140f, 280f, 8f,
-                70f, 14f, 30f, false)
+                70f, 14f, 30f, false),
+
+            // Media Studios: the lawn between the media grid, Midtown and River Works, turned like
+            // Midtown so its streets run on from Midtown's southern street. Held back from the west
+            // road, where its middle street would have met it beside the media grid's own crossing.
+            new("media_studios", "media", 485f, 700f, 160f, 180f, 8f,
+                80f, 16f, 36f, false),
+
+            // Portside: the flat ground between the port street and Silicon Valley's gate, square to
+            // the port street, which takes the place of its northern street.
+            new("portside", "port", 705f, 35f, 200f, 320f, 8f,
+                100f, 18f, 40f, false)
         };
 
         /// <summary>

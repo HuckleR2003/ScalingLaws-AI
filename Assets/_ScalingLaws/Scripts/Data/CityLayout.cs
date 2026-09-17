@@ -459,7 +459,12 @@ namespace ScalingLaws.Data
             // street: the valley's second way in, and the south bank's way out.
             new("southbank_valley", RoadClass.Street,
                 new MapPoint(960f, 189f), new MapPoint(952f, 60f), new MapPoint(925f, -80f),
-                new MapPoint(875f, -220f), new MapPoint(774f, -350f))
+                new MapPoint(875f, -220f), new MapPoint(774f, -350f)),
+
+            // Valley Heights' way out, north to Southbank Hill. A second one west to the south bank road
+            // was tried: its cutting left a slope too steep for the corner it had to meet.
+            new("valley_heights_north_link", RoadClass.Street,
+                new MapPoint(1150f, 15f), new MapPoint(1150f, -106f))
         };
 
         /// <summary>

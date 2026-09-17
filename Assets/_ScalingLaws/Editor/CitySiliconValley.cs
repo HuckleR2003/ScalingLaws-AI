@@ -837,7 +837,7 @@ namespace ScalingLaws.Editor
             }
 
             // The two left from when the gate was a working waterfront.
-            foreach (var (name, x, z, width) in new[] { ("building-e", 400f, -118f, 30f), ("building-k", 560f, -105f, 34f) })
+            foreach (var (name, x, z, width) in new[] { ("building-e", 400f, -118f, 30f), ("building-k", 575f, -128f, 34f) })
             {
                 var model = AssetDatabase.LoadAssetAtPath<GameObject>(Commercial + name + ".fbx");
                 if (model == null)
