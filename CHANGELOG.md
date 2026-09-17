@@ -64,6 +64,8 @@ move, places to click and a city worth moving around.
 - **All the roads are one network**, with proper junctions and corners, side streets that join the
   estates, and a bridge to the port, which used to stand on the far bank with no road to it.
   Driveways run straight from each garage to its street.
+- **Icons on the map.** The legend, the district panel and the place card show a picture for each
+  category and each kind of place.
 
 ### Added
 
