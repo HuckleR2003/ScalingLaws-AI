@@ -142,6 +142,35 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### Tokenization, on the DATA stage
+
+How the corpus is cut into tokens, which is the unit this whole game is priced in. Four rungs, three
+of them behind research, and a bar of six steps for adapting the corpus to whichever one you are on.
+
+- **The field of squares is the mechanic, not decoration.** The rung decides what the squares are,
+  the money pulls them towards the rung above, and the colours travel for about two and a half
+  seconds when anything changes. With reduced motion on it snaps instead.
+- **Fewer tokens for the same sentence** is less silicon per user. The same figure bills the fleet
+  and is what the audiences who watch the price judge the product by, so it is one fact rather than
+  a bonus with a name.
+- **Everything researched and fully adapted is twenty per cent**, and the ladder cannot reach past
+  it. A fully adapted corpus on a lower rung is still dearer than the next rung untouched: the
+  research does the heavy lifting and the money only helps.
+- **Adapting the corpus is a share of the run's own bill**, paid on the day the run starts, so the
+  decision is the same size in 2031 as in 2022. The first step is free and changes nothing at all.
+- The rung travels with the run, so a lab that learns a better vocabulary next year has not made the
+  model it shipped today cheaper to serve.
+- **The page paid for it.** The corpora for sale are three across instead of one down, and the four
+  knowledge-cutoff paragraphs moved into the card that opens under the cursor.
+
+**Save compatibility.** Save v59. Everything already built keeps the off-the-shelf vocabulary it was
+trained against; the ladder applies to runs started from now on.
+
+**Under the hood.** The eleven `With` helpers on a blueprint carried eleven of its fifteen fields and
+silently dropped the four safety tiers, so renaming a blueprint threw away the protection it had been
+given. Nothing in the game called one on a hardened blueprint, which is the only reason it had never
+cost anybody a fine. Every helper carries every field now and a test walks all of them.
+
 ### Debug mode
 
 A way to look at the game with everything open, without pretending it was played.
@@ -159,7 +188,7 @@ A way to look at the game with everything open, without pretending it was played
 **Save compatibility.** Save v58. A v57 campaign loads and is not a sandbox, which is the only true
 reading: it was played in a game that had no debug mode in it.
 
-1,347 EditMode tests and 62 PlayMode tests.
+1,357 EditMode tests and 62 PlayMode tests.
 
 ---
 
