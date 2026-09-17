@@ -47,7 +47,14 @@ namespace ScalingLaws.UI
         FounderHome = 15,
 
         /// <summary>A bench, a bin, a sign: the small things that make a street look inhabited.</summary>
-        StreetFurniture = 16
+        StreetFurniture = 16,
+
+        /// <summary>
+        /// A pin standing for a <see cref="ScalingLaws.Data.MapSiteDefinition"/> that has no real
+        /// geometry of its own yet. Not a building — a surveyed position waiting for one, or for a
+        /// screen that reads it.
+        /// </summary>
+        SiteMarker = 17
     }
 
     /// <summary>
