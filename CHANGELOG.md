@@ -75,6 +75,16 @@ move, places to click and a city worth moving around.
 - **A denser city.** Four new estates, the Gallery Quarter, a port street that reaches Riverdale, a
   second road into Silicon Valley, and district blocks filled out with corner buildings and a second
   row.
+- **The map opens on your own house and pulls back off it.** Leaving the office starts low over the
+  house in Riverdale and travels out to the overview in about three and a half seconds. Touching any
+  key or the wheel takes the camera back at once.
+- **Nobody walks to the car any more.** The map used to wait for the founder to cross the office;
+  the click opens it.
+- **M opens the city and M closes it again**, and the wheel zooms.
+- **SHOW, at the foot of the legend.** Click it and the camera flies to a place and opens its card;
+  click again for the next one, counting as it goes. It walks whichever category is picked, or the
+  whole map when none is, and goes back to the first place after eight seconds of nothing.
+
 - **A bigger city again.** Media District gains Media Studios and Media Shore, and Portside and
   Valley Heights appear between the port, the valley and the hills. Long estates get a cross street
   through the middle, and the place descriptions read as written for players rather than as
@@ -132,7 +142,7 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
-1,328 EditMode tests and 62 PlayMode tests.
+1,341 EditMode tests and 62 PlayMode tests.
 
 ---
 
