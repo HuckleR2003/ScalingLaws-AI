@@ -188,6 +188,13 @@ namespace ScalingLaws.Data
         LeaseASmallHub = 1001,
         LeaseABigHub = 1002,
 
+        // 11xx is the tokenizer ladder on the Model Improvement track. Its own block for the same
+        // reason 8xx and 10xx have one: a ladder that is read as a ladder is easier to keep whole
+        // than three numbers wedged into an era's range, and 11xx was free.
+        SubwordTokenizer = 1101,
+        ByteLevelTokenizer = 1102,
+        LearnedVocabulary = 1103,
+
         // Era 4, the end game.
         HybridArchitectures = 401,
         RecursiveSelfImprovement = 402,
@@ -352,6 +359,9 @@ namespace ScalingLaws.Data
 
             // The Operations track. The room, not the model.
             ResearchNodeId.LiquidLoops => "node.liquidloops",
+            ResearchNodeId.SubwordTokenizer => "node.subwordtokenizer",
+            ResearchNodeId.ByteLevelTokenizer => "node.bytetokenizer",
+            ResearchNodeId.LearnedVocabulary => "node.learnedvocabulary",
             ResearchNodeId.AirflowModelling => "node.airflow",
             ResearchNodeId.OwnSubstation => "node.substation",
             ResearchNodeId.RackTelemetry => "node.racktelemetry",
@@ -770,6 +780,46 @@ namespace ScalingLaws.Data
             // can train something larger than a single node holds. They are cheap next to the
             // capability line on purpose: what they cost is the calendar, and the calendar is what
             // the player is short of.
+
+            // The tokenizer ladder. Three rungs, and what they buy is the cheapest token in the
+            // game: fewer of them for the same sentence, which is less silicon per user and a
+            // product the audiences that watch the price notice. They are `optionalTechnology`, so
+            // the balance operator skips them the way it skips the architecture ladders and the
+            // economy suite goes on measuring the economy rather than this.
+
+            new(ResearchNodeId.SubwordTokenizer, ResearchEra.Foundations,
+                "Subword tokenization",
+                "The vocabulary the company started with came off a shelf and spends a whole token "
+                + "on words it has never seen. Split them into pieces that recur and the long tail "
+                + "of names, code and other languages stops costing a token each.",
+                GameDate.FromCalendar(2022, 5, 1), costUsd: 1_800_000, durationDays: 60,
+                petaflopDaysRequired: 80,
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.ByteLevelTokenizer, ResearchEra.Scaling,
+                "Byte level merges",
+                "Merge over bytes rather than over characters. Nothing in any language is ever "
+                + "unknown again, and the pieces the corpus actually repeats are the pieces that "
+                + "get their own token.",
+                GameDate.FromCalendar(2023, 2, 1), costUsd: 5_400_000, durationDays: 95,
+                petaflopDaysRequired: 260,
+                requires: new[] { ResearchNodeId.SubwordTokenizer },
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
+
+            new(ResearchNodeId.LearnedVocabulary, ResearchEra.Autonomy,
+                "Learned vocabulary",
+                "Fit the vocabulary to the corpus this company holds instead of to the web at "
+                + "large. It is the same idea one step further, and it only pays for a lab that "
+                + "has a corpus of its own worth fitting to.",
+                GameDate.FromCalendar(2024, 6, 1), costUsd: 11_700_000, durationDays: 140,
+                petaflopDaysRequired: 620,
+                requires: new[] { ResearchNodeId.ByteLevelTokenizer },
+                warning: "The saving is smaller than the step before it. A vocabulary can only be "
+                    + "fitted to a corpus once.",
+                optionalTechnology: true,
+                track: ResearchTrack.ModelImprovement),
 
             new(ResearchNodeId.ShardedOptimizerStates, ResearchEra.Foundations,
                 "Sharded optimizer states",
