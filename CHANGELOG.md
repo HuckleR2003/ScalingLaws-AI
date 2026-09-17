@@ -75,6 +75,10 @@ move, places to click and a city worth moving around.
 - **A denser city.** Four new estates, the Gallery Quarter, a port street that reaches Riverdale, a
   second road into Silicon Valley, and district blocks filled out with corner buildings and a second
   row.
+- **A bigger city again.** Media District gains Media Studios and Media Shore, and Portside and
+  Valley Heights appear between the port, the valley and the hills. Long estates get a cross street
+  through the middle, and the place descriptions read as written for players rather than as
+  developer notes.
 
 ### Added
 
@@ -128,7 +132,7 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
-1,298 EditMode tests and 60 PlayMode tests.
+1,328 EditMode tests and 62 PlayMode tests.
 
 ---
 
