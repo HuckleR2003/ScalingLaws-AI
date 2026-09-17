@@ -101,6 +101,9 @@ namespace ScalingLaws.Editor
         /// </summary>
         private const float CrossStreetGap = 12f;
 
+        /// <summary>A subdivision at least this long gets a cross street through its middle as well as at its ends.</summary>
+        private const float MiddleCrossStreetDepth = 240f;
+
         /// <summary>Where a road meets a junction further off square than this, its approach is bent.</summary>
         private const float SquareWithin = 5f;
 
@@ -916,7 +919,7 @@ namespace ScalingLaws.Editor
 
             for (var rank = 0; rank < suburbs.Count; rank++)
             {
-                foreach (var street in SuburbStreets(suburbs[rank], bulbs))
+                foreach (var street in SuburbStreets(suburbs[rank], bulbs, suburbs.Take(rank)))
                 {
                     street.Rank = rank;
                     ways.Add(street);
@@ -1048,7 +1051,7 @@ namespace ScalingLaws.Editor
         /// the block, so not one of them met anything: a comb with no spine. A cross street just
         /// past each end of the streets joins all of them and the collector into a ladder.
         /// </summary>
-        private static List<Way> SuburbStreets(Suburb suburb, List<Bulb> bulbs)
+        private static List<Way> SuburbStreets(Suburb suburb, List<Bulb> bulbs, IEnumerable<Suburb> bigger)
         {
             var id = suburb.Block.Id;
             var streets = new List<Way>
@@ -1068,6 +1071,21 @@ namespace ScalingLaws.Editor
             {
                 streets.Add(Straight($"{id}_cross{(end < 0f ? "_start" : "_end")}", Kind.Lane, SuburbStreetWidth,
                     suburb.World(end, suburb.Collector), suburb.World(end, suburb.LastStreet)));
+            }
+
+            // A long subdivision gets a third cross street through its middle, so its streets meet at
+            // crossroads rather than running unbroken for a quarter of a kilometre. It takes the plots it
+            // crosses, which the clearing pass takes away with their garages. Not where a bigger
+            // subdivision overlaps this one: that cuts its ring back, and the middle street was left
+            // running out past the cut to a dead end.
+            var middleEnds = new[] { suburb.World(0f, suburb.Collector), suburb.World(0f, suburb.LastStreet) };
+            var overlapped = bigger.Any(other => middleEnds.Any(end => other.Inside(end, CrossStreetGap + 20f))
+                                                 || other.Inside(suburb.Centre, suburb.Block.Width));
+
+            if (suburb.Block.Depth >= MiddleCrossStreetDepth && !overlapped)
+            {
+                streets.Add(Straight($"{id}_cross_middle", Kind.Lane, SuburbStreetWidth,
+                    suburb.World(0f, suburb.Collector), suburb.World(0f, suburb.LastStreet)));
             }
 
             for (var index = 0; index < suburb.Block.CulDeSacs; index++)
@@ -1415,7 +1433,11 @@ namespace ScalingLaws.Editor
             // The Gallery Quarter: west to the west road, east towards downtown, south into Midtown.
             ("gallery_quarter", -140f, 0f, -1f, 0f),
             ("gallery_quarter", 140f, 0f, 1f, 0f),
-            ("gallery_quarter", 0f, -70f, 0f, -1f)
+            ("gallery_quarter", 0f, -70f, 0f, -1f),
+
+            // Portside: west to the Silicon Valley boulevard, east to the south bank road.
+            ("portside", -160f, 0f, -1f, 0f),
+            ("portside", 160f, 0f, 1f, 0f)
         };
 
         private const float LongestAccess = 260f;

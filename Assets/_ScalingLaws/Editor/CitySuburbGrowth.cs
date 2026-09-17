@@ -34,6 +34,9 @@ namespace ScalingLaws.Editor
         /// <summary>The garage model is a villa model at a garage's size, the way the swap left it.</summary>
         private const float GarageScale = 3.83f;
 
+        /// <summary>How far either side of a long subdivision's middle cross street a plot stays empty: the road, its pavement and a garage.</summary>
+        private const float MiddleClearance = 18f;
+
         [MenuItem("Scaling Laws/Densify/Build houses on new subdivisions")]
         public static void Run()
         {
@@ -118,6 +121,13 @@ namespace ScalingLaws.Editor
 
                         for (var lot = 0; lot < count; lot++)
                         {
+                            // The middle cross street of a long subdivision runs through here: no house.
+                            var alongFromMiddle = (lot + 0.5f) * block.LotWidth - block.Depth * 0.5f;
+                            if (block.Depth >= 240f && Mathf.Abs(alongFromMiddle) < MiddleClearance)
+                            {
+                                continue;
+                            }
+
                             var frontage = from + along * ((lot + 0.5f) * block.LotWidth);
                             var kerb = frontage + outward * (StreetWidth * 0.5f + SidewalkWidth);
                             var plot = kerb + outward * block.Setback;
