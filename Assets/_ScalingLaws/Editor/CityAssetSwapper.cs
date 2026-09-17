@@ -135,13 +135,46 @@ namespace ScalingLaws.Editor
                 return;
             }
 
+            var byKind = new Dictionary<CityPropKind, GameObject[]>();
+            foreach (var pair in mapping)
+            {
+                byKind[pair.Key] = new[] { pair.Value };
+            }
+
+            RunSwap(byKind, matchFootprint, keepTheBox);
+        }
+
+        /// <summary>
+        /// The actual swap, shared between the GUI window (one prefab per kind) and
+        /// <see cref="CityAssetSwapperBatch"/> (a short list per kind, so a street of houses is not
+        /// four hundred copies of the same building). Picking within a kind's list is
+        /// <see cref="CityProp.Variant"/> modulo the list length — the same number the grey box
+        /// already used to pick its wall colour, so a real pack inherits whatever variety the
+        /// placeholder had rather than starting from none.
+        /// </summary>
+        internal static void RunSwap(Dictionary<CityPropKind, GameObject[]> byKind,
+            bool matchFootprint, bool keepTheBox)
+        {
+            if (byKind.Count == 0)
+            {
+                Debug.LogWarning("[Scaling Laws] Nothing to swap: no prefab is set against a kind.");
+                return;
+            }
+
             var props = FindObjectsByType<CityProp>(FindObjectsSortMode.None);
             var swapped = new Dictionary<CityPropKind, int>();
             var poorFits = new Dictionary<CityPropKind, int>();
 
             foreach (var prop in props)
             {
-                if (!mapping.TryGetValue(prop.Kind, out var prefab))
+                if (!byKind.TryGetValue(prop.Kind, out var choices) || choices.Length == 0)
+                {
+                    continue;
+                }
+
+                var prefab = choices[((prop.Variant % choices.Length) + choices.Length) % choices.Length];
+
+                if (prefab == null)
                 {
                     continue;
                 }
@@ -234,10 +267,19 @@ namespace ScalingLaws.Editor
 
             // Sit it on the ground.
             //
-            // The surveyed position is the middle of the plot at ground level, and an asset's pivot
-            // is anybody's guess — feet, centre, or the corner of whatever the artist started with.
-            // Measuring the scaled bounds and lifting by however far the bottom is below the plot
-            // is the only way that works for a pack nobody has inspected.
+            // **Not on the box.** The placeholder's own Y is its centre, not the ground — every
+            // grey box in this project is a Unity primitive cube, positioned at
+            // `ground + height * 0.5f` so *it* sits flush (see `CityDressingBuilder`'s House and
+            // Tower placement, both of that shape). Copying that centre straight into a real
+            // asset's target height, the way this used to, lifts every swapped building into the
+            // air by half its placeholder's own height — reported 2026-09-16 as "budynki są w
+            // powietrzu". The real ground under this exact spot is what `CityTerrainBuilder`
+            // already computed when the box was first placed, so ask it again rather than trust a
+            // Y that was never meant to mean "ground".
+            //
+            // An asset's own pivot is still anybody's guess — feet, centre, or the corner of
+            // whatever the artist started with — so the lift itself is still measured off the
+            // scaled bounds, not assumed from the model.
             var scaled = instance.GetComponentsInChildren<Renderer>();
             var sat = scaled[0].bounds;
 
@@ -246,7 +288,10 @@ namespace ScalingLaws.Editor
                 sat.Encapsulate(scaled[index].bounds);
             }
 
-            instance.transform.position += Vector3.up * (instance.transform.position.y - sat.min.y);
+            var groundHeight = CityTerrainBuilder.HeightAt(instance.transform.position.x,
+                instance.transform.position.z);
+
+            instance.transform.position += Vector3.up * (groundHeight - sat.min.y);
 
             return factor;
         }
