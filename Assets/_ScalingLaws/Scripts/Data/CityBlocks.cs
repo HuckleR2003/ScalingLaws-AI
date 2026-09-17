@@ -237,7 +237,8 @@ namespace ScalingLaws.Data
     public static class CityBlocks
     {
         /// <summary>
-        /// Six subdivisions across the two residential districts.
+        /// Ten subdivisions: six across the two residential districts, and four grown later onto
+        /// the south bank, above the river mouth and beside the west road.
         ///
         /// Greendale gets the big lots on the hillside; Riverdale gets four tighter ones, which is
         /// what the author asked for and also what actually happens: the cheap suburb is denser.
@@ -261,7 +262,27 @@ namespace ScalingLaws.Data
                 72f, 20f, 9f, 1, false),
 
             new("riverdale_west", "riverdale", 1400f, 330f, 230f, 240f, -32f,
-                72f, 20f, 9f, 1, false)
+                72f, 20f, 9f, 1, false),
+
+            // The south bank between the port and Riverdale, either side of the port street carried on
+            // east to Riverdale: the street stands in for both collectors, so every street of both
+            // subdivisions tees into it. Both are kept a little smaller than riverdale_west, so where
+            // they come near it they are the ones that give way.
+            new("southbank_riverside", "riverdale", 1044f, 316f, 200f, 240f, 8f,
+                76f, 22f, 10f, 0, false),
+
+            new("southbank_hill", "riverdale", 1137f, 88f, 222f, 200f, 188f,
+                74f, 21f, 9f, 0, false),
+
+            // Above the river mouth, west of the west road, looking over the water to the port. Its
+            // collector runs beside the west road, which takes its place.
+            new("harbour_heights", "media", 281f, 500f, 200f, 220f, 98f,
+                78f, 22f, 10f, 0, false),
+
+            // West End: the flat strip between the media grid's north-west corner and the edge of the
+            // map, beside the west road, which again takes the collector's place.
+            new("media_west_end", "media", 140f, 1100f, 180f, 120f, 95.7f,
+                76f, 22f, 10f, 0, false)
         };
 
         /// <summary>The parts of the city that are on a grid rather than on a lane.</summary>
@@ -292,7 +313,12 @@ namespace ScalingLaws.Data
             // River Works: two streets along the river bank and three across, sheds rather than
             // offices. Square to the bank, so the halls on the water side all back onto it.
             new("riverworks_core", "riverworks", 747f, 639f, 140f, 280f, 24f,
-                140f, 9f, 20f, false)
+                140f, 9f, 20f, false),
+
+            // The Gallery Quarter: small blocks of shops and flats on the empty ground between Midtown
+            // and the gallery's car park, turned like Midtown.
+            new("gallery_quarter", "downtown", 560f, 1100f, 140f, 280f, 8f,
+                70f, 14f, 30f, false)
         };
 
         /// <summary>

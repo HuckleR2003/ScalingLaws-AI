@@ -453,7 +453,13 @@ namespace ScalingLaws.Data
             // And one more below the canopy headquarters, so the southern half of the waterfront is
             // two blocks rather than one long one.
             new("valley_south_cross", RoadClass.Street,
-                new MapPoint(627f, -915f), new MapPoint(827f, -915f))
+                new MapPoint(627f, -915f), new MapPoint(827f, -915f)),
+
+            // From the port street, south across the south bank and down to Silicon Valley's bench
+            // street: the valley's second way in, and the south bank's way out.
+            new("southbank_valley", RoadClass.Street,
+                new MapPoint(960f, 189f), new MapPoint(952f, 60f), new MapPoint(925f, -80f),
+                new MapPoint(875f, -220f), new MapPoint(774f, -350f))
         };
 
         /// <summary>
