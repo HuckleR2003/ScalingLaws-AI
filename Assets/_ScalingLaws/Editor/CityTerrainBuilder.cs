@@ -68,7 +68,7 @@ namespace ScalingLaws.Editor
 
         // ---- the heightmap -------------------------------------------------------------------------
 
-        private static TerrainData BuildTerrainData()
+        internal static TerrainData BuildTerrainData()
         {
             var data = AssetDatabase.LoadAssetAtPath<TerrainData>(TerrainDataPath);
 
@@ -77,6 +77,9 @@ namespace ScalingLaws.Editor
                 data = new TerrainData();
                 AssetDatabase.CreateAsset(data, TerrainDataPath);
             }
+
+            // Surveyed afresh from the scene each build: the network may have been rebuilt since.
+            laid = null;
 
             data.heightmapResolution = CityLayout.HeightmapResolution;
             data.size = new Vector3(CityLayout.Size, CityLayout.Height, CityLayout.Size);
@@ -96,16 +99,24 @@ namespace ScalingLaws.Editor
                     var worldX = x / (float)(resolution - 1) * CityLayout.Size;
                     var worldZ = y / (float)(resolution - 1) * CityLayout.Size;
 
-                    var height = HeightAt(worldX, worldZ);
-                    metres[y, x] = height;
+                    metres[y, x] = SurveyedHeightAt(worldX, worldZ);
+                }
+            }
 
+            ShapeGround(metres);
+
+            for (var y = 0; y < resolution; y++)
+            {
+                for (var x = 0; x < resolution; x++)
+                {
                     // Heightmap is indexed [z, x]. The one thing about Unity terrain that catches
                     // everybody exactly once.
-                    heights[y, x] = Mathf.Clamp01(height / CityLayout.Height);
+                    heights[y, x] = Mathf.Clamp01(metres[y, x] / CityLayout.Height);
                 }
             }
 
             data.SetHeights(0, 0, heights);
+            built = data;
             data.terrainLayers = Layers();
             PaintSplat(data, metres);
 
@@ -114,18 +125,336 @@ namespace ScalingLaws.Editor
         }
 
         /// <summary>
-        /// The land, in the order the ground was actually made.
+        /// The ground as built: the terrain asset's own heightmap, read between its points.
+        ///
+        /// Everything that stands something on the land asks this, so everything stands on exactly
+        /// the ground the player sees — including the slopes <see cref="ShapeGround"/> eased into it,
+        /// which no formula for a single point can know, since each depends on its neighbours.
+        /// Before the asset has been built, the survey itself.
+        /// </summary>
+        public static float HeightAt(float x, float z)
+        {
+            if (built == null)
+            {
+                built = AssetDatabase.LoadAssetAtPath<TerrainData>(TerrainDataPath);
+            }
+
+            return built == null
+                ? SurveyedHeightAt(x, z)
+                : built.GetInterpolatedHeight(Mathf.Clamp01(x / CityLayout.Size), Mathf.Clamp01(z / CityLayout.Size));
+        }
+
+        private static TerrainData built;
+
+        /// <summary>
+        /// The land as surveyed, in the order the ground was actually made.
         ///
         /// Hills, then the pads levelled into them, then the roads cut across, and the water carved
         /// through everything last. **Water wins**, because a district that ends up wet is a layout
         /// mistake to fix by moving the district, not by quietly filling in the sea underneath it.
         /// </summary>
-        public static float HeightAt(float x, float z)
+        private static float SurveyedHeightAt(float x, float z)
         {
             var height = NaturalHeight(x, z);
             height = FlattenDistricts(x, z, height);
+            height = FlattenMalls(x, z, height);
             height = CutRoads(x, z, height);
             return CarveWater(x, z, height);
+        }
+
+        /// <summary>Flat ground kept past the gallery's buildings and car park, and how far past that it eases back.</summary>
+        private const float MallMargin = 20f;
+        private const float MallBlend = 60f;
+
+        /// <summary>
+        /// Levels the ground under the gallery, its car park and the lot's edge, at the height the
+        /// district pads give the gallery's middle.
+        ///
+        /// The gallery stands where Greendale's pad meets the park's, and a car park two hundred and
+        /// fifty metres long cannot follow a hillside: once the cliff between the two pads was eased
+        /// into a slope, the lot ran up it. The complex is laid out along its own axis, car park behind
+        /// the halls, as <see cref="CityDressingBuilder"/> builds it.
+        /// </summary>
+        private static float FlattenMalls(float x, float z, float height)
+        {
+            foreach (var mall in CityBlocks.Malls)
+            {
+                var (inside, reach) = MallFootprint(mall, x, z);
+                if (reach > MallBlend)
+                {
+                    continue;
+                }
+
+                var level = FlattenDistricts(mall.CentreX, mall.CentreZ, NaturalHeight(mall.CentreX, mall.CentreZ));
+                height = inside ? level : Mathf.Lerp(height, level, Mathf.SmoothStep(1f, 0f, reach / MallBlend));
+            }
+
+            return height;
+        }
+
+        /// <summary>Whether a point is on a gallery's levelled ground, and if not, how far outside it.</summary>
+        private static (bool Inside, float Reach) MallFootprint(MallSite mall, float x, float z)
+        {
+            var angle = mall.RotationDegrees * Mathf.Deg2Rad;
+            var along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            var across = new Vector2(-along.y, along.x);
+            var offset = new Vector2(x - mall.CentreX, z - mall.CentreZ);
+
+            // The car park lies behind the halls: from the far end of the lot to the halls' own front.
+            var back = -(mall.BuildingDepth * 0.5f + mall.LotDepth * 0.5f + 8f) - mall.LotWidth * 0.5f - MallMargin;
+            var front = mall.BuildingWidth * 0.5f + MallMargin;
+            var side = Mathf.Max(mall.LotDepth, mall.BuildingDepth) * 0.5f + MallMargin;
+
+            var a = Vector2.Dot(offset, along);
+            var c = Mathf.Abs(Vector2.Dot(offset, across));
+            var outsideAlong = Mathf.Max(0f, Mathf.Max(back - a, a - front));
+            var outsideAcross = Mathf.Max(0f, c - side);
+            var reach = Mathf.Sqrt(outsideAlong * outsideAlong + outsideAcross * outsideAcross);
+
+            return (reach <= 0f, reach);
+        }
+
+        // ---- easing the ground ---------------------------------------------------------------------
+
+        /// <summary>Steepest bank down to the water, and steepest slope left anywhere a step was: about 29 degrees.</summary>
+        private const float SteepestGround = 0.55f;
+
+        /// <summary>Where a bank meets the water: just above it, so the foot of every bank is a strip of beach.</summary>
+        private const float ShoreRise = 0.6f;
+
+        /// <summary>
+        /// Takes the vertical walls out of the surveyed ground.
+        ///
+        /// **The walls were real, and there were two kinds.** Water is carved in one step, so land at
+        /// 96 metres met the bay at 40 across a single two-metre sample: a sheer face along every
+        /// high shore. And two district pads at different heights with less than their blend width
+        /// between them — Greendale at 96 and the park at 50, thirty-seven metres apart — made a
+        /// cliff where the two blends met.
+        ///
+        /// Banks are cut back into a slope no steeper than <see cref="SteepestGround"/>, starting
+        /// just above the waterline, so every shore gets a beach at its foot and rock above; the
+        /// shoreline itself does not move. Any other step is eased from both sides at once, the high
+        /// side lowered and the low side raised, so neither district loses all of its level ground.
+        /// Highways keep their levelled shelf, the gallery its levelled lot and each district the
+        /// floor inside its radius: all of them have things laid on them. The eased ground around
+        /// them is held to the same steepest slope against what they keep, so no wall stands at
+        /// their edge.
+        /// </summary>
+        private static void ShapeGround(float[,] metres)
+        {
+            var size = metres.GetLength(0);
+            var step = CityLayout.Size / (size - 1);
+            var water = new bool[size, size];
+            var shelf = new bool[size, size];
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    water[y, x] = metres[y, x] < CityLayout.SeaLevel;
+                }
+            }
+
+            foreach (var road in RoadCentrelines())
+            {
+                if (road.Class != RoadClass.Highway)
+                {
+                    continue;
+                }
+
+                var reach = road.Width * 0.5f + RoadShoulder;
+
+                for (var index = 0; index < road.Points.Count; index++)
+                {
+                    if (!IsLaid(road, index))
+                    {
+                        continue;
+                    }
+
+                    var point = road.Points[index];
+                    var cells = Mathf.CeilToInt((reach + 8f) / step);
+                    var cx = Mathf.RoundToInt(point.x / step);
+                    var cy = Mathf.RoundToInt(point.y / step);
+
+                    for (var y = Mathf.Max(0, cy - cells); y <= Mathf.Min(size - 1, cy + cells); y++)
+                    {
+                        for (var x = Mathf.Max(0, cx - cells); x <= Mathf.Min(size - 1, cx + cells); x++)
+                        {
+                            // Only the two segments either side of this point: a cell is scanned from every
+                            // point near it, so its true nearest segment is always one of those checked.
+                            for (var segment = Mathf.Max(0, index - 1); segment <= Mathf.Min(road.Points.Count - 2, index); segment++)
+                            {
+                                var a = road.Points[segment];
+                                var b = road.Points[segment + 1];
+                                var closest = Vector2.Lerp(a, b, SegmentT(x * step, y * step, a, b));
+                                shelf[y, x] |= Vector2.Distance(closest, new Vector2(x * step, y * step)) <= reach;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // The gallery's levelled lot keeps its level too: a car park is laid on it.
+            foreach (var mall in CityBlocks.Malls)
+            {
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        shelf[y, x] |= MallFootprint(mall, x * step, y * step).Inside;
+                    }
+                }
+            }
+
+            // Banks: no land higher than the water's edge plus the steepest slope back from it.
+            var bank = new float[size, size];
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    bank[y, x] = water[y, x] ? CityLayout.SeaLevel + ShoreRise : float.PositiveInfinity;
+                }
+            }
+
+            Spread(bank, step * SteepestGround, lower: true, barrier: null);
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    if (!water[y, x])
+                    {
+                        metres[y, x] = Mathf.Min(metres[y, x], bank[y, x]);
+                    }
+                }
+            }
+
+            // A district's own floor keeps its height as well: the town is built on it. Only the margin
+            // past its radius and the blend beyond are free to ease. Without this the Innovation
+            // District, levelled into the foot of a two-hundred-metre ridge, had half its floor
+            // raised fifty metres by the easing below, and its highway left in a trench. Where pads
+            // overlap, the floor belongs to the district whose level the pad took (the first listed,
+            // as in FlattenDistricts), and only inside that district's own radius: the step to the
+            // next district then falls in a margin, which is free to ease.
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    foreach (var district in CityLayout.Districts)
+                    {
+                        var distance = Distance(x * step, y * step, district.CentreX, district.CentreZ);
+
+                        if (distance <= district.Radius + PadMargin)
+                        {
+                            shelf[y, x] |= distance <= district.Radius;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Steps: eased from above and below at once, over land only.
+            var lowered = (float[,])metres.Clone();
+            var raised = (float[,])metres.Clone();
+
+            Spread(lowered, step * SteepestGround, lower: true, barrier: water);
+            Spread(raised, step * SteepestGround, lower: false, barrier: water);
+
+            // The easing averages two slopes and so is not itself bound to the ground that keeps its
+            // height: next to a shelf it can still stand a wall. Every free cell is held within the
+            // steepest slope of the kept ground around it; where two kept heights are too far apart for
+            // any slope between them, it takes the middle.
+            var ceiling = new float[size, size];
+            var floor = new float[size, size];
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var kept = shelf[y, x] && !water[y, x];
+                    ceiling[y, x] = kept ? metres[y, x] : float.PositiveInfinity;
+                    floor[y, x] = kept ? metres[y, x] : float.NegativeInfinity;
+                }
+            }
+
+            Spread(ceiling, step * SteepestGround, lower: true, barrier: water);
+            Spread(floor, step * SteepestGround, lower: false, barrier: water);
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    if (water[y, x] || shelf[y, x])
+                    {
+                        continue;
+                    }
+
+                    var eased = (lowered[y, x] + raised[y, x]) * 0.5f;
+
+                    metres[y, x] = floor[y, x] <= ceiling[y, x]
+                        ? Mathf.Clamp(eased, floor[y, x], ceiling[y, x])
+                        : (floor[y, x] + ceiling[y, x]) * 0.5f;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Every cell becomes the lowest (or highest) of its own value and any other cell's value
+        /// plus (or minus) the slope times the distance between them — the cone a bank slumps to.
+        /// Two sweeps each way over the grid, with diagonal steps, which is close enough to true
+        /// distance for ground. Barrier cells neither change nor pass anything across.
+        /// </summary>
+        private static void Spread(float[,] values, float rise, bool lower, bool[,] barrier)
+        {
+            var size = values.GetLength(0);
+            var diagonal = rise * Mathf.Sqrt(2f);
+
+            float Better(float current, float neighbour, float cost) =>
+                lower ? Mathf.Min(current, neighbour + cost) : Mathf.Max(current, neighbour - cost);
+
+            for (var round = 0; round < 2; round++)
+            {
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        if (barrier != null && barrier[y, x])
+                        {
+                            continue;
+                        }
+
+                        var value = values[y, x];
+
+                        if (x > 0 && (barrier == null || !barrier[y, x - 1])) value = Better(value, values[y, x - 1], rise);
+                        if (y > 0 && (barrier == null || !barrier[y - 1, x])) value = Better(value, values[y - 1, x], rise);
+                        if (y > 0 && x > 0 && (barrier == null || !barrier[y - 1, x - 1])) value = Better(value, values[y - 1, x - 1], diagonal);
+                        if (y > 0 && x < size - 1 && (barrier == null || !barrier[y - 1, x + 1])) value = Better(value, values[y - 1, x + 1], diagonal);
+
+                        values[y, x] = value;
+                    }
+                }
+
+                for (var y = size - 1; y >= 0; y--)
+                {
+                    for (var x = size - 1; x >= 0; x--)
+                    {
+                        if (barrier != null && barrier[y, x])
+                        {
+                            continue;
+                        }
+
+                        var value = values[y, x];
+
+                        if (x < size - 1 && (barrier == null || !barrier[y, x + 1])) value = Better(value, values[y, x + 1], rise);
+                        if (y < size - 1 && (barrier == null || !barrier[y + 1, x])) value = Better(value, values[y + 1, x], rise);
+                        if (y < size - 1 && x < size - 1 && (barrier == null || !barrier[y + 1, x + 1])) value = Better(value, values[y + 1, x + 1], diagonal);
+                        if (y < size - 1 && x > 0 && (barrier == null || !barrier[y + 1, x - 1])) value = Better(value, values[y + 1, x - 1], diagonal);
+
+                        values[y, x] = value;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -190,15 +519,24 @@ namespace ScalingLaws.Editor
         /// The shelf takes the height of its own smoothed centreline, so a highway between districts
         /// at different heights climbs rather than stepping. Without this the roads are painted
         /// stripes floating over hills, which is the fastest way to make a generated city look it.
+        ///
+        /// **Not the suburban loops.** They were never laid as roads — the subdivisions' own streets are
+        /// — and their shelves left rings of bank and ditch through both suburbs, and a bank across the
+        /// corner of the gallery's car park where Greendale's spur ends.
         /// </summary>
         private static float CutRoads(float x, float z, float height)
         {
             foreach (var road in RoadCentrelines())
             {
+                if (road.Class == RoadClass.Lane)
+                {
+                    continue;
+                }
+
                 var half = road.Width * 0.5f + RoadShoulder;
                 var along = NearestOnPolyline(x, z, road.Points, out var distance);
 
-                if (distance > half + RoadBlend)
+                if (distance > half + RoadBlend || !IsLaid(road, along))
                 {
                     continue;
                 }
@@ -342,10 +680,10 @@ namespace ScalingLaws.Editor
                     // Asphalt last and heaviest, so nothing else shows through a road.
                     foreach (var road in RoadCentrelines())
                     {
-                        NearestOnPolyline(worldX, worldZ, road.Points, out var distance);
+                        var along = NearestOnPolyline(worldX, worldZ, road.Points, out var distance);
                         var half = road.Width * 0.5f;
 
-                        if (distance < half + 6f)
+                        if (distance < half + 6f && IsLaid(road, along))
                         {
                             weights[4] = Mathf.Max(weights[4],
                                 Mathf.SmoothStep(3f, 0f, Mathf.Max(0f, distance - half) / 6f));
@@ -549,6 +887,107 @@ namespace ScalingLaws.Editor
         }
 
         private static List<Centreline> centrelines;
+
+        /// <summary>
+        /// Which stretches of each road the road network actually laid, one flag per centreline
+        /// point; empty before there is a network, on the first build, when every road is still to come.
+        ///
+        /// The layout's road runs are the survey, not the result. The network cuts a highway off at
+        /// its last junction when it runs on into a district grid serving nothing, and leaves the
+        /// southern link out altogether. Cut into the hills regardless, those stretches were trenches
+        /// with sheer sides and no road in them: the east road's tail above the Innovation District
+        /// ran twenty metres deep up the hill. A stretch counts as laid where a junction, a dead end
+        /// or a tile running the same way lies within half the road's width and a tile of it.
+        /// </summary>
+        private static Dictionary<Centreline, bool[]> laid;
+
+        private static bool IsLaid(Centreline road, float t) =>
+            IsLaid(road, Mathf.RoundToInt(t * (road.Points.Count - 1)));
+
+        private static bool IsLaid(Centreline road, int index)
+        {
+            laid ??= SurveyLaidRoads();
+            return !laid.TryGetValue(road, out var flags) || flags[Mathf.Clamp(index, 0, flags.Length - 1)];
+        }
+
+        private static Dictionary<Centreline, bool[]> SurveyLaidRoads()
+        {
+            const float cell = 32f;
+
+            var result = new Dictionary<Centreline, bool[]>();
+            var network = GameObject.Find("City")?.transform.Find("RoadNetwork");
+
+            if (network == null)
+            {
+                return result;
+            }
+
+            var tiles = new Dictionary<Vector2Int, List<(Vector2 At, Vector2 Along)>>();
+
+            foreach (var name in new[] { "Streets", "Bridges", "Junctions", "Ends" })
+            {
+                var group = network.Find(name);
+                if (group == null)
+                {
+                    continue;
+                }
+
+                // Junctions and ends join every way at once; a plank only the way it runs.
+                var directed = name is "Streets" or "Bridges";
+
+                foreach (Transform tile in group)
+                {
+                    var at = new Vector2(tile.position.x, tile.position.z);
+                    var along = directed ? new Vector2(tile.forward.x, tile.forward.z).normalized : Vector2.zero;
+                    var key = new Vector2Int(Mathf.FloorToInt(at.x / cell), Mathf.FloorToInt(at.y / cell));
+
+                    if (!tiles.TryGetValue(key, out var bucket))
+                    {
+                        tiles[key] = bucket = new List<(Vector2, Vector2)>();
+                    }
+
+                    bucket.Add((at, along));
+                }
+            }
+
+            if (tiles.Count == 0)
+            {
+                return result;
+            }
+
+            foreach (var road in RoadCentrelines())
+            {
+                var reach = road.Width * 0.5f + 8f;
+                var flags = new bool[road.Points.Count];
+
+                for (var index = 0; index < flags.Length; index++)
+                {
+                    var point = road.Points[index];
+                    var tangent = (road.Points[Mathf.Min(index + 1, flags.Length - 1)] - road.Points[Mathf.Max(index - 1, 0)]).normalized;
+                    var kx = Mathf.FloorToInt(point.x / cell);
+                    var ky = Mathf.FloorToInt(point.y / cell);
+
+                    for (var dy = -1; dy <= 1 && !flags[index]; dy++)
+                    {
+                        for (var dx = -1; dx <= 1 && !flags[index]; dx++)
+                        {
+                            if (!tiles.TryGetValue(new Vector2Int(kx + dx, ky + dy), out var bucket))
+                            {
+                                continue;
+                            }
+
+                            flags[index] = bucket.Exists(tile => Vector2.Distance(tile.At, point) <= reach
+                                                                 && (tile.Along == Vector2.zero
+                                                                     || Mathf.Abs(Vector2.Dot(tile.Along, tangent)) >= 0.85f));
+                        }
+                    }
+                }
+
+                result[road] = flags;
+            }
+
+            return result;
+        }
 
         public static IReadOnlyList<Centreline> RoadCentrelines()
         {
