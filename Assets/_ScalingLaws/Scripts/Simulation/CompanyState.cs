@@ -816,6 +816,18 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public bool FeedbackLetterSent { get; set; }
 
+        /// <summary>
+        /// A campaign started from the creator's DEBUG MODE: every node researched and the bank
+        /// full, for looking at screens rather than for playing.
+        ///
+        /// **Saved rather than derived, and that is the whole point.** Achievements live in
+        /// `PlayerPrefs` so they survive a bankruptcy, which means they are the author's own record
+        /// on his own machine and a sandbox must never write to it. If this flag were held in memory
+        /// only, loading a god save would come back as an ordinary campaign holding half a billion
+        /// dollars and unlock the whole cash ladder on the first tick.
+        /// </summary>
+        public bool IsSandbox { get; set; }
+
         public string CompanyName { get; set; }
         public GameDate Date { get; set; }
         public long CashUsd { get; set; }

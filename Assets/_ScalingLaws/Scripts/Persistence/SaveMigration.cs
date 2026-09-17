@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -158,6 +158,7 @@ namespace ScalingLaws.Persistence
                     54 => UpgradeV54ToV55(current),
                     55 => UpgradeV55ToV56(current),
                     56 => UpgradeV56ToV57(current),
+                    57 => UpgradeV57ToV58(current),
                     _ => current
                 };
             }
@@ -1877,6 +1878,26 @@ namespace ScalingLaws.Persistence
         /// be inventing a breakdown the file never recorded. A ledger of any other width is left
         /// alone and the load drops it, the rule `Ledger.Restore` already follows.
         /// </summary>
+        /// <summary>
+        /// v57 to v58: the sandbox flag.
+        ///
+        /// False for every older file, and that is the only true reading rather than a default: a
+        /// v57 campaign was played in a game where DEBUG MODE did not exist, so it cannot have been
+        /// one, and its achievements were earned by playing.
+        /// </summary>
+        public static SaveData UpgradeV57ToV58(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 58;
+            data.isSandbox = false;
+
+            return data;
+        }
+
         public static SaveData UpgradeV56ToV57(SaveData data)
         {
             if (data == null)

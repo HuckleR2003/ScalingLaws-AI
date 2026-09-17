@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ScalingLaws.Data;
 using System.Collections.Generic;
 
@@ -426,7 +426,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 57;
+        public const int CurrentVersion = 58;
 
         public int version = CurrentVersion;
 
@@ -941,6 +941,9 @@ namespace ScalingLaws.Persistence
         // Three parallel lists rather than a list of structs, because that is the shape every other
         // grid in this file uses and JsonUtility does not serialise a list of nested types the way
         // anybody expects.
+        /// <summary>A campaign started in DEBUG MODE. It earns no achievements; see CompanyState.IsSandbox.</summary>
+        public bool isSandbox;
+
         public bool hasServerRoom;
         public bool serverRoomWasAGift;
         public List<int> hallRacks = new();

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ScalingLaws.Core;
@@ -461,6 +461,7 @@ namespace ScalingLaws.Persistence
                 data.effectModelIndices.Add(effect.ModelIndex);
             }
 
+            data.isSandbox = state.IsSandbox;
             data.hasServerRoom = state.HasServerRoom;
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
             state.Hall.Capture(data.hallRacks, data.hallAccelerators, data.hallFans);
@@ -1197,6 +1198,7 @@ namespace ScalingLaws.Persistence
                 safe.effectKinds, safe.effectStartDays, safe.effectDays,
                 safe.effectMagnitudes, safe.effectModelIndices);
 
+            state.IsSandbox = safe.isSandbox;
             state.HasServerRoom = safe.hasServerRoom;
             state.ServerRoomWasAGift = safe.serverRoomWasAGift;
             state.Hall.Restore(safe.hallRacks, safe.hallAccelerators, safe.hallFans);
