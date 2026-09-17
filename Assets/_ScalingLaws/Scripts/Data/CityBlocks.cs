@@ -241,7 +241,19 @@ namespace ScalingLaws.Data
                 118f, 14f, 32f, false),
 
             new("port_core", "port", 560f, 350f, 320f, 280f, 8f,
-                128f, 9f, 20f, false)
+                128f, 9f, 20f, false),
+
+            // Midtown: the blocks between the media strip and downtown, so the two stop being islands
+            // in a wood. Turned between their two angles, with its long streets drawn on from theirs:
+            // its southern and middle streets continue media's two into downtown's, and its western
+            // street closes the side of the media grid that was open.
+            new("midtown_core", "downtown", 601f, 884f, 232f, 348f, 8f,
+                116f, 16f, 40f, false),
+
+            // River Works: two streets along the river bank and three across, sheds rather than
+            // offices. Square to the bank, so the halls on the water side all back onto it.
+            new("riverworks_core", "riverworks", 747f, 639f, 140f, 280f, 24f,
+                140f, 9f, 20f, false)
         };
 
         /// <summary>

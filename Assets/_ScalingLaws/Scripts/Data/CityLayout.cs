@@ -219,7 +219,7 @@ namespace ScalingLaws.Data
         public const int SplatResolution = 512;
 
         /// <summary>
-        /// The eight districts, placed to the reference.
+        /// The nine districts: eight placed to the reference, and River Works grown between two of them.
         ///
         /// Heights step down towards the water on purpose: the suburbs sit up on the shoulder of
         /// the hills, downtown is on the flat, and the port is barely above the sea.
@@ -272,7 +272,14 @@ namespace ScalingLaws.Data
             new("port", "Waterfront & Port", MapCategory.Compute,
                 560f, 350f, 240f, 44f,
                 "Hardware comes through here and so does everybody attending whatever is on at the "
-                + "expo halls. Land is cheap and the power is already run in.")
+                + "expo halls. Land is cheap and the power is already run in."),
+
+            // The low flat bank between the civic centre and the port, on the city side of the river:
+            // server halls that rent their cooling from the water running past them.
+            new("riverworks", "River Works", MapCategory.Compute,
+                747f, 639f, 150f, 46f,
+                "Server halls on the river bank, two streets deep. The ones on the water pipe the river "
+                + "through their cooling and charge for it; the ones behind are cheaper and run warmer.")
         };
 
         /// <summary>
