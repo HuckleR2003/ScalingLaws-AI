@@ -107,9 +107,9 @@ namespace ScalingLaws.Data
     /// describes. Tax has exactly one site because <see cref="CityLayout.Districts"/> already wrote
     /// the joke: the Civic Center's own blurb names "the tax office" without this file's help.
     ///
-    /// **Three kinds are surveyed and empty.** <see cref="MapSiteKind.PropertyListing"/> and the four
-    /// growth stops in <see cref="MapSiteKind.ServerFacility"/> beyond the basement have no Data
-    /// catalog behind them yet — see <c>Docs/CAMPAIGN_STABILITY_AND_FEATURE_AUDIT.md</c>, "build the
+    /// **Three kinds are surveyed and empty.** <see cref="MapSiteKind.PropertyListing"/>, the growth
+    /// stops in <see cref="MapSiteKind.ServerFacility"/> beyond the basement and the five halls to rent
+    /// in River Works have no Data catalog behind them yet — see <c>Docs/CAMPAIGN_STABILITY_AND_FEATURE_AUDIT.md</c>, "build the
     /// compute and hardware page before another economic system," which this is a map layer on top
     /// of, not a replacement for. <see cref="MapSiteKind.CarDealership"/> is also the site of a
     /// promise the tutorial already makes and the game does not keep: step 49 has Emil offer "cars to
@@ -242,6 +242,43 @@ namespace ScalingLaws.Data
                 + "its own rather than as one of a row. Smaller than first drawn — the wide radius "
                 + "the original number wanted was itself most of what put it in the river. Nothing "
                 + "in the economy reaches this tier yet; it exists so the ladder visibly has a top.",
+                systemExists: false),
+
+            // ---- Server halls to rent: River Works -------------------------------------------------
+            // Gosia's design, 2026-09-16: a small works district on the river bank with halls to
+            // rent rather than a ladder to climb — small, medium and large back from the water, and
+            // two on the bank itself that pipe the river through their cooling and charge more for
+            // it. The cooling is the point of the district, so where each hall stands relative to the
+            // water is part of its entry, not decoration: the two on the water stand on the strip
+            // between the river street and the bank, measured at 48 to 56 metres deep there.
+
+            new("server.riverworks.small", "Rack Room", MapSiteKind.ServerFacility, MapCategory.Compute,
+                "riverworks", new MapPoint(703f, 652f), 20f, 1,
+                "The smallest hall on the river works: one row of racks behind a roller door, rented "
+                + "by the month. Air-cooled, and a street back from the water, which is what keeps the "
+                + "rent low.", systemExists: false),
+
+            new("server.riverworks.medium", "Workshop Hall", MapSiteKind.ServerFacility, MapCategory.Compute,
+                "riverworks", new MapPoint(650f, 623f), 24f, 2,
+                "Room for a proper cluster without a campus's rent. Air-cooled like everything back "
+                + "from the bank, so it runs warmer in summer and the price says so.", systemExists: false),
+
+            new("server.riverworks.riverside", "Riverside Hall", MapSiteKind.ServerFacility, MapCategory.Compute,
+                "riverworks", new MapPoint(758f, 540f), 28f, 3,
+                "On the bank itself, with intake pipes straight into the river. The water does the "
+                + "work chillers do everywhere else, so the rent is higher and the power bill lower — "
+                + "the trade this district exists for.", systemExists: false),
+
+            new("server.riverworks.rivercampus", "River-Cooled Campus", MapSiteKind.ServerFacility, MapCategory.Compute,
+                "riverworks", new MapPoint(700f, 512f), 34f, 4,
+                "The biggest hall on the water: its own pump house, intakes upstream and an outfall "
+                + "below. The dearest lease in River Works, and the one that stays coolest under full "
+                + "load.", systemExists: false),
+
+            new("server.riverworks.inland", "Inland Campus", MapSiteKind.ServerFacility, MapCategory.Compute,
+                "riverworks", new MapPoint(811f, 667f), 34f, 4,
+                "As large as the river campus, but behind the streets instead of on the bank: every "
+                + "watt of heat leaves through chillers on the roof. Cheaper to rent, dearer to run.",
                 systemExists: false),
 
             // ---- Event venues: pointing at ground CityBlocks already surveyed -----------------------
