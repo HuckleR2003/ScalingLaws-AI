@@ -58,6 +58,9 @@ move, places to click and a city worth moving around.
   districts: click one and the camera flies there.
 - **The neighbourhoods have driveways, lanes, garages, bridges and traffic lights**, and the loose
   roof slabs and lamp heads that floated over the new models are gone.
+- **Click a building to read about it.** A card opens with the place's name, what kind of place it
+  is and what it is for, and the building gets a yellow outline. Every place stands in a real
+  building now, road pieces no longer hang over the water, and woods line the main roads.
 
 ### Added
 
