@@ -110,7 +110,7 @@ namespace ScalingLaws.Tests.EditMode
             var clamped = CityMapController.ClampToMap(farPast);
 
             Assert.That(clamped.x, Is.EqualTo(CityLayout.Size + CityMapController.PanMargin));
-            Assert.That(clamped.y, Is.EqualTo(-CityMapController.PanMargin));
+            Assert.That(clamped.y, Is.EqualTo(CityMapController.SouthmostGround - CityMapController.PanMargin));
         }
 
         /// <summary>Straight down, the point under the camera is exactly what the camera looks at.</summary>

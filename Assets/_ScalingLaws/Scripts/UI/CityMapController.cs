@@ -205,10 +205,32 @@ namespace ScalingLaws.UI
         public static float HeightFactor(float cameraHeight) =>
             Mathf.Clamp(cameraHeight / ReferenceHeight, MinHeightFactor, MaxHeightFactor);
 
-        /// <summary>Keeps the camera's ground point within <see cref="PanMargin"/> of the map square.</summary>
+        /// <summary>
+        /// Keeps the camera's ground point within <see cref="PanMargin"/> of the map: the city's square,
+        /// and south of it as far as the southernmost district reaches.
+        /// </summary>
         public static Vector2 ClampToMap(Vector2 groundPosition) => new(
             Mathf.Clamp(groundPosition.x, -PanMargin, CityLayout.Size + PanMargin),
-            Mathf.Clamp(groundPosition.y, -PanMargin, CityLayout.Size + PanMargin));
+            Mathf.Clamp(groundPosition.y, SouthmostGround - PanMargin, CityLayout.Size + PanMargin));
+
+        /// <summary>
+        /// How far south the city is built: zero for the original square, below it once a district
+        /// stands on the tile added south of the port. The land goes on further; there is nothing on it.
+        /// </summary>
+        public static float SouthmostGround
+        {
+            get
+            {
+                var southmost = 0f;
+
+                foreach (var district in CityLayout.Districts)
+                {
+                    southmost = Mathf.Min(southmost, district.CentreZ - district.Radius);
+                }
+
+                return southmost;
+            }
+        }
 
         private static Vector3 FlattenToGround(Vector3 direction)
         {
