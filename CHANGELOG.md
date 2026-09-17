@@ -52,6 +52,7 @@ move, places to click and a city worth moving around.
   click it again and the whole map comes back.
 - **Real buildings instead of grey boxes.** Houses, trees, street lamps and towers are models from
   Kenney's city kits, which are free to use (CC0).
+- **The main roads are laid in road tiles**, junctions included, instead of flat grey strips.
 
 ### Added
 
