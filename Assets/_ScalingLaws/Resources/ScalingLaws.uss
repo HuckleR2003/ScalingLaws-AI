@@ -17329,26 +17329,63 @@
 
 .map-legend {
     position: absolute;
-    width: 236px;
-    padding: 14px 12px;
+    width: 292px;
+    padding: 16px 14px;
     background-color: rgba(8, 10, 14, 0.82);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.08);
     border-radius: 4px;
 }
 
-.map-legend__title {
+.map-legend__header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     margin: 0 0 10px 4px;
-    font-size: 11px;
+}
+
+.map-legend--collapsed .map-legend__header {
+    margin-bottom: 0;
+}
+
+.map-legend__title {
+    margin: 0;
+    font-size: 13px;
     letter-spacing: 2px;
     -unity-font-style: bold;
-    color: rgba(200, 214, 236, 0.65);
+    color: rgba(200, 214, 236, 0.75);
+}
+
+.map-legend__toggle {
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(255, 255, 255, 0);
+    border-width: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.map-legend__toggle:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.map-legend__toggle Label {
+    font-size: 14px;
+    color: rgba(200, 214, 236, 0.75);
+    -unity-text-align: middle-center;
+}
+
+.map-legend__body {
+    flex-direction: column;
 }
 
 .map-legend__row {
     flex-direction: row;
     align-items: center;
-    height: 30px;
+    height: 36px;
     margin: 0;
     padding: 0 8px;
     background-color: rgba(255, 255, 255, 0);
@@ -17376,17 +17413,81 @@
 }
 
 .map-legend__swatch {
-    width: 10px;
-    height: 10px;
-    margin-right: 10px;
+    width: 13px;
+    height: 13px;
+    margin-right: 12px;
     border-radius: 2px;
     flex-shrink: 0;
 }
 
 .map-legend__label {
-    font-size: 11px;
-    letter-spacing: 1px;
+    font-size: 15px;
+    letter-spacing: 0.5px;
     color: rgb(226, 236, 250);
+}
+
+.map-districts {
+    position: absolute;
+    width: 232px;
+    padding: 16px 14px;
+    background-color: rgba(8, 10, 14, 0.82);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+}
+
+.map-districts__title {
+    margin: 0 0 10px 4px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgba(200, 214, 236, 0.75);
+}
+
+.map-districts__tile {
+    flex-direction: row;
+    align-items: center;
+    height: 44px;
+    margin: 0 0 5px 0;
+    padding: 0 10px 0 0;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.map-districts__tile:hover {
+    background-color: rgba(255, 255, 255, 0.11);
+}
+
+.map-districts__accent {
+    width: 6px;
+    height: 100%;
+    margin-right: 12px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    flex-shrink: 0;
+}
+
+.map-districts__label {
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    color: rgb(226, 236, 250);
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+.map-controls-hint {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    padding: 10px 14px;
+    background-color: rgba(8, 10, 14, 0.78);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    color: rgba(226, 236, 250, 0.85);
 }
 
 /* The last era reads differently from the four before it, because it is the only one whose subject
