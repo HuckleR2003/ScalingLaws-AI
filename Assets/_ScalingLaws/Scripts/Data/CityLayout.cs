@@ -483,5 +483,54 @@ namespace ScalingLaws.Data
 
         /// <summary>Where the founder lives. Riverdale, and the scene puts the house on it.</summary>
         public static MapPoint FounderHome { get; } = new(1660f, 470f);
+
+        /// <summary>One district by its id, or null. The ids are what a map site names its home by.</summary>
+        public static DistrictDefinition DistrictById(string id)
+        {
+            foreach (var district in Districts)
+            {
+                if (district.Id == id)
+                {
+                    return district;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// How high the ground is at a point: the district it stands in, or the nearest one when it
+        /// stands between them.
+        ///
+        /// **Levelled heights rather than the terrain itself**, because the districts are what the
+        /// terrain was levelled to and nothing outside the editor can sample a `TerrainData`. It is
+        /// what a camera needs to aim at a place, which is a question about the neighbourhood rather
+        /// than about the exact centimetre of ground under one building.
+        /// </summary>
+        public static float GroundHeightAt(MapPoint at)
+        {
+            DistrictDefinition nearest = null;
+            var shortest = float.MaxValue;
+
+            foreach (var district in Districts)
+            {
+                var dx = district.CentreX - at.X;
+                var dz = district.CentreZ - at.Z;
+                var distance = (float)System.Math.Sqrt(dx * dx + dz * dz);
+
+                if (distance <= district.Radius)
+                {
+                    return district.GroundHeight;
+                }
+
+                if (distance < shortest)
+                {
+                    shortest = distance;
+                    nearest = district;
+                }
+            }
+
+            return nearest?.GroundHeight ?? 0f;
+        }
     }
 }
