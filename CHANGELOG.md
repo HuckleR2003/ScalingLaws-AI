@@ -40,7 +40,9 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### The city map
 
-The Bayview map became a place in the game: reachable from the office, with a camera to move, places to click and a city worth moving around.
+The Bayview map became a place in the game: reachable from the office, with a camera to
+move, places to click and a city worth moving around.
+
 - **The city has places on it.** Bayview carries 26 places a company could one day use: offices,
   houses, server facilities, event venues, power plant stakes, hiring agencies, the tax office and
   car showrooms, each marked with a pin in the colour of its category.
@@ -48,6 +50,8 @@ The Bayview map became a place in the game: reachable from the office, with a ca
   textures. The tool that photographs the map also stopped losing its second picture.
 - **The map has a legend you can filter by.** Click a category and everything else on the map dims;
   click it again and the whole map comes back.
+- **Real buildings instead of grey boxes.** Houses, trees, street lamps and towers are models from
+  Kenney's city kits, which are free to use (CC0).
 
 ### Added
 
