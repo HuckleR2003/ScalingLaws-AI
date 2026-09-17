@@ -880,7 +880,8 @@ namespace ScalingLaws.Simulation
             // nothing can still build exactly the model the game always let it build.
             if (!HasChoiceResearch(TrainingChoiceCatalog.GateFor(blueprint.Precision), out failureReason)
                 || !HasChoiceResearch(TrainingChoiceCatalog.GateFor(blueprint.Deduplication),
-                    out failureReason))
+                    out failureReason)
+                || !HasChoiceResearch(TokenizerCatalog.GateFor(blueprint.Tokenizer), out failureReason))
             {
                 return false;
             }
@@ -950,6 +951,19 @@ namespace ScalingLaws.Simulation
             // accelerators mid-run bought nothing, which is one of the few decisions this game is
             // actually about. Safety is the part no amount of silicon can hurry.
             State.ActiveRun.SetCalendar(SafetyPlan.For(blueprint, State.DeployedModels.Count).ExtraDays);
+
+            // **Adapting the corpus is paid on the day the run starts, in full.** It is work done to
+            // the data before anything trains on it, so spreading it over the run would be a bill
+            // for something that already happened. A share of the run's own compute bill rather than
+            // a price list, so the decision is the same size in 2031 as it is in 2022, and step one
+            // is free and changes nothing.
+            var adaptation = TokenizerCatalog.AdaptationCostUsd(
+                blueprint.TokenizerAdaptation, projection.ComputeCashCostUsd);
+
+            if (adaptation > 0L)
+            {
+                State.PostCash(LedgerLine.DataAcquisition, adaptation);
+            }
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.TrainingStarted,
@@ -4394,7 +4408,9 @@ namespace ScalingLaws.Simulation
                 run.Blueprint.AssaTier,
                 run.Blueprint.RedTeamTier,
                 run.Blueprint.DataProtectionTier,
-                run.Blueprint.SafetyEffort));
+                run.Blueprint.SafetyEffort,
+                run.Blueprint.Tokenizer,
+                run.Blueprint.TokenizerAdaptation));
 
             State.ActiveRun = null;
 
@@ -4521,6 +4537,12 @@ namespace ScalingLaws.Simulation
                 var architecture = State.ResolveArchitecture(model.Architecture);
                 var burden = architecture.InferenceCostMultiplier
                     * model.EfficiencyMultiplier(State.Date)
+
+                    // Fewer tokens for the same sentence is less silicon per user, and the audiences
+                    // that weigh the cost of serving are the ones that notice. The same figure bills
+                    // the fleet below, so this is one fact reaching the market rather than a second
+                    // bonus with its own name.
+                    * model.TokensPerText
                     * State.Skills.ServingCostMultiplier()
                     * ModelTypeCatalog.Get(model.Type).ServingCostMultiplier
                     * MarketShareModel.SizeBurden(model.ActiveParameterCount)
@@ -4938,6 +4960,7 @@ namespace ScalingLaws.Simulation
             var flopPerToken = best.InferenceFlopPerToken
                 * architecture.InferenceCostMultiplier
                 * best.EfficiencyMultiplier(State.Date)
+                * best.TokensPerText
                 * State.Skills.ServingCostMultiplier();
             if (flopPerToken <= 0.0)
             {
