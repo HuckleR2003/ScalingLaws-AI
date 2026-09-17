@@ -76,6 +76,7 @@ namespace ScalingLaws.Editor
             root = new GameObject("City").transform;
 
             BuildSea();
+            CityTerrainBuilder.EnsureSouthTerrain();
             BuildArterialSidewalks();
             BuildBridges();
 
@@ -119,17 +120,28 @@ namespace ScalingLaws.Editor
 
         // ---- water --------------------------------------------------------------------------------
 
+        /// <summary>
+        /// Stretches the sea under both terrain tiles, a fifth of a tile past every edge.
+        ///
+        /// A Unity plane is ten units across, hence the tenths.
+        /// </summary>
+        internal static void SizeSea(Transform sea)
+        {
+            var margin = CityLayout.Size * 0.2f;
+            var width = CityLayout.Size + margin * 2f;
+            var length = CityLayout.Size - CityLayout.SouthEdge + margin * 2f;
+
+            sea.localScale = new Vector3(width / 10f, 1f, length / 10f);
+            sea.position = new Vector3(CityLayout.Size / 2f, CityLayout.SeaLevel,
+                (CityLayout.Size + CityLayout.SouthEdge) / 2f);
+        }
+
         private static void BuildSea()
         {
             var sea = GameObject.CreatePrimitive(PrimitiveType.Plane);
             sea.name = "Sea";
             sea.transform.SetParent(root, true);
-
-            sea.transform.localScale =
-                new Vector3(CityLayout.Size / 10f * 1.2f, 1f, CityLayout.Size / 10f * 1.2f);
-
-            sea.transform.position =
-                new Vector3(CityLayout.Size / 2f, CityLayout.SeaLevel, CityLayout.Size / 2f);
+            SizeSea(sea.transform);
 
             UnityEngine.Object.DestroyImmediate(sea.GetComponent<MeshCollider>());
 

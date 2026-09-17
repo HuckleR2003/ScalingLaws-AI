@@ -50,6 +50,13 @@ namespace ScalingLaws.Editor
                 var target = new Vector3(site.Position.X,
                     CityTerrainBuilder.HeightAt(site.Position.X, site.Position.Z), site.Position.Z);
 
+                // The disc follows the catalog radius whether or not the pin itself moves.
+                var footprint = pin.Find("Footprint");
+                if (footprint != null && site.Radius > 0f)
+                {
+                    footprint.localScale = new Vector3(site.Radius * 2f, footprint.localScale.y, site.Radius * 2f);
+                }
+
                 if (Vector3.Distance(pin.position, target) < 0.5f)
                 {
                     continue;
@@ -61,13 +68,6 @@ namespace ScalingLaws.Editor
                 // The marker and its disc are children placed in world space under the pin, so they
                 // come with it, and keep their height above the ground it now stands on.
                 pin.position = target;
-
-                var footprint = pin.Find("Footprint");
-                if (footprint != null && site.Radius > 0f)
-                {
-                    footprint.localScale = new Vector3(site.Radius * 2f, footprint.localScale.y, site.Radius * 2f);
-                }
-
                 moved++;
             }
 

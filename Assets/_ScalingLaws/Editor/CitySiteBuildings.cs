@@ -121,6 +121,13 @@ namespace ScalingLaws.Editor
 
             foreach (var site in MapSiteCatalog.All)
             {
+                // Silicon Valley's buildings are designed one by one, not picked from a kit; the
+                // district's own builder stands them and makes them clickable.
+                if (site.DistrictId == CitySiliconValley.DistrictId)
+                {
+                    continue;
+                }
+
                 var choice = ChoiceFor(site.Kind, site.Tier);
                 var model = Pick(choice, random);
 
