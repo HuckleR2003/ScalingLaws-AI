@@ -77,10 +77,25 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            Select(pin);
+            Pick(pin);
         }
 
-        private void Select(MapSitePin pin)
+        /// <summary>
+        /// Picks a place from outside, exactly as clicking it does. What the legend's SHOW button
+        /// calls after flying the camera there, so the two ways of arriving at a building leave the
+        /// screen in the same state rather than one of them opening a card and the other not.
+        /// </summary>
+        public void Select(MapSitePin pin)
+        {
+            if (pin == null || pin.Definition == null)
+            {
+                return;
+            }
+
+            Pick(pin);
+        }
+
+        private void Pick(MapSitePin pin)
         {
             selected = pin;
             card?.Show(pin.Definition);

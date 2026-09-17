@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace ScalingLaws.Data
 {
@@ -1825,6 +1825,7 @@ namespace ScalingLaws.Data
             ["map.filters.title"] = "MAP FILTERS",
             ["map.filters.all"] = "ALL",
             ["map.controls.hint"] = "WASD / arrows: move     wheel or = / −: zoom     M or ESC: back to the office",
+            ["map.tour.show"] = "SHOW {0}/{1}",
             ["map.districts.title"] = "DISTRICTS",
             ["map.card.rent"] = "Monthly rent",
             ["map.card.buy"] = "Purchase price",
@@ -5011,6 +5012,7 @@ namespace ScalingLaws.Data
             ["map.filters.title"] = "FILTRY MAPY",
             ["map.filters.all"] = "WSZYSTKO",
             ["map.controls.hint"] = "WASD / strzałki: ruch     kółko albo = / −: zoom     M albo ESC: powrót do biura",
+            ["map.tour.show"] = "POKAŻ {0}/{1}",
             ["map.districts.title"] = "DZIELNICE",
             ["map.card.rent"] = "Czynsz miesięczny",
             ["map.card.buy"] = "Cena zakupu",

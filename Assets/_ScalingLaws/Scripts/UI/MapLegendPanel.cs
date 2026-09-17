@@ -25,9 +25,16 @@ namespace ScalingLaws.UI
         private readonly Dictionary<MapCategory, VisualElement> rows = new();
         private readonly VisualElement body;
         private readonly Label toggleGlyph;
+        private readonly Button tour;
         private bool collapsed;
 
-        public MapLegendPanel(MapFilterState filterState)
+        /// <param name="filterState">Which category is picked out, shared with the pins.</param>
+        /// <param name="showNextPlace">
+        /// Called when the player asks to be shown the next place. Null leaves the button off the
+        /// panel altogether, which is what a test with no camera in it gets: a button that flies
+        /// nothing anywhere is worse than no button.
+        /// </param>
+        public MapLegendPanel(MapFilterState filterState, System.Action showNextPlace = null)
         {
             state = filterState;
             AddToClassList("map-legend");
@@ -81,10 +88,34 @@ namespace ScalingLaws.UI
                 body.Add(row);
             }
 
+            // Under the eight rows, inside the body, so folding the legend away folds this away too.
+            // It belongs to the categories above it: it walks whichever of them is picked.
+            if (showNextPlace != null)
+            {
+                tour = new Button(showNextPlace);
+                tour.AddToClassList("map-legend__tour");
+                body.Add(tour);
+            }
+
             state.Changed += Refresh;
             RegisterCallback<DetachFromPanelEvent>(_ => state.Changed -= Refresh);
 
             Refresh();
+        }
+
+        /// <summary>
+        /// Writes the counter on the SHOW button, e.g. "SHOW 3/22". Does nothing when the panel was
+        /// built without one.
+        /// </summary>
+        public void SetTourCaption(int ordinal, int count)
+        {
+            if (tour == null)
+            {
+                return;
+            }
+
+            tour.text = Loc.T("map.tour.show", ordinal, count);
+            tour.SetEnabled(count > 0);
         }
 
         private void ToggleCollapsed()

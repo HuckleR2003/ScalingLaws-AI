@@ -17436,6 +17436,32 @@
     color: rgb(226, 236, 250);
 }
 
+/* The walk through the places, under the eight rows and separated from them by a hairline: it acts
+   on whichever category is picked rather than being a ninth one. Centred and stated on the button,
+   because a Button given a height does not centre its own label. */
+.map-legend__tour {
+    height: 34px;
+    margin: 10px 0 0 0;
+    padding: 0 8px;
+    border-width: 0;
+    border-top-width: 1px;
+    border-top-color: rgba(226, 236, 250, 0.16);
+    border-radius: 0;
+    background-color: rgba(255, 255, 255, 0);
+    color: rgb(226, 236, 250);
+    font-size: 13px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+}
+
+.map-legend__tour:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.map-legend__tour:disabled {
+    color: rgba(210, 220, 236, 0.38);
+}
+
 .map-districts {
     position: absolute;
     width: 232px;
