@@ -1047,8 +1047,16 @@ namespace ScalingLaws.Editor
             camera.farClipPlane = 7000f;
             camera.fieldOfView = 38f;
 
+            // Roughly half the distance of the original opening shot, along the same look
+            // direction — Gosia's own comparison screenshot after the first real playtest
+            // (2026-09-16) asked for a closer default than a wide establishing shot.
             cameraObject.transform.rotation = Quaternion.Euler(36f, 36f, 0f);
-            cameraObject.transform.position = new Vector3(-1150f, 2050f, -1250f);
+            cameraObject.transform.position = new Vector3(-300f, 1050f, -100f);
+
+            // The player's own hands on this camera once the scene is actually reachable from the
+            // game rather than only from the editor menu — see CityMapController for why panning
+            // reads the camera's own forward/right instead of world axes.
+            cameraObject.AddComponent<CityMapController>();
         }
 
         /// <summary>
