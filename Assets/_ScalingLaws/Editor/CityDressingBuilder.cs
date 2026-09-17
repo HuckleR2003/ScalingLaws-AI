@@ -103,6 +103,7 @@ namespace ScalingLaws.Editor
             }
 
             BuildMarkers();
+            MapSiteBuilder.Build(root, ground);
             BuildLighting();
             BuildCamera();
 
@@ -110,7 +111,8 @@ namespace ScalingLaws.Editor
 
             Debug.Log($"[Scaling Laws] City dressed: {houses} houses on surveyed plots, "
                 + $"{buildings} blocks and towers, {CityBlocks.Malls.Count} gallery, "
-                + $"{CityBlocks.Parks.Count} parks, {CityLayout.Bridges.Count} bridges.");
+                + $"{CityBlocks.Parks.Count} parks, {CityLayout.Bridges.Count} bridges, "
+                + $"{MapSiteCatalog.All.Count} map site pins.");
         }
 
         // ---- water --------------------------------------------------------------------------------
@@ -1049,17 +1051,21 @@ namespace ScalingLaws.Editor
 
         // ---- helpers -------------------------------------------------------------------------------------------
 
-        private static float Range(float low, float high) =>
+        // Internal rather than private: MapSiteBuilder draws the same kind of box-and-pin geometry
+        // for MapSiteCatalog and should not carry a second copy of what a coloured box or a shared
+        // material is. `random` and `ground` stay private; a second builder brings its own.
+
+        internal static float Range(float low, float high) =>
             low + (float)random.NextDouble() * (high - low);
 
-        private static void Describe(GameObject box, CityPropKind kind, Vector3 footprint,
+        internal static void Describe(GameObject box, CityPropKind kind, Vector3 footprint,
             string district, int variant)
         {
             var prop = box.AddComponent<CityProp>();
             prop.Describe(kind, footprint, district, variant);
         }
 
-        private static GameObject Box(Transform parent, string name, Vector3 centre, Vector3 size,
+        internal static GameObject Box(Transform parent, string name, Vector3 centre, Vector3 size,
             Material material)
         {
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -1073,7 +1079,7 @@ namespace ScalingLaws.Editor
             return box;
         }
 
-        private static GameObject Local(Transform parent, string name, Vector3 centre, Vector3 size,
+        internal static GameObject Local(Transform parent, string name, Vector3 centre, Vector3 size,
             Material material)
         {
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -1087,7 +1093,7 @@ namespace ScalingLaws.Editor
             return box;
         }
 
-        private static GameObject Cylinder(Transform parent, string name, Vector2 at,
+        internal static GameObject Cylinder(Transform parent, string name, Vector2 at,
             float diameter, float thickness, Material material)
         {
             var cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -1109,7 +1115,7 @@ namespace ScalingLaws.Editor
         /// The shader is looked up rather than named: a URP shader under the built-in pipeline draws
         /// magenta rather than failing, which is a bug that only shows up on screen.
         /// </summary>
-        private static Material Paint(string name, Color colour, float smoothness = 0.15f,
+        internal static Material Paint(string name, Color colour, float smoothness = 0.15f,
             float metallic = 0f)
         {
             if (Paints.TryGetValue(name, out var cached) && cached != null)
