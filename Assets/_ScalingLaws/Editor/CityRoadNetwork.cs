@@ -131,8 +131,11 @@ namespace ScalingLaws.Editor
         /// <summary>How far the port street runs west of the port's middle, towards the river mouth and the container terminal.</summary>
         private const float PortStreetWest = 255f;
 
-        /// <summary>How far it runs east, up the river past the halls to the warehouses.</summary>
-        private const float PortStreetEast = 300f;
+        /// <summary>
+        /// How far it runs east: up the river past the halls and the warehouses, and on along the south
+        /// bank to meet Riverdale's western collector, so the port is reached from both ends.
+        /// </summary>
+        private const float PortStreetEast = 725f;
 
         /// <summary>How far before and after that corner the turn is spread.</summary>
         private const float PortTurnReach = 52f;
@@ -1407,7 +1410,12 @@ namespace ScalingLaws.Editor
             ("riverworks_core", 0f, 70f, 0f, 1f),
 
             // From the middle of the western cross street, out to the west road.
-            ("riverworks_core", -140f, 0f, -1f, 0f)
+            ("riverworks_core", -140f, 0f, -1f, 0f),
+
+            // The Gallery Quarter: west to the west road, east towards downtown, south into Midtown.
+            ("gallery_quarter", -140f, 0f, -1f, 0f),
+            ("gallery_quarter", 140f, 0f, 1f, 0f),
+            ("gallery_quarter", 0f, -70f, 0f, -1f)
         };
 
         private const float LongestAccess = 260f;

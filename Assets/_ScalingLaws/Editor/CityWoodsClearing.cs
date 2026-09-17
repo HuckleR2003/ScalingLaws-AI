@@ -7,7 +7,7 @@ using UnityEngine;
 namespace ScalingLaws.Editor
 {
     /// <summary>
-    /// Clears the planted woods off every district grid's ground.
+    /// Clears the planted woods off every district grid's ground and every subdivision's plots.
     ///
     /// <see cref="CityAtmosphere"/> planted woods wherever the land between districts was empty, and
     /// Midtown and River Works were grown later onto exactly that land. A block is not a forest:
@@ -47,6 +47,27 @@ namespace ScalingLaws.Editor
 
                     if (Mathf.Abs(Vector2.Dot(offset, across)) <= grid.Width * 0.5f + Margin
                         && Mathf.Abs(Vector2.Dot(offset, along)) <= grid.Depth * 0.5f + Margin)
+                    {
+                        doomed.Add(tree.gameObject);
+                        break;
+                    }
+                }
+
+                // And off every subdivision's plots: a suburb grown onto a wood has to clear it too.
+                foreach (var block in CityBlocks.Residential)
+                {
+                    if (doomed.Count > 0 && doomed[^1] == tree.gameObject)
+                    {
+                        break;
+                    }
+
+                    var angle = block.RotationDegrees * Mathf.Deg2Rad;
+                    var along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                    var across = new Vector2(-along.y, along.x);
+                    var offset = at - new Vector2(block.CentreX, block.CentreZ);
+
+                    if (Mathf.Abs(Vector2.Dot(offset, across)) <= block.Width * 0.5f + Margin
+                        && Mathf.Abs(Vector2.Dot(offset, along)) <= block.Depth * 0.5f + Margin)
                     {
                         doomed.Add(tree.gameObject);
                         break;
