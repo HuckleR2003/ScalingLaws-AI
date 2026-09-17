@@ -66,6 +66,9 @@ move, places to click and a city worth moving around.
   Driveways run straight from each garage to its street.
 - **Icons on the map.** The legend, the district panel and the place card show a picture for each
   category and each kind of place.
+- **No more sheer cliffs.** Slopes are gentler and the shoreline has a beach. Downtown gains
+  Midtown, the new River Works district has five server facilities, two of them cooled by the river,
+  and the port is longer, with a container terminal and warehouses.
 
 ### Added
 
