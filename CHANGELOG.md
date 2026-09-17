@@ -53,6 +53,9 @@ move, places to click and a city worth moving around.
 - **Real buildings instead of grey boxes.** Houses, trees, street lamps and towers are models from
   Kenney's city kits, which are free to use (CC0).
 - **The main roads are laid in road tiles**, junctions included, instead of flat grey strips.
+- **The MAP button in the office opens the city.** WASD or the arrows move the camera, = and - zoom,
+  and ESC goes back to the office where you left it. The legend folds away, and a panel lists the
+  districts: click one and the camera flies there.
 
 ### Added
 
