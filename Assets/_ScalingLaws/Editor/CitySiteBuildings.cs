@@ -151,11 +151,13 @@ namespace ScalingLaws.Editor
                 instance.transform.position = at;
 
                 // Turned to face the middle of its own district, so a row of sites does not all
-                // stare the same way regardless of where the streets are.
-                var district = DistrictCentre(site.DistrictId);
-                var facing = district - new Vector2(site.Position.X, site.Position.Z);
+                // stare the same way regardless of where the streets are — and, where the district
+                // has a street grid, squared up to it, so a hall stands parallel to its street
+                // instead of across the corner of its block.
+                var position = new Vector2(site.Position.X, site.Position.Z);
+                var facing = SquareToStreets(site.DistrictId, position, DistrictCentre(site.DistrictId) - position);
 
-                instance.transform.rotation = facing.sqrMagnitude > 1f
+                instance.transform.rotation = facing.sqrMagnitude > 0.0001f
                     ? Quaternion.LookRotation(new Vector3(facing.x, 0f, facing.y), Vector3.up)
                     : Quaternion.identity;
 
@@ -172,7 +174,10 @@ namespace ScalingLaws.Editor
                 var box = instance.AddComponent<BoxCollider>();
                 var bounds = WorldBounds(instance);
                 box.center = instance.transform.InverseTransformPoint(bounds.center);
-                box.size = instance.transform.InverseTransformVector(bounds.size);
+                // Turned into the building's own frame a size can come out negative on an axis, which
+                // a collider refuses with a warning on every load; a size is a size either way round.
+                var size3 = instance.transform.InverseTransformVector(bounds.size);
+                box.size = new Vector3(Mathf.Abs(size3.x), Mathf.Abs(size3.y), Mathf.Abs(size3.z));
 
                 instance.AddComponent<MapSitePin>().Describe(site.Category, site.Kind, site.Id);
 
@@ -256,6 +261,69 @@ namespace ScalingLaws.Editor
             }
 
             return doomed.Count;
+        }
+
+        /// <summary>
+        /// A facing snapped to the nearest of the four directions of the street grid the site stands
+        /// in: the district's grid whose rectangle holds it, or failing that its nearest. Left as it
+        /// is in a district with no grid.
+        /// </summary>
+        private static Vector2 SquareToStreets(string districtId, Vector2 position, Vector2 facing)
+        {
+            GridBlock best = null;
+            var bestScore = float.MaxValue;
+
+            foreach (var grid in CityBlocks.Grids)
+            {
+                if (grid.DistrictId != districtId)
+                {
+                    continue;
+                }
+
+                var angle = grid.RotationDegrees * Mathf.Deg2Rad;
+                var along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                var across = new Vector2(-along.y, along.x);
+                var offset = position - new Vector2(grid.CentreX, grid.CentreZ);
+                var inside = Mathf.Abs(Vector2.Dot(offset, across)) <= grid.Width * 0.5f + 40f
+                             && Mathf.Abs(Vector2.Dot(offset, along)) <= grid.Depth * 0.5f + 40f;
+                var score = (inside ? 0f : 10000f) + offset.magnitude;
+
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = grid;
+                }
+            }
+
+            if (best == null || facing.sqrMagnitude < 1f)
+            {
+                return facing;
+            }
+
+            var radians = best.RotationDegrees * Mathf.Deg2Rad;
+            var axes = new[]
+            {
+                new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)),
+                new Vector2(-Mathf.Sin(radians), Mathf.Cos(radians))
+            };
+
+            var chosen = facing;
+            var closest = float.MinValue;
+
+            foreach (var axis in axes)
+            {
+                foreach (var sign in new[] { 1f, -1f })
+                {
+                    var dot = Vector2.Dot(facing.normalized, axis * sign);
+                    if (dot > closest)
+                    {
+                        closest = dot;
+                        chosen = axis * sign;
+                    }
+                }
+            }
+
+            return chosen;
         }
 
         private static Vector2 DistrictCentre(string districtId)

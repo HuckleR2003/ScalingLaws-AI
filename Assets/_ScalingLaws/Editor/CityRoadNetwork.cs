@@ -108,6 +108,12 @@ namespace ScalingLaws.Editor
         private const float AlongsideDistance = 24f;
         private const float AlongsideAngle = 32f;
 
+        /// <summary>Shorter than this, running alongside is a junction or a near miss rather than a duplicate street.</summary>
+        private const float ShortestAlongside = 50f;
+
+        /// <summary>Furthest a district street that stops short of another road is carried on to meet it.</summary>
+        private const float LongestReach = 60f;
+
         private const string PortGrid = "port_core";
 
         /// <summary>
@@ -122,7 +128,11 @@ namespace ScalingLaws.Editor
         /// The grid's own waterfront street ran underneath them.
         /// </summary>
         private const float PortStreetAcross = -215f;
-        private const float PortStreetReach = 170f;
+        /// <summary>How far the port street runs west of the port's middle, towards the river mouth and the container terminal.</summary>
+        private const float PortStreetWest = 255f;
+
+        /// <summary>How far it runs east, up the river past the halls to the warehouses.</summary>
+        private const float PortStreetEast = 300f;
 
         /// <summary>How far before and after that corner the turn is spread.</summary>
         private const float PortTurnReach = 52f;
@@ -218,6 +228,10 @@ namespace ScalingLaws.Editor
             KeepHighwaysAboveGround(ways, report);
             Probe("before junctions", ways, null, report);
 
+            // Before any pruning: a street that stops just short of another road is a dead end only
+            // until it is carried on, and pruning would cut it back first.
+            ReachAcross(ways, FindJunctions(ways), report);
+
             var junctions = Settle(ways, buildings, report);
 
             if (KeepJunctionsOffSteepGround(junctions, report))
@@ -286,6 +300,112 @@ namespace ScalingLaws.Editor
 
             EditorSceneManager.SaveScene(scene);
             report.Flush("[Network]");
+        }
+
+        /// <summary>
+        /// Carries a district street that stops just short of another road on to meet it.
+        ///
+        /// Two grids laid out separately end where their own rectangles end, and where they come
+        /// close the street of one stops tens of metres short of the other's — River Works' cross
+        /// street ends thirty-six metres below downtown's southern street, a gap no driver would
+        /// leave. Only a street's own end is carried on, never an end the water or a bigger road cut:
+        /// those stop where they stop for a reason. It must meet the other road at a real angle, not
+        /// run along beside it, and cross no water on the way.
+        /// </summary>
+        private static bool ReachAcross(List<Way> ways, List<Junction> junctions, Report report)
+        {
+            var index = new SegmentIndex(ways);
+            var joined = junctions.Where(j => j.Shape != Shape.None).SelectMany(j => j.Touches).ToList();
+            var square = Mathf.Cos(50f * Mathf.Deg2Rad);
+            var reached = false;
+
+            foreach (var way in ways.Where(w => w.Kind == Kind.Grid).ToList())
+            {
+                foreach (var atEnd in new[] { false, true })
+                {
+                    var s = atEnd ? way.Length : 0f;
+                    var range = way.RangeAt(s, 0.5f);
+
+                    if (range == null || (atEnd ? range.To < way.Length - 0.5f : range.From > 0.5f)
+                        || joined.Any(t => t.Way == way && Mathf.Abs(t.S - s) < 3f))
+                    {
+                        continue;
+                    }
+
+                    var start = way.PointAt(s);
+                    var outward = atEnd ? way.TangentAt(s) : -way.TangentAt(s);
+                    var finish = start + outward * LongestReach;
+                    var nearest = float.MaxValue;
+
+                    foreach (var other in index.Near(start + outward * (LongestReach * 0.5f), LongestReach))
+                    {
+                        if (other == way)
+                        {
+                            continue;
+                        }
+
+                        for (var segment = 0; segment < other.Points.Count - 1; segment++)
+                        {
+                            var a = other.Points[segment];
+                            var b = other.Points[segment + 1];
+
+                            if (!Intersect(start, finish, a, b, out _, out var t, out var u))
+                            {
+                                continue;
+                            }
+
+                            var os = other.Arc[segment] + u * (other.Arc[segment + 1] - other.Arc[segment]);
+                            var distance = t * LongestReach;
+
+                            if (distance > 0.5f && distance < nearest
+                                && other.RangeAt(os, 0f) != null && !other.OnCrossing(os, 10f)
+                                && Mathf.Abs(Vector2.Dot(outward, (b - a).normalized)) <= square)
+                            {
+                                nearest = distance;
+                            }
+                        }
+                    }
+
+                    if (nearest == float.MaxValue)
+                    {
+                        continue;
+                    }
+
+                    var dry = true;
+                    for (var d = 0f; d <= nearest && dry; d += 4f)
+                    {
+                        dry = IsDry(start + outward * d);
+                    }
+
+                    if (!dry)
+                    {
+                        continue;
+                    }
+
+                    var steps = Mathf.Max(1, Mathf.CeilToInt(nearest / Densify));
+                    var points = new List<Vector2>();
+                    var heights = new List<float>();
+
+                    for (var step = 0; step <= steps; step++)
+                    {
+                        var point = start + outward * (nearest * step / steps);
+                        points.Add(point);
+                        heights.Add(CityTerrainBuilder.HeightAt(point.x, point.y));
+                    }
+
+                    if (!atEnd)
+                    {
+                        points.Reverse();
+                        heights.Reverse();
+                    }
+
+                    way.Replace(s, s, points, heights);
+                    reached = true;
+                    report.Line($"  {way.Id}: carried {nearest:0} m on from ({start.x:0}, {start.y:0}) to meet the road ahead");
+                }
+            }
+
+            return reached;
         }
 
         /// <summary>
@@ -816,6 +936,7 @@ namespace ScalingLaws.Editor
 
             GiveWayToBiggerSubdivisions(ways, suburbs, report);
             DropStreetsAlongside(ways, report);
+            AddAccessStreets(ways, report);
 
             return ways;
         }
@@ -1225,8 +1346,12 @@ namespace ScalingLaws.Editor
 
                         var (os, distance) = other.Project(point);
 
+                        // Beside the other road, not beyond its end: a street drawn on from the end of
+                        // another, as Midtown's are from downtown's, continues it rather than doubling it.
+                        var otherRange = other.RangeAt(os, 0f);
+
                         if (distance <= (way.Width + other.Width) * 0.5f + AlongsideDistance
-                            && other.RangeAt(os, 0f) != null
+                            && otherRange != null && os > otherRange.From + 3f && os < otherRange.To - 3f
                             && Mathf.Abs(Vector2.Dot(tangent, other.TangentAt(os))) >= parallel)
                         {
                             alongside = true;
@@ -1251,9 +1376,10 @@ namespace ScalingLaws.Editor
 
                 foreach (var (from, to) in marked)
                 {
-                    // A street meeting a highway at a shallow angle runs beside it only briefly;
-                    // that is a junction to be squared, not a second road.
-                    if (to - from < 20f)
+                    // A street meeting another road at a shallow angle runs beside it only briefly,
+                    // and two grids that merely come close at a corner do too: a junction or a near
+                    // miss, not a second road.
+                    if (to - from < ShortestAlongside)
                     {
                         continue;
                     }
@@ -1261,6 +1387,74 @@ namespace ScalingLaws.Editor
                     CutOut(way, Mathf.Max(0f, from - Densify), Mathf.Min(way.Length, to + Densify));
                     report.Line($"  {way.Id}: {to - from:0} m running alongside a bigger road, dropped");
                 }
+            }
+        }
+
+        // ---- access streets ------------------------------------------------------------------------
+
+        /// <summary>
+        /// Streets joining a district grown later to the roads already around it.
+        ///
+        /// A grid is a closed ring of its own streets; one laid onto empty land touches nothing, and
+        /// River Works came out as an island a hundred metres from the west road and eighty below
+        /// Midtown. Each access leaves a point on one of the grid's streets, given in the grid's own
+        /// frame (along its long streets, across them), and runs straight on in the direction given
+        /// until it meets another road.
+        /// </summary>
+        private static readonly (string Grid, float Along, float Across, float TowardsAlong, float TowardsAcross)[] Accesses =
+        {
+            // The middle cross street, on past the inland street and up into Midtown.
+            ("riverworks_core", 0f, 70f, 0f, 1f),
+
+            // From the middle of the western cross street, out to the west road.
+            ("riverworks_core", -140f, 0f, -1f, 0f)
+        };
+
+        private const float LongestAccess = 260f;
+
+        private static void AddAccessStreets(List<Way> ways, Report report)
+        {
+            foreach (var (gridId, along, across, towardsAlong, towardsAcross) in Accesses)
+            {
+                var grid = CityBlocks.Grids.FirstOrDefault(g => g.Id == gridId);
+                if (grid == null)
+                {
+                    continue;
+                }
+
+                var (centre, alongAxis, acrossAxis) = Frame(grid);
+                var start = centre + alongAxis * along + acrossAxis * across;
+                var direction = (alongAxis * towardsAlong + acrossAxis * towardsAcross).normalized;
+                var finish = start + direction * LongestAccess;
+                var nearest = float.MaxValue;
+
+                foreach (var other in ways.Where(w => w.Group != gridId))
+                {
+                    for (var segment = 0; segment < other.Points.Count - 1; segment++)
+                    {
+                        if (Intersect(start, finish, other.Points[segment], other.Points[segment + 1], out _, out var t, out _)
+                            && t * LongestAccess > 1f)
+                        {
+                            nearest = Mathf.Min(nearest, t * LongestAccess);
+                        }
+                    }
+                }
+
+                if (nearest == float.MaxValue)
+                {
+                    report.Line($"  WARNING: the access from {gridId} at ({start.x:0}, {start.y:0}) meets no road within {LongestAccess:0} m");
+                    continue;
+                }
+
+                var access = Straight($"{gridId}_access_{Accesses.ToList().IndexOf((gridId, along, across, towardsAlong, towardsAcross))}",
+                    Kind.Grid, GridStreetWidth, start, start + direction * nearest);
+
+                access.Group = gridId;
+                access.GroupArea = grid.Width * grid.Depth;
+                access.Ranges.Add(new Span { From = 0f, To = access.Length });
+                ways.Add(access);
+
+                report.Line($"  {access.Id}: {nearest:0} m from ({start.x:0}, {start.y:0}) to the road it meets");
             }
         }
 
@@ -1362,7 +1556,7 @@ namespace ScalingLaws.Editor
             var (centre, along, across) = Frame(port);
             var line = centre + across * PortStreetAcross;
             var street = Straight($"{port.Id}_street", Kind.Grid, GridStreetWidth,
-                line - along * PortStreetReach, line + along * PortStreetReach);
+                line - along * PortStreetWest, line + along * PortStreetEast);
 
             street.Group = port.Id;
             street.GroupArea = port.Width * port.Depth;
@@ -2532,6 +2726,23 @@ namespace ScalingLaws.Editor
                 var ground = CityTerrainBuilder.HeightAt(point.x, point.y);
                 var elevated = way.OnCrossing(s, 0.01f) && height - ground > BridgeElevation;
 
+                // A tile is a straight plank between its two ends. Where the ground bends upward
+                // under it — the edge of a levelled pad — the grass rises through the middle of the
+                // plank and reads as a hole in the road, so the plank is lifted clear of it.
+                if (!elevated)
+                {
+                    var bulge = 0f;
+
+                    for (var quarter = 1; quarter <= 3; quarter++)
+                    {
+                        var q = quarter * 0.25f;
+                        var under = way.PointAt(s + step * (q - 0.5f));
+                        bulge = Mathf.Max(bulge, CityTerrainBuilder.HeightAt(under.x, under.y) - Mathf.Lerp(h0, h1, q));
+                    }
+
+                    height += bulge;
+                }
+
                 // On a curve, square-ended tiles open a wedge on the outside of the bend between one
                 // and the next. Each is lengthened by just enough to close it; the overlap on the
                 // inside is the same surface lying on itself, and does not show.
@@ -3153,7 +3364,7 @@ namespace ScalingLaws.Editor
         }
 
         /// <summary>The largest all-true rectangle in a grid, as its first row and column and its size.</summary>
-        private static (int Top, int Left, int Height, int Width) LargestClearRectangle(bool[,] free)
+        internal static (int Top, int Left, int Height, int Width) LargestClearRectangle(bool[,] free)
         {
             var rows = free.GetLength(0);
             var columns = free.GetLength(1);
