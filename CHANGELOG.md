@@ -142,7 +142,24 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
-1,341 EditMode tests and 62 PlayMode tests.
+### Debug mode
+
+A way to look at the game with everything open, without pretending it was played.
+
+- **DEBUG MODE in the creator**, and it is hidden until you ask for it: there is a switch on the
+  settings sheet, and only then does the button appear. A campaign started with it has every
+  research node finished and $500,000,000 in the bank, and the creator turns maroon so nobody is in
+  any doubt about what they are starting.
+- **It earns no achievements, ever.** Achievements are kept outside the save so they survive a
+  bankruptcy, which also means they cannot be taken back, so a debug campaign is marked as one for
+  good and the record ignores it. Every screen of it carries a SANDBOX mark.
+- The research it hands over is **the same handover a finished node does**, so the corpora and the
+  architecture families actually arrive rather than the tree merely reporting them as held.
+
+**Save compatibility.** Save v58. A v57 campaign loads and is not a sandbox, which is the only true
+reading: it was played in a game that had no debug mode in it.
+
+1,347 EditMode tests and 62 PlayMode tests.
 
 ---
 
