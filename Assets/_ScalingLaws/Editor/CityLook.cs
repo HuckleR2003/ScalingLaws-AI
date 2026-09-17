@@ -52,6 +52,61 @@ namespace ScalingLaws.Editor
         [MenuItem("Scaling Laws/Look at/The gallery")]
         public static void Gallery() => ShootAt(new Vector2(790f, 1300f), 170f, "gallery");
 
+        /// <summary>
+        /// Every district straight from above, north up, one file each (`plan_&lt;district&gt;.png`).
+        ///
+        /// The angled views are for judging how a place looks; these are for checking whether a road
+        /// meets the road it should, which a tilt hides behind the buildings.
+        /// </summary>
+        [MenuItem("Scaling Laws/Look at/Every district from above")]
+        public static void Plans()
+        {
+            Directory.CreateDirectory("CityProof~");
+
+            var scene = EditorSceneManager.OpenScene("Assets/_ScalingLaws/Scenes/City.unity",
+                OpenSceneMode.Single);
+
+            if (!scene.IsValid())
+            {
+                Debug.LogError("[Look] No City.unity.");
+                return;
+            }
+
+            // From the command line, `-districts port,civic` picks some: a batchmode process renders a
+            // handful of these and then dies without a word, so a long list is split across runs.
+            var args = System.Environment.GetCommandLineArgs();
+            var at = System.Array.IndexOf(args, "-districts");
+            var wanted = at >= 0 && at + 1 < args.Length ? args[at + 1].Split(',') : null;
+
+            // `-spots x:z:size;x:z:size` photographs exact places instead, for a close look at one junction.
+            var spots = System.Array.IndexOf(args, "-spots");
+            if (spots >= 0 && spots + 1 < args.Length)
+            {
+                foreach (var spot in args[spots + 1].Split(';'))
+                {
+                    var parts = spot.Split(':');
+                    var x = float.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture);
+                    var z = float.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
+                    var size = float.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture);
+
+                    Photograph(new Vector2(x, z), size, $"spot_{x:0}_{z:0}", Quaternion.Euler(90f, 0f, 0f), 1000, 1000);
+                }
+
+                return;
+            }
+
+            foreach (var district in CityLayout.Districts)
+            {
+                if (wanted != null && System.Array.IndexOf(wanted, district.Id) < 0)
+                {
+                    continue;
+                }
+
+                Photograph(new Vector2(district.CentreX, district.CentreZ), 260f, $"plan_{district.Id}",
+                    Quaternion.Euler(90f, 0f, 0f), 1200, 1200);
+            }
+        }
+
         private static void Shoot(string districtId, float size)
         {
             foreach (var district in CityLayout.Districts)
@@ -79,6 +134,11 @@ namespace ScalingLaws.Editor
                 return;
             }
 
+            Photograph(where, size, $"look_{file}", Quaternion.Euler(38f, 40f, 0f), 1500, 1000);
+        }
+
+        private static void Photograph(Vector2 where, float size, string file, Quaternion aim, int width, int height)
+        {
             var camera = Object.FindFirstObjectByType<Camera>();
             if (camera == null)
             {
@@ -91,10 +151,10 @@ namespace ScalingLaws.Editor
             camera.orthographic = true;
             camera.orthographicSize = size;
             camera.farClipPlane = 8000f;
-            camera.transform.rotation = Quaternion.Euler(38f, 40f, 0f);
+            camera.transform.rotation = aim;
             camera.transform.position = target - camera.transform.forward * 1500f;
 
-            var rt = new RenderTexture(1500, 1000, 24) { antiAliasing = 4 };
+            var rt = new RenderTexture(width, height, 24) { antiAliasing = 4 };
             camera.targetTexture = rt;
             camera.Render();
             GL.Flush();
@@ -104,8 +164,13 @@ namespace ScalingLaws.Editor
             shot.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
             shot.Apply();
 
-            var path = Path.Combine("CityProof~", $"look_{file}.png");
+            var path = Path.Combine("CityProof~", $"{file}.png");
             File.WriteAllBytes(path, shot.EncodeToPNG());
+
+            camera.targetTexture = null;
+            RenderTexture.active = null;
+            Object.DestroyImmediate(shot);
+            rt.Release();
 
             Debug.Log($"[Look] Wrote {path}");
         }
