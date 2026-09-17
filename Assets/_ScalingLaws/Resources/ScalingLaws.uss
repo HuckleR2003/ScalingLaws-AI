@@ -7568,7 +7568,15 @@
     margin-bottom: 5px;
 }
 
+.corpus-market {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
 .corpus-row {
+    width: 32.5%;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -20536,4 +20544,134 @@
 /* The safety band under an era, blue like the safety tiles in the side column. */
 .deepening__heading--safety {
     color: rgb(150, 196, 255);
+}
+
+/* ---- the tokenizer field on the DATA stage ---------------------------------------------------
+   The picker, the field of squares and the six steps of adaptation under it. Sizes are deliberately
+   tight: these pages are laid out to fit one window with nothing spare, so this took its height from
+   its own margins rather than from the page. */
+
+.tok-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+}
+
+.tok-arrow {
+    width: 34px;
+    height: 38px;
+    margin: 0 4px 0 0;
+    padding: 0;
+    font-size: 13px;
+    color: rgb(230, 238, 248);
+    background-color: rgb(24, 29, 37);
+    border-width: 1px;
+    border-color: rgb(57, 65, 77);
+    border-radius: 5px;
+    -unity-text-align: middle-center;
+}
+
+.tok-arrow:hover:enabled {
+    border-color: rgb(111, 141, 179);
+}
+
+.tok-arrow:disabled {
+    opacity: 0.35;
+}
+
+.tok-slot {
+    width: 230px;
+    margin-right: 4px;
+    padding: 4px 10px;
+    background-color: rgb(18, 22, 28);
+    border-width: 1px;
+    border-color: rgb(38, 45, 54);
+    border-radius: 5px;
+}
+
+.tok-name {
+    font-size: 14px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+}
+
+.tok-lock {
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    color: rgb(127, 139, 155);
+    -unity-text-align: middle-center;
+}
+
+/* The field itself. One point-filtered texture stretched over the panel's width. */
+.tok-field {
+    height: 86px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: stretch-to-fill;
+    background-color: rgb(10, 12, 16);
+    border-width: 1px;
+    border-color: rgb(35, 40, 47);
+    border-radius: 3px;
+}
+
+.tok-barhead {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 7px;
+    margin-bottom: 4px;
+}
+
+.tok-barlabel {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: rgb(139, 150, 165);
+}
+
+.tok-spent {
+    font-size: 11px;
+    color: rgb(207, 224, 242);
+}
+
+.tok-bar {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.tok-step {
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 34px;
+    margin: 0 2px 0 0;
+    padding: 0 2px;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    color: rgb(127, 139, 155);
+    background-color: rgb(16, 20, 25);
+    border-width: 1px;
+    border-color: rgb(36, 43, 52);
+    border-radius: 4px;
+    -unity-text-align: middle-center;
+}
+
+.tok-step:hover {
+    border-color: rgb(70, 86, 106);
+    color: rgb(207, 224, 242);
+}
+
+.tok-step--filled {
+    background-color: rgb(29, 51, 70);
+    color: rgb(207, 224, 242);
+}
+
+.tok-step--on {
+    background-color: rgb(36, 69, 95);
+    border-color: rgb(121, 169, 224);
+    color: rgb(255, 255, 255);
+}
+
+.tok-reading {
+    margin-top: 6px;
+    font-size: 13px;
+    color: rgb(226, 236, 250);
 }

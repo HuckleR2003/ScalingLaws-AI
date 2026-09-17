@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -124,6 +124,30 @@ namespace ScalingLaws.UI
         private ModelShape blueprintShape = ModelShape.Balanced;
         private DeduplicationPass blueprintDedup = DeduplicationPass.Standard;
         private int blueprintCutoffMonths;
+
+        /// <summary>The tokenizer rung, and how far the corpus is adapted to it. DATA stage.</summary>
+        private TokenizerKind blueprintTokenizer = TokenizerKind.OffTheShelf;
+
+        private int blueprintAdaptation;
+
+        /// <summary>
+        /// What the run is quoted at, kept from the last repricing so the adaptation bar can price
+        /// its six steps against it. They are shares of this run's own bill rather than a price
+        /// list, so the figure has to come from the same projection the rest of the screen reads.
+        /// </summary>
+        private long lastComputeBillUsd;
+
+        /// <summary>
+        /// Kept between rebuilds rather than built with the page.
+        ///
+        /// The DATA page is rebuilt on every repricing, and a field built with it would restart its
+        /// two and a half seconds of travel every time the player touched anything, which is the
+        /// same fault the tutorial strip had: rebuilt under the cursor and therefore never finished.
+        /// </summary>
+        private TokenizerField tokenizerField;
+
+        /// <summary>The two-column grid of corpora for sale, rebuilt with the toggles above it.</summary>
+        private VisualElement market;
 
         /// <summary>Raised once a run actually starts, so the shell can leave this screen.</summary>
         public event Action started;
@@ -1715,9 +1739,12 @@ namespace ScalingLaws.UI
             figure.AddToClassList("choice-card__figures");
             card.Add(figure);
 
-            var body = new Label(pitch);
-            body.AddToClassList("choice-card__body");
-            card.Add(body);
+            if (!string.IsNullOrEmpty(pitch))
+            {
+                var body = new Label(pitch);
+                body.AddToClassList("choice-card__body");
+                card.Add(body);
+            }
 
             return card;
         }
@@ -1746,7 +1773,148 @@ namespace ScalingLaws.UI
             row.Add(BuildDedupPanel());
             column.Add(row);
 
+            column.Add(BuildTokenizerPanel());
+
             return column;
+        }
+
+        /// <summary>
+        /// How the corpus is cut into tokens: the rung, the field, and the money.
+        ///
+        /// **The field is the mechanic, not decoration.** The rung the company is on decides what
+        /// the squares are, the money pulls them towards the rung above, and both are the same
+        /// numbers the market is charged by. A player who never reads the figure under it can still
+        /// see that something changed and roughly how much.
+        ///
+        /// The arrows only ever reach a rung the company has researched, so the blueprint cannot
+        /// carry one the till would refuse. What the next rung needs is named under the arrow
+        /// rather than left as a dead control, the same answer the scale ceiling gives.
+        /// </summary>
+        private VisualElement BuildTokenizerPanel()
+        {
+            var panel = NewPanel(Loc.T("tok.title"));
+
+            var header = new VisualElement();
+            header.AddToClassList("tok-head");
+
+            var rung = TokenizerCatalog.Get(blueprintTokenizer);
+            var index = (int)blueprintTokenizer;
+
+            var back = new Button(() => StepRung(-1)) { text = "◀" };
+            back.AddToClassList("tok-arrow");
+            back.SetEnabled(index > 0);
+            header.Add(back);
+
+            var slot = new VisualElement();
+            slot.AddToClassList("tok-slot");
+
+            var name = new Label(rung.DisplayName);
+            name.AddToClassList("tok-name");
+            slot.Add(name);
+
+            var next = index + 1 < TokenizerCatalog.All.Count
+                ? TokenizerCatalog.All[index + 1]
+                : default;
+
+            var opensWith = index + 1 < TokenizerCatalog.All.Count && !Allowed(next.OpensWith)
+                ? Loc.T("tok.locked", ResearchTree.Get(next.OpensWith).DisplayName)
+                : rung.Pitch;
+
+            var under = new Label(opensWith);
+            under.AddToClassList("tok-lock");
+            slot.Add(under);
+
+            header.Add(slot);
+
+            var forward = new Button(() => StepRung(1)) { text = "▶" };
+            forward.AddToClassList("tok-arrow");
+            forward.SetEnabled(index + 1 < TokenizerCatalog.All.Count && Allowed(next.OpensWith));
+            header.Add(forward);
+
+            panel.Add(header);
+
+            if (tokenizerField == null)
+            {
+                tokenizerField = new TokenizerField();
+
+                // Attached once, with the field, rather than on every rebuild: a card whose owner
+                // is rebuilt under the cursor is the fault the tutorial strip already taught.
+                InsightTip.Attach(tokenizerField, Loc.T("tok.title"), Loc.T("tok.effect"));
+            }
+
+            tokenizerField.Show(blueprintTokenizer, blueprintAdaptation);
+            panel.Add(tokenizerField);
+
+            var barHeading = new VisualElement();
+            barHeading.AddToClassList("tok-barhead");
+
+            var barLabel = new Label(Loc.T("tok.adaptation"));
+            barLabel.AddToClassList("tok-barlabel");
+            barHeading.Add(barLabel);
+
+            var spent = TokenizerCatalog.AdaptationCostUsd(blueprintAdaptation, lastComputeBillUsd);
+            var spentLabel = new Label(spent <= 0L
+                ? Loc.T("tok.adaptation.none")
+                : Loc.T("tok.adaptation.spent", UiFormat.Money(spent)));
+            spentLabel.AddToClassList("tok-spent");
+            barHeading.Add(spentLabel);
+
+            panel.Add(barHeading);
+
+            var bar = new VisualElement();
+            bar.AddToClassList("tok-bar");
+
+            for (var level = 0; level < TokenizerCatalog.AdaptationLevels; level++)
+            {
+                var captured = level;
+                var cost = TokenizerCatalog.AdaptationCostUsd(level, lastComputeBillUsd);
+
+                var step = new Button(() =>
+                {
+                    blueprintAdaptation = captured;
+                    RepriceAndRebuild();
+                })
+                {
+                    text = level == 0 ? Loc.T("common.none") : UiFormat.Money(cost)
+                };
+
+                step.AddToClassList("tok-step");
+                step.EnableInClassList("tok-step--filled", level <= blueprintAdaptation && blueprintAdaptation > 0);
+                step.EnableInClassList("tok-step--on", level == blueprintAdaptation);
+                bar.Add(step);
+            }
+
+            panel.Add(bar);
+
+            var reading = new Label(Loc.T("tok.tokens_per_text") + "   "
+                + UiFormat.Number(
+                    TokenizerCatalog.TokensPerText(AllowedRung(blueprintTokenizer), blueprintAdaptation) * 100.0, 0)
+                + "%");
+            reading.AddToClassList("tok-reading");
+            panel.Add(reading);
+
+            return panel;
+        }
+
+        /// <summary>One rung along, as far as the research allows. The arrows call this.</summary>
+        private void StepRung(int by)
+        {
+            var wanted = (int)blueprintTokenizer + by;
+
+            if (wanted < 0 || wanted >= TokenizerCatalog.All.Count)
+            {
+                return;
+            }
+
+            var rung = TokenizerCatalog.All[wanted];
+
+            if (!Allowed(rung.OpensWith))
+            {
+                return;
+            }
+
+            blueprintTokenizer = rung.Kind;
+            RepriceAndRebuild();
         }
 
         /// <summary>
@@ -1777,16 +1945,22 @@ namespace ScalingLaws.UI
                         ? Loc.T("create.cutoff_old_note")
                         : Loc.T("create.cutoff_mid_note");
 
-                row.Add(NewChoiceCard(
+                var card = NewChoiceCard(
                     title,
-                    pitch,
+                    string.Empty,
                     blueprintCutoffMonths == captured,
                     true,
                     Loc.T("create.cutoff_note",
                         UiFormat.Number(TrainingChoiceCatalog.CutoffCapabilityMultiplier(months), 2),
                         UiFormat.Number(TrainingChoiceCatalog.CutoffCostMultiplier(months, pipeline), 2))
                     + (pipeline && months < 12 ? "  " + Loc.T("create.pipeline") : string.Empty),
-                    () => { blueprintCutoffMonths = captured; RepriceAndRebuild(); }));
+                    () => { blueprintCutoffMonths = captured; RepriceAndRebuild(); });
+
+                // The sentence moved into the card under the cursor. Four of these paragraphs were
+                // the tallest thing on the page and the tokenizer field is paid for out of them,
+                // which is the standing rule for the creator: take the height from somewhere.
+                InsightTip.Attach(card, title, pitch);
+                row.Add(card);
             }
 
             panel.Add(row);
@@ -2443,9 +2617,18 @@ namespace ScalingLaws.UI
                     heading.AddToClassList("panel__heading");
                     heading.AddToClassList("corpus-market__heading");
                     dataToggles.Add(heading);
+
+                    // **Two across rather than one down.** Six corpora at full width was 330px of a
+                    // page that is laid out to fit one window, and the row itself is a name, a line
+                    // and a price with a third of the width empty between them. The tokenizer field
+                    // underneath is paid for out of this, which is the rule for these pages: take
+                    // the height from somewhere rather than adding it.
+                    market = new VisualElement();
+                    market.AddToClassList("corpus-market");
+                    dataToggles.Add(market);
                 }
 
-                dataToggles.Add(CorpusRow(definition));
+                market.Add(CorpusRow(definition));
                 offered++;
             }
         }
@@ -2563,7 +2746,34 @@ namespace ScalingLaws.UI
                 AllowedTier(SafetyModule.Assa, assaTier),
                 AllowedTier(SafetyModule.RedTeam, redTeamTier),
                 AllowedTier(SafetyModule.DataProtection, dataTier),
-                safetyEffort);
+                safetyEffort,
+                AllowedRung(blueprintTokenizer),
+                blueprintAdaptation);
+        }
+
+        /// <summary>
+        /// The chosen rung, or the best one below it the company has actually researched.
+        ///
+        /// Same shape as `AllowedTier` on the safety modules and for the same reason: the arrows
+        /// can only reach an open rung, so this should never have to correct anything, and if it
+        /// ever does the run is refused at the till rather than quietly trained on a technology
+        /// nobody paid for.
+        /// </summary>
+        private TokenizerKind AllowedRung(TokenizerKind wanted)
+        {
+            var best = TokenizerKind.OffTheShelf;
+
+            foreach (var rung in TokenizerCatalog.All)
+            {
+                if (rung.Kind > wanted || !Allowed(rung.OpensWith))
+                {
+                    continue;
+                }
+
+                best = rung.Kind;
+            }
+
+            return best;
         }
 
         /// <summary>Whether the company has the node an option needs, or the option needs none.</summary>
@@ -2650,6 +2860,8 @@ namespace ScalingLaws.UI
             // judge. Nothing is billed until `rentCommitted`.
             var projection = simulation.Project(blueprint, Proposal());
             var profile = simulation.ProfileWith(Proposal());
+
+            lastComputeBillUsd = projection.ComputeCashCostUsd;
 
             parameterLabel.text = Loc.T("creator.parameters",
                 UiFormat.Billions(blueprint.ParameterCountBillions));
