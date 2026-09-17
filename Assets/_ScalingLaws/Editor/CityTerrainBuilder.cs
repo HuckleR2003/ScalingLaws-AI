@@ -405,6 +405,15 @@ namespace ScalingLaws.Editor
         ///
         /// Flat colour because the project has no ground photographs, and a missing texture renders
         /// white — worse than a colour that is at least the right colour. In Docs/NeededGraphics.md.
+        ///
+        /// **Smoothness and metallic are set to zero, and so is the texture's alpha channel, and
+        /// only the third one actually did anything.** `CitySnapshot`'s first real render showed two
+        /// hills looking chrome-plated under a directional light. Setting `layer.smoothness = 0f`
+        /// was the obvious fix and it was not the real one: with no mask map, Terrain reads
+        /// smoothness from the diffuse texture's alpha channel instead, and `new Color(r, g, b)`
+        /// defaults alpha to 1 — maximum gloss — silently overriding the field. The field is left
+        /// set anyway, because leaving it at whatever `TerrainLayer` defaults to for no reason would
+        /// be the same mistake with worse evidence next time.
         /// </summary>
         private static TerrainLayer Layer(string name, Color colour, float tile)
         {
@@ -414,36 +423,66 @@ namespace ScalingLaws.Editor
             if (existing != null)
             {
                 existing.tileSize = new Vector2(tile, tile);
+                existing.smoothness = 0f;
+                existing.metallic = 0f;
+
+                // The texture asset already on disk was baked before alpha carried smoothness zero,
+                // so re-running this with only the fields above changed is the bug staying exactly
+                // as chrome-plated as it was — rewriting the pixels here is what actually repaints
+                // an existing layer rather than only a freshly created one.
+                if (existing.diffuseTexture is Texture2D existingTexture)
+                {
+                    PaintPixels(existingTexture, colour);
+                }
+
                 EditorUtility.SetDirty(existing);
                 return existing;
             }
 
             var texture = new Texture2D(16, 16) { name = name + "Texture" };
+            PaintPixels(texture, colour);
 
-            for (var y = 0; y < 16; y++)
-            {
-                for (var x = 0; x < 16; x++)
-                {
-                    // Per-pixel jitter, so a flat colour does not read as plastic up close.
-                    var jitter = (Hash(x, y) - 0.5f) * 0.06f;
-                    texture.SetPixel(x, y, new Color(
-                        Mathf.Clamp01(colour.r + jitter),
-                        Mathf.Clamp01(colour.g + jitter),
-                        Mathf.Clamp01(colour.b + jitter)));
-                }
-            }
-
-            texture.Apply();
             AssetDatabase.CreateAsset(texture, $"{DataFolder}/{name}Texture.asset");
 
             var layer = new TerrainLayer
             {
                 diffuseTexture = texture,
-                tileSize = new Vector2(tile, tile)
+                tileSize = new Vector2(tile, tile),
+                smoothness = 0f,
+                metallic = 0f
             };
 
             AssetDatabase.CreateAsset(layer, path);
             return layer;
+        }
+
+        /// <summary>
+        /// Writes the jittered flat colour into every pixel of a 16x16 layer texture.
+        ///
+        /// Alpha is not transparency here — Terrain reads it as smoothness when a layer has no mask
+        /// map, which every layer here does not. `layer.smoothness = 0f` alone was silently
+        /// overridden by this: `new Color(r, g, b)` defaults alpha to 1, maximum gloss, which is the
+        /// actual cause of the chrome-looking hills the first attempt at this fix did not touch.
+        /// </summary>
+        private static void PaintPixels(Texture2D texture, Color colour)
+        {
+            for (var y = 0; y < texture.height; y++)
+            {
+                for (var x = 0; x < texture.width; x++)
+                {
+                    // Per-pixel jitter, so a flat colour does not read as plastic up close.
+                    var jitter = (Hash(x, y) - 0.5f) * 0.06f;
+
+                    texture.SetPixel(x, y, new Color(
+                        Mathf.Clamp01(colour.r + jitter),
+                        Mathf.Clamp01(colour.g + jitter),
+                        Mathf.Clamp01(colour.b + jitter),
+                        0f));
+                }
+            }
+
+            texture.Apply();
+            EditorUtility.SetDirty(texture);
         }
 
         // ---- road centrelines ----------------------------------------------------------------------
