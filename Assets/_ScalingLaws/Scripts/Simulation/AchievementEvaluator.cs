@@ -38,6 +38,19 @@ namespace ScalingLaws.Simulation
                 return earned;
             }
 
+            // **A sandbox campaign earns nothing, and the refusal belongs here.**
+            //
+            // The record lives in `PlayerPrefs`, outside the save, so it survives a bankruptcy: it
+            // is the player's own, on their own machine, and one campaign started with every node
+            // researched and half a billion in the bank would unlock most of the catalog on its
+            // first tick and there would be no way to take it back. The shell skips this call
+            // entirely for a sandbox; this arm is what makes the rule a fact about the rules rather
+            // than about one caller remembering.
+            if (state.IsSandbox)
+            {
+                return earned;
+            }
+
             foreach (var definition in AchievementCatalog.All)
             {
                 // Three achievements describe something nothing counts yet. They carry their copy

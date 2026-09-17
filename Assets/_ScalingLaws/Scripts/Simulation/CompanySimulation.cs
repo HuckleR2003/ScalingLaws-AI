@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Globalization;
@@ -2464,6 +2464,31 @@ namespace ScalingLaws.Simulation
             // Granted here rather than through the Try methods on purpose. Those two check cash and
             // charge for the purchase; this node has already been paid for, in a currency the
             // player cannot buy it with.
+            var granted = GrantUnlocksOf(node);
+
+            State.AwardSkill(PlayerSkill.Concept, 620);
+
+
+            State.AwardSkill(PlayerSkill.DataEngineering, 200);
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.ResearchCompleted,
+                State.Date,
+                $"{node.DisplayName} is done.{granted}.",
+                project.CashPaidUsd));
+        }
+
+        /// <summary>
+        /// Hands over what a finished node promised: the corpus on its card and the architecture
+        /// family, once each. Returns the sentence naming them, or nothing when it opens neither.
+        ///
+        /// Its own method because there are two ways a node can finish now, the calendar and the
+        /// sandbox, and the fault this code exists to prevent is precisely a second path that marks
+        /// a node as done and never delivers it. That shipped once: a campaign was locked to the web
+        /// crawl and a dense transformer from the first day to the last, with every test green,
+        /// because the only code that granted either was a purchase method nothing called.
+        /// </summary>
+        private string GrantUnlocksOf(ResearchNode node)
+        {
             var granted = new StringBuilder();
 
             if (node.UnlocksData != DatasetSource.None
@@ -2488,15 +2513,35 @@ namespace ScalingLaws.Simulation
                 granted.Append(granted.Length > 0 ? ", " : " Opens ").Append(family.DisplayName);
             }
 
-            State.AwardSkill(PlayerSkill.Concept, 620);
+            return granted.ToString();
+        }
 
+        /// <summary>
+        /// Every node in the tree, finished, for a sandbox campaign.
+        ///
+        /// **It goes through the same granting as a node the player waited for**, rather than
+        /// filling `UnlockedResearch` and stopping there. A company holding fifty nine nodes and one
+        /// corpus is not a company with the research done, it is the eleventh time this project
+        /// would have shipped a mechanism that reports itself as delivered and delivers nothing.
+        ///
+        /// It awards no skill experience and raises no events: this is a scene to look at, not a
+        /// campaign that happened, and fifty nine completion notices would bury the screen being
+        /// looked at.
+        /// </summary>
+        public void UnlockEveryResearchNode()
+        {
+            foreach (var node in ResearchTree.All)
+            {
+                if (State.UnlockedResearch.Contains(node.Id))
+                {
+                    continue;
+                }
 
-            State.AwardSkill(PlayerSkill.DataEngineering, 200);
-            State.RaiseEvent(new CompanyEvent(
-                CompanyEventType.ResearchCompleted,
-                State.Date,
-                $"{node.DisplayName} is done.{granted}.",
-                project.CashPaidUsd));
+                State.UnlockedResearch.Add(node.Id);
+                GrantUnlocksOf(node);
+            }
+
+            State.ActiveResearch = null;
         }
 
         // ------------------------------------------------------------------ architecture families
