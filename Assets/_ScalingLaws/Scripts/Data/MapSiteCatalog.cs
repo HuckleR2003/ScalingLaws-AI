@@ -30,7 +30,13 @@ namespace ScalingLaws.Data
         TaxOffice = 6,
 
         /// <summary>A car on a forecourt. Nothing in the simulation reads this yet — see the note on the catalog itself.</summary>
-        CarDealership = 7
+        CarDealership = 7,
+
+        /// <summary>
+        /// Where a rival lab keeps its headquarters. Nothing to take or buy: the reason to click is to
+        /// see who holds the best addresses. <see cref="MapSiteDefinition.Tier"/> is the address's rank.
+        /// </summary>
+        RivalHeadquarters = 8
     }
 
     /// <summary>
@@ -280,6 +286,89 @@ namespace ScalingLaws.Data
                 "As large as the river campus, but behind the streets instead of on the bank: every "
                 + "watt of heat leaves through chillers on the roof. Cheaper to rent, dearer to run.",
                 systemExists: false),
+
+            // ---- Silicon Valley: the two offices past the top of the ladder --------------------------
+            // OfficeCatalog.ComingSoon already announces both, with no tier and no economics; these are
+            // the buildings those two lines point at. Tier 0 because neither is a rung on OfficeTier
+            // yet, and a made-up number here would be one more thing to unpick when they become one.
+
+            new("office.soon.tower", "Own Tower", MapSiteKind.OfficeLease, MapCategory.Business,
+                "silicon", new MapPoint(730f, -690f), 32f, 0,
+                "The tallest thing on the bay and nobody's name on it yet: three hundred and twenty "
+                + "desks, a forecourt the central plaza runs straight into, and a rent that is a "
+                + "statement to every rival watching from across the boulevard.", systemExists: false),
+
+            new("office.soon.campus", "Research Campus", MapSiteKind.OfficeLease, MapCategory.Research,
+                "silicon", new MapPoint(542f, -880f), 36f, 0,
+                "Five hundred desks in three wings opening onto a lawn that runs down to the water. "
+                + "The address a lab takes when it stops renting floors and starts hiring out of "
+                + "universities by the department.", systemExists: false),
+
+            // ---- Silicon Valley: rival headquarters, best address first ----------------------------
+            // Tier is the address's rank on the bay, one being the best. The occupants are the labs
+            // already on the roster, by their in-game names, placed where their standing today would
+            // put them; nothing moves them yet. Handing the best addresses to whoever leads the
+            // rankings is the step this ordering is here for.
+
+            new("hq.silicon.1", LabDossiers.NameOf(CompetitorId.OpenAi), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(725f, -470f), 36f, 1,
+                "The crown tower at the head of the central plaza, the first thing anyone crossing from "
+                + "the port sees. The best address on the bay.", systemExists: false),
+
+            new("hq.silicon.2", LabDossiers.NameOf(CompetitorId.GoogleDeepMind), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(487f, -400f), 45f, 2,
+                "Three long wings stepping down to the water, joined by glass bridges and planted on "
+                + "the roof. A campus built to keep researchers from ever needing to leave.",
+                systemExists: false),
+
+            new("hq.silicon.3", LabDossiers.NameOf(CompetitorId.Anthropic), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(519f, -540f), 40f, 3,
+                "A glass ring around a private garden, open only on the side facing the bay.",
+                systemExists: false),
+
+            new("hq.silicon.4", LabDossiers.NameOf(CompetitorId.MetaAi), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(539f, -1030f), 45f, 4,
+                "Low pavilions under deep roofs along the south shore, joined by covered walks. "
+                + "Research that wants to look relaxed about it.", systemExists: false),
+
+            new("hq.silicon.5", LabDossiers.NameOf(CompetitorId.XAi), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(627f, -390f), 30f, 5,
+                "A stepped block on the boulevard with a garden on every setback.", systemExists: false),
+
+            new("hq.silicon.6", LabDossiers.NameOf(CompetitorId.MistralAi), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(720f, -850f), 32f, 6,
+                "A glass block lifted over its own plaza under a canopy that reaches halfway to the "
+                + "boulevard.", systemExists: false),
+
+            new("hq.silicon.7", LabDossiers.NameOf(CompetitorId.DeepSeek), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(880f, -430f), 24f, 7,
+                "The American office, up on the bench street: finned glass, and a view over everybody "
+                + "else's roofs to the bay.", systemExists: false),
+
+            new("hq.silicon.8", LabDossiers.NameOf(CompetitorId.AlibabaQwen), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(900f, -640f), 26f, 8,
+                "A tower on the bench, taller than it needs to be, facing the Own Tower across the "
+                + "street.", systemExists: false),
+
+            new("hq.silicon.9", LabDossiers.NameOf(CompetitorId.Cohere), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(412f, -190f), 30f, 9,
+                "A brick sawtooth factory by the port with a glass box set into one end: the old "
+                + "waterfront, rented by people who sell to companies that like the look of old money.",
+                systemExists: false),
+
+            new("hq.silicon.10", LabDossiers.NameOf(CompetitorId.StabilityAi), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(715f, -980f), 28f, 10,
+                "Brick below, glass above, a pergola on the roof. Respectable, and a long walk from the "
+                + "plaza.", systemExists: false),
+
+            new("hq.silicon.11", LabDossiers.NameOf(CompetitorId.InflectionAi), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(895f, -860f), 24f, 11,
+                "A glass mid-rise on the bench street, bought when the money was easy.", systemExists: false),
+
+            new("hq.silicon.12", LabDossiers.NameOf(CompetitorId.Groq), MapSiteKind.RivalHeadquarters,
+                MapCategory.Business, "silicon", new MapPoint(478f, -175f), 30f, 12,
+                "A converted warehouse at the gate from the port, with a water tower still on it. The "
+                + "cheapest way to say you are in Silicon Valley.", systemExists: false),
 
             // ---- Event venues: pointing at ground CityBlocks already surveyed -----------------------
             // Coordinates copied from CityBlocks.cs rather than referenced, so this file has no

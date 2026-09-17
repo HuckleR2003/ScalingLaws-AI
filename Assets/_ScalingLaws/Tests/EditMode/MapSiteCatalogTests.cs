@@ -132,5 +132,115 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsEmpty(bad, "MapSiteCatalog entries with an implausible radius: "
                 + string.Join(", ", bad));
         }
+
+        /// <summary>
+        /// Silicon Valley's headquarters are ranked addresses: one of each rank from the best down, no
+        /// gaps and no ties, because handing the best address to the leading lab means there has to be
+        /// exactly one best address.
+        /// </summary>
+        [Test]
+        public void HeadquartersAreRankedOneToNWithoutGapsOrTies()
+        {
+            var ranks = new List<int>();
+
+            foreach (var site in MapSiteCatalog.All)
+            {
+                if (site.Kind == MapSiteKind.RivalHeadquarters)
+                {
+                    ranks.Add(site.Tier);
+                }
+            }
+
+            ranks.Sort();
+            Assert.IsNotEmpty(ranks, "No rival headquarters in the catalog.");
+
+            for (var index = 0; index < ranks.Count; index++)
+            {
+                Assert.AreEqual(index + 1, ranks[index],
+                    "Headquarters ranks must run 1, 2, 3 ... with no gaps or repeats: " + string.Join(", ", ranks));
+            }
+        }
+
+        /// <summary>A headquarters is named after a lab on the roster, by its in-game name, never a real company's.</summary>
+        [Test]
+        public void EveryHeadquartersBelongsToALabOnTheRoster()
+        {
+            var names = new HashSet<string>();
+            foreach (var dossier in LabDossiers.All)
+            {
+                names.Add(dossier.Name);
+            }
+
+            var strangers = new List<string>();
+            var seen = new HashSet<string>();
+
+            foreach (var site in MapSiteCatalog.All)
+            {
+                if (site.Kind != MapSiteKind.RivalHeadquarters)
+                {
+                    continue;
+                }
+
+                if (!names.Contains(site.DisplayName))
+                {
+                    strangers.Add($"{site.Id} -> \"{site.DisplayName}\"");
+                }
+
+                if (!seen.Add(site.DisplayName))
+                {
+                    strangers.Add($"{site.DisplayName} has two headquarters");
+                }
+            }
+
+            Assert.IsEmpty(strangers, "Headquarters not matching the roster: " + string.Join("; ", strangers));
+        }
+
+        /// <summary>Every office the catalog announces as coming soon has a building waiting for it on the map.</summary>
+        [Test]
+        public void EveryAnnouncedOfficeHasASiteOnTheMap()
+        {
+            var ids = new HashSet<string>();
+            foreach (var site in MapSiteCatalog.All)
+            {
+                if (site.Kind == MapSiteKind.OfficeLease)
+                {
+                    ids.Add(site.Id);
+                }
+            }
+
+            foreach (var announced in OfficeCatalog.ComingSoon)
+            {
+                // "office.soon.tower.name" is announced; "office.soon.tower" is where it stands.
+                var id = announced.NameKey.Substring(0, announced.NameKey.Length - ".name".Length);
+                Assert.That(ids, Does.Contain(id), $"No map site for the announced office {announced.NameKey}.");
+            }
+        }
+
+        /// <summary>A district laid out on terraces has some; every terrace belongs to a district that exists.</summary>
+        [Test]
+        public void TerracesAndTheDistrictsThatUseThemAgree()
+        {
+            var districts = new Dictionary<string, DistrictDefinition>();
+            foreach (var district in CityLayout.Districts)
+            {
+                districts[district.Id] = district;
+            }
+
+            var used = new HashSet<string>();
+            foreach (var terrace in CityBlocks.Terraces)
+            {
+                Assert.That(districts.ContainsKey(terrace.DistrictId), $"Terrace {terrace.Id} names no district.");
+                used.Add(terrace.DistrictId);
+            }
+
+            foreach (var district in CityLayout.Districts)
+            {
+                if (!district.LevelsGround)
+                {
+                    Assert.That(used, Does.Contain(district.Id),
+                        $"{district.Id} levels no pad of its own and has no terrace either: it would stand on raw hillside.");
+                }
+            }
+        }
     }
 }

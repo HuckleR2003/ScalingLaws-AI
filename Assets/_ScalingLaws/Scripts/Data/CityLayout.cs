@@ -64,7 +64,8 @@ namespace ScalingLaws.Data
     public sealed class DistrictDefinition
     {
         public DistrictDefinition(string id, string displayName, MapCategory category,
-            float centreX, float centreZ, float radius, float groundHeight, string blurb)
+            float centreX, float centreZ, float radius, float groundHeight, string blurb,
+            bool levelsGround = true)
         {
             Id = id;
             DisplayName = displayName;
@@ -74,7 +75,14 @@ namespace ScalingLaws.Data
             Radius = radius;
             GroundHeight = groundHeight;
             Blurb = blurb;
+            LevelsGround = levelsGround;
         }
+
+        /// <summary>
+        /// False for a district laid out on terraces of its own (<c>CityBlocks.Terraces</c>) rather
+        /// than on one round pad: its radius then only says how far it reaches.
+        /// </summary>
+        public bool LevelsGround { get; }
 
         public string Id { get; }
         public string DisplayName { get; }
@@ -183,12 +191,21 @@ namespace ScalingLaws.Data
     public sealed class WaterRun
     {
         public WaterRun(string id, params (MapPoint At, float HalfWidth, float Depth)[] points)
+            : this(id, 1f, points)
+        {
+        }
+
+        public WaterRun(string id, float wobble, params (MapPoint At, float HalfWidth, float Depth)[] points)
         {
             Id = id;
+            Wobble = wobble;
             Points = points;
         }
 
         public string Id { get; }
+
+        /// <summary>How much the noise pushes the shore about: one for a natural coast, less for a built one.</summary>
+        public float Wobble { get; }
         public IReadOnlyList<(MapPoint At, float HalfWidth, float Depth)> Points { get; }
     }
 
@@ -219,7 +236,8 @@ namespace ScalingLaws.Data
         public const int SplatResolution = 512;
 
         /// <summary>
-        /// The nine districts: eight placed to the reference, and River Works grown between two of them.
+        /// The ten districts: eight placed to the reference, River Works grown between two of them, and
+        /// Silicon Valley on the ground added south of the port.
         ///
         /// Heights step down towards the water on purpose: the suburbs sit up on the shoulder of
         /// the hills, downtown is on the flat, and the port is barely above the sea.
@@ -279,11 +297,32 @@ namespace ScalingLaws.Data
             new("riverworks", "River Works", MapCategory.Compute,
                 747f, 639f, 150f, 46f,
                 "Server halls on the river bank, two streets deep. The ones on the water pipe the river "
-                + "through their cooling and charge for it; the ones behind are cheaper and run warmer.")
+                + "through their cooling and charge for it; the ones behind are cheaper and run warmer."),
+
+            // South of the port, on the ground the south tile added: the bay shore the frontier labs
+            // keep their headquarters on. Not levelled as one pad — it is laid out on the terraces in
+            // CityBlocks.Terraces, a waterfront and an upper bench against the hill.
+            new("silicon", "Silicon Valley", MapCategory.Business,
+                680f, -620f, 540f, 47f,
+                "The most expensive street in Bayview. The frontier labs keep their headquarters on this "
+                + "shore, and two trophy buildings between them are still waiting for a tenant who can "
+                + "afford them.",
+                levelsGround: false)
         };
 
         /// <summary>
-        /// The water, as two runs: the bay from the north and the river from the eastern hills.
+        /// How far south the land runs: a second terrain tile, as large as the first, below it.
+        ///
+        /// The city was a single square with the port on its southern edge. Silicon Valley needed a
+        /// waterfront of its own and there was none left inside that square that was not a suburb, a
+        /// highway or the port, so the map grew south instead of being crammed. Everything keeps the
+        /// same coordinates; the new ground simply has negative Z.
+        /// </summary>
+        public const float SouthEdge = -Size;
+
+        /// <summary>
+        /// The water, as three runs: the bay from the north, the river from the eastern hills, and the
+        /// southern bay the river opens into below the port.
         ///
         /// The bay opens out as it goes north — a basin at the mouth, a channel where the bridges
         /// cross it — and the river narrows as it climbs, which is what stops both of them reading
@@ -308,7 +347,18 @@ namespace ScalingLaws.Data
                 (new MapPoint(760f, 430f), 54f, 13f),
                 (new MapPoint(520f, 330f), 70f, 15f),
                 (new MapPoint(240f, 240f), 120f, 20f),
-                (new MapPoint(-120f, 120f), 260f, 30f))
+                (new MapPoint(-120f, 120f), 260f, 30f)),
+
+            // The river mouth opening south into the bay Silicon Valley fronts. A quarter of the usual
+            // wobble: this shore is built up with a promenade along it, and an engineered waterfront is
+            // a long clean curve, not a coast of inlets.
+            new("southbay", 0.25f,
+                (new MapPoint(-120f, 120f), 260f, 30f),
+                (new MapPoint(-110f, -300f), 480f, 34f),
+                (new MapPoint(-70f, -700f), 490f, 36f),
+                (new MapPoint(-90f, -1100f), 480f, 38f),
+                (new MapPoint(-210f, -1600f), 520f, 42f),
+                (new MapPoint(-420f, -2300f), 620f, 46f))
         };
 
         /// <summary>
@@ -374,7 +424,36 @@ namespace ScalingLaws.Data
                 new MapPoint(830f, 1370f), new MapPoint(1060f, 1470f)),
 
             new("media_street", RoadClass.Street,
-                new MapPoint(200f, 930f), new MapPoint(390f, 860f), new MapPoint(400f, 730f))
+                new MapPoint(200f, 930f), new MapPoint(390f, 860f), new MapPoint(400f, 730f)),
+
+            // Silicon Valley. The boulevard carries the west road on across the port street and down
+            // the bay shore, two hundred metres inland, so the campuses have the water in front of
+            // them and the towers the boulevard. Four lanes because it is the district's one way in,
+            // not because it is a highway: it is dressed as an avenue.
+            new("valley_boulevard", RoadClass.Highway,
+                new MapPoint(471f, 118f), new MapPoint(478f, 20f), new MapPoint(505f, -120f),
+                new MapPoint(545f, -300f), new MapPoint(585f, -480f), new MapPoint(615f, -660f),
+                new MapPoint(628f, -840f), new MapPoint(625f, -1000f), new MapPoint(605f, -1100f),
+                new MapPoint(575f, -1200f)),
+
+            // The bench street: leaves the boulevard at the north end, climbs onto the bench under the
+            // hill, runs its length and comes back down to the boulevard at the south end.
+            new("valley_bench", RoadClass.Street,
+                new MapPoint(548f, -310f), new MapPoint(640f, -300f), new MapPoint(760f, -320f),
+                new MapPoint(815f, -440f), new MapPoint(830f, -640f), new MapPoint(828f, -860f),
+                new MapPoint(805f, -1060f), new MapPoint(720f, -1110f), new MapPoint(608f, -1105f)),
+
+            // The two cross streets either side of the central plaza.
+            new("valley_plaza_north", RoadClass.Street,
+                new MapPoint(590f, -540f), new MapPoint(829f, -555f)),
+
+            new("valley_plaza_south", RoadClass.Street,
+                new MapPoint(622f, -790f), new MapPoint(830f, -795f)),
+
+            // And one more below the canopy headquarters, so the southern half of the waterfront is
+            // two blocks rather than one long one.
+            new("valley_south_cross", RoadClass.Street,
+                new MapPoint(627f, -915f), new MapPoint(827f, -915f))
         };
 
         /// <summary>

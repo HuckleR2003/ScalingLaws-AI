@@ -189,6 +189,45 @@ namespace ScalingLaws.Data
     }
 
     /// <summary>
+    /// One level bench of ground: a rectangle held at one height, eased back into the land around it.
+    ///
+    /// What a round district pad cannot do. A waterfront a kilometre long and a bench above it on the
+    /// hill are two levels a few metres apart, both following a shore that bends; a circle levels the
+    /// hill, the shore and the step between them into one plate. Width runs along the rectangle's own
+    /// X axis, depth along its Z axis, turned like a <see cref="GridBlock"/>.
+    /// </summary>
+    public sealed class Terrace
+    {
+        public Terrace(string id, string districtId, float centreX, float centreZ, float width,
+            float depth, float rotationDegrees, float height, float blend)
+        {
+            Id = id;
+            DistrictId = districtId;
+            CentreX = centreX;
+            CentreZ = centreZ;
+            Width = width;
+            Depth = depth;
+            RotationDegrees = rotationDegrees;
+            Height = height;
+            Blend = blend;
+        }
+
+        public string Id { get; }
+        public string DistrictId { get; }
+        public float CentreX { get; }
+        public float CentreZ { get; }
+        public float Width { get; }
+        public float Depth { get; }
+        public float RotationDegrees { get; }
+
+        /// <summary>The level it is held at, in metres.</summary>
+        public float Height { get; }
+
+        /// <summary>How far past its edge the ground eases back to what it was.</summary>
+        public float Blend { get; }
+    }
+
+    /// <summary>
     /// The built parts of Bayview: subdivisions, grids, the gallery and the parks.
     ///
     /// Separate from <see cref="CityLayout"/> because that file is the land — where the coast is,
@@ -281,6 +320,21 @@ namespace ScalingLaws.Data
         {
             new("bayview_park", "Bayview Park", 990f, 1450f, 215f, true, true, 130),
             new("civic_gardens", "Civic Gardens", 930f, 690f, 120f, false, true, 55)
+        };
+
+        /// <summary>
+        /// Silicon Valley's ground: two waterfront terraces following the bay shore as it bends, and a
+        /// bench eight metres higher against the hill.
+        ///
+        /// The waterfront holds the boulevard, the campuses and the promenade; the towers stand on the
+        /// bench behind, which is what gives the district a skyline over the water rather than one flat
+        /// plate of buildings. The bench is not levelled into the hill further than it has to be.
+        /// </summary>
+        public static IReadOnlyList<Terrace> Terraces { get; } = new List<Terrace>
+        {
+            new("silicon_waterfront_north", "silicon", 470f, -370f, 330f, 520f, 13f, 47f, 70f),
+            new("silicon_waterfront_south", "silicon", 530f, -870f, 300f, 560f, -4f, 47f, 70f),
+            new("silicon_bench", "silicon", 860f, -650f, 230f, 900f, 3f, 55f, 80f)
         };
     }
 }
