@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ScalingLaws.Core;
@@ -725,17 +725,7 @@ namespace ScalingLaws.UI
             prompts?.Refresh();
             RingTheCousinIfThisIsDayOne();
 
-            // They reached the car. The city map is a real scene now, not a placeholder — save
-            // first, the same slot autosave already writes to, so ReturnFromCityMap can resume
-            // exactly here rather than the shell inventing a second way to carry state across the
-            // scene boundary.
-            if (founder != null && founder.HasReachedTheCar && current == Screen.Site)
-            {
-                founder.ComeBack();
-                SaveStore.Save(state);
-                SceneFlow.OpenCityMap();
-            }
-
+            PollMapKey();
             PollPauseKey();
             PollAutosave();
 
@@ -3079,6 +3069,41 @@ namespace ScalingLaws.UI
             EnsurePauseMenu();
             pause.Toggle();
             RefreshSheets();
+        }
+
+        /// <summary>
+        /// M opens the city, from the office and from nowhere else.
+        ///
+        /// **The office only**, because that is where the MAP icon is: a key that works on screens
+        /// whose own button does not is a key nobody can learn from the interface. It is refused
+        /// while a text field has the keyboard, for the reason every other shortcut here is —
+        /// naming a model "MODEL M" must not leave the building — and while the menu is up, which
+        /// is a modal and has to behave like one.
+        /// </summary>
+        private void PollMapKey()
+        {
+            if (current != Screen.Site || pause is { IsOpen: true })
+            {
+                return;
+            }
+
+            if (shortcuts == null || !shortcuts.WantsTheMap())
+            {
+                return;
+            }
+
+            OpenTheMap();
+        }
+
+        /// <summary>
+        /// Saves and leaves for the city, which is the one way into that scene. The save is the slot
+        /// autosave already writes, so <see cref="SceneFlow.ReturnFromCityMap"/> resumes exactly
+        /// here rather than the shell inventing a second way to carry a campaign across a scene.
+        /// </summary>
+        private void OpenTheMap()
+        {
+            SaveStore.Save(state);
+            SceneFlow.OpenCityMap();
         }
 
         private void EnsurePauseMenu()

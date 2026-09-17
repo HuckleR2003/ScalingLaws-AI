@@ -54,6 +54,16 @@ namespace ScalingLaws.Simulation
         /// Leaving wins over resting: the player clicked something and the game has to answer the
         /// click rather than finish a nap first.
         /// </summary>
+        /// <summary>
+        /// The task for a day in an office nobody is leaving, which since 0.4.1 is every day: the
+        /// map opens on the click rather than after a walk to the car.
+        ///
+        /// The journey below is kept rather than deleted. The way out of the office is coming back
+        /// as a camera move between the two scenes, and the route, the clip and the empty room are
+        /// what it will be made of.
+        /// </summary>
+        public static FounderTask TaskFor(int dayIndex) => TaskFor(dayIndex, false, false);
+
         public static FounderTask TaskFor(int dayIndex, bool isLeaving, bool isAway)
         {
             if (isAway)

@@ -156,21 +156,11 @@ namespace ScalingLaws.UI
 
             rail.Add(upgrade);
 
-            // Clicking the map sends the founder out through the garage to the car, and the screen
-            // follows once they are in it. Cutting straight to the map is a scene change; walking
-            // out of the room is somebody leaving. GameShell's own Update carries them the rest of
-            // the way once they reach it — see the HasReachedTheCar branch there.
-            //
-            // It goes straight there when there is nobody to walk, because a player whose office
-            // scene has not loaded must not be stranded on a journey that will never finish.
-            var map = new Button(() =>
-            {
-                if (founder == null || !founder.BeginLeaving())
-                {
-                    SaveStore.Save(state);
-                    SceneFlow.OpenCityMap();
-                }
-            });
+            // **The founder no longer walks out to the car first.** Watching somebody cross the
+            // office was the whole journey the first time and a wait every time after it, and the
+            // author asked for it to go. What replaces it belongs to the map rather than to the
+            // room: the city opens on the view the office was drawn at and pulls back from it.
+            var map = new Button(OpenTheMap);
 
             map.AddToClassList("site-icon");
             SetIcon(map, "Ui/map", Loc.T("site.icon.map"));

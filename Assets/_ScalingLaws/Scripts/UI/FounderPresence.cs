@@ -57,12 +57,6 @@ namespace ScalingLaws.UI
         /// <summary>What the founder is doing right now. Idle before anything has spawned.</summary>
         public FounderTask Task { get; private set; } = FounderTask.Working;
 
-        /// <summary>True while the map has been opened and the founder is walking out to the car.</summary>
-        public bool IsLeaving { get; private set; }
-
-        /// <summary>True once they have reached the car and the room is empty.</summary>
-        public bool IsAway { get; private set; }
-
         /// <summary>
         /// How much faster the clock should run this frame.
         ///
@@ -151,31 +145,6 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// The player opened the map. The founder walks out rather than the screen cutting.
-        ///
-        /// Returns false when there is nobody to walk, so the caller can go straight to the map
-        /// instead of waiting for a journey that will never happen.
-        /// </summary>
-        public bool BeginLeaving()
-        {
-            if (actor == null)
-            {
-                return false;
-            }
-
-            IsLeaving = true;
-            IsAway = false;
-            return true;
-        }
-
-        /// <summary>Back from wherever they went. The room fills again.</summary>
-        public void ComeBack()
-        {
-            IsLeaving = false;
-            IsAway = false;
-        }
-
-        /// <summary>
         /// Called every frame by the shell. Decides the task and hands it to the actor.
         ///
         /// The decision is `FounderRoutine`'s, which knows nothing about Unity and is tested on its
@@ -183,7 +152,7 @@ namespace ScalingLaws.UI
         /// </summary>
         public void Refresh(int dayIndex)
         {
-            Task = FounderRoutine.TaskFor(dayIndex, IsLeaving, IsAway);
+            Task = FounderRoutine.TaskFor(dayIndex);
 
             if (actor == null)
             {
@@ -196,12 +165,6 @@ namespace ScalingLaws.UI
             actor.UseWaypoints(waypoints?.Invoke());
 
             actor.Send(Task);
-
-            // Reaching the car is what "away" means, and only the actor knows when that happened.
-            if (IsLeaving && actor.HasArrived)
-            {
-                IsAway = true;
-            }
         }
 
         /// <summary>The chosen look, or null when there is no such prefab.</summary>
@@ -263,8 +226,5 @@ namespace ScalingLaws.UI
 
             worn.transform.SetParent(head, worldPositionStays: true);
         }
-
-        /// <summary>True when a departure has finished and the map can open.</summary>
-        public bool HasReachedTheCar => IsLeaving && actor != null && actor.HasArrived;
     }
 }

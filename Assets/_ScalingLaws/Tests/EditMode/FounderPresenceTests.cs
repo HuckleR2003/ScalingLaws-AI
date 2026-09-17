@@ -56,16 +56,20 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         [Test]
-        public void OpeningTheMapWithNobodyToWalkFallsStraightThrough()
+        public void OpeningTheMapDoesNotSendAnybodyWalking()
         {
             var presence = Presence();
             presence.Spawn();
 
-            Assert.IsFalse(presence.BeginLeaving(),
-                "With no founder in the room the screen has to change immediately. Returning true "
-                + "would leave the player waiting on a journey that never starts.");
+            // The founder used to walk out to the car and the screen followed when they arrived.
+            // The map opens on the click now, so nothing here may answer with a journey.
+            for (var day = 0; day < FounderRoutine.RestIntervalDays; day++)
+            {
+                presence.Refresh(day);
 
-            Assert.IsFalse(presence.IsAway);
+                Assert.AreNotEqual(FounderTask.Leaving, presence.Task);
+                Assert.AreNotEqual(FounderTask.Away, presence.Task);
+            }
         }
 
         [Test]
@@ -81,17 +85,6 @@ namespace ScalingLaws.Tests.EditMode
             presence.Refresh(FounderRoutine.RestIntervalDays);
             Assert.AreEqual(FounderTask.Resting, presence.Task);
             Assert.Greater(presence.TimeScale, 1f);
-        }
-
-        [Test]
-        public void ComingBackClearsTheJourney()
-        {
-            var presence = Presence();
-            presence.ComeBack();
-
-            Assert.IsFalse(presence.IsLeaving);
-            Assert.IsFalse(presence.IsAway);
-            Assert.IsFalse(presence.HasReachedTheCar);
         }
     }
 }
