@@ -44,8 +44,16 @@ namespace ScalingLaws.Simulation
             int assaTier = 0,
             int redTeamTier = 0,
             int dataProtectionTier = -1,
-            int safetyEffort = 1)
+            int safetyEffort = 1,
+            TokenizerKind tokenizer = TokenizerKind.OffTheShelf,
+            int tokenizerAdaptation = 0)
         {
+            // The tokenizer ladder, defaulted to the rung a company has on the day it opens and to
+            // no adaptation, which is exactly 1.0 on the one axis it moves. Same neutral-option rule
+            // as the four below it: every caller written before this describes the run it always
+            // described.
+            Tokenizer = tokenizer;
+            TokenizerAdaptation = Math.Clamp(tokenizerAdaptation, 0, TokenizerCatalog.AdaptationLevels - 1);
             // The safety stage. Tier zero on the first two is what a company already knows how to
             // do on the day it opens, so those default to it and every caller written before this
             // describes exactly the run it always described.
@@ -80,6 +88,22 @@ namespace ScalingLaws.Simulation
                 MaximumTokenBillions);
             DataSources = dataSources;
         }
+
+        /// <summary>
+        /// How the corpus is cut into tokens for this run.
+        ///
+        /// **It belongs to the run, not to the company.** A lab that learns a better vocabulary next
+        /// year has not retroactively made the model it shipped today cheaper to serve, and reading
+        /// the company's current research at serving time would say exactly that. Same reasoning as
+        /// the safety tiers, and the same path: blueprint to trained model to the thing on sale.
+        /// </summary>
+        public TokenizerKind Tokenizer { get; }
+
+        /// <summary>How far the corpus was adapted to that vocabulary, nought to five.</summary>
+        public int TokenizerAdaptation { get; }
+
+        /// <summary>Tokens spent on the same text, against an off-the-shelf vocabulary at 1.0.</summary>
+        public double TokensPerText => TokenizerCatalog.TokensPerText(Tokenizer, TokenizerAdaptation);
 
         public string Name { get; }
         public ArchitectureId Architecture { get; }
@@ -141,49 +165,72 @@ namespace ScalingLaws.Simulation
         public double TokensPerParameter =>
             ParameterCountBillions <= 0.0 ? 0.0 : TrainingTokensBillions / ParameterCountBillions;
 
+        // **Every one of these carries every field.** Until 2026-09-18 they carried the first
+        // eleven and dropped the four safety tiers, so renaming a blueprint reset the protection it
+        // had been given. Nothing had ever called one on a hardened blueprint, which is the only
+        // reason it never cost anybody a fine: a dormant fault that becomes a real one the day some
+        // screen does the obvious thing. `EveryWithHelperKeepsEveryOtherField` is the guard.
+
         public ModelBlueprint WithName(string name) =>
-            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
-                CutoffMonthsBack);
+            new(name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithParameters(double parameterCountBillions) =>
-            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
-                CutoffMonthsBack);
+            new(Name, Architecture, parameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithTokens(double trainingTokensBillions) =>
-            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
-                CutoffMonthsBack);
+            new(Name, Architecture, ParameterCountBillions, trainingTokensBillions, DataSources,
+                Type, Family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithArchitecture(ArchitectureId architecture) =>
-            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, Family, Precision, Shape, Deduplication,
-                CutoffMonthsBack);
+            new(Name, architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithType(ModelType type) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, type, Family, Precision, Shape, Deduplication,
-                CutoffMonthsBack);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                type, Family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithDataSources(DatasetSource dataSources) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources, Type, Family, Precision, Shape, Deduplication,
-                CutoffMonthsBack);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, dataSources,
+                Type, Family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithPrecision(TrainingPrecision precision) =>
             new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
-                Type, Family, precision, Shape, Deduplication, CutoffMonthsBack);
+                Type, Family, precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithShape(ModelShape shape) =>
             new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
-                Type, Family, Precision, shape, Deduplication, CutoffMonthsBack);
+                Type, Family, Precision, shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithDeduplication(DeduplicationPass pass) =>
             new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
-                Type, Family, Precision, Shape, pass, CutoffMonthsBack);
+                Type, Family, Precision, Shape, pass, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithCutoff(int monthsBack) =>
             new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
-                Type, Family, Precision, Shape, Deduplication, monthsBack);
+                Type, Family, Precision, Shape, Deduplication, monthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
 
         public ModelBlueprint WithFamily(string family) =>
-            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources, Type, family, Precision, Shape, Deduplication,
-                CutoffMonthsBack);
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, Tokenizer, TokenizerAdaptation);
+
+        /// <summary>The rung, and how far the corpus was adapted to it. Chosen on the DATA stage.</summary>
+        public ModelBlueprint WithTokenizer(TokenizerKind tokenizer, int adaptationLevel) =>
+            new(Name, Architecture, ParameterCountBillions, TrainingTokensBillions, DataSources,
+                Type, Family, Precision, Shape, Deduplication, CutoffMonthsBack,
+                AssaTier, RedTeamTier, DataProtectionTier, SafetyEffort, tokenizer, adaptationLevel);
 
         public override string ToString() =>
             $"{Name}: {ParameterCountBillions:N0}B params, {TrainingTokensBillions:N0}B tokens, {Architecture}";

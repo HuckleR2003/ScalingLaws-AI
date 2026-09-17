@@ -27,8 +27,12 @@ namespace ScalingLaws.Simulation
             int assaTier = 0,
             int redTeamTier = 0,
             int dataProtectionTier = -1,
-            int safetyEffort = 1)
+            int safetyEffort = 1,
+            TokenizerKind tokenizer = TokenizerKind.OffTheShelf,
+            int tokenizerAdaptation = 0)
         {
+            Tokenizer = tokenizer;
+            TokenizerAdaptation = tokenizerAdaptation;
             // **The protection travels with the model, not with the company.** A run hardened two
             // years ago is still the run that was hardened two years ago, and a company that has
             // since researched everything does not retroactively protect a model it shipped before
@@ -200,6 +204,21 @@ namespace ScalingLaws.Simulation
         public long LifetimeRevenueUsd { get; private set; }
 
         /// <summary>Days it has spent on sale. Not the calendar age: a shelved model stops counting.</summary>
+
+        /// <summary>
+        /// The vocabulary this model was built with, and how far the corpus was adapted to it.
+        ///
+        /// Carried for the same reason the safety tiers are: it is a property of what was built, and
+        /// a company that learns a better one next year has not made this model cheaper to serve.
+        /// </summary>
+        public TokenizerKind Tokenizer { get; }
+
+        /// <summary>Nought to five. See <see cref="ModelBlueprint.TokenizerAdaptation"/>.</summary>
+        public int TokenizerAdaptation { get; }
+
+        /// <summary>Tokens spent on the same text, against an off-the-shelf vocabulary at 1.0.</summary>
+        public double TokensPerText => TokenizerCatalog.TokensPerText(Tokenizer, TokenizerAdaptation);
+
         /// <inheritdoc cref="ModelBlueprint.AssaTier"/>
         public int AssaTier { get; }
 

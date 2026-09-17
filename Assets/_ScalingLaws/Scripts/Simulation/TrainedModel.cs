@@ -29,8 +29,12 @@ namespace ScalingLaws.Simulation
             int assaTier = 0,
             int redTeamTier = 0,
             int dataProtectionTier = -1,
-            int safetyEffort = 1)
+            int safetyEffort = 1,
+            TokenizerKind tokenizer = TokenizerKind.OffTheShelf,
+            int tokenizerAdaptation = 0)
         {
+            Tokenizer = tokenizer;
+            TokenizerAdaptation = tokenizerAdaptation;
             // What the run was hardened with. Carried rather than looked up: a company that
             // researches everything next year does not retroactively protect what it shipped today.
             AssaTier = assaTier;
@@ -81,6 +85,21 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Deep, balanced or wide. Read by the market every day it is on sale.</summary>
         public ModelShape Shape { get; }
+
+
+        /// <summary>
+        /// The vocabulary this model was built with, and how far the corpus was adapted to it.
+        ///
+        /// Carried for the same reason the safety tiers are: it is a property of what was built, and
+        /// a company that learns a better one next year has not made this model cheaper to serve.
+        /// </summary>
+        public TokenizerKind Tokenizer { get; }
+
+        /// <summary>Nought to five. See <see cref="ModelBlueprint.TokenizerAdaptation"/>.</summary>
+        public int TokenizerAdaptation { get; }
+
+        /// <summary>Tokens spent on the same text, against an off-the-shelf vocabulary at 1.0.</summary>
+        public double TokensPerText => TokenizerCatalog.TokensPerText(Tokenizer, TokenizerAdaptation);
 
         /// <inheritdoc cref="ModelBlueprint.AssaTier"/>
         public int AssaTier { get; }
@@ -151,7 +170,9 @@ namespace ScalingLaws.Simulation
                 AssaTier,
                 RedTeamTier,
                 DataProtectionTier,
-                SafetyEffort);
+                SafetyEffort,
+                Tokenizer,
+                TokenizerAdaptation);
 
             model.SetShape(Shape);
 
