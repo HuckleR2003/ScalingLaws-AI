@@ -56,6 +56,8 @@ move, places to click and a city worth moving around.
 - **The MAP button in the office opens the city.** WASD or the arrows move the camera, = and - zoom,
   and ESC goes back to the office where you left it. The legend folds away, and a panel lists the
   districts: click one and the camera flies there.
+- **The neighbourhoods have driveways, lanes, garages, bridges and traffic lights**, and the loose
+  roof slabs and lamp heads that floated over the new models are gone.
 
 ### Added
 
