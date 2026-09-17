@@ -44,6 +44,8 @@ The Bayview map became a place in the game: reachable from the office, with a ca
 - **The city has places on it.** Bayview carries 26 places a company could one day use: offices,
   houses, server facilities, event venues, power plant stakes, hiring agencies, the tax office and
   car showrooms, each marked with a pin in the colour of its category.
+- **The hills stopped looking like chrome.** The shine came from the alpha channel of the terrain
+  textures. The tool that photographs the map also stopped losing its second picture.
 
 ### Added
 
