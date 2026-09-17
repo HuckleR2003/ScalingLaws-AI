@@ -725,12 +725,15 @@ namespace ScalingLaws.UI
             prompts?.Refresh();
             RingTheCousinIfThisIsDayOne();
 
-            // They reached the car. This is where the loading screen and the world map go once the
-            // map itself exists; until then it opens the board, which is what the icon did before.
+            // They reached the car. The city map is a real scene now, not a placeholder — save
+            // first, the same slot autosave already writes to, so ReturnFromCityMap can resume
+            // exactly here rather than the shell inventing a second way to carry state across the
+            // scene boundary.
             if (founder != null && founder.HasReachedTheCar && current == Screen.Site)
             {
                 founder.ComeBack();
-                Show(Screen.Ranking);
+                SaveStore.Save(state);
+                SceneFlow.OpenCityMap();
             }
 
             PollPauseKey();

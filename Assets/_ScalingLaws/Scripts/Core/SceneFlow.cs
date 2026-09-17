@@ -12,6 +12,7 @@ namespace ScalingLaws.Core
     {
         public const string MainMenuScene = "MainMenu";
         public const string GameScene = "Game";
+        public const string CityScene = "City";
 
         /// <summary>
         /// Set by the menu before loading the game scene. True resumes the stored campaign, false
@@ -85,6 +86,27 @@ namespace ScalingLaws.Core
         }
 
         public static void ResumeCampaign()
+        {
+            ResumeSavedCampaign = true;
+            SceneManager.LoadScene(GameScene);
+        }
+
+        /// <summary>
+        /// The founder reached the car. The caller has already saved, so there is nothing here to
+        /// carry across but the request itself — everything <see cref="CityScene"/> needs to look
+        /// right (districts, roads, pins, the legend) already lives in that scene, not in memory.
+        /// </summary>
+        public static void OpenCityMap()
+        {
+            SceneManager.LoadScene(CityScene);
+        }
+
+        /// <summary>
+        /// Leaving the map the same way every other return to the campaign works: resume the save
+        /// just written, rather than inventing a second path back into <see cref="GameScene"/> that
+        /// carries state through memory instead of through the slot both paths already trust.
+        /// </summary>
+        public static void ReturnFromCityMap()
         {
             ResumeSavedCampaign = true;
             SceneManager.LoadScene(GameScene);
