@@ -142,5 +142,128 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(landed.x, Is.EqualTo(target.x).Within(0.01f));
             Assert.That(landed.y, Is.EqualTo(target.y).Within(0.01f));
         }
+
+        /// <summary>The wheel moves the camera in the direction the notch was turned, or not at all.</summary>
+        [Test]
+        public void TheWheelZoomsInWhenItIsTurnedForward()
+        {
+            Assert.That(CityMapController.ScrollDolly(0f), Is.EqualTo(0f));
+            Assert.That(CityMapController.ScrollDolly(1f), Is.EqualTo(CityMapController.ZoomUnitsPerNotch));
+            Assert.That(CityMapController.ScrollDolly(-1f), Is.EqualTo(-CityMapController.ZoomUnitsPerNotch));
+        }
+
+        /// <summary>
+        /// A trackpad flick arrives as one enormous delta on a single frame. Without the cap that
+        /// frame takes the camera from the whole city down to the pavement.
+        /// </summary>
+        [Test]
+        public void OneFlickOfATrackpadCannotCrossTheWholeZoomRange()
+        {
+            var jump = Mathf.Abs(CityMapController.ScrollDolly(40f));
+            Assert.That(jump, Is.LessThan(CityMapController.MaxHeight - CityMapController.MinHeight));
+            Assert.That(jump, Is.EqualTo(CityMapController.ScrollDolly(3f)));
+        }
+
+        /// <summary>
+        /// The dolly stops on the limit rather than being dropped at it, or the last notch before
+        /// the floor would do nothing and the wheel would read as broken exactly where it matters.
+        /// </summary>
+        [Test]
+        public void TheWheelStopsOnTheLimitRatherThanBeingRefused()
+        {
+            const float forwardY = -0.5878f; // the map camera's fixed pitch, looking down
+
+            var partial = CityMapController.ClampDolly(
+                CityMapController.MinHeight + 20f, forwardY, CityMapController.ZoomUnitsPerNotch);
+
+            var landed = CityMapController.MinHeight + 20f + forwardY * partial;
+
+            Assert.That(partial, Is.GreaterThan(0f), "there is still twenty metres to give");
+            Assert.That(landed, Is.EqualTo(CityMapController.MinHeight).Within(0.01f));
+
+            Assert.That(
+                CityMapController.ClampDolly(CityMapController.MinHeight, forwardY, 400f),
+                Is.EqualTo(0f), "against the floor and pushing into it");
+
+            Assert.That(
+                CityMapController.ClampDolly(CityMapController.MaxHeight, forwardY, -400f),
+                Is.EqualTo(0f), "against the ceiling and pushing into it");
+        }
+
+        /// <summary>
+        /// The opening shot starts on the founder's house: aim the fixed look direction from where
+        /// it begins and it has to land on the house, the same check the district jump gets.
+        /// </summary>
+        [Test]
+        public void TheMapOpensLookingAtTheFoundersHouse()
+        {
+            var forward = new Vector3(0.4755f, -0.5878f, 0.6545f); // the map camera's fixed 36/36
+            var home = CityLayout.FounderHome;
+            var ground = CityLayout.GroundHeightAt(home);
+
+            var from = CityMapController.OpeningFrom(home, ground, forward);
+
+            var reach = (from.y - ground) / -forward.y;
+            var landed = new Vector2(from.x + forward.x * reach, from.z + forward.z * reach);
+
+            Assert.That(landed.x, Is.EqualTo(home.X).Within(0.01f));
+            Assert.That(landed.y, Is.EqualTo(home.Z).Within(0.01f));
+            Assert.That(from.y, Is.GreaterThanOrEqualTo(CityMapController.MinHeight),
+                "it must not start inside the terrain");
+            Assert.That(from.y, Is.LessThan(1050f),
+                "it starts below the overview it pulls back to, or there is no pull-back");
+        }
+
+        /// <summary>
+        /// The pull-back runs from one end to the other, in the time the author asked for, and it
+        /// covers most of the ground early. An even travel reads as a lift rather than as leaving.
+        /// </summary>
+        [Test]
+        public void ThePullBackStartsQuicklyAndSettles()
+        {
+            Assert.That(CityMapController.OpeningEase(0f), Is.EqualTo(0f));
+            Assert.That(CityMapController.OpeningEase(CityMapController.OpeningSeconds),
+                Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(CityMapController.OpeningEase(CityMapController.OpeningSeconds * 4f),
+                Is.EqualTo(1f), "a long frame cannot take it past the end");
+
+            var half = CityMapController.OpeningEase(CityMapController.OpeningSeconds * 0.5f);
+            Assert.That(half, Is.GreaterThan(0.7f), "most of the distance is covered early");
+
+            var previous = 0f;
+            for (var step = 1; step <= 20; step++)
+            {
+                var now = CityMapController.OpeningEase(CityMapController.OpeningSeconds * step / 20f);
+                Assert.That(now, Is.GreaterThanOrEqualTo(previous), "the shot never travels backwards");
+                previous = now;
+            }
+        }
+
+        /// <summary>
+        /// Every district levels its own ground, so a camera aimed with one guessed height centres
+        /// every district except the one it was guessed for.
+        /// </summary>
+        [Test]
+        public void TheGroundHeightAtAPlaceIsItsOwnDistrictsHeight()
+        {
+            foreach (var district in CityLayout.Districts)
+            {
+                var centre = new MapPoint(district.CentreX, district.CentreZ);
+                Assert.That(CityLayout.GroundHeightAt(centre), Is.EqualTo(district.GroundHeight),
+                    district.Id + " does not report its own levelled height");
+                Assert.AreSame(district, CityLayout.DistrictById(district.Id));
+            }
+
+            Assert.IsNull(CityLayout.DistrictById("nowhere"));
+        }
+
+        /// <summary>Well inside the limits the wheel is not interfered with at all.</summary>
+        [Test]
+        public void InTheMiddleOfTheRangeTheWheelIsLeftAlone()
+        {
+            var distance = CityMapController.ScrollDolly(1f);
+
+            Assert.That(CityMapController.ClampDolly(1200f, -0.5878f, distance), Is.EqualTo(distance));
+        }
     }
 }

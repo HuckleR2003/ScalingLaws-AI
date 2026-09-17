@@ -61,6 +61,7 @@ namespace ScalingLaws.UI
             new("\u2191 \u2193", "keys.scroll"),
             new("PGUP PGDN", "keys.page"),
             new("HOME END", "keys.ends"),
+            new("M", "keys.map"),
             new("ESC", "keys.menu")
         };
 
@@ -106,6 +107,15 @@ namespace ScalingLaws.UI
                 setSpeed(next.Value);
             }
         }
+
+        /// <summary>
+        /// True on the frame M is pressed and the keyboard belongs to the game.
+        ///
+        /// It lives here rather than beside the shell's own Escape because M is a binding a player
+        /// is meant to find: it is on the table the settings page prints, and the table is only
+        /// honest if the key it names is read through the same typing guard as the rest.
+        /// </summary>
+        public bool WantsTheMap() => !IsTyping() && Input.GetKeyDown(KeyCode.M);
 
         /// <summary>
         /// What the keys mean, given what the clock is doing. Null for "nothing was pressed".

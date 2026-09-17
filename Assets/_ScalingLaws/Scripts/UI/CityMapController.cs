@@ -62,12 +62,77 @@ namespace ScalingLaws.UI
         /// <summary>Close enough that snapping the rest of the way is not a visible jump.</summary>
         public const float FlyToArrivalDistance = 2f;
 
+        /// <summary>
+        /// How long the opening pull-back takes, in seconds. The author asked for three to four.
+        /// </summary>
+        public const float OpeningSeconds = 3.4f;
+
+        /// <summary>
+        /// How far above its own street the camera starts, before it pulls back. Close enough that
+        /// the founder's house fills the shot and the roofs either side of it are separate houses.
+        /// </summary>
+        public const float OpeningHeightAboveGround = 165f;
+
         private Camera cam;
         private Vector3? flyTarget;
+        private Vector3 openingFrom;
+        private Vector3 openingTo;
+        private float openingSeconds;
+        private bool opening;
 
         private void Awake()
         {
             cam = GetComponent<Camera>();
+        }
+
+        /// <summary>
+        /// The map opens on the founder's own house and pulls back off it to the overview.
+        ///
+        /// **It starts where the player just was.** Leaving the office is otherwise a cut to a city
+        /// from two kilometres up, which says nothing about where the company is standing in it. The
+        /// house is a real building on this map, so beginning the shot there and travelling out is
+        /// the one move that answers "where am I" without a label saying so.
+        ///
+        /// The scene's authored camera position is the destination, read here rather than restated,
+        /// so moving the opening view in the builder moves the end of this flight with it.
+        /// </summary>
+        private void Start()
+        {
+            openingTo = transform.position;
+            openingFrom = OpeningFrom(CityLayout.FounderHome,
+                CityLayout.GroundHeightAt(CityLayout.FounderHome), transform.forward);
+
+            transform.position = openingFrom;
+            openingSeconds = 0f;
+            opening = true;
+        }
+
+        /// <summary>
+        /// Where the opening shot begins: low over `target`, on the camera's own fixed look angle,
+        /// so the house is in the middle of the frame rather than under the camera.
+        /// </summary>
+        public static Vector3 OpeningFrom(MapPoint target, float targetGroundHeight, Vector3 forward)
+        {
+            var height = Mathf.Max(MinHeight, targetGroundHeight + OpeningHeightAboveGround);
+            var ground = CameraGroundFor(new Vector2(target.X, target.Z), targetGroundHeight,
+                height, forward);
+
+            return new Vector3(ground.x, height, ground.y);
+        }
+
+        /// <summary>
+        /// How far along the pull-back the camera is at a given moment, nought to one.
+        ///
+        /// **Fast first, settling at the end.** The author's words were that the map drops away
+        /// suddenly and then arrives; an even travel reads as a lift rather than as leaving, and an
+        /// ease-in reads as the camera being dragged.
+        /// </summary>
+        public static float OpeningEase(float seconds)
+        {
+            var t = Mathf.Clamp01(seconds / OpeningSeconds);
+            var left = 1f - t;
+
+            return 1f - left * left * left;
         }
 
         /// <summary>
@@ -81,10 +146,25 @@ namespace ScalingLaws.UI
         /// </summary>
         public void FlyTo(Vector2 groundTarget, float targetGroundHeight)
         {
-            var ground = CameraGroundFor(groundTarget, targetGroundHeight,
-                transform.position.y, transform.forward);
+            FlyTo(groundTarget, targetGroundHeight, transform.position.y);
+        }
 
-            flyTarget = new Vector3(ground.x, transform.position.y, ground.y);
+        /// <summary>
+        /// The same flight, ending at a chosen height rather than keeping the one the camera is at.
+        ///
+        /// What the legend's SHOW button needs: a player who has zoomed out to the whole city and
+        /// then asks to be shown a place would otherwise be flown to it and still be looking at the
+        /// whole city, which is a flight that answers nothing.
+        /// </summary>
+        public void FlyTo(Vector2 groundTarget, float targetGroundHeight, float cameraHeight)
+        {
+            var height = Mathf.Clamp(cameraHeight, MinHeight, MaxHeight);
+            var ground = CameraGroundFor(groundTarget, targetGroundHeight, height, transform.forward);
+
+            // Asking to be taken somewhere ends the opening shot. Without this the pull-back would
+            // go on running underneath the flight and the two would fight for the same camera.
+            opening = false;
+            flyTarget = new Vector3(ground.x, height, ground.y);
         }
 
         /// <summary>
@@ -107,7 +187,9 @@ namespace ScalingLaws.UI
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            // M both opens the map and closes it, so the key the office answers is the key the map
+            // answers. ESC stays: it is what every other panel in the game closes with.
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.M))
             {
                 SceneFlow.ReturnFromCityMap();
                 return;
@@ -125,10 +207,33 @@ namespace ScalingLaws.UI
                 Input.GetKey(KeyCode.Equals) || Input.GetKey(KeyCode.KeypadPlus),
                 Input.GetKey(KeyCode.Minus) || Input.GetKey(KeyCode.KeypadMinus));
 
-            // Either key is the player taking the camera back, mid-flight or not.
-            if (panAxis != Vector2.zero || zoom != 0f)
+            // The wheel is how a map is zoomed everywhere else, and a player reaches for it before
+            // they read any hint. It is a distance a notch rather than a speed a second: the keys
+            // are held and the wheel is not.
+            var wheel = ScrollDolly(Input.mouseScrollDelta.y);
+
+            // Any of the three is the player taking the camera back, mid-flight or not. That
+            // includes the opening shot: a player reaching for the keys has finished watching it,
+            // and a camera that goes on travelling under their hands is a camera that is broken.
+            if (panAxis != Vector2.zero || zoom != 0f || wheel != 0f)
             {
                 flyTarget = null;
+                opening = false;
+            }
+
+            if (opening)
+            {
+                openingSeconds += deltaSeconds;
+
+                transform.position = Vector3.Lerp(openingFrom, openingTo, OpeningEase(openingSeconds));
+
+                if (openingSeconds >= OpeningSeconds)
+                {
+                    transform.position = openingTo;
+                    opening = false;
+                }
+
+                return;
             }
 
             if (flyTarget.HasValue)
@@ -171,6 +276,51 @@ namespace ScalingLaws.UI
                     transform.position = candidate;
                 }
             }
+
+            if (wheel != 0f)
+            {
+                // Clamped rather than refused, unlike the keys above: a wheel notch is a whole jump
+                // and dropping it at the limits would make the last notch before the floor do
+                // nothing at all. It stops exactly at the limit instead.
+                var distance = ClampDolly(transform.position.y, transform.forward.y, wheel);
+                transform.position += transform.forward * distance;
+            }
+        }
+
+        /// <summary>World units the camera dollies for one notch of the wheel.</summary>
+        public const float ZoomUnitsPerNotch = 280f;
+
+        /// <summary>
+        /// Notches, however the platform reports them, turned into a distance along the camera's
+        /// forward vector. Positive zooms in.
+        ///
+        /// **Capped at three notches a frame.** A trackpad's flick arrives as one enormous delta on
+        /// a single frame, and without the cap that one frame takes the camera from the whole city
+        /// down to the pavement.
+        /// </summary>
+        public static float ScrollDolly(float notches) =>
+            Mathf.Clamp(notches, -3f, 3f) * ZoomUnitsPerNotch;
+
+        /// <summary>
+        /// The same distance, shortened so the camera lands on <see cref="MinHeight"/> or
+        /// <see cref="MaxHeight"/> instead of going through it. Zero once it is against a limit and
+        /// pushing further that way.
+        /// </summary>
+        public static float ClampDolly(float cameraHeight, float forwardY, float distance)
+        {
+            if (Mathf.Abs(forwardY) < 0.0001f || distance == 0f)
+            {
+                return 0f;
+            }
+
+            var height = cameraHeight + forwardY * distance;
+
+            if (height < MinHeight)
+            {
+                return (MinHeight - cameraHeight) / forwardY;
+            }
+
+            return height > MaxHeight ? (MaxHeight - cameraHeight) / forwardY : distance;
         }
 
         /// <summary>

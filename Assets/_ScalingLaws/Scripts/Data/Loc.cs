@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace ScalingLaws.Data
 {
@@ -195,6 +195,7 @@ namespace ScalingLaws.Data
             ["keys.scroll"] = "Scroll the page",
             ["keys.page"] = "A screenful at a time",
             ["keys.ends"] = "Top or bottom of the page",
+            ["keys.map"] = "The city map, and back",
             ["keys.menu"] = "Menu, or close what is open",
             ["common.cancel"] = "CANCEL",
             ["common.confirm"] = "CONFIRM",
@@ -1823,7 +1824,7 @@ namespace ScalingLaws.Data
             ["map.legend"] = "Click a country to choose it. Click anywhere else to lean in on that region.",
             ["map.filters.title"] = "MAP FILTERS",
             ["map.filters.all"] = "ALL",
-            ["map.controls.hint"] = "WASD / arrows: move     = / −: zoom     ESC: back to the office",
+            ["map.controls.hint"] = "WASD / arrows: move     wheel or = / −: zoom     M or ESC: back to the office",
             ["map.districts.title"] = "DISTRICTS",
             ["map.card.rent"] = "Monthly rent",
             ["map.card.buy"] = "Purchase price",
@@ -3385,6 +3386,7 @@ namespace ScalingLaws.Data
             ["keys.scroll"] = "Przewijanie strony",
             ["keys.page"] = "Cały ekran naraz",
             ["keys.ends"] = "Początek lub koniec strony",
+            ["keys.map"] = "Mapa miasta i powrót",
             ["keys.menu"] = "Menu albo zamknięcie tego, co otwarte",
             ["common.cancel"] = "ANULUJ",
             ["common.confirm"] = "POTWIERDŹ",
@@ -5008,7 +5010,7 @@ namespace ScalingLaws.Data
             ["map.legend"] = "Kliknij kraj, żeby go wybrać. Kliknij gdziekolwiek indziej, żeby przybliżyć ten region.",
             ["map.filters.title"] = "FILTRY MAPY",
             ["map.filters.all"] = "WSZYSTKO",
-            ["map.controls.hint"] = "WASD / strzałki: ruch     = / −: zoom     ESC: powrót do biura",
+            ["map.controls.hint"] = "WASD / strzałki: ruch     kółko albo = / −: zoom     M albo ESC: powrót do biura",
             ["map.districts.title"] = "DZIELNICE",
             ["map.card.rent"] = "Czynsz miesięczny",
             ["map.card.buy"] = "Cena zakupu",
