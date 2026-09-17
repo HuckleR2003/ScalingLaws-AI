@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine.SceneManagement;
 
 namespace ScalingLaws.Core
@@ -57,6 +57,16 @@ namespace ScalingLaws.Core
 
         /// <summary>Zero is bare-faced. One upward are the pairs of glasses that were found.</summary>
         public static int RequestedFounderGlasses { get; set; }
+
+        /// <summary>
+        /// DEBUG MODE was on when the campaign was started: every node researched, the bank full,
+        /// and no achievements for any of it.
+        ///
+        /// Read once by the game scene, like every other request here, and then it belongs to
+        /// `CompanyState.IsSandbox`, which is saved. A flag that lived only here would be lost the
+        /// first time the campaign was reloaded, and the reload would earn achievements.
+        /// </summary>
+        public static bool RequestedDebugMode { get; set; }
 
         /// <summary>Where the company registers. Zero means the default, America.</summary>
         public static int RequestedRegion { get; set; }

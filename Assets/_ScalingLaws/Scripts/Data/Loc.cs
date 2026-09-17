@@ -227,6 +227,10 @@ namespace ScalingLaws.Data
             ["settings.fullscreen.note"] = "Use a borderless full screen window.",
             ["settings.motion"] = "REDUCE MOTION",
             ["settings.motion.note"] = "Shortens the opening sequence and holds the office camera still.",
+            ["settings.debug"] = "UNLOCK DEBUG OPTIONS",
+            ["settings.debug.note"] = "Shows DEBUG MODE in the creator. A campaign begun with it earns no achievements.",
+            ["menu.debug_mode"] = "DEBUG MODE",
+            ["sandbox.mark"] = "SANDBOX",
 
             // ---- the model hub -----------------------------------------------------------------------
             ["model.title"] = "MODEL",
@@ -3419,6 +3423,10 @@ namespace ScalingLaws.Data
             ["settings.fullscreen.note"] = "Okno pełnoekranowe bez ramki.",
             ["settings.motion"] = "MNIEJ RUCHU",
             ["settings.motion.note"] = "Skraca sekwencję otwierającą i zatrzymuje kamerę w biurze.",
+            ["settings.debug"] = "ODBLOKUJ OPCJE DEBUG",
+            ["settings.debug.note"] = "Pokazuje DEBUG MODE w kreatorze. Kampania z nim zaczęta nie zdobywa osiągnięć.",
+            ["menu.debug_mode"] = "DEBUG MODE",
+            ["sandbox.mark"] = "PIASKOWNICA",
 
             // ---- the model hub -----------------------------------------------------------------------
             ["model.title"] = "MODEL",

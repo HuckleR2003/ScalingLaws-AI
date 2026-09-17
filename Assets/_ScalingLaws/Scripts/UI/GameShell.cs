@@ -550,6 +550,12 @@ namespace ScalingLaws.UI
             }
         }
 
+        /// <summary>
+        /// What a debug campaign opens with. Enough that nothing in the game is gated on money, and
+        /// a round number so a screenshot of it is obviously not a campaign anybody played.
+        /// </summary>
+        public const long SandboxCashUsd = 500_000_000L;
+
         private void Boot()
         {
             // Resuming is the menu's decision. Loading a corrupt or missing save falls back to a new
@@ -591,6 +597,17 @@ namespace ScalingLaws.UI
             }
 
             simulation = new CompanySimulation(state);
+
+            // **DEBUG MODE, and only on a campaign being created.** A resumed save carries its own
+            // flag, so re-entering a sandbox does not top the bank up again and re-entering a real
+            // campaign cannot be turned into one by the setting being left on.
+            if (!SceneFlow.ResumeSavedCampaign && SceneFlow.RequestedDebugMode)
+            {
+                state.IsSandbox = true;
+                state.CashUsd = SandboxCashUsd;
+                simulation.UnlockEveryResearchNode();
+            }
+
             clock = new SimClock(state.Date, SimSpeed.Paused);
 
             // **Today, not day zero.** A save left mid-call loads with the guide paused, and an
@@ -881,6 +898,18 @@ namespace ScalingLaws.UI
             root.AddToClassList("root");
 
             root.Add(BuildTopBar());
+
+            // **A sandbox campaign says so on every screen, permanently.** The author posts
+            // screenshots publicly, and a frame from a run with every node researched and half a
+            // billion in the bank must not be able to pass for a frame from a campaign somebody
+            // played. `PickingMode.Ignore` for the reason every floating mark here carries it: it
+            // sits over the chrome and must never eat a click meant for SAVE or MENU.
+            if (state is { IsSandbox: true })
+            {
+                var mark = new Label(Loc.T("sandbox.mark")) { pickingMode = PickingMode.Ignore };
+                mark.AddToClassList("sandbox-mark");
+                root.Add(mark);
+            }
 
             var shell = new VisualElement();
             shell.AddToClassList("shell");
@@ -3839,6 +3868,15 @@ namespace ScalingLaws.UI
         {
             if (state == null)
             {
+                return;
+            }
+
+            // The whole call, not only the evaluator: the moments the rules announce today and the
+            // bankruptcy counter are just as permanent, and they are kept on this machine rather
+            // than in the save.
+            if (state.IsSandbox)
+            {
+                state.AchievementMomentsToday.Clear();
                 return;
             }
 

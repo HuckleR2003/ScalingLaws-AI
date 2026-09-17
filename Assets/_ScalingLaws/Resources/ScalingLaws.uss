@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Scaling Laws theme.
  *
  * Deliberately a first pass in the visual language of the tycoon games this is modelled on:
@@ -310,6 +310,22 @@
 
 .setting-copy {
     width: 300px;
+}
+
+/* Half the height of an ordinary settings row, for the one switch on that sheet that is not about
+   playing the game. The type stays at the floor: smaller is a rule this stylesheet does not break. */
+.setting-row--small {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    opacity: 0.72;
+}
+
+.setting-row--small .setting-name {
+    font-size: 11px;
+}
+
+.setting-row--small .setting-description {
+    font-size: 11px;
 }
 
 .setting-name {
@@ -730,6 +746,48 @@
     flex-direction: row;
     flex-shrink: 0;
     margin-bottom: 8px;
+}
+
+/* The creator's heading with DEBUG MODE beside it. A row rather than a second line, because these
+   pages are laid out to fit one window and there is nothing spare to give a button its own band. */
+.creator-headrow {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.creator-debug {
+    height: 30px;
+    margin: 0;
+    padding: 0 14px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: rgb(226, 172, 180);
+    background-color: rgba(120, 22, 42, 0.25);
+    border-width: 1px;
+    border-color: rgba(198, 70, 96, 0.55);
+    border-radius: 4px;
+    -unity-text-align: middle-center;
+}
+
+.creator-debug--on {
+    color: rgb(255, 235, 238);
+    background-color: rgb(120, 22, 42);
+    border-color: rgb(226, 96, 120);
+}
+
+/* On every screen of a sandbox campaign, over the chrome, ignoring the pointer. */
+.sandbox-mark {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255, 190, 200, 0.75);
+    background-color: rgba(120, 22, 42, 0.55);
+    padding: 2px 10px;
+    border-radius: 3px;
 }
 
 /* The page has to fit without scrolling, so the title gives back what it can. */

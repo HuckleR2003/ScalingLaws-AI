@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -68,6 +68,15 @@ namespace ScalingLaws.UI
         private string companyName = "Prometheus AI";
         private string founderName = string.Empty;
         private bool showAllTraits;
+
+        /// <summary>
+        /// DEBUG MODE, armed in the creator and carried into the campaign it starts.
+        ///
+        /// Deliberately not remembered between runs of the game, unlike the setting that reveals the
+        /// button: the switch says the door exists, and opening it is a decision taken again for
+        /// every campaign.
+        /// </summary>
+        private bool debugMode;
 
         // Which face and which glasses. The look is stored by name rather than by index, so adding
         // another character pack cannot silently turn an existing founder into somebody else.
@@ -172,7 +181,17 @@ namespace ScalingLaws.UI
                     root.Add(Scroller(BuildCompany()));
                     break;
             }
+
+            // Last, so it wins over whatever the stage set for itself. A maroon page is the whole
+            // warning that this campaign will not be a real one.
+            if (debugMode)
+            {
+                root.style.backgroundColor = DebugBackground;
+            }
         }
+
+        /// <summary>The maroon a debug campaign is created against. Dark enough to read white on.</summary>
+        private static readonly Color DebugBackground = new(0.22f, 0.05f, 0.09f);
 
         /// <summary>Wraps a page so it scrolls when it is taller than the window instead of squashing.</summary>
         private static VisualElement Scroller(VisualElement content)
@@ -526,6 +545,27 @@ namespace ScalingLaws.UI
             motionToggle.RegisterValueChangedCallback(evt => GameSettings.SetReduceMotion(evt.newValue));
             motionRow.Add(motionToggle);
             sheet.Add(motionRow);
+
+            // Half the size of the settings above it and last on the sheet, because it is not a
+            // setting about playing the game. It reveals a button in the creator and nothing else.
+            var debugRow = new VisualElement();
+            debugRow.AddToClassList("setting-row");
+            debugRow.AddToClassList("setting-row--small");
+            debugRow.Add(SettingCopy(Loc.T("settings.debug"), Loc.T("settings.debug.note")));
+            var debugToggle = new Toggle { value = GameSettings.DebugUnlocked };
+            debugToggle.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetDebugUnlocked(evt.newValue);
+
+                // The creator reads this when it is built, and switching it off has to take the
+                // arming with it: a hidden button that is still armed is a campaign nobody meant.
+                if (!evt.newValue)
+                {
+                    debugMode = false;
+                }
+            });
+            debugRow.Add(debugToggle);
+            sheet.Add(debugRow);
 
             var about = new VisualElement();
             about.AddToClassList("panel");
@@ -1023,9 +1063,36 @@ namespace ScalingLaws.UI
             var page = new VisualElement();
             page.AddToClassList("creator");
 
-            var heading = new Label(Loc.T("creator.who_are_you"));
-            heading.AddToClassList("page-title");
-            page.Add(heading);
+            // The heading keeps its own line and its own height whether or not the button is
+            // there, because these pages are laid out to fit one window with nothing to spare.
+            if (GameSettings.DebugUnlocked)
+            {
+                var headerRow = new VisualElement();
+                headerRow.AddToClassList("creator-headrow");
+
+                var headingWithDebug = new Label(Loc.T("creator.who_are_you"));
+                headingWithDebug.AddToClassList("page-title");
+                headerRow.Add(headingWithDebug);
+
+                var debug = new Button(() =>
+                {
+                    debugMode = !debugMode;
+                    Show(Stage.Founder);
+                })
+                { text = Loc.T("menu.debug_mode") };
+
+                debug.AddToClassList("creator-debug");
+                debug.EnableInClassList("creator-debug--on", debugMode);
+                headerRow.Add(debug);
+
+                page.Add(headerRow);
+            }
+            else
+            {
+                var heading = new Label(Loc.T("creator.who_are_you"));
+                heading.AddToClassList("page-title");
+                page.Add(heading);
+            }
 
             var columns = new VisualElement();
             columns.AddToClassList("creator__columns");
@@ -1829,6 +1896,7 @@ namespace ScalingLaws.UI
             SceneFlow.RequestedCountry = (int)chosenCountry;
             SceneFlow.RequestedFounderLook = founderLook ?? string.Empty;
             SceneFlow.RequestedFounderGlasses = founderGlasses;
+            SceneFlow.RequestedDebugMode = debugMode;
 
             SceneFlow.StartNewCampaign(
                 companyName,

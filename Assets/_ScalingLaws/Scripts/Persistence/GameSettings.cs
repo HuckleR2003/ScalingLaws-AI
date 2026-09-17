@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ScalingLaws.Data;
 using UnityEngine;
 
@@ -21,6 +21,7 @@ namespace ScalingLaws.Persistence
         private const string LanguageKey = Prefix + "Language";
         private const string AutosaveKey = Prefix + "AutosaveMinutes";
         private const string SeenOpeningKey = Prefix + "SeenOpening";
+        private const string DebugUnlockedKey = Prefix + "DebugUnlocked";
 
         public const float DefaultMasterVolume = 0.8f;
 
@@ -121,6 +122,27 @@ namespace ScalingLaws.Persistence
         /// </summary>
         public static bool HasSeenOpening { get; private set; }
 
+        /// <summary>
+        /// Whether the creator offers DEBUG MODE at all.
+        ///
+        /// **Two steps on purpose.** A campaign with every node researched and half a billion in the
+        /// bank is for looking at screens, and a button that starts one sitting permanently in the
+        /// corner of the creator is a button somebody presses by accident on the run they meant to
+        /// play. Off by default, switched on in the settings, and only then does the creator show
+        /// anything.
+        ///
+        /// A preference rather than campaign state, like the language and the opening: it is a fact
+        /// about this machine and the person at it.
+        /// </summary>
+        public static bool DebugUnlocked { get; private set; }
+
+        public static void SetDebugUnlocked(bool value)
+        {
+            DebugUnlocked = value;
+            PlayerPrefs.SetInt(DebugUnlockedKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
         /// <summary>Remembers that the opening has been read. Called once, when it finishes.</summary>
         public static void MarkOpeningSeen()
         {
@@ -144,6 +166,7 @@ namespace ScalingLaws.Persistence
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, 1) == 1;
             ReduceMotion = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
             HasSeenOpening = PlayerPrefs.GetInt(SeenOpeningKey, 0) == 1;
+            DebugUnlocked = PlayerPrefs.GetInt(DebugUnlockedKey, 0) == 1;
 
             // Defaults to the machine's own language on a first run, so somebody in Poland does not
             // have to find a settings screen written in English in order to say they read Polish.
