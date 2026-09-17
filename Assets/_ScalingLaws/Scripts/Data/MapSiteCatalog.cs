@@ -81,6 +81,9 @@ namespace ScalingLaws.Data
         /// The decision, possibility or risk this site is supposed to make legible. Per the rule in
         /// <c>Docs/CITY_MAP_PLAN.md</c>: a site with nothing to decide is decoration, and decoration
         /// does not belong on this map.
+        ///
+        /// Shown to the player on the site card, so it is written for the player. A note about code, a
+        /// document or a plan belongs in a comment beside the entry, never in here.
         /// </summary>
         public string DecisionBlurb { get; }
 
@@ -159,8 +162,8 @@ namespace ScalingLaws.Data
 
             new("office.campus", "Campus", MapSiteKind.OfficeLease, MapCategory.Research,
                 "innovation", new MapPoint(1480f, 1360f), 55f, (int)OfficeTier.Campus,
-                "Fifty desks next to the university the company will be hiring out of. Announced in "
-                + "the catalog with no picture yet, so this pin is ahead of the in-game chooser.",
+                "Fifty desks next to the university the company will be hiring out of. The first office "
+                + "chosen for who works nearby rather than for the rent.",
                 systemExists: true),
 
             new("office.tower", "Tower", MapSiteKind.OfficeLease, MapCategory.Finance,
@@ -171,8 +174,8 @@ namespace ScalingLaws.Data
 
             new("office.multisite", "Multi-Site HQ", MapSiteKind.OfficeLease, MapCategory.Finance,
                 "downtown", new MapPoint(960f, 960f), 46f, (int)OfficeTier.MultiSite,
-                "Not one building. This pin is the headquarters the other sites report to: two "
-                + "hundred desks' worth of company, spread further than one map screen shows.",
+                "Not one building. The headquarters the other sites report to: two hundred desks of "
+                + "company, spread across more of the city than one street.",
                 systemExists: true),
 
             // ---- Property: net worth a player can walk past, not headcount --------------------------
@@ -194,8 +197,7 @@ namespace ScalingLaws.Data
             new("home.villa", "Villa", MapSiteKind.PropertyListing, MapCategory.Business,
                 "greendale", new MapPoint(260f, 1560f), 30f, 3,
                 "Up on the shoulder of the hills, long driveway, a view of the bay nobody in "
-                + "Riverdale gets. The grand plots CityBlocks already surveyed for Greendale are "
-                + "built for exactly this.", systemExists: false),
+                + "Riverdale gets. Greendale's plots are drawn for houses like this one.", systemExists: false),
 
             new("home.estate", "Estate", MapSiteKind.PropertyListing, MapCategory.Business,
                 "greendale", new MapPoint(420f, 1700f), 36f, 4,
@@ -222,8 +224,7 @@ namespace ScalingLaws.Data
             new("server.outpost", "First Rack Hall", MapSiteKind.ServerFacility, MapCategory.Compute,
                 "port", new MapPoint(520f, 190f), 22f, 1,
                 "Ugly on purpose: a shed with a loading bay, the first place the company's own "
-                + "silicon lives instead of somebody else's cluster. Where ComputeTier."
-                + "ColocatedServers should stand once the room has a scene.", systemExists: false),
+                + "silicon lives instead of somebody else's cluster.", systemExists: false),
 
             new("server.hall", "Server Hall", MapSiteKind.ServerFacility, MapCategory.Compute,
                 "port", new MapPoint(570f, 180f), 26f, 2,
@@ -232,22 +233,18 @@ namespace ScalingLaws.Data
 
             new("server.cooledhall", "Cooled Hall", MapSiteKind.ServerFacility, MapCategory.Compute,
                 "port", new MapPoint(620f, 200f), 30f, 3,
-                "Real cooling towers on the roof — the visual answer to the seven-cards-beat-eight "
-                + "finding from the README: a company that keeps this hall below its throttling "
-                + "point should look different from one that does not.", systemExists: false),
+                "Cooling towers on the roof. A full cabinet throttles, and seven cards kept cool can "
+                + "beat eight running hot: this is the hall for a company that has learned that.", systemExists: false),
 
             new("server.campus", "Compute Campus", MapSiteKind.ServerFacility, MapCategory.Compute,
                 "port", new MapPoint(600f, 250f), 34f, 4,
-                "Several halls on one plot: what ComputeTier.OwnDatacenter should look like from the "
-                + "map. The $80M datacenter already exists in the economy and has never had a "
-                + "building.", systemExists: false),
+                "Several halls on one plot: the company's own datacenter rather than space in "
+                + "somebody else's.", systemExists: false),
 
             new("server.megasite", "Megasite", MapSiteKind.ServerFacility, MapCategory.Compute,
                 "port", new MapPoint(520f, 220f), 30f, 5,
-                "The far edge of the cluster, and the only building on this map sized to matter on "
-                + "its own rather than as one of a row. Smaller than first drawn — the wide radius "
-                + "the original number wanted was itself most of what put it in the river. Nothing "
-                + "in the economy reaches this tier yet; it exists so the ladder visibly has a top.",
+                "The far edge of the cluster, and the only building here sized to matter on its own "
+                + "rather than as one of a row. The top of the compute ladder.",
                 systemExists: false),
 
             // ---- Server halls to rent: River Works -------------------------------------------------
@@ -272,8 +269,8 @@ namespace ScalingLaws.Data
             new("server.riverworks.riverside", "Riverside Hall", MapSiteKind.ServerFacility, MapCategory.Compute,
                 "riverworks", new MapPoint(758f, 540f), 28f, 3,
                 "On the bank itself, with intake pipes straight into the river. The water does the "
-                + "work chillers do everywhere else, so the rent is higher and the power bill lower — "
-                + "the trade this district exists for.", systemExists: false),
+                + "work chillers do everywhere else, so the rent is higher and the power bill lower. "
+                + "That is the trade this district exists for.", systemExists: false),
 
             new("server.riverworks.rivercampus", "River-Cooled Campus", MapSiteKind.ServerFacility, MapCategory.Compute,
                 "riverworks", new MapPoint(700f, 512f), 34f, 4,
@@ -377,41 +374,36 @@ namespace ScalingLaws.Data
 
             new("event.park", "Bayview Park", MapSiteKind.EventVenue, MapCategory.Events,
                 "park", new MapPoint(990f, 1450f), 0f, 0,
-                "AI Frontier Expo and Global Model Awards, per the calendar in "
-                + "Docs/CITY_MAP_PLAN.md. Already a ParkSite with a lake and an event ground; this "
-                + "pin only adds the calendar link, not new geometry.", systemExists: false),
+                "AI Frontier Expo and Global Model Awards. A lake, lawns and an event ground big "
+                + "enough for the crowds both of them draw.", systemExists: false),
 
             new("event.gallery", "Bayview Gallery", MapSiteKind.EventVenue, MapCategory.Events,
                 "park", new MapPoint(790f, 1300f), 0f, 0,
-                "Compute & Infrastructure Expo and Creator Intelligence Festival. Already a MallSite "
-                + "with the car park the plan's notes insisted on; this pin only adds the calendar "
-                + "link.", systemExists: false),
+                "Compute & Infrastructure Expo and Creator Intelligence Festival. The halls are "
+                + "indoors, and the car park behind them takes the marquees.", systemExists: false),
 
             new("event.civicsquare", "Civic Square", MapSiteKind.EventVenue, MapCategory.Events,
                 "civic", new MapPoint(930f, 690f), 0f, 0,
-                "Responsible AI Forum and the press conferences a scandal calls for. Already a "
-                + "ParkSite (civic_gardens) sized for a crowd rather than a festival — the request "
-                + "for a \"rynek miasta\" is this site.", systemExists: false),
+                "Responsible AI Forum and the press conferences a scandal calls for. A square sized "
+                + "for a crowd rather than a festival.", systemExists: false),
 
             new("event.mediaplaza", "Media Plaza", MapSiteKind.EventVenue, MapCategory.Events,
                 "media", new MapPoint(230f, 780f), 60f, 0,
-                "Model Research Summit and Capital & AI Forum need a second indoor venue so the "
-                + "gallery is not hosting three unrelated event types a year. Proposed, not yet a "
-                + "MallSite in CityBlocks.cs — needs the same survey the gallery already got before "
-                + "a builder can draw it.", systemExists: false),
+                "Model Research Summit and Capital & AI Forum. The city's second indoor venue, so "
+                + "the gallery is not hosting every kind of event in the year.", systemExists: false),
 
             // ---- Power plant stakes: PowerPlantCatalog's two sites, positions are new ---------------
 
             new("plant.riverside", "Riverside Plant", MapSiteKind.PowerPlantStake, MapCategory.Energy,
                 "port", new MapPoint(210f, 260f), 60f, (int)PowerPlantSite.Riverside,
-                "Gas turbines, two and a half years to build, cheap and quick. PowerPlantCatalog "
-                + "already prices it; a stake a rival could buy into is not built yet.",
+                "Gas turbines: about two and a half years to build, the cheaper and quicker of the "
+                + "two plants.",
                 systemExists: false),
 
             new("plant.coastal", "Coastal Plant", MapSiteKind.PowerPlantStake, MapCategory.Energy,
                 "port", new MapPoint(80f, 100f), 70f, (int)PowerPlantSite.Coastal,
-                "A nuclear block, nine years and nearly five times the capital, then a tenth of the "
-                + "running cost. The bigger of the two footprints on this map after the megasite.",
+                "A nuclear block: about nine years to build and nearly five times the capital of the "
+                + "gas plant, then fuel at about a fifth of its cost per kilowatt hour.",
                 systemExists: false),
 
             // ---- Job agencies: the three hiring channels GETTING_STARTED.md already describes -------
@@ -429,36 +421,32 @@ namespace ScalingLaws.Data
             // of the crossing now, not at the district's geometric centre.
             new("jobs.stateregister", "State Employment Register", MapSiteKind.JobAgency, MapCategory.Regulation,
                 "civic", new MapPoint(1080f, 478f), 16f, 2,
-                "Hasn't been redesigned since 2009, per the game's own description of it. Cheapest "
-                + "channel, slowest, and it sits exactly where a bureaucratic office belongs.",
+                "Last updated in 2009, and it shows. The cheapest channel and the slowest, in the "
+                + "part of town a government office belongs in.",
                 systemExists: true),
 
             new("jobs.contractboard", "Contract Board", MapSiteKind.JobAgency, MapCategory.Media,
                 "media", new MapPoint(250f, 860f), 26f, 3,
-                "The informal channel: postings rather than a desk. Placed in the media strip because "
-                + "it is the closest thing this city has to a noticeboard district.",
+                "The informal channel: postings rather than a desk, in the media strip, the closest "
+                + "thing this city has to a noticeboard district.",
                 systemExists: true),
 
             // ---- Tax office: the Civic Center's own blurb already names it --------------------------
 
             new("civic.taxoffice", "Tax Office", MapSiteKind.TaxOffice, MapCategory.Regulation,
                 "civic", new MapPoint(1170f, 510f), 34f, 0,
-                "\"City hall, the AI authority, the tax office and the compliance desk\" — "
-                + "CityLayout.cs described this district before this file existed. The January bill "
-                + "and every postponement decision belong at this address.", systemExists: true),
+                "Where the January bill comes from, and where every request to postpone it is "
+                + "decided.", systemExists: true),
 
             // ---- Car dealerships: cosmetic today, and the fix for a promise Emil already makes ------
 
             new("cars.port", "Port Motors", MapSiteKind.CarDealership, MapCategory.Business,
                 "port", new MapPoint(660f, 230f), 22f, 1,
-                "Nothing in the simulation reads this yet. Emil promises \"cars to pick from\" at "
-                + "tutorial step 49 and the game has never had one; this is the site for closing "
-                + "that gap rather than quietly cutting his line.", systemExists: false),
+                "A car showroom by the port, on the road in from the bridge.", systemExists: false),
 
             new("cars.riverdale", "Riverdale Motors", MapSiteKind.CarDealership, MapCategory.Business,
                 "riverdale", new MapPoint(1600f, 330f), 22f, 2,
-                "The suburban dealership, on the same road as the starter house. Cosmetic pin, same "
-                + "gap as Port Motors.", systemExists: false)
+                "The suburban dealership, on the same road as the starter house.", systemExists: false)
         };
 
         public static IReadOnlyList<MapSiteDefinition> All => Entries;
