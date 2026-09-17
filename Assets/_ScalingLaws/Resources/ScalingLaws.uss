@@ -17321,6 +17321,74 @@
     border-left-color: rgba(120, 206, 156, 0.28);
 }
 
+/* ---- the map legend / filters, Etap 5 of CITY_MAP_PLAN.md ----------------------------------------
+   Eight rows, one per MapCategory, each a swatch and a label. Clicking a row picks it out on the
+   map; clicking the same row again clears it. The swatch itself carries the category's colour, so
+   nothing here is coloured per category — a row only ever needs the same two states every other row
+   has, on or dim. */
+
+.map-legend {
+    position: absolute;
+    width: 236px;
+    padding: 14px 12px;
+    background-color: rgba(8, 10, 14, 0.82);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+}
+
+.map-legend__title {
+    margin: 0 0 10px 4px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: rgba(200, 214, 236, 0.65);
+}
+
+.map-legend__row {
+    flex-direction: row;
+    align-items: center;
+    height: 30px;
+    margin: 0;
+    padding: 0 8px;
+    background-color: rgba(255, 255, 255, 0);
+    border-width: 0;
+    border-left-width: 3px;
+    border-left-color: rgba(255, 255, 255, 0);
+    border-radius: 0;
+}
+
+.map-legend__row:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.map-legend__row--on {
+    background-color: rgba(255, 255, 255, 0.10);
+    border-left-color: rgb(226, 236, 250);
+}
+
+.map-legend__row--dim .map-legend__label {
+    color: rgba(210, 220, 236, 0.38);
+}
+
+.map-legend__row--dim .map-legend__swatch {
+    opacity: 0.4;
+}
+
+.map-legend__swatch {
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.map-legend__label {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgb(226, 236, 250);
+}
+
 /* The last era reads differently from the four before it, because it is the only one whose subject
    is not the model. One tint, on the heading and the edge, and nothing else: the board underneath
    already carries the weight. */
