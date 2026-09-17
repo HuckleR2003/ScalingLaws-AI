@@ -72,6 +72,9 @@ move, places to click and a city worth moving around.
 - **Silicon Valley.** The map grows south past the port onto a new stretch of coast, with the
   headquarters of the 12 rival labs from the game and two prestige offices, and the camera follows
   you there.
+- **A denser city.** Four new estates, the Gallery Quarter, a port street that reaches Riverdale, a
+  second road into Silicon Valley, and district blocks filled out with corner buildings and a second
+  row.
 
 ### Added
 
