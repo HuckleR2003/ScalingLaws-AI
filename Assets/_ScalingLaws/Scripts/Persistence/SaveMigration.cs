@@ -159,6 +159,7 @@ namespace ScalingLaws.Persistence
                     55 => UpgradeV55ToV56(current),
                     56 => UpgradeV56ToV57(current),
                     57 => UpgradeV57ToV58(current),
+                    58 => UpgradeV58ToV59(current),
                     _ => current
                 };
             }
@@ -1885,6 +1886,65 @@ namespace ScalingLaws.Persistence
         /// v57 campaign was played in a game where DEBUG MODE did not exist, so it cannot have been
         /// one, and its achievements were earned by playing.
         /// </summary>
+        /// <summary>
+        /// v58 to v59: the tokenizer ladder.
+        ///
+        /// Every model, every shelf item and any run in flight reads as the off-the-shelf
+        /// vocabulary with no adaptation, which is not a default but the truth: they were built in a
+        /// game where the ladder did not exist, and that rung is the one it is all measured against.
+        /// Handing them a rung they never researched would make a company retroactively cheaper to
+        /// serve for a decision nobody took.
+        /// </summary>
+        public static SaveData UpgradeV58ToV59(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 59;
+
+            if (data.models != null)
+            {
+                foreach (var model in data.models)
+                {
+                    if (model == null)
+                    {
+                        continue;
+                    }
+
+                    model.tokenizer = 0;
+                    model.tokenizerAdaptation = 0;
+                }
+            }
+
+            if (data.shelf != null)
+            {
+                foreach (var shelved in data.shelf)
+                {
+                    if (shelved == null)
+                    {
+                        continue;
+                    }
+
+                    shelved.tokenizer = 0;
+                    shelved.tokenizerAdaptation = 0;
+                }
+            }
+
+            if (data.activeRun?.choices != null)
+            {
+                data.activeRun.choices.tokenizer = 0;
+                data.activeRun.choices.tokenizerAdaptation = 0;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v58 to v59: everything already built keeps the off-the-shelf vocabulary it was "
+                + "trained against. The ladder applies to runs started from now on.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV57ToV58(SaveData data)
         {
             if (data == null)

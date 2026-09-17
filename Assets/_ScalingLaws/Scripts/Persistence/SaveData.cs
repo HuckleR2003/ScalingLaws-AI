@@ -111,6 +111,18 @@ namespace ScalingLaws.Persistence
 
         /// <inheritdoc cref="assaTier"/>
         public int safetyEffort = 1;
+
+        /// <summary>
+        /// The tokenizer rung this was built with, and how far the corpus was adapted to it.
+        ///
+        /// Added in v59. Zero is the off-the-shelf vocabulary with no adaptation, which is exactly
+        /// what every model built before the ladder existed was trained against, so an older file
+        /// reads as the run it always was rather than being handed a technology nobody researched.
+        /// </summary>
+        public int tokenizer;
+
+        /// <inheritdoc cref="tokenizer"/>
+        public int tokenizerAdaptation;
     }
 
     /// <summary>One letter. Added in v24.</summary>
@@ -182,6 +194,18 @@ namespace ScalingLaws.Persistence
         /// <inheritdoc cref="assaTier"/>
         public int safetyEffort = 1;
 
+        /// <summary>
+        /// The tokenizer rung this was built with, and how far the corpus was adapted to it.
+        ///
+        /// Added in v59. Zero is the off-the-shelf vocabulary with no adaptation, which is exactly
+        /// what every model built before the ladder existed was trained against, so an older file
+        /// reads as the run it always was rather than being handed a technology nobody researched.
+        /// </summary>
+        public int tokenizer;
+
+        /// <inheritdoc cref="tokenizer"/>
+        public int tokenizerAdaptation;
+
         public int deduplication = 1;
         public int cutoffMonthsBack;
     }
@@ -233,6 +257,17 @@ namespace ScalingLaws.Persistence
         /// <inheritdoc cref="assaTier"/>
         public int safetyEffort = 1;
 
+        /// <summary>
+        /// The tokenizer rung this was built with, and how far the corpus was adapted to it.
+        ///
+        /// Added in v59. Zero is the off-the-shelf vocabulary with no adaptation, which is exactly
+        /// what every model built before the ladder existed was trained against, so an older file
+        /// reads as the run it always was rather than being handed a technology nobody researched.
+        /// </summary>
+        public int tokenizer;
+
+        /// <inheritdoc cref="tokenizer"/>
+        public int tokenizerAdaptation;
     }
 
     /// <summary>An upgrade programme in flight. Added in v3.</summary>
@@ -426,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 58;
+        public const int CurrentVersion = 59;
 
         public int version = CurrentVersion;
 

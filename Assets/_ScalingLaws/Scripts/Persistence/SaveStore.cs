@@ -145,6 +145,18 @@ namespace ScalingLaws.Persistence
 
         // ------------------------------------------------------------------ capture
 
+        /// <summary>
+        /// A stored tokenizer rung, or the off-the-shelf one.
+        ///
+        /// Validated rather than cast, like every other enum read out of a file here: a save can be
+        /// edited and a corrupt install can garble one, and an undefined rung would reach the market
+        /// as a multiplier nobody can account for.
+        /// </summary>
+        private static TokenizerKind ReadTokenizer(int stored) =>
+            Enum.IsDefined(typeof(TokenizerKind), stored)
+                ? (TokenizerKind)stored
+                : TokenizerKind.OffTheShelf;
+
         public static SaveData Capture(CompanyState state)
         {
             if (state == null)
@@ -570,6 +582,8 @@ namespace ScalingLaws.Persistence
                     redTeamTier = model.RedTeamTier,
                     dataProtectionTier = model.DataProtectionTier,
                     safetyEffort = model.SafetyEffort,
+                    tokenizer = (int)model.Tokenizer,
+                    tokenizerAdaptation = model.TokenizerAdaptation,
                     lifetimeRevenueUsd = model.LifetimeRevenueUsd,
                     daysOnSale = model.DaysOnSale,
                     peakUsers = model.PeakUsers,
@@ -633,6 +647,8 @@ namespace ScalingLaws.Persistence
                     redTeamTier = shelved.RedTeamTier,
                     dataProtectionTier = shelved.DataProtectionTier,
                     safetyEffort = shelved.SafetyEffort,
+                    tokenizer = (int)shelved.Tokenizer,
+                    tokenizerAdaptation = shelved.TokenizerAdaptation,
                     traitLevels = new List<int>(shelved.Traits.ToArray())
                 });
             }
@@ -918,7 +934,9 @@ namespace ScalingLaws.Persistence
                         dataProtectionTier = run.Blueprint.DataProtectionTier,
                         safetyEffort = run.Blueprint.SafetyEffort,
                         deduplication = (int)run.Blueprint.Deduplication,
-                        cutoffMonthsBack = run.Blueprint.CutoffMonthsBack
+                        cutoffMonthsBack = run.Blueprint.CutoffMonthsBack,
+                        tokenizer = (int)run.Blueprint.Tokenizer,
+                        tokenizerAdaptation = run.Blueprint.TokenizerAdaptation
                     }
                 };
             }
@@ -1460,7 +1478,9 @@ namespace ScalingLaws.Persistence
                     Math.Clamp(model.assaTier, 0, SafetyModuleCatalog.TierCount - 1),
                     Math.Clamp(model.redTeamTier, 0, SafetyModuleCatalog.TierCount - 1),
                     Math.Clamp(model.dataProtectionTier, -1, SafetyModuleCatalog.TierCount - 1),
-                    Math.Clamp(model.safetyEffort, 1, 4));
+                    Math.Clamp(model.safetyEffort, 1, 4),
+                    ReadTokenizer(model.tokenizer),
+                    Math.Clamp(model.tokenizerAdaptation, 0, TokenizerCatalog.AdaptationLevels - 1));
 
                 if (model.traitLevels != null && model.traitLevels.Count > 0)
                 {
@@ -1520,7 +1540,9 @@ namespace ScalingLaws.Persistence
                     Math.Clamp(shelved.assaTier, 0, SafetyModuleCatalog.TierCount - 1),
                     Math.Clamp(shelved.redTeamTier, 0, SafetyModuleCatalog.TierCount - 1),
                     Math.Clamp(shelved.dataProtectionTier, -1, SafetyModuleCatalog.TierCount - 1),
-                    Math.Clamp(shelved.safetyEffort, 1, 4)));
+                    Math.Clamp(shelved.safetyEffort, 1, 4),
+                    ReadTokenizer(shelved.tokenizer),
+                    Math.Clamp(shelved.tokenizerAdaptation, 0, TokenizerCatalog.AdaptationLevels - 1)));
 
                 // Anything upgraded while it waited. Empty on a file written before v33, in which
                 // case the model keeps the par set its constructor gave it, which is exactly what
@@ -1914,7 +1936,10 @@ namespace ScalingLaws.Persistence
                     Math.Clamp(safe.activeRun.choices.redTeamTier, 0, SafetyModuleCatalog.TierCount - 1),
                     Math.Clamp(safe.activeRun.choices.dataProtectionTier, -1,
                         SafetyModuleCatalog.TierCount - 1),
-                    Math.Clamp(safe.activeRun.choices.safetyEffort, 1, 4));
+                    Math.Clamp(safe.activeRun.choices.safetyEffort, 1, 4),
+                    ReadTokenizer(safe.activeRun.choices.tokenizer),
+                    Math.Clamp(safe.activeRun.choices.tokenizerAdaptation, 0,
+                        TokenizerCatalog.AdaptationLevels - 1));
 
                 var run = new TrainingRun(
                     blueprint,
