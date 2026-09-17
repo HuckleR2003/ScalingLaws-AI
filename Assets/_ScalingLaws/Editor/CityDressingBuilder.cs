@@ -5,6 +5,7 @@ using ScalingLaws.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace ScalingLaws.Editor
 {
@@ -106,6 +107,7 @@ namespace ScalingLaws.Editor
             MapSiteBuilder.Build(root, ground);
             BuildLighting();
             BuildCamera();
+            BuildLegendOverlay();
 
             EditorSceneManager.SaveScene(scene, scenePath);
 
@@ -1047,6 +1049,37 @@ namespace ScalingLaws.Editor
 
             cameraObject.transform.rotation = Quaternion.Euler(36f, 36f, 0f);
             cameraObject.transform.position = new Vector3(-1150f, 2050f, -1250f);
+        }
+
+        /// <summary>
+        /// Etap 5's legend, live on the scene rather than only in a proof render.
+        ///
+        /// The same <c>ScalingLawsPanelSettings</c> asset every other screen in the game uses, found
+        /// rather than duplicated — a second panel settings asset is how a legend ends up in a
+        /// different font from the game it is describing. Screen Space Overlay, which is the reason
+        /// <c>CitySnapshot</c>'s `Camera.Render()` will never show it: overlay UI Toolkit composites
+        /// straight to the display and a proof of it needs `ScreenProofTests`'s render-texture rig,
+        /// not this camera's.
+        /// </summary>
+        private static void BuildLegendOverlay()
+        {
+            const string panelSettingsPath = "Assets/_ScalingLaws/UI/ScalingLawsPanelSettings.asset";
+
+            var settings = AssetDatabase.LoadAssetAtPath<PanelSettings>(panelSettingsPath);
+            if (settings == null)
+            {
+                Debug.LogWarning($"[Scaling Laws] No PanelSettings at {panelSettingsPath}; "
+                    + "the map legend was not built.");
+                return;
+            }
+
+            var host = new GameObject("MapFilterOverlay");
+            host.transform.SetParent(root, false);
+
+            var document = host.AddComponent<UIDocument>();
+            document.panelSettings = settings;
+
+            host.AddComponent<MapFilterController>();
         }
 
         // ---- helpers -------------------------------------------------------------------------------------------
