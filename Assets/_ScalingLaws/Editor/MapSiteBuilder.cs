@@ -39,46 +39,54 @@ namespace ScalingLaws.Editor
 
             foreach (var site in MapSiteCatalog.All)
             {
-                var height = ground(site.Position.X, site.Position.Z);
-                var colour = MapCategoryPalette.ColourFor(site.Category);
-
-                var pinHeight = BasePinHeight + Mathf.Clamp(site.Tier, 0, 5) * TierStep;
-
-                var site3d = new GameObject(site.DisplayName).transform;
-                site3d.SetParent(group, true);
-                site3d.position = new Vector3(site.Position.X, height, site.Position.Z);
-
-                site3d.gameObject.AddComponent<MapSitePin>().Describe(site.Category, site.Kind);
-
-                var pin = CityDressingBuilder.Box(site3d, "Pin",
-                    new Vector3(site.Position.X, height + pinHeight * 0.5f, site.Position.Z),
-                    new Vector3(PinWidth, pinHeight, PinWidth),
-                    CityDressingBuilder.Paint($"MapSite_{site.Category}", colour, 0.25f));
-
-                CityDressingBuilder.Describe(pin, CityPropKind.SiteMarker,
-                    new Vector3(PinWidth, pinHeight, PinWidth), site.DistrictId, (int)site.Kind);
-
-                // A dimmer marker head, so a pin reads from above (the plan shot) and not only from
-                // the side (the flight). Same idea as CityDressingBuilder's FounderPin, smaller.
-                CityDressingBuilder.Box(site3d, "PinHead",
-                    new Vector3(site.Position.X, height + pinHeight + 1.1f, site.Position.Z),
-                    new Vector3(PinWidth * 2.4f, 1.6f, PinWidth * 2.4f),
-                    CityDressingBuilder.Paint($"MapSite_{site.Category}", colour, 0.25f));
-
-                if (site.Radius > 0f)
-                {
-                    var ring = CityDressingBuilder.Cylinder(site3d, "Footprint",
-                        new Vector2(site.Position.X, site.Position.Z),
-                        site.Radius * 2f, FootprintThickness,
-                        CityDressingBuilder.Paint($"MapSiteGround_{site.Category}", Dim(colour), 0.05f));
-
-                    CityDressingBuilder.Describe(ring, CityPropKind.SiteMarker,
-                        new Vector3(site.Radius * 2f, FootprintThickness, site.Radius * 2f),
-                        site.DistrictId, (int)site.Kind);
-                }
+                BuildPin(group, site, ground);
             }
 
             Debug.Log($"[Scaling Laws] {MapSiteCatalog.All.Count} map site pins placed.");
+        }
+
+        /// <summary>One site's pin, head and footprint ring, under the given group.</summary>
+        public static Transform BuildPin(Transform group, MapSiteDefinition site, Func<float, float, float> ground)
+        {
+            var height = ground(site.Position.X, site.Position.Z);
+            var colour = MapCategoryPalette.ColourFor(site.Category);
+
+            var pinHeight = BasePinHeight + Mathf.Clamp(site.Tier, 0, 5) * TierStep;
+
+            var site3d = new GameObject(site.DisplayName).transform;
+            site3d.SetParent(group, true);
+            site3d.position = new Vector3(site.Position.X, height, site.Position.Z);
+
+            site3d.gameObject.AddComponent<MapSitePin>().Describe(site.Category, site.Kind, site.Id);
+
+            var pin = CityDressingBuilder.Box(site3d, "Pin",
+                new Vector3(site.Position.X, height + pinHeight * 0.5f, site.Position.Z),
+                new Vector3(PinWidth, pinHeight, PinWidth),
+                CityDressingBuilder.Paint($"MapSite_{site.Category}", colour, 0.25f));
+
+            CityDressingBuilder.Describe(pin, CityPropKind.SiteMarker,
+                new Vector3(PinWidth, pinHeight, PinWidth), site.DistrictId, (int)site.Kind);
+
+            // A dimmer marker head, so a pin reads from above (the plan shot) and not only from
+            // the side (the flight). Same idea as CityDressingBuilder's FounderPin, smaller.
+            CityDressingBuilder.Box(site3d, "PinHead",
+                new Vector3(site.Position.X, height + pinHeight + 1.1f, site.Position.Z),
+                new Vector3(PinWidth * 2.4f, 1.6f, PinWidth * 2.4f),
+                CityDressingBuilder.Paint($"MapSite_{site.Category}", colour, 0.25f));
+
+            if (site.Radius > 0f)
+            {
+                var ring = CityDressingBuilder.Cylinder(site3d, "Footprint",
+                    new Vector2(site.Position.X, site.Position.Z),
+                    site.Radius * 2f, FootprintThickness,
+                    CityDressingBuilder.Paint($"MapSiteGround_{site.Category}", Dim(colour), 0.05f));
+
+                CityDressingBuilder.Describe(ring, CityPropKind.SiteMarker,
+                    new Vector3(site.Radius * 2f, FootprintThickness, site.Radius * 2f),
+                    site.DistrictId, (int)site.Kind);
+            }
+
+            return site3d;
         }
 
         /// <summary>A footprint ring reads better dimmer than its pin, or it competes with the pin over it.</summary>

@@ -6,7 +6,8 @@ using UnityEngine;
 namespace ScalingLaws.Editor
 {
     /// <summary>
-    /// Moves every map site's pin to where <see cref="MapSiteCatalog"/> now puts the site.
+    /// Moves every map site's pin to where <see cref="MapSiteCatalog"/> now puts the site, and stands a
+    /// pin for any site added to the catalog since the scene was built.
     ///
     /// The pins were stood up by <see cref="MapSiteBuilder"/> when the scene was first built. The
     /// catalog has moved sites since — the State Employment Register and the Tax Office off the
@@ -19,7 +20,7 @@ namespace ScalingLaws.Editor
     /// </summary>
     public static class MapSitePins
     {
-        [MenuItem("Scaling Laws/Map sites/Move pins to the catalog")]
+        [MenuItem("Scaling Laws/Map sites/Move and add pins to match the catalog")]
         public static void MoveToCatalog()
         {
             var scene = EditorSceneManager.OpenScene("Assets/_ScalingLaws/Scenes/City.unity", OpenSceneMode.Single);
@@ -32,13 +33,17 @@ namespace ScalingLaws.Editor
             }
 
             var moved = 0;
+            var added = 0;
 
             foreach (var site in MapSiteCatalog.All)
             {
                 var pin = group.Find(site.DisplayName);
                 if (pin == null)
                 {
-                    Debug.LogWarning($"[Pins] No pin for {site.DisplayName}.");
+                    // A site added to the catalog after the scene was built has no pin yet.
+                    MapSiteBuilder.BuildPin(group, site, CityTerrainBuilder.HeightAt);
+                    Debug.Log($"[Pins] {site.DisplayName}: new pin at ({site.Position.X:0}, {site.Position.Z:0})");
+                    added++;
                     continue;
                 }
 
@@ -67,7 +72,7 @@ namespace ScalingLaws.Editor
             }
 
             EditorSceneManager.SaveScene(scene);
-            Debug.Log($"[Pins] {moved} pins moved to their catalog positions.");
+            Debug.Log($"[Pins] {moved} pins moved to their catalog positions, {added} added for new sites.");
         }
     }
 }
