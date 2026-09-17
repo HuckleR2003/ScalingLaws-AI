@@ -50,6 +50,8 @@ namespace ScalingLaws.UI
             MapSiteKind.JobAgency => "site_jobs",
             MapSiteKind.TaxOffice => "site_tax",
             MapSiteKind.CarDealership => "site_cars",
+            // No icon of its own yet: a headquarters is an office building, and the office icon says so.
+            MapSiteKind.RivalHeadquarters => "site_office",
             _ => null
         };
 

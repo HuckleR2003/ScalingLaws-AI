@@ -164,6 +164,7 @@ namespace ScalingLaws.UI
             MapSiteKind.PowerPlantStake => "map.kind.power",
             MapSiteKind.JobAgency => "map.kind.jobs",
             MapSiteKind.TaxOffice => "map.kind.tax",
+            MapSiteKind.RivalHeadquarters => "map.kind.rival_hq",
             _ => "map.kind.cars"
         };
     }
