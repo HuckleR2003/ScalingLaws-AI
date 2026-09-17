@@ -46,6 +46,8 @@ The Bayview map became a place in the game: reachable from the office, with a ca
   car showrooms, each marked with a pin in the colour of its category.
 - **The hills stopped looking like chrome.** The shine came from the alpha channel of the terrain
   textures. The tool that photographs the map also stopped losing its second picture.
+- **The map has a legend you can filter by.** Click a category and everything else on the map dims;
+  click it again and the whole map comes back.
 
 ### Added
 
