@@ -17420,6 +17420,16 @@
     flex-shrink: 0;
 }
 
+/* With its icon, the swatch is the icon: larger, square-cornered (the picture has its own rounded
+   tile), and never stretched. */
+.map-legend__swatch--icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    border-radius: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .map-legend__label {
     font-size: 15px;
     letter-spacing: 0.5px;
@@ -17468,6 +17478,14 @@
     flex-shrink: 0;
 }
 
+.map-districts__icon {
+    width: 26px;
+    height: 26px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .map-districts__label {
     font-size: 15px;
     letter-spacing: 0.3px;
@@ -17502,6 +17520,13 @@
     margin-right: 12px;
     border-radius: 5px;
     flex-shrink: 0;
+}
+
+.site-card__icon--image {
+    width: 56px;
+    height: 56px;
+    border-radius: 0;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .site-card__heading {
