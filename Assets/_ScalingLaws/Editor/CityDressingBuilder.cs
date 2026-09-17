@@ -1140,7 +1140,9 @@ namespace ScalingLaws.Editor
             var cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             cylinder.name = name;
             cylinder.transform.SetParent(parent, true);
-            cylinder.transform.position = new Vector3(at.x, ground(at.x, at.y) + 0.2f, at.y);
+            // Outside a full scene build there is no ground handed in; the built terrain is the ground then.
+            var height = (ground ?? CityTerrainBuilder.HeightAt)(at.x, at.y);
+            cylinder.transform.position = new Vector3(at.x, height + 0.2f, at.y);
             cylinder.transform.localScale = new Vector3(diameter, thickness, diameter);
             cylinder.GetComponent<MeshRenderer>().sharedMaterial = material;
 

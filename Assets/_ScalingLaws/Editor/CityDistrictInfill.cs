@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using ScalingLaws.Data;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -54,6 +55,7 @@ namespace ScalingLaws.Editor
         private static int Tried;
         private static int RejectedWet;
         private static int RejectedBlocked;
+        private static int RejectedNoStreet;
 
         [MenuItem("Scaling Laws/Fill district blocks with frontage")]
         public static void Run()
@@ -61,6 +63,7 @@ namespace ScalingLaws.Editor
             Tried = 0;
             RejectedWet = 0;
             RejectedBlocked = 0;
+            RejectedNoStreet = 0;
 
             var scene = EditorSceneManager.OpenScene("Assets/_ScalingLaws/Scenes/City.unity",
                 OpenSceneMode.Single);
@@ -100,7 +103,8 @@ namespace ScalingLaws.Editor
 
             EditorSceneManager.SaveScene(scene);
             Debug.Log($"[Infill] {placed} frontage buildings placed across {CityBlocks.Grids.Count} districts. "
-                + $"{Tried} spots considered: {RejectedWet} too low, {RejectedBlocked} already occupied.");
+                + $"{Tried} spots considered: {RejectedWet} too low, {RejectedBlocked} already occupied, "
+                + $"{RejectedNoStreet} facing no street.");
         }
 
         private static int FillGrid(GridBlock grid, Transform group, Occupancy occupied,
@@ -206,6 +210,16 @@ namespace ScalingLaws.Editor
             if (!occupied.IsFree(at, reach))
             {
                 RejectedBlocked++;
+                return false;
+            }
+
+            // Frontage faces a street that is actually there. The grid's own numbers say where its
+            // streets were drawn; the road network decides which were laid — the port's grid gave
+            // way to one street behind its halls, and a grid street beside a highway was dropped —
+            // and a shop front onto grass is not frontage.
+            if (!occupied.NearRoad(at + facing * (BuildingDepth * 0.5f + Setback + StreetWidth * 0.5f), StreetWidth))
+            {
+                RejectedNoStreet++;
                 return false;
             }
 
@@ -325,6 +339,7 @@ namespace ScalingLaws.Editor
             private const float Cell = 40f;
 
             private readonly Dictionary<(int, int), List<Rect>> buckets = new();
+            private readonly Dictionary<(int, int), List<Vector2>> roads = new();
 
             /// <summary>
             /// Everything already standing becomes an obstacle: roads, bridges, driveways, the
@@ -352,6 +367,18 @@ namespace ScalingLaws.Editor
 
                     var bounds = renderer.bounds;
 
+                    if (name.StartsWith("road-"))
+                    {
+                        var key = (Mathf.FloorToInt(bounds.center.x / Cell), Mathf.FloorToInt(bounds.center.z / Cell));
+                        if (!roads.TryGetValue(key, out var tiles))
+                        {
+                            tiles = new List<Vector2>();
+                            roads[key] = tiles;
+                        }
+
+                        tiles.Add(new Vector2(bounds.center.x, bounds.center.z));
+                    }
+
                     // Something paper-thin and enormous is ground paint, not a thing in the way.
                     if (bounds.size.y < 0.3f && Mathf.Max(bounds.size.x, bounds.size.z) > 60f)
                     {
@@ -368,6 +395,20 @@ namespace ScalingLaws.Editor
                 }
 
                 Debug.Log($"[Infill] {taken} existing objects counted as occupied ground.");
+            }
+
+            /// <summary>True when a road piece stands within the given distance of a point.</summary>
+            public bool NearRoad(Vector2 at, float distance)
+            {
+                foreach (var key in Keys(new Rect(at.x - distance, at.y - distance, distance * 2f, distance * 2f)))
+                {
+                    if (roads.TryGetValue(key, out var tiles) && tiles.Any(tile => Vector2.Distance(tile, at) <= distance))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             public void Take(Vector2 at, float radius) =>

@@ -48,6 +48,13 @@ namespace ScalingLaws.Editor
         [MenuItem("Scaling Laws/Look at/Bayview Park")]
         public static void Park() => Shoot("park", 200f);
 
+        [MenuItem("Scaling Laws/Look at/River Works")]
+        public static void RiverWorks() => Shoot("riverworks", 150f);
+
+        /// <summary>Midtown, which is not a district of its own but downtown grown west towards the media strip.</summary>
+        [MenuItem("Scaling Laws/Look at/Midtown")]
+        public static void Midtown() => ShootAt(new Vector2(601f, 884f), 190f, "midtown");
+
         /// <summary>The gallery, which is not a district and so is aimed at by hand.</summary>
         [MenuItem("Scaling Laws/Look at/The gallery")]
         public static void Gallery() => ShootAt(new Vector2(790f, 1300f), 170f, "gallery");
