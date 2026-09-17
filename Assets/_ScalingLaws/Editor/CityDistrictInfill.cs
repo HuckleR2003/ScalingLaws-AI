@@ -56,6 +56,14 @@ namespace ScalingLaws.Editor
         private static int RejectedWet;
         private static int RejectedBlocked;
         private static int RejectedNoStreet;
+        private static int Corners;
+        private static int Inner;
+
+        /// <summary>Frontage of a corner building: narrower than a run's, so it fits between the last doors of two runs.</summary>
+        private const float CornerWidth = 13f;
+
+        /// <summary>The yard left between the frontage and the second row behind it.</summary>
+        private const float InnerYard = 2f;
 
         [MenuItem("Scaling Laws/Fill district blocks with frontage")]
         public static void Run()
@@ -64,6 +72,8 @@ namespace ScalingLaws.Editor
             RejectedWet = 0;
             RejectedBlocked = 0;
             RejectedNoStreet = 0;
+            Corners = 0;
+            Inner = 0;
 
             var scene = EditorSceneManager.OpenScene("Assets/_ScalingLaws/Scenes/City.unity",
                 OpenSceneMode.Single);
@@ -104,7 +114,7 @@ namespace ScalingLaws.Editor
             EditorSceneManager.SaveScene(scene);
             Debug.Log($"[Infill] {placed} frontage buildings placed across {CityBlocks.Grids.Count} districts. "
                 + $"{Tried} spots considered: {RejectedWet} too low, {RejectedBlocked} already occupied, "
-                + $"{RejectedNoStreet} facing no street.");
+                + $"{RejectedNoStreet} facing no street. Of those placed, {Corners} on block corners and {Inner} in second rows.");
         }
 
         private static int FillGrid(GridBlock grid, Transform group, Occupancy occupied,
@@ -176,6 +186,48 @@ namespace ScalingLaws.Editor
                             }
                         }
                     }
+
+                    // Sheds stand on their own yards: no corners and no second row in a district
+                    // of halls.
+                    if (grid.HighBuilding <= 25f)
+                    {
+                        continue;
+                    }
+
+                    // The corners. The four frontage runs stop short of each other, and every block
+                    // was left with an empty square at each corner; a narrower building fits it,
+                    // pushed out to the kerb so it clears the last door of both runs.
+                    var corner = frontage + (BuildingDepth - CornerWidth) * 0.5f;
+
+                    foreach (var (first, second) in new[] { (across, along), (across, -along), (-across, along), (-across, -along) })
+                    {
+                        if (TryPlace(cellCentre + first * corner + second * corner, first, models, group, occupied,
+                                random, CornerWidth, CornerWidth * 0.4f))
+                        {
+                            placed++;
+                            Corners++;
+                        }
+                    }
+
+                    // A second row behind the frontage where the block is deep enough for a yard in
+                    // between: one building behind each side, backing onto the frontage, the four
+                    // standing round a courtyard in the middle of the block.
+                    var inner = frontage - BuildingDepth - InnerYard;
+
+                    if (inner < BuildingDepth * 0.5f + FrontageWidth * 0.5f)
+                    {
+                        continue;
+                    }
+
+                    foreach (var outward in new[] { across, -across, along, -along })
+                    {
+                        if (TryPlace(cellCentre + outward * inner, outward, models, group, occupied, random,
+                                facesStreet: false))
+                        {
+                            placed++;
+                            Inner++;
+                        }
+                    }
                 }
             }
 
@@ -183,7 +235,8 @@ namespace ScalingLaws.Editor
         }
 
         private static bool TryPlace(Vector2 at, Vector2 facing, IReadOnlyList<GameObject> models,
-            Transform group, Occupancy occupied, System.Random random)
+            Transform group, Occupancy occupied, System.Random random, float frontageWidth = FrontageWidth,
+            float reachOverride = 0f, bool facesStreet = true)
         {
             Tried++;
 
@@ -196,7 +249,7 @@ namespace ScalingLaws.Editor
                 return false;
             }
 
-            var width = FrontageWidth * (0.82f + (float)random.NextDouble() * 0.3f);
+            var width = frontageWidth * (0.82f + (float)random.NextDouble() * 0.3f);
 
             // Checked on the building's depth, not on the square of its longest side. A frontage
             // building is wide and shallow; testing it as a square pushes its imaginary corners
@@ -205,7 +258,7 @@ namespace ScalingLaws.Editor
             //
             // Its neighbours along the same frontage need no test at all — they are laid out a
             // fixed step apart, so they cannot reach each other by construction.
-            var reach = BuildingDepth * 0.5f * 0.9f;
+            var reach = reachOverride > 0f ? reachOverride : BuildingDepth * 0.5f * 0.9f;
 
             if (!occupied.IsFree(at, reach))
             {
@@ -217,7 +270,9 @@ namespace ScalingLaws.Editor
             // streets were drawn; the road network decides which were laid — the port's grid gave
             // way to one street behind its halls, and a grid street beside a highway was dropped —
             // and a shop front onto grass is not frontage.
-            if (!occupied.NearRoad(at + facing * (BuildingDepth * 0.5f + Setback + StreetWidth * 0.5f), StreetWidth))
+            // Within a highway's width rather than a street's: where a grid's own street beside a highway
+            // was dropped, its frontage faces the highway instead, and that is still a street front.
+            if (facesStreet && !occupied.NearRoad(at + facing * (BuildingDepth * 0.5f + Setback + StreetWidth * 0.5f), StreetWidth * 1.6f))
             {
                 RejectedNoStreet++;
                 return false;
