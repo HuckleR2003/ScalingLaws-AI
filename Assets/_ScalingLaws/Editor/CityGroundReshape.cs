@@ -43,6 +43,7 @@ namespace ScalingLaws.Editor
 
             CityTerrainBuilder.BuildTerrainData();
             AssetDatabase.SaveAssets();
+            CityTerrainBuilder.EnsureSouthTerrain();
 
             var moved = 0;
             var largest = 0f;

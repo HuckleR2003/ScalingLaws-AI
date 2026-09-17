@@ -33,6 +33,9 @@ namespace ScalingLaws.Editor
         public const string ScenePath = ScenesFolder + "/City.unity";
         private const string TerrainDataPath = DataFolder + "/BayviewTerrain.asset";
 
+        /// <summary>The tile south of the city, from Z = <see cref="CityLayout.SouthEdge"/> up to zero.</summary>
+        private const string SouthTerrainDataPath = DataFolder + "/BayviewTerrainSouth.asset";
+
         private const int Seed = 20260816;
 
         /// <summary>Flat ground kept past a district's radius before the land starts to move.</summary>
@@ -68,42 +71,76 @@ namespace ScalingLaws.Editor
 
         // ---- the heightmap -------------------------------------------------------------------------
 
+        /// <summary>
+        /// Builds both terrain tiles and returns the city's own, the northern one.
+        ///
+        /// **The two tiles are one piece of ground, sampled and eased as one grid** — the south
+        /// tile's rows first, then the city's, sharing the row along Z = 0 — and only split into two
+        /// assets at the end. Shaped separately, each would ease its banks and steps against an edge
+        /// that is not there, and the seam would open into a step along the whole width of the map.
+        /// </summary>
         internal static TerrainData BuildTerrainData()
         {
-            var data = AssetDatabase.LoadAssetAtPath<TerrainData>(TerrainDataPath);
-
-            if (data == null)
-            {
-                data = new TerrainData();
-                AssetDatabase.CreateAsset(data, TerrainDataPath);
-            }
+            var data = LoadOrCreateTile(TerrainDataPath);
+            var south = LoadOrCreateTile(SouthTerrainDataPath);
 
             // Surveyed afresh from the scene each build: the network may have been rebuilt since.
             laid = null;
 
-            data.heightmapResolution = CityLayout.HeightmapResolution;
-            data.size = new Vector3(CityLayout.Size, CityLayout.Height, CityLayout.Size);
-            data.SetDetailResolution(512, 16);
-
-            var resolution = data.heightmapResolution;
-            var heights = new float[resolution, resolution];
+            var resolution = CityLayout.HeightmapResolution;
+            var step = CityLayout.Size / (resolution - 1);
+            var rows = 2 * (resolution - 1) + 1;
 
             // Sampled once and reused by the splatmap: the height is the expensive part, and the two
             // passes have to agree about where the water is or the sand lands in the sea.
-            var metres = new float[resolution, resolution];
+            var metres = new float[rows, resolution];
 
-            for (var y = 0; y < resolution; y++)
+            for (var y = 0; y < rows; y++)
             {
                 for (var x = 0; x < resolution; x++)
                 {
-                    var worldX = x / (float)(resolution - 1) * CityLayout.Size;
-                    var worldZ = y / (float)(resolution - 1) * CityLayout.Size;
-
-                    metres[y, x] = SurveyedHeightAt(worldX, worldZ);
+                    metres[y, x] = SurveyedHeightAt(x * step, CityLayout.SouthEdge + y * step);
                 }
             }
 
             ShapeGround(metres);
+
+            SetTileHeights(south, metres, 0);
+            SetTileHeights(data, metres, resolution - 1);
+            built = data;
+            builtSouth = south;
+
+            data.terrainLayers = Layers();
+            south.terrainLayers = data.terrainLayers;
+            PaintSplat(data, metres, 0f);
+            PaintSplat(south, metres, CityLayout.SouthEdge);
+
+            EditorUtility.SetDirty(data);
+            EditorUtility.SetDirty(south);
+            return data;
+        }
+
+        private static TerrainData LoadOrCreateTile(string path)
+        {
+            var data = AssetDatabase.LoadAssetAtPath<TerrainData>(path);
+
+            if (data == null)
+            {
+                data = new TerrainData();
+                AssetDatabase.CreateAsset(data, path);
+            }
+
+            data.heightmapResolution = CityLayout.HeightmapResolution;
+            data.size = new Vector3(CityLayout.Size, CityLayout.Height, CityLayout.Size);
+            data.SetDetailResolution(512, 16);
+            return data;
+        }
+
+        /// <summary>One tile's heights, from the rows of the shared grid that start at <paramref name="firstRow"/>.</summary>
+        private static void SetTileHeights(TerrainData data, float[,] metres, int firstRow)
+        {
+            var resolution = data.heightmapResolution;
+            var heights = new float[resolution, resolution];
 
             for (var y = 0; y < resolution; y++)
             {
@@ -111,17 +148,69 @@ namespace ScalingLaws.Editor
                 {
                     // Heightmap is indexed [z, x]. The one thing about Unity terrain that catches
                     // everybody exactly once.
-                    heights[y, x] = Mathf.Clamp01(metres[y, x] / CityLayout.Height);
+                    heights[y, x] = Mathf.Clamp01(metres[firstRow + y, x] / CityLayout.Height);
                 }
             }
 
             data.SetHeights(0, 0, heights);
-            built = data;
-            data.terrainLayers = Layers();
-            PaintSplat(data, metres);
+        }
 
-            EditorUtility.SetDirty(data);
-            return data;
+        /// <summary>
+        /// The south tile in the open scene, created beside the city's own if it is not there yet,
+        /// and the sea stretched to reach under it. Null before the south tile's asset exists.
+        ///
+        /// Tiles in the same grouping join their edges by themselves (Terrain.allowAutoConnect), so
+        /// nothing here stitches the seam by hand; it only has to stand at the right place.
+        /// </summary>
+        internal static Terrain EnsureSouthTerrain()
+        {
+            var data = AssetDatabase.LoadAssetAtPath<TerrainData>(SouthTerrainDataPath);
+            if (data == null)
+            {
+                return null;
+            }
+
+            Terrain main = null;
+            Terrain south = null;
+
+            foreach (var terrain in Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None))
+            {
+                if (terrain.terrainData == data)
+                {
+                    south = terrain;
+                }
+                else if (AssetDatabase.GetAssetPath(terrain.terrainData) == TerrainDataPath)
+                {
+                    main = terrain;
+                }
+            }
+
+            if (south == null)
+            {
+                var terrainObject = Terrain.CreateTerrainGameObject(data);
+                terrainObject.name = "BayviewSouth";
+                south = terrainObject.GetComponent<Terrain>();
+            }
+
+            south.transform.position = new Vector3(0f, 0f, CityLayout.SouthEdge);
+            south.basemapDistance = main != null ? main.basemapDistance : 2400f;
+            south.heightmapPixelError = main != null ? main.heightmapPixelError : 2f;
+            south.allowAutoConnect = true;
+
+            if (main != null)
+            {
+                south.materialTemplate = main.materialTemplate;
+                south.groupingID = main.groupingID;
+                main.allowAutoConnect = true;
+            }
+
+            var sea = GameObject.Find("City")?.transform.Find("Sea");
+            if (sea != null)
+            {
+                CityDressingBuilder.SizeSea(sea);
+            }
+
+            return south;
         }
 
         /// <summary>
@@ -134,6 +223,19 @@ namespace ScalingLaws.Editor
         /// </summary>
         public static float HeightAt(float x, float z)
         {
+            if (z < 0f)
+            {
+                if (builtSouth == null)
+                {
+                    builtSouth = AssetDatabase.LoadAssetAtPath<TerrainData>(SouthTerrainDataPath);
+                }
+
+                return builtSouth == null
+                    ? SurveyedHeightAt(x, z)
+                    : builtSouth.GetInterpolatedHeight(Mathf.Clamp01(x / CityLayout.Size),
+                        Mathf.Clamp01((z - CityLayout.SouthEdge) / CityLayout.Size));
+            }
+
             if (built == null)
             {
                 built = AssetDatabase.LoadAssetAtPath<TerrainData>(TerrainDataPath);
@@ -145,6 +247,7 @@ namespace ScalingLaws.Editor
         }
 
         private static TerrainData built;
+        private static TerrainData builtSouth;
 
         /// <summary>
         /// The land as surveyed, in the order the ground was actually made.
@@ -157,6 +260,7 @@ namespace ScalingLaws.Editor
         {
             var height = NaturalHeight(x, z);
             height = FlattenDistricts(x, z, height);
+            height = FlattenTerraces(x, z, height);
             height = FlattenMalls(x, z, height);
             height = CutRoads(x, z, height);
             return CarveWater(x, z, height);
@@ -190,6 +294,40 @@ namespace ScalingLaws.Editor
             }
 
             return height;
+        }
+
+        /// <summary>Holds each terrace at its height and eases the ground back over its blend. The first listed wins where two overlap.</summary>
+        private static float FlattenTerraces(float x, float z, float height)
+        {
+            foreach (var terrace in CityBlocks.Terraces)
+            {
+                var reach = TerraceReach(terrace, x, z);
+
+                if (reach <= 0f)
+                {
+                    return terrace.Height;
+                }
+
+                if (reach < terrace.Blend)
+                {
+                    height = Mathf.Lerp(height, terrace.Height, Mathf.SmoothStep(1f, 0f, reach / terrace.Blend));
+                }
+            }
+
+            return height;
+        }
+
+        /// <summary>How far outside a terrace's rectangle a point is; zero on it.</summary>
+        internal static float TerraceReach(Terrace terrace, float x, float z)
+        {
+            var angle = terrace.RotationDegrees * Mathf.Deg2Rad;
+            var along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            var across = new Vector2(-along.y, along.x);
+            var offset = new Vector2(x - terrace.CentreX, z - terrace.CentreZ);
+
+            var outsideX = Mathf.Max(0f, Mathf.Abs(Vector2.Dot(offset, along)) - terrace.Width * 0.5f);
+            var outsideZ = Mathf.Max(0f, Mathf.Abs(Vector2.Dot(offset, across)) - terrace.Depth * 0.5f);
+            return Mathf.Sqrt(outsideX * outsideX + outsideZ * outsideZ);
         }
 
         /// <summary>Whether a point is on a gallery's levelled ground, and if not, how far outside it.</summary>
@@ -242,14 +380,16 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static void ShapeGround(float[,] metres)
         {
-            var size = metres.GetLength(0);
-            var step = CityLayout.Size / (size - 1);
-            var water = new bool[size, size];
-            var shelf = new bool[size, size];
+            var rows = metres.GetLength(0);
+            var cols = metres.GetLength(1);
+            var step = CityLayout.Size / (cols - 1);
+            var originZ = CityLayout.SouthEdge;
+            var water = new bool[rows, cols];
+            var shelf = new bool[rows, cols];
 
-            for (var y = 0; y < size; y++)
+            for (var y = 0; y < rows; y++)
             {
-                for (var x = 0; x < size; x++)
+                for (var x = 0; x < cols; x++)
                 {
                     water[y, x] = metres[y, x] < CityLayout.SeaLevel;
                 }
@@ -274,44 +414,55 @@ namespace ScalingLaws.Editor
                     var point = road.Points[index];
                     var cells = Mathf.CeilToInt((reach + 8f) / step);
                     var cx = Mathf.RoundToInt(point.x / step);
-                    var cy = Mathf.RoundToInt(point.y / step);
+                    var cy = Mathf.RoundToInt((point.y - originZ) / step);
 
-                    for (var y = Mathf.Max(0, cy - cells); y <= Mathf.Min(size - 1, cy + cells); y++)
+                    for (var y = Mathf.Max(0, cy - cells); y <= Mathf.Min(rows - 1, cy + cells); y++)
                     {
-                        for (var x = Mathf.Max(0, cx - cells); x <= Mathf.Min(size - 1, cx + cells); x++)
+                        for (var x = Mathf.Max(0, cx - cells); x <= Mathf.Min(cols - 1, cx + cells); x++)
                         {
+                            var cell = new Vector2(x * step, originZ + y * step);
+
                             // Only the two segments either side of this point: a cell is scanned from every
                             // point near it, so its true nearest segment is always one of those checked.
                             for (var segment = Mathf.Max(0, index - 1); segment <= Mathf.Min(road.Points.Count - 2, index); segment++)
                             {
                                 var a = road.Points[segment];
                                 var b = road.Points[segment + 1];
-                                var closest = Vector2.Lerp(a, b, SegmentT(x * step, y * step, a, b));
-                                shelf[y, x] |= Vector2.Distance(closest, new Vector2(x * step, y * step)) <= reach;
+                                var closest = Vector2.Lerp(a, b, SegmentT(cell.x, cell.y, a, b));
+                                shelf[y, x] |= Vector2.Distance(closest, cell) <= reach;
                             }
                         }
                     }
                 }
             }
 
-            // The gallery's levelled lot keeps its level too: a car park is laid on it.
-            foreach (var mall in CityBlocks.Malls)
+            // The gallery's levelled lot keeps its level too: a car park is laid on it. So does every
+            // terrace: buildings stand on it.
+            for (var y = 0; y < rows; y++)
             {
-                for (var y = 0; y < size; y++)
+                for (var x = 0; x < cols; x++)
                 {
-                    for (var x = 0; x < size; x++)
+                    var worldX = x * step;
+                    var worldZ = originZ + y * step;
+
+                    foreach (var mall in CityBlocks.Malls)
                     {
-                        shelf[y, x] |= MallFootprint(mall, x * step, y * step).Inside;
+                        shelf[y, x] |= MallFootprint(mall, worldX, worldZ).Inside;
+                    }
+
+                    foreach (var terrace in CityBlocks.Terraces)
+                    {
+                        shelf[y, x] |= TerraceReach(terrace, worldX, worldZ) <= 0f;
                     }
                 }
             }
 
             // Banks: no land higher than the water's edge plus the steepest slope back from it.
-            var bank = new float[size, size];
+            var bank = new float[rows, cols];
 
-            for (var y = 0; y < size; y++)
+            for (var y = 0; y < rows; y++)
             {
-                for (var x = 0; x < size; x++)
+                for (var x = 0; x < cols; x++)
                 {
                     bank[y, x] = water[y, x] ? CityLayout.SeaLevel + ShoreRise : float.PositiveInfinity;
                 }
@@ -319,9 +470,9 @@ namespace ScalingLaws.Editor
 
             Spread(bank, step * SteepestGround, lower: true, barrier: null);
 
-            for (var y = 0; y < size; y++)
+            for (var y = 0; y < rows; y++)
             {
-                for (var x = 0; x < size; x++)
+                for (var x = 0; x < cols; x++)
                 {
                     if (!water[y, x])
                     {
@@ -336,14 +487,20 @@ namespace ScalingLaws.Editor
             // raised fifty metres by the easing below, and its highway left in a trench. Where pads
             // overlap, the floor belongs to the district whose level the pad took (the first listed,
             // as in FlattenDistricts), and only inside that district's own radius: the step to the
-            // next district then falls in a margin, which is free to ease.
-            for (var y = 0; y < size; y++)
+            // next district then falls in a margin, which is free to ease. A district on terraces
+            // levels nothing by its radius and keeps nothing by it either.
+            for (var y = 0; y < rows; y++)
             {
-                for (var x = 0; x < size; x++)
+                for (var x = 0; x < cols; x++)
                 {
                     foreach (var district in CityLayout.Districts)
                     {
-                        var distance = Distance(x * step, y * step, district.CentreX, district.CentreZ);
+                        if (!district.LevelsGround)
+                        {
+                            continue;
+                        }
+
+                        var distance = Distance(x * step, originZ + y * step, district.CentreX, district.CentreZ);
 
                         if (distance <= district.Radius + PadMargin)
                         {
@@ -365,12 +522,12 @@ namespace ScalingLaws.Editor
             // height: next to a shelf it can still stand a wall. Every free cell is held within the
             // steepest slope of the kept ground around it; where two kept heights are too far apart for
             // any slope between them, it takes the middle.
-            var ceiling = new float[size, size];
-            var floor = new float[size, size];
+            var ceiling = new float[rows, cols];
+            var floor = new float[rows, cols];
 
-            for (var y = 0; y < size; y++)
+            for (var y = 0; y < rows; y++)
             {
-                for (var x = 0; x < size; x++)
+                for (var x = 0; x < cols; x++)
                 {
                     var kept = shelf[y, x] && !water[y, x];
                     ceiling[y, x] = kept ? metres[y, x] : float.PositiveInfinity;
@@ -381,9 +538,9 @@ namespace ScalingLaws.Editor
             Spread(ceiling, step * SteepestGround, lower: true, barrier: water);
             Spread(floor, step * SteepestGround, lower: false, barrier: water);
 
-            for (var y = 0; y < size; y++)
+            for (var y = 0; y < rows; y++)
             {
-                for (var x = 0; x < size; x++)
+                for (var x = 0; x < cols; x++)
                 {
                     if (water[y, x] || shelf[y, x])
                     {
@@ -407,7 +564,8 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static void Spread(float[,] values, float rise, bool lower, bool[,] barrier)
         {
-            var size = values.GetLength(0);
+            var rows = values.GetLength(0);
+            var cols = values.GetLength(1);
             var diagonal = rise * Mathf.Sqrt(2f);
 
             float Better(float current, float neighbour, float cost) =>
@@ -415,9 +573,9 @@ namespace ScalingLaws.Editor
 
             for (var round = 0; round < 2; round++)
             {
-                for (var y = 0; y < size; y++)
+                for (var y = 0; y < rows; y++)
                 {
-                    for (var x = 0; x < size; x++)
+                    for (var x = 0; x < cols; x++)
                     {
                         if (barrier != null && barrier[y, x])
                         {
@@ -429,15 +587,15 @@ namespace ScalingLaws.Editor
                         if (x > 0 && (barrier == null || !barrier[y, x - 1])) value = Better(value, values[y, x - 1], rise);
                         if (y > 0 && (barrier == null || !barrier[y - 1, x])) value = Better(value, values[y - 1, x], rise);
                         if (y > 0 && x > 0 && (barrier == null || !barrier[y - 1, x - 1])) value = Better(value, values[y - 1, x - 1], diagonal);
-                        if (y > 0 && x < size - 1 && (barrier == null || !barrier[y - 1, x + 1])) value = Better(value, values[y - 1, x + 1], diagonal);
+                        if (y > 0 && x < cols - 1 && (barrier == null || !barrier[y - 1, x + 1])) value = Better(value, values[y - 1, x + 1], diagonal);
 
                         values[y, x] = value;
                     }
                 }
 
-                for (var y = size - 1; y >= 0; y--)
+                for (var y = rows - 1; y >= 0; y--)
                 {
-                    for (var x = size - 1; x >= 0; x--)
+                    for (var x = cols - 1; x >= 0; x--)
                     {
                         if (barrier != null && barrier[y, x])
                         {
@@ -446,10 +604,10 @@ namespace ScalingLaws.Editor
 
                         var value = values[y, x];
 
-                        if (x < size - 1 && (barrier == null || !barrier[y, x + 1])) value = Better(value, values[y, x + 1], rise);
-                        if (y < size - 1 && (barrier == null || !barrier[y + 1, x])) value = Better(value, values[y + 1, x], rise);
-                        if (y < size - 1 && x < size - 1 && (barrier == null || !barrier[y + 1, x + 1])) value = Better(value, values[y + 1, x + 1], diagonal);
-                        if (y < size - 1 && x > 0 && (barrier == null || !barrier[y + 1, x - 1])) value = Better(value, values[y + 1, x - 1], diagonal);
+                        if (x < cols - 1 && (barrier == null || !barrier[y, x + 1])) value = Better(value, values[y, x + 1], rise);
+                        if (y < rows - 1 && (barrier == null || !barrier[y + 1, x])) value = Better(value, values[y + 1, x], rise);
+                        if (y < rows - 1 && x < cols - 1 && (barrier == null || !barrier[y + 1, x + 1])) value = Better(value, values[y + 1, x + 1], diagonal);
+                        if (y < rows - 1 && x > 0 && (barrier == null || !barrier[y + 1, x - 1])) value = Better(value, values[y + 1, x - 1], diagonal);
 
                         values[y, x] = value;
                     }
@@ -495,6 +653,11 @@ namespace ScalingLaws.Editor
         {
             foreach (var district in CityLayout.Districts)
             {
+                if (!district.LevelsGround)
+                {
+                    continue;
+                }
+
                 var distance = Distance(x, z, district.CentreX, district.CentreZ);
                 var pad = district.Radius + PadMargin;
 
@@ -534,6 +697,12 @@ namespace ScalingLaws.Editor
                 }
 
                 var half = road.Width * 0.5f + RoadShoulder;
+
+                if (!road.Near(x, z, half + RoadBlend))
+                {
+                    continue;
+                }
+
                 var along = NearestOnPolyline(x, z, road.Points, out var distance);
 
                 if (distance > half + RoadBlend || !IsLaid(road, along))
@@ -581,7 +750,7 @@ namespace ScalingLaws.Editor
                     + (Noise(x * 0.0115f, z * 0.0115f) - 0.5f) * 42f
                     + (Noise(x * 0.031f + 7.1f, z * 0.031f + 3.3f) - 0.5f) * 14f;
 
-                var edge = Mathf.Max(12f, halfWidth + wobble);
+                var edge = Mathf.Max(12f, halfWidth + wobble * run.Wobble);
 
                 if (distance > edge)
                 {
@@ -614,7 +783,7 @@ namespace ScalingLaws.Editor
         /// a district is concrete. That way the painting cannot disagree with the shape, which is
         /// what happens the moment anybody paints to a hand-drawn mask.
         /// </summary>
-        private static void PaintSplat(TerrainData data, float[,] metres)
+        private static void PaintSplat(TerrainData data, float[,] metres, float originZ)
         {
             var resolution = CityLayout.SplatResolution;
             data.alphamapResolution = resolution;
@@ -630,7 +799,7 @@ namespace ScalingLaws.Editor
                 for (var x = 0; x < resolution; x++)
                 {
                     var worldX = x * step;
-                    var worldZ = y * step;
+                    var worldZ = originZ + y * step;
 
                     var height = SampleMetres(metres, worldX, worldZ);
                     var slope = SlopeAt(metres, worldX, worldZ, heightStep);
@@ -663,6 +832,11 @@ namespace ScalingLaws.Editor
                     // edge is never a circle.
                     foreach (var district in CityLayout.Districts)
                     {
+                        if (!district.LevelsGround)
+                        {
+                            continue;
+                        }
+
                         var distance = Distance(worldX, worldZ, district.CentreX, district.CentreZ);
                         var pad = district.Radius + PadMargin;
 
@@ -680,6 +854,11 @@ namespace ScalingLaws.Editor
                     // Asphalt last and heaviest, so nothing else shows through a road.
                     foreach (var road in RoadCentrelines())
                     {
+                        if (!road.Near(worldX, worldZ, road.Width * 0.5f + 6f))
+                        {
+                            continue;
+                        }
+
                         var along = NearestOnPolyline(worldX, worldZ, road.Points, out var distance);
                         var half = road.Width * 0.5f;
 
@@ -708,9 +887,10 @@ namespace ScalingLaws.Editor
 
         private static float SampleMetres(float[,] metres, float worldX, float worldZ)
         {
-            var last = CityLayout.HeightmapResolution - 1;
-            var x = Mathf.Clamp(Mathf.RoundToInt(worldX / CityLayout.Size * last), 0, last);
-            var y = Mathf.Clamp(Mathf.RoundToInt(worldZ / CityLayout.Size * last), 0, last);
+            // The shared grid of both tiles: its first row is the south edge, one sample every step.
+            var step = CityLayout.Size / (metres.GetLength(1) - 1);
+            var x = Mathf.Clamp(Mathf.RoundToInt(worldX / step), 0, metres.GetLength(1) - 1);
+            var y = Mathf.Clamp(Mathf.RoundToInt((worldZ - CityLayout.SouthEdge) / step), 0, metres.GetLength(0) - 1);
             return metres[y, x];
         }
 
@@ -844,8 +1024,12 @@ namespace ScalingLaws.Editor
 
                 for (var index = 0; index < Points.Count; index++)
                 {
-                    heights[index] = FlattenDistricts(Points[index].x, Points[index].y,
-                        NaturalHeight(Points[index].x, Points[index].y));
+                    var point = Points[index];
+                    heights[index] = FlattenTerraces(point.x, point.y,
+                        FlattenDistricts(point.x, point.y, NaturalHeight(point.x, point.y)));
+
+                    min = Vector2.Min(min, point);
+                    max = Vector2.Max(max, point);
                 }
 
                 // Six passes of neighbour averaging, so a road does not inherit every bump the land
@@ -865,10 +1049,19 @@ namespace ScalingLaws.Editor
             }
 
             private float[] heights;
+            private Vector2 min = new(float.MaxValue, float.MaxValue);
+            private Vector2 max = new(float.MinValue, float.MinValue);
 
             public float Width { get; }
             public RoadClass Class { get; }
             public IReadOnlyList<Vector2> Points { get; }
+
+            /// <summary>
+            /// Whether a point is within <paramref name="reach"/> of the line's bounding box: the cheap
+            /// test that spares most of the map from measuring against every point of every road.
+            /// </summary>
+            public bool Near(float x, float z, float reach) =>
+                x >= min.x - reach && x <= max.x + reach && z >= min.y - reach && z <= max.y + reach;
 
             /// <summary>The road surface at a position along the line, in metres.</summary>
             public float HeightAt(float t)
