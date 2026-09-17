@@ -61,6 +61,23 @@ namespace ScalingLaws.UI
                 document.rootVisualElement.Add(districts);
             }
 
+            // The card, and the thing that drives it. Built here for the same reason the district
+            // panel is: this is the city scene's one UIDocument, and a second overlay object to
+            // hold one panel would be a second thing to keep in step.
+            var selection = mapCamera == null
+                ? null
+                : mapCamera.GetComponent<MapSiteSelection>()
+                  ?? mapCamera.gameObject.AddComponent<MapSiteSelection>();
+
+            var card = new MapSiteCard(() => selection?.Deselect());
+            card.style.position = Position.Absolute;
+            card.style.right = 16;
+            card.style.bottom = 16;
+
+            document.rootVisualElement.Add(card);
+
+            selection?.Use(card);
+
             CollectMaterials();
             state.Changed += ApplyFilter;
         }
