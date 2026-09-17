@@ -39,6 +39,28 @@ namespace ScalingLaws.UI
 
             document.rootVisualElement.Add(panel);
 
+            // Not this component's concern in the strict sense — it owns the legend, not the
+            // camera — but this is the one UIDocument the city scene has, and a control scheme
+            // with no on-screen trace of itself is not discoverable. One label costs less than a
+            // second overlay.
+            var hint = new Label(Loc.T("map.controls.hint"));
+            hint.AddToClassList("map-controls-hint");
+            document.rootVisualElement.Add(hint);
+
+            // Same reasoning as the hint above: one UIDocument, so the quick-travel panel lives
+            // here too rather than starting a third overlay object for it.
+            var mapCamera = FindFirstObjectByType<CityMapController>();
+            if (mapCamera != null)
+            {
+                var districts = new MapDistrictPanel(district =>
+                    mapCamera.FlyTo(new Vector2(district.CentreX, district.CentreZ), district.GroundHeight));
+                districts.style.position = Position.Absolute;
+                districts.style.top = 16;
+                districts.style.left = 16;
+
+                document.rootVisualElement.Add(districts);
+            }
+
             CollectMaterials();
             state.Changed += ApplyFilter;
         }

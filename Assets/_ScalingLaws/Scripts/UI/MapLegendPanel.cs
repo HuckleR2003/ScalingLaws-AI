@@ -15,17 +15,45 @@ namespace ScalingLaws.UI
     /// </summary>
     public sealed class MapLegendPanel : VisualElement
     {
+        /// <summary>Pointing down: the rows underneath are showing.</summary>
+        private const string ExpandedGlyph = "▾";
+
+        /// <summary>Pointing sideways: the panel is collapsed to its header bar.</summary>
+        private const string CollapsedGlyph = "▸";
+
         private readonly MapFilterState state;
         private readonly Dictionary<MapCategory, VisualElement> rows = new();
+        private readonly VisualElement body;
+        private readonly Label toggleGlyph;
+        private bool collapsed;
 
         public MapLegendPanel(MapFilterState filterState)
         {
             state = filterState;
             AddToClassList("map-legend");
 
+            // A header the panel keeps even when collapsed, so there is always something on
+            // screen to click to bring the rows back — a legend that can vanish with no trace
+            // of itself would need a second control somewhere else just to undo the first.
+            var header = new VisualElement();
+            header.AddToClassList("map-legend__header");
+            Add(header);
+
             var title = new Label(Loc.T("map.filters.title"));
             title.AddToClassList("map-legend__title");
-            Add(title);
+            header.Add(title);
+
+            toggleGlyph = new Label(ExpandedGlyph);
+            toggleGlyph.pickingMode = PickingMode.Ignore;
+
+            var toggle = new Button(ToggleCollapsed);
+            toggle.AddToClassList("map-legend__toggle");
+            toggle.Add(toggleGlyph);
+            header.Add(toggle);
+
+            body = new VisualElement();
+            body.AddToClassList("map-legend__body");
+            Add(body);
 
             foreach (var category in MapCategoryPalette.All)
             {
@@ -43,13 +71,21 @@ namespace ScalingLaws.UI
                 row.Add(label);
 
                 rows[category] = row;
-                Add(row);
+                body.Add(row);
             }
 
             state.Changed += Refresh;
             RegisterCallback<DetachFromPanelEvent>(_ => state.Changed -= Refresh);
 
             Refresh();
+        }
+
+        private void ToggleCollapsed()
+        {
+            collapsed = !collapsed;
+            body.style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
+            toggleGlyph.text = collapsed ? CollapsedGlyph : ExpandedGlyph;
+            EnableInClassList("map-legend--collapsed", collapsed);
         }
 
         private void Refresh()
