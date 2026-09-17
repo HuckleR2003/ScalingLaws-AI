@@ -61,9 +61,16 @@ namespace ScalingLaws.UI
                 var row = new Button(() => state.Toggle(captured));
                 row.AddToClassList("map-legend__row");
 
+                // The category's icon, or its plain colour until there is one.
                 var swatch = new VisualElement();
                 swatch.AddToClassList("map-legend__swatch");
                 swatch.style.backgroundColor = MapCategoryPalette.ColourFor(category);
+
+                if (MapIcons.Apply(swatch, MapIcons.For(category)))
+                {
+                    swatch.AddToClassList("map-legend__swatch--icon");
+                }
+
                 row.Add(swatch);
 
                 var label = new Label(Loc.T(MapCategoryPalette.NameKey(category)));

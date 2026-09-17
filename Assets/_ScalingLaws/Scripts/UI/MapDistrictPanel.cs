@@ -38,6 +38,15 @@ namespace ScalingLaws.UI
                 accent.style.backgroundColor = MapCategoryPalette.ColourFor(district.Category);
                 tile.Add(accent);
 
+                var icon = new VisualElement();
+                icon.AddToClassList("map-districts__icon");
+                icon.pickingMode = PickingMode.Ignore;
+
+                if (MapIcons.Apply(icon, MapIcons.For(district.Category)))
+                {
+                    tile.Add(icon);
+                }
+
                 var label = new Label(district.DisplayName);
                 label.AddToClassList("map-districts__label");
                 tile.Add(label);

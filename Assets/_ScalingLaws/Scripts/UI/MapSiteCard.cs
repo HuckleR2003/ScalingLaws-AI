@@ -51,8 +51,8 @@ namespace ScalingLaws.UI
             header.AddToClassList("site-card__header");
             Add(header);
 
-            // The icon's home. Empty until the icon set arrives — see the note on the desktop —
-            // and coloured by category meanwhile, so a card is recognisable without one.
+            // The icon for the kind of place this is, or the category's plain colour for a kind that
+            // has none yet, so a card is recognisable either way.
             icon.AddToClassList("site-card__icon");
             header.Add(icon);
 
@@ -92,7 +92,10 @@ namespace ScalingLaws.UI
             kindLine.text = Loc.T(KindKey(site.Kind)).ToUpperInvariant();
             blurb.text = site.DecisionBlurb;
 
+            // Reset first: the card is reused, and the last site's icon must not stay on a kind without one.
+            icon.style.backgroundImage = StyleKeyword.Null;
             icon.style.backgroundColor = MapCategoryPalette.ColourFor(site.Category);
+            icon.EnableInClassList("site-card__icon--image", MapIcons.Apply(icon, MapIcons.For(site.Kind)));
 
             figures.Clear();
 
