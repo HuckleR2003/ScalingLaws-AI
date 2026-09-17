@@ -34,6 +34,11 @@ namespace ScalingLaws.Editor
                 return;
             }
 
+            if (CityRoadNetwork.Supersedes("Props"))
+            {
+                return;
+            }
+
             SwapGarages();
             PlaceTrafficLights();
 

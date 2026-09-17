@@ -102,6 +102,11 @@ namespace ScalingLaws.Editor
                 return;
             }
 
+            if (CityRoadNetwork.Supersedes("Scaling Laws"))
+            {
+                return;
+            }
+
             var tile = AssetDatabase.LoadAssetAtPath<GameObject>(TilePath);
             if (tile == null)
             {
@@ -231,6 +236,11 @@ namespace ScalingLaws.Editor
             if (!scene.IsValid())
             {
                 Debug.LogError("[Scaling Laws] No City.unity to tile intersections in.");
+                return;
+            }
+
+            if (CityRoadNetwork.Supersedes("Scaling Laws"))
+            {
                 return;
             }
 
@@ -394,6 +404,11 @@ namespace ScalingLaws.Editor
             if (!scene.IsValid())
             {
                 Debug.LogError("[Scaling Laws] No City.unity to tile roads in.");
+                return;
+            }
+
+            if (CityRoadNetwork.Supersedes("Scaling Laws"))
+            {
                 return;
             }
 

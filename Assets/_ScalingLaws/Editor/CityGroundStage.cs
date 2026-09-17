@@ -34,6 +34,11 @@ namespace ScalingLaws.Editor
                 return;
             }
 
+            if (CityRoadNetwork.Supersedes("Ground"))
+            {
+                return;
+            }
+
             var cityRoot = GameObject.Find("City");
             var existing = GameObject.Find("GroundStage");
             if (existing != null)

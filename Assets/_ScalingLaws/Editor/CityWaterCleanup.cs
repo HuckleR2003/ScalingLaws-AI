@@ -49,6 +49,11 @@ namespace ScalingLaws.Editor
                 return;
             }
 
+            if (CityRoadNetwork.Supersedes("WaterFix"))
+            {
+                return;
+            }
+
             var doomed = new List<GameObject>();
             var byName = new Dictionary<string, int>();
 
