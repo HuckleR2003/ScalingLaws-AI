@@ -69,6 +69,9 @@ move, places to click and a city worth moving around.
 - **No more sheer cliffs.** Slopes are gentler and the shoreline has a beach. Downtown gains
   Midtown, the new River Works district has five server facilities, two of them cooled by the river,
   and the port is longer, with a container terminal and warehouses.
+- **Silicon Valley.** The map grows south past the port onto a new stretch of coast, with the
+  headquarters of the 12 rival labs from the game and two prestige offices, and the camera follows
+  you there.
 
 ### Added
 
