@@ -61,6 +61,9 @@ move, places to click and a city worth moving around.
 - **Click a building to read about it.** A card opens with the place's name, what kind of place it
   is and what it is for, and the building gets a yellow outline. Every place stands in a real
   building now, road pieces no longer hang over the water, and woods line the main roads.
+- **All the roads are one network**, with proper junctions and corners, side streets that join the
+  estates, and a bridge to the port, which used to stand on the far bank with no road to it.
+  Driveways run straight from each garage to its street.
 
 ### Added
 
