@@ -17476,6 +17476,134 @@
     flex-shrink: 1;
 }
 
+/* ---- the card that opens when a place on the map is clicked -------------------------------------
+   Upright and narrow: it stands beside the map rather than across it, so the place being read
+   about stays visible behind it. */
+
+.site-card {
+    position: absolute;
+    width: 320px;
+    padding: 18px;
+    background-color: rgba(10, 13, 18, 0.94);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+
+.site-card__header {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.site-card__icon {
+    width: 44px;
+    height: 44px;
+    margin-right: 12px;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+.site-card__heading {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.site-card__title {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 253);
+    white-space: normal;
+    margin: 0 0 3px 0;
+}
+
+.site-card__kind {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: rgba(200, 214, 236, 0.6);
+    margin: 0;
+}
+
+.site-card__close {
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    background-color: rgba(255, 255, 255, 0);
+    border-width: 0;
+    border-radius: 4px;
+    font-size: 17px;
+    color: rgba(200, 214, 236, 0.55);
+}
+
+.site-card__close:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+    color: rgb(238, 244, 253);
+}
+
+.site-card__blurb {
+    font-size: 13px;
+    white-space: normal;
+    color: rgba(214, 226, 243, 0.82);
+    margin-bottom: 14px;
+}
+
+/* The figures block. Set apart from the prose above it, because these are the numbers a decision
+   gets made on — even while they are still dashes. */
+.site-card__figures {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    padding: 4px 12px;
+    margin-bottom: 14px;
+}
+
+.site-card__figure {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 30px;
+}
+
+.site-card__figure-label {
+    font-size: 12px;
+    color: rgba(200, 214, 236, 0.72);
+}
+
+.site-card__figure-value {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(238, 244, 253);
+}
+
+.site-card__action {
+    height: 40px;
+    margin: 0 0 10px 0;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+}
+
+/* Disabled is the normal state of this button for now, so it has to look deliberate rather than
+   broken — dimmed, but still legibly a door. */
+.site-card__action:disabled {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.07);
+    color: rgba(200, 214, 236, 0.38);
+    opacity: 1;
+}
+
+.site-card__footnote {
+    font-size: 11px;
+    white-space: normal;
+    color: rgba(200, 214, 236, 0.45);
+    margin: 0;
+}
+
 .map-controls-hint {
     position: absolute;
     left: 16px;
