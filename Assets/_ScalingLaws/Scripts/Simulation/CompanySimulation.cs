@@ -129,9 +129,9 @@ namespace ScalingLaws.Simulation
                 kilowatts += generation.PowerKilowatts * asset.Units;
             }
 
-            // Stocked the same way the profile stocks it. `Stock` clears and refills front to back,
-            // so calling it twice with the same fleet is the same as calling it once.
-            hall.Stock(units);
+            // Checked the same way the profile checks it. `Stock` only trims and names, so calling it
+            // twice with the same fleet is the same as calling it once.
+            hall.Stock(OnlineAcceleratorsByGeneration());
 
             return units <= 0
                 ? hall.Output(0.0, 0.0, Room)
@@ -582,6 +582,56 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
+        /// Online accelerators by generation. What the floor is checked against every day, and what
+        /// the store in the cabinet window is counted from.
+        /// </summary>
+        public Dictionary<HardwareGenerationId, int> OnlineAcceleratorsByGeneration()
+        {
+            var owned = new Dictionary<HardwareGenerationId, int>();
+
+            foreach (var asset in State.Pool.Assets)
+            {
+                if (asset.Units <= 0 || !asset.IsOnline(State.Date)
+                    || !HardwareCatalog.TryGet(asset.GenerationId, out var generation)
+                    || generation.Class != HardwareClass.Accelerator)
+                {
+                    continue;
+                }
+
+                owned.TryGetValue(asset.GenerationId, out var held);
+                owned[asset.GenerationId] = held + asset.Units;
+            }
+
+            return owned;
+        }
+
+        /// <summary>
+        /// Cards of this generation the company owns, has online, and has not put in a cabinet.
+        /// These are the tiles in the cabinet window's store.
+        /// </summary>
+        public int InStoreOf(HardwareGenerationId generation)
+        {
+            OnlineAcceleratorsByGeneration().TryGetValue(generation, out var owned);
+            return Math.Max(0, owned - (State.HasServerRoom ? State.Hall.HousedOf(generation) : 0));
+        }
+
+        /// <summary>Puts one card of a named generation into one cabinet, from the store.</summary>
+        public bool TryFitCard(int column, int row, HardwareGenerationId generation,
+            out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.none");
+                return false;
+            }
+
+            return State.Hall.TryFitCard(column, row, generation, InStoreOf(generation),
+                out failureReason);
+        }
+
+        /// <summary>
         /// Puts one card into one cabinet, by hand.
         ///
         /// **Reported twice: you can buy silicon and you cannot put it anywhere.** The floor
@@ -601,7 +651,33 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            return State.Hall.TryFitCard(column, row, OnlineAccelerators(), out failureReason);
+            // With no generation named, the strongest card in the store. Never one taken out of
+            // another cabinet: that was the old behaviour and it rearranged a cabinet the player
+            // was not looking at.
+            var best = default(HardwareGenerationId);
+            var bestPf = -1.0;
+
+            foreach (var pair in OnlineAcceleratorsByGeneration())
+            {
+                if (InStoreOf(pair.Key) <= 0 || !HardwareCatalog.TryGet(pair.Key, out var part))
+                {
+                    continue;
+                }
+
+                if (part.PetaflopsPerUnit > bestPf)
+                {
+                    best = pair.Key;
+                    bestPf = part.PetaflopsPerUnit;
+                }
+            }
+
+            if (bestPf < 0.0)
+            {
+                failureReason = Loc.T("rack.nothing_owned");
+                return false;
+            }
+
+            return TryFitCard(column, row, best, out failureReason);
         }
 
         /// <inheritdoc cref="ServerHall.TryPullCard"/>
@@ -616,6 +692,24 @@ namespace ScalingLaws.Simulation
             }
 
             return State.Hall.TryPullCard(column, row, out failureReason);
+        }
+
+        /// <summary>
+        /// Takes one card of a named generation out of a cabinet and back to the store. What a
+        /// click on a lit slot does.
+        /// </summary>
+        public bool TryPullCard(int column, int row, HardwareGenerationId generation,
+            out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.none");
+                return false;
+            }
+
+            return State.Hall.TryPullCard(column, row, generation, out failureReason);
         }
 
         public bool TryFitFan(int column, int row, out string failureReason)

@@ -479,6 +479,7 @@ namespace ScalingLaws.Persistence
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
             state.Hall.Capture(data.hallRacks, data.hallAccelerators, data.hallFans);
             state.Hall.CaptureRoom(data.hallCoolers, data.hallOverclock);
+            state.Hall.CaptureCards(data.hallCards);
             state.Warehouse.Capture(data.storeRackKinds, data.storeRackCounts, out data.storeFans);
             state.Power.Capture(data.powerPlantSites, data.powerPlantReadyDays);
 
@@ -1224,6 +1225,7 @@ namespace ScalingLaws.Persistence
             state.ServerRoomWasAGift = safe.serverRoomWasAGift;
             state.Hall.Restore(safe.hallRacks, safe.hallAccelerators, safe.hallFans);
             state.Hall.RestoreRoom(safe.hallCoolers, safe.hallOverclock);
+            state.Hall.RestoreCards(safe.hallCards);
             state.Warehouse.Restore(safe.storeRackKinds, safe.storeRackCounts, safe.storeFans);
             state.Power.Restore(safe.powerPlantSites, safe.powerPlantReadyDays);
             state.Staff.Owned.Clear();

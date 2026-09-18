@@ -153,8 +153,16 @@ namespace ScalingLaws.Tests.EditMode
 
             simulation.Advance(ComputeTierCatalog.Get(ComputeTier.ColocatedServers).LeadTimeDays + 1);
 
+            // **Arrived, and in the store, not in a cabinet.** The room used to fill itself, which
+            // is why the author could never arrange it or take anything out.
+            Assert.That(hall.HousedAccelerators, Is.Zero,
+                "The cards mounted themselves. Nothing goes into a cabinet but the player.");
+
+            Assert.That(RoomHands.FitEverything(simulation), Is.EqualTo(8));
+            simulation.Advance(3);
+
             Assert.That(hall.HousedAccelerators, Is.EqualTo(8),
-                "Eight cards were bought and the floor has room for all of them.");
+                "Eight cards were fitted and the floor has room for all of them.");
         }
 
         [Test]
@@ -170,6 +178,8 @@ namespace ScalingLaws.Tests.EditMode
                 out var why), Is.True, why);
 
             simulation.Advance(ComputeTierCatalog.Get(ComputeTier.ColocatedServers).LeadTimeDays + 1);
+            RoomHands.FitEverything(simulation);
+            simulation.Advance(1);
 
             Assert.That(hall.HousedAccelerators, Is.EqualTo(slots),
                 "The room holds what it holds. The rest is still owned and still housed elsewhere.");
@@ -203,7 +213,7 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(hall.TotalSlots, Is.EqualTo(slots - ServerRackCatalog.FanSlots),
                 "A fan occupies a slot, so the floor has one fewer to let.");
 
-            Assert.That(hall.Stock(slots), Is.EqualTo(slots - ServerRackCatalog.FanSlots),
+            Assert.That(hall.Fill(slots), Is.EqualTo(slots - ServerRackCatalog.FanSlots),
                 "And the refill must respect it, or the fan is cooling that costs nothing.");
 
             Assert.That(hall.FreeSlots(3, 3), Is.Zero,
@@ -231,6 +241,10 @@ namespace ScalingLaws.Tests.EditMode
             var wait = ComputeTierCatalog.Get(ComputeTier.ColocatedServers).LeadTimeDays + 2;
             empty.Advance(wait);
             stocked.Advance(wait);
+
+            RoomHands.FitEverything(stocked);
+            empty.Advance(1);
+            stocked.Advance(1);
 
             Assert.That(stocked.State.Hall.HousedAccelerators, Is.EqualTo(slots));
 

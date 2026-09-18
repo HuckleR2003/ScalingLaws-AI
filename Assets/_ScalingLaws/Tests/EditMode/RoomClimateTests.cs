@@ -37,7 +37,7 @@ namespace ScalingLaws.Tests.EditMode
                 }
             }
 
-            hall.Stock(hall.TotalSlots);
+            hall.Fill(hall.TotalSlots);
             return hall;
         }
 
@@ -181,7 +181,7 @@ namespace ScalingLaws.Tests.EditMode
                 }
             }
 
-            hall.Stock(hall.TotalSlots);
+            hall.Fill(hall.TotalSlots);
             var climate = hall.Climate(B200.PowerKilowatts);
 
             Assert.That(climate.State, Is.EqualTo(ServerRackCatalog.RoomClimateState.Overheating));

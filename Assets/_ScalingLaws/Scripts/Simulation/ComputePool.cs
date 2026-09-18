@@ -282,6 +282,7 @@ namespace ScalingLaws.Simulation
             var residualValue = 0L;
             var roomDraw = 0.0;
             var roomPetaflops = 0.0;
+            var ownedByGeneration = new Dictionary<HardwareGenerationId, int>();
 
             var supportCapacity = new Dictionary<HardwareClass, double>
             {
@@ -325,6 +326,9 @@ namespace ScalingLaws.Simulation
                 {
                     ownedAccelerators += asset.Units;
 
+                    ownedByGeneration.TryGetValue(asset.GenerationId, out var held);
+                    ownedByGeneration[asset.GenerationId] = held + asset.Units;
+
                     acceleratorPowerKw += assetPower;
                     acceleratorElectricity +=
                         assetPower * SimUnits.HoursPerDay * tier.PowerCostPerKilowattHourUsd;
@@ -364,13 +368,17 @@ namespace ScalingLaws.Simulation
                     ? acceleratorPowerKw / ownedAccelerators
                     : 0.0;
 
-                var housed = hall.Stock(ownedAccelerators);
+                // **Checked, never filled.** The cards in the cabinets are the ones the player put
+                // there, and each is priced as the card it is rather than as the fleet's average.
+                var housed = hall.Stock(ownedByGeneration);
                 var output = hall.Output(perUnitPetaflops, perUnitKilowatts, room);
+                var (unthrottled, housedKilowatts) = hall.HousedRaw(perUnitPetaflops, perUnitKilowatts);
 
                 if (housed > 0 && ownedAccelerators > 0)
                 {
-                    var share = housed / (double)ownedAccelerators;
-                    var unthrottled = housed * perUnitPetaflops;
+                    var share = acceleratorPowerKw > 0.0
+                        ? Math.Min(1.0, housedKilowatts / acceleratorPowerKw)
+                        : housed / (double)ownedAccelerators;
 
                     // At this point nothing but owned accelerators has touched the ceiling, so this
                     // average is theirs alone. Rented and packaged capacity join below.

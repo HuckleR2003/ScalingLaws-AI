@@ -118,7 +118,7 @@ namespace ScalingLaws.Tests.PlayMode
 
             // Seven cards in every cabinet, then a fan in two of them. Identical silicon either
             // side, and the only difference is the slot given to air.
-            hall.Stock(hall.TotalSlots - 4);
+            hall.Fill(hall.TotalSlots - 4);
 
             simulation.State.CashUsd = 400_000_000;
             simulation.TryFitFan(0, 0, out _);

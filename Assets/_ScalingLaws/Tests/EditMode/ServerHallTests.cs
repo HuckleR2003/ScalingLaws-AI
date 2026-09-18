@@ -107,8 +107,8 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsTrue(proper.TryPlace(0, 0, ServerRack.HighDensity, out _));
             Assert.IsTrue(proper.TryPlace(1, 0, ServerRack.HighDensity, out _));
 
-            cheap.Stock(16);
-            proper.Stock(16);
+            cheap.Fill(16);
+            proper.Fill(16);
 
             Assert.AreEqual(16, cheap.HousedAccelerators);
             Assert.AreEqual(16, proper.HousedAccelerators);
@@ -130,7 +130,7 @@ namespace ScalingLaws.Tests.EditMode
         {
             var hall = new ServerHall(1, 1);
             Assert.IsTrue(hall.TryPlace(0, 0, ServerRack.OpenFrame, out _));
-            hall.Stock(4);
+            hall.Fill(4);
 
             var output = hall.Output(1.0, 4.0);
 
@@ -184,7 +184,7 @@ namespace ScalingLaws.Tests.EditMode
         {
             var hall = new ServerHall(2, 2);
             hall.TryPlace(0, 0, ServerRack.HighDensity, out _);
-            hall.Stock(10);
+            hall.Fill(10);
 
             Assert.IsTrue(hall.TryRemove(0, 0, out var rack, out var freed, out _));
 
@@ -203,7 +203,7 @@ namespace ScalingLaws.Tests.EditMode
             hall.TryPlace(0, 0, ServerRack.OpenFrame, out _);
             hall.TryPlace(1, 0, ServerRack.OpenFrame, out _);
 
-            var housed = hall.Stock(50);
+            var housed = hall.Fill(50);
 
             Assert.AreEqual(8, housed, "Two open frames hold four each and no more.");
             Assert.AreEqual(8, hall.HousedAccelerators);
@@ -216,7 +216,7 @@ namespace ScalingLaws.Tests.EditMode
             var hall = new ServerHall(4, 4);
             hall.TryPlace(0, 0, ServerRack.Immersion, out _);
             hall.TryPlace(3, 2, ServerRack.OpenFrame, out _);
-            hall.Stock(20);
+            hall.Fill(20);
 
             var racks = new System.Collections.Generic.List<int>();
             var counts = new System.Collections.Generic.List<int>();

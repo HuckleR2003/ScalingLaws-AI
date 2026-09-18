@@ -64,6 +64,10 @@ namespace ScalingLaws.Tests.EditMode
                 30_000L,
                 leadTimeDays: 0));
 
+            Assert.That(simulation.BasementOutput().Petaflops, Is.EqualTo(0.0),
+                "Owned is not fitted. Nothing goes into a cabinet but the player.");
+
+            RoomHands.FitEverything(simulation);
             var output = simulation.BasementOutput();
 
             Assert.That(output.Petaflops, Is.GreaterThan(0.0),

@@ -75,7 +75,7 @@ namespace ScalingLaws.Editor
             if (basement)
             {
                 simulation.TryOpenServerRoom(true, out _);
-                state.Hall.Stock(state.Hall.TotalSlots);
+                state.Hall.Fill(state.Hall.TotalSlots);
             }
 
             // A hundred days of settling, so the measurement is of a running campaign rather than

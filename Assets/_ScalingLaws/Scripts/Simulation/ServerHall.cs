@@ -74,6 +74,17 @@ namespace ScalingLaws.Simulation
         /// <summary>Overclock level per square, zero for stock. Meaningful only under a cabinet.</summary>
         private readonly int[] overclock;
 
+        /// <summary>
+        /// Which cards stand in each cabinet, by generation. Null where nothing is recorded.
+        ///
+        /// **`accelerators` stays the count and this is the identity.** A card in a cabinet
+        /// whose generation is not recorded is *unknown*: a v61 room, or a room a test filled with
+        /// <see cref="Fill"/>. Unknown cards are priced at the fleet's average and are given a
+        /// generation by the next <see cref="Stock(IReadOnlyDictionary{HardwareGenerationId,int})"/>,
+        /// newest first, from what the company owns and has not put anywhere.
+        /// </summary>
+        private readonly Dictionary<HardwareGenerationId, int>[] kinds;
+
         public ServerHall(int columns = DefaultColumns, int rows = DefaultRows)
         {
             Columns = Math.Clamp(columns, 1, 32);
@@ -84,6 +95,190 @@ namespace ScalingLaws.Simulation
             accelerators = new int[Columns * Rows];
             coolers = new bool[Columns * Rows];
             overclock = new int[Columns * Rows];
+            kinds = new Dictionary<HardwareGenerationId, int>[Columns * Rows];
+        }
+
+        // ---- which cards are where --------------------------------------------------------------
+
+        private int KnownIn(int index)
+        {
+            var total = 0;
+
+            if (kinds[index] != null)
+            {
+                foreach (var count in kinds[index].Values)
+                {
+                    total += count;
+                }
+            }
+
+            return total;
+        }
+
+        private int UnknownIn(int index) => Math.Max(0, accelerators[index] - KnownIn(index));
+
+        private void AddKind(int index, HardwareGenerationId generation, int count = 1)
+        {
+            kinds[index] ??= new Dictionary<HardwareGenerationId, int>();
+            kinds[index].TryGetValue(generation, out var held);
+            kinds[index][generation] = held + count;
+        }
+
+        private bool RemoveKind(int index, HardwareGenerationId generation)
+        {
+            if (kinds[index] == null || !kinds[index].TryGetValue(generation, out var held) || held <= 0)
+            {
+                return false;
+            }
+
+            if (held == 1)
+            {
+                kinds[index].Remove(generation);
+            }
+            else
+            {
+                kinds[index][generation] = held - 1;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Takes one card out of a cabinet when nobody said which: an unknown one first, then the
+        /// weakest. Used where a rule has to give a slot back, never where a player chose a card.
+        /// </summary>
+        private void RemoveAny(int index)
+        {
+            if (accelerators[index] <= 0)
+            {
+                return;
+            }
+
+            if (UnknownIn(index) <= 0 && kinds[index] != null)
+            {
+                var weakest = default(HardwareGenerationId);
+                var weakestPf = double.MaxValue;
+
+                foreach (var pair in kinds[index])
+                {
+                    var pf = HardwareCatalog.TryGet(pair.Key, out var part) ? part.PetaflopsPerUnit : 0.0;
+
+                    if (pair.Value > 0 && pf < weakestPf)
+                    {
+                        weakest = pair.Key;
+                        weakestPf = pf;
+                    }
+                }
+
+                RemoveKind(index, weakest);
+            }
+
+            accelerators[index]--;
+        }
+
+        /// <summary>
+        /// What a cabinet's cards make and draw at stock clocks, before heat. Recorded cards at
+        /// their own figures, unknown ones at the averages the caller passes.
+        /// </summary>
+        private (double Petaflops, double Kilowatts) Load(int index, double averagePetaflops,
+            double averageKilowatts)
+        {
+            var unknown = UnknownIn(index);
+            var petaflops = unknown * Math.Max(0.0, SimUnits.Finite(averagePetaflops));
+            var kilowatts = unknown * Math.Max(0.0, SimUnits.Finite(averageKilowatts));
+
+            if (kinds[index] != null)
+            {
+                foreach (var pair in kinds[index])
+                {
+                    if (!HardwareCatalog.TryGet(pair.Key, out var part))
+                    {
+                        continue;
+                    }
+
+                    petaflops += pair.Value * part.PetaflopsPerUnit;
+                    kilowatts += pair.Value * part.PowerKilowatts;
+                }
+            }
+
+            return (petaflops, kilowatts);
+        }
+
+        /// <summary>
+        /// The cards in one cabinet, strongest first. Unknown cards are reported with
+        /// <paramref name="unknown"/> so the screen can say so rather than inventing a model.
+        /// </summary>
+        public List<(HardwareGenerationId Generation, int Count)> CardsIn(int column, int row,
+            out int unknown)
+        {
+            unknown = 0;
+            var found = new List<(HardwareGenerationId, int)>();
+
+            if (!Contains(column, row))
+            {
+                return found;
+            }
+
+            var index = IndexOf(column, row);
+            unknown = UnknownIn(index);
+
+            if (kinds[index] != null)
+            {
+                foreach (var pair in kinds[index])
+                {
+                    if (pair.Value > 0)
+                    {
+                        found.Add((pair.Key, pair.Value));
+                    }
+                }
+            }
+
+            found.Sort((left, right) => Strength(right.Item1).CompareTo(Strength(left.Item1)));
+            return found;
+        }
+
+        private static double Strength(HardwareGenerationId generation) =>
+            HardwareCatalog.TryGet(generation, out var part) ? part.PetaflopsPerUnit : 0.0;
+
+        /// <summary>How many cards of one generation stand anywhere on this floor.</summary>
+        public int HousedOf(HardwareGenerationId generation)
+        {
+            var total = 0;
+
+            foreach (var map in kinds)
+            {
+                if (map != null && map.TryGetValue(generation, out var count))
+                {
+                    total += count;
+                }
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// What every card on the floor makes and draws at stock clocks, before heat. The fleet
+        /// takes this off the colocation figures, so the cards downstairs are not paid for twice.
+        /// </summary>
+        public (double Petaflops, double Kilowatts) HousedRaw(double averagePetaflops,
+            double averageKilowatts)
+        {
+            var petaflops = 0.0;
+            var kilowatts = 0.0;
+
+            for (var index = 0; index < racks.Length; index++)
+            {
+                if (racks[index] == ServerRack.None || accelerators[index] <= 0)
+                {
+                    continue;
+                }
+
+                var (pf, kw) = Load(index, averagePetaflops, averageKilowatts);
+                petaflops += pf;
+                kilowatts += kw;
+            }
+
+            return (petaflops, kilowatts);
         }
 
         public int Columns { get; }
@@ -337,6 +532,7 @@ namespace ScalingLaws.Simulation
 
             racks[IndexOf(column, row)] = rack;
             accelerators[IndexOf(column, row)] = 0;
+            kinds[IndexOf(column, row)] = null;
             overclock[IndexOf(column, row)] = 0;
             return true;
         }
@@ -372,6 +568,7 @@ namespace ScalingLaws.Simulation
 
             racks[index] = ServerRack.None;
             accelerators[index] = 0;
+            kinds[index] = null;
             fans[index] = 0;
             overclock[index] = 0;
             return true;
@@ -410,9 +607,8 @@ namespace ScalingLaws.Simulation
         /// that fails leaves the rack nowhere, and the interface would have to know how to undo
         /// half a move. Here the target is checked before anything leaves the first square.
         ///
-        /// The accelerators are not carried: `Stock` redistributes the whole fleet across the floor
-        /// on every tick, so what is in a cabinet is an arrangement rather than a possession. The
-        /// fans are carried, because those were bought for that cabinet.
+        /// Everything in it travels with it: the cards, which the player put there by hand, and the
+        /// fans, which were bought for that cabinet.
         /// </summary>
         public bool TryMove(int fromColumn, int fromRow, int toColumn, int toRow,
             out string failureReason)
@@ -448,11 +644,13 @@ namespace ScalingLaws.Simulation
             racks[to] = racks[from];
             fans[to] = fans[from];
             accelerators[to] = accelerators[from];
+            kinds[to] = kinds[from];
             overclock[to] = overclock[from];
 
             racks[from] = ServerRack.None;
             fans[from] = 0;
             accelerators[from] = 0;
+            kinds[from] = null;
             overclock[from] = 0;
 
             return true;
@@ -514,12 +712,16 @@ namespace ScalingLaws.Simulation
         /// cabinet at all.** Air and silicon share the slots, so the player takes a card out and
         /// then puts the fan in. Two clicks, both deliberate.
         ///
-        /// The card is not destroyed. It becomes homeless, and the next stock pass puts it wherever
-        /// there is room, which is usually the slot it just left unless something else has taken
-        /// it. That is the honest behaviour: an empty slot in a cabinet a company owns is a slot
-        /// the company fills.
+        /// The card is not destroyed. It goes back to the store, not in a cabinet, and **it stays
+        /// there**: nothing refills a slot the player emptied. The pass that used to do exactly
+        /// that every tick is why a card could never be taken out.
         /// </summary>
-        public bool TryPullCard(int column, int row, out string failureReason)
+        public bool TryPullCard(int column, int row, out string failureReason) =>
+            TryPullCard(column, row, null, out failureReason);
+
+        /// <summary>Takes one card of this generation out, or any card when none is named.</summary>
+        public bool TryPullCard(int column, int row, HardwareGenerationId? generation,
+            out string failureReason)
         {
             failureReason = string.Empty;
 
@@ -537,7 +739,19 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            accelerators[index]--;
+            if (generation.HasValue)
+            {
+                if (!RemoveKind(index, generation.Value))
+                {
+                    failureReason = Loc.T("rack.none_here");
+                    return false;
+                }
+
+                accelerators[index]--;
+                return true;
+            }
+
+            RemoveAny(index);
             return true;
         }
 
@@ -589,7 +803,7 @@ namespace ScalingLaws.Simulation
             var climate = Climate(kilowattsPerAccelerator, upgrades);
             var level = climate.OverclocksRunning ? overclock[index] : 0;
 
-            var heat = accelerators[index] * Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator))
+            var heat = Load(index, 0.0, kilowattsPerAccelerator).Kilowatts
                        * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
 
             // The room's own heat reaches every cabinet in it: the air going in is already warm.
@@ -621,39 +835,143 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Brings the floor into line with a fleet: trims what cannot be there and tops up the rest.
+        /// Brings the floor into line with a fleet: trims what cannot be there, **and adds nothing**.
         ///
-        /// **It used to clear every cabinet and refill from scratch, every tick.** That was fine
-        /// while nothing but this method ever decided where a card stood, and it is the reason a
-        /// player could not put one anywhere: any arrangement made by hand was wiped a fraction of
-        /// a second later. Reported as the server room not doing its job, twice.
+        /// **It used to top up every cabinet from whatever was loose, every tick.** That made every
+        /// arrangement a player made by hand last a fraction of a second, a card could never be
+        /// taken out (the next pass put it straight back), and new silicon mounted itself wherever
+        /// the arithmetic fell. Reported three times as "the parts mount themselves and I cannot
+        /// take anything out". Cards go into cabinets by hand now, and this only keeps the floor
+        /// honest:
         ///
-        /// So what is on the floor is kept. Three passes and each one is a different question:
+        /// 1. **Can it be there.** A cabinet that lost slots to a fan gives cards back.
+        /// 2. **Is it owned.** Selling a generation takes its cards off the floor, fullest cabinet
+        ///    first.
+        /// 3. **What is it.** A card with no recorded generation is named from what is owned and
+        ///    not yet in a cabinet, newest first.
         ///
-        /// 1. **Can it be there.** A cabinet that lost slots to a fan, or was sold, gives its cards
-        ///    back.
-        /// 2. **Is it owned.** Selling silicon has to empty the cabinets it was standing in, and
-        ///    the cards come off the fullest first so the room thins out rather than one cabinet
-        ///    emptying completely.
-        /// 3. **What is left over.** Anything owned and not yet housed is spread across the free
-        ///    capacity, in proportion to how much free capacity each cabinet has.
-        ///
-        /// **On an empty room the third pass gives exactly what the old proportional fill gave**,
-        /// because every cabinet starts at zero and its free capacity is its whole capacity. That
-        /// spread was a deliberate decision and the comment that explained it is kept below: a room
-        /// that crams everything into rack one and leaves rack two empty is not a room anybody
-        /// runs, and it made the choice of cabinet invisible.
-        ///
-        /// Returns how many are housed, so the caller can say what is standing in the yard.
+        /// Returns how many are housed.
         /// </summary>
-        public int Stock(int available)
+        public int Stock(IReadOnlyDictionary<HardwareGenerationId, int> owned)
+        {
+            // ---- 1. nothing may stand where it cannot ----------------------------------------
+            for (var index = 0; index < accelerators.Length; index++)
+            {
+                while (accelerators[index] > CardCapacity(index))
+                {
+                    RemoveAny(index);
+                }
+            }
+
+            // ---- 2. nothing may stand that is not owned, generation by generation ------------
+            var generations = new HashSet<HardwareGenerationId>();
+
+            foreach (var map in kinds)
+            {
+                if (map != null)
+                {
+                    generations.UnionWith(map.Keys);
+                }
+            }
+
+            foreach (var generation in generations)
+            {
+                var have = 0;
+                owned?.TryGetValue(generation, out have);
+
+                var housed = HousedOf(generation);
+
+                while (housed > Math.Max(0, have))
+                {
+                    var fullest = -1;
+                    var most = 0;
+
+                    for (var index = 0; index < kinds.Length; index++)
+                    {
+                        if (kinds[index] != null && kinds[index].TryGetValue(generation, out var count)
+                            && count > most)
+                        {
+                            fullest = index;
+                            most = count;
+                        }
+                    }
+
+                    if (fullest < 0)
+                    {
+                        break;
+                    }
+
+                    RemoveKind(fullest, generation);
+                    accelerators[fullest]--;
+                    housed--;
+                }
+            }
+
+            // ---- 3. a card nobody recorded gets a name, newest first ---------------------------
+            //
+            // **Never a new card.** A v61 room and a room filled by a tool hold cards with no
+            // generation; they are matched against what is owned and not yet in a cabinet, and a
+            // card with nothing left to match leaves the floor, because the company does not own it.
+            var spare = new List<(HardwareGenerationId Generation, int Count)>();
+
+            if (owned != null)
+            {
+                foreach (var pair in owned)
+                {
+                    var left = pair.Value - HousedOf(pair.Key);
+
+                    if (left > 0)
+                    {
+                        spare.Add((pair.Key, left));
+                    }
+                }
+            }
+
+            spare.Sort((left, right) => Strength(right.Generation).CompareTo(Strength(left.Generation)));
+
+            for (var index = 0; index < accelerators.Length; index++)
+            {
+                var unknown = UnknownIn(index);
+
+                while (unknown > 0)
+                {
+                    var at = spare.FindIndex(line => line.Count > 0);
+
+                    if (at < 0)
+                    {
+                        accelerators[index]--;
+                    }
+                    else
+                    {
+                        AddKind(index, spare[at].Generation);
+                        spare[at] = (spare[at].Generation, spare[at].Count - 1);
+                    }
+
+                    unknown--;
+                }
+            }
+
+            return HousedAccelerators;
+        }
+
+        /// <summary>
+        /// Stocks a room with anonymous cards the old way: trims, then spreads whatever is left over
+        /// across the free slots in proportion. **For tests and tools only.** The game never calls
+        /// it, because a room that fills itself is a room the player cannot arrange, and that was
+        /// reported three times before the pass that did it was taken out of
+        /// <see cref="Stock(IReadOnlyDictionary{HardwareGenerationId,int})"/>.
+        /// </summary>
+        public int Fill(int available)
         {
             var wanted = Math.Max(0, available);
 
             // ---- 1. nothing may stand where it cannot ----------------------------------------
             for (var index = 0; index < accelerators.Length; index++)
             {
-                accelerators[index] = Math.Clamp(accelerators[index], 0, CardCapacity(index));
+                while (accelerators[index] > CardCapacity(index))
+                {
+                    RemoveAny(index);
+                }
             }
 
             // ---- 2. nothing may stand that is not owned --------------------------------------
@@ -677,7 +995,7 @@ namespace ScalingLaws.Simulation
                     break;
                 }
 
-                accelerators[fullest]--;
+                RemoveAny(fullest);
                 housed--;
             }
 
@@ -733,30 +1051,19 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
-        /// Puts one card into one cabinet, taking it from wherever it is standing now.
+        /// Puts one card of this generation into one cabinet, from the store.
         ///
-        /// **This is the thing the room was missing.** Buying silicon put it in the company's
-        /// books and the floor arranged itself; there was no way to say which cabinet a card went
-        /// into, which is the one decision a room full of cabinets is supposed to be about.
-        ///
-        /// It never creates a card. When there is nothing homeless it takes one from the fullest
-        /// cabinet that is not this one, so fitting is always a move rather than a purchase, and a
-        /// player cannot conjure compute by clicking.
+        /// **It never creates a card and it never moves one.** The caller says how many of this
+        /// generation are owned and not yet in a cabinet; with none, the answer is no. Taking a card
+        /// out of another cabinet behind the player's back was the old behaviour, and a click that
+        /// rearranges a different cabinet is a click nobody can predict.
         /// </summary>
-        /// <param name="owned">Accelerators the company has online today.</param>
-        public bool TryFitCard(int column, int row, int owned, out string failureReason)
+        public bool TryFitCard(int column, int row, HardwareGenerationId generation, int inStore,
+            out string failureReason)
         {
             failureReason = string.Empty;
 
-            if (!Contains(column, row))
-            {
-                failureReason = Loc.T("room.no_rack_here");
-                return false;
-            }
-
-            var index = IndexOf(column, row);
-
-            if (racks[index] == ServerRack.None)
+            if (!Contains(column, row) || racks[IndexOf(column, row)] == ServerRack.None)
             {
                 failureReason = Loc.T("room.no_rack_here");
                 return false;
@@ -768,40 +1075,14 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (Math.Max(0, owned) <= 0)
+            if (inStore <= 0)
             {
                 failureReason = Loc.T("rack.nothing_owned");
                 return false;
             }
 
-            // Homeless first. Only when everything the company owns is already standing somewhere
-            // does this become a move, and then it comes off whichever cabinet has the most.
-            if (HousedAccelerators >= owned)
-            {
-                var fullest = -1;
-
-                for (var other = 0; other < accelerators.Length; other++)
-                {
-                    if (other == index || accelerators[other] <= 0)
-                    {
-                        continue;
-                    }
-
-                    if (fullest < 0 || accelerators[other] > accelerators[fullest])
-                    {
-                        fullest = other;
-                    }
-                }
-
-                if (fullest < 0)
-                {
-                    failureReason = Loc.T("rack.all_here");
-                    return false;
-                }
-
-                accelerators[fullest]--;
-            }
-
+            var index = IndexOf(column, row);
+            AddKind(index, generation);
             accelerators[index]++;
             return true;
         }
@@ -933,10 +1214,10 @@ namespace ScalingLaws.Simulation
 
                 var definition = ServerRackCatalog.Get(racks[index]);
                 var level = climate.OverclocksRunning ? overclock[index] : 0;
+                var (rawPetaflops, rawKilowatts) = Load(index, perUnit, perUnitHeat);
 
                 // An overclock buys work with heat, and the heat is the bill as well as the risk.
-                var heat = accelerators[index] * perUnitHeat
-                           * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
+                var heat = rawKilowatts * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
 
                 // **Fans raise the cabinet's rating rather than lowering the heat**, which is the
                 // honest shape: air moves warmth out of the box, it does not make the silicon draw
@@ -955,7 +1236,7 @@ namespace ScalingLaws.Simulation
                     throttled++;
                 }
 
-                petaflops += accelerators[index] * perUnit * factor
+                petaflops += rawPetaflops * factor
                              * (1.0 + ServerRackCatalog.OverclockThroughputPerLevel * level);
 
                 // The power is drawn whether or not the work gets done, which is the whole cost of
@@ -989,15 +1270,14 @@ namespace ScalingLaws.Simulation
             var room = upgrades ?? RoomUpgrades.None;
             var climate = Climate(kilowattsPerAccelerator, room);
             var level = climate.OverclocksRunning ? overclock[index] : 0;
+            var (rawPetaflops, rawKilowatts) = Load(index, petaflopsPerAccelerator, kilowattsPerAccelerator);
 
-            var heat = accelerators[index] * Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator))
-                       * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
+            var heat = rawKilowatts * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
             var cooling = room.CoolingFor(ServerRackCatalog.Get(racks[index]), fans[index])
                           * climate.CabinetFactor;
             var factor = ServerRackCatalog.ThrottleFactor(heat, cooling, room.PenaltyFor(racks[index]));
 
-            return accelerators[index] * Math.Max(0.0, SimUnits.Finite(petaflopsPerAccelerator))
-                   * factor * (1.0 + ServerRackCatalog.OverclockThroughputPerLevel * level);
+            return rawPetaflops * factor * (1.0 + ServerRackCatalog.OverclockThroughputPerLevel * level);
         }
 
         /// <summary>
@@ -1037,7 +1317,7 @@ namespace ScalingLaws.Simulation
 
                 var level = overclocks ? overclock[index] : 0;
 
-                heat += accelerators[index] * perUnitHeat
+                heat += Load(index, 0.0, perUnitHeat).Kilowatts
                         * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level)
                         + fans[index] * ServerRackCatalog.FanDrawKilowatts;
             }
@@ -1082,6 +1362,7 @@ namespace ScalingLaws.Simulation
             {
                 racks[index] = ServerRack.None;
                 accelerators[index] = 0;
+                kinds[index] = null;
                 fans[index] = 0;
 
                 if (savedRacks != null && index < savedRacks.Count
@@ -1099,6 +1380,73 @@ namespace ScalingLaws.Simulation
                 if (savedFans != null && index < savedFans.Count)
                 {
                     fans[index] = Math.Max(0, savedFans[index]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Which cards stand where: flattened triples of square, generation and count. v62.
+        /// </summary>
+        public void CaptureCards(List<int> into)
+        {
+            into.Clear();
+
+            for (var index = 0; index < kinds.Length; index++)
+            {
+                if (kinds[index] == null)
+                {
+                    continue;
+                }
+
+                foreach (var pair in kinds[index])
+                {
+                    if (pair.Value <= 0)
+                    {
+                        continue;
+                    }
+
+                    into.Add(index);
+                    into.Add((int)pair.Key);
+                    into.Add(pair.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Restores which cards stand where, after the counts. A generation that does not exist, a
+        /// square off the floor, or more named cards than the cabinet holds are dropped rather than
+        /// trusted: whatever is left unnamed is named again by the next stock pass.
+        /// </summary>
+        public void RestoreCards(IReadOnlyList<int> saved)
+        {
+            for (var index = 0; index < kinds.Length; index++)
+            {
+                kinds[index] = null;
+            }
+
+            if (saved == null)
+            {
+                return;
+            }
+
+            for (var at = 0; at + 2 < saved.Count; at += 3)
+            {
+                var index = saved[at];
+                var generation = saved[at + 1];
+                var count = saved[at + 2];
+
+                if (index < 0 || index >= kinds.Length || count <= 0
+                    || racks[index] == ServerRack.None
+                    || !Enum.IsDefined(typeof(HardwareGenerationId), generation))
+                {
+                    continue;
+                }
+
+                var room = accelerators[index] - KnownIn(index);
+
+                if (room > 0)
+                {
+                    AddKind(index, (HardwareGenerationId)generation, Math.Min(count, room));
                 }
             }
         }
@@ -1153,6 +1501,7 @@ namespace ScalingLaws.Simulation
             {
                 racks[index] = ServerRack.None;
                 accelerators[index] = 0;
+                kinds[index] = null;
                 fans[index] = 0;
                 coolers[index] = false;
                 overclock[index] = 0;

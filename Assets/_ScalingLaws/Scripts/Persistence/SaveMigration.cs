@@ -162,6 +162,7 @@ namespace ScalingLaws.Persistence
                     58 => UpgradeV58ToV59(current),
                     59 => UpgradeV59ToV60(current),
                     60 => UpgradeV60ToV61(current),
+                    61 => UpgradeV61ToV62(current),
                     _ => current
                 };
             }
@@ -1943,6 +1944,33 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v58 to v59: everything already built keeps the off-the-shelf vocabulary it was "
                 + "trained against. The ladder applies to runs started from now on.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v61 to v62: which cards stand in which cabinet. Empty in an older file because a v61
+        /// room filled itself and never recorded it.
+        /// </summary>
+        public static SaveData UpgradeV61ToV62(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 62;
+
+            // **Nothing is invented here either.** A v61 cabinet recorded how many cards it held
+            // and not which, because the room filled itself. The counts stay; the next day names
+            // each card from what the company owns and has not put anywhere, newest first, and
+            // that is declared rather than disguised. From here on nothing fills a cabinet but the
+            // player.
+            data.hallCards = new System.Collections.Generic.List<int>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v61 to v62: cards in the server room are put there by hand now. The cards already "
+                + "standing stay; their models are read from the fleet, newest first, on the first day.");
 
             return data;
         }

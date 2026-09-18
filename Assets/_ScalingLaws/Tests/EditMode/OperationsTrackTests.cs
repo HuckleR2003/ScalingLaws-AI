@@ -336,7 +336,7 @@ namespace ScalingLaws.Tests.EditMode
                 Assert.IsTrue(hall.TryPlaceCooler(column, 1, out var why), why);
             }
 
-            hall.Stock(slots);
+            hall.Fill(slots);
             return hall;
         }
 
@@ -362,7 +362,7 @@ namespace ScalingLaws.Tests.EditMode
                 "Opening the room left the first square empty, so there is no cabinet to open.");
 
             // Something in it, or the panel has nothing to predict about.
-            simulation.State.Hall.Stock(6);
+            simulation.State.Hall.Fill(6);
             return simulation;
         }
 

@@ -222,7 +222,7 @@ namespace ScalingLaws.Tests.EditMode
             var slots = ServerRackCatalog.Get(hall.At(0, 0).Rack).Slots;
 
             // Fill it with silicon, which is what a player does before wondering about the heat.
-            hall.Stock(slots * 4);
+            hall.Fill(slots * 4);
 
             Assert.That(hall.FreeSlots(0, 0), Is.Zero);
             Assert.IsFalse(simulation.TryFitFan(0, 0, out var why));
@@ -259,7 +259,7 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsTrue(simulation.TryBuildCooler(0, 2, out cooled), cooled);
 
             // Full, which is what a player does first and what makes the cabinet hot.
-            hall.Stock(hall.TotalSlots);
+            hall.Fill(hall.TotalSlots);
 
             var part = HardwareCatalog.Get(HardwareGenerationId.AcceleratorVr200);
 
@@ -325,6 +325,7 @@ namespace ScalingLaws.Tests.EditMode
             var rented = simulation.Profile;
 
             simulation.TryOpenServerRoom(true, out _);
+            RoomHands.FitEverything(simulation);
             simulation.Advance(1);
 
             Assert.That(simulation.State.Hall.HousedAccelerators, Is.GreaterThan(0),
@@ -363,6 +364,7 @@ namespace ScalingLaws.Tests.EditMode
             }
 
             basement.TryOpenServerRoom(true, out _);
+            RoomHands.FitEverything(basement);
             basement.Advance(1);
             datacentre.Advance(1);
 
@@ -402,7 +404,7 @@ namespace ScalingLaws.Tests.EditMode
             simulation.TryStandRack(2, 2, ServerRack.Immersion, out _);
             simulation.TryFitFan(2, 2, out _);
             simulation.TryFitFan(2, 2, out _);
-            simulation.State.Hall.Stock(20);
+            simulation.State.Hall.Fill(20);
 
             var racks = new System.Collections.Generic.List<int>();
             var cards = new System.Collections.Generic.List<int>();
@@ -585,7 +587,7 @@ namespace ScalingLaws.Tests.EditMode
             var hall = new ServerHall(4, 4);
 
             Assert.That(hall.TotalSlots, Is.Zero, "a floor with no cabinets has no slots");
-            Assert.That(hall.Stock(256), Is.Zero, "cards cannot stand on bare floor");
+            Assert.That(hall.Fill(256), Is.Zero, "cards cannot stand on bare floor");
             Assert.That(hall.HousedAccelerators, Is.Zero);
         }
     }

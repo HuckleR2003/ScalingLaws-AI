@@ -26,7 +26,7 @@ namespace ScalingLaws.Tests.PlayMode
         {
             // The basement, so the room screen has cabinets to photograph rather than a locked page.
             simulation.TryOpenServerRoom(true, out _);
-            simulation.State.Hall.Stock(simulation.State.Hall.TotalSlots - 2);
+            simulation.State.Hall.Fill(simulation.State.Hall.TotalSlots - 2);
             simulation.TryFitFan(0, 0, out _);
 
             var state = simulation.State;
