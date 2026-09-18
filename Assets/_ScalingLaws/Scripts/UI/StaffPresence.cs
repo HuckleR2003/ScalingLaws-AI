@@ -77,7 +77,23 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>How many people are actually standing in the room. Read by the guard.</summary>
-        public int Standing => spawned.Count;
+        public int Standing
+        {
+            get
+            {
+                var count = 0;
+
+                foreach (var person in spawned)
+                {
+                    if (person != null)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
 
         /// <summary>
         /// Puts the right people in the room.
@@ -115,9 +131,22 @@ namespace ScalingLaws.UI
 
             Clear();
 
+            var seat = 0;
+
             for (var index = 0; index < hires.Count; index++)
             {
-                Spawn(group.transform, hires[index], index);
+                // **Remote contractors are not in the building.** They were spawned into the room
+                // like everybody else, took a chair each and stood about the office of a company
+                // they have never visited, which the author reported as an old bug. They keep their
+                // place in the list as an empty slot, so the index a click opens still names the
+                // right person, and they take no chair from somebody who does come in.
+                if (hires[index].Source == HireSource.Remote)
+                {
+                    spawned.Add(null);
+                    continue;
+                }
+
+                Spawn(group.transform, hires[index], index, seat++);
             }
 
             // A fresh set of people has nobody hidden yet, so the next `SetHour` has to do the work
@@ -189,12 +218,14 @@ namespace ScalingLaws.UI
             return desks == null ? null : desks.Find(ChairPrefix + index);
         }
 
-        private void Spawn(Transform group, Hire hire, int index)
+        private void Spawn(Transform group, Hire hire, int index, int seat)
         {
             var prefab = Resources.Load<GameObject>(FounderPresence.PrefabPath);
 
             if (prefab == null)
             {
+                // Keeps the slot, so the list stays one to one with the roster.
+                spawned.Add(null);
                 return;
             }
 
@@ -217,7 +248,7 @@ namespace ScalingLaws.UI
                 UnityEngine.Object.DestroyImmediate(routine);
             }
 
-            Stand(person.transform, index);
+            Stand(person.transform, seat);
 
             person.AddComponent<NamePlate>().Set(
                 hire.Name,

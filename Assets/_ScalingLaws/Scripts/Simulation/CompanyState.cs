@@ -828,6 +828,13 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public bool IsSandbox { get; set; }
 
+        /// <summary>
+        /// Whether people write in unasked. On by default, and a player who is tired of the letters
+        /// can turn it off from the inbox. Searches the company pays for are unaffected: this is
+        /// about the post, not about hiring. Saved from v60.
+        /// </summary>
+        public bool AcceptsApplications { get; set; } = true;
+
         public string CompanyName { get; set; }
         public GameDate Date { get; set; }
         public long CashUsd { get; set; }
@@ -986,6 +993,9 @@ namespace ScalingLaws.Simulation
                 News.Add(story);
             }
         }
+
+        /// <summary>Whether anything is waiting to be read off the queue.</summary>
+        public bool HasQueuedEvents => events.Count > 0;
 
         public bool TryDequeueEvent(out CompanyEvent companyEvent)
         {

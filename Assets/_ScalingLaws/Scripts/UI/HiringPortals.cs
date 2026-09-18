@@ -250,7 +250,8 @@ namespace ScalingLaws.UI
                 + "This is the cheap end of the market and it is cheap for a reason."));
 
             page.Add(SkillPicker());
-            page.Add(SearchButton(HireSource.Remote, "SEARCH CONTRACTORS"));
+            page.Add(SearchButton(HireSource.Remote,
+                "SEARCH CONTRACTORS  " + UiFormat.Money(CompanySimulation.ContractorSearchFeeUsd)));
             page.Add(Results(HireSource.Remote));
 
             return page;
@@ -428,9 +429,26 @@ namespace ScalingLaws.UI
         {
             var button = new Button(() =>
             {
-                shortlists[source] = new List<Candidate>(
-                    simulation.Shortlist(chosen, source, source == HireSource.Remote ? 34 : 48,
-                        ShortlistSize));
+                // The marketplace charges a listing fee; the register does not. Paid in the
+                // simulation, because that is where money moves.
+                if (source == HireSource.Remote)
+                {
+                    if (!simulation.TrySearchContractors(chosen, 34, ShortlistSize,
+                            out var paidFor, out var why))
+                    {
+                        AudioDirector.Deny();
+                        problem = why;
+                        refresh();
+                        return;
+                    }
+
+                    shortlists[source] = new List<Candidate>(paidFor);
+                }
+                else
+                {
+                    shortlists[source] = new List<Candidate>(
+                        simulation.Shortlist(chosen, source, 48, ShortlistSize));
+                }
 
                 problem = string.Empty;
                 refresh();

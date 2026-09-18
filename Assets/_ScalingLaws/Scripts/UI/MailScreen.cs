@@ -160,6 +160,25 @@ namespace ScalingLaws.UI
             filters.Add(FilterChip(Loc.T("mail.filter_unread"), Filter.Unread, box.Unread));
             filters.Add(FilterChip(Loc.T("mail.filter_answer"), Filter.NeedsAnswer, NeedingAnswer()));
 
+            // **Letters nobody asked for, off at the door.** Asked for by the author: a campaign
+            // several years in gets a speculative application every couple of months for as long as
+            // it runs. Searches the company pays for are untouched; this is only the post.
+            var accepting = simulation.State.AcceptsApplications;
+            var applications = new Button(() =>
+            {
+                simulation.State.AcceptsApplications = !simulation.State.AcceptsApplications;
+                Refresh();
+            })
+            {
+                text = Loc.T(accepting ? "mail.applications_on" : "mail.applications_off")
+            };
+
+            applications.AddToClassList("chip");
+            applications.EnableInClassList("chip--on", accepting);
+            InsightTip.Attach(applications, Loc.T("mail.applications.title"),
+                Loc.T("mail.applications.body"));
+            filters.Add(applications);
+
             bar.Add(filters);
             return bar;
         }
@@ -211,7 +230,7 @@ namespace ScalingLaws.UI
                 return column;
             }
 
-            var scroll = new ScrollView();
+            var scroll = ScrollMemory.Keep(new ScrollView(), "mail.list");
             scroll.AddToClassList("mail-scroll");
 
             foreach (var letter in letters)

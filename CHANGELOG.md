@@ -156,6 +156,40 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### From the playtest list, 18 September
+
+- **Two or three releases can be in the works at once.** A second needs an office of level 1 and 5
+  people on the team, a third needs level 2 and 15. Hovering over WAIT UNTIL THE WORK IS FINISHED
+  says what the next one needs and what you have. One model still takes one planned release at a
+  time.
+- **The state programme is a contract, not a pension.** It pays in full while your best model is
+  within 5 points of the frontier and falls to a quarter at 30 points behind, shown as FEE PAID. The
+  failure risk grows up to twelve times when nothing has shipped for over a year, reputation is low
+  or there were scandals in the last year. Before this, Bureaucracy failed about once a century
+  whatever the company did.
+- **The state programme is taxed.** Tax was assessed on the market's takings only, so a company
+  living on a state contract paid almost none.
+- **Contractor searches cost $1,000 each**, so the cheapest channel can no longer be rerolled for
+  free until a strong contractor turns up.
+- **The inbox can turn unasked job applications away**, with a switch next to the filters.
+- **A notice when parts are ordered**, with the delivery date, and a gold one when they arrive.
+- **Language can be changed from the ESC menu** during a campaign. The game saves and reopens in the
+  new language.
+- **Remote contractors no longer stand in the office.** They never came in, and they took chairs.
+- **The safety stage reads better.** The descriptions are 30% larger on a banner of their own, and
+  the fleet bonus now says what it does: less risk for each model on sale, up to a number of models.
+
+### Fixed
+
+- **The tutorial no longer disappears when a tab is opened during the first call.** The cousin rings
+  again as soon as you are back in the office. A deliberate "later" still means later.
+- **Pages no longer jump to the top when you click something.** The founder creator, the inbox, the
+  news, investing, the server room build rail, the team roster, the office build mode and the rival
+  cards keep their place when they redraw.
+- **The corpora ticked on the DATA stage no longer reset every day.**
+- **A creator stage that fails to build keeps the page it had** instead of going blank, and the
+  error is logged. A tester saw the DATA stage go empty after switching tokenizers quickly.
+
 ### The late game can be won
 
 Measured by playing fourteen years many times over, with every research node taken the day it
@@ -235,9 +269,10 @@ A way to look at the game with everything open, without pretending it was played
   architecture families actually arrive rather than the tree merely reporting them as held.
 
 **Save compatibility.** Save v58. A v57 campaign loads and is not a sandbox, which is the only true
-reading: it was played in a game that had no debug mode in it.
+reading: it was played in a game that had no debug mode in it. Save v60 records whether the inbox
+takes unasked applications; an older campaign keeps receiving them.
 
-1,376 EditMode tests and 62 PlayMode tests.
+1,389 EditMode tests and 63 PlayMode tests.
 
 ---
 

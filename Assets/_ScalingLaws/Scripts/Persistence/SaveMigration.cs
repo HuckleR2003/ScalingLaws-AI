@@ -160,6 +160,7 @@ namespace ScalingLaws.Persistence
                     56 => UpgradeV56ToV57(current),
                     57 => UpgradeV57ToV58(current),
                     58 => UpgradeV58ToV59(current),
+                    59 => UpgradeV59ToV60(current),
                     _ => current
                 };
             }
@@ -1941,6 +1942,30 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v58 to v59: everything already built keeps the off-the-shelf vocabulary it was "
                 + "trained against. The ladder applies to runs started from now on.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v59 to v60: the inbox can refuse unasked applications. A flag written inverted, so a
+        /// file without it means what every older campaign actually had.
+        /// </summary>
+        public static SaveData UpgradeV59ToV60(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 60;
+
+            // Nothing to reconstruct and nothing guessed: a v59 campaign had no way to refuse
+            // unasked letters, so it received them, and that is what the default says.
+            data.refusesApplications = false;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v59 to v60: the inbox can now turn unasked applications away. Older campaigns keep "
+                + "receiving them, as they always did.");
 
             return data;
         }

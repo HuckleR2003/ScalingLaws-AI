@@ -343,7 +343,7 @@ namespace ScalingLaws.UI
                 },
                 new[]
                 {
-                    new Note("Anglia, przedszkole", 760f, 44f, fromBottom: true),
+                    new Note("Anglia", 760f, 44f, fromBottom: true),
                     new Note("Limanowa", 970f, 44f, fromBottom: true)
                 }),
 

@@ -139,6 +139,19 @@ namespace ScalingLaws.UI
                     risk <= 0.0002 ? "sboard__reading--good"
                         : risk <= 0.0006 ? "sboard__reading--warn"
                         : "sboard__reading--bad"));
+
+                // What the state still pays for the model the company is running. A cut here that
+                // no card showed would read as the books being wrong.
+                var paid = simulation.StateRelevance();
+
+                row.Add(Reading(
+                    Loc.T("state.relevance"),
+                    UiFormat.Percent(paid, 0),
+                    Loc.T("state.relevance.note"),
+                    paid,
+                    paid >= 0.999 ? "sboard__reading--good"
+                        : paid >= 0.6 ? "sboard__reading--warn"
+                        : "sboard__reading--bad"));
             }
 
             return row;

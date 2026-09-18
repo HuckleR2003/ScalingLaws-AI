@@ -2096,6 +2096,108 @@ namespace ScalingLaws.Simulation
             return subjects;
         }
 
+        // ------------------------------------------------------------------ parallel releases
+
+        /// <summary>Office level and headcount that open a second release plan in parallel.</summary>
+        public const int SecondPlanOfficeLevel = 1;
+
+        public const int SecondPlanHeadcount = 5;
+
+        /// <summary>Office level and headcount that open a third.</summary>
+        public const int ThirdPlanOfficeLevel = 2;
+
+        public const int ThirdPlanHeadcount = 15;
+
+        /// <summary>
+        /// How many planned releases the company can have in engineering at once.
+        ///
+        /// **One, until the company is big enough to run two teams.** Asked for by the author:
+        /// improving two models at once needs an office of level one and five people, three at once
+        /// needs level two and fifteen. The gate is premises and people rather than money, because
+        /// money is already what buys the work; what a garage with two founders in it lacks is the
+        /// second team. Shelf work is still outside this, for the reason
+        /// <see cref="CompanyState.ReleaseProgrammeInFlight"/> gives.
+        /// </summary>
+        public int ReleasePlanSlots()
+        {
+            var level = OfficeCatalog.Get(State.Staff.Office).Level;
+            var people = State.Staff.Headcount;
+
+            if (level >= ThirdPlanOfficeLevel && people >= ThirdPlanHeadcount)
+            {
+                return 3;
+            }
+
+            return level >= SecondPlanOfficeLevel && people >= SecondPlanHeadcount ? 2 : 1;
+        }
+
+        /// <summary>Planned releases in engineering right now. Shelf work does not count.</summary>
+        public int ReleasePlansInFlight()
+        {
+            var count = 0;
+
+            foreach (var project in State.UpgradeProjects)
+            {
+                if (project is { OnShelf: false, HasPlannedRelease: true })
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Whether a release can be planned for this model today, and if not, why not in words.
+        ///
+        /// One body, read by the button that greys itself and by the method that commits, so the two
+        /// cannot disagree. A model already being versioned cannot take a second plan on top: two
+        /// versions of one product racing each other to the shelf is the fault the one-plan rule was
+        /// written against, and a second team does not change that.
+        /// </summary>
+        public bool CanPlanRelease(int modelIndex, out string reason)
+        {
+            reason = string.Empty;
+
+            foreach (var project in State.UpgradeProjects)
+            {
+                if (project is { OnShelf: false, HasPlannedRelease: true } && project.ModelIndex == modelIndex)
+                {
+                    reason = Loc.T("upgrade.one_release_note");
+                    return false;
+                }
+            }
+
+            if (ReleasePlansInFlight() >= ReleasePlanSlots())
+            {
+                reason = NextPlanSlotNeeds();
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// What would open one more parallel release, against what the company has. Empty when the
+        /// company already has every slot there is.
+        /// </summary>
+        public string NextPlanSlotNeeds()
+        {
+            var slots = ReleasePlanSlots();
+
+            if (slots >= 3)
+            {
+                return Loc.T("upgrade.slots_full", slots);
+            }
+
+            var (level, people) = slots == 1
+                ? (SecondPlanOfficeLevel, SecondPlanHeadcount)
+                : (ThirdPlanOfficeLevel, ThirdPlanHeadcount);
+
+            return Loc.T("upgrade.slot_needs", slots + 1, level, people,
+                OfficeCatalog.Get(State.Staff.Office).Level, State.Staff.Headcount);
+        }
+
         // `TryStartUpgrade`, the single-trait form, used to sit here. The player commissions a
         // basket and always has, so this had no caller outside the fixtures. Moved to
         // `Tests/EditMode/SimulationOperators.cs` rather than kept as a second commissioning path.
@@ -3319,6 +3421,39 @@ namespace ScalingLaws.Simulation
             }
 
             return list;
+        }
+
+        /// <summary>
+        /// What one look through the contractor marketplace costs.
+        ///
+        /// **Asked for by the author after a playtest.** The list was free to redraw, so the cheapest
+        /// channel in the game was also the one a player could reroll without limit until a
+        /// strong contractor turned up, and "weaker than their profile says" stopped being a risk.
+        /// A thousand dollars is nothing to a company and a real cost to rerolling forty times.
+        /// </summary>
+        public const long ContractorSearchFeeUsd = 1_000L;
+
+        /// <summary>
+        /// A contractor shortlist, paid for. The fee is taken whether or not anybody is hired,
+        /// because that is what a listing fee is.
+        /// </summary>
+        public bool TrySearchContractors(PlayerSkill position, int centreLevel, int howMany,
+            out IReadOnlyList<Candidate> found, out string failureReason)
+        {
+            found = Array.Empty<Candidate>();
+
+            if (State.CashUsd < ContractorSearchFeeUsd)
+            {
+                failureReason = Loc.T("hire.needs_cash",
+                    UiMoney(ContractorSearchFeeUsd), UiMoney(State.CashUsd));
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Salaries, ContractorSearchFeeUsd);
+            State.LifetimeOperatingCostUsd += ContractorSearchFeeUsd;
+            found = Shortlist(position, HireSource.Remote, centreLevel, howMany);
+            failureReason = string.Empty;
+            return true;
         }
 
         /// <summary>
@@ -5565,6 +5700,15 @@ namespace ScalingLaws.Simulation
 
             State.DaysUntilNextApplicant =
                 Math.Max(20, ApplicantIntervalDays + State.Random.NextInt(-25, 26));
+
+            // Turned away from the inbox. Checked after the interval is drawn, so switching it back
+            // on does not bring a letter the next morning, and before anything is rolled from the
+            // hiring stream, so a company that refuses letters still meets the same people in its
+            // own searches.
+            if (!State.AcceptsApplications)
+            {
+                return;
+            }
 
             var roles = StaffCatalog.All;
             if (roles.Count == 0)

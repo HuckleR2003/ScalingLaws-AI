@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 59;
+        public const int CurrentVersion = 60;
 
         public int version = CurrentVersion;
 
@@ -978,6 +978,12 @@ namespace ScalingLaws.Persistence
         // anybody expects.
         /// <summary>A campaign started in DEBUG MODE. It earns no achievements; see CompanyState.IsSandbox.</summary>
         public bool isSandbox;
+
+        /// <summary>
+        /// Written inverted, v60, so a file that never had the field reads as the default: a v59
+        /// campaign did receive unasked letters, because there was no way to stop them.
+        /// </summary>
+        public bool refusesApplications;
 
         public bool hasServerRoom;
         public bool serverRoomWasAGift;

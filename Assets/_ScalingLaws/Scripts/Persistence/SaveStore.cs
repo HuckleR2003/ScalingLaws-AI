@@ -474,6 +474,7 @@ namespace ScalingLaws.Persistence
             }
 
             data.isSandbox = state.IsSandbox;
+            data.refusesApplications = !state.AcceptsApplications;
             data.hasServerRoom = state.HasServerRoom;
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
             state.Hall.Capture(data.hallRacks, data.hallAccelerators, data.hallFans);
@@ -1217,6 +1218,7 @@ namespace ScalingLaws.Persistence
                 safe.effectMagnitudes, safe.effectModelIndices);
 
             state.IsSandbox = safe.isSandbox;
+            state.AcceptsApplications = !safe.refusesApplications;
             state.HasServerRoom = safe.hasServerRoom;
             state.ServerRoomWasAGift = safe.serverRoomWasAGift;
             state.Hall.Restore(safe.hallRacks, safe.hallAccelerators, safe.hallFans);

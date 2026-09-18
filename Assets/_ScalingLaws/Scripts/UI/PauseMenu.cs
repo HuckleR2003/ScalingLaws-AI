@@ -78,6 +78,13 @@ namespace ScalingLaws.UI
         /// <summary>Opens the feedback form. Set by the shell.</summary>
         public Action Feedback { get; set; }
 
+        /// <summary>
+        /// Switches language mid-campaign. Set by the shell, which saves and reopens the game in it,
+        /// because every screen reads its words when it is built and a half-translated session is
+        /// worse than a second's reload.
+        /// </summary>
+        public Action<Language> LanguageChanged { get; set; }
+
         public void Open()
         {
             IsOpen = true;
@@ -369,6 +376,12 @@ namespace ScalingLaws.UI
             var block = new VisualElement();
             block.AddToClassList("pause__settings");
 
+            // Language first, as on the main menu: everything below it is written in it.
+            if (LanguageChanged != null)
+            {
+                block.Add(BuildLanguage());
+            }
+
             // **First, because it is the setting somebody opens this page in a hurry to reach.**
             // Neither slider was here at all: both live on the main menu, so a player who wanted the
             // office loop quieter had to leave the campaign to do it.
@@ -516,6 +529,49 @@ namespace ScalingLaws.UI
             block.Add(note);
 
             return block;
+        }
+
+        /// <summary>Two chips, and a note saying that picking one saves and reloads.</summary>
+        private VisualElement BuildLanguage()
+        {
+            var row = new VisualElement();
+            row.AddToClassList("pause__setting");
+
+            var label = new Label(Loc.T("settings.language"));
+            label.AddToClassList("pause__label");
+            row.Add(label);
+
+            var choices = new VisualElement();
+            choices.AddToClassList("pause__choices");
+
+            foreach (var (language, name) in new[] { (Language.English, "English"), (Language.Polish, "Polski") })
+            {
+                var chosen = language;
+
+                var chip = new Button(() =>
+                {
+                    if (GameSettings.Language != chosen)
+                    {
+                        LanguageChanged?.Invoke(chosen);
+                    }
+                })
+                { text = name };
+
+                chip.AddToClassList("pause__chip");
+                chip.EnableInClassList("pause__chip--on", GameSettings.Language == chosen);
+                choices.Add(chip);
+            }
+
+            row.Add(choices);
+
+            var wrapper = new VisualElement();
+            wrapper.Add(row);
+
+            var hint = new Label(Loc.T("pause.language.note"));
+            hint.AddToClassList("pause__hint");
+            wrapper.Add(hint);
+
+            return wrapper;
         }
 
         private VisualElement Toggle(string key, bool on, Action<bool> set)

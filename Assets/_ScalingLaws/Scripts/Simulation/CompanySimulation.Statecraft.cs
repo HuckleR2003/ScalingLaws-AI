@@ -259,6 +259,58 @@ namespace ScalingLaws.Simulation
             return Math.Clamp(raw + (1.0 - raw) * RedundancyAbsorbs, 0.0, 1.0);
         }
 
+        /// <summary>Most the state's doubt can multiply the failure risk by.</summary>
+        public const double MostDoubt = 12.0;
+
+        /// <summary>
+        /// How much less the state trusts the company than the day it signed, as a multiplier on
+        /// the failure risk. One at best.
+        ///
+        /// **Reported by the author: the programme never fails, however long the company sits
+        /// still and whatever scandals it has.** The risk read delivery and the safety record, and
+        /// the record counts incidents only, so a company that stopped shipping, lost its public
+        /// and was in the papers every month ran Bureaucracy at under one per cent a year. Three
+        /// things a ministry actually reads, each capped so none of them alone is the whole story:
+        /// nothing released for over a year (up to four times), reputation below a half (up to three
+        /// times), and scandals in the last year (up to three times).
+        /// </summary>
+        public double StateDoubt()
+        {
+            var sinceRelease = State.Date.DayIndex - State.LastReleaseDate.DayIndex;
+            var stale = 1.0 + 3.0 * Math.Clamp((sinceRelease - 365.0) / 535.0, 0.0, 1.0);
+
+            var regard = 1.0 + 2.0 * Math.Clamp((0.5 - State.Reputation) / 0.5, 0.0, 1.0);
+
+            var scandals = 0;
+
+            foreach (var story in State.News.All)
+            {
+                if (story.Section == NewsSection.Scandals && story.IsAboutPlayer
+                    && State.Date.DayIndex - story.Date.DayIndex < 365)
+                {
+                    scandals++;
+                }
+            }
+
+            var headlines = 1.0 + 0.5 * Math.Min(scandals, 4);
+
+            return Math.Clamp(stale * regard * headlines, 1.0, MostDoubt);
+        }
+
+        /// <summary>
+        /// What share of the fee the state still pays for the model the company is running.
+        ///
+        /// **The state pays for what is current.** A contract signed on a frontier model and served
+        /// for a decade on the same one was paid in full for all of it, which made the programme an
+        /// income that needed nothing from the company after the signature. Full pay within five
+        /// points of the frontier, falling to a quarter thirty points behind it.
+        /// </summary>
+        public double StateRelevance()
+        {
+            var gap = State.Rivals.FrontierCapability(State.Date) - State.BestCapability;
+            return Math.Clamp(1.0 - Math.Max(0.0, gap - 5.0) / 25.0, 0.25, 1.0);
+        }
+
         /// <summary>
         /// Today's chance of a national-scale failure.
         ///
@@ -270,6 +322,8 @@ namespace ScalingLaws.Simulation
             var oversight = State.HasResearch(ResearchNodeId.ContinuousOversight)
                 ? 1.0 - OversightRiskCut
                 : 1.0;
+
+            oversight *= StateDoubt();
 
             return State.Programme.DailyFailureRisk(
                 delivery,
@@ -301,7 +355,9 @@ namespace ScalingLaws.Simulation
 
             programme.RecordDelivery(delivery);
 
-            var earned = programme.EarnedUsdPerDay(delivery);
+            // The fee, cut when the company's best model has fallen behind. Delivery is petaflops;
+            // this is what those petaflops are running.
+            var earned = (long)Math.Round(programme.EarnedUsdPerDay(delivery) * StateRelevance());
 
             if (earned > 0L)
             {
@@ -323,6 +379,13 @@ namespace ScalingLaws.Simulation
                 State.PostCash(LedgerLine.Electricity, powerUsd);
                 State.LifetimeOperatingCostUsd += powerUsd;
             }
+
+            // **Taxed, like any other profit.** The daily tax was assessed on the market's takings
+            // alone, and this ran after it, so a company living on a state contract paid tax on
+            // almost nothing: the author earned tens of millions a month and was billed $357.6k
+            // for the year. Net of the contract's own power, at the same rate as everything else.
+            var programmePower = (long)Math.Round(megawatts * 1000.0 * 24.0 * StatePowerTariffUsd);
+            AccrueTax((long)Math.Round(Math.Max(0L, earned - programmePower) * State.Home.TaxRate));
 
             if (programme.Running.Count == 0 || !programme.CouldFailOn(State.Date))
             {

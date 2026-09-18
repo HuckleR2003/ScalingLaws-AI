@@ -252,6 +252,41 @@ namespace ScalingLaws.UI
         private int pausedOn;
 
         /// <summary>
+        /// True while the phone on screen is the cousin's first call rather than a call back. Walking
+        /// away from the first one must not count as "later"; see <see cref="Show(Screen)"/>.
+        /// </summary>
+        private bool firstCallRinging;
+
+        /// <summary>
+        /// Saves and reopens the campaign in another language.
+        ///
+        /// **A reload rather than a repaint.** The bottom bar, the creator's stage names, the phone
+        /// and every open page read their words when they were built, and walking all of them is a
+        /// list that goes stale the day somebody adds a screen. The save is the whole campaign, and
+        /// the replay tests hold that loading one continues exactly where it stopped.
+        /// </summary>
+        private void ReopenIn(Language language)
+        {
+            GameSettings.SetLanguage(language);
+
+            if (state.IsBankrupt)
+            {
+                return;
+            }
+
+            SaveStore.Save(state);
+            SceneFlow.ResumeSavedCampaign = true;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(SceneFlow.GameScene);
+        }
+
+        /// <summary>The day deliveries were last announced, so several batches make one notice.</summary>
+        private int deliveriesAnnounced = int.MinValue;
+
+        /// <summary>A date the way the rest of the interface writes one: 26.11.2024.</summary>
+        private static string DayMonthYear(GameDate date) =>
+            date.ToDateTime().ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+        /// <summary>
         /// Puts him off until three days have passed, from wherever that decision was made.
         ///
         /// One method, because the last time these two lines were written separately one of the
@@ -764,6 +799,16 @@ namespace ScalingLaws.UI
 
             if (days <= 0)
             {
+                // **What a click raised is read on the next frame, not the next day.** Events were
+                // drained only after a day advanced, so buying parts while paused said nothing
+                // until the clock ran, and "arriving on" is exactly the fact a player wants at the
+                // moment they pay. Here, rather than inside Show, because Show is called from the
+                // things draining can open.
+                if (state.HasQueuedEvents)
+                {
+                    DrainEvents();
+                }
+
                 return;
             }
 
@@ -1715,7 +1760,19 @@ namespace ScalingLaws.UI
 
                 if (state != null && state.Guide.Stage == GuideStage.Talking)
                 {
-                    PutTheCousinOff();
+                    // **Not on the very first call.** A new player clicks a tab in the first few
+                    // seconds as often as not, and that used to count as "call me back in three
+                    // days": the tutorial was gone before anybody had read a word of it. A first
+                    // call nobody answered is not an answer, so it goes back to waiting and rings
+                    // again the moment the office is on screen. A call back is still a call back.
+                    if (firstCallRinging)
+                    {
+                        state.Guide.Stage = GuideStage.Unseen;
+                    }
+                    else
+                    {
+                        PutTheCousinOff();
+                    }
                 }
             }
 
@@ -2351,6 +2408,16 @@ namespace ScalingLaws.UI
                 return;
             }
 
+            // A first call that was walked away from waits for the office rather than ringing over
+            // whatever page the player went to: the phone covers the creator's NEXT button, which is
+            // why walking away closes it in the first place.
+            if (!paused && current != Screen.Site)
+            {
+                return;
+            }
+
+            firstCallRinging = !paused;
+
             if (!paused)
             {
                 state.Guide.StartingCashUsd = state.CashUsd;
@@ -2433,10 +2500,9 @@ namespace ScalingLaws.UI
             // The same fact the button greys itself on, checked where the commitment is made. A
             // rule that lives only in the control is a suggestion the moment anything else reaches
             // this method.
-            if (state.ReleaseProgrammeInFlight)
+            if (!simulation.CanPlanRelease(index, out var busyWhy))
             {
-                startedNotice?.Show(Loc.T("upgrade.team_busy"),
-                    Loc.T("upgrade.one_release_note"));
+                startedNotice?.Show(Loc.T("upgrade.team_busy"), busyWhy);
 
                 Show(Screen.Upgrade);
                 return;
@@ -3145,7 +3211,8 @@ namespace ScalingLaws.UI
             pause = new PauseMenu(() => simulation, RefreshSheets)
             {
                 Closed = RefreshSheets,
-                Quit = SceneFlow.LoadMainMenu
+                Quit = SceneFlow.LoadMainMenu,
+                LanguageChanged = ReopenIn
             };
 
             report = new FeedbackDialog(() => state.Date, RefreshSheets)
@@ -3814,6 +3881,64 @@ namespace ScalingLaws.UI
 
                         startedNotice?.Show(Loc.T("notice.grant_tier", reached),
                             Loc.T("notice.grant_tier.note", Loc.T("hud.capital")), NoticeTone.Special);
+                    }
+
+                    break;
+                }
+
+                // **Parts ordered and parts arrived.** Both events have always been raised and
+                // neither said anything on screen, so a purchase with a lead time of weeks left the
+                // player checking the room every morning to see whether the cards had come. Blue
+                // with the date on the way out; gold on the way in, once a day however many batches
+                // land together.
+                case CompanyEventType.HardwareOrdered:
+                {
+                    var assets = state.Pool.Assets;
+
+                    if (assets.Count == 0)
+                    {
+                        break;
+                    }
+
+                    var ordered = assets[assets.Count - 1];
+
+                    if (ordered.PurchaseDate == state.Date
+                        && HardwareCatalog.TryGet(ordered.GenerationId, out var part))
+                    {
+                        startedNotice?.Show(Loc.T("notice.parts_ordered"),
+                            Loc.T("notice.parts_ordered.note", ordered.Units.ToString("N0",
+                                    System.Globalization.CultureInfo.InvariantCulture),
+                                part.DisplayName, DayMonthYear(ordered.CommissionDate)));
+                    }
+
+                    break;
+                }
+
+                case CompanyEventType.HardwareDelivered:
+                {
+                    if (deliveriesAnnounced == state.Date.DayIndex)
+                    {
+                        break;
+                    }
+
+                    deliveriesAnnounced = state.Date.DayIndex;
+                    var arrived = new List<string>();
+
+                    foreach (var asset in state.Pool.Assets)
+                    {
+                        if (asset.Units > 0 && asset.CommissionDate == state.Date
+                            && HardwareCatalog.TryGet(asset.GenerationId, out var part))
+                        {
+                            arrived.Add(asset.Units.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)
+                                        + " x " + part.DisplayName);
+                        }
+                    }
+
+                    if (arrived.Count > 0)
+                    {
+                        startedNotice?.Show(Loc.T("notice.parts_delivered"),
+                            Loc.T("notice.parts_delivered.note", string.Join(", ", arrived)),
+                            NoticeTone.Special);
                     }
 
                     break;

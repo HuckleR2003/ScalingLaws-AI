@@ -538,7 +538,12 @@ namespace ScalingLaws.UI
             // refusal is not a control, so it says which model the team is on instead.
             // A version the player already named and priced is still being built. Only the
             // release path is blocked: work on a model nobody can buy yet names no version.
-            var busy = !subject.OnShelf && simulation.State.ReleaseProgrammeInFlight;
+            //
+            // More than one release can be in engineering once the company has the premises and the
+            // people for a second team. What the next team needs is on the card over this button,
+            // because a greyed control that does not say what would light it reads as a bug.
+            var busyWhy = string.Empty;
+            var busy = !subject.OnShelf && !simulation.CanPlanRelease(subject.Index, out busyWhy);
 
             var go = new Button(() =>
             {
@@ -572,7 +577,19 @@ namespace ScalingLaws.UI
             go.AddToClassList("udet__go");
             go.EnableInClassList("udet__go--busy", busy);
             go.SetEnabled(anyPicked && affordable && !busy);
-            row.Add(go);
+
+            // The card hangs on a wrapper, not on the button: a disabled button takes no pointer
+            // events, and the button is disabled exactly when the card is needed.
+            var wrap = new VisualElement();
+            wrap.AddToClassList("udet__go-wrap");
+            wrap.Add(go);
+
+            if (busy)
+            {
+                InsightTip.Attach(wrap, Loc.T("upgrade.slots_title"), busyWhy);
+            }
+
+            row.Add(wrap);
 
             return row;
         }
