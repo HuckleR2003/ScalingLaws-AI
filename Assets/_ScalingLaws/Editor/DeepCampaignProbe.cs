@@ -57,6 +57,19 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static bool ownsCompute;
 
+        /// <summary>
+        /// Whether the operator plays the way somebody trying to win would.
+        ///
+        /// **The three above never aimed their research, never paid for it and never advertised.**
+        /// They took the first node the board offered, so a company with two billion in the bank sat
+        /// at capability 53 for four years behind a parameter ceiling it never researched, and
+        /// awareness sat at the word of mouth floor for fourteen years. Reading "the player is
+        /// erased" off that operator would have been reading its own bad choices. This one aims the
+        /// tree at scale, data and families, funds it, keeps a campaign running and picks the family
+        /// that projects best. It is still a script; it is a script with a plan.
+        /// </summary>
+        private static bool ambitious;
+
         [MenuItem("Scaling Laws/Play a deep campaign")]
         public static void Play()
         {
@@ -65,20 +78,30 @@ namespace ScalingLaws.Editor
             var campaigns = 0;
 
             // Three operators, and the third is the one that owns anything.
-            foreach (var (disciplined, owner, heading) in new[]
+            foreach (var (disciplined, owner, aims, heading) in new[]
             {
-                (false, false, "A NEW LINE EVERY TIME, nothing ever superseded, renting"),
-                (true, false, "ONE PRODUCT LINE, each release replacing the last, renting"),
-                (true, true, "ONE PRODUCT LINE, and it owns its own silicon and a server room")
+                (false, false, false, "A NEW LINE EVERY TIME, nothing ever superseded, renting"),
+                (true, false, false, "ONE PRODUCT LINE, each release replacing the last, renting"),
+                (true, true, false, "ONE PRODUCT LINE, and it owns its own silicon and a server room"),
+                (true, false, true, "AMBITIOUS: one line, research aimed and funded, advertising, renting")
             })
             {
+                // `PROBE_ONLY=ambitious` runs the last operator on one seed, for iterating on it
+                // without waiting two minutes for eleven campaigns nobody is looking at.
+                var only = Environment.GetEnvironmentVariable("PROBE_ONLY");
+                if (only == "ambitious" && !aims)
+                {
+                    continue;
+                }
+
                 oneLine = disciplined;
                 ownsCompute = owner;
+                ambitious = aims;
 
                 report.AppendLine();
                 report.AppendLine("================ " + heading);
 
-                foreach (var seed in new[] { 4242, 9001, 1337 })
+                foreach (var seed in only == "ambitious" ? new[] { 4242 } : new[] { 4242, 9001, 1337 })
                 {
                     RunOne(seed, report);
                     campaigns++;
@@ -202,7 +225,7 @@ namespace ScalingLaws.Editor
                 Operate(simulation, ref shipped, ref researched, ref upgrades, ref hires,
                     ref loans, ref smears, ref lawsuits, released, offices, Refused);
 
-                if (day % 365 == 364)
+                if (day % 365 == 364 || (ambitious && day < 1100 && day % 91 == 90))
                 {
                     var rank = simulation.Ranking().FirstOrDefault(entry => entry.IsPlayer);
 
@@ -221,7 +244,9 @@ namespace ScalingLaws.Editor
                         + "marketed {10,3}  WORLD {11,15:N0}  our share {12,6:P1}  "
                         + "kW {13,9:N0}  power/day {14,12}  = {15,6:P1} of fleet, "
                         + "fleet {16,12}/day, revenue {17,12}/day, "
-                        + "SERVED {18,15:N0} of the world, unserved {19,6:P1}, leader {20,6:P1}",
+                        + "SERVED {18,15:N0} of the world, unserved {19,6:P1}, leader {20,6:P1}, "
+                        + "frontier {21,5:0.0}, demanded {22:N1}B, capacity {23:N1}B, "
+                        + "rate {24:0.000}/M, market {25:0.000}/M, free {26:P0}, training share {27:P0}",
                         state.Date, Money(state.CashUsd), state.BestCapability,
                         rank.Position, standing.Subscribers, state.Reputation,
                         state.UnlockedResearch.Count, state.DeployedModels.Count,
@@ -240,7 +265,13 @@ namespace ScalingLaws.Editor
                         // nothing and a share of everything looked the same.
                         simulation.MarketByType().TotalUsersOverall,
                         simulation.MarketByType().UnservedShare,
-                        LeaderShare(simulation)));
+                        LeaderShare(simulation),
+                        simulation.Market.FrontierCapability,
+                        state.LastQuality.Demanded, state.LastQuality.Capacity,
+                        state.Monetization.RatePerMillionTokensUsd(simulation.Market.PricePerMillionTokensUsd),
+                        simulation.Market.PricePerMillionTokensUsd,
+                        state.Monetization.FreeShareOfTokens,
+                        state.TrainingComputeShare));
                 }
             }
 
@@ -432,11 +463,18 @@ namespace ScalingLaws.Editor
                 // compute-days rather than a parameter count picked out of the air.
                 var budget = fleet * 90.0;
 
+                var family = state.AdoptedArchitectures.Contains(ArchitectureId.SparseMixture)
+                    ? ArchitectureId.SparseMixture
+                    : ArchitectureId.DenseTransformer;
+
+                if (ambitious)
+                {
+                    family = BestFamily(simulation, budget);
+                }
+
                 var blueprint = TrainingPlanner.OptimalBlueprintForBudget(
                     "Aurora " + (shipped + 1),
-                    state.AdoptedArchitectures.Contains(ArchitectureId.SparseMixture)
-                        ? ArchitectureId.SparseMixture
-                        : ArchitectureId.DenseTransformer,
+                    family,
                     budget,
                     state.OwnedDataSources);
 
@@ -498,7 +536,12 @@ namespace ScalingLaws.Editor
             }
 
             // ---- keep the tree moving ----------------------------------------------------------
-            if (state.ActiveResearch == null)
+            if (ambitious)
+            {
+                AimTheTree(simulation, ref researched);
+                Advertise(simulation);
+            }
+            else if (state.ActiveResearch == null)
             {
                 foreach (var node in simulation.ResearchBoard())
                 {
@@ -576,6 +619,162 @@ namespace ScalingLaws.Editor
             {
                 simulation.TryAnswerSmearThreat(settle: false, out _);
             }
+        }
+
+        /// <summary>
+        /// Every node that raises a ceiling, and everything they stand on. Computed once: the tree
+        /// does not change during a campaign.
+        /// </summary>
+        private static HashSet<ResearchNodeId> aimedAt;
+
+        private static HashSet<ResearchNodeId> AimedAt()
+        {
+            if (aimedAt != null)
+            {
+                return aimedAt;
+            }
+
+            var targets = new Stack<ResearchNodeId>();
+
+            foreach (var (node, _) in ScaleCeiling.Ladder)
+            {
+                targets.Push(node);
+            }
+
+            foreach (var node in ResearchTree.All)
+            {
+                if (node.UnlocksData != DatasetSource.None
+                    || node.UnlocksArchitecture != ArchitectureId.None)
+                {
+                    targets.Push(node.Id);
+                }
+            }
+
+            aimedAt = new HashSet<ResearchNodeId>();
+
+            while (targets.Count > 0)
+            {
+                var id = targets.Pop();
+
+                if (!aimedAt.Add(id))
+                {
+                    continue;
+                }
+
+                foreach (var need in ResearchTree.Get(id).Prerequisites)
+                {
+                    targets.Push(need);
+                }
+            }
+
+            return aimedAt;
+        }
+
+        /// <summary>
+        /// Research aimed at what caps the next model, and paid for. The oldest open node on the
+        /// path first, because the calendar opened it first; anything else only once the path is
+        /// clear.
+        /// </summary>
+        private static void AimTheTree(CompanySimulation simulation, ref int researched)
+        {
+            var state = simulation.State;
+
+            // A percent of the balance a month, within sane bounds, reviewed monthly.
+            if (state.Date.DayIndex % 30 == 0)
+            {
+
+                state.ResearchFunding = ResearchFundingMode.Fixed;
+                state.ResearchMonthlyUsd = Math.Clamp(state.CashUsd / 100L,
+                    ResearchBudget.MinimumMonthlyUsd, 6_000_000L);
+            }
+
+            if (state.ActiveResearch != null)
+            {
+                return;
+            }
+
+            var aimed = AimedAt();
+            ResearchStanding? pick = null;
+
+            foreach (var node in simulation.ResearchBoard())
+            {
+                if (!node.CanStart)
+                {
+                    continue;
+                }
+
+                var better = pick == null
+                    || (aimed.Contains(node.Node.Id) && !aimed.Contains(pick.Value.Node.Id))
+                    || (aimed.Contains(node.Node.Id) == aimed.Contains(pick.Value.Node.Id)
+                        && node.Node.EarliestDate.DayIndex < pick.Value.Node.EarliestDate.DayIndex);
+
+                if (better)
+                {
+                    pick = node;
+                }
+            }
+
+            if (pick != null && simulation.TryStartResearch(pick.Value.Node.Id, out _))
+            {
+                researched++;
+            }
+        }
+
+        /// <summary>
+        /// One campaign at a time, three channels, aimed at the largest audience, six months at a
+        /// stretch. What a company that means to be known does, at a price it can carry.
+        /// </summary>
+        private static void Advertise(CompanySimulation simulation)
+        {
+            var state = simulation.State;
+
+            if (state.DeployedModels.Count == 0 || state.CashUsd < 30_000_000L)
+            {
+                return;
+            }
+
+            foreach (var campaign in state.Campaigns)
+            {
+                if (!campaign.HasFinished(state.Date))
+                {
+                    return;
+                }
+            }
+
+            state.ClearCampaigns();
+            state.AddCampaign(new MarketingCampaign(
+                new[] { MarketingChannel.Press, MarketingChannel.Creators, MarketingChannel.Social },
+                AudienceSegment.Consumer, 6, state.Date));
+        }
+
+        /// <summary>The adopted family that projects best at this budget.</summary>
+        private static ArchitectureId BestFamily(CompanySimulation simulation, double budget)
+        {
+            var state = simulation.State;
+            var best = ArchitectureId.DenseTransformer;
+            var bestCapability = double.MinValue;
+
+            foreach (var family in state.AdoptedArchitectures)
+            {
+                var blueprint = TrainingPlanner.OptimalBlueprintForBudget("probe", family, budget,
+                    state.OwnedDataSources);
+
+                var ceiling = simulation.ParameterCeilingBillions();
+                if (blueprint.ParameterCountBillions > ceiling)
+                {
+                    blueprint = blueprint.WithParameters(ceiling * 0.95);
+                }
+
+                var capability = simulation.Project(blueprint).ProjectedCapability;
+
+                if (capability > bestCapability)
+                {
+                    bestCapability = capability;
+                    best = family;
+                }
+            }
+
+            return best;
         }
 
         private static bool IsLoud(CompanyEventType type) =>
