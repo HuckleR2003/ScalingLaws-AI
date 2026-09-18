@@ -32,6 +32,7 @@ namespace ScalingLaws.UI
 
         private readonly MapFilterState state = new();
         private readonly MapTour tour = new();
+        private readonly OfficeListing offices = new();
         private readonly Dictionary<MapCategory, List<Material>> materialsByCategory = new();
         private readonly Dictionary<Material, Color> originalColours = new();
         private readonly Dictionary<string, MapSitePin> pinsById = new();
@@ -47,11 +48,19 @@ namespace ScalingLaws.UI
 
             var panel = new MapLegendPanel(state, ShowNextPlace);
             legend = panel;
-            panel.style.position = Position.Absolute;
-            panel.style.top = 16;
-            panel.style.right = 16;
 
-            document.rootVisualElement.Add(panel);
+            // **The legend and OFFICES FOR RENT share one column**, so the banner sits under the
+            // filters whatever height the legend is, folded or open.
+            var column = new VisualElement();
+            column.AddToClassList("map-rightcolumn");
+            column.style.position = Position.Absolute;
+            column.style.top = 16;
+            column.style.right = 16;
+
+            column.Add(panel);
+            column.Add(new MapOfficePanel(offices, ShowOffice));
+
+            document.rootVisualElement.Add(column);
 
             // Not this component's concern in the strict sense — it owns the legend, not the
             // camera — but this is the one UIDocument the city scene has, and a control scheme
@@ -148,6 +157,23 @@ namespace ScalingLaws.UI
                 GroundHeightFor(stop), TourHeight);
 
             if (pinsById.TryGetValue(stop.Id, out var pin))
+            {
+                siteSelection?.Select(pin);
+            }
+        }
+
+        /// <summary>OFFICES FOR RENT's NEXT button: the same flight and card SHOW gives a place.</summary>
+        private void ShowOffice(MapSiteDefinition office)
+        {
+            if (office == null || mapView == null)
+            {
+                return;
+            }
+
+            mapView.FlyTo(new Vector2(office.Position.X, office.Position.Z),
+                GroundHeightFor(office), TourHeight);
+
+            if (pinsById.TryGetValue(office.Id, out var pin))
             {
                 siteSelection?.Select(pin);
             }

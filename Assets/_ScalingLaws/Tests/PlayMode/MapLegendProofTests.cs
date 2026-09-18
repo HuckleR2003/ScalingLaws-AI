@@ -106,6 +106,18 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>One category picked, so the on/dim states are both in the same frame.</summary>
+        /// <summary>OFFICES FOR RENT with one size ticked.</summary>
+        [UnityTest]
+        public IEnumerator OfficesForRentDrawsUnderTheFilters()
+        {
+            // The banner alone: the frame is the legend's height, and the column would put it under
+            // the fold. The column's own layout is the stylesheet rule `.map-rightcolumn > .map-legend`.
+            var listing = new OfficeListing();
+            listing.Toggle(OfficeSize.Small);
+
+            yield return Capture(new MapOfficePanel(listing, _ => { }), "map_offices.png");
+        }
+
         [UnityTest]
         public IEnumerator TheLegendDrawsWithACategoryPicked()
         {

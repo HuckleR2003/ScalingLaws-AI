@@ -17687,6 +17687,62 @@
     background-color: rgba(255, 255, 255, 0.08);
 }
 
+/* The top right of the map: the filters, and OFFICES FOR RENT under them. */
+.map-rightcolumn {
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+/* In the column the legend is laid out, not pinned, so OFFICES FOR RENT sits under it at
+   whatever height it is. Absolute here drew the banner over the top of the filters. */
+.map-rightcolumn > .map-legend {
+    position: relative;
+}
+
+/* ---- OFFICES FOR RENT, under the filters ----
+   Its own banner rather than a ninth legend row: the question it answers is "where are the offices
+   my size", which a colour filter cannot ask. */
+.map-offices {
+    width: 396px;
+    margin-top: 10px;
+    padding: 16px 18px 6px 18px;
+    background-color: rgba(10, 13, 19, 0.88);
+    border-width: 1px;
+    border-color: rgba(96, 150, 230, 0.45);
+    border-radius: 12px;
+}
+
+.map-offices__sizes {
+    flex-direction: row;
+    margin-top: 10px;
+}
+
+.map-offices__size {
+    flex-grow: 1;
+    height: 32px;
+    margin: 0 6px 0 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(200, 212, 232);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+}
+
+.map-offices__size--on {
+    color: rgb(12, 16, 22);
+    background-color: rgb(120, 170, 240);
+    border-color: rgb(120, 170, 240);
+}
+
+.map-offices__current {
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgb(150, 164, 188);
+}
+
 /* ---- the tick box on a legend row ---------------------------------------------------------------
    The panel used to show a picked category by going slightly brighter, which is nothing next to
    seven other rows of colour. A box that is empty or filled says it at a glance, and it is also what
