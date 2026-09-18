@@ -543,6 +543,53 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// A cellar packed past its heat budget: the cabinet card red with OVERHEATING, the corner
+        /// banner reading the room, and one room cooler standing on two squares.
+        ///
+        /// Asked for by the author in those words, and colour is exactly what no assertion can
+        /// check: whether the red card still reads, and whether the cooler reads as a cooler.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOverheatingRoomDraws()
+        {
+            var simulation = Campaign();
+            simulation.State.CashUsd = 4_000_000_000L;
+            simulation.TryOpenServerRoom(true, out _);
+
+            for (var column = 0; column < 4; column++)
+            {
+                for (var row = 1; row < 3; row++)
+                {
+                    simulation.TryBuyRack(ServerRack.HighDensity, out _);
+                    simulation.TryStandRack(column, row, ServerRack.HighDensity, out _);
+                }
+            }
+
+            simulation.TryBuildCooler(0, 3, out _);
+
+            simulation.State.Pool.AddAsset(new HardwareAsset(
+                HardwareGenerationId.AcceleratorB200, ComputeTier.ColocatedServers, 160,
+                simulation.State.Date, 10_000, 0));
+
+            simulation.Advance(1);
+
+            for (var index = 0; index < 160; index++)
+            {
+                if (!simulation.TryFitCard(index % 4, index / 4 % 3, out _))
+                {
+                    break;
+                }
+            }
+
+            var panel = new RackEditorPanel(() => simulation, () => { });
+            yield return Capture(panel.Build(1, 1), "cabinet_hot.png");
+
+            var screen = new ServerRoomScreen(() => simulation, () => { });
+            screen.PickFor(2, 3);
+            yield return Capture(screen.Build(), "room_hot.png");
+        }
+
+        /// <summary>
         /// The room in build mode: the floor on the left, the shop and the store room on the right.
         ///
         /// Until the four cabinets could all be bought, the room placed an enclosed rack and only

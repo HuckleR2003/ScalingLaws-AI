@@ -14484,6 +14484,27 @@
     margin-bottom: 10px;
 }
 
+.roombuild__cooler {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color: rgba(120, 170, 220, 0.08);
+    border-width: 1px;
+    border-color: rgb(52, 70, 96);
+}
+
+.roombuild__cooler > * {
+    flex-shrink: 0;
+}
+
+.roombuild__coolerbuy {
+    margin-left: 0;
+    margin-top: 8px;
+    align-self: stretch;
+    -unity-text-align: middle-center;
+}
+
 /* ---- the corner ---- */
 
 .rbanner {
@@ -14494,8 +14515,13 @@
        now the middle of the shop, so the two drew on top of each other. Still the corner of
        the room, which is the whole idea; the room just does not reach the window any more. */
     right: 344px;
-    width: 336px;
-    padding: 20px 22px 18px 22px;
+    width: 400px;
+
+    /* Two figures a row since the room grew a temperature and a head count of its own. Six
+       stacked blocks reached the bottom of the room and covered the cabinets it describes. */
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 18px 20px 16px 20px;
     border-radius: 10px;
     background-color: rgba(10, 13, 20, 0.94);
     border-width: 1px;
@@ -14503,7 +14529,14 @@
 }
 
 .rbanner__block {
-    margin-bottom: 16px;
+    width: 50%;
+    padding-right: 8px;
+    margin-bottom: 12px;
+}
+
+.rbanner__block--wide {
+    width: 100%;
+    padding-right: 0;
 }
 
 .rbanner__caption {
@@ -14513,9 +14546,15 @@
 }
 
 .rbanner__value {
-    font-size: 29px;
+    font-size: 23px;
     color: rgb(228, 236, 250);
     -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.rbanner__value--word {
+    font-size: 16px;
+    margin-top: 5px;
+    margin-bottom: 4px;
 }
 
 .rbanner__note {
@@ -14548,6 +14587,8 @@
 }
 
 .rbanner__health {
+    width: 100%;
+    white-space: normal;
     font-size: 13px;
     color: rgb(126, 216, 158);
     margin-top: 8px;
@@ -14555,6 +14596,10 @@
 
 .rbanner__health--bad {
     color: rgb(232, 140, 62);
+}
+
+.rbanner__health--warn {
+    color: rgb(232, 204, 92);
 }
 
 /* ---- one cabinet, opened ---- */
@@ -14654,6 +14699,103 @@
 }
 
 .rackmodal__verdict--bad {
+    color: rgb(232, 140, 62);
+}
+
+/* ---- the cabinet that is too hot, and the room behind it ---- */
+
+/* The whole card turns, because a band a player has to read is a band a player skips. Dark
+   enough that the figures on it still read at their own contrast. */
+.rackmodal__card--hot {
+    background-color: rgb(52, 18, 20);
+    border-color: rgb(196, 64, 58);
+}
+
+.rackmodal__card--warm {
+    background-color: rgb(44, 38, 14);
+    border-color: rgb(214, 180, 64);
+}
+
+.rackalarm {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+}
+
+.rackalarm--hot {
+    background-color: rgb(168, 44, 40);
+}
+
+.rackalarm--warm {
+    background-color: rgb(196, 160, 44);
+}
+
+.rackalarm__word {
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    margin-right: 14px;
+    color: rgb(255, 255, 255);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.rackalarm--warm .rackalarm__word,
+.rackalarm--warm .rackalarm__note {
+    color: rgb(24, 20, 6);
+}
+
+.rackalarm__note {
+    flex-shrink: 1;
+    white-space: normal;
+    font-size: 13px;
+    color: rgb(255, 236, 232);
+}
+
+.rackmodal__users {
+    margin-top: 6px;
+    font-size: 13px;
+    color: rgb(150, 206, 238);
+    white-space: normal;
+}
+
+.rackoc {
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.rackoc__caption {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: rgb(140, 156, 182);
+    margin-bottom: 4px;
+}
+
+.rackoc__choices {
+    flex-direction: row;
+}
+
+.rackoc__choice {
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 6px;
+    -unity-text-align: middle-center;
+}
+
+.rackoc__choice--on {
+    background-color: rgb(58, 96, 150);
+    border-color: rgb(120, 170, 230);
+    color: rgb(255, 255, 255);
+}
+
+.rackoc__note {
+    margin-top: 4px;
+    font-size: 12px;
+    white-space: normal;
+    color: rgb(134, 148, 172);
+}
+
+.rackoc__note--bad {
     color: rgb(232, 140, 62);
 }
 

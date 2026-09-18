@@ -104,6 +104,15 @@ namespace ScalingLaws.UI
         private (int Column, int Row)? hovering;
 
         /// <summary>
+        /// True while a room cooler is on the cursor: a new one, paid for where it lands, or one
+        /// lifted off the floor.
+        /// </summary>
+        private bool placingCooler;
+
+        /// <summary>The anchor of the cooler being moved, or null for a new one.</summary>
+        private (int Column, int Row)? coolerFrom;
+
+        /// <summary>
         /// Opens the cabinet chooser, without a click.
         ///
         /// **For the proof render, and it earns its place.** A test has no panel, so an event sent
@@ -305,13 +314,13 @@ namespace ScalingLaws.UI
                 return view;
             }
 
-            var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
             // **The ring belongs to one step of the walkthrough and nothing else.** Named by id
             // rather than by index, because a step inserted above it would silently move the ring
             // onto a sentence about the shop.
             stage.RingTheCabinets = GuideOverlay.WalkingOn(WalkthroughCatalog.RoomCabinetsStepId);
 
-            stage.Dress(simulation.State.Hall, known ? part.PowerKilowatts : 0.0,
+            // The owned cards' own draw, the same figure the cabinet panel and the fleet use.
+            stage.Dress(simulation.State.Hall, simulation.HallPerAccelerator().Kilowatts,
                 simulation.Room);
 
             view.style.backgroundImage = Background.FromRenderTexture(stage.Texture);
@@ -400,6 +409,12 @@ namespace ScalingLaws.UI
 
             hovering = (column, row);
 
+            if (placingCooler)
+            {
+                stage.ShowCoolerGhost(column, row, CoolerFits(simulation.State.Hall, column, row));
+                return;
+            }
+
             var free = simulation.State.Hall.IsEmpty(column, row);
 
             // The outline is drawn whether or not something is being carried: an empty hand still
@@ -409,6 +424,31 @@ namespace ScalingLaws.UI
                 : free;
 
             stage.ShowGhost(carrying, column, row, allowed);
+        }
+
+        /// <summary>
+        /// Whether the cooler on the cursor could stand here. The squares it is leaving count as
+        /// free, so sliding one along by a square is allowed, which is what `TryMoveCooler` does.
+        /// </summary>
+        private bool CoolerFits(ServerHall hall, int column, int row)
+        {
+            bool Free(int c, int r)
+            {
+                if (!hall.Contains(c, r))
+                {
+                    return false;
+                }
+
+                if (hall.IsEmpty(c, r))
+                {
+                    return true;
+                }
+
+                return coolerFrom.HasValue && hall.TryCoolerAt(c, r, out var anchor)
+                       && anchor == coolerFrom.Value.Column && r == coolerFrom.Value.Row;
+            }
+
+            return Free(column, row) && Free(column + 1, row);
         }
 
         private void ClearHover()
@@ -421,9 +461,22 @@ namespace ScalingLaws.UI
 
         private void OnLeftClick(CompanySimulation simulation, int column, int row)
         {
+            if (placingCooler)
+            {
+                PutCooler(simulation, column, row);
+                return;
+            }
+
             if (carrying != ServerRack.None)
             {
                 Put(simulation, column, row);
+                return;
+            }
+
+            // A cooler has nothing to open. Right click is how it is moved or sold, and the hint
+            // under the room says so.
+            if (simulation.State.Hall.IsCooler(column, row))
+            {
                 return;
             }
 
@@ -452,9 +505,33 @@ namespace ScalingLaws.UI
         /// </summary>
         private void OnRightClick(CompanySimulation simulation, int column, int row)
         {
+            if (placingCooler)
+            {
+                // A second right click on a lifted cooler sells it, the same as a cabinet goes to
+                // the store room; a new one was never bought, so it simply goes away.
+                if (coolerFrom.HasValue
+                    && simulation.TrySellCooler(coolerFrom.Value.Column, coolerFrom.Value.Row, out _))
+                {
+                    AudioDirector.Confirm();
+                }
+
+                Release(simulation);
+                return;
+            }
+
             if (carrying != ServerRack.None)
             {
                 Release(simulation);
+                return;
+            }
+
+            if (simulation.State.Hall.TryCoolerAt(column, row, out var coolerAnchor))
+            {
+                placingCooler = true;
+                coolerFrom = (coolerAnchor, row);
+                building = true;
+
+                changed?.Invoke();
                 return;
             }
 
@@ -494,6 +571,30 @@ namespace ScalingLaws.UI
             changed?.Invoke();
         }
 
+        /// <summary>Stands the cooler on the cursor, buying it if it is new.</summary>
+        private void PutCooler(CompanySimulation simulation, int column, int row)
+        {
+            string why;
+
+            var placed = coolerFrom.HasValue
+                ? simulation.TryMoveCooler(coolerFrom.Value.Column, coolerFrom.Value.Row, column, row, out why)
+                : simulation.TryBuildCooler(column, row, out why);
+
+            if (!placed)
+            {
+                problem = why;
+                changed?.Invoke();
+                return;
+            }
+
+            problem = string.Empty;
+            placingCooler = false;
+            coolerFrom = null;
+
+            stage.HideGhost();
+            changed?.Invoke();
+        }
+
         /// <summary>
         /// Puts down whatever is being carried without placing it.
         ///
@@ -503,6 +604,17 @@ namespace ScalingLaws.UI
         /// </summary>
         private void Release(CompanySimulation simulation)
         {
+            if (placingCooler)
+            {
+                // A lifted cooler that is released stays where it was: it never moved.
+                placingCooler = false;
+                coolerFrom = null;
+
+                stage.HideGhost();
+                changed?.Invoke();
+                return;
+            }
+
             if (carrying == ServerRack.None)
             {
                 return;
@@ -522,6 +634,14 @@ namespace ScalingLaws.UI
 
         private string HintFor(CompanySimulation simulation)
         {
+            if (placingCooler)
+            {
+                return coolerFrom.HasValue
+                    ? Loc.T("room.hint.cooler_lifted", UiFormat.Money(
+                        (long)(ServerRackCatalog.RoomCoolerPriceUsd * CompanySimulation.RackResaleFraction)))
+                    : Loc.T("room.hint.cooler");
+            }
+
             if (carrying != ServerRack.None)
             {
                 return Loc.T("room.hint.carrying",
@@ -598,6 +718,9 @@ namespace ScalingLaws.UI
             {
                 scroller.Add(ShopRow(simulation, definition));
             }
+
+            scroller.Add(SectionHeading(Loc.T("room.cooler")));
+            scroller.Add(CoolerRow(simulation));
 
             scroller.Add(SectionHeading(Loc.T("room.build.store")));
             scroller.Add(BuildStoreRoom(simulation));
@@ -859,6 +982,50 @@ namespace ScalingLaws.UI
                 + UiFormat.Money(definition.MonthlyUpkeepUsd) + "\n" + definition.Note;
 
             return card;
+        }
+
+        /// <summary>
+        /// The room cooler: what it does, how many stand, and the button that puts one on the
+        /// cursor. **Paid for where it lands**, so cancelling costs nothing.
+        /// </summary>
+        private VisualElement CoolerRow(CompanySimulation simulation)
+        {
+            var hall = simulation.State.Hall;
+            var panel = new VisualElement();
+            panel.AddToClassList("roombuild__cooler");
+
+            var pitch = new Label(Loc.T("room.cooler.pitch"));
+            pitch.AddToClassList("roombuild__hint");
+            panel.Add(pitch);
+
+            panel.Add(UiParts.StatLine(Loc.T("rack.cooling"),
+                "+" + UiFormat.Kilowatts(ServerRackCatalog.RoomCoolerCoolingKilowatts)));
+
+            panel.Add(UiParts.StatLine(Loc.T("rack.upkeep"),
+                UiFormat.Money(ServerRackCatalog.RoomCoolerMonthlyUpkeepUsd)));
+
+            var count = new Label(Loc.T("room.cooler.count", hall.CoolerCount));
+            count.AddToClassList("roombuild__hint");
+            panel.Add(count);
+
+            var buy = new Button(() =>
+            {
+                carrying = ServerRack.None;
+                liftedFrom = null;
+                placingCooler = true;
+                coolerFrom = null;
+
+                changed?.Invoke();
+            })
+            { text = Loc.T("room.cooler.buy", UiFormat.Money(ServerRackCatalog.RoomCoolerPriceUsd)) };
+
+            buy.AddToClassList("chip");
+            buy.AddToClassList("roombuild__coolerbuy");
+            buy.SetEnabled(simulation.State.CashUsd >= ServerRackCatalog.RoomCoolerPriceUsd
+                           && hall.FreeSquares >= 2);
+            panel.Add(buy);
+
+            return panel;
         }
 
         /// <summary>

@@ -77,6 +77,26 @@ namespace ScalingLaws.UI
             card.Add(BuildHead(definition));
             card.Add(BuildStateBanner(simulation, column, row));
 
+            // **The whole card turns, not only the band.** Asked for by the author in those words:
+            // red with OVERHEATING, yellow with NEAR OVERHEATING. A band a player has to read is a
+            // band a player skips; a card that has changed colour is noticed before it is read.
+            var (_, perCardKw) = simulation.HallPerAccelerator();
+            var heatNow = hall.HeatAt(column, row, perCardKw, simulation.Room);
+            var roomNow = simulation.RoomClimateToday();
+
+            var hot = heatNow == ServerRackCatalog.RackHeat.Cooking
+                      || roomNow.State == ServerRackCatalog.RoomClimateState.Overheating;
+            var warm = !hot && (heatNow == ServerRackCatalog.RackHeat.Warm
+                                || roomNow.State == ServerRackCatalog.RoomClimateState.Warm);
+
+            card.EnableInClassList("rackmodal__card--hot", hot);
+            card.EnableInClassList("rackmodal__card--warm", warm);
+
+            if (hot || warm)
+            {
+                card.Add(BuildAlarm(hot, heatNow, roomNow));
+            }
+
             // **Two columns: the parts on the left, the cabinet on the right.**
             //
             // Reported twice, the second time as still broken: you can buy silicon and there is no
@@ -93,6 +113,7 @@ namespace ScalingLaws.UI
             cabinetColumn = cabinet;
             cabinet.Add(BuildSlots(simulation, square, definition));
             cabinet.Add(BuildStats(simulation, square, definition));
+            cabinet.Add(BuildOverclock(simulation, column, row, roomNow));
             cabinet.Add(BuildActions(simulation, column, row, square));
 
             body.Add(cabinet);
@@ -115,12 +136,129 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BuildStateBanner(CompanySimulation simulation, int column, int row)
         {
-            var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
+            // The owned cards' own draw, which is what the fleet is served from. The rentable part
+            // was a year ahead of a company running older silicon and read hotter than the room.
+            var (_, kilowatts) = simulation.HallPerAccelerator();
 
-            var state = simulation.State.Hall.HeatAt(
-                column, row, known ? part.PowerKilowatts : 0.0, simulation.Room);
+            var state = simulation.State.Hall.HeatAt(column, row, kilowatts, simulation.Room);
 
             return HeatBand(state);
+        }
+
+        /// <summary>
+        /// OVERHEATING or NEAR OVERHEATING, with the one piece of advice that fixes it.
+        ///
+        /// **The advice names the room when the room is the cause.** A cabinet losing work because
+        /// the whole cellar is over its budget is not fixed by a fan in this cabinet, and telling a
+        /// player to fit one would spend their money on the wrong thing.
+        /// </summary>
+        private static VisualElement BuildAlarm(bool hot, ServerRackCatalog.RackHeat heat, RoomClimate room)
+        {
+            var alarm = new VisualElement();
+            alarm.AddToClassList("rackalarm");
+            alarm.AddToClassList(hot ? "rackalarm--hot" : "rackalarm--warm");
+
+            var word = new Label(Loc.T(hot ? "rack.overheating" : "rack.near_overheating"));
+            word.AddToClassList("rackalarm__word");
+            alarm.Add(word);
+
+            string advice;
+
+            if (room.State == ServerRackCatalog.RoomClimateState.Overheating)
+            {
+                advice = Loc.T("room.climate.advice_hot");
+            }
+            else if (heat == ServerRackCatalog.RackHeat.Cooking)
+            {
+                advice = Loc.T("rack.overheating.note");
+            }
+            else if (room.State == ServerRackCatalog.RoomClimateState.Warm)
+            {
+                advice = Loc.T("room.climate.advice_warm");
+            }
+            else
+            {
+                advice = Loc.T("rack.near_overheating.note");
+            }
+
+            var note = new Label(advice);
+            note.AddToClassList("rackalarm__note");
+            alarm.Add(note);
+
+            return alarm;
+        }
+
+        /// <summary>
+        /// STOCK, LEVEL 1, LEVEL 2. Raising it needs a room with air to spare and the simulation
+        /// says so when it refuses; lowering it is always allowed.
+        /// </summary>
+        private VisualElement BuildOverclock(CompanySimulation simulation, int column, int row,
+            RoomClimate room)
+        {
+            var hall = simulation.State.Hall;
+            var current = hall.OverclockAt(column, row);
+            var coolEnough = room.Ratio < ServerRackCatalog.OverclockAllowedBelow;
+
+            var block = new VisualElement();
+            block.AddToClassList("rackoc");
+            block.tooltip = Loc.T("rack.oc.note");
+
+            var caption = new Label(Loc.T("rack.oc"));
+            caption.AddToClassList("rackoc__caption");
+            block.Add(caption);
+
+            var choices = new VisualElement();
+            choices.AddToClassList("rackoc__choices");
+
+            for (var level = 0; level <= ServerRackCatalog.OverclockLevels; level++)
+            {
+                var wanted = level;
+
+                var choice = new Button(() =>
+                {
+                    if (simulation.TrySetOverclock(column, row, wanted, out var why))
+                    {
+                        changed?.Invoke();
+                    }
+                    else
+                    {
+                        announce?.Invoke(Loc.T("rack.oc"), why);
+                    }
+                })
+                {
+                    text = level == 0 ? Loc.T("rack.oc.off") : Loc.T("rack.oc.level", level)
+                };
+
+                choice.AddToClassList("chip");
+                choice.AddToClassList("rackoc__choice");
+                choice.EnableInClassList("rackoc__choice--on", level == current);
+                choice.SetEnabled(level <= current || coolEnough);
+                choices.Add(choice);
+            }
+
+            block.Add(choices);
+
+            string line;
+
+            if (current > 0 && !room.OverclocksRunning)
+            {
+                line = Loc.T("rack.oc.suspended");
+            }
+            else if (!coolEnough && current < ServerRackCatalog.OverclockLevels)
+            {
+                line = Loc.T("rack.oc_room_warm");
+            }
+            else
+            {
+                line = Loc.T("rack.oc.note");
+            }
+
+            var note = new Label(line);
+            note.AddToClassList("rackoc__note");
+            note.EnableInClassList("rackoc__note--bad", current > 0 && !room.OverclocksRunning);
+            block.Add(note);
+
+            return block;
         }
 
         /// <summary>
@@ -580,11 +718,21 @@ namespace ScalingLaws.UI
 
             var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
             var room = simulation.Room;
-            var heat = known ? square.Accelerators * part.PowerKilowatts : 0.0;
-            var cooling = room.CoolingFor(definition, square.Fans);
+            var hall = simulation.State.Hall;
+            var (perCardPf, perCardKw) = simulation.HallPerAccelerator();
+            var climate = hall.Climate(perCardKw, room);
 
-            var penalty = room.PenaltyFor(square.Rack);
-            var factor = ServerRackCatalog.ThrottleFactor(heat, cooling, penalty);
+            // **Everything below is what the hall itself computes.** Heat and cooling here used to
+            // be worked out inline, which was right until the room and the overclock arrived and
+            // then quoted a cabinet that ignored both.
+            var level = climate.OverclocksRunning ? hall.OverclockAt(square.Column, square.Row) : 0;
+            var heat = square.Accelerators * perCardKw
+                       * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
+            var cooling = room.CoolingFor(definition, square.Fans) * climate.CabinetFactor;
+            var delivered = hall.CabinetPetaflops(square.Column, square.Row, perCardPf, perCardKw, room);
+            var ideal = square.Accelerators * perCardPf
+                        * (1.0 + ServerRackCatalog.OverclockThroughputPerLevel * level);
+            var factor = ideal > 0.0 ? Math.Min(1.0, delivered / ideal) : 1.0;
             var draw = heat + square.Fans * ServerRackCatalog.FanDrawKilowatts;
 
             block.Add(UiParts.StatLine(Loc.T("rack.accelerators"),
@@ -594,10 +742,13 @@ namespace ScalingLaws.UI
             block.Add(UiParts.StatLine(Loc.T("rack.cooling"), UiFormat.Kilowatts(cooling)));
             block.Add(UiParts.StatLine(Loc.T("rack.draw"), UiFormat.Kilowatts(draw)));
 
-            block.Add(UiParts.StatLine(Loc.T("rack.throughput"),
-                known
-                    ? UiFormat.Petaflops(square.Accelerators * part.PetaflopsPerUnit * factor)
-                    : "0"));
+            block.Add(UiParts.StatLine(Loc.T("rack.throughput"), UiFormat.Petaflops(delivered)));
+
+            var people = new Label(Loc.T("rack.users",
+                UiFormat.Count(delivered * simulation.UsersPerPetaflop())));
+            people.AddToClassList("rackmodal__users");
+            people.tooltip = Loc.T("room.users.note");
+            block.Add(people);
 
             // **The one node in this game that buys information rather than a number.** Fitting a
             // card is the decision this panel exists for and its cost was only visible afterwards:

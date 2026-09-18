@@ -158,6 +158,114 @@ namespace ScalingLaws.UI
                     hall.HeatAt(square.Column, square.Row, kilowattsPerAccelerator, upgrades),
                     RingTheCabinets);
             }
+
+            // Room coolers: one box across the anchor square and the one to its right.
+            for (var row = 0; row < hall.Rows; row++)
+            {
+                for (var column = 0; column < hall.Columns; column++)
+                {
+                    if (!hall.TryCoolerAt(column, row, out var anchor) || anchor != column
+                        || !squares.TryGetValue((column, row), out var left)
+                        || !squares.TryGetValue((column + 1, row), out var right))
+                    {
+                        continue;
+                    }
+
+                    StandCooler(left, right, column, row);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A room cooler, drawn across two squares.
+        ///
+        /// **Parented to the anchor and reaching to the neighbour's real marker**, not to a pitch
+        /// computed here, for the reason `ViewportOf` gives: the room in the scene is what the
+        /// player is looking at, and a box sized from the data would miss it the day the two
+        /// disagree. Named with <see cref="RackPrefix"/> so the clear takes it with the cabinets.
+        /// </summary>
+        private static void StandCooler(Transform left, Transform right, int column, int row)
+        {
+            var reach = left.InverseTransformPoint(right.position);
+            var length = Mathf.Abs(reach.x) + BasementFloor.SquareSize * 0.8f;
+
+            var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            body.name = $"{RackPrefix}Cooler_{column}_{row}";
+            body.transform.SetParent(left, false);
+            body.transform.localPosition = new Vector3(reach.x / 2f, CoolerHeight / 2f, reach.z / 2f);
+            body.transform.localScale = new Vector3(length, CoolerHeight, BasementFloor.SquareSize * 0.55f);
+
+            Object.Destroy(body.GetComponent<BoxCollider>());
+            body.GetComponent<MeshRenderer>().sharedMaterial =
+                Paint("room-cooler", new Color(0.70f, 0.76f, 0.80f));
+
+            // A dark intake band along the face the camera sees, so it reads as air handling
+            // rather than as a long white cabinet. **An unrotated cube**: a rotated child under a
+            // parent scaled this unevenly is sheared, and the first render drew the grilles as a
+            // bar lying diagonally across the room.
+            var intake = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            intake.name = "Intake";
+            intake.transform.SetParent(body.transform, false);
+            intake.transform.localPosition = new Vector3(0f, 0.08f, -0.51f);
+            intake.transform.localScale = new Vector3(0.86f, 0.55f, 0.04f);
+
+            Object.Destroy(intake.GetComponent<BoxCollider>());
+            intake.GetComponent<MeshRenderer>().sharedMaterial =
+                Paint("room-cooler-grille", new Color(0.24f, 0.38f, 0.48f));
+
+            var side = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            side.name = "IntakeSide";
+            side.transform.SetParent(body.transform, false);
+            side.transform.localPosition = new Vector3(0.51f, 0.08f, 0f);
+            side.transform.localScale = new Vector3(0.04f, 0.55f, 0.7f);
+
+            Object.Destroy(side.GetComponent<BoxCollider>());
+            side.GetComponent<MeshRenderer>().sharedMaterial =
+                Paint("room-cooler-grille", new Color(0.24f, 0.38f, 0.48f));
+        }
+
+        /// <summary>How tall a room cooler stands. Lower than any cabinet, so it never hides one.</summary>
+        public const float CoolerHeight = 0.9f;
+
+        /// <summary>
+        /// The ghost for a room cooler: an outline over two squares, red when either is taken or
+        /// the pair runs off the floor.
+        /// </summary>
+        public void ShowCoolerGhost(int column, int row, bool allowed)
+        {
+            if (!squares.TryGetValue((column, row), out var marker))
+            {
+                HideGhost();
+                return;
+            }
+
+            EnsureGhost();
+
+            ghost.transform.SetParent(marker, false);
+            ghost.transform.localPosition = Vector3.zero;
+            ghost.SetActive(true);
+
+            var reach = squares.TryGetValue((column + 1, row), out var next)
+                ? marker.InverseTransformPoint(next.position)
+                : new Vector3(BasementFloor.Pitch, 0f, 0f);
+
+            ghostOutline.transform.localPosition = new Vector3(reach.x / 2f, 0.03f, reach.z / 2f);
+            ghostOutline.transform.localScale = new Vector3(
+                Mathf.Abs(reach.x) + BasementFloor.SquareSize, 0.04f, BasementFloor.SquareSize);
+
+            ghostOutline.sharedMaterial = Paint(
+                allowed ? "ghost-ok" : "ghost-no",
+                allowed ? new Color(0.42f, 0.78f, 0.58f) : new Color(0.78f, 0.30f, 0.28f));
+
+            ghostBody.gameObject.SetActive(allowed);
+
+            if (allowed)
+            {
+                ghostBody.transform.localPosition = new Vector3(reach.x / 2f, CoolerHeight / 2f, reach.z / 2f);
+                ghostBody.transform.localScale = new Vector3(
+                    Mathf.Abs(reach.x) + BasementFloor.SquareSize * 0.8f, CoolerHeight,
+                    BasementFloor.SquareSize * 0.55f);
+            }
         }
 
         /// <summary>
@@ -283,6 +391,11 @@ namespace ScalingLaws.UI
             ghost.transform.SetParent(marker, false);
             ghost.transform.localPosition = Vector3.zero;
             ghost.SetActive(true);
+
+            // The cooler's ghost stretches the outline over two squares; a cabinet's is one.
+            ghostOutline.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            ghostOutline.transform.localScale =
+                new Vector3(BasementFloor.SquareSize, 0.04f, BasementFloor.SquareSize);
 
             ghostOutline.sharedMaterial = Paint(
                 allowed ? "ghost-ok" : "ghost-no",

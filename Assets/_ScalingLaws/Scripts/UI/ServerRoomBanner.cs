@@ -28,6 +28,10 @@ namespace ScalingLaws.UI
         private readonly Label latency = new();
         private readonly VisualElement loadFill = new();
         private readonly Label health = new();
+        private readonly Label climate = new();
+        private readonly Label climateNote = new();
+        private readonly Label users = new();
+        private readonly Label usersNote = new();
 
         public ServerRoomBanner()
         {
@@ -37,6 +41,17 @@ namespace ScalingLaws.UI
             Root.Add(Figure(Loc.T("room.banner.capacity"), capacity, capacityNote));
             Root.Add(Figure(Loc.T("room.banner.temperature"), temperature, temperatureNote));
             Root.Add(Figure(Loc.T("room.banner.power"), power, powerNote));
+
+            // The reading is a word, and OVERHEATING at the figure size broke mid-word on the
+            // first render. Smaller type, same colour.
+            climate.AddToClassList("rbanner__value--word");
+            var room = Figure(Loc.T("room.climate.title"), climate, climateNote);
+            room.tooltip = Loc.T("room.climate.note");
+            Root.Add(room);
+
+            var served = Figure(Loc.T("room.users"), users, usersNote);
+            served.tooltip = Loc.T("room.users.note");
+            Root.Add(served);
 
             Root.Add(BuildLoad());
 
@@ -68,6 +83,7 @@ namespace ScalingLaws.UI
         {
             var block = new VisualElement();
             block.AddToClassList("rbanner__block");
+            block.AddToClassList("rbanner__block--wide");
 
             var head = new VisualElement();
             head.AddToClassList("rbanner__loadhead");
@@ -118,9 +134,9 @@ namespace ScalingLaws.UI
             // the compute profile does.
             var housed = simulation.BasementOutput();
 
-            // The heat figures still need a reference card for the per-unit draw, and the rentable
-            // generation is the right one for that: it is what the room is rated against.
-            HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
+            // The heat figures read the owned cards' own draw, the same figure the floor, the
+            // cabinet panel and the fleet use. It falls back to the rentable part with nothing owned.
+            var perCardKw = simulation.HallPerAccelerator().Kilowatts;
 
             capacity.text = UiFormat.Petaflops(housed.Petaflops);
 
@@ -134,9 +150,9 @@ namespace ScalingLaws.UI
             //
             // The hottest cabinet rather than an average. An average across a floor where one rack
             // is cooking and three are cold reads as comfortable, which is the one thing it is not.
-            var hottest = HottestRatio(hall, part, simulation.Room);
+            var hottest = HottestRatio(hall, perCardKw, simulation.Room);
 
-            var worst = HottestState(hall, part, simulation.Room);
+            var worst = HottestState(hall, perCardKw, simulation.Room);
 
             temperature.text = UiFormat.Percent(hottest, 0);
 
@@ -162,12 +178,58 @@ namespace ScalingLaws.UI
             loadFill.style.backgroundColor = LoadTone(load);
             latency.text = UiFormat.Milliseconds(quality.ResponseMilliseconds);
 
-            health.text = housed.ThrottledRacks > 0
-                ? Loc.T("room.banner.throttling", housed.ThrottledRacks)
-                : Loc.T("room.banner.all_clear");
+            // ---- the room itself ----------------------------------------------------------------
+            //
+            // **The room's reading, not the hottest cabinet's.** The two are different problems
+            // with different fixes: a cabinet over its rating wants a fan, a room over its budget
+            // wants a cooler, and a player shown only one of them buys the wrong thing.
+            var room = simulation.RoomClimateToday();
+            var roomTone = ToneOf(room.State);
 
-            health.EnableInClassList("rbanner__health--bad", housed.ThrottledRacks > 0);
+            climate.text = Loc.T(ServerRackCatalog.KeyFor(room.State));
+            climate.style.color = RackHeatPalette.Of(roomTone);
+            climateNote.text = Loc.T("room.climate.reading",
+                UiFormat.Number(room.HeatKilowatts, 0), UiFormat.Number(room.CoolingKilowatts, 0));
+
+            // The figure large and the sentence small: "about 311.5k people" at display size ran to
+            // two lines in a half-width block on the first render.
+            var people = housed.Petaflops * simulation.UsersPerPetaflop();
+            users.text = UiFormat.Count(people);
+            usersNote.text = Loc.T("room.users.value", UiFormat.Count(people));
+
+            // The advice is the room's when the room is the problem, because every cabinet in it
+            // is losing work at once and no amount of fans fixes that.
+            var advice = room.State switch
+            {
+                ServerRackCatalog.RoomClimateState.Overheating => Loc.T("room.climate.advice_hot"),
+                ServerRackCatalog.RoomClimateState.Warm => Loc.T("room.climate.advice_warm"),
+                _ => null
+            };
+
+            health.text = advice ?? (housed.ThrottledRacks > 0
+                ? Loc.T("room.banner.throttling", housed.ThrottledRacks)
+                : Loc.T("room.banner.all_clear"));
+
+            var bad = housed.ThrottledRacks > 0
+                      || room.State == ServerRackCatalog.RoomClimateState.Overheating;
+
+            health.EnableInClassList("rbanner__health--bad", bad);
+            health.EnableInClassList("rbanner__health--warn",
+                !bad && room.State == ServerRackCatalog.RoomClimateState.Warm);
         }
+
+        /// <summary>
+        /// The room's four readings drawn in the cabinets' palette, so "near overheating" is the
+        /// same yellow on the room as on a cabinet. One palette; the room borrows it.
+        /// </summary>
+        public static ServerRackCatalog.RackHeat ToneOf(ServerRackCatalog.RoomClimateState state) =>
+            state switch
+            {
+                ServerRackCatalog.RoomClimateState.Cool => ServerRackCatalog.RackHeat.Cool,
+                ServerRackCatalog.RoomClimateState.Comfortable => ServerRackCatalog.RackHeat.Comfortable,
+                ServerRackCatalog.RoomClimateState.Warm => ServerRackCatalog.RackHeat.Warm,
+                _ => ServerRackCatalog.RackHeat.Cooking
+            };
 
         /// <summary>
         /// How close the worst cabinet is to the point where it stops delivering, 0 to 1.
@@ -176,7 +238,7 @@ namespace ScalingLaws.UI
         /// in kilowatts of heat rather than in temperature, and inventing a degree figure to display
         /// would be a number the simulation does not use.
         /// </summary>
-        private static double HottestRatio(ServerHall hall, HardwareGeneration part,
+        private static double HottestRatio(ServerHall hall, double kilowattsPerAccelerator,
             RoomUpgrades upgrades)
         {
             var worst = 0.0;
@@ -186,7 +248,7 @@ namespace ScalingLaws.UI
             foreach (var square in hall.Occupied())
             {
                 worst = Math.Max(worst,
-                    hall.HeatRatio(square.Column, square.Row, part.PowerKilowatts, upgrades));
+                    hall.HeatRatio(square.Column, square.Row, kilowattsPerAccelerator, upgrades));
             }
 
             // Reported against the point where throttling begins, so 100% is exactly the edge and
@@ -203,14 +265,14 @@ namespace ScalingLaws.UI
         /// turned amber at a load the floor still drew green. One reading, one palette.
         /// </summary>
         private static ServerRackCatalog.RackHeat HottestState(ServerHall hall,
-            HardwareGeneration part, RoomUpgrades upgrades)
+            double kilowattsPerAccelerator, RoomUpgrades upgrades)
         {
             var worst = 0.0;
 
             foreach (var square in hall.Occupied())
             {
                 worst = Math.Max(worst,
-                    hall.HeatRatio(square.Column, square.Row, part.PowerKilowatts, upgrades));
+                    hall.HeatRatio(square.Column, square.Row, kilowattsPerAccelerator, upgrades));
             }
 
             return ServerRackCatalog.HeatOf(worst);
