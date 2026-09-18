@@ -19,10 +19,15 @@ namespace ScalingLaws.UI
     public sealed class MapSiteSelection : MonoBehaviour
     {
         /// <summary>How long each corner bar runs, as a share of the building's smallest side.</summary>
-        private const float BracketShare = 0.22f;
+        private const float BracketShare = 0.3f;
 
-        /// <summary>Thickness of a bar, in metres. Thick enough to read from the map's own height.</summary>
-        private const float BracketThickness = 1.6f;
+        /// <summary>
+        /// Thickness of a bar, in metres.
+        ///
+        /// Raised from 1.6 m after the author reported that a selected building was hard to tell from
+        /// its neighbours: the map is read from three hundred metres up, where 1.6 m is a hairline.
+        /// </summary>
+        private const float BracketThickness = 2.8f;
 
         /// <summary>Clear of the building's own surface, so the bracket never fights with its walls.</summary>
         private const float Clearance = 0.6f;
@@ -34,10 +39,43 @@ namespace ScalingLaws.UI
         private Transform[] bars;
         private MapSiteCard card;
         private MapSitePin selected;
+        private Vector3 anchor;
 
         private void Awake()
         {
             cam = GetComponent<Camera>();
+        }
+
+        private void LateUpdate()
+        {
+            // The card stands beside the building rather than in a corner, so it has to be moved
+            // whenever the map moves under it — which, with a camera the player pans and zooms, is
+            // most frames. Late, so it reads the camera after this frame's panning.
+            if (selected == null || card == null || cam == null)
+            {
+                return;
+            }
+
+            var screen = cam.WorldToScreenPoint(anchor);
+
+            if (screen.z <= 0f)
+            {
+                return;
+            }
+
+            var room = card.parent?.contentRect ?? Rect.zero;
+
+            if (room.width <= 0f || room.height <= 0f || Screen.width <= 0 || Screen.height <= 0)
+            {
+                return;
+            }
+
+            // Panel coordinates by hand rather than through `RuntimePanelUtils`: this panel fills the
+            // screen, so the conversion is two ratios, and doing it here means the card cannot end up
+            // depending on which scale mode the panel settings are left in.
+            card.PlaceNear(new Vector2(
+                screen.x / Screen.width * room.width,
+                (1f - screen.y / Screen.height) * room.height));
         }
 
         /// <summary>Handed the card to drive, by whatever built the map's interface.</summary>
@@ -98,8 +136,15 @@ namespace ScalingLaws.UI
         private void Pick(MapSitePin pin)
         {
             selected = pin;
+
+            var bounds = WorldBounds(pin.gameObject);
+
+            // The card is hung off the building's shoulder rather than its middle, so it does not sit
+            // on top of the thing it describes.
+            anchor = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
+
             card?.Show(pin.Definition);
-            Outline(WorldBounds(pin.gameObject));
+            Outline(bounds);
         }
 
         /// <summary>Drops the selection from outside — what the card's own close button calls.</summary>

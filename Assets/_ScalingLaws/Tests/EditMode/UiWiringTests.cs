@@ -78,9 +78,9 @@ namespace ScalingLaws.Tests.EditMode
                     var name = match.Groups[1].Value;
 
                     // Unity calls these itself, and a constructor shares its name with its type.
-                    if (name is "Update" or "OnEnable" or "OnDisable" or "OnDestroy" or "Awake"
-                        or "Start" or "OnGUI" or "if" or "for" or "foreach" or "while" or "switch"
-                        or "return" or "catch" or "using" or "lock" or "readonly")
+                    if (name is "Update" or "LateUpdate" or "FixedUpdate" or "OnEnable" or "OnDisable"
+                        or "OnDestroy" or "Awake" or "Start" or "OnGUI" or "if" or "for" or "foreach"
+                        or "while" or "switch" or "return" or "catch" or "using" or "lock" or "readonly")
                     {
                         continue;
                     }
