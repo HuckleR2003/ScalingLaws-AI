@@ -156,6 +156,25 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### The late game can be won
+
+Measured by playing fourteen years many times over, with every research node taken the day it
+opens and unlimited money. Until now the second half of the game could not be won, however well
+anybody played.
+
+- **Rivals can no longer build models the game says are impossible.** Rival labs kept improving
+  until they reached the top of the capability scale in 2031, while the best model a player could
+  train stopped at 90.9 at the end of 2028. From 2031 the best possible player was 9 points behind
+  the field for the rest of the game. Rivals are now held to the same limits as the player: from
+  2029 the best rival and the best possible player model are level, every year to 2036.
+- **Training keeps getting more efficient after 2028**, more slowly: one doubling every three years
+  instead of stopping dead. The best model anyone can train goes from 91.2 in mid 2028 to 97.0 by
+  2034, so the frontier still moves late in the game.
+- **The world stops losing AI users.** From 2029 people use AI more heavily and the market grows with
+  them. Before, the number of people served worldwide fell by half between 2029 and 2035 and the
+  market's total yearly revenue fell from $52bn to $22bn. Now the user count holds at about 3.4bn and
+  the market grows again after 2029. Nothing changes before 2029.
+
 ### The model creator is drawn on a blueprint
 
 - **A live screen replaced the photograph** on the scale, data and compute stages. It shows the
@@ -218,7 +237,7 @@ A way to look at the game with everything open, without pretending it was played
 **Save compatibility.** Save v58. A v57 campaign loads and is not a sandbox, which is the only true
 reading: it was played in a game that had no debug mode in it.
 
-1,370 EditMode tests and 62 PlayMode tests.
+1,376 EditMode tests and 62 PlayMode tests.
 
 ---
 
