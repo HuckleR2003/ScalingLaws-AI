@@ -3198,6 +3198,9 @@ namespace ScalingLaws.UI
         private void OpenTheMap()
         {
             SaveStore.Save(state);
+
+            // The map opens on wherever the company is now, not on the house it may have left.
+            SceneFlow.MapHomeOffice = (int)state.Staff.Office;
             SceneFlow.OpenCityMap();
         }
 

@@ -73,12 +73,32 @@ namespace ScalingLaws.UI
         /// </summary>
         public const float OpeningHeightAboveGround = 165f;
 
+        /// <summary>How long the flight back down to the house takes when the map is closed.</summary>
+        public const float ClosingSeconds = 1.3f;
+
+        /// <summary>
+        /// The longest a single frame may advance the opening or closing shot.
+        ///
+        /// **This is why the pull-back looked like it did not exist.** The city is the heaviest scene
+        /// in the game, and its first frames take seconds to draw. One of them handed the opening its
+        /// whole 3.4 seconds in a single step, so the camera was already at the overview by the first
+        /// frame anybody saw. A shot is measured in frames the player sees, not in wall clock.
+        /// </summary>
+        public const float LongestShotStep = 1f / 30f;
+
+        /// <summary>Frames the opening waits before it starts, so it begins on a frame that was drawn.</summary>
+        public const int OpeningSettleFrames = 3;
+
         private Camera cam;
         private Vector3? flyTarget;
         private Vector3 openingFrom;
         private Vector3 openingTo;
         private float openingSeconds;
         private bool opening;
+        private int settleFrames;
+        private bool closing;
+        private float closingSeconds;
+        private Vector3 closingFrom;
 
         /// <summary>What the office had its shadows set to, put back when the map closes.</summary>
         private float shadowDistanceBefore;
@@ -103,11 +123,11 @@ namespace ScalingLaws.UI
         private void Start()
         {
             openingTo = transform.position;
-            openingFrom = OpeningFrom(CityLayout.FounderHome,
-                CityLayout.GroundHeightAt(CityLayout.FounderHome), transform.forward);
+            openingFrom = OpeningFrom(Home, CityLayout.GroundHeightAt(Home), transform.forward);
 
             transform.position = openingFrom;
             openingSeconds = 0f;
+            settleFrames = OpeningSettleFrames;
             opening = true;
 
             // **Shadows have to reach as far as the camera can see.** The quality settings stop
@@ -165,6 +185,44 @@ namespace ScalingLaws.UI
             var left = 1f - t;
 
             return 1f - left * left * left;
+        }
+
+        /// <summary>
+        /// How far down to the house the closing shot is, nought to one: slow away from the
+        /// overview, quick at the end, the mirror of the opening. The author asked for the zoom back
+        /// in when the map is left; without it ESC was a cut.
+        /// </summary>
+        public static float ClosingEase(float seconds)
+        {
+            var t = Mathf.Clamp01(seconds / ClosingSeconds);
+            return t * t * t;
+        }
+
+        /// <summary>One frame's worth of a shot, never more than <see cref="LongestShotStep"/>.</summary>
+        public static float ShotStep(float deltaSeconds) =>
+            Mathf.Clamp(float.IsNaN(deltaSeconds) ? 0f : deltaSeconds, 0f, LongestShotStep);
+
+        /// <summary>Where the company is on the map: its office, or the founder's house.</summary>
+        private static MapPoint Home => MapSiteCatalog.HomeFor((OfficeTier)SceneFlow.MapHomeOffice);
+
+        /// <summary>
+        /// Closes the map by flying back down to the company's building, then loads the office.
+        /// Asked a second time while it is flying, it goes straight away: a player pressing ESC twice
+        /// wants out, not a longer animation.
+        /// </summary>
+        public void Leave()
+        {
+            if (closing)
+            {
+                SceneFlow.ReturnFromCityMap();
+                return;
+            }
+
+            closing = true;
+            opening = false;
+            flyTarget = null;
+            closingSeconds = 0f;
+            closingFrom = transform.position;
         }
 
         /// <summary>
@@ -226,11 +284,26 @@ namespace ScalingLaws.UI
             // answers. ESC stays: it is what every other panel in the game closes with.
             if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.M))
             {
-                SceneFlow.ReturnFromCityMap();
+                Leave();
                 return;
             }
 
             var deltaSeconds = Time.unscaledDeltaTime;
+
+            if (closing)
+            {
+                closingSeconds += ShotStep(deltaSeconds);
+
+                var to = OpeningFrom(Home, CityLayout.GroundHeightAt(Home), transform.forward);
+                transform.position = Vector3.Lerp(closingFrom, to, ClosingEase(closingSeconds));
+
+                if (closingSeconds >= ClosingSeconds)
+                {
+                    SceneFlow.ReturnFromCityMap();
+                }
+
+                return;
+            }
 
             var panAxis = ResolvePan(
                 Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow),
@@ -258,7 +331,13 @@ namespace ScalingLaws.UI
 
             if (opening)
             {
-                openingSeconds += deltaSeconds;
+                if (settleFrames > 0)
+                {
+                    settleFrames--;
+                    return;
+                }
+
+                openingSeconds += ShotStep(deltaSeconds);
 
                 transform.position = Vector3.Lerp(openingFrom, openingTo, OpeningEase(openingSeconds));
 

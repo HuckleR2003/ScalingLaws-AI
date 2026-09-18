@@ -24,6 +24,13 @@ namespace ScalingLaws.Core
         /// <summary>Company name typed on the menu, used only when starting fresh.</summary>
         public static string RequestedCompanyName { get; set; } = "Prometheus AI";
 
+        /// <summary>
+        /// Where the company is, as an office tier (0 is the founder's house). Set by the office
+        /// just before the city loads, so the map opens on the building the player just left rather
+        /// than on the house they moved out of. An int because `Core` does not know the catalog.
+        /// </summary>
+        public static int MapHomeOffice { get; set; }
+
         /// <summary>Which opening tile was chosen. Read once by the game scene.</summary>
         public static int RequestedArchetype { get; set; }
 

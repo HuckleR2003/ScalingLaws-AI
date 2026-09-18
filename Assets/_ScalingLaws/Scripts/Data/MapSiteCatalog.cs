@@ -474,6 +474,27 @@ namespace ScalingLaws.Data
 
         public static IReadOnlyList<MapSiteDefinition> All => Entries;
 
+        /// <summary>
+        /// Where the company stands on the map for an office tier: the founder's house for the
+        /// garage, and the office's own site for anything on the ladder. The house when a tier has no
+        /// site, which is a broken catalog rather than a reason to open the map on nothing.
+        /// </summary>
+        public static MapPoint HomeFor(OfficeTier tier)
+        {
+            if (tier != OfficeTier.Garage)
+            {
+                foreach (var entry in Entries)
+                {
+                    if (entry.Kind == MapSiteKind.OfficeLease && entry.Tier == (int)tier)
+                    {
+                        return entry.Position;
+                    }
+                }
+            }
+
+            return CityLayout.FounderHome;
+        }
+
         public static IEnumerable<MapSiteDefinition> OfKind(MapSiteKind kind)
         {
             foreach (var entry in Entries)

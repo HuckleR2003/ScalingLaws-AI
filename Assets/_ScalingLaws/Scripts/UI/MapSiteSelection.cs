@@ -103,11 +103,33 @@ namespace ScalingLaws.UI
 
             if (!Physics.Raycast(ray, out var hit, 10000f))
             {
-                Clear();
+                // Water and some pools carry no collider, so the ray can miss everything. The point
+                // on the ground is still known from the terrain's own height, and the plaza pool is
+                // exactly where a player clicks to pick the plaza.
+                var fallback = GroundUnder(ray);
+                var near = fallback.HasValue ? NearestPin(fallback.Value) : null;
+
+                if (near == null)
+                {
+                    Clear();
+                    return;
+                }
+
+                Pick(near);
                 return;
             }
 
             var pin = hit.collider.GetComponentInParent<MapSitePin>();
+
+            // **A click that lands on ground near a place picks the place.** The pin is a post two
+            // metres wide, and the places the author could not click (Terrace Park, Valley Plaza,
+            // the wind farm) are pools, lawns and turbines that belong to the landscape rather than
+            // to the pin, so the ray hit the terrain every time. The site's own radius, or a
+            // minimum a player can hit from map height, decides what counts as near.
+            if (pin == null || pin.Definition == null)
+            {
+                pin = NearestPin(new Vector2(hit.point.x, hit.point.z));
+            }
 
             if (pin == null || pin.Definition == null)
             {
@@ -117,6 +139,71 @@ namespace ScalingLaws.UI
 
             Pick(pin);
         }
+
+        /// <summary>
+        /// The smallest reach a place has for a click, in metres. A site drawn with no radius still
+        /// covers a plaza's worth of ground, which is what a player aims at from three hundred
+        /// metres up.
+        /// </summary>
+        public const float MinimumReach = 45f;
+
+        private MapSitePin[] pins;
+
+        /// <summary>The place whose reach this ground point is inside, nearest first. Null for none.</summary>
+        private MapSitePin NearestPin(Vector2 ground)
+        {
+            pins ??= FindObjectsByType<MapSitePin>(FindObjectsSortMode.None);
+
+            MapSitePin best = null;
+            var bestDistance = float.MaxValue;
+
+            foreach (var candidate in pins)
+            {
+                var site = candidate == null ? null : candidate.Definition;
+
+                if (site == null || !candidate.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                var distance = Vector2.Distance(ground, new Vector2(site.Position.X, site.Position.Z));
+
+                if (distance <= ReachOf(site.Radius) && distance < bestDistance)
+                {
+                    best = candidate;
+                    bestDistance = distance;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Where a ray meets the ground when it hit no collider: a horizontal plane at the terrain's
+        /// height, refined twice because that height depends on where the ray lands.
+        /// </summary>
+        private static Vector2? GroundUnder(Ray ray)
+        {
+            if (ray.direction.y >= -0.001f)
+            {
+                return null;
+            }
+
+            var height = 0f;
+            var point = Vector3.zero;
+
+            for (var pass = 0; pass < 3; pass++)
+            {
+                var distance = (height - ray.origin.y) / ray.direction.y;
+                point = ray.origin + ray.direction * distance;
+                height = Data.CityLayout.GroundHeightAt(new Data.MapPoint(point.x, point.z));
+            }
+
+            return new Vector2(point.x, point.z);
+        }
+
+        /// <summary>How far from its centre a click still picks a place. Tested without a scene.</summary>
+        public static float ReachOf(float siteRadius) => Mathf.Max(MinimumReach, siteRadius);
 
         /// <summary>
         /// Picks a place from outside, exactly as clicking it does. What the legend's SHOW button
