@@ -156,6 +156,33 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### Cards go into cabinets by hand
+
+Reported three times: parts mounted themselves, the cabinets filled with whatever, and nothing could
+be taken out. All three were one daily pass that spread every loose card across the free slots, so a
+card pulled out was back in the same second. That pass is gone.
+
+- **Nothing goes into a cabinet by itself.** Bought cards arrive in the store and wait there.
+- **The store is beside the cabinet.** Open a cabinet and a smaller window on the right shows a tile
+  for every card you own, with how many are not in a cabinet yet, and a grey tile with the date for
+  every order still on its way.
+- **Three ways in**: click a tile, drag it onto the cabinet, or double click it. Each puts one card
+  of that model in.
+- **Click a card in the cabinet to take it out**, back to its tile. Click a fan to put it in the
+  store room.
+- **A cabinet knows which cards are in it**, and runs on them: a cabinet of B200s is hotter and
+  faster than a cabinet of A100s beside it, rather than both running on the fleet's average.
+- **Moving a cabinet takes its cards with it.** Selling a model takes its cards off the floor.
+
+**Save compatibility.** Save v62. The cards already standing in a v61 room stay where they are; on
+the first day each is matched to a model the company owns, newest first. From then on only you put
+cards in.
+
+**Under the hood.** `ManualMountingTests` holds that nothing mounts itself, that a pulled card stays
+out, that fitting with an empty store moves nothing, that each cabinet is priced on its own cards,
+and the v62 round trip. The old self-filling pass survives as `ServerHall.Fill` for tests and tools
+only, and six fixtures that relied on it now fit cards the way a player does.
+
 ### The server room has a climate
 
 A basement full of cabinets used to do next to nothing and gave no way to tell why. The room now has
