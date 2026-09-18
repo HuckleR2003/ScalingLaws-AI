@@ -23,6 +23,30 @@ namespace ScalingLaws.Simulation
         private const double DemandShape = 11.891;
         private const double DemandRatePerDay = 0.00109;
 
+        /// <summary>
+        /// Years into the campaign after which the curve above is no longer the whole of demand:
+        /// the start of 2029, when it is past ninety per cent of its ceiling.
+        /// </summary>
+        public const double HeavierUseFromYears = 7.0;
+
+        /// <summary>
+        /// How much more demand there is each year after that, because the people already using a
+        /// model use it more.
+        ///
+        /// **The number of people using AI used to fall by half from 2028 to 2035.** Users are
+        /// derived, tokens divided by what one person gets through, and each audience's use grows
+        /// eighteen to thirty two per cent a year for the whole campaign. The Gompertz curve above
+        /// saturates, so every year after it did the same tokens were divided by a heavier user and
+        /// the world appeared to lose a fifth of its people. Nobody had left; the curve had simply
+        /// stopped counting the heavier use as demand. The whole market's takings fell from $52bn a
+        /// year to $22bn with it, so the late game was a race for a shrinking prize.
+        ///
+        /// A quarter a year sits inside the range of the audiences' own intensity growth, so the
+        /// population holds roughly level rather than growing or shrinking. It starts only once the
+        /// curve has saturated, so nothing about the years every balance test was tuned on moves.
+        /// </summary>
+        public const double HeavierUseGrowthPerYear = 1.25;
+
         // Price: exponential decay from the 2022 list price of a large completion model.
         public const double InitialPricePerMillionTokensUsd = 20.0;
         public const double PriceDecayPerYear = 0.80;
@@ -30,7 +54,26 @@ namespace ScalingLaws.Simulation
 
         // Algorithmic progress: the same capability gets cheaper to reach every year.
         public const double AlgorithmicEfficiencyDoublingYears = 1.0;
-        public const double MaximumAlgorithmicEfficiency = 64.0;
+
+        /// <summary>
+        /// Where the yearly doubling stops being yearly: sixty four times, which the calendar
+        /// reaches at the start of 2028.
+        /// </summary>
+        public const double EarlyAlgorithmicEfficiency = 64.0;
+
+        /// <summary>
+        /// Past <see cref="EarlyAlgorithmicEfficiency"/> recipes keep improving, three times slower.
+        ///
+        /// **They used to stop dead.** Sixty four was a ceiling, the corpora had stopped growing
+        /// three years earlier and the slider was already at its top, so from 2028 the best run any
+        /// player could train never improved again while the field went on climbing. That is the
+        /// late game `CeilingProbe` found unwinnable. Slower rather than stopped is also the honest
+        /// reading of the trend: nobody expects the doubling to hold forever, and nobody expects it
+        /// to end on a particular Tuesday either.
+        /// </summary>
+        public const double LateAlgorithmicEfficiencyDoublingYears = 3.0;
+
+        public const double MaximumAlgorithmicEfficiency = 256.0;
 
         // Cloud pricing, derived from what the hardware actually costs rather than a magic curve.
         public const int CloudAmortizationDays = 1095;
@@ -95,7 +138,10 @@ namespace ScalingLaws.Simulation
             var days = date.DayIndex;
             var exponent = -DemandShape * Math.Exp(-DemandRatePerDay * days);
 
-            return DemandCeilingBillionTokensPerDay * Math.Exp(exponent)
+            var heavierUse = Math.Pow(HeavierUseGrowthPerYear,
+                Math.Max(0.0, GameDate.Start.YearsUntil(date) - HeavierUseFromYears));
+
+            return DemandCeilingBillionTokensPerDay * Math.Exp(exponent) * heavierUse
                 * WorldEventCatalog.MultiplierOn(WorldLever.Demand, date);
         }
 
@@ -144,7 +190,12 @@ namespace ScalingLaws.Simulation
         public static double BaseAlgorithmicEfficiencyOn(GameDate date)
         {
             var years = Math.Max(0.0, GameDate.Start.YearsUntil(date));
-            var efficiency = Math.Pow(2.0, years / AlgorithmicEfficiencyDoublingYears);
+            var earlyYears = Math.Log(EarlyAlgorithmicEfficiency, 2.0) * AlgorithmicEfficiencyDoublingYears;
+
+            var efficiency = years <= earlyYears
+                ? Math.Pow(2.0, years / AlgorithmicEfficiencyDoublingYears)
+                : EarlyAlgorithmicEfficiency
+                  * Math.Pow(2.0, (years - earlyYears) / LateAlgorithmicEfficiencyDoublingYears);
 
             return Math.Clamp(efficiency, 1.0, MaximumAlgorithmicEfficiency);
         }
