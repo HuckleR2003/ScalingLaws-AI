@@ -60,6 +60,11 @@ namespace ScalingLaws.UI
                 double.IsNaN(value) || double.IsInfinity(value) ? 0.0 : Math.Clamp(value, 0.0, 1.0);
         }
 
+        /// <summary>The bezel under `Resources/`, and its width over its height.</summary>
+        private const string BezelPath = "Creator/monitor_bezel";
+
+        private const float BezelAspect = 1102f / 758f;
+
         private static readonly Color Ink = new(0.31f, 0.69f, 0.91f);
         private static readonly Color Rule = new(0.11f, 0.153f, 0.204f);
 
@@ -76,6 +81,39 @@ namespace ScalingLaws.UI
         {
             AddToClassList("runmon");
 
+            // The office monitor, photographed head on by `MonitorBezelRender`. Everything below is
+            // drawn inside its glass. A missing picture leaves the plain dark plate this screen had
+            // before it had a frame, so the readings never depend on the art.
+            var bezel = Resources.Load<Texture2D>(BezelPath);
+            var screen = this as VisualElement;
+
+            if (bezel != null)
+            {
+                var set = new VisualElement();
+                set.AddToClassList("runmon__set");
+                set.style.backgroundImage = new StyleBackground(bezel);
+
+                // The frame keeps the photograph's proportions whatever width the column is given,
+                // or the glass the readings sit in would stop lining up with the glass in the picture.
+                set.RegisterCallback<GeometryChangedEvent>(evt =>
+                {
+                    var wanted = evt.newRect.width / BezelAspect;
+                    if (Mathf.Abs(set.resolvedStyle.height - wanted) > 0.5f)
+                    {
+                        set.style.height = wanted;
+                    }
+                });
+
+                screen = new VisualElement();
+                screen.AddToClassList("runmon__screen");
+                set.Add(screen);
+                Add(set);
+            }
+            else
+            {
+                AddToClassList("runmon--plain");
+            }
+
             var head = new VisualElement();
             head.AddToClassList("runmon__head");
 
@@ -87,26 +125,31 @@ namespace ScalingLaws.UI
             lamp.AddToClassList("runmon__lamp");
             head.Add(lamp);
 
-            Add(head);
+            screen.Add(head);
 
             curve = new VisualElement();
             curve.AddToClassList("runmon__curve");
             curve.generateVisualContent += DrawCurve;
-            Add(curve);
+            screen.Add(curve);
 
             status = new Label(Loc.T("monitor.shape"));
             status.AddToClassList("runmon__status");
-            Add(status);
+            screen.Add(status);
 
             cluster = new Meter("monitor.cluster", new Color(0.31f, 0.69f, 0.91f));
             bill = new Meter("monitor.bill", new Color(0.878f, 0.639f, 0.333f));
             against = new Meter("monitor.against", new Color(0.349f, 0.788f, 0.541f));
             perText = new Meter("monitor.per_text", new Color(0.690f, 0.424f, 0.878f));
 
-            Add(cluster);
-            Add(bill);
-            Add(against);
-            Add(perText);
+            // Two by two rather than four down: the glass is wider than it is tall, and a column of
+            // four bars was what made this screen as tall as the page beside it.
+            var meters = new VisualElement();
+            meters.AddToClassList("runmon__meters");
+            meters.Add(cluster);
+            meters.Add(bill);
+            meters.Add(against);
+            meters.Add(perText);
+            screen.Add(meters);
         }
 
         /// <summary>Hands the screen a new frame. Called from the creator's own repricing.</summary>

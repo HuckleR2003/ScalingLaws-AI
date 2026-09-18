@@ -20679,9 +20679,15 @@
 /* ---- the screen that replaced the photograph on three creator stages ------------------------- */
 
 .runmon {
-    width: 33%;
+    /* As tall as the monitor and no taller. It used to stretch to the height of the page beside
+       it and cover the blueprint sheet from the top of the stage to the bottom. */
+    width: 31%;
     flex-shrink: 0;
+    align-self: flex-start;
     margin-right: 14px;
+}
+
+.runmon--plain {
     padding: 14px;
     background-color: rgb(10, 14, 21);
     border-width: 1px;
@@ -20689,11 +20695,29 @@
     border-radius: 6px;
 }
 
+.runmon__set {
+    width: 100%;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+/* The glass inside the photograph, measured off the baked bezel (1102 x 758): the screen runs
+   from 32 to 1070 across and 34 to 612 down. */
+.runmon__screen {
+    position: absolute;
+    left: 2.9%;
+    right: 2.9%;
+    top: 4.5%;
+    bottom: 19.3%;
+    padding: 8px 10px 6px 10px;
+    background-color: rgba(6, 10, 16, 0.78);
+    overflow: hidden;
+}
+
 .runmon__head {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .runmon__title {
@@ -20710,9 +20734,11 @@
 }
 
 .runmon__curve {
-    height: 120px;
-    flex-shrink: 0;
-    margin-bottom: 8px;
+    height: 64px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 40px;
+    margin-bottom: 5px;
     background-color: rgb(7, 11, 17);
     border-width: 1px;
     border-color: rgb(28, 39, 52);
@@ -20723,23 +20749,31 @@
     font-size: 11px;
     color: rgb(127, 139, 155);
     white-space: normal;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
 }
 
 .runmon__status--blocked {
     color: rgb(224, 137, 148);
 }
 
-.runmon__meter {
+.runmon__meters {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
     flex-shrink: 0;
-    margin-bottom: 10px;
+}
+
+.runmon__meter {
+    width: 48%;
+    flex-shrink: 0;
+    margin-bottom: 5px;
 }
 
 .runmon__mrow {
     flex-direction: row;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .runmon__mcap {

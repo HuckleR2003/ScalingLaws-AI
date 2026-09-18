@@ -148,6 +148,10 @@ had to change.
   shape of the run, how much of the fleet it takes, the bill against the money in the bank, where
   the model would land against today's frontier, and what a token costs to serve. Nothing on it
   repeats the four figures along the top.
+- **The screen is a monitor now.** The readings sit inside the glass of the office monitor, drawn
+  head on, with the four bars two by two. The column is only as tall as the monitor, so the
+  blueprint shows underneath it instead of being covered to the bottom of the page. The maker's
+  name and two logos on the bezel were painted out.
 - **The pages sit on a faint drawing now**: a grid, corner marks, and a title block along the bottom
   naming what each stage decides. It is drawn at a few per cent of white, under the art-direction
   rule that says anything behind the interface stays out of the way.
