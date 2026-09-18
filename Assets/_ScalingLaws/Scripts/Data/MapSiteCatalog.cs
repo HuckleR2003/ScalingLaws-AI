@@ -392,6 +392,21 @@ namespace ScalingLaws.Data
                 "Model Research Summit and Capital & AI Forum. The city's second indoor venue, so "
                 + "the gallery is not hosting every kind of event in the year.", systemExists: false),
 
+            // The two open-air venues the author picked out: the terrace park CityHillPark builds above
+            // Innovation, and the plaza CitySiliconValley already built. Events to come will be held
+            // at them; nothing books them yet.
+            new("event.hillpark", "Terrace Park", MapSiteKind.EventVenue, MapCategory.Events,
+                "innovation", new MapPoint(1570f, 1675f), 0f, 0,
+                "Three long pools on a terrace cut into the hill above Innovation, a pavilion at one "
+                + "end and the bay behind it. Room for a launch, or a conference held outdoors.",
+                systemExists: false),
+
+            new("event.valleyplaza", "Valley Plaza", MapSiteKind.EventVenue, MapCategory.Events,
+                "silicon", new MapPoint(515f, -690f), 0f, 0,
+                "The long pool between the trophy towers, from the boulevard down to the marina. The "
+                + "most photographed address in the valley, and the one a launch here is remembered by.",
+                systemExists: false),
+
             // ---- Power plant stakes: PowerPlantCatalog's two sites, positions are new ---------------
 
             new("plant.riverside", "Riverside Plant", MapSiteKind.PowerPlantStake, MapCategory.Energy,
@@ -404,6 +419,14 @@ namespace ScalingLaws.Data
                 "port", new MapPoint(80f, 100f), 70f, (int)PowerPlantSite.Coastal,
                 "A nuclear block: about nine years to build and nearly five times the capital of the "
                 + "gas plant, then fuel at about a fifth of its cost per kilowatt hour.",
+                systemExists: false),
+
+            // ---- The ridge east of Silicon Valley: turbines standing, ground beside them for sale ----
+
+            new("energy.windridge", "Ridge Wind Farm", MapSiteKind.PropertyListing, MapCategory.Energy,
+                "silicon", new MapPoint(1150f, -640f), 90f, 0,
+                "Nine turbines already turn on the skyline above the valley. The ground beside them is "
+                + "for sale, and the wind over this shoulder is the reason the price is what it is.",
                 systemExists: false),
 
             // ---- Job agencies: the three hiring channels GETTING_STARTED.md already describes -------

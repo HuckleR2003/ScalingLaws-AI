@@ -464,7 +464,17 @@ namespace ScalingLaws.Data
             // Valley Heights' way out, north to Southbank Hill. A second one west to the south bank road
             // was tried: its cutting left a slope too steep for the corner it had to meet.
             new("valley_heights_north_link", RoadClass.Street,
-                new MapPoint(1150f, 15f), new MapPoint(1150f, -106f))
+                new MapPoint(1150f, 15f), new MapPoint(1150f, -106f)),
+
+            // **The ridge road behind Greendale.** The plateau ends at 96 m, the mountain climbs to
+            // 225 m in the corner and the ground falls to the bay: this slaloms across that shoulder
+            // through the pines and ends above the water. A run rather than two points, because the
+            // bends are the whole idea.
+            new("greendale_ridge", RoadClass.Lane,
+                new MapPoint(196f, 1648f), new MapPoint(120f, 1690f), new MapPoint(65f, 1760f), new MapPoint(60f, 1830f),
+                new MapPoint(95f, 1895f), new MapPoint(140f, 1950f), new MapPoint(195f, 1995f),
+                new MapPoint(250f, 2030f), new MapPoint(320f, 2035f), new MapPoint(355f, 2000f),
+                new MapPoint(395f, 1965f))
         };
 
         /// <summary>
