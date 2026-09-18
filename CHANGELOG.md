@@ -156,6 +156,45 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### The server room has a climate
+
+A basement full of cabinets used to do next to nothing and gave no way to tell why. The room now has
+a heat budget of its own, a way to raise it, a way to spend it, and a number anybody can weigh.
+
+- **The room has a temperature.** Every cabinet sheds its heat into the same room, which gets rid of
+  30 kW on its own. Past that the air going into each cabinet is already warm, so all of them cool
+  worse and start losing work together. The corner of the room reads COOL, NORMAL, NEAR OVERHEATING
+  or OVERHEATING, with the heat against what the room can shed.
+- **Room coolers.** A cooler takes 45 kW of heat out of the room and stands on two squares, which is
+  its real price: floor a cabinet would have used. $18,000 placed, $150 a month, 2.5 kW to run. Right
+  click one to move it, right click again to sell it.
+- **Overclocking.** A cabinet can run at level 1 or level 2: 12% more work a level for 30% more heat
+  and power. It can only be raised while the room is cool, and it switches itself off if the room
+  overheats, then comes back when the room cools.
+- **How many people it keeps served.** The room's corner and every cabinet say how many people the
+  silicon in them keeps served at today's model and today's use per person. Emil's four cabinets
+  full of H100s keep about 290,000 people served.
+- **A cabinet that is too hot says so.** The whole card turns red with OVERHEATING, or yellow with
+  NEAR OVERHEATING, with the one piece of advice that fixes it. When the room is the cause, the
+  advice names the room rather than sending you to buy a fan that cannot help.
+- **The basement no longer counts against the site power limit.** Cards bought for free slots in the
+  basement are left out of the colocation limit, because the house feeds that room and heat is what
+  caps a cellar. A bigger building still buys power cheaper: $0.19 a kWh at home, $0.14 in a
+  colocation cage, $0.055 in your own datacenter.
+- **The floor, the cabinet and the corner read the same cards.** They used to price heat with the
+  part the clouds rent this year, so a company running older silicon saw its room hotter than it was.
+
+**Save compatibility.** Save v61. A v60 room loads with no coolers and no overclocks, because
+neither existed. A basement filled to the walls may now run hot until a cooler goes in; nothing was
+added to it for free, because a cooler needs two empty squares and which cabinets make way is your
+decision.
+
+**Under the hood.** `RoomClimateTests` holds the thresholds, the two-square cooler, overclock gating
+and suspension, the tariff order, the head count, the v61 migration and a save round trip. Three
+older fixtures stacked hot cabinets and now measured the room rather than the cabinet; they got
+coolers of their own instead of looser assertions. The cabinet reachability sweep covers the cooler
+and overclock operations.
+
 ### From the playtest list, 18 September
 
 - **Two or three releases can be in the works at once.** A second needs an office of level 1 and 5
