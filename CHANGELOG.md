@@ -78,6 +78,20 @@ move, places to click and a city worth moving around.
 - **The map opens on your own house and pulls back off it.** Leaving the office starts low over the
   house in Riverdale and travels out to the overview in about three and a half seconds. Touching any
   key or the wheel takes the camera back at once.
+- **A building's card opens beside the building** and follows it as the camera moves, switching
+  sides at the edge of the screen. The card, the legend and the district panel are all larger.
+- **The legend has tick boxes and takes several categories at once.** Every place in a ticked
+  category gets a pulsing column and a ring in the category's colour, visible from across the map.
+  ALL clears the ticks, and SHOW walks every ticked category together.
+- **The card shows real figures where the game has them**: rent, desks, fit-out, cash needed and
+  the purchase price for offices, and cost, output and build time for the two power plants. Places
+  without prices yet still show a dash. A corner of the card is kept for a view inside the place.
+- **Shadows reach as far as the map camera sees.** They used to stop 150 m from the camera, so
+  buildings only cast them at full zoom. The office keeps its own setting.
+- **Pine woods and a winding road behind Greendale**, down to the bay, nine turning wind turbines
+  on the ridge east of Silicon Valley with the land beside them marked for sale, and a terrace park
+  with three long pools above Innovation. The terrace park and the Silicon Valley plaza are event
+  venues you can click. The pines are from Kenney's Nature Kit (CC0).
 - **Nobody walks to the car any more.** The map used to wait for the founder to cross the office;
   the click opens it.
 - **M opens the city and M closes it again**, and the wheel zooms.
@@ -204,7 +218,7 @@ A way to look at the game with everything open, without pretending it was played
 **Save compatibility.** Save v58. A v57 campaign loads and is not a sandbox, which is the only true
 reading: it was played in a game that had no debug mode in it.
 
-1,357 EditMode tests and 62 PlayMode tests.
+1,370 EditMode tests and 62 PlayMode tests.
 
 ---
 
