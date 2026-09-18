@@ -294,7 +294,12 @@ namespace ScalingLaws.Simulation
 
             var elapsed = Math.Max(0, date.DayIndex - LiveReleaseDate.DayIndex);
             drift = SimUnits.Storable(Math.Min(MaximumDrift, elapsed * DriftPerDay));
-            return Math.Clamp(LiveCapability + drift, 0.0, 100.0);
+
+            // Polishing a model after launch can take it up to what could be built today and no
+            // further. See <see cref="FrontierPhysics"/>. A launch that was already above the line,
+            // which only a real release from the reference table can be, is never marked down.
+            var reachable = Math.Max(LiveCapability, FrontierPhysics.ReachableOn(date));
+            return Math.Clamp(Math.Min(LiveCapability + drift, reachable), 0.0, 100.0);
         }
 
         public bool TryGetLiveModel(GameDate date, out RivalModel model)
@@ -446,8 +451,19 @@ namespace ScalingLaws.Simulation
         private void Ship(GameDate date)
         {
             LiveModelName = pending.DisplayName;
-            LiveCapability = SimUnits.Storable(
-                Math.Clamp(pending.Capability + pendingCapabilityAdjustment, 0.0, 100.0));
+
+            // **A projected release is held to what could be trained on the day it ships.** Real
+            // releases from the reference table are history and are left as they happened; the
+            // lab's own later releases are a projection, and a projection that outruns the scaling
+            // law the player is bound by is a rival doing something the game says is impossible.
+            var launched = Math.Clamp(pending.Capability + pendingCapabilityAdjustment, 0.0, 100.0);
+            if (pending.IsProjection)
+            {
+                launched = Math.Min(launched,
+                    Math.Max(LiveCapability, FrontierPhysics.ReachableOn(date)));
+            }
+
+            LiveCapability = SimUnits.Storable(launched);
             LiveBrand = pending.BrandStrength;
             LivePrice = pending.PriceMultiplier;
             LiveReleaseDate = date;

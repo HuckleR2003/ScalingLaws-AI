@@ -2546,16 +2546,26 @@ namespace ScalingLaws.Simulation
         {
             foreach (var node in ResearchTree.All)
             {
-                if (State.UnlockedResearch.Contains(node.Id))
-                {
-                    continue;
-                }
-
-                State.UnlockedResearch.Add(node.Id);
-                GrantUnlocksOf(node);
+                UnlockResearchNode(node.Id);
             }
 
             State.ActiveResearch = null;
+        }
+
+        /// <summary>
+        /// One node held as if it had finished, with everything it hands over. The sandbox uses it
+        /// for the whole tree; the balance probes use it to research on the calendar's schedule
+        /// rather than the operator's, which is how "could anybody have kept up" gets an answer.
+        /// </summary>
+        public void UnlockResearchNode(ResearchNodeId id)
+        {
+            if (State.UnlockedResearch.Contains(id))
+            {
+                return;
+            }
+
+            State.UnlockedResearch.Add(id);
+            GrantUnlocksOf(ResearchTree.Get(id));
         }
 
         // ------------------------------------------------------------------ architecture families
