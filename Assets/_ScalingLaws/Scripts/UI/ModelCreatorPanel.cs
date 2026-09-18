@@ -526,19 +526,37 @@ namespace ScalingLaws.UI
 
             blueprint.Show(stage);
 
-            stageHost.Clear();
+            // **Built first, swapped second.** This cleared the page and then built the new one, so
+            // anything that threw part way through left the stage blank with no options on it,
+            // which is what a tester saw after switching the tokenizer quickly. Now a failure keeps
+            // the page that was there, and says so in the log rather than silently.
+            VisualElement page;
 
-            stageHost.Add(stage switch
+            try
             {
-                0 => BuildBrandingStage(),
-                1 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
-                2 => WithMonitor(BuildShapePanel()),
-                3 => WithMonitor(BuildDataPanel()),
-                4 => WithMonitor(BuildComputePanel()),
-                5 => BuildSafetyPanel(),
-                6 => BuildProjectionPanel(),
-                _ => BuildDeployStage()
-            });
+                page = stage switch
+                {
+                    0 => BuildBrandingStage(),
+                    1 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
+                    2 => WithMonitor(BuildShapePanel()),
+                    3 => WithMonitor(BuildDataPanel()),
+                    4 => WithMonitor(BuildComputePanel()),
+                    5 => BuildSafetyPanel(),
+                    6 => BuildProjectionPanel(),
+                    _ => BuildDeployStage()
+                };
+            }
+            catch (System.Exception exception)
+            {
+                UnityEngine.Debug.LogException(exception);
+                page = null;
+            }
+
+            if (page != null)
+            {
+                stageHost.Clear();
+                stageHost.Add(page);
+            }
 
             backButton.SetEnabled(stage > 0);
             nextButton.text = stage >= StageNames.Length - 1
@@ -2596,6 +2614,21 @@ namespace ScalingLaws.UI
 
         private void RebuildDataSources()
         {
+            // **What was ticked, read before the toggles are thrown away.** The shell calls Refresh
+            // on the open creator every day, and this used to build every toggle from scratch with
+            // only the web crawl ticked, so the corpora a player had chosen were undone once a day.
+            // A corpus the company has just acquired arrives unticked: adding it is a decision.
+            var hadToggles = dataSourceToggles.Count > 0;
+            var ticked = new HashSet<DatasetSource>();
+
+            foreach (var pair in dataSourceToggles)
+            {
+                if (pair.Value.value)
+                {
+                    ticked.Add(pair.Key);
+                }
+            }
+
             dataToggles.Clear();
             dataSourceToggles.Clear();
 
@@ -2610,7 +2643,9 @@ namespace ScalingLaws.UI
                     definition.DisplayName,
                     UiFormat.Billions(definition.TokenSupplyBillions),
                     UiFormat.Number(definition.QualityMultiplier, 2)));
-                toggle.value = definition.Flag == DatasetSource.WebCrawl;
+                toggle.value = hadToggles
+                    ? ticked.Contains(definition.Flag)
+                    : definition.Flag == DatasetSource.WebCrawl;
                 toggle.RegisterValueChangedCallback(_ => Reprice());
                 dataSourceToggles[definition.Flag] = toggle;
                 dataToggles.Add(toggle);
