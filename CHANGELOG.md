@@ -142,6 +142,18 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### The model creator is drawn on a blueprint
+
+- **A live screen replaced the photograph** on the scale, data and compute stages. It shows the
+  shape of the run, how much of the fleet it takes, the bill against the money in the bank, where
+  the model would land against today's frontier, and what a token costs to serve. Nothing on it
+  repeats the four figures along the top.
+- **The pages sit on a faint drawing now**: a grid, corner marks, and a title block along the bottom
+  naming what each stage decides. It is drawn at a few per cent of white, under the art-direction
+  rule that says anything behind the interface stays out of the way.
+- **Small notes in the margin brighten when the cursor comes near them.** Places and names from the
+  author's own history, a few per stage, dim enough to ignore and there to be found.
+
 ### Tokenization, on the DATA stage
 
 How the corpus is cut into tokens, which is the unit this whole game is priced in. Four rungs, three
