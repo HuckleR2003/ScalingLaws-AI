@@ -146,6 +146,9 @@ namespace ScalingLaws.UI
         /// </summary>
         private TokenizerField tokenizerField;
 
+        /// <summary>The screen beside the controls on SCALE, DATA and COMPUTE.</summary>
+        private RunMonitor monitor;
+
         /// <summary>The two-column grid of corpora for sale, rebuilt with the toggles above it.</summary>
         private VisualElement market;
 
@@ -512,9 +515,9 @@ namespace ScalingLaws.UI
             {
                 0 => BuildBrandingStage(),
                 1 => WithArt("newmodel_1", BuildFoundationColumn(), BuildLaptopScreen()),
-                2 => WithArt("newmodel_2", BuildShapePanel()),
-                3 => WithArt("newmodel_3", BuildDataPanel()),
-                4 => WithArt("newmodel_4", BuildComputePanel()),
+                2 => WithMonitor(BuildShapePanel()),
+                3 => WithMonitor(BuildDataPanel()),
+                4 => WithMonitor(BuildComputePanel()),
                 5 => BuildSafetyPanel(),
                 6 => BuildProjectionPanel(),
                 _ => BuildDeployStage()
@@ -537,6 +540,33 @@ namespace ScalingLaws.UI
         /// column and the controls take the whole width, which is the same failure rule the page
         /// banners use.
         /// </summary>
+        /// <summary>
+        /// The live screen on the left, the decision on the right.
+        ///
+        /// **It took the place of a photograph on three stages.** The picture was a server hall that
+        /// answered nothing, on a third of the width of the busiest screen in the game. This is the
+        /// same answer `BrowserPreview` and `PortraitStudio` already reached: show the thing being
+        /// designed rather than a picture of something like it.
+        ///
+        /// The monitor is kept between stages rather than rebuilt with the page, so walking from
+        /// SCALE to DATA does not restart it, and it is fed from `Reprice` like everything else.
+        /// </summary>
+        private VisualElement WithMonitor(VisualElement body)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("stage-split");
+
+            monitor ??= new RunMonitor();
+            row.Add(monitor);
+
+            var column = new VisualElement();
+            column.AddToClassList("stage-split__body");
+            column.Add(body);
+            row.Add(column);
+
+            return row;
+        }
+
         private static VisualElement WithArt(string artName, VisualElement body, VisualElement overlay = null)
         {
             var row = new VisualElement();
@@ -2862,6 +2892,19 @@ namespace ScalingLaws.UI
             var profile = simulation.ProfileWith(Proposal());
 
             lastComputeBillUsd = projection.ComputeCashCostUsd;
+
+            // The screen beside the controls. Everything on it is read off the projection and the
+            // company, and none of it repeats the four figures on the strip above.
+            var bill = projection.ComputeCashCostUsd
+                       + TokenizerCatalog.AdaptationCostUsd(blueprintAdaptation, projection.ComputeCashCostUsd);
+
+            monitor?.Show(new RunMonitor.Reading(
+                simulation.State.TrainingComputeShare,
+                simulation.State.CashUsd <= 0L ? 1.0 : bill / (double)simulation.State.CashUsd,
+                projection.ProjectedCapability,
+                simulation.Market.FrontierCapability,
+                blueprint.TokensPerText,
+                projection.IsFeasible));
 
             parameterLabel.text = Loc.T("creator.parameters",
                 UiFormat.Billions(blueprint.ParameterCountBillions));
