@@ -80,6 +80,10 @@ namespace ScalingLaws.UI
         private float openingSeconds;
         private bool opening;
 
+        /// <summary>What the office had its shadows set to, put back when the map closes.</summary>
+        private float shadowDistanceBefore;
+        private int shadowCascadesBefore;
+
         private void Awake()
         {
             cam = GetComponent<Camera>();
@@ -105,7 +109,35 @@ namespace ScalingLaws.UI
             transform.position = openingFrom;
             openingSeconds = 0f;
             opening = true;
+
+            // **Shadows have to reach as far as the camera can see.** The quality settings stop
+            // drawing them at 150 m, which is a setting written for a room: from map height the city
+            // lay flat and shadows only appeared once the player had zoomed right in, which is what
+            // the author reported. The distance follows the camera instead, and the office's own
+            // setting is put back on the way out, because 150 m is right for a room.
+            shadowDistanceBefore = QualitySettings.shadowDistance;
+            shadowCascadesBefore = QualitySettings.shadowCascades;
+            QualitySettings.shadowCascades = 4;
         }
+
+        private void OnDisable()
+        {
+            if (shadowDistanceBefore <= 0f)
+            {
+                return;
+            }
+
+            QualitySettings.shadowDistance = shadowDistanceBefore;
+            QualitySettings.shadowCascades = shadowCascadesBefore;
+        }
+
+        /// <summary>
+        /// How far shadows are drawn from a camera at this height: far enough to cover what is in
+        /// frame, and no further, because every extra metre is spread over the same shadow map and
+        /// makes every shadow in it softer.
+        /// </summary>
+        public static float ShadowDistanceFor(float cameraHeight) =>
+            Mathf.Clamp(cameraHeight * 2.2f, 220f, 2600f);
 
         /// <summary>
         /// Where the opening shot begins: low over `target`, on the camera's own fixed look angle,
@@ -187,6 +219,9 @@ namespace ScalingLaws.UI
 
         private void Update()
         {
+            // Shadows reach as far as this height needs; see the note in `Start`.
+            QualitySettings.shadowDistance = ShadowDistanceFor(transform.position.y);
+
             // M both opens the map and closes it, so the key the office answers is the key the map
             // answers. ESC stays: it is what every other panel in the game closes with.
             if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.M))
