@@ -156,6 +156,23 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### The city map, second pass
+
+- **The map opens on your building and pulls back from it.** The pull-back had been written and
+  never seen: the city's first frames take seconds to draw, and one of them used to cover the whole
+  animation, so the camera was already at the overview by the first frame anybody saw. The shot now
+  waits for drawn frames and moves no more than a thirtieth of a second a frame.
+- **It opens on your office once you rent one**, not on the house the company moved out of.
+- **Leaving the map flies back down** to your building before the office comes back. Press ESC again
+  to skip it.
+- **OFFICES FOR RENT**, a banner under the map filters: tick SMALL, MEDIUM or LARGE and NEXT OFFICE
+  flies to each office of those sizes in turn, smallest first, and opens its card.
+- **Terrace Park, Valley Plaza and the wind farm can be clicked.** A click on the ground near a place
+  now picks it, within the place's own radius or 45 metres, whichever is larger. They were pools,
+  lawns and turbines that the click went straight through to the terrain.
+- **Houses are 15 to 25 per cent bigger**, the smallest the most. 1,284 houses, each grown about the
+  middle of its base so none sinks or floats.
+
 ### Cards go into cabinets by hand
 
 Reported three times: parts mounted themselves, the cabinets filled with whatever, and nothing could
