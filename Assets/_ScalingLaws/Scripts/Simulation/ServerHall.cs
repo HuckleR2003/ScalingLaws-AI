@@ -64,6 +64,16 @@ namespace ScalingLaws.Simulation
         private readonly int[] accelerators;
         private readonly int[] fans;
 
+        /// <summary>
+        /// True on the left-hand square of a room cooler. The cooler also covers the square to its
+        /// right, and that square is found from the anchor rather than stored, so a cooler can
+        /// never be half on the floor.
+        /// </summary>
+        private readonly bool[] coolers;
+
+        /// <summary>Overclock level per square, zero for stock. Meaningful only under a cabinet.</summary>
+        private readonly int[] overclock;
+
         public ServerHall(int columns = DefaultColumns, int rows = DefaultRows)
         {
             Columns = Math.Clamp(columns, 1, 32);
@@ -72,6 +82,8 @@ namespace ScalingLaws.Simulation
 
             racks = new ServerRack[Columns * Rows];
             accelerators = new int[Columns * Rows];
+            coolers = new bool[Columns * Rows];
+            overclock = new int[Columns * Rows];
         }
 
         public int Columns { get; }
@@ -90,8 +102,10 @@ namespace ScalingLaws.Simulation
                     accelerators[IndexOf(column, row)], fans[IndexOf(column, row)])
                 : new HallSquare(column, row, ServerRack.None, 0);
 
+        /// <summary>Bare floor: no cabinet and no cooler standing on it.</summary>
         public bool IsEmpty(int column, int row) =>
-            Contains(column, row) && racks[IndexOf(column, row)] == ServerRack.None;
+            Contains(column, row) && racks[IndexOf(column, row)] == ServerRack.None
+            && !IsCooler(column, row);
 
         /// <summary>Every square that has something on it.</summary>
         public List<HallSquare> Occupied()
@@ -128,7 +142,167 @@ namespace ScalingLaws.Simulation
             }
         }
 
-        public int FreeSquares => SquareCount - RackCount;
+        public int FreeSquares => SquareCount - RackCount - 2 * CoolerCount;
+
+        // ---- room coolers ----------------------------------------------------------------------
+
+        /// <summary>Every room cooler on the floor. Each covers two squares.</summary>
+        public int CoolerCount
+        {
+            get
+            {
+                var count = 0;
+
+                foreach (var anchor in coolers)
+                {
+                    if (anchor)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        /// <summary>
+        /// Whether a cooler covers this square, and if so which square it is anchored on.
+        /// A cooler stands on its anchor and the square to its right.
+        /// </summary>
+        public bool TryCoolerAt(int column, int row, out int anchorColumn)
+        {
+            anchorColumn = -1;
+
+            if (!Contains(column, row))
+            {
+                return false;
+            }
+
+            if (coolers[IndexOf(column, row)])
+            {
+                anchorColumn = column;
+                return true;
+            }
+
+            if (column > 0 && coolers[IndexOf(column - 1, row)])
+            {
+                anchorColumn = column - 1;
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsCooler(int column, int row) => TryCoolerAt(column, row, out _);
+
+        /// <summary>
+        /// Stands a room cooler on this square and the one to its right.
+        ///
+        /// Two squares, as asked, because the cost of air has to be counted in the same currency
+        /// as a cabinet: floor. A cooler on one square would be a purchase; a cooler on two is a
+        /// decision about what the room is for.
+        /// </summary>
+        public bool TryPlaceCooler(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!Contains(column, row) || !Contains(column + 1, row))
+            {
+                failureReason = Loc.T("room.cooler_no_room");
+                return false;
+            }
+
+            if (!IsEmpty(column, row) || !IsEmpty(column + 1, row))
+            {
+                failureReason = Loc.T("room.square_taken");
+                return false;
+            }
+
+            coolers[IndexOf(column, row)] = true;
+            return true;
+        }
+
+        /// <summary>Takes a cooler off the floor, from either of its squares.</summary>
+        public bool TryRemoveCooler(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!TryCoolerAt(column, row, out var anchor))
+            {
+                failureReason = Loc.T("room.no_cooler_here");
+                return false;
+            }
+
+            coolers[IndexOf(anchor, row)] = false;
+            return true;
+        }
+
+        /// <summary>
+        /// Slides a cooler to another pair of squares. Checked before anything moves, and a cooler
+        /// is allowed to overlap the squares it is leaving, so shuffling one along by a square works.
+        /// </summary>
+        public bool TryMoveCooler(int fromColumn, int fromRow, int toColumn, int toRow,
+            out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!TryCoolerAt(fromColumn, fromRow, out var anchor))
+            {
+                failureReason = Loc.T("room.no_cooler_here");
+                return false;
+            }
+
+            coolers[IndexOf(anchor, fromRow)] = false;
+
+            if (TryPlaceCooler(toColumn, toRow, out failureReason))
+            {
+                return true;
+            }
+
+            coolers[IndexOf(anchor, fromRow)] = true;
+            return false;
+        }
+
+        // ---- overclock -------------------------------------------------------------------------
+
+        /// <summary>The level a cabinet has been set to. It only runs while the room allows it.</summary>
+        public int OverclockAt(int column, int row) =>
+            Contains(column, row) && racks[IndexOf(column, row)] != ServerRack.None
+                ? overclock[IndexOf(column, row)]
+                : 0;
+
+        /// <summary>
+        /// Sets a cabinet's overclock. Raising it needs a room with air to spare, today; lowering it
+        /// is always allowed, because backing off is never the dangerous direction.
+        /// </summary>
+        public bool TrySetOverclock(int column, int row, int level, double kilowattsPerAccelerator,
+            RoomUpgrades? upgrades, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!Contains(column, row) || racks[IndexOf(column, row)] == ServerRack.None)
+            {
+                failureReason = Loc.T("room.no_rack_here");
+                return false;
+            }
+
+            var index = IndexOf(column, row);
+            var wanted = Math.Clamp(level, 0, ServerRackCatalog.OverclockLevels);
+
+            if (wanted > overclock[index])
+            {
+                var climate = Climate(kilowattsPerAccelerator, upgrades);
+
+                if (climate.Ratio >= ServerRackCatalog.OverclockAllowedBelow)
+                {
+                    failureReason = Loc.T("rack.oc_room_warm");
+                    return false;
+                }
+            }
+
+            overclock[index] = wanted;
+            return true;
+        }
 
         // ---- placing and removing -----------------------------------------------------------
 
@@ -155,7 +329,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (racks[IndexOf(column, row)] != ServerRack.None)
+            if (racks[IndexOf(column, row)] != ServerRack.None || IsCooler(column, row))
             {
                 failureReason = Loc.T("room.square_taken");
                 return false;
@@ -163,6 +337,7 @@ namespace ScalingLaws.Simulation
 
             racks[IndexOf(column, row)] = rack;
             accelerators[IndexOf(column, row)] = 0;
+            overclock[IndexOf(column, row)] = 0;
             return true;
         }
 
@@ -198,6 +373,7 @@ namespace ScalingLaws.Simulation
             racks[index] = ServerRack.None;
             accelerators[index] = 0;
             fans[index] = 0;
+            overclock[index] = 0;
             return true;
         }
 
@@ -263,7 +439,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (racks[to] != ServerRack.None)
+            if (racks[to] != ServerRack.None || IsCooler(toColumn, toRow))
             {
                 failureReason = Loc.T("room.square_taken");
                 return false;
@@ -272,10 +448,12 @@ namespace ScalingLaws.Simulation
             racks[to] = racks[from];
             fans[to] = fans[from];
             accelerators[to] = accelerators[from];
+            overclock[to] = overclock[from];
 
             racks[from] = ServerRack.None;
             fans[from] = 0;
             accelerators[from] = 0;
+            overclock[from] = 0;
 
             return true;
         }
@@ -408,9 +586,15 @@ namespace ScalingLaws.Simulation
             }
 
             var definition = ServerRackCatalog.Get(racks[index]);
-            var heat = accelerators[index] * Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator));
+            var climate = Climate(kilowattsPerAccelerator, upgrades);
+            var level = climate.OverclocksRunning ? overclock[index] : 0;
 
-            var cooling = (upgrades ?? RoomUpgrades.None).CoolingFor(definition, fans[index]);
+            var heat = accelerators[index] * Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator))
+                       * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
+
+            // The room's own heat reaches every cabinet in it: the air going in is already warm.
+            var cooling = (upgrades ?? RoomUpgrades.None).CoolingFor(definition, fans[index])
+                          * climate.CabinetFactor;
 
             return heat / Math.Max(0.1, cooling);
         }
@@ -708,7 +892,8 @@ namespace ScalingLaws.Simulation
                 }
 
                 // Bearings. A fan is a moving part in a room with no moving parts.
-                return total + FanCount * ServerRackCatalog.FanMonthlyUpkeepUsd;
+                return total + FanCount * ServerRackCatalog.FanMonthlyUpkeepUsd
+                       + CoolerCount * ServerRackCatalog.RoomCoolerMonthlyUpkeepUsd;
             }
         }
 
@@ -727,11 +912,16 @@ namespace ScalingLaws.Simulation
             var perUnitHeat = Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator));
             var room = upgrades ?? RoomUpgrades.None;
 
+            // **The room first, then each cabinet in it.** Every cabinet sheds into the same air,
+            // so how warm that air is decides how well each of them can shed at all.
+            var climate = Climate(perUnitHeat, room);
+
             var petaflops = 0.0;
 
             // Every rack on the floor draws its idle, stocked or not. Fans and pumps do not care
             // whether anything is plugged in, and a hall full of empty immersion tanks is a bill.
-            var draw = IdleDrawKilowatts;
+            // The room coolers are on the same bill.
+            var draw = IdleDrawKilowatts + CoolerCount * ServerRackCatalog.RoomCoolerDrawKilowatts;
             var throttled = 0;
 
             for (var index = 0; index < racks.Length; index++)
@@ -742,7 +932,11 @@ namespace ScalingLaws.Simulation
                 }
 
                 var definition = ServerRackCatalog.Get(racks[index]);
-                var heat = accelerators[index] * perUnitHeat;
+                var level = climate.OverclocksRunning ? overclock[index] : 0;
+
+                // An overclock buys work with heat, and the heat is the bill as well as the risk.
+                var heat = accelerators[index] * perUnitHeat
+                           * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
 
                 // **Fans raise the cabinet's rating rather than lowering the heat**, which is the
                 // honest shape: air moves warmth out of the box, it does not make the silicon draw
@@ -750,8 +944,9 @@ namespace ScalingLaws.Simulation
                 //
                 // Airflow modelling adds to this for every cabinet at once, and liquid loops
                 // flatten the curve past it for immersion tanks alone. Both come in through
-                // `RoomUpgrades` so the hall goes on knowing nothing about the research tree.
-                var cooling = room.CoolingFor(definition, fans[index]);
+                // `RoomUpgrades` so the hall goes on knowing nothing about the research tree. The
+                // room's own heat comes in through the climate: a hot room is warm air going in.
+                var cooling = room.CoolingFor(definition, fans[index]) * climate.CabinetFactor;
 
                 var factor = ServerRackCatalog.ThrottleFactor(
                     heat, cooling, room.PenaltyFor(racks[index]));
@@ -760,7 +955,8 @@ namespace ScalingLaws.Simulation
                     throttled++;
                 }
 
-                petaflops += accelerators[index] * perUnit * factor;
+                petaflops += accelerators[index] * perUnit * factor
+                             * (1.0 + ServerRackCatalog.OverclockThroughputPerLevel * level);
 
                 // The power is drawn whether or not the work gets done, which is the whole cost of
                 // getting this wrong: the bill is for the heat, and the output is not. The fans are
@@ -768,7 +964,85 @@ namespace ScalingLaws.Simulation
                 draw += heat + fans[index] * ServerRackCatalog.FanDrawKilowatts;
             }
 
-            return new HallOutput(petaflops, draw, throttled);
+            return new HallOutput(petaflops, draw, throttled, climate);
+        }
+
+        /// <summary>
+        /// What one cabinet is delivering, with the room and its overclock counted. The cabinet
+        /// panel quotes this as users, so it has to be the same arithmetic as <see cref="Output"/>.
+        /// </summary>
+        public double CabinetPetaflops(int column, int row, double petaflopsPerAccelerator,
+            double kilowattsPerAccelerator, RoomUpgrades? upgrades = null)
+        {
+            if (!Contains(column, row))
+            {
+                return 0.0;
+            }
+
+            var index = IndexOf(column, row);
+
+            if (racks[index] == ServerRack.None || accelerators[index] <= 0)
+            {
+                return 0.0;
+            }
+
+            var room = upgrades ?? RoomUpgrades.None;
+            var climate = Climate(kilowattsPerAccelerator, room);
+            var level = climate.OverclocksRunning ? overclock[index] : 0;
+
+            var heat = accelerators[index] * Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator))
+                       * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
+            var cooling = room.CoolingFor(ServerRackCatalog.Get(racks[index]), fans[index])
+                          * climate.CabinetFactor;
+            var factor = ServerRackCatalog.ThrottleFactor(heat, cooling, room.PenaltyFor(racks[index]));
+
+            return accelerators[index] * Math.Max(0.0, SimUnits.Finite(petaflopsPerAccelerator))
+                   * factor * (1.0 + ServerRackCatalog.OverclockThroughputPerLevel * level);
+        }
+
+        /// <summary>
+        /// The room's heat against what it can shed.
+        ///
+        /// **Overclocks are counted and then, if the room cannot take them, switched off.** Two
+        /// passes rather than a loop: an overclock that tips the room over its budget is the one
+        /// thing the room refuses, and a room without overclocks is the only honest fallback.
+        /// </summary>
+        public RoomClimate Climate(double kilowattsPerAccelerator, RoomUpgrades? upgrades = null)
+        {
+            var perUnitHeat = Math.Max(0.0, SimUnits.Finite(kilowattsPerAccelerator));
+            var cooling = ServerRackCatalog.BasementPassiveCoolingKilowatts
+                          + CoolerCount * ServerRackCatalog.RoomCoolerCoolingKilowatts;
+
+            var withOverclock = RoomHeat(perUnitHeat, true);
+
+            if (withOverclock <= cooling)
+            {
+                return new RoomClimate(withOverclock, cooling, true);
+            }
+
+            return new RoomClimate(RoomHeat(perUnitHeat, false), cooling, false);
+        }
+
+        /// <summary>Everything the cabinets put into the room's air.</summary>
+        private double RoomHeat(double perUnitHeat, bool overclocks)
+        {
+            var heat = IdleDrawKilowatts;
+
+            for (var index = 0; index < racks.Length; index++)
+            {
+                if (racks[index] == ServerRack.None)
+                {
+                    continue;
+                }
+
+                var level = overclocks ? overclock[index] : 0;
+
+                heat += accelerators[index] * perUnitHeat
+                        * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level)
+                        + fans[index] * ServerRackCatalog.FanDrawKilowatts;
+            }
+
+            return heat;
         }
 
         // ---- persistence ------------------------------------------------------------------------
@@ -829,6 +1103,50 @@ namespace ScalingLaws.Simulation
             }
         }
 
+        /// <summary>Coolers and overclocks, the two things v61 added to the floor.</summary>
+        public void CaptureRoom(List<int> intoCoolers, List<int> intoOverclock)
+        {
+            intoCoolers.Clear();
+            intoOverclock.Clear();
+
+            for (var index = 0; index < racks.Length; index++)
+            {
+                intoCoolers.Add(coolers[index] ? 1 : 0);
+                intoOverclock.Add(overclock[index]);
+            }
+        }
+
+        /// <summary>
+        /// Restores coolers and overclocks after the racks. A cooler whose squares are not both free
+        /// is dropped rather than overlapping a cabinet, and an overclock is clamped to the levels
+        /// that exist: a corrupt or edited file must never crash the room.
+        /// </summary>
+        public void RestoreRoom(IReadOnlyList<int> savedCoolers, IReadOnlyList<int> savedOverclock)
+        {
+            for (var index = 0; index < racks.Length; index++)
+            {
+                coolers[index] = false;
+                overclock[index] = 0;
+            }
+
+            for (var index = 0; index < racks.Length; index++)
+            {
+                if (savedOverclock != null && index < savedOverclock.Count
+                    && racks[index] != ServerRack.None)
+                {
+                    overclock[index] = Math.Clamp(savedOverclock[index], 0,
+                        ServerRackCatalog.OverclockLevels);
+                }
+
+                if (savedCoolers == null || index >= savedCoolers.Count || savedCoolers[index] != 1)
+                {
+                    continue;
+                }
+
+                TryPlaceCooler(index % Columns, index / Columns, out _);
+            }
+        }
+
         public void Clear()
         {
             for (var index = 0; index < racks.Length; index++)
@@ -836,19 +1154,52 @@ namespace ScalingLaws.Simulation
                 racks[index] = ServerRack.None;
                 accelerators[index] = 0;
                 fans[index] = 0;
+                coolers[index] = false;
+                overclock[index] = 0;
             }
         }
+    }
+
+    /// <summary>
+    /// The room's heat against what it can shed. A snapshot, for the rules and for the screen.
+    /// </summary>
+    public readonly struct RoomClimate
+    {
+        public RoomClimate(double heatKilowatts, double coolingKilowatts, bool overclocksRunning)
+        {
+            HeatKilowatts = Math.Max(0.0, SimUnits.Finite(heatKilowatts));
+            CoolingKilowatts = Math.Max(0.1, SimUnits.Finite(coolingKilowatts, 0.1));
+            OverclocksRunning = overclocksRunning;
+        }
+
+        public double HeatKilowatts { get; }
+        public double CoolingKilowatts { get; }
+
+        /// <summary>False when the room could not take the overclocks and they were switched off.</summary>
+        public bool OverclocksRunning { get; }
+
+        public double Ratio => HeatKilowatts / Math.Max(0.1, CoolingKilowatts);
+
+        public ServerRackCatalog.RoomClimateState State => ServerRackCatalog.ClimateOf(Ratio);
+
+        /// <summary>How much of its own rating each cabinet can shed in air this warm.</summary>
+        public double CabinetFactor => ServerRackCatalog.RoomCoolingFactor(Ratio);
     }
 
     /// <summary>What a hall is delivering right now.</summary>
     public readonly struct HallOutput
     {
-        public HallOutput(double petaflops, double drawKilowatts, int throttledRacks)
+        public HallOutput(double petaflops, double drawKilowatts, int throttledRacks,
+            RoomClimate climate = default)
         {
             Petaflops = Math.Max(0.0, SimUnits.Finite(petaflops));
             DrawKilowatts = Math.Max(0.0, SimUnits.Finite(drawKilowatts));
             ThrottledRacks = Math.Max(0, throttledRacks);
+            Climate = climate;
         }
+
+        /// <summary>The room these figures were worked out in.</summary>
+        public RoomClimate Climate { get; }
 
         public double Petaflops { get; }
         public double DrawKilowatts { get; }

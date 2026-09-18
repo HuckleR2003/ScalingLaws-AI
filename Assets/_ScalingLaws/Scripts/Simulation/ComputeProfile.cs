@@ -24,9 +24,13 @@ namespace ScalingLaws.Simulation
             double dailyOperatingCostUsd,
             double dailyDepreciationUsd,
             long residualValueUsd,
-            FleetBill bill = default)
+            FleetBill bill = default,
+            double roomDrawKilowatts = 0.0,
+            double roomPetaflops = 0.0)
         {
             Bill = bill;
+            RoomDrawKilowatts = Math.Max(0.0, SimUnits.Finite(roomDrawKilowatts));
+            RoomPetaflops = Math.Max(0.0, SimUnits.Finite(roomPetaflops));
             AcceleratorCount = Math.Max(0, acceleratorCount);
             RentedAcceleratorCount = Math.Max(0, rentedAcceleratorCount);
             AcceleratorsInTransit = Math.Max(0, acceleratorsInTransit);
@@ -42,6 +46,15 @@ namespace ScalingLaws.Simulation
             DailyDepreciationUsd = Math.Max(0.0, SimUnits.Finite(dailyDepreciationUsd));
             ResidualValueUsd = Math.Max(0L, residualValueUsd);
         }
+
+        /// <summary>
+        /// What the basement draws, inside <see cref="PowerDrawKilowatts"/>. Kept apart because the
+        /// basement is not on the colocation contract, so the site limit reads the draw without it.
+        /// </summary>
+        public double RoomDrawKilowatts { get; }
+
+        /// <summary>What the basement delivers, after heat and overclocks, inside the raw total.</summary>
+        public double RoomPetaflops { get; }
 
         /// <summary>Accelerators actually producing FLOPs today, owned and rented together.</summary>
         public int AcceleratorCount { get; }

@@ -161,6 +161,7 @@ namespace ScalingLaws.Persistence
                     57 => UpgradeV57ToV58(current),
                     58 => UpgradeV58ToV59(current),
                     59 => UpgradeV59ToV60(current),
+                    60 => UpgradeV60ToV61(current),
                     _ => current
                 };
             }
@@ -1942,6 +1943,34 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v58 to v59: everything already built keeps the off-the-shelf vocabulary it was "
                 + "trained against. The ladder applies to runs started from now on.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v60 to v61: room coolers and overclocks, both empty in an older file because neither
+        /// existed.
+        /// </summary>
+        public static SaveData UpgradeV60ToV61(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 61;
+
+            // **Nothing is invented: a v60 room had no coolers and no overclocks to record.** What
+            // changes is the rule, not the file. The room now has a heat budget, and a v60 basement
+            // filled to the walls runs over it until a cooler goes in. That is declared rather than
+            // softened with free coolers, because a cooler needs two empty squares and a full room
+            // has none to give: the player chooses which cabinets make way.
+            data.hallCoolers = new System.Collections.Generic.List<int>();
+            data.hallOverclock = new System.Collections.Generic.List<int>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v60 to v61: the server room has a heat budget now. An older room has no coolers, so a "
+                + "full basement runs hot until one is placed; nothing was added to it.");
 
             return data;
         }

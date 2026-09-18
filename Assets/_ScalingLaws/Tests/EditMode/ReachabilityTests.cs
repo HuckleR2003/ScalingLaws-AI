@@ -141,7 +141,10 @@ namespace ScalingLaws.Tests.EditMode
                 .GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Select(method => method.Name)
                 .Where(name => name.StartsWith("Try")
-                               && (name.Contains("Rack") || name.Contains("Fan")))
+                               && (name.Contains("Rack") || name.Contains("Fan")
+                                   // The room cooler and the overclock joined the room on
+                                   // 2026-09-18 and are held to the same rule.
+                                   || name.Contains("Cooler") || name.Contains("Overclock")))
                 .Distinct()
                 .ToList();
 

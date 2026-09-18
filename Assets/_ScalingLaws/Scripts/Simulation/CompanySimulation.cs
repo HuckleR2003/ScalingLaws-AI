@@ -405,6 +405,142 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
+        // ---- the room around the cabinets -----------------------------------------------------
+
+        /// <summary>
+        /// Buys a room cooler and stands it on this square and the one to its right.
+        ///
+        /// **Bought where it stands**, unlike a cabinet, because a cooler holds nothing: there is
+        /// no silicon to keep and no fans to carry, so a store room for it would be a second place
+        /// to lose track of the same object. Moving one is free; taking one away sells it.
+        /// </summary>
+        public bool TryBuildCooler(int column, int row, out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            if (!State.HasServerRoom)
+            {
+                failureReason = Loc.T("room.none");
+                return false;
+            }
+
+            if (State.CashUsd < ServerRackCatalog.RoomCoolerPriceUsd)
+            {
+                failureReason = Loc.T("fail.needs_cash", UiMoney(ServerRackCatalog.RoomCoolerPriceUsd),
+                    UiMoney(State.CashUsd));
+                return false;
+            }
+
+            if (!State.Hall.TryPlaceCooler(column, row, out failureReason))
+            {
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Hardware, ServerRackCatalog.RoomCoolerPriceUsd);
+            State.LifetimeCapitalSpentUsd += ServerRackCatalog.RoomCoolerPriceUsd;
+            return true;
+        }
+
+        /// <summary>Slides a cooler to another pair of squares. Free.</summary>
+        public bool TryMoveCooler(int fromColumn, int fromRow, int toColumn, int toRow,
+            out string failureReason) =>
+            State.Hall.TryMoveCooler(fromColumn, fromRow, toColumn, toRow, out failureReason);
+
+        /// <summary>Takes a cooler out and sells it, on the same terms as a cabinet.</summary>
+        public bool TrySellCooler(int column, int row, out string failureReason)
+        {
+            if (!State.Hall.TryRemoveCooler(column, row, out failureReason))
+            {
+                return false;
+            }
+
+            State.PostCash(LedgerLine.AssetSales,
+                (long)(ServerRackCatalog.RoomCoolerPriceUsd * RackResaleFraction));
+            return true;
+        }
+
+        /// <summary>
+        /// Sets a cabinet's overclock. Raising it needs a room with air to spare; see
+        /// <see cref="ServerHall.TrySetOverclock"/>.
+        /// </summary>
+        public bool TrySetOverclock(int column, int row, int level, out string failureReason)
+        {
+            var (_, kilowatts) = HallPerAccelerator();
+            return State.Hall.TrySetOverclock(column, row, level, kilowatts, Room, out failureReason);
+        }
+
+        /// <summary>
+        /// What one accelerator in the room makes and draws, averaged over the silicon the company
+        /// has online. **The same averages `ComputePool.BuildProfile` hands the hall**, so the room
+        /// the screen describes is the room the market is served from. With nothing owned yet it
+        /// is the part the clouds rent, which is what the shop would sell.
+        /// </summary>
+        public (double Petaflops, double Kilowatts) HallPerAccelerator()
+        {
+            var units = 0;
+            var petaflops = 0.0;
+            var kilowatts = 0.0;
+
+            foreach (var asset in State.Pool.Assets)
+            {
+                if (asset.Units <= 0 || !asset.IsOnline(State.Date)
+                    || !HardwareCatalog.TryGet(asset.GenerationId, out var generation)
+                    || generation.Class != HardwareClass.Accelerator)
+                {
+                    continue;
+                }
+
+                units += asset.Units;
+                petaflops += generation.PetaflopsPerUnit * asset.Units;
+                kilowatts += generation.PowerKilowatts * asset.Units;
+            }
+
+            if (units > 0)
+            {
+                return (petaflops / units, kilowatts / units);
+            }
+
+            return HardwareCatalog.TryGet(Market.RentableGeneration, out var rented)
+                ? (rented.PetaflopsPerUnit, rented.PowerKilowatts)
+                : (0.0, 0.0);
+        }
+
+        /// <summary>The room as it stands today: heat, budget, and whether overclocks are running.</summary>
+        public RoomClimate RoomClimateToday()
+        {
+            var (_, kilowatts) = HallPerAccelerator();
+            return State.Hall.Climate(kilowatts, Room);
+        }
+
+        /// <summary>
+        /// How many people one petaflop of silicon keeps served today, if all of it served.
+        ///
+        /// **Asked for by the author**: a room of cabinets said nothing a player could weigh, and
+        /// "about four hundred thousand people" is a number anybody can. Worked out the way
+        /// `ServeMarket` works out capacity, from the flagship's own cost per token and what one
+        /// person gets through today, so the figure moves when the model or the market does.
+        /// With nothing on sale it is a twenty billion parameter model, the reference the whole
+        /// economy is measured against.
+        /// </summary>
+        public double UsersPerPetaflop()
+        {
+            var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
+
+            var flopPerToken = best != null
+                ? FlopPerServedToken(best)
+                : 2.0 * MarketShareModel.ReferenceActiveParameters * DeployedModel.ServingDistillationFactor;
+
+            if (flopPerToken <= 0.0)
+            {
+                return 0.0;
+            }
+
+            var tokensPerDay = SimUnits.FlopsPerPetaflop * SimUnits.SecondsPerDay * InferenceUtilization
+                               / flopPerToken;
+
+            return tokensPerDay / AudienceCatalog.AverageTokensPerUserPerDay(State.Date);
+        }
+
         /// <summary>Slides a standing cabinet to another square. Free, and it keeps its fans.</summary>
         public bool TryMoveRack(int fromColumn, int fromRow, int toColumn, int toRow,
             out string failureReason)
@@ -1355,7 +1491,17 @@ namespace ScalingLaws.Simulation
                 capacityAfter += tierDefinition.PowerCapacityKilowatts;
             }
 
-            var drawAfter = Profile.PowerDrawKilowatts + generation.PowerKilowatts * units;
+            // **Cards that will stand in the basement do not count against the site.** The site limit
+            // is the colocation contract's, and the basement is not on it: the house's own supply
+            // feeds it, and heat is what caps a cellar, not a contract. So the room's draw comes off
+            // the site's figure, and so does every new card the cabinets have a free slot for.
+            var profile = Profile;
+            var housedHere = generation.Class == HardwareClass.Accelerator && State.HasServerRoom
+                ? Math.Min(units, Math.Max(0, State.Hall.TotalSlots - State.Hall.HousedAccelerators))
+                : 0;
+
+            var drawAfter = profile.PowerDrawKilowatts - profile.RoomDrawKilowatts
+                            + generation.PowerKilowatts * (units - housedHere);
             if (drawAfter > capacityAfter)
             {
                 failureReason = Loc.T("hw.power_short", Whole(drawAfter), Whole(capacityAfter));
@@ -5046,6 +5192,21 @@ namespace ScalingLaws.Simulation
                 bestRival);
         }
 
+        /// <summary>
+        /// What one served token of this model costs in FLOPs today. One formula, read by the
+        /// market and by the room's user count, so the two can never quote different capacities.
+        /// </summary>
+        private double FlopPerServedToken(DeployedModel model)
+        {
+            var architecture = State.ResolveArchitecture(model.Architecture);
+
+            return model.InferenceFlopPerToken
+                   * architecture.InferenceCostMultiplier
+                   * model.EfficiencyMultiplier(State.Date)
+                   * model.TokensPerText
+                   * State.Skills.ServingCostMultiplier();
+        }
+
         private (double Share, double Demanded, double Served, long Revenue) ServeMarket(
             ComputeProfile profile,
             MarketConditions market)
@@ -5101,12 +5262,7 @@ namespace ScalingLaws.Simulation
 
             // Optimisation levels above market par make every token cheaper to produce, which turns
             // straight into capacity at the same cluster size.
-            var architecture = State.ResolveArchitecture(best.Architecture);
-            var flopPerToken = best.InferenceFlopPerToken
-                * architecture.InferenceCostMultiplier
-                * best.EfficiencyMultiplier(State.Date)
-                * best.TokensPerText
-                * State.Skills.ServingCostMultiplier();
+            var flopPerToken = FlopPerServedToken(best);
             if (flopPerToken <= 0.0)
             {
                 return (share, demanded, 0.0, 0L);

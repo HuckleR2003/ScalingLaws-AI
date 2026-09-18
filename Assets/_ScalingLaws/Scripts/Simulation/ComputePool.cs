@@ -280,6 +280,8 @@ namespace ScalingLaws.Simulation
             var maintenance = 0.0;
             var depreciation = 0.0;
             var residualValue = 0L;
+            var roomDraw = 0.0;
+            var roomPetaflops = 0.0;
 
             var supportCapacity = new Dictionary<HardwareClass, double>
             {
@@ -387,6 +389,8 @@ namespace ScalingLaws.Simulation
                 }
 
                 powerDraw += output.DrawKilowatts;
+                roomDraw = output.DrawKilowatts;
+                roomPetaflops = housed > 0 && ownedAccelerators > 0 ? output.Petaflops : 0.0;
                 // The substation is the company stopping being a household. Read off the
                 // upgrades rather than the constant, or the node would change the research screen
                 // and none of the money.
@@ -449,7 +453,9 @@ namespace ScalingLaws.Simulation
                 operatingCost,
                 depreciation,
                 residualValue,
-                bill);
+                bill,
+                roomDraw,
+                roomPetaflops);
         }
 
         /// <summary>

@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 60;
+        public const int CurrentVersion = 61;
 
         public int version = CurrentVersion;
 
@@ -990,6 +990,15 @@ namespace ScalingLaws.Persistence
         public List<int> hallRacks = new();
         public List<int> hallAccelerators = new();
         public List<int> hallFans = new();
+
+        /// <summary>
+        /// v61. One per square: 1 where a room cooler is anchored, 0 elsewhere. A cooler covers its
+        /// anchor and the square to the right, so only the anchor is written.
+        /// </summary>
+        public List<int> hallCoolers = new();
+
+        /// <summary>v61. Overclock level per square, 0 for stock.</summary>
+        public List<int> hallOverclock = new();
 
         /// <summary>
         /// The store room: cabinets bought and not standing, by kind, and loose fans.

@@ -341,6 +341,125 @@ namespace ScalingLaws.Data
             _ => "rheat--idle"
         };
 
+        // ---- the room around the cabinets ------------------------------------------------------
+        //
+        // Every cabinet sheds its heat into the same room, and until 2026-09-18 the room was
+        // bottomless: a basement could hold sixteen full cabinets and never get warm. The author
+        // asked for the Startup Company shape instead, and it is the right one for a cellar: the
+        // room itself has a cooling budget, a floor-standing cooler buys more of it at the cost of
+        // two squares that would otherwise hold cabinets, and a room that runs hot makes every
+        // cabinet in it shed its own heat worse.
+
+        /// <summary>
+        /// What a cellar sheds with nobody helping: walls, a vent and a window at the top of the
+        /// stairs. Enough for Emil's four enclosed cabinets full of 2022 or 2023 silicon, and not
+        /// for them full of anything from 2025.
+        /// </summary>
+        public const double BasementPassiveCoolingKilowatts = 30.0;
+
+        /// <summary>Heat one floor-standing room cooler takes out of the room.</summary>
+        public const double RoomCoolerCoolingKilowatts = 45.0;
+
+        /// <summary>What a room cooler draws. Moving heat outside is paid for in electricity.</summary>
+        public const double RoomCoolerDrawKilowatts = 2.5;
+
+        public const long RoomCoolerPriceUsd = 18_000;
+
+        /// <summary>Servicing, per cooler, per month. Compressors and filters.</summary>
+        public const long RoomCoolerMonthlyUpkeepUsd = 150;
+
+        /// <summary>
+        /// How much worse a cabinet sheds its heat for every tenth the room runs over its budget.
+        ///
+        /// A cabinet's rating assumes air at room temperature going in. Past the room's budget the
+        /// air going in is already warm, so the same fans move less heat.
+        /// </summary>
+        public const double RoomHeatPenalty = 1.5;
+
+        /// <summary>The least a cabinet ever sheds of its own rating, however hot the room.</summary>
+        public const double RoomFactorFloor = 0.35;
+
+        /// <summary>Room ratio below which the air is cool enough to overclock in.</summary>
+        public const double OverclockAllowedBelow = 0.85;
+
+        /// <summary>Levels of overclock a cabinet can be pushed to. Zero is stock.</summary>
+        public const int OverclockLevels = 2;
+
+        /// <summary>Extra work per level. The reward.</summary>
+        public const double OverclockThroughputPerLevel = 0.12;
+
+        /// <summary>
+        /// Extra heat per level, and therefore extra power. Two and a half times the reward on
+        /// purpose: pushing silicon past its clock is always the expensive way to get work, and it
+        /// only pays in a room with air to spare.
+        /// </summary>
+        public const double OverclockHeatPerLevel = 0.30;
+
+        /// <summary>How the room is doing, in the four words the interface uses.</summary>
+        public enum RoomClimateState
+        {
+            /// <summary>Plenty of budget left. Overclocking is safe.</summary>
+            Cool = 0,
+
+            /// <summary>Working normally. Overclocking still allowed, just.</summary>
+            Comfortable = 1,
+
+            /// <summary>Near the top of the budget. Nothing throttles yet; the next cabinet will.</summary>
+            Warm = 2,
+
+            /// <summary>Past the budget. Every cabinet sheds worse, and overclocks are suspended.</summary>
+            Overheating = 3
+        }
+
+        /// <summary>Room ratio past which the room reads as warm.</summary>
+        public const double RoomWarmAbove = 0.85;
+
+        /// <summary>Room ratio below which the room reads as cool.</summary>
+        public const double RoomCoolBelow = 0.6;
+
+        /// <summary>The room's heat against its budget, as one of the four words.</summary>
+        public static RoomClimateState ClimateOf(double ratio)
+        {
+            var heat = SimUnits.Finite(ratio);
+
+            if (heat > 1.0)
+            {
+                return RoomClimateState.Overheating;
+            }
+
+            if (heat > RoomWarmAbove)
+            {
+                return RoomClimateState.Warm;
+            }
+
+            return heat > RoomCoolBelow ? RoomClimateState.Comfortable : RoomClimateState.Cool;
+        }
+
+        /// <summary>
+        /// How much of its own rating a cabinet can still shed in a room running at this ratio.
+        /// One while the room is inside its budget; falling past it, never below the floor.
+        /// </summary>
+        public static double RoomCoolingFactor(double roomRatio)
+        {
+            var ratio = Math.Max(0.0, SimUnits.Finite(roomRatio));
+
+            if (ratio <= 1.0)
+            {
+                return 1.0;
+            }
+
+            return Math.Clamp(1.0 / (1.0 + (ratio - 1.0) * RoomHeatPenalty), RoomFactorFloor, 1.0);
+        }
+
+        /// <summary>The phrase-book key for a room state. Written out, for the guard's sake.</summary>
+        public static string KeyFor(RoomClimateState state) => state switch
+        {
+            RoomClimateState.Cool => "room.climate.cool",
+            RoomClimateState.Comfortable => "room.climate.ok",
+            RoomClimateState.Warm => "room.climate.warm",
+            _ => "room.climate.hot"
+        };
+
         /// <summary>
         /// What a rack actually delivers when it is asked to shed more heat than it can.
         ///

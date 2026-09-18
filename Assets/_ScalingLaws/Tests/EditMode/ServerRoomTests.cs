@@ -254,6 +254,10 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsTrue(simulation.TryBuyRack(ServerRack.OpenFrame, out _));
             Assert.IsTrue(simulation.TryStandRack(3, 3, ServerRack.OpenFrame, out _));
 
+            // A cooled room, so the heat being measured is the cabinet's and not the cellar's.
+            Assert.IsTrue(simulation.TryBuildCooler(0, 1, out var cooled), cooled);
+            Assert.IsTrue(simulation.TryBuildCooler(0, 2, out cooled), cooled);
+
             // Full, which is what a player does first and what makes the cabinet hot.
             hall.Stock(hall.TotalSlots);
 

@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.IO;
 using UnityEngine;
@@ -318,13 +319,21 @@ namespace ScalingLaws.Tests.EditMode
         /// <summary>A floor of one kind of cabinet, filled to the last slot.</summary>
         private static ServerHall Floor(ServerRack rack, int squares)
         {
-            var hall = new ServerHall(squares, 1);
+            // **A second row of room coolers**, so the room's own heat budget is never what these
+            // tests measure. They are about what one cabinet sheds, and a floor this hot in a
+            // cellar with only its passive air would read the room instead of the cabinet.
+            var hall = new ServerHall(Math.Max(squares, 8), 2);
             var slots = 0;
 
             for (var column = 0; column < squares; column++)
             {
                 Assert.IsTrue(hall.TryPlace(column, 0, rack, out var why), why);
                 slots += ServerRackCatalog.Get(rack).Slots;
+            }
+
+            for (var column = 0; column + 1 < hall.Columns; column += 2)
+            {
+                Assert.IsTrue(hall.TryPlaceCooler(column, 1, out var why), why);
             }
 
             hall.Stock(slots);
