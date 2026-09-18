@@ -278,7 +278,7 @@ namespace ScalingLaws.UI
                 rail.Add(CarryNote());
             }
 
-            var scroller = new ScrollView();
+            var scroller = ScrollMemory.Keep(new ScrollView(), "office.build");
             scroller.AddToClassList("obuild__scroll");
 
             var shopHeading = new Label(Loc.T("build.shop"));

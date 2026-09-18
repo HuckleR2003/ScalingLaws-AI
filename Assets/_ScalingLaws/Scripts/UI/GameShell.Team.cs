@@ -275,7 +275,7 @@ namespace ScalingLaws.UI
             blurb.AddToClassList("roster__blurb");
             card.Add(blurb);
 
-            var list = new ScrollView();
+            var list = ScrollMemory.Keep(new ScrollView(), "team.roster." + definition.Role);
             list.AddToClassList("roster__list");
 
             foreach (var slot in people)

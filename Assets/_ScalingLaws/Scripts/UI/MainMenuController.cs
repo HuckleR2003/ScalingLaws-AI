@@ -175,10 +175,10 @@ namespace ScalingLaws.UI
                     root.Add(BuildIntro());
                     break;
                 case Stage.Founder:
-                    root.Add(Scroller(BuildFounder()));
+                    root.Add(ScrollMemory.Keep(Scroller(BuildFounder()), "menu.founder"));
                     break;
                 default:
-                    root.Add(Scroller(BuildCompany()));
+                    root.Add(ScrollMemory.Keep(Scroller(BuildCompany()), "menu.company"));
                     break;
             }
 
@@ -194,7 +194,7 @@ namespace ScalingLaws.UI
         private static readonly Color DebugBackground = new(0.22f, 0.05f, 0.09f);
 
         /// <summary>Wraps a page so it scrolls when it is taller than the window instead of squashing.</summary>
-        private static VisualElement Scroller(VisualElement content)
+        private static ScrollView Scroller(VisualElement content)
         {
             var scroll = new ScrollView(ScrollViewMode.Vertical);
             scroll.AddToClassList("page-scroll");

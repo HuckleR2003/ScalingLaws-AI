@@ -320,7 +320,7 @@ namespace ScalingLaws.UI
 
         private VisualElement BuildList(CompanySimulation simulation)
         {
-            var scroller = new ScrollView();
+            var scroller = ScrollMemory.Keep(new ScrollView(), "invest.list");
             scroller.AddToClassList("invest__list");
             scroller.verticalScrollerVisibility = ScrollerVisibility.Auto;
             scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;

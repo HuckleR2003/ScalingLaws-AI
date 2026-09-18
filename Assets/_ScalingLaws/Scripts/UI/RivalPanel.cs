@@ -94,7 +94,7 @@ namespace ScalingLaws.UI
         public VisualElement Build(CompetitorId lab, Func<VisualElement> actions = null)
         {
             var simulation = company();
-            var block = new ScrollView();
+            var block = ScrollMemory.Keep(new ScrollView(), "rival." + lab);
             block.AddToClassList("rival");
             block.verticalScrollerVisibility = ScrollerVisibility.Auto;
             block.horizontalScrollerVisibility = ScrollerVisibility.Hidden;

@@ -586,7 +586,7 @@ namespace ScalingLaws.UI
             // room already exceed the window on a short screen, and without this the store room
             // is silently squeezed onto the shop, which is what the first render of this rail
             // showed. Same floor the creator pages have had since they were built.
-            var scroller = new ScrollView();
+            var scroller = ScrollMemory.Keep(new ScrollView(), "room.build");
             scroller.AddToClassList("roombuild__scroll");
 
             scroller.Add(SectionHeading(Loc.T("room.build.silicon")));

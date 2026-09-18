@@ -702,7 +702,7 @@ namespace ScalingLaws.UI
 
             Root.Add(BuildArchiveSummary(history));
 
-            var scroll = new ScrollView();
+            var scroll = ScrollMemory.Keep(new ScrollView(), "manage.archive");
             scroll.AddToClassList("archive-scroll");
 
             var ordinal = history.Count;

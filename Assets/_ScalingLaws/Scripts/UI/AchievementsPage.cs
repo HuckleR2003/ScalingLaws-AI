@@ -68,7 +68,7 @@ namespace ScalingLaws.UI
 
             page.Add(BuildSummary());
 
-            var scroller = new ScrollView();
+            var scroller = ScrollMemory.Keep(new ScrollView(), "achievements");
             scroller.AddToClassList("achpage__scroll");
 
             foreach (var group in Order)

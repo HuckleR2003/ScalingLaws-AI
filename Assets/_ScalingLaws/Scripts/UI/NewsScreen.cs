@@ -123,7 +123,7 @@ namespace ScalingLaws.UI
                 return column;
             }
 
-            var scroll = new ScrollView();
+            var scroll = ScrollMemory.Keep(new ScrollView(), "news.wire");
             scroll.AddToClassList("news-scroll");
 
             foreach (var story in stories)

@@ -71,7 +71,7 @@ namespace ScalingLaws.UI
             strap.AddToClassList("notice__body");
             card.Add(strap);
 
-            var list = new ScrollView();
+            var list = ScrollMemory.Keep(new ScrollView(), "offers");
             list.AddToClassList("offerbook__list");
 
             foreach (var offer in desk.Open)
