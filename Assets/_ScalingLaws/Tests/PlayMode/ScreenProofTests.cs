@@ -535,6 +535,18 @@ namespace ScalingLaws.Tests.PlayMode
 
             simulation.Advance(1);
             simulation.TryFitFan(0, 0, out _);
+
+            // Cards go in by hand now, so the frame puts five in the way a player does, and orders
+            // a second generation that is still on its way so the grey tile is in the picture.
+            for (var index = 0; index < 5; index++)
+            {
+                simulation.TryFitCard(0, 0, HardwareGenerationId.AcceleratorA100, out _);
+            }
+
+            simulation.State.Pool.AddAsset(new HardwareAsset(
+                HardwareGenerationId.AcceleratorH100, ComputeTier.ColocatedServers, 16,
+                simulation.State.Date, 30_000, 45));
+
             simulation.Advance(1);
 
             var panel = new RackEditorPanel(() => simulation, () => { });

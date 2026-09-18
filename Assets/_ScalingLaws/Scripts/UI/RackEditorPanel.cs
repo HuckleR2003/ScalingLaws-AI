@@ -106,17 +106,19 @@ namespace ScalingLaws.UI
             var body = new VisualElement();
             body.AddToClassList("rackmodal__body");
 
-            body.Add(BuildPartsBay(simulation, column, row));
-
             var cabinet = new VisualElement();
             cabinet.AddToClassList("rackmodal__cabinet");
             cabinetColumn = cabinet;
-            cabinet.Add(BuildSlots(simulation, square, definition));
+            cabinet.Add(BuildSlots(simulation, square, definition, column, row));
             cabinet.Add(BuildStats(simulation, square, definition));
             cabinet.Add(BuildOverclock(simulation, column, row, roomNow));
             cabinet.Add(BuildActions(simulation, column, row, square));
 
             body.Add(cabinet);
+
+            // **The store on the right, as the author asked for it three times**: a smaller second
+            // window of tiles beside the cabinet they go into.
+            body.Add(BuildStore(simulation, column, row));
             card.Add(body);
 
             return veil;
@@ -289,31 +291,28 @@ namespace ScalingLaws.UI
         // it, so this one is gone rather than left beside it saying the same thing twice.
 
         /// <summary>
-        /// Everything the company owns, sorted, with a way to put one in this cabinet.
+        /// The store: one tile per generation the company owns, and a grey one per order still on
+        /// its way with the day it arrives.
         ///
-        /// **Strongest first**, by petaflops a card, because that is the order a player thinks in
-        /// when deciding what goes in the cabinet they are looking at. What is still in transit is
-        /// listed underneath with its date, greyed, because it is the answer to "where did my order
-        /// go" and it is not something that can be fitted yet.
-        ///
-        /// A row does three things and the author asked for all three: **double click fits one**,
-        /// the FIT button fits one, and SELL sells the whole batch at today's residual. Dragging a
-        /// row onto the cabinet is not built.
+        /// **Nothing goes into a cabinet by itself any more.** A tile counts the cards of its
+        /// generation that are owned and not standing anywhere, and there are three ways to put one
+        /// in: click the tile, drag it onto the cabinet, or double click it. Clicking a card in the
+        /// cabinet sends it back here. SELL under a tile sells the whole generation at today's
+        /// residual, as the row it replaced did.
         /// </summary>
-        private VisualElement BuildPartsBay(CompanySimulation simulation, int column, int row)
+        private VisualElement BuildStore(CompanySimulation simulation, int column, int row)
         {
             var state = simulation.State;
 
-            var bay = new VisualElement();
-            bay.AddToClassList("rackbay");
+            var store = new VisualElement();
+            store.AddToClassList("rackstore");
 
-            var heading = new Label(Loc.T("rack.stock"));
+            var heading = new Label(Loc.T("rack.store"));
             heading.AddToClassList("panel__heading");
-            bay.Add(heading);
+            store.Add(heading);
 
-            // One line per generation rather than per purchase order, because two orders of the
-            // same card are the same card and a player counting their A100s does not care which
-            // invoice they arrived on. The index of the first batch is kept for the sale.
+            // One tile per generation rather than per purchase order, because two orders of the
+            // same card are the same card. The index of the first batch is kept for the sale.
             var online = new List<(HardwareGeneration Part, int Units, int Asset)>();
             var waiting = new List<(HardwareGeneration Part, int Units, GameDate Arrives)>();
 
@@ -353,84 +352,109 @@ namespace ScalingLaws.UI
             {
                 var none = new Label(Loc.T("rack.stock.none"));
                 none.AddToClassList("field__hint");
-                bay.Add(none);
+                store.Add(none);
 
-                return bay;
+                return store;
             }
 
-            var housed = state.Hall.HousedAccelerators;
             var owned = simulation.OnlineAccelerators();
+            var housed = state.Hall.HousedAccelerators;
 
-            bay.Add(UiParts.StatLine(Loc.T("rack.stock.here"),
-                state.Hall.At(column, row).Accelerators.ToString()));
+            store.Add(UiParts.StatLine(Loc.T("rack.stock.loose"), Math.Max(0, owned - housed).ToString()));
 
-            bay.Add(UiParts.StatLine(Loc.T("rack.stock.elsewhere"),
-                Math.Max(0, housed - state.Hall.At(column, row).Accelerators).ToString()));
-
-            bay.Add(UiParts.StatLine(Loc.T("rack.stock.loose"),
-                Math.Max(0, owned - housed).ToString()));
-
-            var list = new ScrollView(ScrollViewMode.Vertical)
+            var grid = new ScrollView(ScrollViewMode.Vertical)
             {
                 verticalScrollerVisibility = ScrollerVisibility.Auto,
                 horizontalScrollerVisibility = ScrollerVisibility.Hidden
             };
 
-            list.AddToClassList("rackbay__list");
+            grid.AddToClassList("rackstore__grid");
+            grid.contentContainer.AddToClassList("rackstore__tiles");
 
             foreach (var line in online)
             {
-                list.Add(PartRow(simulation, column, row, line.Part, line.Units, line.Asset));
+                grid.Add(Tile(simulation, column, row, line.Part, line.Units, line.Asset));
             }
 
             foreach (var line in waiting)
             {
-                var coming = new Label(Loc.T("rack.stock.row_waiting",
-                    line.Units, line.Part.DisplayName, line.Arrives.ToString()));
-
-                coming.AddToClassList("rackstock__row");
-                coming.AddToClassList("rackstock__row--waiting");
-                list.Add(coming);
+                grid.Add(WaitingTile(line.Part, line.Units, line.Arrives));
             }
 
-            bay.Add(list);
+            store.Add(grid);
 
-            var note = new Label(Loc.T("rack.fit_note"));
+            var note = new Label(Loc.T("rack.store.note"));
             note.AddToClassList("field__hint");
-            bay.Add(note);
+            note.AddToClassList("rackstore__note");
+            store.Add(note);
 
-            return bay;
+            return store;
         }
 
-        /// <summary>One generation the company owns, with the two things that can be done to it.</summary>
-        private VisualElement PartRow(CompanySimulation simulation, int column, int row,
+        /// <summary>One generation the company owns: a tile to fit from, and SELL under it.</summary>
+        private VisualElement Tile(CompanySimulation simulation, int column, int row,
             HardwareGeneration part, int units, int asset)
         {
-            var line = new VisualElement();
-            line.AddToClassList("rackbay__row");
+            var inStore = simulation.InStoreOf(part.Id);
 
-            var words = new VisualElement();
-            words.AddToClassList("rackbay__words");
+            var cell = new VisualElement();
+            cell.AddToClassList("rackstore__cell");
 
-            var name = new Label(units + "x  " + part.DisplayName);
-            name.AddToClassList("rackbay__name");
-            words.Add(name);
+            var tile = new VisualElement();
+            tile.AddToClassList("rackstore__tile");
+            tile.EnableInClassList("rackstore__tile--empty", inStore <= 0);
+            tile.tooltip = Loc.T("rack.store.tip", part.DisplayName);
+
+            var picture = new VisualElement();
+            picture.AddToClassList("rackstore__picture");
+            var sled = RackArt.Sled(part.ReleaseDate.Year);
+
+            if (sled != null)
+            {
+                picture.style.backgroundImage = new StyleBackground(sled);
+            }
+
+            tile.Add(picture);
+
+            var name = new Label(part.DisplayName);
+            name.AddToClassList("rackstore__name");
+            tile.Add(name);
 
             var spec = new Label(UiFormat.Petaflops(part.PetaflopsPerUnit)
-                + "  ·  " + UiFormat.Kilowatts(part.PowerKilowatts));
+                                 + "  ·  " + UiFormat.Kilowatts(part.PowerKilowatts));
+            spec.AddToClassList("rackstore__spec");
+            tile.Add(spec);
 
-            spec.AddToClassList("rackbay__spec");
-            words.Add(spec);
+            var count = new Label(inStore > 0
+                ? Loc.T("rack.store.count", inStore)
+                : Loc.T("rack.store.none_left"));
+            count.AddToClassList("rackstore__count");
+            tile.Add(count);
 
-            line.Add(words);
+            // A drag ends with a pointer up on the tile, which UI Toolkit also reports as a click.
+            // Without this a card dragged onto the cabinet would be fitted twice.
+            var dragged = new bool[1];
 
-            var fit = new Button(() => Fit(simulation, column, row, part))
+            tile.RegisterCallback<ClickEvent>(click =>
             {
-                text = Loc.T("rack.fit")
-            };
+                if (dragged[0])
+                {
+                    dragged[0] = false;
+                    return;
+                }
 
-            fit.AddToClassList("rackbay__fit");
-            line.Add(fit);
+                if (click.clickCount == 1)
+                {
+                    Fit(simulation, column, row, part);
+                }
+            });
+
+            if (inStore > 0)
+            {
+                Draggable(tile, simulation, column, row, part, dragged);
+            }
+
+            cell.Add(tile);
 
             var sell = new Button(() =>
             {
@@ -454,21 +478,32 @@ namespace ScalingLaws.UI
             };
 
             sell.AddToClassList("rackbay__sell");
-            line.Add(sell);
+            sell.AddToClassList("rackstore__sell");
+            cell.Add(sell);
 
-            // **Double click fits one**, which is what the author asked for by name and what a
-            // player tries before they find a button.
-            line.RegisterCallback<ClickEvent>(click =>
-            {
-                if (click.clickCount >= 2)
-                {
-                    Fit(simulation, column, row, part);
-                }
-            });
+            return cell;
+        }
 
-            Draggable(line, simulation, column, row, part);
+        /// <summary>An order still on its way: grey, with the day it arrives, and no controls.</summary>
+        private static VisualElement WaitingTile(HardwareGeneration part, int units, GameDate arrives)
+        {
+            var cell = new VisualElement();
+            cell.AddToClassList("rackstore__cell");
 
-            return line;
+            var tile = new VisualElement();
+            tile.AddToClassList("rackstore__tile");
+            tile.AddToClassList("rackstore__tile--waiting");
+
+            var name = new Label(units + "x  " + part.DisplayName);
+            name.AddToClassList("rackstore__name");
+            tile.Add(name);
+
+            var when = new Label(Loc.T("rack.store.arrives", arrives.ToString()));
+            when.AddToClassList("rackstore__count");
+            tile.Add(when);
+
+            cell.Add(tile);
+            return cell;
         }
 
         /// <summary>
@@ -489,7 +524,7 @@ namespace ScalingLaws.UI
         ///   pointer, which during a drag is frequently the ghost.
         /// </summary>
         private void Draggable(VisualElement line, CompanySimulation simulation, int column,
-            int row, HardwareGeneration part)
+            int row, HardwareGeneration part, bool[] dragged = null)
         {
             var from = Vector2.zero;
             var dragging = false;
@@ -545,6 +580,11 @@ namespace ScalingLaws.UI
                 dragging = false;
                 line.ReleasePointer(up.pointerId);
 
+                if (dragged != null)
+                {
+                    dragged[0] = true;
+                }
+
                 var onCabinet = cabinetColumn != null
                     && cabinetColumn.worldBound.Contains(up.position);
 
@@ -579,7 +619,7 @@ namespace ScalingLaws.UI
         /// <summary>Puts one card in the cabinet on screen and says so.</summary>
         private void Fit(CompanySimulation simulation, int column, int row, HardwareGeneration part)
         {
-            if (simulation.TryFitCard(column, row, out var why))
+            if (simulation.TryFitCard(column, row, part.Id, out var why))
             {
                 AudioDirector.Confirm();
 
@@ -630,8 +670,8 @@ namespace ScalingLaws.UI
         /// throttling are simulation state, and a lit indicator painted into a texture would still
         /// be lit on a cabinet that had cooked.
         /// </summary>
-        private static VisualElement BuildSlots(CompanySimulation simulation, HallSquare square,
-            ServerRackDefinition definition)
+        private VisualElement BuildSlots(CompanySimulation simulation, HallSquare square,
+            ServerRackDefinition definition, int column, int row)
         {
             var block = new VisualElement();
             block.AddToClassList("rackmodal__slots");
@@ -648,22 +688,42 @@ namespace ScalingLaws.UI
 
             block.Add(BuildUplink(simulation, square, definition));
 
-            var known = HardwareCatalog.TryGet(simulation.Market.RentableGeneration, out var part);
-            var room = simulation.Room;
-            var heat = known ? square.Accelerators * part.PowerKilowatts : 0.0;
-            var cooling = room.CoolingFor(definition, square.Fans);
+            var hall = simulation.State.Hall;
+            var (_, perCardKw) = simulation.HallPerAccelerator();
+            var hot = hall.HeatAt(column, row, perCardKw, simulation.Room)
+                      == ServerRackCatalog.RackHeat.Cooking;
 
-            var hot = ServerRackCatalog.ThrottleFactor(
-                heat, cooling, room.PenaltyFor(square.Rack)) < 1.0;
-            var era = simulation.State.Date.Year;
+            // One entry per card, strongest first, so each lit slot knows which card it is. An
+            // unrecorded card (a room from before v62, for one day) draws as this year's sled.
+            var cards = new List<HardwareGenerationId?>();
+
+            var recorded = hall.CardsIn(column, row, out var unknown);
+
+            foreach (var (generation, held) in recorded)
+            {
+                for (var index = 0; index < held; index++)
+                {
+                    cards.Add(generation);
+                }
+            }
+
+            for (var index = 0; index < unknown; index++)
+            {
+                cards.Add(null);
+            }
 
             var fills = new List<SlotFill>(definition.Slots);
 
             for (var index = 0; index < definition.Slots; index++)
             {
-                if (index < square.Accelerators)
+                if (index < cards.Count)
                 {
-                    fills.Add(new SlotFill(RackArt.Sled(era), RackArt.SledLights, 1.0, hot));
+                    var year = cards[index].HasValue
+                               && HardwareCatalog.TryGet(cards[index].Value, out var part)
+                        ? part.ReleaseDate.Year
+                        : simulation.State.Date.Year;
+
+                    fills.Add(new SlotFill(RackArt.Sled(year), RackArt.SledLights, 1.0, hot));
                 }
                 else if (index < used)
                 {
@@ -677,6 +737,57 @@ namespace ScalingLaws.UI
 
             var face = new RackFace();
             face.Show(square.Rack, fills);
+
+            // **A click on a slot takes out what is in it**, back to the store: a card to its
+            // tile, a fan to the store room. The other half of fitting, asked for with it.
+            face.SlotClicked = slot =>
+            {
+                if (slot < cards.Count)
+                {
+                    var generation = cards[slot];
+                    var pulled = generation.HasValue
+                        ? simulation.TryPullCard(column, row, generation.Value, out var why)
+                        : simulation.TryPullCard(column, row, out why);
+
+                    if (pulled)
+                    {
+                        AudioDirector.Confirm();
+
+                        var name = generation.HasValue
+                                   && HardwareCatalog.TryGet(generation.Value, out var part)
+                            ? part.DisplayName
+                            : Loc.T("rack.accelerators");
+
+                        announce?.Invoke(Loc.T("rack.store"), Loc.T("rack.pulled", name));
+                    }
+                    else
+                    {
+                        AudioDirector.Deny();
+                        announce?.Invoke(Loc.T("rack.store"), why);
+                    }
+
+                    changed?.Invoke();
+                }
+                else if (slot < used && simulation.TryStoreFan(column, row))
+                {
+                    AudioDirector.Confirm();
+                    changed?.Invoke();
+                }
+            };
+
+            face.SlotTip = slot =>
+            {
+                if (slot < cards.Count)
+                {
+                    var name = cards[slot].HasValue && HardwareCatalog.TryGet(cards[slot].Value, out var part)
+                        ? part.DisplayName
+                        : Loc.T("rack.accelerators");
+
+                    return Loc.T("rack.slot.card", name);
+                }
+
+                return slot < used ? Loc.T("rack.slot.fan") : string.Empty;
+            };
 
             block.Add(face);
             return block;

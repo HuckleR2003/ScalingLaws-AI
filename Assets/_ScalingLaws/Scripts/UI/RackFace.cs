@@ -185,6 +185,15 @@ namespace ScalingLaws.UI
         public int SlotCount => children.Count;
 
         /// <summary>
+        /// Called with the slot's index, top first, when a slot is clicked. Null draws a face that
+        /// cannot be clicked, which is what the shop and the room's cards want.
+        /// </summary>
+        public System.Action<int> SlotClicked { get; set; }
+
+        /// <summary>The hover text for a slot, by index. Null or empty for none.</summary>
+        public System.Func<int, string> SlotTip { get; set; }
+
+        /// <summary>
         /// Sets what this cabinet is and what is in it, top slot first.
         ///
         /// The slot elements are reused rather than rebuilt, so a cabinet redrawn once a day does
@@ -205,6 +214,12 @@ namespace ScalingLaws.UI
             while (children.Count < wanted)
             {
                 var slot = new RackSlot();
+                var at = children.Count;
+
+                // Read at click time rather than captured, so a face reused for another cabinet
+                // answers for the cabinet it is showing now.
+                slot.RegisterCallback<ClickEvent>(_ => SlotClicked?.Invoke(at));
+
                 children.Add(slot);
                 Add(slot);
             }
@@ -235,6 +250,13 @@ namespace ScalingLaws.UI
                 slot.style.height = Length.Percent(each * 100f);
 
                 slot.Show(fills[index]);
+                // A slot ignores the pointer unless there is something in it to take out: an empty
+                // slot that swallowed clicks would stop a drag landing on the cabinet behind it.
+                var clickable = SlotClicked != null && fills[index].Lit > 0.0;
+
+                slot.pickingMode = clickable ? PickingMode.Position : PickingMode.Ignore;
+                slot.tooltip = SlotTip?.Invoke(index) ?? string.Empty;
+                slot.EnableInClassList("rackslot--clickable", clickable);
             }
         }
     }

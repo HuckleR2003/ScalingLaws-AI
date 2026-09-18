@@ -20542,6 +20542,107 @@
     background-color: rgb(226, 140, 120);
 }
 
+/* ---- the store beside the cabinet: tiles to fit from ----
+
+   On the right, a smaller second window, as the author described it three times. Tiles rather
+   than rows because the thing being chosen is a card, and a card is recognised before it is read. */
+.rackstore {
+    width: 318px;
+    flex-shrink: 0;
+    margin-left: 18px;
+    padding: 12px 12px 10px 12px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.035);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+.rackstore__grid {
+    max-height: 520px;
+    margin: 8px 0 6px 0;
+}
+
+.rackstore__tiles {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.rackstore__cell {
+    width: 50%;
+    padding: 0 4px 8px 0;
+}
+
+.rackstore__tile {
+    min-height: 118px;
+    padding: 7px 7px 6px 7px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(120, 176, 255, 0.35);
+    background-color: rgba(40, 60, 90, 0.35);
+}
+
+.rackstore__tile:hover {
+    border-color: rgba(154, 214, 62, 0.85);
+    background-color: rgba(60, 90, 60, 0.45);
+}
+
+.rackstore__tile--empty {
+    opacity: 0.55;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.rackstore__tile--waiting {
+    opacity: 0.6;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-style: dashed;
+    background-color: rgba(128, 128, 128, 0.12);
+}
+
+.rackstore__picture {
+    height: 30px;
+    margin-bottom: 5px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.rackstore__name {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+    white-space: normal;
+}
+
+.rackstore__spec {
+    font-size: 11px;
+    color: rgb(132, 140, 156);
+}
+
+.rackstore__count {
+    margin-top: 4px;
+    font-size: 11px;
+    color: rgb(154, 214, 62);
+    white-space: normal;
+}
+
+.rackstore__tile--empty .rackstore__count,
+.rackstore__tile--waiting .rackstore__count {
+    color: rgb(150, 156, 170);
+}
+
+.rackstore__sell {
+    width: auto;
+    height: 22px;
+    margin-top: 4px;
+}
+
+.rackstore__note {
+    white-space: normal;
+}
+
+.rackslot--clickable:hover {
+    background-color: rgba(226, 140, 120, 0.25);
+}
+
 /* ---- notices: the gold one and the red one -------------------------------------------------
 
    Gold is for occasions and red is for things that happen to the company. Both are rationed on
