@@ -45,6 +45,22 @@ namespace ScalingLaws.UI
         /// <summary>The card under the cursor while a row is being dragged, or null.</summary>
         private VisualElement carried;
 
+        /// <summary>The generation the sell dialog is open for, or null when it is closed.</summary>
+        private HardwareGenerationId? selling;
+
+        /// <summary>What the sell slider is set to. Survives the panel's rebuilds.</summary>
+        private int sellCount = 1;
+
+        /// <summary>
+        /// Opens the sell dialog without a click. For the proof render: a test has no panel, so a
+        /// click sent to SELL is never dispatched. Same reason `ServerRoomScreen.PickFor` exists.
+        /// </summary>
+        public void OpenSale(HardwareGenerationId generation, int count)
+        {
+            selling = generation;
+            sellCount = Math.Max(1, count);
+        }
+
         /// <summary>
         /// Says what happened, across the top of the screen.
         ///
@@ -106,6 +122,10 @@ namespace ScalingLaws.UI
             var body = new VisualElement();
             body.AddToClassList("rackmodal__body");
 
+            // **The equipment window on the left, the cabinet on the right**, as in the author's
+            // sketch of 2026-09-18. It was on the right for one build; the sketch settled it.
+            body.Add(BuildStore(simulation, column, row));
+
             var cabinet = new VisualElement();
             cabinet.AddToClassList("rackmodal__cabinet");
             cabinetColumn = cabinet;
@@ -115,11 +135,12 @@ namespace ScalingLaws.UI
             cabinet.Add(BuildActions(simulation, column, row, square));
 
             body.Add(cabinet);
-
-            // **The store on the right, as the author asked for it three times**: a smaller second
-            // window of tiles beside the cabinet they go into.
-            body.Add(BuildStore(simulation, column, row));
             card.Add(body);
+
+            if (selling.HasValue && HardwareCatalog.TryGet(selling.Value, out var forSale))
+            {
+                card.Add(BuildSellDialog(simulation, forSale));
+            }
 
             return veil;
         }
@@ -373,7 +394,7 @@ namespace ScalingLaws.UI
 
             foreach (var line in online)
             {
-                grid.Add(Tile(simulation, column, row, line.Part, line.Units, line.Asset));
+                grid.Add(Tile(simulation, column, row, line.Part));
             }
 
             foreach (var line in waiting)
@@ -393,7 +414,7 @@ namespace ScalingLaws.UI
 
         /// <summary>One generation the company owns: a tile to fit from, and SELL under it.</summary>
         private VisualElement Tile(CompanySimulation simulation, int column, int row,
-            HardwareGeneration part, int units, int asset)
+            HardwareGeneration part)
         {
             var inStore = simulation.InStoreOf(part.Id);
 
@@ -420,6 +441,7 @@ namespace ScalingLaws.UI
             name.AddToClassList("rackstore__name");
             tile.Add(name);
 
+            // [MOC] on the sketch: what one card makes and what it draws.
             var spec = new Label(UiFormat.Petaflops(part.PetaflopsPerUnit)
                                  + "  ·  " + UiFormat.Kilowatts(part.PowerKilowatts));
             spec.AddToClassList("rackstore__spec");
@@ -454,16 +476,119 @@ namespace ScalingLaws.UI
                 Draggable(tile, simulation, column, row, part, dragged);
             }
 
-            cell.Add(tile);
+            // The strip along the bottom of the tile, as drawn: SET fits one, SELL asks how many.
+            var strip = new VisualElement();
+            strip.AddToClassList("rackstore__strip");
+
+            var set = new Button(() => Fit(simulation, column, row, part)) { text = Loc.T("rack.set") };
+            set.AddToClassList("rackstore__action");
+            set.SetEnabled(inStore > 0);
+            strip.Add(set);
 
             var sell = new Button(() =>
             {
-                if (simulation.TrySellHardware(asset, units, out var proceeds, out var why))
+                selling = part.Id;
+                sellCount = Math.Max(1, inStore > 0 ? inStore : 1);
+                changed?.Invoke();
+            })
+            {
+                text = Loc.T("rack.sell_cards")
+            };
+
+            sell.AddToClassList("rackstore__action");
+            sell.AddToClassList("rackstore__action--sell");
+            strip.Add(sell);
+
+            // A click on a button would otherwise also reach the tile and fit a second card.
+            set.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            sell.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+            set.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation(), TrickleDown.NoTrickleDown);
+            sell.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation(), TrickleDown.NoTrickleDown);
+
+            tile.Add(strip);
+            cell.Add(tile);
+
+            return cell;
+        }
+
+        /// <summary>
+        /// How many to sell, on a slider, with the money beside it before anything is sold.
+        ///
+        /// **Asked for in place of a button that sold the whole batch at once**, which is one
+        /// misclick from turning a room's worth of silicon into a fraction of what it cost. Cards
+        /// in the store go first; past that count the dialog says how many will come out of the
+        /// cabinets.
+        /// </summary>
+        private VisualElement BuildSellDialog(CompanySimulation simulation, HardwareGeneration part)
+        {
+            var owned = simulation.OnlineUnitsOf(part.Id);
+            var inStore = simulation.InStoreOf(part.Id);
+            sellCount = Math.Clamp(sellCount, 1, Math.Max(1, owned));
+
+            var veil = new VisualElement();
+            veil.AddToClassList("racksell");
+
+            var box = new VisualElement();
+            box.AddToClassList("racksell__box");
+            veil.Add(box);
+
+            var title = new Label(Loc.T("rack.sell.title", part.DisplayName));
+            title.AddToClassList("racksell__title");
+            box.Add(title);
+
+            var amount = new Label();
+            amount.AddToClassList("racksell__amount");
+
+            var warning = new Label();
+            warning.AddToClassList("racksell__warning");
+
+            void Describe()
+            {
+                amount.text = Loc.T("rack.sell.amount", sellCount,
+                    UiFormat.Money(simulation.SaleValueOfCards(part.Id, sellCount)));
+
+                var fromCabinets = Math.Max(0, sellCount - inStore);
+                warning.text = fromCabinets > 0 ? Loc.T("rack.sell.from_cabinets", fromCabinets) : string.Empty;
+                warning.style.display = fromCabinets > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+
+            var slider = new SliderInt(1, Math.Max(1, owned)) { value = sellCount };
+            slider.AddToClassList("racksell__slider");
+            slider.RegisterValueChangedCallback(change =>
+            {
+                sellCount = change.newValue;
+                Describe();
+            });
+
+            box.Add(slider);
+            box.Add(amount);
+            box.Add(warning);
+            Describe();
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("racksell__buttons");
+
+            var cancel = new Button(() =>
+            {
+                selling = null;
+                changed?.Invoke();
+            })
+            {
+                text = Loc.T("common.cancel")
+            };
+
+            cancel.AddToClassList("button");
+            buttons.Add(cancel);
+
+            var confirm = new Button(() =>
+            {
+                var count = sellCount;
+
+                if (simulation.TrySellCards(part.Id, count, out var proceeds, out var why))
                 {
                     AudioDirector.Confirm();
                     announce?.Invoke(Loc.T("rack.sold"),
-                        Loc.T("rack.sold_note", units, part.DisplayName,
-                            UiFormat.Money(proceeds)));
+                        Loc.T("rack.sold_note", count, part.DisplayName, UiFormat.Money(proceeds)));
                 }
                 else
                 {
@@ -471,17 +596,19 @@ namespace ScalingLaws.UI
                     announce?.Invoke(Loc.T("rack.sell_cards"), why);
                 }
 
+                selling = null;
                 changed?.Invoke();
             })
             {
-                text = Loc.T("rack.sell_cards")
+                text = Loc.T("rack.sell.confirm")
             };
 
-            sell.AddToClassList("rackbay__sell");
-            sell.AddToClassList("rackstore__sell");
-            cell.Add(sell);
+            confirm.AddToClassList("button");
+            confirm.AddToClassList("racksell__confirm");
+            buttons.Add(confirm);
 
-            return cell;
+            box.Add(buttons);
+            return veil;
         }
 
         /// <summary>An order still on its way: grey, with the day it arrives, and no controls.</summary>

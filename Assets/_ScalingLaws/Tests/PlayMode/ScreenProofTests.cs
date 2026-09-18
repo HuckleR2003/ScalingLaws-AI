@@ -552,6 +552,12 @@ namespace ScalingLaws.Tests.PlayMode
             var panel = new RackEditorPanel(() => simulation, () => { });
 
             yield return Capture(panel.Build(0, 0), "cabinet.png");
+
+            // The sell dialog, set past what is in the store so the warning is in the frame too.
+            var selling = new RackEditorPanel(() => simulation, () => { });
+            selling.OpenSale(HardwareGenerationId.AcceleratorA100, 7);
+
+            yield return Capture(selling.Build(0, 0), "cabinet_sell.png");
         }
 
         /// <summary>

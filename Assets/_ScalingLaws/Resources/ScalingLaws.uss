@@ -20549,7 +20549,7 @@
 .rackstore {
     width: 318px;
     flex-shrink: 0;
-    margin-left: 18px;
+    margin-right: 18px;
     padding: 12px 12px 10px 12px;
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.035);
@@ -20629,10 +20629,95 @@
     color: rgb(150, 156, 170);
 }
 
-.rackstore__sell {
-    width: auto;
-    height: 22px;
-    margin-top: 4px;
+/* SET and SELL on a black strip along the bottom of the tile, as in the sketch. */
+.rackstore__strip {
+    flex-direction: row;
+    margin: 6px -7px -6px -7px;
+    background-color: rgb(8, 9, 12);
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.rackstore__action {
+    flex-grow: 1;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    -unity-text-align: middle-center;
+    color: rgb(236, 240, 248);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+}
+
+.rackstore__action:hover {
+    background-color: rgb(154, 214, 62);
+    color: rgb(20, 22, 28);
+}
+
+.rackstore__action--sell:hover {
+    background-color: rgb(226, 140, 120);
+}
+
+/* ---- how many to sell ---- */
+.racksell {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.72);
+    border-radius: 10px;
+}
+
+.racksell__box {
+    width: 420px;
+    padding: 18px 20px 16px 20px;
+    border-radius: 10px;
+    background-color: rgb(20, 24, 34);
+    border-width: 1px;
+    border-color: rgb(226, 140, 120);
+}
+
+.racksell__title {
+    font-size: 16px;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    color: rgb(236, 240, 248);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.racksell__slider {
+    margin: 0 0 10px 0;
+}
+
+.racksell__amount {
+    font-size: 15px;
+    color: rgb(236, 240, 248);
+}
+
+.racksell__warning {
+    margin-top: 6px;
+    font-size: 12px;
+    white-space: normal;
+    color: rgb(232, 180, 90);
+}
+
+.racksell__buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.racksell__confirm {
+    margin-left: 8px;
+    color: rgb(20, 22, 28);
+    background-color: rgb(226, 140, 120);
 }
 
 .rackstore__note {

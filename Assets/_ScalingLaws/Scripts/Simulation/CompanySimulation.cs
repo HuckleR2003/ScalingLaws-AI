@@ -1621,6 +1621,120 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
+        /// <summary>
+        /// Sells some cards of one generation, oldest batch first, however many batches they came
+        /// in. What SELL in the cabinet window's store does after the slider has been set.
+        ///
+        /// Cards still in the store go first in effect: the floor is only trimmed when fewer are
+        /// owned than stand in cabinets, so selling up to the store's count leaves every cabinet
+        /// exactly as the player arranged it.
+        /// </summary>
+        public bool TrySellCards(HardwareGenerationId generation, int units, out long proceedsUsd,
+            out string failureReason)
+        {
+            proceedsUsd = 0L;
+            failureReason = string.Empty;
+
+            var left = Math.Max(0, units);
+
+            if (left <= 0)
+            {
+                failureReason = Loc.T("hw.nothing_to_sell");
+                return false;
+            }
+
+            while (left > 0)
+            {
+                var oldest = OldestOnlineBatch(generation);
+
+                if (oldest < 0)
+                {
+                    break;
+                }
+
+                var take = Math.Min(left, State.Pool.Assets[oldest].Units);
+
+                if (!TrySellHardware(oldest, take, out var part, out failureReason))
+                {
+                    break;
+                }
+
+                proceedsUsd += part;
+                left -= take;
+            }
+
+            if (proceedsUsd <= 0L && string.IsNullOrEmpty(failureReason))
+            {
+                failureReason = Loc.T("hw.nothing_to_sell");
+            }
+
+            return proceedsUsd > 0L;
+        }
+
+        /// <summary>What <see cref="TrySellCards"/> would pay today, without selling anything.</summary>
+        public long SaleValueOfCards(HardwareGenerationId generation, int units)
+        {
+            var left = Math.Max(0, units);
+            var total = 0.0;
+
+            var batches = new List<HardwareAsset>();
+
+            foreach (var asset in State.Pool.Assets)
+            {
+                if (asset.GenerationId == generation && asset.Units > 0 && asset.IsOnline(State.Date))
+                {
+                    batches.Add(asset);
+                }
+            }
+
+            batches.Sort((a, b) => a.PurchaseDate.DayIndex.CompareTo(b.PurchaseDate.DayIndex));
+
+            foreach (var asset in batches)
+            {
+                if (left <= 0)
+                {
+                    break;
+                }
+
+                var take = Math.Min(left, asset.Units);
+                total += HardwareValuation.ResidualValuePerUnitUsd(asset.GenerationId,
+                    asset.PurchasePricePerUnitUsd, asset.PurchaseDate, State.Date) * take;
+                left -= take;
+            }
+
+            return SimUnits.ToDollars(total);
+        }
+
+        /// <summary>Online cards of one generation, however many batches they came in.</summary>
+        public int OnlineUnitsOf(HardwareGenerationId generation)
+        {
+            OnlineAcceleratorsByGeneration().TryGetValue(generation, out var units);
+            return units;
+        }
+
+        private int OldestOnlineBatch(HardwareGenerationId generation)
+        {
+            var found = -1;
+
+            for (var index = 0; index < State.Pool.Assets.Count; index++)
+            {
+                var asset = State.Pool.Assets[index];
+
+                if (asset.GenerationId != generation || asset.Units <= 0 || !asset.IsOnline(State.Date))
+                {
+                    continue;
+                }
+
+                if (found < 0
+                    || asset.PurchaseDate.DayIndex < State.Pool.Assets[found].PurchaseDate.DayIndex)
+                {
+                    found = index;
+                }
+            }
+
+            return found;
+        }
+
         /// <summary>Sells part of a batch at today's resale value, which is rarely what was paid.</summary>
         public bool TrySellHardware(int assetIndex, int units, out long proceedsUsd, out string failureReason)
         {

@@ -110,6 +110,32 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         [Test]
+        public void SellingSomeCardsSpansBatchesAndLeavesTheCabinetsAlone()
+        {
+            var simulation = RoomWith((HardwareGenerationId.AcceleratorA100, 3),
+                (HardwareGenerationId.AcceleratorA100, 4));
+
+            Assert.IsTrue(simulation.TryFitCard(0, 0, HardwareGenerationId.AcceleratorA100, out var why), why);
+            Assert.IsTrue(simulation.TryFitCard(0, 0, HardwareGenerationId.AcceleratorA100, out why), why);
+
+            var quoted = simulation.SaleValueOfCards(HardwareGenerationId.AcceleratorA100, 5);
+            var cash = simulation.State.CashUsd;
+
+            Assert.IsTrue(simulation.TrySellCards(HardwareGenerationId.AcceleratorA100, 5,
+                out var proceeds, out why), why);
+
+            Assert.That(proceeds, Is.EqualTo(quoted), "The dialog quoted one figure and paid another.");
+            Assert.That(simulation.State.CashUsd, Is.EqualTo(cash + proceeds),
+                "The sale did not reach the books.");
+
+            simulation.Advance(1);
+            Assert.That(simulation.OnlineUnitsOf(HardwareGenerationId.AcceleratorA100), Is.EqualTo(2),
+                "Five of seven were sold across two batches.");
+            Assert.That(simulation.State.Hall.At(0, 0).Accelerators, Is.EqualTo(2),
+                "Selling what was in the store took cards out of a cabinet.");
+        }
+
+        [Test]
         public void EachCabinetRunsOnTheCardsInItNotOnTheFleetAverage()
         {
             var simulation = RoomWith((HardwareGenerationId.AcceleratorA100, 8),

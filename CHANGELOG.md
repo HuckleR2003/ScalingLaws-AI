@@ -163,11 +163,13 @@ be taken out. All three were one daily pass that spread every loose card across 
 card pulled out was back in the same second. That pass is gone.
 
 - **Nothing goes into a cabinet by itself.** Bought cards arrive in the store and wait there.
-- **The store is beside the cabinet.** Open a cabinet and a smaller window on the right shows a tile
-  for every card you own, with how many are not in a cabinet yet, and a grey tile with the date for
-  every order still on its way.
-- **Three ways in**: click a tile, drag it onto the cabinet, or double click it. Each puts one card
-  of that model in.
+- **The store is beside the cabinet.** Open a cabinet and a smaller window on the left shows a tile
+  for every card you own: the model, what it makes and draws, and how many are not in a cabinet yet.
+  Orders still on their way are grey tiles with the day they arrive.
+- **Three ways in**: click a tile, drag it onto the cabinet, or press SET. Each puts one card of that
+  model in.
+- **SELL asks how many.** A slider picks the number, the price is shown before anything is sold, and
+  it warns when some of them would have to come out of cabinets. It used to sell the whole batch.
 - **Click a card in the cabinet to take it out**, back to its tile. Click a fan to put it in the
   store room.
 - **A cabinet knows which cards are in it**, and runs on them: a cabinet of B200s is hotter and
