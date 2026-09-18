@@ -20764,3 +20764,49 @@
     height: 6px;
     border-radius: 3px;
 }
+
+/* ---- the sheet the model creator is laid out on ---------------------------------------------
+   Held to the art-direction rule rather than to what a blueprint looks like: the grid is a few per
+   cent of white and every word on it is dimmer than the dimmest caption on any panel. The words
+   lift when the cursor comes within fifty pixels, which is what lets them be this faint. */
+
+.bpg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.bpg__marks {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.bpg__word {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    transition-property: color;
+    transition-duration: 0.25s;
+}
+
+.bpg__callout {
+    color: rgba(150, 200, 255, 0.30);
+    letter-spacing: 1.9px;
+}
+
+.bpg__small {
+    color: rgba(150, 200, 255, 0.20);
+    letter-spacing: 2.2px;
+}
+
+.bpg__callout.bpg__word--near {
+    color: rgba(168, 212, 255, 0.52);
+}
+
+.bpg__small.bpg__word--near {
+    color: rgba(168, 212, 255, 0.42);
+}

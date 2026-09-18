@@ -149,6 +149,9 @@ namespace ScalingLaws.UI
         /// <summary>The screen beside the controls on SCALE, DATA and COMPUTE.</summary>
         private RunMonitor monitor;
 
+        /// <summary>The drawing under the whole creator. Changes sheet with the stage.</summary>
+        private readonly BlueprintGround blueprint;
+
         /// <summary>The two-column grid of corpora for sale, rebuilt with the toggles above it.</summary>
         private VisualElement market;
 
@@ -277,6 +280,18 @@ namespace ScalingLaws.UI
             this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
             root = new VisualElement();
             root.AddToClassList("content");
+
+            // **First child, so everything else is drawn on top of it.** The sheet the creator is
+            // laid out on: a faint grid, what each stage is deciding, and the author's own places
+            // written small in the gutters. It ignores the pointer, so the page above it behaves
+            // exactly as it did before there was anything underneath.
+            blueprint = new BlueprintGround();
+            root.Add(blueprint);
+
+            // The ground cannot receive pointer events by design, so the page it sits under is what
+            // tells it where the cursor is. That is what lets the writing be faint enough to ignore
+            // and still be findable by moving the mouse across the empty half of the page.
+            root.RegisterCallback<PointerMoveEvent>(evt => blueprint.PointerAt(evt.position));
 
             // **Before anything is built, because building reprices and repricing writes the rent
             // slider to the company.** A fresh handle reads zero, so constructing this panel took
@@ -508,6 +523,8 @@ namespace ScalingLaws.UI
 
                 stageRail.Add(pip);
             }
+
+            blueprint.Show(stage);
 
             stageHost.Clear();
 
