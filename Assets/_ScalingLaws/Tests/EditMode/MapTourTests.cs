@@ -107,5 +107,37 @@ namespace ScalingLaws.Tests.EditMode
                 Assert.AreEqual(MapCategory.Business, tour.Show().Category);
             }
         }
+        /// <summary>
+        /// The legend ticks several categories now, so the walk has to cover all of them. With two
+        /// ticked it visits both sets and nothing else.
+        /// </summary>
+        [Test]
+        public void FocusManyWalksEveryTickedCategory()
+        {
+            var tour = new MapTour();
+
+            tour.FocusMany(new[] { MapCategory.Energy, MapCategory.Compute });
+
+            var expected = MapSiteCatalog.All
+                .Count(site => site.Category == MapCategory.Energy || site.Category == MapCategory.Compute);
+
+            Assert.AreEqual(expected, tour.Count);
+            Assert.That(tour.Stops.All(stop =>
+                stop.Category == MapCategory.Energy || stop.Category == MapCategory.Compute), Is.True);
+
+            // Two at once, so there is no single category to name.
+            Assert.IsNull(tour.Category);
+        }
+
+        [Test]
+        public void FocusManyWithNothingTickedWalksTheWholeMap()
+        {
+            var tour = new MapTour();
+
+            tour.FocusMany(new[] { MapCategory.Energy });
+            tour.FocusMany(System.Array.Empty<MapCategory>());
+
+            Assert.AreEqual(MapSiteCatalog.All.Count, tour.Count);
+        }
     }
 }

@@ -19,7 +19,7 @@ namespace ScalingLaws.UI
     public sealed class MapFilterController : MonoBehaviour
     {
         /// <summary>How far towards near-black a dimmed material's colour is pulled.</summary>
-        private const float DimAmount = 0.78f;
+        private const float DimAmount = 0.9f;
 
         private static readonly Color DimTarget = new(0.045f, 0.055f, 0.075f);
 
@@ -96,6 +96,16 @@ namespace ScalingLaws.UI
             siteSelection = selection;
 
             CollectMaterials();
+
+            // **The part that made ticking a category visible.** See `MapSiteBeacons`: dimming the other
+            // pins was not enough to find anything from the height this map is read at.
+            if (mapCamera != null)
+            {
+                var beacons = mapCamera.GetComponent<MapSiteBeacons>()
+                              ?? mapCamera.gameObject.AddComponent<MapSiteBeacons>();
+
+                beacons.Use(state, pinsById.Values);
+            }
             state.Changed += ApplyFilter;
             state.Changed += RefocusTour;
 
@@ -145,7 +155,7 @@ namespace ScalingLaws.UI
 
         private void RefocusTour()
         {
-            if (tour.Focus(state.Selected))
+            if (tour.FocusMany(state.Picked))
             {
                 legend.SetTourCaption(tour.NextOrdinal, tour.Count);
             }

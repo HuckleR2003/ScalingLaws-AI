@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using ScalingLaws.Data;
 
 namespace ScalingLaws.UI
@@ -30,11 +31,15 @@ namespace ScalingLaws.UI
 
         public MapTour()
         {
-            Stops = StopsFor(null);
+            Categories = new List<MapCategory>();
+            Stops = StopsFor(Categories);
         }
 
-        /// <summary>The category being walked, or null for the whole map.</summary>
+        /// <summary>The category being walked, or null for the whole map or for several at once.</summary>
         public MapCategory? Category { get; private set; }
+
+        /// <summary>Every category being walked. Empty for the whole map.</summary>
+        public IReadOnlyList<MapCategory> Categories { get; private set; }
 
         /// <summary>The places this walk visits, in catalog order.</summary>
         public IReadOnlyList<MapSiteDefinition> Stops { get; private set; }
@@ -100,13 +105,22 @@ namespace ScalingLaws.UI
         /// when the button's text changes as a result, which it does whenever the set is not the
         /// same one it was already showing from the start.
         /// </summary>
-        public bool Focus(MapCategory? category)
-        {
-            var wasAtTheStart = !walking && next == 0;
-            var sameSet = Category == category;
+        public bool Focus(MapCategory? category) =>
+            FocusMany(category == null ? new List<MapCategory>() : new List<MapCategory> { category.Value });
 
-            Category = category;
-            Stops = StopsFor(category);
+        /// <summary>
+        /// The same thing for several categories at once, which is what the legend does now that its
+        /// rows tick rather than pick. An empty list is the whole map, exactly as no category was.
+        /// </summary>
+        public bool FocusMany(IReadOnlyList<MapCategory> categories)
+        {
+            var wanted = categories ?? new List<MapCategory>();
+            var wasAtTheStart = !walking && next == 0;
+            var sameSet = wanted.Count == Categories.Count && !wanted.Except(Categories).Any();
+
+            Categories = wanted.ToList();
+            Category = Categories.Count == 1 ? Categories[0] : null;
+            Stops = StopsFor(Categories);
 
             next = 0;
             idleSeconds = 0f;
@@ -115,9 +129,9 @@ namespace ScalingLaws.UI
             return !(sameSet && wasAtTheStart);
         }
 
-        private static IReadOnlyList<MapSiteDefinition> StopsFor(MapCategory? category)
+        private static IReadOnlyList<MapSiteDefinition> StopsFor(IReadOnlyList<MapCategory> categories)
         {
-            if (category == null)
+            if (categories == null || categories.Count == 0)
             {
                 return MapSiteCatalog.All;
             }
@@ -126,7 +140,7 @@ namespace ScalingLaws.UI
 
             foreach (var site in MapSiteCatalog.All)
             {
-                if (site.Category == category)
+                if (categories.Contains(site.Category))
                 {
                     stops.Add(site);
                 }

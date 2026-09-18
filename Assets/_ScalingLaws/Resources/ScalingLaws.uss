@@ -17395,12 +17395,12 @@
 
 .map-legend {
     position: absolute;
-    width: 292px;
-    padding: 16px 14px;
-    background-color: rgba(8, 10, 14, 0.82);
+    width: 396px;
+    padding: 20px 18px;
+    background-color: rgba(10, 13, 19, 0.88);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
 }
 
 .map-legend__header {
@@ -17416,15 +17416,15 @@
 
 .map-legend__title {
     margin: 0;
-    font-size: 13px;
+    font-size: 16px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgba(200, 214, 236, 0.75);
 }
 
 .map-legend__toggle {
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     margin: 0;
     padding: 0;
     background-color: rgba(255, 255, 255, 0);
@@ -17439,7 +17439,7 @@
 }
 
 .map-legend__toggle Label {
-    font-size: 14px;
+    font-size: 17px;
     color: rgba(200, 214, 236, 0.75);
     -unity-text-align: middle-center;
 }
@@ -17451,14 +17451,14 @@
 .map-legend__row {
     flex-direction: row;
     align-items: center;
-    height: 36px;
-    margin: 0;
-    padding: 0 8px;
+    height: 48px;
+    margin: 0 0 2px 0;
+    padding: 0 10px;
     background-color: rgba(255, 255, 255, 0);
     border-width: 0;
-    border-left-width: 3px;
+    border-left-width: 4px;
     border-left-color: rgba(255, 255, 255, 0);
-    border-radius: 0;
+    border-radius: 6px;
 }
 
 .map-legend__row:hover {
@@ -17466,7 +17466,7 @@
 }
 
 .map-legend__row--on {
-    background-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.14);
     border-left-color: rgb(226, 236, 250);
 }
 
@@ -17479,8 +17479,8 @@
 }
 
 .map-legend__swatch {
-    width: 13px;
-    height: 13px;
+    width: 16px;
+    height: 16px;
     margin-right: 12px;
     border-radius: 2px;
     flex-shrink: 0;
@@ -17489,15 +17489,15 @@
 /* With its icon, the swatch is the icon: larger, square-cornered (the picture has its own rounded
    tile), and never stretched. */
 .map-legend__swatch--icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 10px;
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
     border-radius: 0;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .map-legend__label {
-    font-size: 15px;
+    font-size: 18px;
     letter-spacing: 0.5px;
     color: rgb(226, 236, 250);
 }
@@ -17506,8 +17506,8 @@
    on whichever category is picked rather than being a ninth one. Centred and stated on the button,
    because a Button given a height does not centre its own label. */
 .map-legend__tour {
-    height: 34px;
-    margin: 10px 0 0 0;
+    height: 46px;
+    margin: 8px 0 0 0;
     padding: 0 8px;
     border-width: 0;
     border-top-width: 1px;
@@ -17524,23 +17524,85 @@
     background-color: rgba(255, 255, 255, 0.08);
 }
 
+/* ---- the tick box on a legend row ---------------------------------------------------------------
+   The panel used to show a picked category by going slightly brighter, which is nothing next to
+   seven other rows of colour. A box that is empty or filled says it at a glance, and it is also what
+   makes several categories at once look possible. */
+
+.map-legend__tick {
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 2px;
+    border-color: rgba(226, 236, 250, 0.42);
+    border-radius: 5px;
+}
+
+.map-legend__tick--on {
+    background-color: rgb(226, 236, 250);
+    border-color: rgb(238, 244, 253);
+}
+
+.map-legend__tick-mark {
+    font-size: 15px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgba(255, 255, 255, 0);
+}
+
+.map-legend__tick--on .map-legend__tick-mark {
+    color: rgb(12, 16, 22);
+}
+
+/* One way back to the whole map, because unticking four boxes one at a time means remembering which
+   four. Off rather than hidden while nothing is ticked: a control that does nothing is better than a
+   panel that changes height. */
+.map-legend__clear {
+    height: 38px;
+    margin: 8px 0 0 0;
+    padding: 0 10px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: rgb(226, 236, 250);
+    -unity-text-align: middle-center;
+}
+
+.map-legend__clear:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.map-legend__clear:disabled {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(210, 220, 236, 0.32);
+    opacity: 1;
+}
+
 .map-legend__tour:disabled {
     color: rgba(210, 220, 236, 0.38);
 }
 
 .map-districts {
     position: absolute;
-    width: 232px;
-    padding: 16px 14px;
-    background-color: rgba(8, 10, 14, 0.82);
+    width: 304px;
+    padding: 20px 18px;
+    background-color: rgba(10, 13, 19, 0.88);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
 }
 
 .map-districts__title {
-    margin: 0 0 10px 4px;
-    font-size: 13px;
+    margin: 0 0 12px 4px;
+    font-size: 16px;
     letter-spacing: 2px;
     -unity-font-style: bold;
     color: rgba(200, 214, 236, 0.75);
@@ -17549,12 +17611,12 @@
 .map-districts__tile {
     flex-direction: row;
     align-items: center;
-    height: 44px;
-    margin: 0 0 5px 0;
-    padding: 0 10px 0 0;
-    background-color: rgba(255, 255, 255, 0.04);
+    height: 56px;
+    margin: 0 0 6px 0;
+    padding: 0 12px 0 0;
+    background-color: rgba(255, 255, 255, 0.05);
     border-width: 0;
-    border-radius: 3px;
+    border-radius: 7px;
 }
 
 .map-districts__tile:hover {
@@ -17562,7 +17624,7 @@
 }
 
 .map-districts__accent {
-    width: 6px;
+    width: 8px;
     height: 100%;
     margin-right: 12px;
     border-top-left-radius: 3px;
@@ -17571,15 +17633,15 @@
 }
 
 .map-districts__icon {
-    width: 26px;
-    height: 26px;
+    width: 34px;
+    height: 34px;
     margin-right: 10px;
     flex-shrink: 0;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .map-districts__label {
-    font-size: 15px;
+    font-size: 18px;
     letter-spacing: 0.3px;
     color: rgb(226, 236, 250);
     white-space: normal;
@@ -17592,12 +17654,12 @@
 
 .site-card {
     position: absolute;
-    width: 320px;
-    padding: 18px;
-    background-color: rgba(10, 13, 18, 0.94);
+    width: 460px;
+    padding: 24px;
+    background-color: rgba(12, 16, 23, 0.96);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
+    border-color: rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
 }
 
 .site-card__header {
@@ -17607,16 +17669,16 @@
 }
 
 .site-card__icon {
-    width: 44px;
-    height: 44px;
-    margin-right: 12px;
-    border-radius: 5px;
+    width: 58px;
+    height: 58px;
+    margin-right: 16px;
+    border-radius: 8px;
     flex-shrink: 0;
 }
 
 .site-card__icon--image {
-    width: 56px;
-    height: 56px;
+    width: 74px;
+    height: 74px;
     border-radius: 0;
     -unity-background-scale-mode: scale-to-fit;
 }
@@ -17627,7 +17689,7 @@
 }
 
 .site-card__title {
-    font-size: 18px;
+    font-size: 25px;
     -unity-font-style: bold;
     color: rgb(238, 244, 253);
     white-space: normal;
@@ -17635,15 +17697,15 @@
 }
 
 .site-card__kind {
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 1.5px;
     color: rgba(200, 214, 236, 0.6);
     margin: 0;
 }
 
 .site-card__close {
-    width: 26px;
-    height: 26px;
+    width: 34px;
+    height: 34px;
     margin: 0;
     padding: 0;
     flex-shrink: 0;
@@ -17660,7 +17722,7 @@
 }
 
 .site-card__blurb {
-    font-size: 13px;
+    font-size: 17px;
     white-space: normal;
     color: rgba(214, 226, 243, 0.82);
     margin-bottom: 14px;
@@ -17669,38 +17731,99 @@
 /* The figures block. Set apart from the prose above it, because these are the numbers a decision
    gets made on — even while they are still dashes. */
 .site-card__figures {
+    flex-grow: 1;
+    flex-shrink: 1;
     background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 5px;
-    padding: 4px 12px;
-    margin-bottom: 14px;
+    border-radius: 8px;
+    padding: 6px 16px;
+}
+
+/* The numbers and the little window into the place stand side by side: the figures are what the
+   decision is made on, the view is what makes it a place rather than a row. */
+.site-card__middle {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+/* ---- the window into the place ------------------------------------------------------------------
+   A square in the corner of the card, and a click makes it twice the size. The author asked for the
+   frame now so the views can be dropped in as they are rendered; until then it says so itself. */
+
+.site-card__preview {
+    width: 120px;
+    height: 120px;
+    margin-left: 14px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.site-card__preview:hover {
+    border-color: rgba(238, 244, 253, 0.55);
+}
+
+.site-card__preview--open {
+    width: 240px;
+    height: 240px;
+}
+
+/* Nothing rendered for this place yet: a dark plate that plainly waits for a picture, rather than an
+   empty hole that reads as a fault. */
+.site-card__preview--empty {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+.site-card__preview-note {
+    margin: 0;
+    padding: 4px 6px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    color: rgba(226, 236, 250, 0.78);
+    background-color: rgba(8, 10, 14, 0.62);
+    border-bottom-left-radius: 7px;
+    border-bottom-right-radius: 7px;
+}
+
+/* With the view open the card is wider, so a 240px square does not squeeze the numbers into a
+   column one word across. */
+.site-card--preview-open {
+    width: 600px;
 }
 
 .site-card__figure {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    height: 30px;
+    height: 38px;
 }
 
 .site-card__figure-label {
-    font-size: 12px;
+    font-size: 15px;
     color: rgba(200, 214, 236, 0.72);
 }
 
 .site-card__figure-value {
-    font-size: 15px;
+    font-size: 21px;
     -unity-font-style: bold;
     color: rgb(238, 244, 253);
 }
 
 .site-card__action {
-    height: 40px;
-    margin: 0 0 10px 0;
+    height: 52px;
+    margin: 0 0 12px 0;
     background-color: rgba(255, 255, 255, 0.10);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.12);
-    border-radius: 5px;
-    font-size: 14px;
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    font-size: 17px;
     -unity-font-style: bold;
     color: rgb(226, 236, 250);
 }
@@ -17715,7 +17838,7 @@
 }
 
 .site-card__footnote {
-    font-size: 11px;
+    font-size: 14px;
     white-space: normal;
     color: rgba(200, 214, 236, 0.45);
     margin: 0;
@@ -17725,12 +17848,12 @@
     position: absolute;
     left: 16px;
     bottom: 16px;
-    padding: 10px 14px;
-    background-color: rgba(8, 10, 14, 0.78);
+    padding: 14px 18px;
+    background-color: rgba(10, 13, 19, 0.84);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
-    font-size: 14px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    font-size: 17px;
     letter-spacing: 0.3px;
     color: rgba(226, 236, 250, 0.85);
 }
