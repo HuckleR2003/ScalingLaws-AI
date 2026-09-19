@@ -30,6 +30,7 @@ namespace ScalingLaws.Editor
         /// <summary>Both hubs rebuilt and photographed, for the command line.</summary>
         public static void BuildAndSnapshot()
         {
+            PolyHavenImporter.SetUpAll();
             HubRoomBuilder.BuildBoth();
             DecorModelBuilder.BuildAll();
             Snapshot();

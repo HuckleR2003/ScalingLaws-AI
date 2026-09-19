@@ -170,6 +170,12 @@ had to change.
 - **Real floors.** The offices' parquet, kitchen tiles, lobby marble, the big office's concrete walls
   and its black marble logo wall are photographed materials from ambientCG (CC0), with their own
   surface relief, polished so the lamps shine in them.
+- **Real furniture in the offices.** Armchairs, a lounge chair, coffee tables, a TV cabinet, a drawer
+  cabinet and a coffee cart from Poly Haven (CC0), photographed and textured. The office shop's
+  coffee bar is now that cart.
+- **The server room has real cabinets.** Open frames, enclosed racks and high density racks are
+  modelled cabinets with a thin light down one side in the colour of their temperature, where they
+  used to be boxes. The immersion tank is still a box.
 - **Houses on the map are bigger again**, 30 per cent on top of the first pass, because next to the
   commercial blocks the difference did not show.
 

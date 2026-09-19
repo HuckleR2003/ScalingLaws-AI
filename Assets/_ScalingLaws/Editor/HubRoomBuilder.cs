@@ -658,8 +658,16 @@ namespace ScalingLaws.Editor
                 Box(lounge, "PanelWall", new Vector3(WallThickness + 0.02f, 1.55f, middle.z),
                     new Vector3(0.03f, 2.7f, z1 - z0 - 0.5f), palette.PanelWall);
 
-                Piece(lounge, "Television", new Vector3(x0 + 0.3f, 0.95f, middle.z),
-                    new Vector3(0.1f, 1.1f, 1.8f), Kit.Television, palette.Screen, 90f);
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(Kit.TelevisionSet[0]) != null)
+                {
+                    Piece(lounge, "TelevisionSet", new Vector3(x0 + 0.35f, 0f, middle.z),
+                        new Vector3(0.4f, 2.0f, 2.0f), Kit.TelevisionSet, palette.Screen, 180f);
+                }
+                else
+                {
+                    Piece(lounge, "Television", new Vector3(x0 + 0.3f, 0.95f, middle.z),
+                        new Vector3(0.1f, 1.1f, 1.8f), Kit.Television, palette.Screen, 90f);
+                }
             }
         }
 
@@ -864,7 +872,7 @@ namespace ScalingLaws.Editor
             Box(hall, "CounterLight", new Vector3(1.77f, 0.08f, logoZ), new Vector3(0.02f, 0.03f, d * 0.48f), palette.Led);
 
             // Somewhere to wait: two armchairs and a low table, and two tall plants.
-            Piece(hall, "WaitTable", new Vector3(w * 0.6f, 0f, d * 0.55f), new Vector3(0.8f, 0.4f, 0.8f), Kit.CoffeeTable, palette.Timber);
+            Piece(hall, "WaitTable", new Vector3(w * 0.6f, 0f, d * 0.55f), new Vector3(0.8f, 0.4f, 0.8f), Kit.RoundTable, palette.Timber);
             Piece(hall, "WaitChairA", new Vector3(w * 0.6f - 0.8f, 0f, d * 0.55f + 0.2f), new Vector3(0.75f, 0.8f, 0.75f), Kit.Armchair, palette.Accent, 110f);
             Piece(hall, "WaitChairB", new Vector3(w * 0.6f + 0.8f, 0f, d * 0.55f + 0.2f), new Vector3(0.75f, 0.8f, 0.75f), Kit.Armchair, palette.Accent, -110f);
             Piece(hall, "PlantA", new Vector3(0.6f, 0f, 0.6f), new Vector3(0.8f, 1.5f, 0.8f), Kit.PlantTall, palette.Foliage);
@@ -994,6 +1002,7 @@ namespace ScalingLaws.Editor
             Piece(corner, "Monitor", desk + new Vector3(0f, 0.75f, 0.2f), new Vector3(0.7f, 0.5f, 0.3f), Kit.Monitor, palette.Screen, 90f);
             Piece(corner, "Chair", plan.BossChair, new Vector3(0.66f, 1.05f, 0.66f), Kit.DeskChair, palette.Fabric);
             Piece(corner, "BossPlant", desk + new Vector3(1.2f, 0f, 0.4f), new Vector3(0.7f, 1.3f, 0.7f), Kit.PlantTall, palette.Foliage);
+            Piece(corner, "BossLounge", desk + new Vector3(-1.4f, 0f, 0.2f), new Vector3(0.75f, 0.9f, 0.75f), Kit.LoungeChair, palette.Fabric, 120f);
         }
 
         /// <summary>The second floor's glass office for the boss, in the near corner.</summary>
@@ -1015,6 +1024,8 @@ namespace ScalingLaws.Editor
             Piece(room, "Chair", plan.BossChair, new Vector3(0.66f, 1.05f, 0.66f), Kit.DeskChair, palette.Fabric);
             Piece(room, "Printer", new Vector3(plan.Width - 0.6f, 0f, z1 - 0.6f), new Vector3(0.9f, 1.3f, 0.9f), Kit.Printer, palette.Metal, 270f);
             Piece(room, "Plant", new Vector3(x0 + 0.5f, 0f, 0.5f), new Vector3(0.7f, 1.3f, 0.7f), Kit.PlantTall, palette.Foliage);
+            Piece(room, "Lounge", new Vector3(x0 + 0.9f, 0f, z1 - 0.9f), new Vector3(0.75f, 0.9f, 0.75f), Kit.LoungeChair, palette.Fabric, 135f);
+            Piece(room, "Cabinet", new Vector3(plan.Width - 0.5f, 0f, 1.2f), new Vector3(0.9f, 1.0f, 0.5f), Kit.Cabinet, palette.Cabinet, 270f);
         }
 
         // ---- light ----------------------------------------------------------------------------------
@@ -1320,12 +1331,22 @@ namespace ScalingLaws.Editor
             public static readonly string[] DiningChair = { Lite + "Chair_Conference_Teal.prefab", Lite + "Chair_Conference.prefab" };
 
             public static readonly string[] Sofa = { Brick + "Furniture/Living Room/Sofa_Apt_01.prefab", Nappin + "(Prb)Sofa1.prefab" };
-            public static readonly string[] CoffeeTable = { Brick + "Furniture/Living Room/Table_Coffee_01.prefab", Nappin + "(Prb)CoffeTable.prefab" };
-            public static readonly string[] Armchair = { Nappin + "(Prb)LoungeChair.prefab" };
+            /// <summary>Poly Haven (CC0), photographed: first where a room wants something real.</summary>
+            private const string Haven = "Assets/_ScalingLaws/Art/Models/PolyHaven/";
+
+            public static readonly string[] CoffeeTable = { Haven + "modern_coffee_table_01/modern_coffee_table_01.fbx", Brick + "Furniture/Living Room/Table_Coffee_01.prefab", Nappin + "(Prb)CoffeTable.prefab" };
+            public static readonly string[] Armchair = { Haven + "modern_arm_chair_01/modern_arm_chair_01.fbx", Nappin + "(Prb)LoungeChair.prefab" };
+            public static readonly string[] LoungeChair = { Haven + "mid_century_lounge_chair/mid_century_lounge_chair.fbx", Nappin + "(Prb)LoungeChair.prefab" };
+            public static readonly string[] RoundTable = { Haven + "coffee_table_round_01/coffee_table_round_01.fbx", Nappin + "(Prb)CoffeTable.prefab" };
+            public static readonly string[] Cabinet = { Haven + "drawer_cabinet/drawer_cabinet.fbx", Nappin + "(Prb)Shelves1.prefab" };
+            public static readonly string[] CoffeeCart = { Haven + "CoffeeCart_01/CoffeeCart_01.fbx" };
             public static readonly string[] FloorLamp = { Brick + "Props/Lighting/Lamp_Floor_Apt_01.prefab" };
             public static readonly string[] Painting = { Brick + "Props/Art/Canvas_Painting_01.prefab" };
             public static readonly string[] Television = { Brick + "Props/Electronics/TV_Apt_01.prefab" };
-            public static readonly string[] MediaTable = { Brick + "Furniture/Living Room/Table_Media_01.prefab" };
+
+            /// <summary>The television on its cabinet with wall shelves (CGTrader, local only).</summary>
+            public static readonly string[] TelevisionSet = { "Assets/_ScalingLaws/Art/Models/CGTrader/Resources/Racks/ModernTV.prefab" };
+            public static readonly string[] MediaTable = { Haven + "modern_wooden_cabinet/modern_wooden_cabinet.fbx", Brick + "Furniture/Living Room/Table_Media_01.prefab" };
         }
 
         /// <summary>
@@ -1356,8 +1377,15 @@ namespace ScalingLaws.Editor
 
             var piece = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
             piece.name = name;
-            piece.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            piece.transform.localScale = Vector3.one;
+
+            // **The model's own root rotation and scale are kept, and the turn goes on top.** A model
+            // exported from Blender carries its axis change on the root (a quarter turn about x, and
+            // often a scale of a hundred); overwriting it with a plain yaw laid every Poly Haven
+            // chair on its side.
+            var ownRotation = piece.transform.localRotation;
+            var ownScale = piece.transform.localScale;
+            piece.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * ownRotation;
+            piece.transform.localScale = ownScale;
 
             var bounds = Measure(piece);
 
@@ -1391,7 +1419,7 @@ namespace ScalingLaws.Editor
                 scale *= room / widest;
             }
 
-            piece.transform.localScale = Vector3.one * scale;
+            piece.transform.localScale = ownScale * scale;
 
             // Re-measured after scaling, because the offset from the pivot scaled with it.
             bounds = Measure(piece);

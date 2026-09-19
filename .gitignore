@@ -141,3 +141,7 @@ icon.log
 # wrong directory. Neither belongs under Assets/.
 Assets/_ScalingLaws/Logs/
 Assets/_ScalingLaws/Logs.meta
+
+# CGTrader models: royalty-free licence allows use in the game, not redistribution of the files.
+/Assets/_ScalingLaws/Art/Models/CGTrader/
+/Assets/_ScalingLaws/Art/Models/CGTrader.meta

@@ -103,6 +103,11 @@ namespace ScalingLaws.Editor
                         HubRoomBuilder.Kit.Monitor, Mat("HubScreen"), 90f);
                     break;
 
+                case FurnitureKind.CoffeeBar when AssetDatabase.LoadAssetAtPath<GameObject>(HubRoomBuilder.Kit.CoffeeCart[0]) != null:
+                    // A real coffee cart, photographed, rather than a counter made of boxes.
+                    HubRoomBuilder.Piece(t, "Cart", Vector3.zero, new Vector3(x, y, z), HubRoomBuilder.Kit.CoffeeCart, cabinet, 180f);
+                    break;
+
                 case FurnitureKind.CoffeeBar:
                     HubRoomBuilder.Box(t, "Counter", new Vector3(0f, 0.5f, 0f), new Vector3(x, 1.0f, z), cabinet);
                     HubRoomBuilder.Box(t, "Top", new Vector3(0f, 1.02f, 0f), new Vector3(x + 0.04f, 0.05f, z + 0.04f), stone);

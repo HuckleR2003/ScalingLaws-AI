@@ -626,6 +626,83 @@ namespace ScalingLaws.UI
 
             Object.Destroy(strip.GetComponent<BoxCollider>());
             strip.GetComponent<MeshRenderer>().sharedMaterial = HeatPaint(heat);
+
+            // **A real cabinet where there is one.** The box stays, because it carries the heat
+            // strip and is the shape every other part of the room is measured against, and only its
+            // own renderer is switched off. The models are local (CGTrader's licence does not allow
+            // them in the public repository), so a clone without them keeps the boxes.
+            var model = ModelFor(square.Rack);
+
+            if (model == null)
+            {
+                return;
+            }
+
+            body.GetComponent<MeshRenderer>().enabled = false;
+
+            var placed = Object.Instantiate(model, marker, false);
+            placed.name = $"{RackPrefix}Model_{square.Column}_{square.Row}";
+
+            var measured = Bounds(placed);
+            var scale = measured.size.y > 0.01f ? height / measured.size.y : 1f;
+            placed.transform.localScale = Vector3.one * scale;
+            placed.transform.localPosition = Vector3.zero;
+
+            // The strip moves onto the model's own side, and becomes a thin bar of light: sized for
+            // the box, it stood beside a narrower cabinet as a coloured panel of its own.
+            var modelWidth = measured.size.x * scale;
+            var boxWidth = body.transform.localScale.x;
+            strip.transform.localPosition = new Vector3(modelWidth / 2f / boxWidth + 0.02f, 0.02f, -0.1f);
+            strip.transform.localScale = new Vector3(0.03f, 0.8f, 0.06f);
+        }
+
+        /// <summary>
+        /// Which model stands for which cabinet: the small rack for an open frame, the medium one for
+        /// an enclosed rack, the big one for high density. The immersion tank has no model and stays
+        /// a box. Null when the model is not on this machine.
+        /// </summary>
+        private static GameObject ModelFor(ServerRack rack)
+        {
+            var name = rack switch
+            {
+                ServerRack.OpenFrame => "Racks/Rack_Small",
+                ServerRack.Enclosed => "Racks/Rack_Medium",
+                ServerRack.HighDensity => "Racks/Rack_Big",
+                _ => null
+            };
+
+            if (name == null)
+            {
+                return null;
+            }
+
+            if (!Models.TryGetValue(name, out var model))
+            {
+                model = Resources.Load<GameObject>(name);
+                Models[name] = model;
+            }
+
+            return model;
+        }
+
+        private static readonly Dictionary<string, GameObject> Models = new();
+
+        private static Bounds Bounds(GameObject root)
+        {
+            var renderers = root.GetComponentsInChildren<Renderer>();
+
+            if (renderers.Length == 0)
+            {
+                return new Bounds(root.transform.position, Vector3.zero);
+            }
+
+            var bounds = renderers[0].bounds;
+            foreach (var renderer in renderers)
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+
+            return bounds;
         }
 
         private static readonly Dictionary<string, Material> Paints = new();
