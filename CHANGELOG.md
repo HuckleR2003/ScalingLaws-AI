@@ -38,6 +38,19 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+### Licence and documentation
+
+- **The licence changed.** From 19 September 2026 the code is **source available, all rights
+  reserved**: you may read it, learn from it, build it on your own machine and quote it with a link,
+  and you may not distribute it or a build made from it without permission. Versions published before
+  that date keep the PolyForm Noncommercial licence they were released under. The game itself stays
+  free to play from the published builds.
+- **The documentation was checked against the code.** The README, the architecture map, the getting
+  started guide, the security note and the contributing guide had test counts, a save version, a
+  research tree size and a file count that were weeks old. All of them were measured again: 1,418
+  EditMode tests in 163 fixtures, 65 PlayMode tests in 15, 305 C# files, 64 research nodes on five
+  tracks, save version 62.
+
 ### The city map
 
 The Bayview map became a place in the game: reachable from the office, with a camera to
@@ -176,6 +189,8 @@ had to change.
 - **The server room has real cabinets.** Open frames, enclosed racks and high density racks are
   modelled cabinets with a thin light down one side in the colour of their temperature, where they
   used to be boxes. The immersion tank is still a box.
+- **Lighter offices.** Brown was heavy: the small office now has a light oak floor and warm plaster
+  walls, and the big one a honey herringbone and lighter concrete.
 - **The basement looks like a basement.** Worn concrete floor, old damp plaster on the walls and
   bunker panels under the cabinets, photographed (ambientCG, CC0), so the first proper office reads
   as the step up it is. The small office's walls are real timber boards.

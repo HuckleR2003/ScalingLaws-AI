@@ -30,6 +30,6 @@ Anything that is a normal crash, a bad number or a screen that does not work bel
 Releases are built from the commit they are tagged against. The tag is on the commit, so what you
 downloaded can be checked against what is in this repository.
 
-The repository does not contain the imported Asset Store packs used for the office furniture and the
-character models. Their licences forbid redistribution, so a fresh clone shows them as missing
-references. Nothing that decides anything in the game is in those packs.
+The repository does not contain the imported Asset Store packs or the CGTrader models used for the
+office furniture, the server racks and the character models. Their licences forbid redistribution, so
+a fresh clone shows them as missing references. Nothing that decides anything in the game is in those packs.

@@ -134,3 +134,12 @@ reads as generated invites accusations the engineering does not deserve.
 
 One subject per commit. The message says what changed and **why it was wrong before**; the diff
 already says what the code does now. Look at the existing history for the shape.
+
+---
+
+## Licence of contributions
+
+The code is source available, not open source: see [LICENSE.md](LICENSE.md). By opening a pull
+request you agree that what you submit may be used, changed and distributed as part of Scaling Laws
+under any licence the author chooses. If that does not suit you, an issue describing the change is
+just as welcome.

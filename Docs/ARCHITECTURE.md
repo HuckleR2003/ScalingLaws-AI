@@ -41,13 +41,15 @@ inside three years. That is intentional.
 | `Assets/_ScalingLaws/Scripts/Data/` | Pure data libraries plus lookups. No economics, no state. |
 | `Assets/_ScalingLaws/Scripts/Simulation/` | The rules. Also no UnityEngine, so tests run in milliseconds. |
 | `Assets/_ScalingLaws/Scripts/Persistence/` | Save format, migration, PlayerPrefs I/O. The only folder that imports UnityEngine. |
-| `Assets/_ScalingLaws/Scripts/UI/` | 93 files. UI Toolkit panels, consumers only: nothing here decides anything. |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1115 tests across 117 fixtures. No scene is loaded by any of them. Count them with the command in `CLAUDE.md`; this line has been wrong twice. |
-| `Assets/_ScalingLaws/Tests/PlayMode/` | 31 tests across 8 fixtures. These load a scene, which is the point: they are the only ones that can see a layout fault. |
+| `Assets/_ScalingLaws/Scripts/UI/` | 128 files. UI Toolkit panels, consumers only: nothing here decides anything. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1418 tests across 163 fixtures. No scene is loaded by any of them. Count them with the command in `CLAUDE.md`; this line has been wrong three times. |
+| `Assets/_ScalingLaws/Tests/PlayMode/` | 65 tests across 15 fixtures. These load a scene, which is the point: they are the only ones that can see a layout fault. |
+| `Assets/_ScalingLaws/Art/Textures/ambientCG/`, `Art/Models/PolyHaven/` | Photographed materials and furniture, CC0, with a LICENSE.txt in each. |
+| `Assets/_ScalingLaws/Art/Models/CGTrader/` | Server racks and a TV set. Local only: the licence forbids redistribution, so it is gitignored and every use falls back. |
 
 **These counts were wrong for a long time and it mattered.** This table said `UI/` was
 empty on purpose against 81 files, and 60 tests against 926, and both figures were quoted
-out of here into decisions about what was covered. Measured 2026-09-05. Count before
+out of here into decisions about what was covered. Measured 2026-09-19. Count before
 quoting: `ls Assets/_ScalingLaws/Scripts/UI/*.cs | wc -l`, and the totals come off
 `TestResults.xml` rather than off memory.
 
@@ -316,7 +318,7 @@ chain, and calendar, and the calendar is the part that cannot be bought out of. 
 what moved the baseline player from finishing four years ahead of the whole field to finishing
 behind it.
 
-Five eras and 59 nodes across four tracks, ending on `ArtificialSuperintelligence`, which is visible on the board
+Five eras and 64 nodes across five tracks, ending on `ArtificialSuperintelligence`, which is visible on the board
 from day one, carries a warning, and cannot be reached inside the first four years. Two rules that
 `ConsistencyTests` pins: every node must be reachable from the root, and no node may open earlier
 than its own prerequisite. The second one caught a real dead end where Autonomous Agents opened six
@@ -402,8 +404,8 @@ the clouds were renting, and that determines the petaflops.
 
 Every step says what it had to invent in `SaveMigration.LastMigrationNotes`. Each
 method moves a file forward exactly one version and the runner chains them, so a
-v1 file walks every step up to the current one. When v53 arrives, add
-`UpgradeV52ToV53` and chain it. Do not edit an existing reader.
+v1 file walks every step up to the current one (v62 today). When v63 arrives, add
+`UpgradeV62ToV63` and chain it. Do not edit an existing reader.
 
 The runner is a loop rather than a hand-written nest of calls, because a loop
 cannot stop short of the newest version. It did once, and later fields loaded
@@ -509,6 +511,17 @@ teaches nobody anything about how long a gap stays open.
   modules **the model was built with** rather than what the company holds today.
 - ~~**Office and hardware screens.**~~ **Built.** The fleet screen, the premises
   page, and the basement as a room you walk into.
+- ~~**A server room that does something.**~~ **Built, 2026-09-18 and 19.** The room
+  has a heat budget (`RoomClimate`, save v61): 30 kW passive, a two-square room
+  cooler for 45 kW more, overclocks allowed only while the room is cool. Cards go
+  into cabinets by hand (save v62): `ServerHall.Stock` trims and names, never adds,
+  and each cabinet records its cards by generation and is priced on them.
+- ~~**Rooms that look like rooms.**~~ **Built, 2026-09-19.** `HubRoomBuilder` lays
+  out both rented floors from the author's references with a lobby and the
+  company name over the door (`CompanySignAnchor`, written at runtime),
+  photographed PBR materials (`AmbientMaterials`), glass you can see through and a
+  box-projected reflection probe. `DecorModelBuilder` gives every shop piece a model
+  under `Resources/Decor`.
 
 Still open:
 
