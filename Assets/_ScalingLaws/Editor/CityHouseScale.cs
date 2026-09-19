@@ -41,7 +41,7 @@ namespace ScalingLaws.Editor
             Debug.Log($"[Houses] {areas.Count} houses. Footprint m2: min {areas[0]:0}, "
                 + $"p25 {areas[areas.Count / 4]:0}, median {areas[areas.Count / 2]:0}, "
                 + $"p75 {areas[areas.Count * 3 / 4]:0}, max {areas[^1]:0}. "
-                + $"Already scaled: {houses.Count(house => house.name.EndsWith(Marker))}");
+                + $"Already scaled: {houses.Count(house => house.name.Contains(Marker))}");
         }
 
         [MenuItem("Scaling Laws/City/Census of props")]
@@ -96,7 +96,7 @@ namespace ScalingLaws.Editor
 
             foreach (var house in houses)
             {
-                if (house.name.EndsWith(Marker))
+                if (house.name.Contains(Marker))
                 {
                     continue;
                 }
@@ -123,6 +123,47 @@ namespace ScalingLaws.Editor
         }
 
         private const string Marker = " [grown]";
+
+        /// <summary>
+        /// The second pass, asked for the next day: fifteen to twenty-five per cent was not enough
+        /// to read next to the commercial blocks, which are the comparison a player actually makes.
+        /// Every house grows by <see cref="SecondGrowth"/> about the middle of its base, once.
+        /// </summary>
+        public const float SecondGrowth = 1.3f;
+
+        private const string SecondMarker = " [grown2]";
+
+        public static void GrowFurtherWithPhotographs()
+        {
+            ShootStreet("houses_before2.png");
+
+            var scene = OpenCity();
+            var grown = 0;
+
+            foreach (var house in Houses())
+            {
+                if (house.name.Contains(SecondMarker))
+                {
+                    continue;
+                }
+
+                var bounds = Bounds(house);
+                var pivot = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+
+                house.localScale *= SecondGrowth;
+                var after = Bounds(house);
+                house.position += pivot - new Vector3(after.center.x, after.min.y, after.center.z);
+
+                house.name += SecondMarker;
+                grown++;
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log($"[Houses] second pass: {grown} houses grown by {SecondGrowth:0.00}.");
+
+            ShootStreet("houses_after2.png");
+        }
 
         private static UnityEngine.SceneManagement.Scene OpenCity() =>
             EditorSceneManager.OpenScene("Assets/_ScalingLaws/Scenes/City.unity", OpenSceneMode.Single);
