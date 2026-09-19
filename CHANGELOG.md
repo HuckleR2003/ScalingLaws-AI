@@ -156,6 +156,34 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### The two rented offices, rebuilt
+
+Both floors were rebuilt against two reference images the author picked, with the first thing a
+visitor sees: a lobby, glass doors, and the company's name over them.
+
+- **An entrance.** Both offices open onto a lobby with glass double doors in the back wall, a stone
+  floor, a reception counter and your company's name lit on the wall above the doors. The name is
+  the one you typed at the creator.
+- **The small office** is warm wood: herringbone parquet, wood-panelled walls, tall windows with
+  blinds, a kitchen with a dining table, a lounge with a sofa and armchairs, a glass meeting room
+  with a panelled wall, and ten desks in two benches.
+- **The big office** is dark: dark herringbone, a tiled kitchen with two tables, a glass lounge with
+  a pink and blue rug, lit divider walls, a television on a 3D panel wall, a row of lit acoustic
+  panels, twenty desks in three benches and a glass office for you.
+- **Floors reflect the room.** The floors are glossy and each room carries its own reflection, so the
+  pools of warm light under the lamps shine on the parquet.
+- **Glass you can see through.** Partitions used to be opaque blue slabs that hid everything behind
+  them.
+- **Staff sit and work.** Employees no longer stand behind their chairs: they sit at their desks,
+  typing, from the start of their hours to the end, and are gone outside them, name and all.
+
+**Save compatibility.** No save change. Furniture bought for these offices stands in the open floor
+in front of the desks, which moved when the rooms were rebuilt.
+
+**Under the hood.** The floor, wall and panel textures are drawn by code (`TextureForge`) rather than
+downloaded, as stand-ins for the planned asset pass: a material can be repointed at a bought texture
+without touching the room. The two highest quality levels draw 8 lights per pixel, up from 3 and 4.
+
 ### The city map, second pass
 
 - **The map opens on your building and pulls back from it.** The pull-back had been written and
