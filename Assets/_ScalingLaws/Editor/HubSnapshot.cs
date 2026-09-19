@@ -31,7 +31,45 @@ namespace ScalingLaws.Editor
         public static void BuildAndSnapshot()
         {
             HubRoomBuilder.BuildBoth();
+            DecorModelBuilder.BuildAll();
             Snapshot();
+            ShootShop();
+        }
+
+        /// <summary>
+        /// Every piece the furniture shop sells, stood in a row on the small office's shop floor, so
+        /// the models can be looked at. The scene is not saved.
+        /// </summary>
+        public static void ShootShop()
+        {
+            Directory.CreateDirectory(OutputFolder);
+
+            var scene = EditorSceneManager.OpenScene("Assets/_ScalingLaws/Scenes/SmallHub.unity", OpenSceneMode.Single);
+            var room = GameObject.Find("SmallHub");
+            var x = 4.4f;
+            var z = 2.2f;
+
+            foreach (var piece in Data.FurnitureCatalog.All)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{DecorModelBuilder.Folder}/{piece.Kind}.prefab");
+
+                if (prefab == null || room == null)
+                {
+                    continue;
+                }
+
+                if (x + piece.SizeX > 11.6f)
+                {
+                    x = 4.4f;
+                    z -= 1.3f;
+                }
+
+                var placed = (GameObject)PrefabUtility.InstantiatePrefab(prefab, room.transform);
+                placed.transform.localPosition = new Vector3(x + piece.SizeX / 2f, 0f, z);
+                x += piece.SizeX + 0.3f;
+            }
+
+            ShootOpen("shop_models.png");
         }
 
         private static void Shoot(string scenePath, string fileName)
@@ -43,10 +81,16 @@ namespace ScalingLaws.Editor
                 return;
             }
 
+            ShootOpen(fileName);
+        }
+
+        /// <summary>Renders whatever scene is open, as it stands, without reloading it.</summary>
+        private static void ShootOpen(string fileName)
+        {
             var camera = Object.FindFirstObjectByType<Camera>();
             if (camera == null)
             {
-                Debug.LogWarning($"{scenePath} has no camera.");
+                Debug.LogWarning($"No camera to shoot {fileName} with.");
                 return;
             }
 

@@ -551,6 +551,22 @@ namespace ScalingLaws.UI
         {
             var piece = item.Definition;
 
+            // **The model, when there is one.** Every piece used to be drawn as a box in its
+            // colour, which the author reported as strange blocks at the front of the office once
+            // the rebuilt rooms put the shop's floor where the camera looks. `DecorModelBuilder`
+            // writes one prefab per piece under Resources; the box below is what a piece without
+            // one still gets, so nothing bought ever goes missing.
+            var model = Resources.Load<GameObject>(DecorFolder + piece.Kind);
+
+            if (model != null)
+            {
+                var placed = Object.Instantiate(model, group);
+                placed.name = piece.DisplayName;
+                placed.transform.localPosition = new Vector3(item.X, 0f, item.Z);
+                placed.transform.localRotation = Quaternion.identity;
+                return;
+            }
+
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
             box.name = piece.DisplayName;
             box.transform.SetParent(group, false);
@@ -564,6 +580,9 @@ namespace ScalingLaws.UI
             var renderer = box.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = MaterialFor(piece.Tint);
         }
+
+        /// <summary>Where the furniture shop's models live under Resources.</summary>
+        public const string DecorFolder = "Decor/";
 
         private static readonly Dictionary<string, Material> Paints = new();
 
