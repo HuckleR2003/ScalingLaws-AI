@@ -156,6 +156,20 @@ where it was recorded.
 ledger are translated into the rolling window rather than removed, so nothing that asked them before
 had to change.
 
+### The offices, second pass
+
+- **Furniture you buy is furniture.** Every piece from the office shop used to be drawn as a coloured
+  block, which the rebuilt rooms put right at the front of the view. Plants, desks, the whiteboard,
+  bookshelf, sofa, standing desk, coffee bar, sculpture, aquarium and sleep pod now have models.
+- **The big office is its own place.** You come in from the street through a glass shopfront into a
+  reception hall with your company's name lit on a stone wall, a long counter, somewhere for visitors
+  to wait and gates through to the office. The desks moved under the windows and the acoustic
+  panels at the back, the meeting room is glass at the front, and there is a breakout corner.
+- **The boss's desk is no longer under the interface.** Both offices are framed a little further out
+  and lower.
+- **Houses on the map are bigger again**, 30 per cent on top of the first pass, because next to the
+  commercial blocks the difference did not show.
+
 ### The two rented offices, rebuilt
 
 Both floors were rebuilt against two reference images the author picked, with the first thing a
