@@ -192,10 +192,11 @@ namespace ScalingLaws.UI
 
             if (chair != null)
             {
-                // Behind the chair rather than on it: the character is standing, and a standing
-                // model dropped onto a seat is a person growing out of the furniture. The chair's
-                // own facing is where the desk is, so stepping back along it is the aisle side.
-                person.position = chair.position - chair.forward * 0.32f;
+                // **On the chair, working.** The author's rule of 2026-09-19: staff never walk and
+                // never stand about; they sit at their station and work, and are not there at all
+                // outside their hours. Placed exactly where the founder sits down (the chair's own
+                // position and facing), and put straight into the typing loop by `Sit`.
+                person.position = chair.position;
                 person.rotation = chair.rotation;
                 return;
             }
@@ -208,6 +209,28 @@ namespace ScalingLaws.UI
                 1.6f + index % PerRow * Spacing,
                 0f,
                 1.0f + index / PerRow * Spacing);
+        }
+
+        /// <summary>The state a seated employee loops: the founder's own typing clip.</summary>
+        public const string WorkingState = "Type";
+
+        /// <summary>
+        /// Straight into the typing loop, never through the walk or the sit-down. Each person starts
+        /// at a different point in the loop, derived from their index rather than rolled, so a room
+        /// of twelve is not twelve people pressing keys in step and the same room looks the same
+        /// after a reload.
+        /// </summary>
+        private static void Sit(GameObject person, int index)
+        {
+            var animator = person.GetComponentInChildren<Animator>();
+
+            if (animator == null || animator.runtimeAnimatorController == null
+                || !animator.HasState(0, Animator.StringToHash(WorkingState)))
+            {
+                return;
+            }
+
+            animator.Play(WorkingState, 0, index * 0.37f % 1f);
         }
 
         /// <summary>The chair the room built for this hire, or null when it built none.</summary>
@@ -249,6 +272,7 @@ namespace ScalingLaws.UI
             }
 
             Stand(person.transform, seat);
+            Sit(person, index);
 
             person.AddComponent<NamePlate>().Set(
                 hire.Name,
@@ -441,17 +465,18 @@ namespace ScalingLaws.UI
                 var hire = hires[index];
                 var onDuty = now >= hire.StartHour && now < hire.EndHour;
 
-                // The renderers rather than the object, so the name plate stays up: the plate is
-                // what is left of somebody who has gone home and it is the point of the whole
-                // arrangement.
+                // **Gone, name plate and all.** The author's rule of 2026-09-19: somebody outside
+                // their hours is not in the office. The plate used to stay up reading "off duty",
+                // which left rows of floating labels over empty chairs all night.
                 foreach (var renderer in person.GetComponentsInChildren<Renderer>(true))
                 {
-                    if (renderer.transform.name is "Line" or "Rule")
-                    {
-                        continue;
-                    }
-
                     renderer.enabled = onDuty;
+                }
+
+                // Back into the loop on arrival, or they reappear frozen where they left off.
+                if (onDuty)
+                {
+                    Sit(person, index);
                 }
 
                 var plate = person.GetComponent<NamePlate>();
