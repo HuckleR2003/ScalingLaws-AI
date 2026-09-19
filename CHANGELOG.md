@@ -38,6 +38,13 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+### Credits
+
+- **The game has credits.** CREDITS in the main menu opens a sheet with who made the game, the
+  testers and, once the Steam launch is supported, the supporters. The first tester on it is
+  **Natalka6456**, who played the game for hours and wrote down every place it was unclear or broke.
+  Names are kept in one list, and a test fails if a name goes missing or appears twice.
+
 ### Licence and documentation
 
 - **The licence changed.** From 19 September 2026 the code is **source available, all rights

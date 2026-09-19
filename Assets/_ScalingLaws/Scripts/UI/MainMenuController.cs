@@ -62,6 +62,9 @@ namespace ScalingLaws.UI
         private bool awaitingOverwriteConfirmation;
         private bool settingsOpen;
 
+        /// <summary>The CREDITS sheet is open over the menu. Same shape as <see cref="settingsOpen"/>.</summary>
+        private bool creditsOpen;
+
         private readonly List<FounderTrait> chosenTraits = new();
         private readonly SkillSet skills = new();
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
@@ -274,6 +277,10 @@ namespace ScalingLaws.UI
             {
                 page.Add(BuildSettingsPanel());
             }
+            else if (creditsOpen)
+            {
+                page.Add(BuildCreditsPanel());
+            }
 
             return page;
         }
@@ -369,6 +376,16 @@ namespace ScalingLaws.UI
             { text = Loc.T("menu.settings") };
             settings.AddToClassList("menu-button");
             actions.Add(settings);
+
+            var credits = new Button(() =>
+            {
+                creditsOpen = true;
+                Show(Stage.Menu);
+            })
+            { text = Loc.T("menu.credits") };
+            credits.AddToClassList("menu-button");
+            credits.AddToClassList("menu-button--quiet");
+            actions.Add(credits);
 
             var quit = new Button(Quit) { text = Loc.T("menu.quit") };
             quit.AddToClassList("menu-button");
@@ -592,6 +609,78 @@ namespace ScalingLaws.UI
             sheet.Add(back);
 
             return panel;
+        }
+
+        /// <summary>
+        /// The CREDITS sheet: who made the game, who tested it and who supported the Steam launch.
+        ///
+        /// Built on the settings sheet rather than a page of its own, because it is read and closed,
+        /// not navigated. Every name comes from <see cref="Credits"/>; nothing here is typed twice.
+        /// </summary>
+        private VisualElement BuildCreditsPanel()
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("settings-panel");
+
+            var sheet = new VisualElement();
+            sheet.AddToClassList("settings-sheet");
+            panel.Add(sheet);
+
+            var heading = new Label(Loc.T("credits.title"));
+            heading.AddToClassList("page-title");
+            sheet.Add(heading);
+
+            var sub = new Label(Loc.T("credits.note"));
+            sub.AddToClassList("page-subtitle");
+            sheet.Add(sub);
+
+            sheet.Add(CreditsSection(Loc.T("credits.created"), null,
+                new[] { Credits.CreatedBy + "  ·  " + Credits.Studio }));
+            sheet.Add(CreditsSection(Loc.T("credits.testers"), Loc.T("credits.testers.note"), Credits.Testers));
+            sheet.Add(CreditsSection(Loc.T("credits.supporters"),
+                Credits.Supporters.Count == 0 ? Loc.T("credits.supporters.empty") : null, Credits.Supporters));
+
+            var back = new Button(() =>
+            {
+                creditsOpen = false;
+                Show(Stage.Menu);
+            })
+            { text = Loc.T("common.back") };
+            back.AddToClassList("menu-button");
+            back.style.marginTop = 18;
+            sheet.Add(back);
+
+            return panel;
+        }
+
+        /// <summary>One heading, an optional line under it, and the names, largest type on the sheet.</summary>
+        private static VisualElement CreditsSection(string title, string note, IEnumerable<string> names)
+        {
+            var section = new VisualElement();
+            section.AddToClassList("panel");
+            section.style.marginTop = 14;
+
+            var heading = new Label(title);
+            heading.AddToClassList("signature-studio");
+            section.Add(heading);
+
+            if (!string.IsNullOrEmpty(note))
+            {
+                var line = new Label(note);
+                line.AddToClassList("console-caption");
+                line.style.whiteSpace = WhiteSpace.Normal;
+                section.Add(line);
+            }
+
+            foreach (var name in names)
+            {
+                var label = new Label(name);
+                label.AddToClassList("signature-author");
+                label.style.marginTop = 6;
+                section.Add(label);
+            }
+
+            return section;
         }
 
         /// <summary>
