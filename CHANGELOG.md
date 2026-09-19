@@ -167,6 +167,9 @@ had to change.
   panels at the back, the meeting room is glass at the front, and there is a breakout corner.
 - **The boss's desk is no longer under the interface.** Both offices are framed a little further out
   and lower.
+- **Real floors.** The offices' parquet, kitchen tiles, lobby marble, the big office's concrete walls
+  and its black marble logo wall are photographed materials from ambientCG (CC0), with their own
+  surface relief, polished so the lamps shine in them.
 - **Houses on the map are bigger again**, 30 per cent on top of the first pass, because next to the
   commercial blocks the difference did not show.
 

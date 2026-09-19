@@ -1520,22 +1520,33 @@ namespace ScalingLaws.Editor
                     ? TextureForge.DomePanels("DomesWarm", new Color(0.56f, 0.38f, 0.22f), 6)
                     : TextureForge.DomePanels("DomesGrey", new Color(0.46f, 0.47f, 0.50f), 6);
 
-                MainFloor = Make($"{tag}Floor", Color.white, one ? 0.62f : 0.72f, 0f, parquet,
-                    new Vector2(plan.Width / 2.4f, plan.Depth / 2.4f));
+                // **Photographed materials from ambientCG (CC0) where we have them**, with the
+                // generated textures as the fallback: a clone without the folder still builds.
+                MainFloor = one
+                    ? Pbr($"{tag}Floor", "WoodFloor034", new Color(0.86f, 0.70f, 0.56f), 1f, new Vector2(plan.Width / 3.2f, plan.Depth / 3.2f))
+                      ?? Make($"{tag}Floor", Color.white, 0.62f, 0f, parquet, new Vector2(plan.Width / 2.4f, plan.Depth / 2.4f))
+                    : Pbr($"{tag}Floor", "WoodFloor037", new Color(0.62f, 0.42f, 0.36f), 1f, new Vector2(plan.Width / 3.2f, plan.Depth / 3.2f))
+                      ?? Make($"{tag}Floor", Color.white, 0.72f, 0f, parquet, new Vector2(plan.Width / 2.4f, plan.Depth / 2.4f));
 
-                LobbyFloor = Make($"{tag}LobbyFloor", Color.white, 0.85f, 0f, stone,
-                    new Vector2(plan.LobbyWidth / 2f, plan.LobbyDepth / 2f));
+                LobbyFloor = Pbr($"{tag}LobbyFloor", "Marble012", Color.white, 1f, new Vector2(plan.LobbyWidth / 2f, plan.LobbyDepth / 2f))
+                    ?? Make($"{tag}LobbyFloor", Color.white, 0.85f, 0f, stone, new Vector2(plan.LobbyWidth / 2f, plan.LobbyDepth / 2f));
 
-                KitchenFloor = Make($"{tag}KitchenFloor", Color.white, 0.8f, 0f, tiles,
-                    new Vector2(plan.KitchenWidth / 2.4f, (plan.KitchenTo - plan.KitchenFrom) / 2.4f));
+                var kitchenTiling = new Vector2(plan.KitchenWidth / 2.4f, (plan.KitchenTo - plan.KitchenFrom) / 2.4f);
+                KitchenFloor = one
+                    ? Pbr($"{tag}KitchenFloor", "Tiles107", new Color(0.58f, 0.60f, 0.64f), 1f, kitchenTiling)
+                      ?? Make($"{tag}KitchenFloor", Color.white, 0.8f, 0f, tiles, kitchenTiling)
+                    : Pbr($"{tag}KitchenFloor", "Tiles138", Color.white, 1f, kitchenTiling)
+                      ?? Make($"{tag}KitchenFloor", Color.white, 0.8f, 0f, tiles, kitchenTiling);
 
                 WallBack = one
                     ? Make($"{tag}WallBack", Color.white, 0.25f, 0f, planks, new Vector2(plan.Depth / 1.2f, WallHeight / 1.2f))
-                    : Make($"{tag}WallBack", new Color(0.55f, 0.56f, 0.6f), 0.3f, 0f, stoneDark, new Vector2(plan.Depth / 3f, 1f));
+                    : Pbr($"{tag}WallBack", "Concrete034", new Color(0.30f, 0.31f, 0.34f), 0.6f, new Vector2(plan.Depth / 3f, 1f))
+                      ?? Make($"{tag}WallBack", new Color(0.55f, 0.56f, 0.6f), 0.3f, 0f, stoneDark, new Vector2(plan.Depth / 3f, 1f));
 
                 WallSide = one
                     ? Make($"{tag}WallSide", Color.white, 0.25f, 0f, planks, new Vector2(plan.Width / 1.2f, WallHeight / 1.2f))
-                    : Make($"{tag}WallSide", new Color(0.55f, 0.56f, 0.6f), 0.3f, 0f, stoneDark, new Vector2(plan.Width / 3f, 1f));
+                    : Pbr($"{tag}WallSide", "Concrete034", new Color(0.30f, 0.31f, 0.34f), 0.6f, new Vector2(plan.Width / 3f, 1f))
+                      ?? Make($"{tag}WallSide", new Color(0.55f, 0.56f, 0.6f), 0.3f, 0f, stoneDark, new Vector2(plan.Width / 3f, 1f));
 
                 PanelWall = Make($"{tag}PanelWall", Color.white, 0.35f, 0f, domes, new Vector2(3f, 2f));
 
@@ -1552,9 +1563,11 @@ namespace ScalingLaws.Editor
                     new Color(1f, 0.82f, 0.58f) * 2.4f);
                 Cabinet = one ? Make($"{tag}Cabinet", new Color(0.22f, 0.17f, 0.13f), 0.45f)
                               : Make($"{tag}Cabinet", new Color(0.09f, 0.09f, 0.10f), 0.5f);
-                Counter = Make("HubCounter", Color.white, 0.9f, 0f, stone, Vector2.one);
+                Counter = Pbr("HubCounter", "Marble012", Color.white, 1f, Vector2.one)
+                          ?? Make("HubCounter", Color.white, 0.9f, 0f, stone, Vector2.one);
                 Backsplash = one ? Make($"{tag}Backsplash", Color.white, 0.8f, 0f, tiles, new Vector2(2f, 0.3f))
-                                 : Make($"{tag}Backsplash", Color.white, 0.85f, 0f, stoneDark, new Vector2(2f, 0.4f));
+                                 : Pbr($"{tag}Backsplash", "Marble006", Color.white, 1f, new Vector2(1.5f, 1f))
+                                   ?? Make($"{tag}Backsplash", Color.white, 0.85f, 0f, stoneDark, new Vector2(2f, 0.4f));
                 DeskTop = one ? Make($"{tag}DeskTop", new Color(0.44f, 0.31f, 0.20f), 0.4f)
                               : Make($"{tag}DeskTop", new Color(0.20f, 0.20f, 0.22f), 0.5f);
                 BenchScreen = Make("HubBenchScreen", new Color(0.14f, 0.14f, 0.15f), 0.3f);
@@ -1637,6 +1650,13 @@ namespace ScalingLaws.Editor
                 material.mainTexture = texture;
                 material.mainTextureScale = tiling ?? Vector2.one;
 
+                // Cleared here and set again by `Pbr`, so a material that stops being photographed
+                // does not keep a normal map from the last build.
+                material.SetTexture("_BumpMap", null);
+                material.SetTexture("_MetallicGlossMap", null);
+                material.DisableKeyword("_NORMALMAP");
+                material.DisableKeyword("_METALLICGLOSSMAP");
+
                 if (emission.HasValue)
                 {
                     material.EnableKeyword("_EMISSION");
@@ -1651,6 +1671,75 @@ namespace ScalingLaws.Editor
 
                 EditorUtility.SetDirty(material);
                 return material;
+            }
+
+            /// <summary>The folder the ambientCG materials were copied into. CC0; see LICENSE.txt there.</summary>
+            private const string AmbientFolder = "Assets/_ScalingLaws/Art/Textures/ambientCG";
+
+            /// <summary>
+            /// A photographed material from ambientCG: colour, normal and smoothness, on the Standard
+            /// shader. Null when the textures are not in the project, so the caller can fall back.
+            ///
+            /// The smoothness comes from the asset's roughness map, inverted into the alpha of a
+            /// metallic map when the files were copied in, because that is where the Standard shader
+            /// reads it. <paramref name="gloss"/> scales it.
+            /// </summary>
+            private static Material Pbr(string name, string asset, Color tint, float gloss, Vector2 tiling)
+            {
+                var colour = AssetDatabase.LoadAssetAtPath<Texture2D>($"{AmbientFolder}/{asset}_Color.jpg");
+
+                if (colour == null)
+                {
+                    return null;
+                }
+
+                var normalPath = $"{AmbientFolder}/{asset}_NormalGL.jpg";
+                var glossPath = $"{AmbientFolder}/{asset}_MetallicSmoothness.png";
+
+                Import(normalPath, TextureImporterType.NormalMap, false);
+                Import(glossPath, TextureImporterType.Default, false);
+
+                var material = Make(name, tint, 0.5f, 0f, colour, tiling);
+
+                var normal = AssetDatabase.LoadAssetAtPath<Texture2D>(normalPath);
+                var glossMap = AssetDatabase.LoadAssetAtPath<Texture2D>(glossPath);
+
+                if (normal != null)
+                {
+                    material.SetTexture("_BumpMap", normal);
+                    material.SetFloat("_BumpScale", 1f);
+                    material.EnableKeyword("_NORMALMAP");
+                }
+
+                if (glossMap != null)
+                {
+                    material.SetTexture("_MetallicGlossMap", glossMap);
+                    material.SetFloat("_GlossMapScale", gloss);
+                    material.EnableKeyword("_METALLICGLOSSMAP");
+                }
+
+                EditorUtility.SetDirty(material);
+                return material;
+            }
+
+            private static void Import(string path, TextureImporterType type, bool srgb)
+            {
+                if (AssetImporter.GetAtPath(path) is not TextureImporter importer)
+                {
+                    return;
+                }
+
+                if (importer.textureType == type && importer.sRGBTexture == srgb
+                    && importer.wrapMode == TextureWrapMode.Repeat)
+                {
+                    return;
+                }
+
+                importer.textureType = type;
+                importer.sRGBTexture = srgb;
+                importer.wrapMode = TextureWrapMode.Repeat;
+                importer.anisoLevel = 8;
+                importer.SaveAndReimport();
             }
 
             /// <summary>

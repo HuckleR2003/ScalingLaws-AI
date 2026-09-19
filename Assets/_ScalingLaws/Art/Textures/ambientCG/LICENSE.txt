@@ -1,0 +1,7 @@
+Textures in this folder are from ambientCG (https://ambientcg.com), released under
+Creative Commons CC0 1.0 Universal: free for any use, no attribution required.
+
+Files: <id>_Color.jpg and <id>_NormalGL.jpg as downloaded (1K-JPG); <id>_MetallicSmoothness.png is
+derived from the asset's Roughness map for Unity's Standard shader: alpha = 1 - roughness for the
+concrete, and 0.55 + 0.4 * (1 - roughness) for the floors and marble, which are shown polished.
+Downloaded 2026-09-19.
