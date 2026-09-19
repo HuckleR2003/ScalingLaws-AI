@@ -598,6 +598,9 @@ namespace ScalingLaws.UI
             about.Add(discipline);
             sheet.Add(about);
 
+            // The people who tested the game, straight under who made it.
+            sheet.Add(TesterList.Build());
+
             var back = new Button(() =>
             {
                 settingsOpen = false;
@@ -636,7 +639,7 @@ namespace ScalingLaws.UI
 
             sheet.Add(CreditsSection(Loc.T("credits.created"), null,
                 new[] { Credits.CreatedBy + "  ·  " + Credits.Studio }));
-            sheet.Add(CreditsSection(Loc.T("credits.testers"), Loc.T("credits.testers.note"), Credits.Testers));
+            sheet.Add(TesterList.Build());
             sheet.Add(CreditsSection(Loc.T("credits.supporters"),
                 Credits.Supporters.Count == 0 ? Loc.T("credits.supporters.empty") : null, Credits.Supporters));
 

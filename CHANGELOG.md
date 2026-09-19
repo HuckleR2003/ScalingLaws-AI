@@ -44,6 +44,11 @@ go in. This file is the draft for the store update post, so anything vague here 
   testers and, once the Steam launch is supported, the supporters. The first tester on it is
   **Natalka6456**, who played the game for hours and wrote down every place it was unclear or broke.
   Names are kept in one list, and a test fails if a name goes missing or appears twice.
+- **The testers are also under SETTINGS in the main menu**, below the studio card. Each has a
+  line in small type about what they did, in both languages. **Natalka6456** has her own small
+  picture beside her name, and **Francisco T** is the second name on the list, for ideas about
+  mechanics and quality-of-life improvements and for bug reports. The SETTINGS and CREDITS sheets
+  build the list from the same code, so they cannot show different people.
 
 ### Licence and documentation
 

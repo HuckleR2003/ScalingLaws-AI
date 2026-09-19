@@ -219,6 +219,47 @@ namespace ScalingLaws.Tests.PlayMode
         /// fresh machine, so every row is locked: that is the state a new player opens it in and the
         /// one where a locked row has to look deliberate rather than broken.
         /// </summary>
+        /// <summary>
+        /// The testers under SETTINGS in the main menu, in both languages, and the CREDITS sheet.
+        ///
+        /// Built through the controller's own private methods rather than a copy of them, on a
+        /// component that is never enabled, so the menu's opening never runs over the frame. The
+        /// icon is the thing worth looking at: a missing Resources file draws no picture and no
+        /// error, which reads exactly like a row that was designed without one.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheSettingsSheetListsTheTesters()
+        {
+            var host = new GameObject("MenuProof");
+            host.SetActive(false);
+            var menu = host.AddComponent<MainMenuController>();
+            var build = typeof(MainMenuController).GetMethod(
+                "BuildSettingsPanel",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var credits = typeof(MainMenuController).GetMethod(
+                "BuildCreditsPanel",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(build, Is.Not.Null);
+            Assert.That(credits, Is.Not.Null);
+
+            var previous = Loc.Current;
+            try
+            {
+                Loc.Current = Language.Polish;
+                yield return Capture((VisualElement)build.Invoke(menu, null), "menu_settings_pl.png");
+                yield return Capture(TesterList.Build(), "menu_testers_pl.png");
+
+                Loc.Current = Language.English;
+                yield return Capture((VisualElement)build.Invoke(menu, null), "menu_settings_en.png");
+                yield return Capture((VisualElement)credits.Invoke(menu, null), "menu_credits_en.png");
+            }
+            finally
+            {
+                Loc.Current = previous;
+                Object.Destroy(host);
+            }
+        }
+
         [UnityTest]
         public IEnumerator TheAchievementsPageDraws()
         {

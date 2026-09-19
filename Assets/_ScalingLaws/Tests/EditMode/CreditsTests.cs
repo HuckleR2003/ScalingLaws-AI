@@ -13,13 +13,14 @@ namespace ScalingLaws.Tests
         [Test]
         public void NatalkaIsCreditedAsATester()
         {
-            Assert.That(Credits.Testers, Does.Contain("Natalka6456"));
+            Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("Natalka6456"));
+            Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("Francisco T"));
         }
 
         [Test]
         public void NoNameIsBlankOrListedTwice()
         {
-            var everyone = Credits.Testers.Concat(Credits.Supporters).ToList();
+            var everyone = Credits.Testers.Select(t => t.Name).Concat(Credits.Supporters).ToList();
 
             Assert.That(everyone.All(name => !string.IsNullOrWhiteSpace(name)), Is.True);
             Assert.That(everyone.Count, Is.EqualTo(everyone.Distinct().Count()));
@@ -32,7 +33,7 @@ namespace ScalingLaws.Tests
             {
                 "menu.credits", "credits.title", "credits.note", "credits.created", "credits.testers",
                 "credits.testers.note", "credits.supporters", "credits.supporters.empty"
-            };
+            }.Concat(Credits.Testers.Select(t => t.RoleKey)).ToArray();
 
             // English first: a key English lacks comes back as the key itself. Polish second, through
             // the translator's worklist, because a missing Polish key falls back to English silently.
