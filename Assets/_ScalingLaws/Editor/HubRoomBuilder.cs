@@ -1545,15 +1545,15 @@ namespace ScalingLaws.Editor
                 var stoneDark = TextureForge.Stone("StoneDark", new Color(0.20f, 0.21f, 0.23f));
                 var planks = TextureForge.Planks("PlanksWarm", new Color(0.52f, 0.33f, 0.19f), 6);
                 var domes = one
-                    ? TextureForge.DomePanels("DomesWarm", new Color(0.56f, 0.38f, 0.22f), 6)
+                    ? TextureForge.DomePanels("DomesWarm", new Color(0.80f, 0.76f, 0.70f), 6)
                     : TextureForge.DomePanels("DomesGrey", new Color(0.46f, 0.47f, 0.50f), 6);
 
                 // **Photographed materials from ambientCG (CC0) where we have them**, with the
                 // generated textures as the fallback: a clone without the folder still builds.
                 MainFloor = one
-                    ? Pbr($"{tag}Floor", "WoodFloor034", new Color(0.86f, 0.70f, 0.56f), 1f, new Vector2(plan.Width / 3.2f, plan.Depth / 3.2f))
+                    ? Pbr($"{tag}Floor", "WoodFloor036", new Color(0.96f, 0.92f, 0.86f), 1f, new Vector2(plan.Width / 3.2f, plan.Depth / 3.2f))
                       ?? Make($"{tag}Floor", Color.white, 0.62f, 0f, parquet, new Vector2(plan.Width / 2.4f, plan.Depth / 2.4f))
-                    : Pbr($"{tag}Floor", "WoodFloor037", new Color(0.62f, 0.42f, 0.36f), 1f, new Vector2(plan.Width / 3.2f, plan.Depth / 3.2f))
+                    : Pbr($"{tag}Floor", "WoodFloor034", new Color(0.95f, 0.88f, 0.80f), 1f, new Vector2(plan.Width / 3.2f, plan.Depth / 3.2f))
                       ?? Make($"{tag}Floor", Color.white, 0.72f, 0f, parquet, new Vector2(plan.Width / 2.4f, plan.Depth / 2.4f));
 
                 LobbyFloor = Pbr($"{tag}LobbyFloor", "Marble012", Color.white, 1f, new Vector2(plan.LobbyWidth / 2f, plan.LobbyDepth / 2f))
@@ -1567,15 +1567,15 @@ namespace ScalingLaws.Editor
                       ?? Make($"{tag}KitchenFloor", Color.white, 0.8f, 0f, tiles, kitchenTiling);
 
                 WallBack = one
-                    ? AmbientMaterials.Get($"{tag}WallBack", "WoodFloor043", new Color(0.80f, 0.64f, 0.50f), 1f, new Vector2(plan.Depth / 2f, WallHeight / 2f))
+                    ? AmbientMaterials.Get($"{tag}WallBack", "Plaster002", new Color(0.96f, 0.93f, 0.88f), 0.5f, new Vector2(plan.Depth / 3f, WallHeight / 3f))
                       ?? Make($"{tag}WallBack", Color.white, 0.25f, 0f, planks, new Vector2(plan.Depth / 1.2f, WallHeight / 1.2f))
-                    : Pbr($"{tag}WallBack", "Concrete034", new Color(0.30f, 0.31f, 0.34f), 0.6f, new Vector2(plan.Depth / 3f, 1f))
+                    : Pbr($"{tag}WallBack", "Concrete034", new Color(0.66f, 0.67f, 0.70f), 0.6f, new Vector2(plan.Depth / 3f, 1f))
                       ?? Make($"{tag}WallBack", new Color(0.55f, 0.56f, 0.6f), 0.3f, 0f, stoneDark, new Vector2(plan.Depth / 3f, 1f));
 
                 WallSide = one
-                    ? AmbientMaterials.Get($"{tag}WallSide", "WoodFloor043", new Color(0.80f, 0.64f, 0.50f), 1f, new Vector2(plan.Width / 2f, WallHeight / 2f))
+                    ? AmbientMaterials.Get($"{tag}WallSide", "Plaster002", new Color(0.96f, 0.93f, 0.88f), 0.5f, new Vector2(plan.Width / 3f, WallHeight / 3f))
                       ?? Make($"{tag}WallSide", Color.white, 0.25f, 0f, planks, new Vector2(plan.Width / 1.2f, WallHeight / 1.2f))
-                    : Pbr($"{tag}WallSide", "Concrete034", new Color(0.30f, 0.31f, 0.34f), 0.6f, new Vector2(plan.Width / 3f, 1f))
+                    : Pbr($"{tag}WallSide", "Concrete034", new Color(0.66f, 0.67f, 0.70f), 0.6f, new Vector2(plan.Width / 3f, 1f))
                       ?? Make($"{tag}WallSide", new Color(0.55f, 0.56f, 0.6f), 0.3f, 0f, stoneDark, new Vector2(plan.Width / 3f, 1f));
 
                 PanelWall = Make($"{tag}PanelWall", Color.white, 0.35f, 0f, domes, new Vector2(3f, 2f));
