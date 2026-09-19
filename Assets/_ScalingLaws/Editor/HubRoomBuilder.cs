@@ -197,11 +197,25 @@ namespace ScalingLaws.Editor
             /// Twenty desks in three benches, dark herringbone, lit dividers, a kitchen, a glass lounge
             /// and a television wall: the author's first reference.
             /// </summary>
+            /// <remarks>
+            /// **Redone the same day, because the first pass was the small office at a larger size.**
+            /// The author's note: too like the first, a better entrance, and the desks under the top
+            /// wall. So the company is entered from the street through a glass front with its name
+            /// over the doors, into a reception hall with a lit logo wall and gates; the benches stand
+            /// under the windows and the acoustic panels; the front of the floor is a glass meeting
+            /// room, the boss's office and a breakout corner.
+            /// </remarks>
             public static Plan BigHub() => new("BigHub", 2, 22f, 14f, 20, 9.0f,
-                lobbyWidth: 3.6f, lobbyDepth: 4.6f,
-                kitchenFrom: 4.6f, kitchenTo: 10.2f, kitchenWidth: 5.2f,
+                lobbyWidth: 5.0f, lobbyDepth: 5.2f,
+                kitchenFrom: 5.2f, kitchenTo: 10.0f, kitchenWidth: 5.0f,
                 loungeX: 0f, loungeWidth: 5.6f, loungeDepth: 3.8f,
-                benches: new[] { new Bench(8.8f, 4, 3.9f), new Bench(8.8f, 4, 6.9f), new Bench(17.6f, 2, 7.4f) });
+                benches: new[] { new Bench(8.0f, 4, 12.1f), new Bench(8.0f, 4, 9.3f), new Bench(16.6f, 2, 12.1f) });
+
+            /// <summary>
+            /// The big office is entered from the front of the building, through a glass shopfront;
+            /// the small one through doors in its back wall.
+            /// </summary>
+            public bool FrontEntrance => Level == 2;
 
             /// <summary>
             /// The desk the founder works at: in the corner nearest the camera on both floors, and on
@@ -236,7 +250,16 @@ namespace ScalingLaws.Editor
             // start at a lobby with glass doors and the company's name over them, which is the first
             // thing the author asked for.
             BuildShell(root.transform, plan, palette);
-            BuildLobby(root.transform, plan, palette);
+
+            if (plan.FrontEntrance)
+            {
+                BuildReceptionHall(root.transform, plan, palette);
+            }
+            else
+            {
+                BuildLobby(root.transform, plan, palette);
+            }
+
             BuildKitchen(root.transform, plan, palette);
             BuildLounge(root.transform, plan, palette);
             BuildDesks(root.transform, plan, palette);
@@ -249,6 +272,8 @@ namespace ScalingLaws.Editor
             else
             {
                 BuildFeatureWalls(root.transform, plan, palette);
+                BuildFrontMeetingRoom(root.transform, plan, palette);
+                BuildBreakout(root.transform, plan, palette);
                 BuildBossOffice(root.transform, plan, palette);
             }
 
@@ -296,8 +321,9 @@ namespace ScalingLaws.Editor
 
             // **The back wall has the entrance in it**, so it is built in three pieces round the
             // doorway: below the lobby, above the lobby, and the lintel over the doors.
-            var doorFrom = plan.LobbyDepth / 2f - DoorWidth / 2f;
-            var doorTo = plan.LobbyDepth / 2f + DoorWidth / 2f;
+            // With the entrance at the front, the back wall is whole: the gap closes to nothing.
+            var doorFrom = plan.FrontEntrance ? plan.Depth / 2f : plan.LobbyDepth / 2f - DoorWidth / 2f;
+            var doorTo = plan.FrontEntrance ? plan.Depth / 2f : plan.LobbyDepth / 2f + DoorWidth / 2f;
 
             Box(shell, "WallBackA",
                 new Vector3(WallThickness / 2f, WallHeight / 2f, doorFrom / 2f),
@@ -307,9 +333,12 @@ namespace ScalingLaws.Editor
                 new Vector3(WallThickness / 2f, WallHeight / 2f, (doorTo + plan.Depth) / 2f),
                 new Vector3(WallThickness, WallHeight, plan.Depth - doorTo), palette.WallBack);
 
-            Box(shell, "WallBackLintel",
-                new Vector3(WallThickness / 2f, (DoorHeight + WallHeight) / 2f, (doorFrom + doorTo) / 2f),
-                new Vector3(WallThickness, WallHeight - DoorHeight, DoorWidth), palette.WallBack);
+            if (!plan.FrontEntrance)
+            {
+                Box(shell, "WallBackLintel",
+                    new Vector3(WallThickness / 2f, (DoorHeight + WallHeight) / 2f, (doorFrom + doorTo) / 2f),
+                    new Vector3(WallThickness, WallHeight - DoorHeight, DoorWidth), palette.WallBack);
+            }
 
             Box(shell, "WallSide",
                 new Vector3(plan.Width / 2f, WallHeight / 2f, plan.Depth - WallThickness / 2f),
@@ -329,8 +358,9 @@ namespace ScalingLaws.Editor
             // blinds.
             // Where nothing stands against the wall: over the lounge on both floors. The meeting
             // room's panel wall and the second floor's television and acoustic panels cover the rest.
-            var first = plan.Level == 1 ? plan.Width * 0.30f : 0.9f;
-            var last = plan.Level == 1 ? plan.Width - 5.4f : plan.LoungeWidth - 0.8f;
+            // On the second floor the windows are over the benches that stand under them.
+            var first = plan.Level == 1 ? plan.Width * 0.30f : 7.4f;
+            var last = plan.Level == 1 ? plan.Width - 5.4f : 13.6f;
             var count = Mathf.Max(2, Mathf.RoundToInt((last - first) / 2.3f));
 
             for (var index = 0; index <= count; index++)
@@ -339,17 +369,6 @@ namespace ScalingLaws.Editor
                 Window(shell, $"SideWindow{index}", new Vector3(x, 0f, plan.Depth - WallThickness), true, palette);
             }
 
-            // And along the back wall inside the second floor's glass lounge. The first floor's back
-            // wall is the lobby and the kitchen, end to end.
-            if (plan.Level == 2)
-            {
-                var from = plan.Depth - plan.LoungeDepth + 0.9f;
-
-                for (var z = from; z < plan.Depth - 0.8f; z += 2.3f)
-                {
-                    Window(shell, $"BackWindow{z:0}", new Vector3(WallThickness, 0f, z), false, palette);
-                }
-            }
         }
 
         /// <summary>
@@ -636,8 +655,11 @@ namespace ScalingLaws.Editor
                     (x1 - x0) * 0.62f, (x1 - x0) * 0.86f);
                 GlassRun(lounge, "LoungeGlassX", new Vector3(x1, 0f, z0), new Vector3(x1, 0f, z1), palette, 0f, 0f);
 
-                Piece(lounge, "Television", new Vector3(x0 + 0.25f, 1.3f, middle.z),
-                    new Vector3(0.1f, 0.7f, 1.2f), Kit.Television, palette.Screen, 90f);
+                Box(lounge, "PanelWall", new Vector3(WallThickness + 0.02f, 1.55f, middle.z),
+                    new Vector3(0.03f, 2.7f, z1 - z0 - 0.5f), palette.PanelWall);
+
+                Piece(lounge, "Television", new Vector3(x0 + 0.3f, 0.95f, middle.z),
+                    new Vector3(0.1f, 1.1f, 1.8f), Kit.Television, palette.Screen, 90f);
             }
         }
 
@@ -761,32 +783,14 @@ namespace ScalingLaws.Editor
         {
             var features = Group(parent, "FeatureWalls");
 
-            Divider(features, "DividerA", new Vector3(plan.Width * 0.33f, 0f, plan.Depth * 0.25f),
-                plan.Depth * 0.30f, palette);
+            // One divider between the lounge and the benches, one between the long benches and the
+            // short one: the lit walls that give the reference its look, standing where they divide.
+            Divider(features, "DividerA", new Vector3(6.2f, 0f, 8.4f), 4.8f, palette);
+            Divider(features, "DividerB", new Vector3(14.8f, 0f, 8.2f), 5.0f, palette);
 
-            Divider(features, "DividerB", new Vector3(plan.Width * 0.715f, 0f, plan.Depth * 0.40f),
-                plan.Depth * 0.26f, palette);
-
-            // The television wall, on the side wall between the lounge and the panels.
-            var tvFrom = plan.LoungeX + plan.LoungeWidth + 0.8f;
-            var tvTo = plan.Width * 0.58f;
-            var tvMiddle = (tvFrom + tvTo) / 2f;
-
-            Box(features, "DomeWall", new Vector3(tvMiddle, 1.55f, plan.Depth - WallThickness - 0.02f),
-                new Vector3(tvTo - tvFrom, 3.0f, 0.03f), palette.PanelWall);
-
-            Piece(features, "Television", new Vector3(tvMiddle, 1.1f, plan.Depth - WallThickness - 0.07f),
-                new Vector3(2.2f, 1.3f, 0.06f), Kit.Television, palette.Screen, 180f);
-
-            Piece(features, "Credenza", new Vector3(tvMiddle, 0f, plan.Depth - WallThickness - 0.35f),
-                new Vector3(2.6f, 0.6f, 0.5f), Kit.MediaTable, palette.Cabinet, 180f);
-
-            Piece(features, "CredenzaPlant", new Vector3(tvTo - 0.4f, 0f, plan.Depth - WallThickness - 0.45f),
-                new Vector3(0.6f, 1.2f, 0.6f), Kit.PlantTall, palette.Foliage);
-
-            // The acoustic panels: tall, pale, each with a line of light down one edge.
-            var panelsFrom = tvTo + 0.6f;
-            var panelsTo = plan.Width - 0.6f;
+            // The acoustic panels, tall and pale, each with a line of light, behind the short bench.
+            var panelsFrom = 15.4f;
+            var panelsTo = plan.Width - 0.5f;
             var panels = Mathf.Max(3, Mathf.RoundToInt((panelsTo - panelsFrom) / 0.75f));
 
             for (var index = 0; index < panels; index++)
@@ -800,6 +804,159 @@ namespace ScalingLaws.Editor
                 Box(features, $"AcousticLight{index}", new Vector3(x + 0.29f, 1.55f, z - 0.02f),
                     new Vector3(0.03f, 2.6f, 0.03f), palette.Led);
             }
+        }
+
+        /// <summary>
+        /// The big office's way in: a glass shopfront at the front of the building with the name over
+        /// its doors, a reception hall behind it with the name again, lit, on a stone wall, a long
+        /// counter, a place for visitors to wait, and gates through to the office.
+        ///
+        /// **The shopfront is glass all the way up**, because it stands on the side of the building
+        /// the camera looks in from, and anything solid there would hide the hall behind it.
+        /// </summary>
+        private static void BuildReceptionHall(Transform parent, Plan plan, HubPalette palette)
+        {
+            var hall = Group(parent, "Lobby");
+            var w = plan.LobbyWidth;
+            var d = plan.LobbyDepth;
+
+            Box(hall, "StoneFloor", new Vector3(w / 2f, 0.012f, d / 2f), new Vector3(w, 0.012f, d), palette.LobbyFloor);
+
+            // ---- the shopfront, on z = 0 ----
+            var doorX = w * 0.55f;
+            const float frontHeight = 3.1f;
+
+            GlassFront(hall, "FrontLeft", 0.1f, doorX - DoorWidth / 2f - 0.05f, frontHeight, palette);
+            GlassFront(hall, "FrontRight", doorX + DoorWidth / 2f + 0.05f, w, frontHeight, palette);
+
+            Box(hall, "DoorHead", new Vector3(doorX, DoorHeight, 0.02f), new Vector3(DoorWidth + 0.2f, 0.1f, 0.16f), palette.Frame);
+            Box(hall, "DoorJambL", new Vector3(doorX - DoorWidth / 2f - 0.02f, DoorHeight / 2f, 0.02f), new Vector3(0.08f, DoorHeight, 0.16f), palette.Frame);
+            Box(hall, "DoorJambR", new Vector3(doorX + DoorWidth / 2f + 0.02f, DoorHeight / 2f, 0.02f), new Vector3(0.08f, DoorHeight, 0.16f), palette.Frame);
+            Box(hall, "LeafL", new Vector3(doorX - DoorWidth / 4f, DoorHeight / 2f, 0.02f), new Vector3(DoorWidth / 2f - 0.06f, DoorHeight - 0.1f, 0.03f), palette.ClearGlass);
+            Box(hall, "LeafR", new Vector3(doorX + DoorWidth / 4f, DoorHeight / 2f, 0.02f), new Vector3(DoorWidth / 2f - 0.06f, DoorHeight - 0.1f, 0.03f), palette.ClearGlass);
+            Box(hall, "HandleL", new Vector3(doorX - 0.12f, 1.05f, -0.03f), new Vector3(0.03f, 1.0f, 0.04f), palette.Brass);
+            Box(hall, "HandleR", new Vector3(doorX + 0.12f, 1.05f, -0.03f), new Vector3(0.03f, 1.0f, 0.04f), palette.Brass);
+            Box(hall, "Mat", new Vector3(doorX, 0.02f, 0.9f), new Vector3(DoorWidth, 0.01f, 1.0f), palette.Carpet);
+
+            // A lit band along the top of the shopfront. **No name on it**: from this camera the
+            // shopfront and the logo wall behind it line up, and two names drawn one over the other
+            // read as neither. The name is on the logo wall, where the visitor faces it.
+            Box(hall, "Fascia", new Vector3(w / 2f, frontHeight + 0.08f, 0.0f), new Vector3(w + 0.1f, 0.2f, 0.2f), palette.SignPanel);
+            Box(hall, "FasciaLight", new Vector3(w / 2f, frontHeight - 0.03f, -0.11f), new Vector3(w * 0.92f, 0.03f, 0.03f), palette.Led);
+
+            // ---- the logo wall, on the back wall, with the name large and lit ----
+            var logoZ = d * 0.52f;
+            Box(hall, "LogoWall", new Vector3(WallThickness + 0.05f, 1.6f, logoZ), new Vector3(0.1f, 3.0f, d * 0.8f), palette.Backsplash);
+            Box(hall, "LogoFrameTop", new Vector3(WallThickness + 0.11f, 2.55f, logoZ), new Vector3(0.03f, 0.03f, d * 0.7f), palette.Led);
+            Box(hall, "LogoFrameBottom", new Vector3(WallThickness + 0.11f, 1.35f, logoZ), new Vector3(0.03f, 0.03f, d * 0.7f), palette.Led);
+
+            var logo = new GameObject("CompanySign");
+            logo.transform.SetParent(hall, false);
+            logo.transform.localPosition = new Vector3(WallThickness + 0.12f, 1.95f, logoZ);
+            logo.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
+            var logoSign = logo.AddComponent<UI.CompanySignAnchor>();
+            logoSign.Width = d * 0.66f;
+            logoSign.Height = 0.62f;
+
+            // The counter, along the logo wall, stone on a dark body with a line of light at its foot.
+            Box(hall, "CounterBody", new Vector3(1.45f, 0.52f, logoZ), new Vector3(0.6f, 1.04f, d * 0.52f), palette.Cabinet);
+            Box(hall, "CounterTop", new Vector3(1.45f, 1.07f, logoZ), new Vector3(0.7f, 0.06f, d * 0.56f), palette.Counter);
+            Box(hall, "CounterLight", new Vector3(1.77f, 0.08f, logoZ), new Vector3(0.02f, 0.03f, d * 0.48f), palette.Led);
+
+            // Somewhere to wait: two armchairs and a low table, and two tall plants.
+            Piece(hall, "WaitTable", new Vector3(w * 0.6f, 0f, d * 0.55f), new Vector3(0.8f, 0.4f, 0.8f), Kit.CoffeeTable, palette.Timber);
+            Piece(hall, "WaitChairA", new Vector3(w * 0.6f - 0.8f, 0f, d * 0.55f + 0.2f), new Vector3(0.75f, 0.8f, 0.75f), Kit.Armchair, palette.Accent, 110f);
+            Piece(hall, "WaitChairB", new Vector3(w * 0.6f + 0.8f, 0f, d * 0.55f + 0.2f), new Vector3(0.75f, 0.8f, 0.75f), Kit.Armchair, palette.Accent, -110f);
+            Piece(hall, "PlantA", new Vector3(0.6f, 0f, 0.6f), new Vector3(0.8f, 1.5f, 0.8f), Kit.PlantTall, palette.Foliage);
+            Piece(hall, "PlantB", new Vector3(0.6f, 0f, d - 0.6f), new Vector3(0.8f, 1.5f, 0.8f), Kit.PlantTall, palette.Foliage);
+
+            // ---- the way through: glass to the kitchen, glass with gates to the office ----
+            GlassRun(hall, "HallScreenZ", new Vector3(0f, 0f, d), new Vector3(w, 0f, d), palette, 0f, 0f);
+            GlassRun(hall, "HallScreenX", new Vector3(w, 0f, 0f), new Vector3(w, 0f, d), palette, d * 0.30f, d * 0.72f);
+
+            for (var gate = 0; gate < 3; gate++)
+            {
+                var z = Mathf.Lerp(d * 0.34f, d * 0.68f, gate / 2f);
+                Box(hall, $"Gate{gate}", new Vector3(w, 0.5f, z), new Vector3(0.24f, 1.0f, 0.14f), palette.Frame);
+                Box(hall, $"GateLight{gate}", new Vector3(w, 1.01f, z), new Vector3(0.2f, 0.02f, 0.1f), palette.Led);
+
+                if (gate < 2)
+                {
+                    Box(hall, $"GateFlap{gate}", new Vector3(w, 0.62f, z + (d * 0.17f) / 2f),
+                        new Vector3(0.02f, 0.5f, d * 0.17f - 0.2f), palette.ClearGlass);
+                }
+            }
+
+            AddPointLight(hall, "HallLightA", new Vector3(1.4f, 2.6f, logoZ), 1.2f, 4.5f, new Color(1f, 0.86f, 0.7f));
+            AddPointLight(hall, "HallLightB", new Vector3(w * 0.6f, 2.6f, 1.4f), 1.0f, 4.5f, new Color(1f, 0.86f, 0.7f));
+        }
+
+        /// <summary>A run of full-height glass along z = 0 from one x to another, with its posts.</summary>
+        private static void GlassFront(Transform parent, string name, float fromX, float toX, float height,
+            HubPalette palette)
+        {
+            if (toX - fromX < 0.1f)
+            {
+                return;
+            }
+
+            Box(parent, name, new Vector3((fromX + toX) / 2f, height / 2f, 0.02f), new Vector3(toX - fromX, height, 0.03f), palette.ClearGlass);
+            Box(parent, name + "Base", new Vector3((fromX + toX) / 2f, 0.04f, 0.02f), new Vector3(toX - fromX, 0.08f, 0.1f), palette.Frame);
+
+            var posts = Mathf.Max(1, Mathf.RoundToInt((toX - fromX) / 1.3f));
+
+            for (var index = 0; index <= posts; index++)
+            {
+                var x = Mathf.Lerp(fromX, toX, index / (float)posts);
+                Box(parent, $"{name}Post{index}", new Vector3(x, height / 2f, 0.02f), new Vector3(0.06f, height, 0.1f), palette.Frame);
+            }
+        }
+
+        /// <summary>The big office's meeting room: glass, at the front, where the camera sees into it.</summary>
+        private static void BuildFrontMeetingRoom(Transform parent, Plan plan, HubPalette palette)
+        {
+            var room = Group(parent, "MeetingRoom");
+            const float x0 = 10.4f;
+            const float x1 = 15.2f;
+            const float z1 = 4.4f;
+
+            Box(room, "Carpet", new Vector3((x0 + x1) / 2f, 0.016f, z1 / 2f), new Vector3(x1 - x0, 0.01f, z1), palette.Carpet);
+
+            GlassRun(room, "GlassBack", new Vector3(x0, 0f, z1), new Vector3(x1, 0f, z1), palette, 0f, 0f);
+            GlassRun(room, "GlassLeft", new Vector3(x0, 0f, 0f), new Vector3(x0, 0f, z1), palette, z1 * 0.62f, z1 * 0.9f);
+            GlassRun(room, "GlassRight", new Vector3(x1, 0f, 0f), new Vector3(x1, 0f, z1), palette, 0f, 0f);
+
+            var tableX = (x0 + x1) / 2f;
+            var tableZ = z1 / 2f;
+
+            Piece(room, "Table", new Vector3(tableX, 0f, tableZ), new Vector3(2.6f, 0.75f, 1.1f), Kit.MeetingTable, palette.Timber, 90f);
+
+            for (var index = 0; index < 6; index++)
+            {
+                var side = index % 2 == 0 ? -1f : 1f;
+                var along = tableX + (index / 2 - 1) * 0.85f;
+
+                Piece(room, $"Chair{index}", new Vector3(along, 0f, tableZ + side * 0.85f),
+                    new Vector3(0.55f, 0.88f, 0.55f), Kit.MeetingChair, palette.Fabric, side < 0f ? 0f : 180f);
+            }
+
+            AddPointLight(room, "MeetingLight", new Vector3(tableX, 2.4f, tableZ), 1.1f, 4.5f, new Color(1f, 0.9f, 0.78f));
+        }
+
+        /// <summary>The corner to the right of the benches: two armchairs, a table, plants and the printers.</summary>
+        private static void BuildBreakout(Transform parent, Plan plan, HubPalette palette)
+        {
+            var corner = Group(parent, "Breakout");
+            var centre = new Vector3(18.8f, 0f, 7.6f);
+
+            Box(corner, "Rug", new Vector3(centre.x, 0.018f, centre.z), new Vector3(3.2f, 0.01f, 2.4f), palette.RugAccent);
+            Piece(corner, "Table", centre, new Vector3(0.9f, 0.42f, 0.6f), Kit.CoffeeTable, palette.Timber);
+            Piece(corner, "ChairA", centre + new Vector3(-1.0f, 0f, 0.2f), new Vector3(0.8f, 0.85f, 0.8f), Kit.Armchair, palette.Accent, 100f);
+            Piece(corner, "ChairB", centre + new Vector3(1.0f, 0f, 0.2f), new Vector3(0.8f, 0.85f, 0.8f), Kit.Armchair, palette.Accent, -100f);
+            Piece(corner, "PlantA", new Vector3(plan.Width - 0.6f, 0f, 9.8f), new Vector3(0.8f, 1.5f, 0.8f), Kit.PlantTall, palette.Foliage);
+            Piece(corner, "PlantB", new Vector3(16.2f, 0f, 5.2f), new Vector3(0.7f, 1.2f, 0.7f), Kit.PlantTall, palette.Foliage);
+
+            AddPointLight(corner, "BreakoutLight", centre + new Vector3(0f, 2.3f, 0f), 1.1f, 4.2f, new Color(1f, 0.83f, 0.62f));
         }
 
         /// <summary>A dark partition standing in the room, with four warm light strips and a shelf.</summary>
@@ -951,7 +1108,11 @@ namespace ScalingLaws.Editor
         {
             // The same names the house uses, because FounderRoutine walks by name and a floor that
             // called them something else would put the founder at the origin.
-            Marker(parent, "Door", new Vector3(0.8f, 0f, plan.LobbyDepth / 2f));
+            var door = plan.FrontEntrance
+                ? new Vector3(plan.LobbyWidth * 0.55f, 0f, 0.8f)
+                : new Vector3(0.8f, 0f, plan.LobbyDepth / 2f);
+
+            Marker(parent, "Door", door);
 
             // Both desk markers are the boss chair; see the note on Plan.BossDesk.
             Marker(parent, "Desk", plan.BossChair, 0f);
@@ -969,8 +1130,9 @@ namespace ScalingLaws.Editor
             Marker(parent, "StairHead", plan.Aisle);
 
             // Out through the glass doors.
-            Marker(parent, "Garage", new Vector3(-1.2f, 0f, plan.LobbyDepth / 2f));
-            Marker(parent, "Car", new Vector3(-2.6f, 0f, plan.LobbyDepth / 2f));
+            var outside = plan.FrontEntrance ? new Vector3(0f, 0f, -2.0f) : new Vector3(-2.0f, 0f, 0f);
+            Marker(parent, "Garage", door + outside * 0.6f);
+            Marker(parent, "Car", door + outside * 1.3f);
         }
 
         // ---- the scene -------------------------------------------------------------------------
@@ -1059,7 +1221,7 @@ namespace ScalingLaws.Editor
         /// better on a machine that has the packs, which is the same rule every loader in this
         /// project already follows for art.
         /// </summary>
-        private static class Kit
+        internal static class Kit
         {
             private const string Nappin = "Assets/nappin/OfficeEssentialsPack/Prefabs/";
             private const string Lite = "Assets/LowPolyOfficeProps_LITE/Prefabs/";
@@ -1181,7 +1343,7 @@ namespace ScalingLaws.Editor
         /// without anybody being able to say why.
         /// </summary>
         /// <param name="footprint">What the box was: width, height and depth in metres.</param>
-        private static void Piece(Transform parent, string name, Vector3 centre,
+        internal static void Piece(Transform parent, string name, Vector3 centre,
             Vector3 footprint, string[] candidates, Material fallback, float yaw = 0f)
         {
             var prefab = Load(candidates);
@@ -1282,7 +1444,7 @@ namespace ScalingLaws.Editor
             return bounds;
         }
 
-        private static void Box(Transform parent, string name, Vector3 centre, Vector3 size,
+        internal static void Box(Transform parent, string name, Vector3 centre, Vector3 size,
             Material material)
         {
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
