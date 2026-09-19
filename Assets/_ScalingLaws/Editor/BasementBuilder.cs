@@ -472,14 +472,28 @@ namespace ScalingLaws.Editor
                 // Darker than the first pass. The room came out near white under two point lights
                 // and read as an empty office, and the cabinets standing on it have to be the
                 // brightest thing in the frame rather than competing with their own floor.
-                Concrete = Make("BasementConcrete", new Color(0.22f, 0.22f, 0.23f), 0.08f);
-                ConcreteDark = Make("BasementConcreteDark", new Color(0.15f, 0.155f, 0.17f), 0.05f);
-                TileA = Make("BasementTileA", new Color(0.26f, 0.27f, 0.29f), 0.16f);
-                TileB = Make("BasementTileB", new Color(0.22f, 0.23f, 0.25f), 0.16f);
+                // **A cellar, photographed.** Worn concrete underfoot, old damp plaster on the walls,
+                // bunker panels under the cabinets: the ugly room the author asked for, so the first
+                // proper office reads as a step up. ambientCG (CC0), with the old flat colours as
+                // the fallback on a clone without the textures.
+                var width = BasementFloor.RoomWidth;
+                var depth = BasementFloor.RoomDepth;
+                var height = BasementFloor.CeilingHeight;
+
+                Concrete = AmbientMaterials.Get("BasementConcrete", "Concrete044D", new Color(0.72f, 0.72f, 0.74f), 0.8f, new Vector2(width / 2.5f, depth / 2.5f))
+                           ?? Make("BasementConcrete", new Color(0.22f, 0.22f, 0.23f), 0.08f);
+                ConcreteDark = AmbientMaterials.Get("BasementConcreteDark", "Plaster007", new Color(0.46f, 0.47f, 0.45f), 0.6f, new Vector2(depth / 3f, height / 3f))
+                               ?? Make("BasementConcreteDark", new Color(0.15f, 0.155f, 0.17f), 0.05f);
+                TileA = AmbientMaterials.Get("BasementTileA", "Concrete031", new Color(0.85f, 0.86f, 0.88f), 0.7f, Vector2.one * 0.6f)
+                        ?? Make("BasementTileA", new Color(0.26f, 0.27f, 0.29f), 0.16f);
+                TileB = AmbientMaterials.Get("BasementTileB", "Concrete031", new Color(0.70f, 0.71f, 0.74f), 0.7f, new Vector2(0.6f, -0.6f))
+                        ?? Make("BasementTileB", new Color(0.22f, 0.23f, 0.25f), 0.16f);
                 Steel = Make("BasementSteel", new Color(0.36f, 0.38f, 0.41f), 0.55f, 0.6f);
                 Copper = Make("BasementCopper", new Color(0.52f, 0.33f, 0.20f), 0.5f, 0.5f);
-                Damp = Make("BasementDamp", new Color(0.24f, 0.26f, 0.25f), 0.3f);
-                Render = Make("BasementRender", new Color(0.40f, 0.39f, 0.37f), 0.05f);
+                Damp = AmbientMaterials.Get("BasementDamp", "Concrete036", new Color(0.55f, 0.56f, 0.52f), 0.9f, Vector2.one)
+                       ?? Make("BasementDamp", new Color(0.24f, 0.26f, 0.25f), 0.3f);
+                Render = AmbientMaterials.Get("BasementRender", "Plaster002", new Color(0.62f, 0.61f, 0.58f), 0.5f, Vector2.one)
+                         ?? Make("BasementRender", new Color(0.40f, 0.39f, 0.37f), 0.05f);
                 Lamp = Make("BasementLamp", new Color(0.90f, 0.95f, 1f), 0.7f);
 
                 // Only the snapshot stands cabinets. The game paints its own at runtime.

@@ -176,6 +176,9 @@ had to change.
 - **The server room has real cabinets.** Open frames, enclosed racks and high density racks are
   modelled cabinets with a thin light down one side in the colour of their temperature, where they
   used to be boxes. The immersion tank is still a box.
+- **The basement looks like a basement.** Worn concrete floor, old damp plaster on the walls and
+  bunker panels under the cabinets, photographed (ambientCG, CC0), so the first proper office reads
+  as the step up it is. The small office's walls are real timber boards.
 - **Houses on the map are bigger again**, 30 per cent on top of the first pass, because next to the
   commercial blocks the difference did not show.
 
