@@ -1153,7 +1153,7 @@ namespace ScalingLaws.UI
                 (title, note) => startedNotice?.Show(title, note));
 
             officeStage = new OfficeStage(GameObject.Find(OfficeStageRoot));
-            officeStage.Show(state.Staff.Office, state.Decor);
+            officeStage.Show(state.Staff.Office, state.Decor, state.CompanyName);
 
             founder = new FounderPresence(() => state)
             {

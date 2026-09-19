@@ -202,7 +202,7 @@ namespace ScalingLaws.UI
         /// has not changed, and the furniture is rebuilt on its own because a piece can be bought
         /// without the lease changing.
         /// </summary>
-        public void Show(OfficeTier tier, DecorPlan decor)
+        public void Show(OfficeTier tier, DecorPlan decor, string companyName = null)
         {
             if (!IsLive)
             {
@@ -213,6 +213,15 @@ namespace ScalingLaws.UI
             {
                 SwapRoom(tier);
                 shownTier = tier;
+                shownName = null;
+            }
+
+            // The name over the entrance. Written when it changes rather than every call, because
+            // fitting it measures glyphs and the office is shown on every day's repaint.
+            if (loadedRoom != null && companyName != shownName)
+            {
+                CompanySignAnchor.ApplyAll(loadedRoom, companyName);
+                shownName = companyName;
             }
 
             // The tier's own desks, read from the catalog the hiring cap reads. One source, so the
@@ -221,6 +230,9 @@ namespace ScalingLaws.UI
 
             Dress(decor);
         }
+
+        /// <summary>The name last written on the sign, so an unchanged one is not written again.</summary>
+        private string shownName;
 
         private void SwapRoom(OfficeTier tier)
         {

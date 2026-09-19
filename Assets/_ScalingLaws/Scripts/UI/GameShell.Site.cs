@@ -55,7 +55,7 @@ namespace ScalingLaws.UI
             // Cheap when nothing changed, and the only place that has to notice a move: the office
             // is not on screen anywhere else, so re-dressing it on every tab change would be work
             // done for a camera nobody is looking through.
-            officeStage?.Show(state.Staff.Office, state.Decor);
+            officeStage?.Show(state.Staff.Office, state.Decor, state.CompanyName);
 
             // After the room, because the people are parented into it. Cheap when the roster has
             // not changed, which is almost every repaint.

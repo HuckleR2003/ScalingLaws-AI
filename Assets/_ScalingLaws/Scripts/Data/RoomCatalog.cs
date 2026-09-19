@@ -106,13 +106,14 @@ namespace ScalingLaws.Data
             [OfficeTier.Garage] =
                 new RoomView(null, GarageCameraSize, 6.0f, 4.5f, 4, 0f, 0f, 0f, 0f),
 
-            // The zones below start where the back row of desks ends and stop short of the front
-            // wall. They were checked against the rendered frames rather than worked out on paper.
+            // The zones below are the open floor between the lobby screen and the first bench, the
+            // part of the room nearest the camera. Moved there on 2026-09-19 when both floors were
+            // rebuilt; the lounge now stands where the old zone was.
             [OfficeTier.Loft] =
-                new RoomView("Rooms/SmallHub", 7.0f, 8.0f, 5.5f, 10, 1.6f, 6.9f, 8.0f, 3.6f),
+                new RoomView("Rooms/SmallHub", 7.0f, 8.0f, 5.5f, 10, 4.0f, 0.4f, 7.6f, 2.4f),
 
             [OfficeTier.Floor] =
-                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 2.2f, 8.8f, 11.0f, 4.4f),
+                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 4.4f, 0.4f, 11.8f, 2.4f),
 
             // **The tower was added to the office ladder on 2026-08-28 and never got a room.**
             // `RoomFor` falls back to the garage, whose view loads no prefab at all, so a company
@@ -120,13 +121,13 @@ namespace ScalingLaws.Data
             // frame. It shares the big hub with the two above it until a tower is modelled, which
             // is the same thing those two do and is honest about the art that exists.
             [OfficeTier.Tower] =
-                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 2.2f, 8.8f, 11.0f, 4.4f),
+                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 4.4f, 0.4f, 11.8f, 2.4f),
 
             [OfficeTier.Campus] =
-                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 2.2f, 8.8f, 11.0f, 4.4f),
+                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 4.4f, 0.4f, 11.8f, 2.4f),
 
             [OfficeTier.MultiSite] =
-                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 2.2f, 8.8f, 11.0f, 4.4f)
+                new RoomView("Rooms/BigHub", 9.0f, 11.0f, 7.0f, 20, 4.4f, 0.4f, 11.8f, 2.4f)
         };
 
         public static RoomView For(OfficeTier tier) =>

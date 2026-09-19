@@ -27,6 +27,13 @@ namespace ScalingLaws.Editor
             Shoot("Assets/_ScalingLaws/Scenes/BigHub.unity", "big_hub.png");
         }
 
+        /// <summary>Both hubs rebuilt and photographed, for the command line.</summary>
+        public static void BuildAndSnapshot()
+        {
+            HubRoomBuilder.BuildBoth();
+            Snapshot();
+        }
+
         private static void Shoot(string scenePath, string fileName)
         {
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
