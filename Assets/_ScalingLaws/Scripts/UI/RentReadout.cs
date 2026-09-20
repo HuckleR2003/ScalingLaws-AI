@@ -104,13 +104,20 @@ namespace ScalingLaws.UI
                 perDay / FullScaleDailyUsd,
                 "rmeters__fill--bill"));
 
-            // Delivered, not contracted. The pool never converts every rented petaflop into work,
-            // and the gap between these two bars is the whole reason `RealizedEfficiency` exists.
+            // **Delivered out of what is rented, not out of the whole fleet.** This used to print
+            // `EffectivePetaflops` over `RawPetaflops`, which is every petaflop the company has:
+            // a player with owned cards and no host CPUs for them read "25.9% of what you pay for"
+            // under the rent slider, and the rent was delivering its full share. The rented half
+            // arrives fully provisioned, so what it loses is the utilisation ceiling and the fabric
+            // tax on spreading a run wide, and nothing else.
+            var deliveredRented = rentedPetaflops * profile.UtilizationCeiling * profile.ScalingEfficiency;
+
             strip.Add(Meter(
                 Loc.T("rent.meter.delivered"),
-                UiFormat.Petaflops(profile.EffectivePetaflops),
-                Loc.T("rent.meter.delivered_note", UiFormat.Percent(profile.RealizedEfficiency)),
-                profile.EffectivePetaflops / scale,
+                UiFormat.Petaflops(deliveredRented),
+                Loc.T("rent.meter.delivered_note",
+                    UiFormat.Percent(rentedPetaflops <= 0.0 ? 0.0 : deliveredRented / rentedPetaflops)),
+                deliveredRented / scale,
                 "rmeters__fill--delivered"));
 
             return strip;
@@ -126,12 +133,18 @@ namespace ScalingLaws.UI
         /// "About", in words as well as in the number, because it is a rule of thumb over an average
         /// account and a heavy audience will not fit in it.
         /// </summary>
-        public static VisualElement CapacityBand(double rentedPetaflops, double heldUsers)
+        public static VisualElement CapacityBand(double rentedPetaflops, double heldUsers,
+            double usersPerPetaflop)
         {
             var band = new VisualElement();
             band.AddToClassList("rband");
 
-            var accounts = HostingCatalog.CoversAccounts(rentedPetaflops);
+            // **From the simulation's own serving arithmetic, not from a constant beside it.** This
+            // read `HostingCatalog.CoversAccounts`, a hand-written forty petaflops per million
+            // accounts, which is a second answer to a question `ServeMarket` already answers every
+            // day from the model on sale and from what this company's own users get through. The two
+            // disagreed by a factor of eight, and the band was the one a player believed.
+            var accounts = Math.Max(0.0, rentedPetaflops) * Math.Max(0.0, usersPerPetaflop);
 
             var caption = new Label(Loc.T("rent.band.caption"));
             caption.AddToClassList("rband__caption");

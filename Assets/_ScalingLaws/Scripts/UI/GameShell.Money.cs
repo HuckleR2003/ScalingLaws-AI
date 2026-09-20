@@ -82,7 +82,7 @@ namespace ScalingLaws.UI
 
             // And the question the slider is really being asked, in the largest type on the panel.
             rental.Add(RentReadout.CapacityBand(
-                state.Pool.RentedAndPackagedPetaflops, heldUsers));
+                state.Pool.RentedAndPackagedPetaflops, heldUsers, simulation.UsersPerPetaflop()));
 
             rental.Add(Hint(Loc.T("money.reserved.note")));
 

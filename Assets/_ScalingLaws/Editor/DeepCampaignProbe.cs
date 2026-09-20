@@ -82,6 +82,17 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static bool smart;
 
+        /// <summary>
+        /// Whether the operator does the least a player can do: one model, shipped, and then
+        /// nothing at all.
+        ///
+        /// **The author's own report, and the floor this economy has to have.** He shipped one
+        /// model, never opened the compute screen, and was holding $55M within four months while
+        /// the fleet read eleven per cent busy. An operator that plays that badly and still prints
+        /// money is the measurement that says the early game asks nothing of anybody.
+        /// </summary>
+        private static bool lazy;
+
         [MenuItem("Scaling Laws/Play a deep campaign")]
         public static void Play()
         {
@@ -96,7 +107,8 @@ namespace ScalingLaws.Editor
                 (true, false, false, false, "ONE PRODUCT LINE, each release replacing the last, renting"),
                 (true, true, false, false, "ONE PRODUCT LINE, and it owns its own silicon and a server room"),
                 (true, false, true, false, "AMBITIOUS: one line, research aimed and funded, advertising, renting"),
-                (true, false, true, true, "SMART: ambitious, and it reprices, sizes the cluster to the load and raises rounds")
+                (true, false, true, true, "SMART: ambitious, and it reprices, sizes the cluster to the load and raises rounds"),
+                (true, false, false, false, "LAZY: one model, shipped, and then nothing at all")
             })
             {
                 // `PROBE_ONLY=ambitious` runs the last operator on one seed, for iterating on it
@@ -112,6 +124,7 @@ namespace ScalingLaws.Editor
                 ownsCompute = owner;
                 ambitious = aims;
                 smart = runs;
+                lazy = heading.StartsWith("LAZY", StringComparison.Ordinal);
 
                 report.AppendLine();
                 report.AppendLine("================ " + heading);
@@ -561,6 +574,32 @@ namespace ScalingLaws.Editor
         {
             var state = simulation.State;
 
+            // The creator leaves the spend slider somewhere, so a player who never opens the compute
+            // screen is still renting what they set on their way in. This is that: a hundred and
+            // fifty petaflops, once, and never touched again.
+            if (lazy && state.Pool.RentedPetaflops <= 0.0)
+            {
+                simulation.SetRentedPetaflops(150.0);
+            }
+
+            // The whole of what the lazy operator does: one run, one release, and then it watches.
+            if (lazy && (state.ReleasedModelCount > 0 || state.ActiveRun != null || state.Shelf.Count > 0))
+            {
+                if (state.Shelf.Count > 0)
+                {
+                    if (simulation.TryReleaseModel(0, 1.0, out var lazyWhy))
+                    {
+                        released.Add(state.DeployedModels[^1].Name);
+                    }
+                    else
+                    {
+                        refused("release", lazyWhy);
+                    }
+                }
+
+                return;
+            }
+
             // ---- keep something training -------------------------------------------------------
             if (state.ActiveRun == null && state.Shelf.Count < 2)
             {
@@ -658,6 +697,12 @@ namespace ScalingLaws.Editor
                         break;
                     }
                 }
+            }
+
+            if (lazy)
+            {
+                // Never touches the compute screen, which is the point.
+                return;
             }
 
             // ---- rent to what the run needs ----------------------------------------------------

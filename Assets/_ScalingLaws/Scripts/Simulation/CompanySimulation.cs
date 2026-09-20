@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Globalization;
@@ -22,7 +22,7 @@ namespace ScalingLaws.Simulation
         /// Share of nameplate throughput inference actually reaches. Far below training, because
         /// serving is bound by memory bandwidth rather than arithmetic.
         /// </summary>
-        public const double InferenceUtilization = 0.06;
+        public const double InferenceUtilization = 0.02;
 
         /// <summary>Spread of the finished capability around its projection, in capability points.</summary>
         public const double TrainingOutcomeStandardDeviation = 1.2;
@@ -539,7 +539,7 @@ namespace ScalingLaws.Simulation
             var tokensPerDay = SimUnits.FlopsPerPetaflop * SimUnits.SecondsPerDay * InferenceUtilization
                                / flopPerToken;
 
-            return tokensPerDay / AudienceCatalog.AverageTokensPerUserPerDay(State.Date);
+            return tokensPerDay / Math.Max(1.0, TokensPerUserPerDayServed());
         }
 
         /// <summary>Slides a standing cabinet to another square. Free, and it keeps its fans.</summary>
@@ -5171,6 +5171,69 @@ namespace ScalingLaws.Simulation
             return names;
         }
 
+        /// <summary>
+        /// What one of this company's own users gets through in a day.
+        ///
+        /// **One definition of "a person", read by every screen that counts them.** The market's
+        /// average account is around eight times heavier than a consumer one, because it is
+        /// weighted by audiences the company may not serve at all. A rent meter using it told a
+        /// player with four and a half million consumer accounts that their fleet held three and
+        /// three quarter million and that the rest were queueing, while the fleet was eleven per
+        /// cent busy and nobody was waiting for anything.
+        ///
+        /// A company with nobody on it is quoted the consumer figure, which is the audience a first
+        /// model reaches.
+        /// </summary>
+        public double TokensPerUserPerDayServed()
+        {
+            var tokens = 0.0;
+            var users = 0.0;
+
+            foreach (var standing in SegmentStandings())
+            {
+                var share = Math.Clamp(standing.PlayerShare, 0.0, 1.0);
+
+                tokens += Math.Max(0.0, standing.TotalTokensPerDay) * share * SimUnits.TokensPerBillion;
+                users += Math.Max(0.0, standing.TotalUsers) * share;
+            }
+
+            return users > 0.0 && tokens > 0.0
+                ? tokens / users
+                : AudienceCatalog.Get(AudienceSegment.Consumer).IntensityIn(State.Date.Year);
+        }
+
+        /// <summary>
+        /// The share of what this company serves that anybody is invoiced for, from the mix of
+        /// audiences it is actually serving today.
+        ///
+        /// Weighted by the tokens each audience takes from this company rather than by heads: an
+        /// enterprise account is one customer and a thousand times the volume of a consumer, and
+        /// revenue follows volume. With nothing on sale it answers with the consumer figure, which
+        /// is the audience a first model reaches.
+        /// </summary>
+        public double AudiencePayingShare()
+        {
+            var tokens = 0.0;
+            var paying = 0.0;
+
+            foreach (var standing in SegmentStandings())
+            {
+                var mine = Math.Max(0.0, standing.TotalTokensPerDay) * Math.Clamp(standing.PlayerShare, 0.0, 1.0);
+
+                if (mine <= 0.0)
+                {
+                    continue;
+                }
+
+                tokens += mine;
+                paying += mine * AudienceCatalog.Get(standing.Segment).PayingShare;
+            }
+
+            return tokens <= 0.0
+                ? AudienceCatalog.Get(AudienceSegment.Consumer).PayingShare
+                : Math.Clamp(paying / tokens, 0.01, 1.0);
+        }
+
         /// <summary>The market by who people are. For balance tests and the audience readout.</summary>
         public List<SegmentStanding> SegmentStandings() =>
             State.Segments.Standings(State.Date, MarketModel.DemandOn(State.Date), OwnerNames());
@@ -5290,7 +5353,7 @@ namespace ScalingLaws.Simulation
             var tokens = servingPetaflops * SimUnits.FlopsPerPetaflop * SimUnits.SecondsPerDay
                          / flopPerToken;
 
-            return tokens / Math.Max(1.0, AudienceCatalog.AverageTokensPerUserPerDay(State.Date));
+            return tokens / Math.Max(1.0, TokensPerUserPerDayServed());
         }
 
         public DeployedModel Flagship()
@@ -5635,8 +5698,18 @@ namespace ScalingLaws.Simulation
             // The split that makes a free tier a strategy rather than a giveaway. Every token costs
             // the same to produce; only some of them are invoiced.
             var freeShare = State.Monetization.FreeShareOfTokens;
+
+            // **Who the tokens belong to decides whether anybody is invoiced for them.** Two
+            // different facts, kept apart: the free tier is the company's own decision, and the
+            // paying share is what this audience is like. Consumers mostly do not pay for an
+            // assistant and an API key is billed for every token, so a model aimed at consumers
+            // buys reach and one aimed at developers buys revenue.
+            // **The free tier stays the free tier.** Folding the non-payers into it made the
+            // generosity slider look weaker than it is and the books call somebody else's decision
+            // a giveaway. What the company hands out is what the company chose to hand out; the
+            // rest is an audience that was never going to be invoiced.
             var freeTokens = served * freeShare;
-            var paidTokens = served - freeTokens;
+            var paidTokens = (served - freeTokens) * AudiencePayingShare();
 
             State.FreeTokensServedBillions = freeTokens;
             State.LifetimeFreeTokensBillions += freeTokens;

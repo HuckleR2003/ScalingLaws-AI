@@ -40,8 +40,9 @@ namespace ScalingLaws.Data
             double servingCostWeight, double tokensPerUserPerDay,
             (int Year, double Weight)[] anchors,
             double reservationCapability = 0.0, double intensityGrowthPerYear = 1.0,
-            double peopleCeiling = 0.0)
+            double peopleCeiling = 0.0, double payingShare = 1.0)
         {
+            PayingShare = Math.Clamp(payingShare, 0.01, 1.0);
             PeopleCeiling = Math.Max(0.0, peopleCeiling);
             TokensPerUserPerDay = Math.Max(1.0, tokensPerUserPerDay);
             AdoptionRatePerDay = Math.Clamp(adoptionRatePerDay, 0.002, 0.5);
@@ -75,6 +76,23 @@ namespace ScalingLaws.Data
         /// loses far fewer of them.
         /// </summary>
         public double WillingnessToPay { get; }
+
+        /// <summary>
+        /// The share of this audience's tokens anybody is ever invoiced for.
+        ///
+        /// **Without this every token served was billed** (the only exception being the free tier
+        /// the player chooses), so a company selling to consumers earned as much per token as one
+        /// selling to enterprises. A campaign reported on 2026-09-20 shipped one model, never
+        /// touched the fleet, and took $29M a month from 4.6 million consumer accounts against a
+        /// cluster bill of $1M: thirty times over, for a decision nobody had to make.
+        ///
+        /// It is also the thing every real product in this market is shaped by. Consumer assistants
+        /// are free for almost everybody and a few per cent subscribe; an API key is billed for
+        /// every token; an enterprise contract is billed twice over. So who a model is for is now
+        /// the difference between reach and revenue, which is what the whole audience system exists
+        /// to ask.
+        /// </summary>
+        public double PayingShare { get; }
 
         /// <summary>
         /// How much of the gap to its preferred product a segment closes in one day.
@@ -257,7 +275,12 @@ namespace ScalingLaws.Data
                 reservationCapability: 6.0, intensityGrowthPerYear: 1.28,
                 // Most of the connected world. About 5.5 billion people are on the
                 // internet at all, and not all of them will ever touch this.
-                peopleCeiling: 4_000_000_000),
+                peopleCeiling: 4_000_000_000,
+
+                // A few per cent of a consumer assistant's users ever pay for it, and the rest are
+                // the reason it is known at all. Set above what the real conversion is, because a
+                // consumer product that earned nothing would make the opening of the game a wall.
+                payingShare: 0.60),
 
             new(AudienceSegment.Developer, willingnessToPay: 1.20, adoptionRatePerDay: 0.090, brandWeight: 0.55,
                 servingCostWeight: 0.35, tokensPerUserPerDay: 180_000,
@@ -268,7 +291,10 @@ namespace ScalingLaws.Data
                 },
                 reservationCapability: 11.0, intensityGrowthPerYear: 1.32,
                 // The industry surveys count developers in the tens of millions.
-                peopleCeiling: 45_000_000),
+                peopleCeiling: 45_000_000,
+
+                // An API key is billed for every token it spends.
+                payingShare: 0.95),
 
             new(AudienceSegment.Enterprise, willingnessToPay: 1.65, adoptionRatePerDay: 0.012, brandWeight: 1.15,
                 servingCostWeight: 0.25, tokensPerUserPerDay: 900_000,
@@ -278,7 +304,10 @@ namespace ScalingLaws.Data
                 },
                 reservationCapability: 26.0, intensityGrowthPerYear: 1.24,
                 // Seats rather than companies, so this is knowledge workers.
-                peopleCeiling: 900_000_000),
+                peopleCeiling: 900_000_000,
+
+                // A contract is a contract, and enterprises pay for seats nobody uses.
+                payingShare: 1.0),
 
             new(AudienceSegment.Creative, willingnessToPay: 1.05, adoptionRatePerDay: 0.060, brandWeight: 1.00,
                 servingCostWeight: 0.85, tokensPerUserPerDay: 40_000,
@@ -288,7 +317,11 @@ namespace ScalingLaws.Data
                 },
                 reservationCapability: 9.0, intensityGrowthPerYear: 1.26,
                 // Professionals and the people who work like them.
-                peopleCeiling: 350_000_000),
+                peopleCeiling: 350_000_000,
+
+                // Creative tools sell subscriptions to the people who finish things, and the rest
+                // try them and leave.
+                payingShare: 0.55),
 
             new(AudienceSegment.Agentic, willingnessToPay: 2.10, adoptionRatePerDay: 0.030, brandWeight: 0.70,
                 servingCostWeight: 1.30, tokensPerUserPerDay: 3_000_000,
@@ -299,7 +332,10 @@ namespace ScalingLaws.Data
                 reservationCapability: 44.0, intensityGrowthPerYear: 1.18,
                 // Not people at all: the organisations running agents, which is why this is
                 // the smallest population and by far the heaviest per head.
-                peopleCeiling: 250_000_000)
+                peopleCeiling: 250_000_000,
+
+                // Nobody runs an agent for free: the work it does is the reason it is running.
+                payingShare: 1.0)
         };
 
         private static readonly Dictionary<AudienceSegment, AudienceSegmentDefinition> BySegment = BuildIndex();
