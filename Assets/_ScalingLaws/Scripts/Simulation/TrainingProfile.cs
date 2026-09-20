@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
@@ -190,6 +191,10 @@ namespace ScalingLaws.Simulation
             PositionOnBelt(TrainingProjection.UndertrainedBelow),
             PositionOnBelt(TrainingProjection.OvertrainedAbove));
 
+        /// <summary>Whole gigabytes, in the one culture every figure in this game is written in.</summary>
+        private static string UiWhole(double value) =>
+            Math.Round(Math.Max(0.0, SimUnits.Finite(value))).ToString("N0", CultureInfo.InvariantCulture);
+
         private static List<string> BuildNotes(TrainingProjection projection, ShapeProfile profile,
             double memory, double serving, bool estimated)
         {
@@ -197,19 +202,19 @@ namespace ScalingLaws.Simulation
 
             if (!estimated)
             {
-                notes.Add("No compute available, so this shape cannot be costed yet. "
-                    + "Rent or buy capacity and the readings below will mean something.");
+                notes.Add(Loc.T("profile.note.no_compute"));
             }
 
             // Memory first. Everything else is advice; this one stops the run.
             if (memory > 1.0)
             {
-                notes.Add($"This run needs {projection.MemoryRequiredGigabytes:N0} GB and you have "
-                    + $"{projection.MemoryAvailableGigabytes:N0} GB. It will not start.");
+                notes.Add(Loc.T("profile.note.memory_short",
+                    UiWhole(projection.MemoryRequiredGigabytes),
+                    UiWhole(projection.MemoryAvailableGigabytes)));
             }
             else if (memory > 0.85)
             {
-                notes.Add("Memory is nearly full. A slightly larger model will not fit at all.");
+                notes.Add(Loc.T("profile.note.memory_tight"));
             }
 
             if (!estimated)
@@ -217,48 +222,45 @@ namespace ScalingLaws.Simulation
                 return notes;
             }
 
+            // Written out rather than built from the enum's name, because a phrase-book key made by
+            // concatenation is invisible to the guard that checks every key exists.
             switch (profile)
             {
                 case ShapeProfile.Oversized:
-                    notes.Add("The model is far too large for the amount of data selected. "
-                        + "Most of this compute is being spent on parameters that never get trained.");
+                    notes.Add(Loc.T("profile.note.oversized"));
                     break;
                 case ShapeProfile.ComputeHungry:
-                    notes.Add("Short of tokens for a model this size. More data, or a smaller model, "
-                        + "converts the same bill into a better result.");
+                    notes.Add(Loc.T("profile.note.hungry"));
                     break;
                 case ShapeProfile.Balanced:
-                    notes.Add("You are inside the efficient scaling band.");
+                    notes.Add(Loc.T("profile.note.balanced"));
                     break;
                 case ShapeProfile.DataRich:
-                    notes.Add("Extra tokens beyond this point mostly buy diminishing returns.");
+                    notes.Add(Loc.T("profile.note.datarich"));
                     break;
                 case ShapeProfile.Lean:
-                    notes.Add("A small model trained hard. Cheap to serve for years, "
-                        + "and it will never reach the frontier.");
+                    notes.Add(Loc.T("profile.note.lean"));
                     break;
             }
 
             if (serving > 1.6)
             {
-                notes.Add($"This model will be expensive to serve later, about "
-                    + $"{serving:0.0} times a twenty billion parameter one per token. "
-                    + "Cost sensitive audiences notice.");
+                notes.Add(Loc.T("profile.note.dear_to_serve",
+                    serving.ToString("0.0", CultureInfo.InvariantCulture)));
             }
             else if (serving < 0.7)
             {
-                notes.Add("Cheap to serve. It will hold price sensitive audiences for years.");
+                notes.Add(Loc.T("profile.note.cheap_to_serve"));
             }
 
             if (projection.DataAcquisitionCostUsd > projection.ComputeCashCostUsd / 2)
             {
-                notes.Add("Data is costing more than half of what the compute costs.");
+                notes.Add(Loc.T("profile.note.data_heavy"));
             }
 
             if (projection.TrainingDays > 240)
             {
-                notes.Add($"{projection.TrainingDays} days on one run. The frontier moves while "
-                    + "you wait.");
+                notes.Add(Loc.T("profile.note.long_run", projection.TrainingDays.ToString()));
             }
 
             return notes;

@@ -135,7 +135,15 @@ namespace ScalingLaws.Simulation
         TaxCarriedForward = 59,
 
         /// <summary>The whole arrears taken at once after three years of postponement.</summary>
-        TaxCollected = 60
+        TaxCollected = 60,
+
+        /// <summary>
+        /// An order took the site past four fifths of the power it supplies.
+        ///
+        /// Raised by the order rather than by the day, so it is said once, at the moment a player
+        /// can still do something with it: the next batch is the one that gets refused.
+        /// </summary>
+        SitePowerNearlyFull = 61
     }
 
     /// <summary>

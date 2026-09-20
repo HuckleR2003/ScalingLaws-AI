@@ -21,7 +21,7 @@ namespace ScalingLaws.Tests.EditMode
     public sealed class StandingTests
     {
         private static StandingChange Neutral() => Standing.Today(
-            marketShare: 0.0, servedBillions: 0.0, freeTierGenerosity: 0.0,
+            servedUsers: 0.0, servedBillions: 0.0, freeTierGenerosity: 0.0,
             daysSinceLastRelease: 0, priceMultiplier: 1.0, marketingIntensity: 0.0,
             reputationGainMultiplier: 1.0, currentReputation: 0.4);
 
@@ -76,7 +76,7 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ServingPeopleWellIsTheStrongestThingACompanyCanDo()
         {
-            var serving = Standing.Today(0.5, 100.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
+            var serving = Standing.Today(Standing.ServiceKneeUsers, 100.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
             var marketing = Standing.Today(0.0, 0.0, 0.0, 0, 1.0, 1.0, 1.0, 0.4);
 
             Assert.Greater(serving.Service, 0.0);
@@ -134,8 +134,8 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ACharismaticFounderCannotSlowDownDecay()
         {
-            var plain = Standing.Today(0.4, 50.0, 1.0, Standing.StaleDays, 1.0, 1.0, 1.0, 0.4);
-            var charming = Standing.Today(0.4, 50.0, 1.0, Standing.StaleDays, 1.0, 1.0, 2.0);
+            var plain = Standing.Today(Standing.ServiceKneeUsers, 50.0, 1.0, Standing.StaleDays, 1.0, 1.0, 1.0, 0.4);
+            var charming = Standing.Today(Standing.ServiceKneeUsers, 50.0, 1.0, Standing.StaleDays, 1.0, 1.0, 2.0);
 
             Assert.Greater(charming.Service, plain.Service);
             Assert.AreEqual(plain.ModelAge, charming.ModelAge, 1e-12);
@@ -148,7 +148,7 @@ namespace ScalingLaws.Tests.EditMode
             var stale = Standing.Today(0.0, 0.0, 0.0, Standing.StaleDays, 1.0, 0.0, 1.0, 0.4);
             StringAssert.Contains("ageing", stale.Headline);
 
-            var serving = Standing.Today(1.0, 100.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
+            var serving = Standing.Today(Standing.ServiceKneeUsers, 100.0, 0.0, 0, 1.0, 0.0, 1.0, 0.4);
             StringAssert.Contains("serving", serving.Headline);
 
             Assert.AreEqual("fading quietly", Neutral().Headline,

@@ -13,7 +13,7 @@ namespace ScalingLaws.Tests
         [Test]
         public void NatalkaIsCreditedAsATester()
         {
-            Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("Natalka6456"));
+            Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("MiNatix"));
             Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("Francisco T"));
         }
 

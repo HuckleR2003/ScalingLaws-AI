@@ -957,7 +957,8 @@ namespace ScalingLaws.UI
             heading.AddToClassList("panel__heading");
             panel.Add(heading);
 
-            panel.Add(TableRow("AUDIENCE", "USERS", "YOUR SHARE", "LEADER", true, 0.0));
+            panel.Add(TableRow(Loc.T("demo.col_audience"), Loc.T("model.col_users"),
+                Loc.T("demo.col_your_share"), Loc.T("demo.col_leader"), true, 0.0));
 
             var standings = simulation.SegmentStandings();
             foreach (var standing in standings)

@@ -195,6 +195,21 @@ namespace ScalingLaws.UI
             ships.AddToClassList("relship__ships");
             titles.Add(ships);
 
+            // **What this model does to the cluster, in people.** A heavier model halves what the
+            // same fleet can serve, and the probe watched a company lose three quarters of its
+            // audience inside a month to exactly that, on a release that was better in every way
+            // the screen was reporting.
+            var servable = simulation.UsersServableWith(shelved);
+            var servedNow = simulation.UsersServableNow();
+
+            var fleet = new Label(servedNow > 0.0
+                ? Loc.T("create.fleet_serves_vs", UiFormat.Count(servable), UiFormat.Count(servedNow))
+                : Loc.T("create.fleet_serves", UiFormat.Count(servable)));
+
+            fleet.AddToClassList("create-note");
+            fleet.EnableInClassList("create-note--warn", servedNow > 0.0 && servable < servedNow * 0.75);
+            titles.Add(fleet);
+
             head.Add(titles);
             card.Add(head);
 

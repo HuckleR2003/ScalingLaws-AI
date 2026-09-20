@@ -897,6 +897,11 @@ namespace ScalingLaws.UI
 
             var total = (long)System.Math.Round(price * SiliconBatch);
 
+            // Cards the cabinets have room for do not count against the site, so from here this
+            // usually reads low; it is the batch past the free slots that meets the ceiling.
+            var power = simulation.PowerAfterOrder(generation, SiliconBatch, tier);
+            card.Add(UiParts.SitePowerLine(power));
+
             var buy = new Button(() =>
             {
                 if (!simulation.TryBuyHardware(generation.Id, SiliconBatch, tier, out var why))
@@ -920,7 +925,7 @@ namespace ScalingLaws.UI
             };
 
             buy.AddToClassList("roombuild__buy");
-            buy.SetEnabled(simulation.State.CashUsd >= total);
+            buy.SetEnabled(simulation.State.CashUsd >= total && power.Fits);
             card.Add(buy);
 
             card.tooltip = generation.DisplayName + ". " + Loc.T("room.silicon.buy_note");

@@ -38,14 +38,85 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+### Balance: serving people pays for itself again
+
+**The three faults below were measured, not guessed, over nine campaigns of fourteen years each.**
+Together they meant that the only strategy the economy rewarded was charging far above the market
+rate and serving almost nobody, and that a company doing everything else right was erased from the
+market some time in 2025 and never came back.
+
+- **Charging more than ten times the market rate was free.** Four places clamped the price a buyer
+  feels at ten times the going rate while the till went on charging the full figure. A campaign run
+  at $2,000 a month finished on **$480bn** against **$3.6bn** at the $80 the game opens on, with the
+  same audience. The price a customer feels is now the price the company charges, whatever it is.
+- **Serving a token got cheaper for the market every year and never for the player.** The price of a
+  token falls by more than half a year, which is the design; what the player pays to produce one
+  only fell as fast as new silicon. Measured: serving a 200B-active model cost 0.22x the market rate
+  in 2022, 2x by 2025 and 5.7x from 2030, so pricing anywhere near the market was bankruptcy on
+  every seed. `MarketModel.ServingEfficiencyOn` is the market's own serving recipes, anchored one
+  point a year on things that happened (serving in FP8 and continuous batching in 2023, paged
+  attention and speculative decoding in 2024, FP4 and compressed caches in 2025) and a projection
+  after that. **A model at market par now serves at market par.**
+- **The subscription drifted into being the most extreme price in the game on its own.** The $80 a
+  month a company opens on is exactly the market rate on day one, and it was 29 times it by 2025 and
+  500 times by 2029, because the tokens it buys were a fixed figure while the people paying it got
+  through seventeen times as much. The allowance now follows what an account actually uses, so the
+  opening price drifts to between 2 and 17 times the market instead of hundreds. A control left
+  alone is not a decision.
+- **Reputation came from share of a world that grows fifty times over.** Full marks needed a tenth
+  of everybody. A company at the frontier, shipping on time, serving seven and a half million
+  people, held 0.2% of that world, earned almost nothing for it, and watched its standing fall from
+  1.00 to 0.07 while nothing about the product had changed. It is a headcount now: two million
+  people served a day is full marks, and being twice as large as that is not twice as well regarded.
+- **The price a company charges reaches the public.** The standing's price driver read the metered
+  multiplier, which a company billing by subscription never touches, so for every default campaign
+  ever played it sat at exactly 1.0. An expensive product now costs something in public opinion, and
+  the press notices.
+
+What the same measurement says after the change: a company that prices around three times the
+market, buys its compute out of the bank rather than out of last month's takings, builds sparse
+models and signs the rounds it is offered now finishes fourteen years solvent on every seed, with
+110 to 120 million people served and a model within a few points of the frontier. Charging near the
+market rate serves twice as many people for less money, and charging ten times it makes more money
+from a quarter of the audience. **All three are now a decision rather than one right answer.**
+
+### Added
+
+- **The creator says what a model would do to your cluster, in people.** The Scale page and the
+  release window both print how many people the fleet keeps served on the model being designed,
+  against what it serves today, and the line turns amber when the new model would serve fewer.
+  A campaign in the probe lost three quarters of its audience inside a month to a release that was
+  better on every figure the screen was reporting: the model was four times heavier to serve, the
+  cluster's capacity halved overnight and nothing said so before the run was paid for.
+- **The site's power ceiling is visible before an order is refused.** Every place that sells silicon
+  prints what the site would be drawing after the order, amber from four fifths of the contract and
+  red when the order will not fit, with the buy button disabled rather than failing at the till. An
+  order that takes the site past four fifths raises a notice naming the ceiling and what lifts it.
+  Cards already ordered and still in transit now count against the limit, so a lead time can no
+  longer be used to order past it and find out on delivery.
+
+### Changed
+
+- **The house is lighter.** Pale oak underfoot, plaster on the walls, brushed metal, a warm lamp
+  that reads as a lamp, and a reflection probe so the floor has something to reflect. The furniture
+  every player moved by hand is exactly where it was: the materials were repainted in place rather
+  than the room being rebuilt.
+- **The staff are seated again on every refresh**, so a company that moves takes its people to the
+  chairs of the floor it is actually standing in.
+
+### Fixed
+
+- **Twelve notes on the creator's Scale page and six headings on the model tables were English on a
+  Polish screen.** They are in the phrase book now, in both languages.
+
 ### Credits
 
 - **The game has credits.** CREDITS in the main menu opens a sheet with who made the game, the
   testers and, once the Steam launch is supported, the supporters. The first tester on it is
-  **Natalka6456**, who played the game for hours and wrote down every place it was unclear or broke.
+  **MiNatix**, who played the game for hours and wrote down every place it was unclear or broke.
   Names are kept in one list, and a test fails if a name goes missing or appears twice.
 - **The testers are also under SETTINGS in the main menu**, below the studio card. Each has a
-  line in small type about what they did, in both languages. **Natalka6456** has her own small
+  line in small type about what they did, in both languages. **MiNatix** has her own small
   picture beside her name, and **Francisco T** is the second name on the list, for ideas about
   mechanics and quality-of-life improvements and for bug reports. The SETTINGS and CREDITS sheets
   build the list from the same code, so they cannot show different people.

@@ -528,7 +528,8 @@ namespace ScalingLaws.Simulation
 
             var flopPerToken = best != null
                 ? FlopPerServedToken(best)
-                : 2.0 * MarketShareModel.ReferenceActiveParameters * DeployedModel.ServingDistillationFactor;
+                : 2.0 * MarketShareModel.ReferenceActiveParameters * DeployedModel.ServingDistillationFactor
+                  / MarketModel.ServingEfficiencyOn(State.Date);
 
             if (flopPerToken <= 0.0)
             {
@@ -934,7 +935,7 @@ namespace ScalingLaws.Simulation
             AdvanceIntelligence();
             AdvanceMail();
             ExpireFundingOffer();
-            UpdateReputation(share, served);
+            UpdateReputation(served);
             ReportNewlyUnlockedTiers(previousLadder);
 
             State.Relations.Advance();
@@ -1579,26 +1580,12 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            var capacityAfter = SitePowerCapacityKilowatts();
-            if (!HasAssetsInTier(tier))
+            var power = PowerAfterOrder(generation, units, tier);
+            if (!power.Fits)
             {
-                capacityAfter += tierDefinition.PowerCapacityKilowatts;
-            }
-
-            // **Cards that will stand in the basement do not count against the site.** The site limit
-            // is the colocation contract's, and the basement is not on it: the house's own supply
-            // feeds it, and heat is what caps a cellar, not a contract. So the room's draw comes off
-            // the site's figure, and so does every new card the cabinets have a free slot for.
-            var profile = Profile;
-            var housedHere = generation.Class == HardwareClass.Accelerator && State.HasServerRoom
-                ? Math.Min(units, Math.Max(0, State.Hall.TotalSlots - State.Hall.HousedAccelerators))
-                : 0;
-
-            var drawAfter = profile.PowerDrawKilowatts - profile.RoomDrawKilowatts
-                            + generation.PowerKilowatts * (units - housedHere);
-            if (drawAfter > capacityAfter)
-            {
-                failureReason = Loc.T("hw.power_short", Whole(drawAfter), Whole(capacityAfter));
+                failureReason = Loc.T("hw.power_short", Whole(power.DrawAfterKilowatts),
+                    Whole(power.CapacityKilowatts),
+                    Whole(ComputeTierCatalog.Get(ComputeTier.OwnDatacenter).PowerCapacityKilowatts));
                 return false;
             }
 
@@ -1618,7 +1605,87 @@ namespace ScalingLaws.Simulation
                 $"Ordered {units:N0}x {generation.DisplayName} for {tierDefinition.DisplayName}, arriving in {tierDefinition.LeadTimeDays} days.",
                 total));
 
+            // Raised once, by the order that crosses the line, rather than every day the site sits
+            // above it: a warning repeated daily is wallpaper by the end of the week.
+            if (power.CrossesIntoNearlyFull)
+            {
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.SitePowerNearlyFull,
+                    State.Date,
+                    $"Site power at {power.DrawAfterKilowatts:N0} of {power.CapacityKilowatts:N0} kW once this order lands."));
+            }
+
             return true;
+        }
+
+        /// <summary>
+        /// What the site would draw with one more order on it, and what it supplies.
+        ///
+        /// The one reading of the power ceiling at the moment of buying: <see cref="TryBuyHardware"/>
+        /// refuses on it and the shop prints it before the click, so the two can never disagree.
+        ///
+        /// **Cards that will stand in the basement do not count against the site.** The site limit
+        /// is the colocation contract's, and the basement is not on it: the house's own supply feeds
+        /// it, and heat is what caps a cellar, not a contract. So the room's draw comes off the
+        /// site's figure, and so does every card the cabinets have a free slot for. Cards already
+        /// ordered take those slots first, because they were ordered first.
+        /// </summary>
+        /// <summary>The site as it stands: running now plus already ordered, with nothing added.</summary>
+        public SitePowerOutlook SitePowerNow() => PowerAfterOrder(default, 0, ComputeTier.None);
+
+        public SitePowerOutlook PowerAfterOrder(HardwareGeneration generation, int units, ComputeTier tier)
+        {
+            units = Math.Max(0, units);
+
+            var capacity = SitePowerCapacityKilowatts();
+            if (ComputeTierCatalog.TryGet(tier, out var tierDefinition) && !tierDefinition.IsRented
+                && !HasAssetsInTier(tier))
+            {
+                capacity += tierDefinition.PowerCapacityKilowatts;
+            }
+
+            // Already bought and still on the way: nothing today, all of it the day it lands.
+            var pendingKilowatts = 0.0;
+            var pendingCards = 0;
+            var pendingCardKilowatts = 0.0;
+
+            foreach (var asset in State.Pool.Assets)
+            {
+                if (asset.Units <= 0 || asset.IsOnline(State.Date)
+                    || !HardwareCatalog.TryGet(asset.GenerationId, out var part))
+                {
+                    continue;
+                }
+
+                var kilowatts = part.PowerKilowatts * asset.Units;
+                pendingKilowatts += kilowatts;
+
+                if (part.Class == HardwareClass.Accelerator)
+                {
+                    pendingCards += asset.Units;
+                    pendingCardKilowatts += kilowatts;
+                }
+            }
+
+            var freeSlots = State.HasServerRoom
+                ? Math.Max(0, State.Hall.TotalSlots - State.Hall.HousedAccelerators)
+                : 0;
+
+            var pendingHoused = Math.Min(pendingCards, freeSlots);
+            freeSlots -= pendingHoused;
+
+            var pendingHousedKilowatts = pendingCards <= 0
+                ? 0.0
+                : pendingCardKilowatts * pendingHoused / pendingCards;
+
+            var newHoused = generation.Class == HardwareClass.Accelerator ? Math.Min(units, freeSlots) : 0;
+
+            var profile = Profile;
+            var before = profile.PowerDrawKilowatts - profile.RoomDrawKilowatts
+                         + pendingKilowatts - pendingHousedKilowatts;
+            var after = before + generation.PowerKilowatts * (units - newHoused);
+
+            return new SitePowerOutlook(before, after, capacity);
         }
 
         /// <summary>
@@ -5151,6 +5218,81 @@ namespace ScalingLaws.Simulation
         /// model, and three copies of "strongest live model not superseded inside its own line" is
         /// three chances for them to disagree about what the company is.
         /// </summary>
+        /// <summary>
+        /// How many people today's cluster could keep served on a model of this shape.
+        ///
+        /// **The number a release decides and nothing said.** Measured over fourteen years: a
+        /// company serving a hundred million people shipped a model with four times the active
+        /// parameters of the one it replaced, its serving capacity halved overnight, the fleet went
+        /// to twice its load for a month, and the share slid from eight per cent to two tenths of
+        /// one over the following six months and never came back. Every figure behind that was on
+        /// the creator already, as a multiplier nobody can convert into people in their head.
+        ///
+        /// Same arithmetic as <see cref="ServeMarket"/> and <see cref="UsersPerPetaflop"/>, read
+        /// from a blueprint rather than from a live model, so a forecast and the day it becomes
+        /// cannot disagree.
+        /// </summary>
+        public double UsersServableWith(ModelBlueprint blueprint)
+        {
+            var architecture = State.ResolveArchitecture(blueprint.Architecture);
+
+            var active = Math.Max(1e6,
+                blueprint.ParameterCountBillions * 1e9 * architecture.ActiveParameterFraction);
+
+            var flopPerToken = 2.0 * active * DeployedModel.ServingDistillationFactor
+                               * architecture.InferenceCostMultiplier
+                               * blueprint.TokensPerText
+                               * State.Skills.ServingCostMultiplier()
+                               / MarketModel.ServingEfficiencyOn(State.Date);
+
+            return UsersFor(flopPerToken);
+        }
+
+        /// <summary>The same question about a run that has finished and is waiting to ship.</summary>
+        public double UsersServableWith(TrainedModel model)
+        {
+            if (model == null)
+            {
+                return 0.0;
+            }
+
+            var architecture = State.ResolveArchitecture(model.Architecture);
+
+            var flopPerToken = 2.0 * Math.Max(1e6, model.ActiveParameterCount)
+                               * DeployedModel.ServingDistillationFactor
+                               * architecture.InferenceCostMultiplier
+                               * model.TokensPerText
+                               * State.Skills.ServingCostMultiplier()
+                               / MarketModel.ServingEfficiencyOn(State.Date);
+
+            return UsersFor(flopPerToken);
+        }
+
+        /// <summary>The same question about what the company is selling today.</summary>
+        public double UsersServableNow()
+        {
+            var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
+
+            return best == null ? 0.0 : UsersFor(FlopPerServedToken(best));
+        }
+
+        private double UsersFor(double flopPerToken)
+        {
+            if (flopPerToken <= 0.0)
+            {
+                return 0.0;
+            }
+
+            var servingShare = ClusterIsBuildingSomething() ? 1.0 - State.TrainingComputeShare : 1.0;
+            var servingPetaflops = Profile.RawPetaflops * InferenceUtilization
+                                   * Math.Clamp(servingShare, 0.0, 1.0);
+
+            var tokens = servingPetaflops * SimUnits.FlopsPerPetaflop * SimUnits.SecondsPerDay
+                         / flopPerToken;
+
+            return tokens / Math.Max(1.0, AudienceCatalog.AverageTokensPerUserPerDay(State.Date));
+        }
+
         public DeployedModel Flagship()
         {
             DeployedModel best = null;
@@ -5403,6 +5545,11 @@ namespace ScalingLaws.Simulation
         /// <summary>
         /// What one served token of this model costs in FLOPs today. One formula, read by the
         /// market and by the room's user count, so the two can never quote different capacities.
+        ///
+        /// Divided by what the market's serving recipes have learned since 2022, which is what a
+        /// model at par in Optimisation gets for being at par. See
+        /// <see cref="MarketModel.ServingEfficiencyOn"/> for why a token priced by a falling market
+        /// has to be produced by a falling cost.
         /// </summary>
         private double FlopPerServedToken(DeployedModel model)
         {
@@ -5412,7 +5559,8 @@ namespace ScalingLaws.Simulation
                    * architecture.InferenceCostMultiplier
                    * model.EfficiencyMultiplier(State.Date)
                    * model.TokensPerText
-                   * State.Skills.ServingCostMultiplier();
+                   * State.Skills.ServingCostMultiplier()
+                   / MarketModel.ServingEfficiencyOn(State.Date);
         }
 
         private (double Share, double Demanded, double Served, long Revenue) ServeMarket(
@@ -5493,7 +5641,7 @@ namespace ScalingLaws.Simulation
             State.FreeTokensServedBillions = freeTokens;
             State.LifetimeFreeTokensBillions += freeTokens;
 
-            var rate = State.Monetization.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd);
+            var rate = State.Monetization.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd, State.Date);
             var revenue = SimUnits.ToDollars(paidTokens * 1000.0 * rate);
 
             if (demanded - served > demanded * 0.15 && demanded > 0.0)
@@ -5514,7 +5662,7 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private void SyncPricing(MarketConditions market)
         {
-            var relative = State.Monetization.RelativePrice(market.PricePerMillionTokensUsd);
+            var relative = State.Monetization.RelativePrice(market.PricePerMillionTokensUsd, State.Date);
             foreach (var model in State.DeployedModels)
             {
                 if (model.IsLiveOn(State.Date))
@@ -6599,18 +6747,29 @@ namespace ScalingLaws.Simulation
         /// can say which one moved. Reputation is still a single number nudged in a single place;
         /// what changed is that the nudge is now explainable.
         /// </summary>
-        private void UpdateReputation(double share, double served)
+        private void UpdateReputation(double served)
         {
+            // **People, not a share of a world that grows fifty times.** See
+            // <see cref="Standing.ServiceKneeUsers"/> for the fourteen years of measurement behind
+            // that, and note that this is the same headcount the fan base is built from, read once.
+            var held = MarketByType();
+            var servedUsers = held.TotalUsersOverall * held.OverallShareOf(0);
+
             // Marketing intensity as a fraction of a spend that would be unmistakable. A company
             // spending a hundred thousand a day is being seen everywhere; below that it scales.
             var marketing = Math.Clamp(MarketingDailyUsd() / 100_000.0, 0.0, 1.0);
 
             var change = Standing.Today(
-                share,
+                servedUsers,
                 served,
                 State.Monetization.Generosity,
                 State.Date.DayIndex - State.LastReleaseDate.DayIndex,
-                State.Monetization.PaidPriceMultiplier,
+
+                // **The price the company actually charges.** This read `PaidPriceMultiplier`, which
+                // is the metered lever, and a company billing by subscription never touches it: the
+                // one driver that was meant to make an expensive product cost something in public
+                // opinion sat at exactly 1.0 for every default campaign ever played.
+                State.Monetization.RelativePrice(Market.PricePerMillionTokensUsd, State.Date),
                 marketing,
                 State.Founder.ReputationGainMultiplier,
                 State.Reputation);
@@ -6618,24 +6777,21 @@ namespace ScalingLaws.Simulation
             State.LastStandingChange = change;
             State.Reputation += change.Total;
 
-            // Fans follow the users the company actually holds, weighted by how it is regarded.
-            var breakdown = MarketByType();
-            var users = breakdown.TotalUsersOverall * breakdown.OverallShareOf(0);
-
+            // Fans follow the same headcount, weighted by how the company is regarded.
             // **A backlash holds the fan base down as well as the demand.** It presses on the target
             // rather than on the count, so serving people well and being liked pull against it every
             // day: a company that works through a bad year keeps more of its following than one that
             // waits it out. Fans drift at 0.0012 a day, so a quarter off the target is nothing like
             // a quarter off the count on day one, and how much of it lands depends on the length the
             // incident drew.
-            var fanTarget = Standing.FanTarget(users, State.Reputation)
+            var fanTarget = Standing.FanTarget(servedUsers, State.Reputation)
                 * (1.0 - State.Effects.FanPressure(State.Date));
 
             State.Fans = Standing.AdvanceFans(State.Fans, fanTarget);
 
             // One number a day, written by the code that already worked it out. A chart built from a
             // second calculation would eventually disagree with the counter beside it.
-            State.Users.Record(users);
+            State.Users.Record(servedUsers);
         }
 
         private void ReportDeliveries()

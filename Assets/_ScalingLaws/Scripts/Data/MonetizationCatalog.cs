@@ -86,8 +86,31 @@ namespace ScalingLaws.Data
     {
         public const string CatalogVersion = "2026.08.03";
 
-        /// <summary>Tokens a paying account gets through in a month. Turns a fee into a rate.</summary>
+        /// <summary>
+        /// Tokens a paying account gets through in a month on the opening day. Turns a fee into a
+        /// rate. See <see cref="TokensPerSubscriberPerMonthOn"/> for every later day.
+        /// </summary>
         public const double TokensPerSubscriberPerMonth = 4_000_000.0;
+
+        /// <summary>
+        /// Tokens a paying account gets through in a month on a given day.
+        ///
+        /// **It was the opening figure forever**, while the audiences it is billed to got through
+        /// seventeen times as much by 2029. So the same monthly fee was read as a price per token
+        /// that never fell while the market's halved every year: the $80 a company opens on, which
+        /// is exactly the market rate on day one, was 29 times it by 2025 and 500 times it by 2029.
+        /// A fee nobody had touched had quietly become the most extreme price in the game, which
+        /// breaks the rule that a control left alone is not a decision.
+        ///
+        /// A subscriber is a person, and people use it more every year, which the audience catalog
+        /// already measures. The fee buys what they actually use, so a subscription still drifts
+        /// above a falling market (that is the trade it exists for) but by 2 to 17 times rather
+        /// than by hundreds.
+        /// </summary>
+        public static double TokensPerSubscriberPerMonthOn(GameDate date) =>
+            TokensPerSubscriberPerMonth
+            * AudienceCatalog.AverageTokensPerUserPerDay(date)
+            / AudienceCatalog.AverageTokensPerUserPerDay(GameDate.Start);
 
         /// <summary>Free tokens per user per day at which generosity reads as maximum.</summary>
         public const double GenerousFreeTierTokensPerDay = 250_000.0;

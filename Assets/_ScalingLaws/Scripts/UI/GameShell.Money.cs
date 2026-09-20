@@ -316,9 +316,16 @@ namespace ScalingLaws.UI
         private VisualElement BuildHardwareCard(HardwareGeneration generation, ComputeTier tier)
         {
             const int batch = 64;
+            // **A refusal here used to vanish.** The reason was thrown away with `out _`, so a card
+            // turned down for power looked exactly like a card that had been clicked and ignored.
             var card = new Button(() =>
             {
-                simulation.TryBuyHardware(generation.Id, batch, tier, out _);
+                if (!simulation.TryBuyHardware(generation.Id, batch, tier, out var why))
+                {
+                    AudioDirector.Deny();
+                    startedNotice?.Show(Loc.T("notice.refused"), why);
+                }
+
                 Show(Screen.Fleet);
             });
             card.AddToClassList("card");
@@ -343,6 +350,12 @@ namespace ScalingLaws.UI
                 UiFormat.Money(generation.LaunchPriceUsd * batch)));
             price.AddToClassList("card__line");
             card.Add(price);
+
+            var power = simulation.PowerAfterOrder(generation, batch, tier);
+            if (unlocked)
+            {
+                card.Add(UiParts.SitePowerLine(power));
+            }
 
             if (generation.IsProjection)
             {

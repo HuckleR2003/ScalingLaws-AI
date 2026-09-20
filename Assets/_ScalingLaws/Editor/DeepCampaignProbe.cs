@@ -70,6 +70,18 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static bool ambitious;
 
+        /// <summary>
+        /// Whether the operator also runs the business the way a person watching the numbers would.
+        ///
+        /// **Every operator above left the price where the game opened it**, a subscription that
+        /// charges twenty dollars a million tokens forever while the market rate halves every year.
+        /// By 2025 that is thirty times the market and the demand split clamps it at ten, so every
+        /// campaign measured so far was measuring a company that never once looked at its price.
+        /// This one reprices monthly against the market, sizes the rented cluster to the load it
+        /// actually sees, and raises a round whenever investors will open one.
+        /// </summary>
+        private static bool smart;
+
         [MenuItem("Scaling Laws/Play a deep campaign")]
         public static void Play()
         {
@@ -78,18 +90,20 @@ namespace ScalingLaws.Editor
             var campaigns = 0;
 
             // Three operators, and the third is the one that owns anything.
-            foreach (var (disciplined, owner, aims, heading) in new[]
+            foreach (var (disciplined, owner, aims, runs, heading) in new[]
             {
-                (false, false, false, "A NEW LINE EVERY TIME, nothing ever superseded, renting"),
-                (true, false, false, "ONE PRODUCT LINE, each release replacing the last, renting"),
-                (true, true, false, "ONE PRODUCT LINE, and it owns its own silicon and a server room"),
-                (true, false, true, "AMBITIOUS: one line, research aimed and funded, advertising, renting")
+                (false, false, false, false, "A NEW LINE EVERY TIME, nothing ever superseded, renting"),
+                (true, false, false, false, "ONE PRODUCT LINE, each release replacing the last, renting"),
+                (true, true, false, false, "ONE PRODUCT LINE, and it owns its own silicon and a server room"),
+                (true, false, true, false, "AMBITIOUS: one line, research aimed and funded, advertising, renting"),
+                (true, false, true, true, "SMART: ambitious, and it reprices, sizes the cluster to the load and raises rounds")
             })
             {
                 // `PROBE_ONLY=ambitious` runs the last operator on one seed, for iterating on it
                 // without waiting two minutes for eleven campaigns nobody is looking at.
                 var only = Environment.GetEnvironmentVariable("PROBE_ONLY");
-                if (only == "ambitious" && !aims)
+                if (!string.IsNullOrEmpty(only)
+                    && heading.IndexOf(only, StringComparison.OrdinalIgnoreCase) < 0)
                 {
                     continue;
                 }
@@ -97,11 +111,13 @@ namespace ScalingLaws.Editor
                 oneLine = disciplined;
                 ownsCompute = owner;
                 ambitious = aims;
+                smart = runs;
 
                 report.AppendLine();
                 report.AppendLine("================ " + heading);
 
-                foreach (var seed in only == "ambitious" ? new[] { 4242 } : new[] { 4242, 9001, 1337 })
+                var oneSeed = Environment.GetEnvironmentVariable("PROBE_SEEDS") == "1";
+                foreach (var seed in oneSeed ? new[] { 4242 } : new[] { 4242, 9001, 1337 })
                 {
                     RunOne(seed, report);
                     campaigns++;
@@ -160,6 +176,9 @@ namespace ScalingLaws.Editor
             var peakCapability = 0.0;
 
             var yearly = new List<string>();
+            var watch = (Environment.GetEnvironmentVariable("PROBE_WATCH") ?? string.Empty).Split('-');
+            var watchFrom = watch.Length == 2 && int.TryParse(watch[0], out var wf) ? wf : -1;
+            var watchTo = watch.Length == 2 && int.TryParse(watch[1], out var wt) ? wt : -1;
             var events = new List<string>();
 
             // **Why a campaign stops, in its own words.** The first run showed a company that
@@ -193,10 +212,28 @@ namespace ScalingLaws.Editor
 
                     // The loud ones, a few of each, so the report says what a campaign felt
                     // like rather than printing four thousand lines.
-                    if (events.Count < 30 && IsLoud(entry.Type))
+                    if (events.Count < 60 && IsLoud(entry.Type))
                     {
                         events.Add($"      day {state.Date.DayIndex,5}  {entry.Type}: "
                             + Trim(entry.Message));
+                    }
+                }
+            }
+
+            // **Where the money came from, a year at a time.** The first reading of this probe had
+            // operators ending on twenty billion dollars with a share of the market that rounded to
+            // nothing, and no line said which part of the game had paid for it.
+            var yearBooks = new Dictionary<LedgerLine, long>();
+            var bookMonth = Ledger.MonthKeyOf(state.Date);
+
+            void Harvest(int monthKey)
+            {
+                foreach (var info in Ledger.Lines)
+                {
+                    var amount = state.Ledger.MonthTotal(monthKey, info.Line);
+                    if (amount != 0L)
+                    {
+                        yearBooks[info.Line] = (yearBooks.TryGetValue(info.Line, out var sum) ? sum : 0L) + amount;
                     }
                 }
             }
@@ -205,6 +242,27 @@ namespace ScalingLaws.Editor
             {
                 simulation.AdvanceDay();
                 Drain();
+
+                var monthNow = Ledger.MonthKeyOf(state.Date);
+                if (monthNow != bookMonth)
+                {
+                    Harvest(bookMonth);
+                    bookMonth = monthNow;
+
+                    if (state.Date.Month == 1)
+                    {
+                        var income = yearBooks.Where(pair => Ledger.Info(pair.Key).IsIncome)
+                            .OrderByDescending(pair => pair.Value)
+                            .Select(pair => $"{pair.Key} {Money(pair.Value)}");
+                        var costs = yearBooks.Where(pair => !Ledger.Info(pair.Key).IsIncome)
+                            .OrderByDescending(pair => pair.Value)
+                            .Take(7)
+                            .Select(pair => $"{pair.Key} {Money(pair.Value)}");
+                        yearly.Add($"      BOOKS {state.Date.Year - 1}  IN: {string.Join(", ", income)}");
+                        yearly.Add($"      BOOKS {state.Date.Year - 1} OUT: {string.Join(", ", costs)}");
+                        yearBooks.Clear();
+                    }
+                }
 
                 if (state.CashUsd < 0 && bankrupt < 0)
                 {
@@ -225,9 +283,34 @@ namespace ScalingLaws.Editor
                 Operate(simulation, ref shipped, ref researched, ref upgrades, ref hires,
                     ref loans, ref smears, ref lawsuits, released, offices, Refused);
 
-                if (day % 365 == 364 || (ambitious && day < 1100 && day % 91 == 90))
+                // `PROBE_WATCH=from-to` prints one line a day between two day indices. For pulling
+                // a collapse apart: a quarterly line cannot say which week it happened in.
+                if (watchFrom >= 0 && day >= watchFrom && day <= watchTo)
                 {
-                    var rank = simulation.Ranking().FirstOrDefault(entry => entry.IsPlayer);
+                    var q = state.LastQuality;
+                    var flag = simulation.Flagship();
+                    var breakdown = simulation.MarketByType();
+
+                    yearly.Add(string.Format(Culture,
+                        "      WATCH {0} share {1,7:P3} users {2,12:N0} demanded {3,10:N1}B capacity {4,10:N1}B "
+                        + "rep {5:0.00} aware {6:0.00} effects {7:0.00} cap {8:0.0} burden {9:0.00} "
+                        + "price {10:0.0}x reliability {11:0.00} cash {12}",
+                        state.Date, breakdown.OverallShareOf(0),
+                        breakdown.TotalUsersOverall * breakdown.OverallShareOf(0),
+                        q.Demanded, q.Capacity, state.Reputation, state.Awareness.Overall,
+                        state.Effects.DemandMultiplier(state.Date),
+                        state.BestCapability,
+                        flag == null ? 0.0 : MarketShareModel.SizeBurden(flag.ActiveParameterCount),
+                        state.Monetization.RelativePrice(simulation.Market.PricePerMillionTokensUsd, state.Date),
+                        q.Reliability, Money(state.CashUsd)));
+                }
+
+                if (day % 365 == 364 || (ambitious && day < 1560 && day % 91 == 90))
+                {
+                    var flagship = simulation.Flagship();
+                    var board = simulation.Ranking();
+                    var rank = board.FirstOrDefault(entry => entry.IsPlayer);
+                    var best = board.Count > 0 ? board[0] : rank;
 
                     // **The power bill, because nobody could say whether it bites.** The room is
                     // billed at a domestic tariff and a datacenter at a contract one, and the only
@@ -246,7 +329,10 @@ namespace ScalingLaws.Editor
                         + "fleet {16,12}/day, revenue {17,12}/day, "
                         + "SERVED {18,15:N0} of the world, unserved {19,6:P1}, leader {20,6:P1}, "
                         + "frontier {21,5:0.0}, demanded {22:N1}B, capacity {23:N1}B, "
-                        + "rate {24:0.000}/M, market {25:0.000}/M, free {26:P0}, training share {27:P0}",
+                        + "rate {24:0.000}/M, market {25:0.000}/M, free {26:P0}, training share {27:P0}, "
+                        + "cluster cost {28:0.000}/M, awareness {29:0.00}, our brand {30:0.00}, "
+                        + "leader {31} cap {32:0.0} brand {33:0.00}, age {34:0.0}y, active {35:N0}B, "
+                        + "burden {36:0.00}, reliability {37:0.00}, kind {38}",
                         state.Date, Money(state.CashUsd), state.BestCapability,
                         rank.Position, standing.Subscribers, state.Reputation,
                         state.UnlockedResearch.Count, state.DeployedModels.Count,
@@ -268,10 +354,31 @@ namespace ScalingLaws.Editor
                         LeaderShare(simulation),
                         simulation.Market.FrontierCapability,
                         state.LastQuality.Demanded, state.LastQuality.Capacity,
-                        state.Monetization.RatePerMillionTokensUsd(simulation.Market.PricePerMillionTokensUsd),
+                        state.Monetization.RatePerMillionTokensUsd(simulation.Market.PricePerMillionTokensUsd, state.Date),
                         simulation.Market.PricePerMillionTokensUsd,
                         state.Monetization.FreeShareOfTokens,
-                        state.TrainingComputeShare));
+                        state.TrainingComputeShare,
+
+                        // **Does serving one more person pay for itself?** The question the author
+                        // asks about this economy, answered as a number: what a million served
+                        // tokens is charged at against what the cluster spends producing them.
+                        state.LastQuality.Capacity > 0.0
+                            ? fleet.Bill.TotalUsd / (state.LastQuality.Capacity * 1000.0)
+                            : 0.0,
+
+                        // Who is ahead, and on what. A share that falls while the model is level
+                        // with the frontier is a brand or an awareness story, and this says which.
+                        state.Awareness.Overall, rank.Brand, best.LabName, best.Capability, best.Brand,
+
+                        // The product itself, because a share that falls while the model improves
+                        // is either its age, its cost to serve or how well it is running.
+                        flagship == null ? 0.0 : flagship.ReleaseDate.YearsUntil(state.Date),
+                        flagship == null ? 0.0 : flagship.ActiveParameterCount / 1e9,
+                        flagship == null
+                            ? 1.0
+                            : MarketShareModel.SizeBurden(flagship.ActiveParameterCount),
+                        state.LastQuality.Reliability,
+                        flagship == null ? "none" : flagship.Type.ToString()));
                 }
             }
 
@@ -554,7 +661,11 @@ namespace ScalingLaws.Editor
             }
 
             // ---- rent to what the run needs ----------------------------------------------------
-            if (state.Date.DayIndex % 30 == 0)
+            if (smart)
+            {
+                RunTheBusiness(simulation);
+            }
+            else if (state.Date.DayIndex % 30 == 0)
             {
                 // An owner rents the shortfall rather than the whole cluster. Renting the same
                 // amount and *also* buying would be a company with two clusters and one
@@ -684,8 +795,10 @@ namespace ScalingLaws.Editor
             {
 
                 state.ResearchFunding = ResearchFundingMode.Fixed;
+                // A twentieth of the bank a month, within what the desk will take. A lab that is
+                // not converting money into understanding is a lab waiting to be overtaken.
                 state.ResearchMonthlyUsd = Math.Clamp(state.CashUsd / 100L,
-                    ResearchBudget.MinimumMonthlyUsd, 6_000_000L);
+                    ResearchBudget.MinimumMonthlyUsd, ResearchBudget.MaximumMonthlyUsd);
             }
 
             if (state.ActiveResearch != null)
@@ -747,9 +860,100 @@ namespace ScalingLaws.Editor
                 AudienceSegment.Consumer, 6, state.Date));
         }
 
+        /// <summary>
+        /// Price, cluster and capital, reviewed once a month.
+        ///
+        /// The price follows the market with a premium for being near the frontier and a discount
+        /// for being behind it, because that is the one comparison a buyer makes. The cluster grows
+        /// when the load says requests are queueing and shrinks when it sits idle, within what the
+        /// takings and the bank can carry. Rounds are opened and signed the day investors allow.
+        /// </summary>
+        private static void RunTheBusiness(CompanySimulation simulation)
+        {
+            var state = simulation.State;
+
+            if (state.Date.DayIndex % 30 != 0)
+            {
+                return;
+            }
+
+            // Knobs, so one part of running a business can be switched at a time and the rest held.
+            // The defaults are the best play measured so far, so the standing report describes a
+            // company somebody would actually run: three times the market rate, the cluster paid for
+            // out of the bank rather than out of last month's takings, and every round signed.
+            // Each is switchable because the interesting question is always which one is carrying it.
+            var priceKnob = Environment.GetEnvironmentVariable("PROBE_PRICE") ?? "3";
+            var rentKnob = Environment.GetEnvironmentVariable("PROBE_RENT") ?? "cash";
+            var fundKnob = Environment.GetEnvironmentVariable("PROBE_FUND") ?? "on";
+
+            if (fundKnob == "on")
+            {
+                if (!state.CurrentFundingOffer.IsOpen)
+                {
+                    simulation.TryOpenFundingRound(out _);
+                }
+
+                if (state.CurrentFundingOffer.IsOpen)
+                {
+                    simulation.TryAcceptFundingOffer(out _);
+                }
+            }
+
+            var market = simulation.Market.PricePerMillionTokensUsd;
+            if (priceKnob.StartsWith("usd"))
+            {
+                state.Monetization.SubscriptionPriceUsdPerMonth =
+                    double.Parse(priceKnob.Substring(3), CultureInfo.InvariantCulture);
+            }
+            else if (priceKnob != "fixed")
+            {
+                var standing = state.BestCapability / Math.Max(1.0, simulation.Market.FrontierCapability);
+                var premium = priceKnob == "market"
+                    ? Math.Clamp(1.0 + (standing - 0.9) * 3.0, 0.6, 1.6)
+                    : double.Parse(priceKnob, CultureInfo.InvariantCulture);
+                state.Monetization.SubscriptionPriceUsdPerMonth =
+                    market * premium * (MonetizationCatalog.TokensPerSubscriberPerMonthOn(state.Date) / 1_000_000.0);
+            }
+
+            if (rentKnob == "cash")
+            {
+                simulation.SetRentedPetaflops(Math.Clamp(state.CashUsd / 40_000.0, 120.0, 60_000.0));
+                return;
+            }
+
+            var takings = 0L;
+            for (var back = 1; back <= 30; back++)
+            {
+                takings += state.Ledger.DayIndexTotal(state.Date.DayIndex - back, LedgerLine.Subscriptions);
+            }
+
+            var rentPerPetaflopDay = Math.Max(0.01, simulation.Market.RentPricePerPetaflopDayUsd);
+            var rented = Math.Max(120.0, state.Pool.RentedPetaflops);
+            var load = state.LastQuality.Utilisation;
+
+            // Grows while people are queueing and shrinks while the cluster idles, which is how
+            // anybody runs a service. The old version only moved past 85% load and never caught up,
+            // so it served a full queue at 100% for years and read as a company with no customers.
+            var wanted = load > 0.70 ? rented * 1.5 : load < 0.35 ? rented * 0.85 : rented;
+
+            // Most of what it takes in, plus a slice of the bank that keeps three months of runway.
+            // A lab that will not spend its round on compute is a lab that raised for nothing.
+            var affordable = (takings / 30.0 * 0.9 + state.CashUsd / 90.0) / rentPerPetaflopDay;
+            simulation.SetRentedPetaflops(Math.Clamp(Math.Min(wanted, affordable), 120.0, 400_000.0));
+        }
+
         /// <summary>The adopted family that projects best at this budget.</summary>
         private static ArchitectureId BestFamily(CompanySimulation simulation, double budget)
         {
+            // `PROBE_FAMILY=sparse` plays the way somebody who has read the serving burden plays:
+            // a mixture fires a fraction of its parameters per token, so it is cheap to serve at a
+            // size that would otherwise price itself out of the market.
+            if ((Environment.GetEnvironmentVariable("PROBE_FAMILY") ?? (smart ? "sparse" : "best")) == "sparse"
+                && simulation.State.AdoptedArchitectures.Contains(ArchitectureId.SparseMixture))
+            {
+                return ArchitectureId.SparseMixture;
+            }
+
             var state = simulation.State;
             var best = ArchitectureId.DenseTransformer;
             var bestCapability = double.MinValue;
@@ -780,6 +984,7 @@ namespace ScalingLaws.Editor
         private static bool IsLoud(CompanyEventType type) =>
             type == CompanyEventType.SafetyIncident
             || type == CompanyEventType.SmearBackfired
+            || type == CompanyEventType.ModelScandal
             || type == CompanyEventType.ModelReleased;
 
         private static string Trim(string message) =>

@@ -747,7 +747,7 @@ namespace ScalingLaws.Simulation
 
             var kind = ModelScandals.Today(
                 State.Reputation,
-                State.Monetization.RelativePrice(marketPricePerMillionUsd),
+                State.Monetization.RelativePrice(marketPricePerMillionUsd, State.Date),
                 cut,
                 sustainedLoad,
                 sinceRelease,

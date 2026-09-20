@@ -136,7 +136,7 @@ namespace ScalingLaws.Simulation
         /// the company and does not move when the market price does, which is the whole trade: it
         /// protects a good position and traps a bad one.
         /// </summary>
-        public double RatePerMillionTokensUsd(double marketPricePerMillionUsd)
+        public double RatePerMillionTokensUsd(double marketPricePerMillionUsd, GameDate date)
         {
             return Model switch
             {
@@ -144,16 +144,23 @@ namespace ScalingLaws.Simulation
                     Math.Max(0.0, marketPricePerMillionUsd) * PaidPriceMultiplier,
                 PricingModel.Subscription =>
                     SubscriptionPriceUsdPerMonth
-                    / (MonetizationCatalog.TokensPerSubscriberPerMonth / 1_000_000.0),
+                    / (MonetizationCatalog.TokensPerSubscriberPerMonthOn(date) / 1_000_000.0),
                 _ => 0.0
             };
         }
+
+        /// <summary>The rate on the opening day, for the arithmetic that does not depend on one.</summary>
+        public double RatePerMillionTokensUsd(double marketPricePerMillionUsd) =>
+            RatePerMillionTokensUsd(marketPricePerMillionUsd, GameDate.Start);
 
         /// <summary>
         /// Where the company sits against the market, for the demand split. Free reads as very
         /// cheap rather than as free, because attention still has to be won from paid rivals.
         /// </summary>
-        public double RelativePrice(double marketPricePerMillionUsd)
+        public double RelativePrice(double marketPricePerMillionUsd) =>
+            RelativePrice(marketPricePerMillionUsd, GameDate.Start);
+
+        public double RelativePrice(double marketPricePerMillionUsd, GameDate date)
         {
             if (marketPricePerMillionUsd <= 0.0)
             {
@@ -165,8 +172,8 @@ namespace ScalingLaws.Simulation
                 return 0.05;
             }
 
-            var rate = RatePerMillionTokensUsd(marketPricePerMillionUsd);
-            return Math.Clamp(rate / marketPricePerMillionUsd, 0.05, 10.0);
+            var rate = RatePerMillionTokensUsd(marketPricePerMillionUsd, date);
+            return Math.Clamp(rate / marketPricePerMillionUsd, 0.05, MarketShareModel.MostRelativePrice);
         }
 
         /// <summary>Brand from marketing: the company line plus whatever the model campaign holds.</summary>

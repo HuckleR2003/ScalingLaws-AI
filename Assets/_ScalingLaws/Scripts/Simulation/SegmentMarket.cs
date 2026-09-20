@@ -18,7 +18,8 @@ namespace ScalingLaws.Simulation
             Type = type == ModelType.None ? ModelType.General : type;
             Capability = Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0);
             Brand = Math.Clamp(SimUnits.Finite(brand), 0.0, 1.0);
-            PriceMultiplier = Math.Clamp(SimUnits.Finite(priceMultiplier, 1.0), 0.02, 20.0);
+            PriceMultiplier = Math.Clamp(SimUnits.Finite(priceMultiplier, 1.0), 0.02,
+                MarketShareModel.MostRelativePrice);
             AgeYears = Math.Max(0.0, SimUnits.Finite(ageYears));
             ServingBurden = Math.Clamp(SimUnits.Finite(servingBurden, 1.0), 0.1, 6.0);
         }

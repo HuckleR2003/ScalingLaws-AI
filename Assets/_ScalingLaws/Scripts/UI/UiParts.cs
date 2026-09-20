@@ -401,5 +401,26 @@ namespace ScalingLaws.UI
             // Third, so it lands under the title and the strap and above the banner photograph.
             page.Insert(System.Math.Min(2, page.childCount), row);
         }
+
+        /// <summary>
+        /// What the site would draw after this order, printed under the price.
+        ///
+        /// Every place that sells silicon draws it, because the power ceiling used to be mentioned
+        /// at exactly one moment: the refusal. Amber from four fifths, where the fleet page already
+        /// turns its own power line amber; red when the order would be refused, with the button
+        /// beside it greyed by the caller.
+        /// </summary>
+        public static Label SitePowerLine(SitePowerOutlook outlook)
+        {
+            var line = new Label(Loc.T(outlook.Fits ? "shop.power_after" : "shop.power_over",
+                UiFormat.Kilowatts(outlook.DrawAfterKilowatts),
+                UiFormat.Kilowatts(outlook.CapacityKilowatts)));
+
+            line.AddToClassList("power-after");
+            line.EnableInClassList("power-after--near", outlook.IsNearlyFull);
+            line.EnableInClassList("power-after--over", !outlook.Fits);
+
+            return line;
+        }
     }
 }

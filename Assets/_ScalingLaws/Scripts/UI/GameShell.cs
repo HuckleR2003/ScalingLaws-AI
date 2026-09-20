@@ -3947,6 +3947,23 @@ namespace ScalingLaws.UI
                     break;
                 }
 
+                // **Said once, by the order that crossed four fifths**, because the next one is the
+                // one that gets refused and until now the refusal was the first anybody heard of the
+                // ceiling. Red with the way to the fleet page, where the datacenter button is.
+                case CompanyEventType.SitePowerNearlyFull:
+                {
+                    var site = simulation.SitePowerNow();
+
+                    startedNotice?.Show(Loc.T("notice.power_near"),
+                        Loc.T("notice.power_near.note",
+                            UiFormat.Kilowatts(site.DrawBeforeKilowatts),
+                            UiFormat.Kilowatts(site.CapacityKilowatts),
+                            UiFormat.Kilowatts(ComputeTierCatalog.Get(ComputeTier.OwnDatacenter)
+                                .PowerCapacityKilowatts)),
+                        NoticeTone.Alert, Loc.T("notice.see"), () => Show(Screen.Fleet));
+                    break;
+                }
+
                 // **The one that happens to the company.** Red, longer, and with the way to the story
                 // on it, because a scandal found a week later is a scandal nobody answered.
                 case CompanyEventType.ModelScandal:

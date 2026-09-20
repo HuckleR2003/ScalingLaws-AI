@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine.UIElements;
@@ -286,7 +287,7 @@ namespace ScalingLaws.UI
             // never comes back here drifts into charging multiples of the going rate and eventually
             // reads about it. A screen that shows the fee and not the gap is hiding the half that
             // moves on its own.
-            block.Add(BuildAgainstMarket(shown, market));
+            block.Add(BuildAgainstMarket(shown, market, company().State.Date));
 
             var row = new VisualElement();
             row.AddToClassList("bizprice__sliderrow");
@@ -347,7 +348,7 @@ namespace ScalingLaws.UI
         /// <summary>
         /// One sentence saying whether the fee is near the going rate, and how far off if not.
         /// </summary>
-        private static VisualElement BuildAgainstMarket(double shown, double market)
+        private static VisualElement BuildAgainstMarket(double shown, double market, GameDate date)
         {
             var line = new Label();
             line.AddToClassList("bizprice__against");
@@ -358,7 +359,7 @@ namespace ScalingLaws.UI
                 return line;
             }
 
-            var rate = shown / (MonetizationCatalog.TokensPerSubscriberPerMonth / 1_000_000.0);
+            var rate = shown / (MonetizationCatalog.TokensPerSubscriberPerMonthOn(date) / 1_000_000.0);
             var against = rate / market;
 
             if (against > ModelScandals.PricyAbove)

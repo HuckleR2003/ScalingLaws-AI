@@ -465,6 +465,13 @@ namespace ScalingLaws.UI
                 var hire = hires[index];
                 var onDuty = now >= hire.StartHour && now < hire.EndHour;
 
+                // **Seated again, every refresh.** A hire is placed on a chair when they are
+                // spawned, and the room under them can change afterwards: a company that moves
+                // takes its people to a floor whose chairs are somewhere else entirely. Seating is
+                // two assignments on at most twenty one objects, once an hour of game time, and
+                // doing it here means there is no order in which a move can leave somebody behind.
+                Stand(person.transform, index);
+
                 // **Gone, name plate and all.** The author's rule of 2026-09-19: somebody outside
                 // their hours is not in the office. The plate used to stay up reading "off duty",
                 // which left rows of floating labels over empty chairs all night.

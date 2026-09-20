@@ -1589,6 +1589,20 @@ namespace ScalingLaws.UI
                 Loc.T("create.times", UiFormat.Number(profile.ServingBurden, 2)),
                 Math.Clamp(profile.ServingBurden / 3.0, 0.0, 1.0)));
 
+            // **What that multiplier is, in people.** A serving burden of 6.75 is unreadable; "your
+            // cluster keeps two million served on this, against a hundred million today" is the
+            // decision. Both figures come from the simulation's own serving arithmetic.
+            var servable = simulation.UsersServableWith(blueprint);
+            var servedNow = simulation.UsersServableNow();
+
+            var fleetLine = new Label(servedNow > 0.0
+                ? Loc.T("create.fleet_serves_vs", UiFormat.Count(servable), UiFormat.Count(servedNow))
+                : Loc.T("create.fleet_serves", UiFormat.Count(servable)));
+
+            fleetLine.AddToClassList("create-note");
+            fleetLine.EnableInClassList("create-note--warn", servedNow > 0.0 && servable < servedNow * 0.75);
+            scaleReadout.Add(fleetLine);
+
             scaleReadout.Add(ThinBar(Loc.T("create.memory_used"),
                 UiFormat.Percent(Math.Min(1.0, profile.MemoryPressure)),
                 Math.Min(1.0, profile.MemoryPressure)));

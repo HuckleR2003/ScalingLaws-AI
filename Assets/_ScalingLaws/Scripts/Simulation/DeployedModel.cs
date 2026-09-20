@@ -159,7 +159,7 @@ namespace ScalingLaws.Simulation
         public double PriceMultiplier
         {
             get => price;
-            set => price = Math.Clamp(SimUnits.Finite(value, 1.0), 0.05, 10.0);
+            set => price = Math.Clamp(SimUnits.Finite(value, 1.0), 0.05, MarketShareModel.MostRelativePrice);
         }
 
         /// <summary>

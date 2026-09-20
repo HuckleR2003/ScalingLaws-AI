@@ -3584,6 +3584,36 @@
     -unity-font-style: bold;
 }
 
+/* What a planned model would let the cluster serve, in people, under the readout bars. */
+.create-note {
+    font-size: 11px;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    color: rgb(150, 158, 172);
+    white-space: normal;
+}
+
+.create-note--warn {
+    color: rgb(230, 186, 96);
+}
+
+/* The site's power after an order, under the price wherever silicon is sold. */
+.power-after {
+    font-size: 11px;
+    margin-top: 2px;
+    color: rgb(150, 158, 172);
+    white-space: normal;
+}
+
+.power-after--near {
+    color: rgb(230, 186, 96);
+}
+
+.power-after--over {
+    color: rgb(230, 110, 96);
+    -unity-font-style: bold;
+}
+
 /* Standing in the top bar, beside the money. Quiet by default: these are numbers
    a player glances at, and only the direction needs to catch the eye. */
 

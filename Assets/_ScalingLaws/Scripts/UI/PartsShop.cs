@@ -309,6 +309,11 @@ namespace ScalingLaws.UI
             sum.AddToClassList("shoprow__sum");
             cost.Add(sum);
 
+            // The ceiling before the click rather than after it. Cards the cellar has slots for do
+            // not count, and `PowerAfterOrder` already knows that.
+            var power = simulation.PowerAfterOrder(generation, batch, Tier);
+            cost.Add(UiParts.SitePowerLine(power));
+
             row.Add(cost);
 
             var buy = new Button(() =>
@@ -337,7 +342,7 @@ namespace ScalingLaws.UI
             };
 
             buy.AddToClassList("shoprow__buy");
-            buy.SetEnabled(affordable);
+            buy.SetEnabled(affordable && power.Fits);
             row.Add(buy);
 
             // **Projected silicon says so.** The catalogue knows where the real products stop, and a

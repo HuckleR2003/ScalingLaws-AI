@@ -222,9 +222,20 @@ namespace ScalingLaws.Simulation
             return Math.Clamp(1.0 + (Math.Sqrt(ratio) - 1.0) * SizePassThrough, 0.15, 8.0);
         }
 
+        /// <summary>
+        /// The dearest a product can be against the market and still be read at its real price.
+        ///
+        /// **It was ten, and the till never heard about it.** Four places clamped the price a buyer
+        /// feels to ten times the market while revenue went on charging the full rate, so every
+        /// multiple past ten was free money: a subscription at $2,000 a month finished a fourteen
+        /// year campaign on $480bn against $3.6bn at the $80 it opens on, with the same audience.
+        /// The only thing a bound here may do is keep a logarithm finite.
+        /// </summary>
+        public const double MostRelativePrice = 1000.0;
+
         public static double Utility(double capability, double brand, double priceMultiplier, double ageYears)
         {
-            var safePrice = Math.Clamp(SimUnits.Finite(priceMultiplier, 1.0), 0.05, 10.0);
+            var safePrice = Math.Clamp(SimUnits.Finite(priceMultiplier, 1.0), 0.05, MostRelativePrice);
             var safeAge = Math.Max(0.0, SimUnits.Finite(ageYears));
 
             return CapabilityWeight * Math.Clamp(SimUnits.Finite(capability), 0.0, 100.0)

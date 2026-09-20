@@ -295,6 +295,26 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The SCALE stage, which is where the size of the run is decided.
+        ///
+        /// **The page that now answers the question the whole screen exists for**: what this model
+        /// would do to the cluster, in people rather than in a multiplier. A campaign measured over
+        /// fourteen years lost three quarters of its audience inside a month to a release that was
+        /// better on every figure the creator was reporting, and the one that would have warned it
+        /// is this line.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheScaleStageDraws()
+        {
+            var simulation = Campaign();
+
+            var panel = new ModelCreatorPanel(simulation) { Stage = 2 };
+            panel.Refresh();
+
+            yield return Capture(panel.Root, "create_scale.png");
+        }
+
+        /// <summary>
         /// The last page of the creator with the comparison turned on.
         ///
         /// **The one thing a picture can answer here**: whether the rival figure and the name of

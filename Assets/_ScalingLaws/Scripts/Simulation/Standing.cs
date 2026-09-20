@@ -99,8 +99,26 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public const double DailyDriftRate = 0.0015;
 
-        /// <summary>Full marks for serving a large share of the market well.</summary>
+        /// <summary>Full marks for serving a great many people well.</summary>
         public const double ServiceGain = 0.0012;
+
+        /// <summary>
+        /// People served in a day for full marks, and the reason this is a headcount rather than a
+        /// share of the market.
+        ///
+        /// **It used to be share, and that made the late game unwinnable by construction.** Full
+        /// marks needed a tenth of everybody, in a world whose served population grows from tens of
+        /// millions to three and a half billion across a campaign. Measured over fourteen years: a
+        /// company at the frontier, shipping on time, serving seven and a half million people, held
+        /// 0.2% of that world, earned almost nothing here, and its reputation fell from 1.00 to
+        /// 0.07. Reputation feeds brand and brand feeds the demand split, so the loss compounded
+        /// into a share of nothing while the product was fine.
+        ///
+        /// A company with millions of daily users is known, whatever a larger rival is doing, and
+        /// two million is where being known stops scaling. Square rooted so a young company with a
+        /// hundred thousand users still earns a quarter of it rather than nothing.
+        /// </summary>
+        public const double ServiceKneeUsers = 2_000_000.0;
 
         /// <summary>A maximally generous free tier is worth this much a day. Small on purpose.</summary>
         public const double FreeTierGain = 0.00035;
@@ -132,7 +150,7 @@ namespace ScalingLaws.Simulation
         /// the sum is small enough that no single day decides anything: standing is the shape of a
         /// year of decisions rather than the result of one.
         /// </summary>
-        public static StandingChange Today(double marketShare, double servedBillions,
+        public static StandingChange Today(double servedUsers, double servedBillions,
             double freeTierGenerosity, int daysSinceLastRelease, double priceMultiplier,
             double marketingIntensity, double reputationGainMultiplier,
 
@@ -142,7 +160,8 @@ namespace ScalingLaws.Simulation
             double currentReputation = 0.4)
         {
             var service = servedBillions > 0.0
-                ? ServiceGain * Math.Clamp(marketShare * 10.0, 0.0, 1.0)
+                ? ServiceGain * Math.Clamp(
+                    Math.Sqrt(Math.Max(0.0, SimUnits.Finite(servedUsers)) / ServiceKneeUsers), 0.0, 1.0)
                 : 0.0;
 
             var free = FreeTierGain * Math.Clamp(SimUnits.Finite(freeTierGenerosity), 0.0, 1.0);

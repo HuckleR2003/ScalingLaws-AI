@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
@@ -172,10 +172,13 @@ namespace ScalingLaws.UI
             header.AddToClassList("demo-row");
             header.AddToClassList("demo-row--header");
 
-            header.Add(HeaderCell("MODEL TYPE", "demo-row__name"));
-            header.Add(HeaderCell("USERS", "demo-row__users"));
-            header.Add(HeaderCell("SHARE", "demo-row__share"));
-            header.Add(HeaderCell("LEADER", "demo-row__leader"));
+            // **Four headings and a caption that were still English.** The phrase book has had the
+            // words for three of them since the model table was written; this panel was built with
+            // literals and a Polish player read them in English on the page they meet first.
+            header.Add(HeaderCell(Loc.T("unlock.model_type"), "demo-row__name"));
+            header.Add(HeaderCell(Loc.T("model.col_users"), "demo-row__users"));
+            header.Add(HeaderCell(Loc.T("demo.col_share"), "demo-row__share"));
+            header.Add(HeaderCell(Loc.T("demo.col_leader"), "demo-row__leader"));
 
             table.Add(header);
             table.Add(rows);
@@ -203,7 +206,7 @@ namespace ScalingLaws.UI
             if (breakdown == null || breakdown.Types.Count == 0)
             {
                 headline.text = Loc.T("demo.no_market");
-                caption.text = Loc.T("demo.nobody_served");
+                caption.text = Loc.T("demo.caption_unserved");
                 pie.Set(Array.Empty<double>(), 1.0);
                 return;
             }
@@ -221,10 +224,10 @@ namespace ScalingLaws.UI
                 headline.text = UiFormat.Count(breakdown.AddressableUsers);
 
                 caption.text = breakdown.TotalUsersOverall <= 0.0
-                    ? "people who would use one of these, and nobody is serving them yet."
-                    : $"people in the market. {UiFormat.Percent(1.0 - breakdown.UnservedShare)} are "
-                        + $"using something, and you hold "
-                        + $"{UiFormat.Percent(breakdown.OverallShareOf(0))} of those.";
+                    ? Loc.T("demo.caption_unserved")
+                    : Loc.T("demo.caption_market",
+                        UiFormat.Percent(1.0 - breakdown.UnservedShare),
+                        UiFormat.Percent(breakdown.OverallShareOf(0)));
             }
             else if (breakdown.TryGetType(selected, out var standing))
             {

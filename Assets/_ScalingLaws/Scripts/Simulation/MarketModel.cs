@@ -162,6 +162,66 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
+        /// How many times cheaper the market's own serving recipes make one token of the same model,
+        /// against 2022. Software only: the hardware already arrives through the rent and the catalog.
+        ///
+        /// **Without this the market price fell and the player's cost to serve did not.** Token
+        /// prices fall by more than half a year and that decline is what serving got cheaper by, but
+        /// a served token here cost `2 x active parameters` FLOPs on every date, so the only relief
+        /// was newer silicon. Measured with `DeepCampaignProbe` on 2026-09-19: serving a 200B-active
+        /// model cost 0.22x the market rate in 2022, 2x in 2025 and 5.7x from 2030, and a frontier
+        /// sized model 57x. Pricing near the market was therefore bankruptcy for every operator on
+        /// every seed, and the only strategy that survived was charging ten times the market.
+        ///
+        /// Anchored rather than a formula, one point a year, because each one is a thing that
+        /// happened: serving in FP8 and continuous batching in 2023, paged attention and speculative
+        /// decoding in 2024, FP4 and compressed KV caches in 2025. The catalog counts throughput in
+        /// dense BF16 and says so, so none of this is counted twice. Every point after 2025 is a
+        /// projection, and the curve is held flat after the last one rather than extrapolated.
+        ///
+        /// Being at market par in the trait that measures this (Optimisation) is worth exactly this
+        /// and nothing more; ahead of par is still worth more, behind it less, as before.
+        /// </summary>
+        public static double ServingEfficiencyOn(GameDate date)
+        {
+            var years = GameDate.Start.YearsUntil(date);
+
+            if (years <= ServingEfficiencyAnchors[0].Years)
+            {
+                return ServingEfficiencyAnchors[0].Factor;
+            }
+
+            for (var index = 1; index < ServingEfficiencyAnchors.Length; index++)
+            {
+                var (toYears, toFactor) = ServingEfficiencyAnchors[index];
+
+                if (years <= toYears)
+                {
+                    var (fromYears, fromFactor) = ServingEfficiencyAnchors[index - 1];
+                    var along = (years - fromYears) / (toYears - fromYears);
+
+                    // Between two points the recipe improves by a constant factor a day, so the
+                    // interpolation is in the logarithm rather than a straight line.
+                    return Math.Exp(Math.Log(fromFactor) + (Math.Log(toFactor) - Math.Log(fromFactor)) * along);
+                }
+            }
+
+            return ServingEfficiencyAnchors[^1].Factor;
+        }
+
+        /// <summary>Years after 1 January 2022, and how many times cheaper serving is by then.</summary>
+        private static readonly (double Years, double Factor)[] ServingEfficiencyAnchors =
+        {
+            (0.0, 1.0),
+            (1.0, 2.0),
+            (2.0, 5.0),
+            (3.0, 12.0),
+            (4.0, 20.0),
+            (6.0, 45.0),
+            (8.0, 80.0)
+        };
+
+        /// <summary>
         /// Compute multiplier from better training recipes, relative to 2022. Applied to a run as
         /// the square root on both parameters and tokens, which multiplies the FLOP budget by this
         /// figure while leaving the run's shape untouched.

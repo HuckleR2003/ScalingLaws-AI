@@ -354,7 +354,7 @@ namespace ScalingLaws.Tests.EditMode
                     AssertFinite(capability, $"{archetype} model capability");
                     Assert.That(capability, Is.InRange(0.0, 100.0));
                     Assert.That(model.EfficiencyMultiplier(state.Date), Is.InRange(0.05, 4.0));
-                    Assert.That(model.PriceMultiplier, Is.InRange(0.05, 10.0));
+                    Assert.That(model.PriceMultiplier, Is.InRange(0.05, MarketShareModel.MostRelativePrice));
                 }
             }
         }
