@@ -38,6 +38,25 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.5.0] - 2026-09-20
+
+**Serving people pays for itself again.** The one thing this release changes is the shape of the
+economy: the price a buyer feels is now the price the company charges, a token gets cheaper to serve
+for the player at the rate the market's own price falls, and public opinion is earned by how many
+people a company serves well rather than by holding a tenth of a world that grows fifty times over.
+Measured over nine campaigns of fourteen years before and after: the strategy that used to win was
+charging far above the market and serving almost nobody, and a company doing everything else right
+was erased some time in 2025. Now a lab that prices near the market serves twice the people for less
+money, one that charges ten times it makes more money from a quarter of the audience, and the careful
+middle survives fourteen years on every seed.
+
+The sections below are the whole week's work, in the order it happened, from the city map to the
+balance repair.
+
 ### Balance: serving people pays for itself again
 
 **The three faults below were measured, not guessed, over nine campaigns of fourteen years each.**
@@ -510,6 +529,37 @@ reading: it was played in a game that had no debug mode in it. Save v60 records 
 takes unasked applications; an older campaign keeps receiving them.
 
 1,389 EditMode tests and 63 PlayMode tests.
+
+### Save compatibility
+
+**Save v62, unchanged by the balance work.** Every campaign from 0.4.0 onwards loads and keeps its
+history. Nothing in this release added state: the serving efficiency, the subscription's token
+allowance and the standing's new service driver are all read from the date and from figures the save
+already carries, which is why an old file replays rather than being reconstructed.
+
+The one thing a mid-campaign player will notice on the first tick is the price: a company that has
+never touched the subscription is now charging two to seventeen times the market rate instead of
+several hundred times, and the demand split reads the honest figure. If your campaign had drifted
+into charging the market's whole annual revenue for a million tokens, it will suddenly have
+customers.
+
+### Under the hood
+
+**1,421 EditMode tests across 164 fixtures, and 67 PlayMode across 15.** Counted from
+`TestResults.xml` and `PlayResults.xml` rather than remembered.
+
+`DeepCampaignProbe` plays five operators now, and the fifth is the one that answers the question the
+others could not: what happens to somebody who prices deliberately, sizes the cluster out of the
+bank, builds sparse models and signs every round. Its price, its cluster policy, its architecture
+and its funding are switchable one at a time, because the interesting answer is always which one is
+carrying the result. `ResearchCostDump` prints what the tree charges in points and what a served
+million tokens costs against what the market pays for it, the two tables that had been answered from
+memory three times.
+
+The house was lightened by repainting fifteen material assets in place rather than by regenerating
+`OfficeRoom.prefab`: the prefab's own object ids are what the hand-placed furniture in `Game.unity`
+is keyed to, and rebuilding it would have snapped a week of furnishing back to where the generator
+puts things.
 
 ---
 
