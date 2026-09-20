@@ -826,9 +826,13 @@ namespace ScalingLaws.UI
             // and giving two different buttons in two different places one name is how a rule gets
             // edited and appears to do nothing.
             skip.AddToClassList("intro-skipall");
-            skip.style.display = GameSettings.HasSeenOpening
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
+
+            // **Always, from the first frame.** It used to appear only for somebody who had been
+            // through the opening once, on the reasoning that a first-time player should not be
+            // offered the story skipped. Reported by the author as the button not being there at
+            // all, which is what a hidden escape hatch is: the player who most wants out is the one
+            // who cannot see it, and a new profile or a cleared save hides it from everybody.
+            skip.style.display = DisplayStyle.Flex;
 
             column.Add(skip);
 

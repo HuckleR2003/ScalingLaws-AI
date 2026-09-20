@@ -153,6 +153,9 @@ from a quarter of the audience. **All three are now a decision rather than one r
   belong to the model, so a company that shipped one without the work never stopped having done it,
   and one probe log carried the identical sentence thirty times. It is news for six months and when
   the company ships again, which is when there is something new to write about.
+- **The introduction had a SKIP button and hid it from everybody who wanted it.** It was shown only
+  to a player who had already been through the opening once, so a new profile, a cleared save and
+  anybody on their first campaign got no way out of it at all. It is there from the first frame now.
 - **Twelve notes on the creator's Scale page and six headings on the model tables were English on a
   Polish screen.** They are in the phrase book now, in both languages.
 
