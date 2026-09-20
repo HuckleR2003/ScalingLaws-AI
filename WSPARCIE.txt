@@ -1,0 +1,45 @@
+WSPARCIE PREMIERY NA STEAM
+Scaling Laws / HCK Labs
+
+
+PO POLSKU
+
+Gra jest darmowa i będzie darmowa w tej formie. Steam jest osobną sprawą: żeby wystawić tam grę,
+trzeba najpierw zapłacić opłatę rejestracyjną Valve. Tyle. To jedyny powód tej zbiórki.
+
+Na stronie gry i na GitHubie jest przycisk wsparcia i licznik, który pokazuje, ile już jest
+zebrane. Licznik aktualizuję na bieżąco, więc widzisz dokładnie ten sam stan, co ja.
+
+Każda wpłata przybliża premierę, a od 40 zł wchodzisz do pakietu wspierającego: imię (albo nick)
+w napisach gry i w sekcji WSPIERAJĄCY w menu, i wiadomość, kiedy gra staje na Steamie.
+
+Zbiórka trwa do 19 października 2026. Jeśli nie uzbiera się tyle, ile trzeba, nie znika przez to
+nic z gry: dalej wychodzi tu, na stronie i na itch.io, tak jak do tej pory.
+
+Wsparcie: https://github.com/sponsors/HuckleR2003
+Strona gry:  https://pcworkman.dev/hck-labs/scaling-laws/
+
+Jeśli nie chcesz albo nie możesz wpłacić, a chcesz pomóc: zagraj, napisz mi, co jest niejasne
+albo co się psuje, i powiedz o grze komuś, kto lubi tycoony. To działa równie dobrze.
+
+
+IN ENGLISH
+
+The game is free and stays free in this form. Steam is a separate matter: putting a game there
+means paying Valve's registration fee first. That is the whole reason for this fund.
+
+There is a support button and a counter on the game's page and on GitHub. The counter shows what
+has come in so far, and I keep it current, so you are looking at the same figure I am.
+
+Every contribution brings the launch closer. From about ten dollars you are in the supporter pack:
+your name or handle in the game's credits and in the SUPPORTERS section of the menu, and a message
+from me the day it goes live on Steam.
+
+The fund runs until 19 October 2026. If it does not reach the target, nothing is taken away from
+the game: it keeps arriving here, on the site and on itch.io, exactly as it has been.
+
+Support: https://github.com/sponsors/HuckleR2003
+The game: https://pcworkman.dev/hck-labs/scaling-laws/
+
+If you would rather not pay, or cannot, and still want to help: play it, tell me what is unclear
+or what breaks, and mention it to somebody who likes tycoons. That helps just as much.

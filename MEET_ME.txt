@@ -1,0 +1,66 @@
+SCALING LAWS 0.5.0
+Tycoon o firmie AI / An AI company tycoon
+HCK Labs, Marcin "HCK" Firmuga
+
+
+PO POLSKU
+
+Styczeń 2022. Dwanaście milionów dolarów. Zero produktu. Prowadzisz laboratorium AI w świecie,
+w którym prawdziwe modele wychodzą w dniach, w których naprawdę wyszły.
+
+Trenujesz modele, sprzedajesz tokeny, kupujesz moc obliczeniową i próbujesz dotrwać do 2036.
+Jedno zdanie opisuje całą grę: ulepszeń się nie kupuje, ulepszenia się taktuje w czasie. Sprzęt
+się starzeje, czołówka przesuwa się co miesiąc, a pieniądze wydane rok za wcześnie leżą w
+aktywach, które tracą po ćwierć wartości z każdą nową generacją.
+
+Jak zacząć:
+1. Stwórz założyciela i firmę. Region i kraj zmieniają podatki, ceny sprzętu i konkurencję.
+2. Emil, twój kuzyn, przeprowadzi cię przez pierwszą godzinę. Zapłaci też za pierwsze badanie.
+3. Zbuduj pierwszy model w MODEL. Kreator pokazuje jakość, czas i koszt, zanim zapłacisz.
+4. Wydaj go w WYDANIE, ustaw cenę, i patrz na MOC. Jeśli nie masz na czym serwować, kolejka
+   rośnie, a ludzie odchodzą.
+5. Wracaj do BADANIA. Kalendarza nie kupisz, a czołówka nie czeka.
+
+Sterowanie: spacja pauzuje, 1/2/3 to prędkość, strzałki przewijają stronę. Lewy przycisk myszy
+wybiera, prawy cofa albo oddala.
+
+Zapisy: gra zapisuje się sama i przez ZAPISZ. Kampanie z 0.4.0 wczytują się bez zmian.
+
+
+IN ENGLISH
+
+January 2022. Twelve million dollars. No product. You run an AI lab in a world where the real
+models arrive on the dates they actually arrived.
+
+You train models, sell tokens, buy compute, and try to still be here in 2036. One sentence
+describes the whole game: upgrades are not purchased, they are timed. Hardware ages, the frontier
+moves every month, and capital spent a year early sits in an asset losing roughly a quarter of its
+value with every successor launch.
+
+Where to start:
+1. Build a founder and a company. The region and the country change tax, hardware prices and
+   local competition.
+2. Emil, your cousin, walks you through the first hour and pays for your first research node.
+3. Design your first model under MODEL. The creator shows the quality, the time and the bill
+   before you pay for any of it.
+4. Ship it under RELEASE, set a price, then look at COMPUTE. Without capacity the queue grows and
+   people leave.
+5. Go back to RESEARCH. You cannot buy the calendar, and the frontier does not wait.
+
+Controls: space pauses, 1/2/3 set the speed, the arrow keys scroll a page. Left click selects,
+right click goes back or zooms out.
+
+Saves: the game autosaves and saves from SAVE. Campaigns from 0.4.0 load unchanged.
+
+
+CO JEST W PACZCE / WHAT IS IN THIS ZIP
+
+Scaling Laws Windows\     gra, uruchom "Scaling Laws.exe"  /  the game, run "Scaling Laws.exe"
+MEET_ME.txt               ten plik  /  this file
+README.md                 czym jest projekt i jak jest zbudowany  /  what the project is
+CHANGELOG.md              co się zmieniło w każdym wydaniu  /  every release, newest first
+WSPARCIE.txt              trwająca zbiórka na Steam  /  the Steam launch fund
+
+
+Strona: https://pcworkman.dev/hck-labs/scaling-laws/
+Kod: https://github.com/HuckleR2003/ScalingLaws-AI

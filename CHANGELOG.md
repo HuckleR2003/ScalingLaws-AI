@@ -101,6 +101,20 @@ from a quarter of the audience. **All three are now a decision rather than one r
 
 ### Added
 
+- **Every audience has a paying share.** An API key is billed for every token it spends and a
+  consumer assistant is free for almost everybody, so who a model is for is now the difference
+  between reach and revenue. Reported after a playtest: one model, the compute screen never opened,
+  $55M inside four months and the fleet reading eleven per cent busy.
+- **Serving a token costs three times the fleet it did** (`InferenceUtilization` 0.06 to 0.02),
+  which lands almost entirely on 2022 to 2024 because past that the serving efficiency curve
+  dominates. The compute screen now has to be opened.
+- **The parts warehouse has a door.** A full width button at the top of the room's rail opens it,
+  visible without entering build mode, and the small one buried inside the build section is gone.
+- **BUY opens an order window** instead of spending the money on the click: units, price each,
+  total, delivery date and the wait, with a slider that pays up to half again for up to six
+  sevenths of the calendar.
+- **The region page says which mouse button does what**, with the two pictures and SELECT and ZOOM
+  OUT hard against them.
 - **The creator says what a model would do to your cluster, in people.** The Scale page and the
   release window both print how many people the fleet keeps served on the model being designed,
   against what it serves today, and the line turns amber when the new model would serve fewer.
@@ -116,6 +130,16 @@ from a quarter of the audience. **All three are now a decision rather than one r
 
 ### Changed
 
+- **Rented capacity and reserved capacity share a line**, half the page each, and the tour now
+  scrolls whatever it is pointing at into view rather than describing a control a section and a half
+  below the fold.
+- **The rent meter's delivered bar measures the rented half**, not the whole fleet against the whole
+  fleet: a player with owned cards and no host CPUs for them read "25.9% of what you pay for" under
+  a rent that was delivering its full share.
+- **One definition of a person.** The capacity band read a hand-written forty petaflops per million
+  accounts, a second answer to what the market computes daily, and the room read the market's average
+  account, which is eight times heavier than a consumer one. Both read what this company's own users
+  get through now.
 - **The house is lighter.** Pale oak underfoot, plaster on the walls, brushed metal, a warm lamp
   that reads as a lamp, and a reflection probe so the floor has something to reflect. The furniture
   every player moved by hand is exactly where it was: the materials were repainted in place rather
