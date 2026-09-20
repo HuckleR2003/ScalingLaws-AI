@@ -24,7 +24,8 @@ Jak zacząć:
 Sterowanie: spacja pauzuje, 1/2/3 to prędkość, strzałki przewijają stronę. Lewy przycisk myszy
 wybiera, prawy cofa albo oddala.
 
-Zapisy: gra zapisuje się sama i przez ZAPISZ. Kampanie z 0.4.0 wczytują się bez zmian.
+Zapisy: gra zapisuje się sama i przez ZAPISZ. Kampanie z 0.4.0 wczytują się i zachowują historię.
+Format zapisu idzie z v56 na v62 i każdy krok to prawdziwa migracja, nie reset.
 
 
 IN ENGLISH
@@ -50,7 +51,8 @@ Where to start:
 Controls: space pauses, 1/2/3 set the speed, the arrow keys scroll a page. Left click selects,
 right click goes back or zooms out.
 
-Saves: the game autosaves and saves from SAVE. Campaigns from 0.4.0 load unchanged.
+Saves: the game autosaves and saves from SAVE. Campaigns from 0.4.0 load and keep their history.
+The format moves from v56 to v62 and every step is a real migration rather than a reset.
 
 
 CO JEST W PACZCE / WHAT IS IN THIS ZIP
