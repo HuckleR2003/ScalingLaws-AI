@@ -26,6 +26,29 @@ namespace ScalingLaws.Tests.EditMode
                 "ScalingLaws.uss"));
 
         /// <summary>
+        /// No length in the sheet is written in a unit USS does not have.
+        ///
+        /// **One `0.08em` took the whole stylesheet down.** USS parses lengths in pixels and
+        /// percent; anything else fails the rule, and a sheet with a failed rule in it does not
+        /// load at all. The game came up with the bottom bar stacking vertically, every panel
+        /// unstyled, and nothing in the log to say why. `BootTests.TheLayoutIsActuallyStyled`
+        /// caught it, which is what that fixture is for, and this catches it a minute earlier and
+        /// says which unit did it.
+        /// </summary>
+        [Test]
+        public void EveryLengthIsInAUnitUssUnderstands()
+        {
+            var offenders = Regex.Matches(Sheet, @"[-+]?[0-9]*\.?[0-9]+(em|rem|pt|vh|vw|ex|ch)")
+                .Select(match => match.Value)
+                .Distinct()
+                .ToList();
+
+            Assert.That(offenders, Is.Empty,
+                "USS takes px and % and nothing else. One rule in a unit it cannot read stops the "
+                + "whole sheet from loading: " + string.Join(", ", offenders));
+        }
+
+        /// <summary>
         /// Nothing in the game draws smaller than this.
         ///
         /// **Reported as the single biggest problem with the game, from a laptop.** Fifty eight

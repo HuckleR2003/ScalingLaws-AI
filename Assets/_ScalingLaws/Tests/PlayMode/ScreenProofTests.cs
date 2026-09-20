@@ -295,6 +295,56 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The parts warehouse with an order open on it.
+        ///
+        /// The window is new and it carries the only slider in the game that buys calendar, so the
+        /// one thing a picture answers is whether the figures, the rush line and the two buttons
+        /// fit the card or run off the bottom of it.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOrderWindowDraws()
+        {
+            var simulation = Campaign();
+            var shop = new PartsShop(simulation, null);
+            shop.Refresh();
+
+            var open = typeof(PartsShop).GetMethod(
+                "OpenOrder",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            Assert.That(open, Is.Not.Null);
+
+            var generation = HardwareCatalog.Get(HardwareGenerationId.AcceleratorH100);
+            open.Invoke(shop, new object[] { generation, 32_000L, 32_000L * 4 });
+
+            yield return Capture(shop.Root, "room_order.png");
+        }
+
+        /// <summary>
+        /// The region page of the founder creator, before anything is picked.
+        ///
+        /// The one thing a picture answers here: whether the two mouse pictures and their words
+        /// read as one label at the size they are drawn, or as a legend somebody has to join up.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheRegionPageShowsTheMouseLegend()
+        {
+            var host = new GameObject("RegionProof");
+            host.SetActive(false);
+            var menu = host.AddComponent<MainMenuController>();
+
+            var build = typeof(MainMenuController).GetMethod(
+                "BuildRegionSection",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            Assert.That(build, Is.Not.Null);
+
+            yield return Capture((VisualElement)build.Invoke(menu, null), "creator_region.png");
+
+            Object.Destroy(host);
+        }
+
+        /// <summary>
         /// The SCALE stage, which is where the size of the run is decided.
         ///
         /// **The page that now answers the question the whole screen exists for**: what this model

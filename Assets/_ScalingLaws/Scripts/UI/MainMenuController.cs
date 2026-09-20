@@ -1773,6 +1773,13 @@ namespace ScalingLaws.UI
                 var prompt = new Label(Loc.T("creator.click_map"));
                 prompt.AddToClassList("field__hint");
                 list.Add(prompt);
+
+                // The two buttons this screen expects, said in pictures. Asked for by the author
+                // for exactly this page and written as a part so the next screen that needs it does
+                // not grow its own copy.
+                list.Add(UiParts.MouseLegend(
+                    ("Ui/mouse_left", Loc.T("mouse.select")),
+                    ("Ui/mouse_right", Loc.T("mouse.zoom_out"))));
             }
             else
             {

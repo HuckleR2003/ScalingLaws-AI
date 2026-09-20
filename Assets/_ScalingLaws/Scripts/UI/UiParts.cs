@@ -403,6 +403,52 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
+        /// A mouse button and what it does, one row per button.
+        ///
+        /// **Built as a part rather than as two labels on the region page**, because the number of
+        /// screens in this game that quietly expect a right click is only going up: the build mode
+        /// puts a cabinet back with one, the map leans out with one, and a player who has not been
+        /// told tries the left button twice and decides the screen is broken.
+        ///
+        /// The pictures are the author's own, small on purpose, with the words hard against them so
+        /// the pair reads as one label rather than as a legend somebody has to join up.
+        /// </summary>
+        public static VisualElement MouseLegend(params (string Icon, string Text)[] rows)
+        {
+            var legend = new VisualElement();
+            legend.AddToClassList("mouselegend");
+
+            foreach (var (icon, text) in rows)
+            {
+                var row = new VisualElement();
+                row.AddToClassList("mouselegend__row");
+
+                var picture = new VisualElement();
+                picture.AddToClassList("mouselegend__icon");
+
+                // A missing file draws nothing rather than a hole, the same rule every other loader
+                // in this project follows.
+                var texture = Resources.Load<Texture2D>(icon);
+
+                if (texture != null)
+                {
+                    picture.style.backgroundImage = new StyleBackground(texture);
+                    picture.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                }
+
+                row.Add(picture);
+
+                var label = new Label(text);
+                label.AddToClassList("mouselegend__text");
+                row.Add(label);
+
+                legend.Add(row);
+            }
+
+            return legend;
+        }
+
+        /// <summary>
         /// What the site would draw after this order, printed under the price.
         ///
         /// Every place that sells silicon draws it, because the power ceiling used to be mentioned

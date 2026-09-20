@@ -316,27 +316,7 @@ namespace ScalingLaws.UI
 
             row.Add(cost);
 
-            var buy = new Button(() =>
-            {
-                if (simulation.TryBuyHardware(generation.Id, batch, Tier, out var why))
-                {
-                    AudioDirector.Confirm();
-
-                    // **Money left the account and the only thing that moved was a figure in a
-                    // rail.** Reported as buying without knowing you bought.
-                    announce?.Invoke(Loc.T("room.bought.title"),
-                        Loc.T("room.bought.note", batch, generation.DisplayName,
-                            UiFormat.Money(total),
-                            ComputeTierCatalog.Get(Tier).LeadTimeDays));
-
-                    changed?.Invoke();
-                    Refresh();
-                    return;
-                }
-
-                AudioDirector.Deny();
-                subtitle.text = why;
-            })
+            var buy = new Button(() => OpenOrder(generation, price, total))
             {
                 text = Loc.T("shop.buy")
             };
@@ -356,6 +336,120 @@ namespace ScalingLaws.UI
             InsightTip.AttachKeyed(row, generation.DisplayName, Loc.T("shop.row_note"));
 
             return row;
+        }
+
+        /// <summary>
+        /// The order window: what it costs, when it lands, and how much of that wait money buys off.
+        ///
+        /// **Asked for after a playtest where BUY spent the money on the click.** Sixty four
+        /// accelerators is a serious purchase and the only thing a player saw before it left the
+        /// account was the price on a button. Now the figures sit still for a moment and the rush
+        /// fee is a decision: the slider is the one place in this game where money buys calendar,
+        /// and it says what it costs while it does it.
+        /// </summary>
+        private void OpenOrder(HardwareGeneration generation, long unitPrice, long total)
+        {
+            var lead = ComputeTierCatalog.Get(Tier).LeadTimeDays;
+            var express = 0f;
+
+            var veil = new VisualElement();
+            veil.AddToClassList("notice-veil");
+            veil.RegisterCallback<ClickEvent>(_ => veil.RemoveFromHierarchy());
+
+            var card = new VisualElement();
+            card.AddToClassList("notice");
+            card.AddToClassList("partsorder");
+            card.RegisterCallback<ClickEvent>(click => click.StopPropagation());
+
+            var title = new Label(generation.DisplayName.ToUpperInvariant());
+            title.AddToClassList("partsorder__title");
+            card.Add(title);
+
+            var units = new Label(Loc.T("order.units", batch, UiFormat.Money(unitPrice)));
+            units.AddToClassList("partsorder__line");
+            card.Add(units);
+
+            var cost = new Label();
+            cost.AddToClassList("partsorder__cost");
+            card.Add(cost);
+
+            var arrives = new Label();
+            arrives.AddToClassList("partsorder__line");
+            card.Add(arrives);
+
+            var wait = new Label();
+            wait.AddToClassList("partsorder__note");
+            card.Add(wait);
+
+            var slider = new Slider(0f, 1f) { value = 0f };
+            slider.AddToClassList("partsorder__slider");
+            card.Add(slider);
+
+            var rush = new Label();
+            rush.AddToClassList("partsorder__note");
+            card.Add(rush);
+
+            var confirm = new Button { text = Loc.T("order.confirm") };
+            confirm.AddToClassList("button");
+            confirm.AddToClassList("partsorder__confirm");
+            card.Add(confirm);
+
+            var cancel = new Button(() => veil.RemoveFromHierarchy()) { text = Loc.T("order.cancel") };
+            cancel.AddToClassList("button");
+            card.Add(cancel);
+
+            void Reprice()
+            {
+                var terms = CompanySimulation.ExpressTerms(total, lead, express);
+                var due = total + terms.SurchargeUsd;
+
+                cost.text = UiFormat.Money(due);
+                arrives.text = Loc.T("order.arrives",
+                    simulation.State.Date.AddDays(terms.LeadTimeDays).ToString());
+                wait.text = Loc.T("order.wait", terms.LeadTimeDays);
+                rush.text = terms.SurchargeUsd <= 0L
+                    ? Loc.T("order.rush_none")
+                    : Loc.T("order.rush", UiFormat.Money(terms.SurchargeUsd),
+                        UiFormat.Percent(1.0 - terms.LeadTimeDays / (double)Math.Max(1, lead), 0));
+
+                confirm.SetEnabled(simulation.State.CashUsd >= due);
+            }
+
+            slider.RegisterValueChangedCallback(change =>
+            {
+                express = change.newValue;
+                Reprice();
+            });
+
+            confirm.clicked += () =>
+            {
+                if (simulation.TryBuyHardware(generation.Id, batch, Tier, express, out var why))
+                {
+                    AudioDirector.Confirm();
+
+                    var terms = CompanySimulation.ExpressTerms(total, lead, express);
+
+                    // **Money left the account and the only thing that moved was a figure in a
+                    // rail.** Reported as buying without knowing you bought.
+                    announce?.Invoke(Loc.T("room.bought.title"),
+                        Loc.T("room.bought.note", batch, generation.DisplayName,
+                            UiFormat.Money(total + terms.SurchargeUsd), terms.LeadTimeDays));
+
+                    veil.RemoveFromHierarchy();
+                    changed?.Invoke();
+                    Refresh();
+                    return;
+                }
+
+                AudioDirector.Deny();
+                subtitle.text = why;
+                veil.RemoveFromHierarchy();
+            };
+
+            Reprice();
+            veil.Add(card);
+            Root.Add(veil);
+            AudioDirector.Page();
         }
 
         private static VisualElement Figure(string caption, string value)

@@ -3584,6 +3584,99 @@
     -unity-font-style: bold;
 }
 
+/* The way into the parts warehouse: the first thing on the room's rail. */
+.roombuild__warehouse {
+    height: 52px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(12, 16, 24);
+    background-color: rgb(120, 196, 255);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.roombuild__warehouse:hover {
+    background-color: rgb(158, 214, 255);
+}
+
+/* The order window: figures, the rush slider, and the two buttons. */
+.partsorder {
+    width: 460px;
+}
+
+.partsorder__title {
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: rgb(238, 243, 250);
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.partsorder__line {
+    font-size: 13px;
+    color: rgb(198, 208, 222);
+    margin-top: 4px;
+}
+
+.partsorder__cost {
+    font-size: 30px;
+    color: rgb(238, 243, 250);
+    -unity-font-style: bold;
+    margin-top: 6px;
+    margin-bottom: 2px;
+}
+
+.partsorder__note {
+    font-size: 11px;
+    color: rgb(150, 158, 172);
+    white-space: normal;
+    margin-top: 4px;
+}
+
+.partsorder__slider {
+    width: 100px;
+    margin-top: 10px;
+    margin-left: 0;
+}
+
+.partsorder__confirm {
+    margin-top: 14px;
+    margin-left: 0;
+}
+
+/* A mouse button and what it does. Small, and the words hard against the picture. */
+.mouselegend {
+    margin-top: 14px;
+}
+
+.mouselegend__row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.mouselegend__icon {
+    width: 30px;
+    height: 40px;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+.mouselegend__text {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgb(238, 243, 250);
+    -unity-font-style: bold;
+}
+
 /* What a planned model would let the cluster serve, in people, under the readout bars. */
 .create-note {
     font-size: 11px;

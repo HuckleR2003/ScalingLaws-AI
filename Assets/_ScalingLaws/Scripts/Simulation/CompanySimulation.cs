@@ -1526,7 +1526,40 @@ namespace ScalingLaws.Simulation
         /// Buys hardware into a tier. Charges cash immediately; the units arrive after the tier's
         /// lead time and produce nothing until they do.
         /// </summary>
-        public bool TryBuyHardware(HardwareGenerationId generationId, int units, ComputeTier tier, out string failureReason)
+        /// <summary>
+        /// The most a rush fee adds to an order, and the most of the wait it buys off.
+        ///
+        /// Asked for by the author: a small slider on the order, paying up to half again for up to
+        /// six sevenths of the calendar. It is the one place in this game where money buys time,
+        /// and it is deliberately the smallest one: a delivery is a lorry, not a research
+        /// programme, and nothing about the frontier moves because you paid extra.
+        /// </summary>
+        public const double MostExpressSurcharge = 0.50;
+
+        public const double MostExpressDaysSaved = 0.85;
+
+        /// <summary>What a rush costs and what it buys, for the order window to print before the click.</summary>
+        public static (long SurchargeUsd, int LeadTimeDays) ExpressTerms(long totalUsd, int leadTimeDays,
+            double express)
+        {
+            var share = Math.Clamp(SimUnits.Finite(express), 0.0, 1.0);
+
+            var surcharge = (long)Math.Round(Math.Max(0L, totalUsd) * MostExpressSurcharge * share);
+            var days = (int)Math.Max(1.0,
+                Math.Round(Math.Max(0, leadTimeDays) * (1.0 - MostExpressDaysSaved * share)));
+
+            return (surcharge, leadTimeDays <= 0 ? 0 : days);
+        }
+
+        public bool TryBuyHardware(HardwareGenerationId generationId, int units, ComputeTier tier,
+            out string failureReason) =>
+            TryBuyHardware(generationId, units, tier, 0.0, out failureReason);
+
+        /// <summary>
+        /// Buys hardware, optionally in a hurry. <paramref name="express"/> is nought to one.
+        /// </summary>
+        public bool TryBuyHardware(HardwareGenerationId generationId, int units, ComputeTier tier,
+            double express, out string failureReason)
         {
             failureReason = string.Empty;
 
@@ -1573,7 +1606,8 @@ namespace ScalingLaws.Simulation
                 MarketModel.PurchasePricePerUnitUsd(generation, tierDefinition, MarketModel.ScarcityOn(State.Date))
                 * State.Founder.HardwarePriceMultiplier
                 * State.Home.HardwarePriceMultiplier);
-            var total = pricePerUnit * units;
+            var terms = ExpressTerms(pricePerUnit * units, tierDefinition.LeadTimeDays, express);
+            var total = pricePerUnit * units + terms.SurchargeUsd;
             if (State.CashUsd < total)
             {
                 failureReason = Loc.T("fail.needs_cash", UiMoney(total), UiMoney(State.CashUsd));
@@ -1597,12 +1631,12 @@ namespace ScalingLaws.Simulation
                 units,
                 State.Date,
                 pricePerUnit,
-                tierDefinition.LeadTimeDays));
+                terms.LeadTimeDays));
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.HardwareOrdered,
                 State.Date,
-                $"Ordered {units:N0}x {generation.DisplayName} for {tierDefinition.DisplayName}, arriving in {tierDefinition.LeadTimeDays} days.",
+                $"Ordered {units:N0}x {generation.DisplayName} for {tierDefinition.DisplayName}, arriving in {terms.LeadTimeDays} days.",
                 total));
 
             // Raised once, by the order that crosses the line, rather than every day the site sits

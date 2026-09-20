@@ -665,6 +665,21 @@ namespace ScalingLaws.UI
             var rail = new VisualElement();
             rail.AddToClassList("roombuild");
 
+            // **The warehouse door, above everything and the width of the rail.** Reported plainly:
+            // buying parts is the least obvious thing in this room, and the way in was a small
+            // button inside a section that only appears once BUILD is open, which is two clicks
+            // behind a mode nobody has to be in to want a card. It is the first thing on the rail
+            // now, whether or not the room is in build mode.
+            var warehouse = new Button(() =>
+            {
+                shopOpen = true;
+                changed?.Invoke();
+            })
+            { text = Loc.T("shop.open") };
+
+            warehouse.AddToClassList("roombuild__warehouse");
+            rail.Add(warehouse);
+
             var head = new VisualElement();
             head.AddToClassList("roombuild__head");
 
@@ -837,18 +852,9 @@ namespace ScalingLaws.UI
                 panel.Add(SiliconRow(simulation, newest[index], tier));
             }
 
-            var browse = new Button(() =>
-            {
-                shopOpen = true;
-                changed?.Invoke();
-            })
-            {
-                text = Loc.T("shop.open")
-            };
-
-            browse.AddToClassList("roombuild__open");
-            panel.Add(browse);
-
+            // The door to the rest of the catalogue used to be here as well. It is at the top of
+            // the rail now, where it is visible without opening build mode, and two doors to one
+            // shop is one door too many.
             return panel;
         }
 
