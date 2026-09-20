@@ -105,8 +105,26 @@ namespace ScalingLaws.UI
             // 290px a card is the width the covers were cropped for, and three of them plus the
             // margins sit inside the page with room to spare. Rented capacity keeps the whole width
             // underneath, where its slider and the figure it moves are still on one line.
-            page.Add(BuildPackagePanel());
-            page.Add(rental);
+            // **One line, rented on the left and reserved on the right.** Asked for by name after
+            // a playtest where the tour talked about the rented power while it was a section and a
+            // half below the fold. The two are the same decision asked twice (capacity by the hour
+            // against capacity by contract) and reading them a scroll apart is what made the second
+            // one feel like a different screen.
+            //
+            // The three reserved cards keep their row: they are 30% of their own half with a floor
+            // of 236px, so three of them plus the margins sit inside half a page at 16:10 rather
+            // than wrapping into the column this comment used to warn about.
+            var capacityRow = new VisualElement();
+            capacityRow.AddToClassList("fleet-capacity-row");
+
+            rental.AddToClassList("fleet-capacity-row__half");
+
+            var packages = BuildPackagePanel();
+            packages.AddToClassList("fleet-capacity-row__half");
+
+            capacityRow.Add(rental);
+            capacityRow.Add(packages);
+            page.Add(capacityRow);
 
             var ladder = new VisualElement();
             ladder.AddToClassList("panel");

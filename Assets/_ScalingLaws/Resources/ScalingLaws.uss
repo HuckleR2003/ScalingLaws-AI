@@ -3584,6 +3584,19 @@
     -unity-font-style: bold;
 }
 
+/* Rented capacity and reserved capacity, one line, half the page each. */
+.fleet-capacity-row {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.fleet-capacity-row__half {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
 /* The way into the parts warehouse: the first thing on the room's rail. */
 .roombuild__warehouse {
     height: 52px;
@@ -4356,10 +4369,12 @@
    band nine times wider than it was tall, and no crop of a 16:9 render survives that. */
 
 .pack {
-    flex-grow: 0;
-    flex-shrink: 0;
-    width: 290px;
-    margin-right: 14px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 30%;
+    min-width: 236px;
+    max-width: 290px;
+    margin-right: 10px;
     padding: 0;
     padding-bottom: 10px;
     background-color: rgba(255, 255, 255, 0.03);

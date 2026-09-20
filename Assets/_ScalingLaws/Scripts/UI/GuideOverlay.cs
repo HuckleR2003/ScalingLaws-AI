@@ -797,11 +797,42 @@ namespace ScalingLaws.UI
 
             host.schedule.Execute(() =>
             {
-                foreach (var element in host.Query<VisualElement>(className: wanted).ToList())
+                var lit = host.Query<VisualElement>(className: wanted).ToList();
+
+                foreach (var element in lit)
                 {
                     element.AddToClassList("guide-lit");
                 }
+
+                // **And bring it on screen.** Reported from a playtest: he talks about the rented
+                // power while it is a section and a half below the fold, so the player reads a
+                // sentence about a control they cannot see and presses NEXT to make it go away.
+                // Pointing at something off screen is the same as pointing at nothing.
+                if (lit.Count > 0)
+                {
+                    ScrollIntoView(lit[0]);
+                }
             }).ExecuteLater(24);
+        }
+
+        /// <summary>
+        /// Scrolls whatever encloses this element until the element is in the window.
+        ///
+        /// Walks up for the nearest `ScrollView` rather than being handed the page's one, because
+        /// the thing being pointed at can be inside a rail with its own scroller, and the one that
+        /// has to move is the one it is actually in. Runs after the highlight, which is already
+        /// deferred a frame, so the layout it scrolls against is the laid out one.
+        /// </summary>
+        private static void ScrollIntoView(VisualElement element)
+        {
+            for (var parent = element?.parent; parent != null; parent = parent.parent)
+            {
+                if (parent is ScrollView scroller)
+                {
+                    scroller.ScrollTo(element);
+                    return;
+                }
+            }
         }
 
         /// <summary>
