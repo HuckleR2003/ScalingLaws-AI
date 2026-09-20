@@ -10,7 +10,7 @@ one you can pay for. Decide whether three weeks of safety evaluation is worth de
 find out later that a regulator judges you on what you had switched on the day you shipped.
 
 [![Build](https://img.shields.io/badge/build-v0.5.0-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
-[![Tests](https://img.shields.io/badge/tests-1421%20EditMode%20%2B%2067%20PlayMode-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-1422%20EditMode%20%2B%2067%20PlayMode-brightgreen)](#testing)
 [![Unity](https://img.shields.io/badge/Unity-6000.5.8f1-black)](#running-it)
 [![Languages](https://img.shields.io/badge/languages-EN%20%2F%20PL-lightgrey)](#)
 [![Licence](https://img.shields.io/badge/licence-source%20available-orange)](LICENSE.md)
@@ -195,7 +195,7 @@ clicking.
 |---|---|
 | `Assets/_ScalingLaws/Scripts/` | 305 C# files across the five layers above |
 | `Assets/_ScalingLaws/Editor/` | Scene generation, rig setup, the city flyover |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1421 tests across 164 fixtures. None load a scene. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1422 tests across 164 fixtures. None load a scene. |
 | `Assets/_ScalingLaws/Tests/PlayMode/` | 67 tests that do load a scene, and render pages to PNG |
 | `Docs/` | The mechanism map, the art brief, the world map plan |
 

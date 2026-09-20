@@ -355,6 +355,28 @@ namespace ScalingLaws.Tests.EditMode
                 Is.EqualTo(ScandalKind.Corners));
         }
 
+        /// <summary>
+        /// The skipped-safety story is news when the model ships and not for the rest of the decade.
+        ///
+        /// **A probe log of one campaign carried the identical sentence thirty times**, once every
+        /// thirty days, because the safety tiers belong to the model and a company that skipped
+        /// them once never stops having skipped them. The same story monthly is wallpaper rather
+        /// than a penalty, and shipping again is what makes it news again.
+        /// </summary>
+        [Test]
+        public void TheSkippedSafetyStoryStopsBeingNews()
+        {
+            Assert.That(ModelScandals.Today(0.7, 1.0, false, 0.5,
+                    ModelScandals.FreshStoryDays - 10, true),
+                Is.EqualTo(ScandalKind.Corners),
+                "A model that shipped last month without the safety work is the story.");
+
+            Assert.That(ModelScandals.Today(0.7, 1.0, false, 0.5,
+                    ModelScandals.FreshStoryDays + 10, true),
+                Is.EqualTo(ScandalKind.None),
+                "Eight months later the same fact about the same model is not a new story.");
+        }
+
         /// <summary>A company nobody has heard of is not damaged by a story nobody reads.</summary>
         [Test]
         public void AStoryHurtsAWellKnownCompanyMoreThanAnUnknownOne()

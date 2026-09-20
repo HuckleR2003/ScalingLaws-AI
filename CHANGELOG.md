@@ -125,6 +125,10 @@ from a quarter of the audience. **All three are now a decision rather than one r
 
 ### Fixed
 
+- **The same scandal ran every thirty days for the rest of the campaign.** A model's safety tiers
+  belong to the model, so a company that shipped one without the work never stopped having done it,
+  and one probe log carried the identical sentence thirty times. It is news for six months and when
+  the company ships again, which is when there is something new to write about.
 - **Twelve notes on the creator's Scale page and six headings on the model tables were English on a
   Polish screen.** They are in the phrase book now, in both languages.
 
@@ -545,7 +549,7 @@ customers.
 
 ### Under the hood
 
-**1,421 EditMode tests across 164 fixtures, and 67 PlayMode across 15.** Counted from
+**1,422 EditMode tests across 164 fixtures, and 67 PlayMode across 15.** Counted from
 `TestResults.xml` and `PlayResults.xml` rather than remembered.
 
 `DeepCampaignProbe` plays five operators now, and the fifth is the one that answers the question the

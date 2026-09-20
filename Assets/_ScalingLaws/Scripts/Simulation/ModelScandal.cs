@@ -58,6 +58,24 @@ namespace ScalingLaws.Simulation
         public const double BeneathNotice = 0.18;
 
         /// <summary>
+        /// How long a thing stays new enough to write about.
+        ///
+        /// **A model that shipped without safety work is news when it ships.** The corners story
+        /// is the only one whose cause never goes away on its own: the tiers belong to the model,
+        /// so a company that skipped them once was written about every thirty days for the rest of
+        /// the campaign, in the same words, and a probe log of one campaign carried the identical
+        /// sentence thirty times. A story repeated monthly is wallpaper, and wallpaper is not a
+        /// penalty anybody reacts to.
+        ///
+        /// **Six months was still not narrow enough and the probe said so**: an operator that
+        /// ships every few months kept the window permanently open, and the same campaign still
+        /// carried the sentence three hundred and ninety one times. It is the desk's own quiet
+        /// period, so the story is about a model that has just shipped and each release can produce
+        /// one of them at most. After that the same fact about the same model is not news.
+        /// </summary>
+        public const int FreshStoryDays = QuietDays;
+
+        /// <summary>
         /// Which story today is, or none.
         ///
         /// Ordered, and the order is a judgment about what a reader cares about most: safety before
@@ -73,7 +91,7 @@ namespace ScalingLaws.Simulation
                 return ScandalKind.None;
             }
 
-            if (cornersCut)
+            if (cornersCut && daysSinceRelease <= FreshStoryDays)
             {
                 return ScandalKind.Corners;
             }
