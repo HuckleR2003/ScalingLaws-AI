@@ -51,6 +51,15 @@ go in. This file is the draft for the store update post, so anything vague here 
   TEAM screen is not built, so the card does not mention it, and a test fails if that copy ever
   appears before the feature does.
 
+### Fixed
+
+- **A fleet of reserved packages had no memory in it, so it could not train anything.** The three
+  hosting packages added their petaflops, their utilisation and their bill to the fleet and never
+  their accelerator memory. A company that bought packages and left the rent slider at zero saw
+  capacity it had paid for on the compute screen, and every training run it asked for came back
+  "needs N GB of accelerator memory, fleet offers 0 GB". The memory is derived from the generation
+  the packages are provisioned on, by the same arithmetic the slider already used.
+
 ---
 
 ## [0.5.0] - 2026-09-20

@@ -431,6 +431,27 @@ namespace ScalingLaws.Simulation
                 weightedCeiling += packaged * 0.92;
                 rentedPetaflops += packaged;
                 cloudRent += PackagesDailyCostUsd;
+
+                // **And the memory that comes with it, which this block never added.** The comment
+                // above says the packages join here so that memory, utilisation and every
+                // downstream reader see one fleet, and every line did that except the memory. So a
+                // company whose whole fleet was reserved packages reported petaflops on the compute
+                // screen and **zero gigabytes** to the planner, and every training run it asked for
+                // came back "needs N GB of accelerator memory, fleet offers 0 GB" over a screen
+                // showing capacity the player had paid for.
+                //
+                // Derived from the generation the packages are provisioned on, by exactly the
+                // arithmetic the slider above uses: a package is rented capacity with a better
+                // contract behind it, not a different kind of silicon. **Only the memory joins
+                // here.** The accelerator count is deliberately left alone, because it feeds
+                // `ScalingEfficiency` and moving it would retune the fleet of every company that
+                // ever bought a package, which is a balance change and not this repair.
+                if (HardwareCatalog.TryGet(market.RentableGeneration, out var provisioned)
+                    && provisioned.PetaflopsPerUnit > 0.0)
+                {
+                    memoryGigabytes += (double)provisioned.MemoryGigabytes
+                        * Math.Ceiling(packaged / provisioned.PetaflopsPerUnit);
+                }
             }
 
             var rawPetaflops = ownedPetaflops + rentedPetaflops;
