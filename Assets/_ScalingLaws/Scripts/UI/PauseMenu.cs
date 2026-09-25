@@ -168,6 +168,12 @@ namespace ScalingLaws.UI
             }
 
             sheet.Add(card);
+
+            // **Added after the card, so it paints over it rather than under.** An absolutely
+            // positioned element still paints in document order here, which the server room banner
+            // taught this project once already. Pinned to a corner rather than put in the flow,
+            // because the card is centred and a tile above it would shove it off centre.
+            sheet.Add(SupporterCard.Build(corner: true));
             return sheet;
         }
 

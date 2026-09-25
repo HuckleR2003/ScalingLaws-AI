@@ -267,6 +267,29 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The fund card, which asks real people for money and therefore has to look like a notice
+        /// rather than a banner. Rendered in both languages because the Polish sentences are longer
+        /// and a fixed 312px card is exactly where that shows.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheSupporterCardDraws()
+        {
+            var previous = Loc.Current;
+            try
+            {
+                Loc.Current = Language.English;
+                yield return Capture(SupporterCard.Build(), "support_card_en.png");
+
+                Loc.Current = Language.Polish;
+                yield return Capture(SupporterCard.Build(), "support_card_pl.png");
+            }
+            finally
+            {
+                Loc.Current = previous;
+            }
+        }
+
+        /// <summary>
         /// The DATA stage, with the corpora the company does not own listed under the ones it does.
         ///
         /// **Neither of the two existing contact sheets reaches this page.** `TabProofTests` opens

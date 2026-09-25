@@ -21515,3 +21515,91 @@
 .bpg__small.bpg__word--near {
     color: rgba(168, 212, 255, 0.42);
 }
+
+/* The Steam launch fund, in the two menus a player already opens. Flat, quiet, never animated:
+   it is a notice, not a campaign, and it sits over screens that are already busy. */
+.support-card {
+    width: 312px;
+    padding: 16px 18px 18px 18px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.14);
+    background-color: rgba(11, 14, 20, 0.97);
+    flex-shrink: 0;
+}
+.support-card--corner {
+    position: absolute;
+    left: 44px;
+    top: 44px;
+}
+.support-card--menu {
+    position: absolute;
+    right: 64px;
+    bottom: 34px;
+}
+.support-card__kicker {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(236, 132, 118, 0.92);
+    margin-bottom: 4px;
+}
+.support-card__title {
+    font-size: 16px;
+    color: rgb(238, 242, 250);
+    white-space: normal;
+    margin-bottom: 8px;
+}
+.support-card__why {
+    font-size: 12px;
+    color: rgba(206, 214, 228, 0.86);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+.support-card__tier {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+.support-card__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 3px;
+    background-color: rgba(236, 132, 118, 0.85);
+    margin-top: 6px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+.support-card__tiertext {
+    font-size: 12px;
+    color: rgba(214, 222, 236, 0.9);
+    white-space: normal;
+    flex-shrink: 1;
+}
+.support-card__until {
+    font-size: 11px;
+    color: rgba(168, 178, 196, 0.8);
+    white-space: normal;
+    margin-top: 6px;
+    margin-bottom: 12px;
+}
+.support-card__open {
+    height: 34px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(242, 246, 252);
+    background-color: rgba(154, 40, 52, 0.92);
+    border-radius: 6px;
+    border-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.support-card__free {
+    font-size: 11px;
+    color: rgba(150, 160, 178, 0.78);
+    white-space: normal;
+}

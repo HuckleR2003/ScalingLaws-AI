@@ -273,6 +273,12 @@ namespace ScalingLaws.UI
             signature.Add(author);
             page.Add(signature);
 
+            // The fund, in the other corner from the signature. Absolute, so the two column layout
+            // above it is untouched.
+            var support = SupporterCard.Build();
+            support.AddToClassList("support-card--menu");
+            page.Add(support);
+
             if (settingsOpen)
             {
                 page.Add(BuildSettingsPanel());

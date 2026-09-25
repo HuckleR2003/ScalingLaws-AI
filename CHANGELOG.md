@@ -38,7 +38,18 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **The Steam launch fund is in the game, in the two menus a player already opens.** A flat card in
+  the corner of the pause sheet and on the main menu: what the hundred dollar listing fee is, what
+  40 zl and 100 zl get you, when the fund closes, and one button that opens the page. It never opens
+  itself and it never counts anything at anybody. Until now the offer existed only on the site, on
+  itch and in a text file inside the download, so the only people who could see it were the ones
+  reading about the game rather than playing it.
+- **It states only what the game can deliver today.** The credits already carry a SUPPORTERS section,
+  so a name goes in the moment there is one. The tier that promises a candidate you can hire on the
+  TEAM screen is not built, so the card does not mention it, and a test fails if that copy ever
+  appears before the feature does.
 
 ---
 
