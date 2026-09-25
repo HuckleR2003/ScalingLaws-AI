@@ -60,6 +60,16 @@ go in. This file is the draft for the store update post, so anything vague here 
   "needs N GB of accelerator memory, fleet offers 0 GB". The memory is derived from the generation
   the packages are provisioned on, by the same arithmetic the slider already used.
 
+### Under the hood
+
+- **The support desk exists as rules, and nothing on screen reads it yet.** `SupportDesk` and
+  `SupportCatalog`: post arrives with the audience, people answer the outage first and the agents
+  only ever answer ordinary questions, and the average wait falls out of backlog over throughput.
+  Past 96 hours the desk is abandoned and the product is experienced a fifth worse; under 48 it is
+  answered and the product is experienced eight per cent better. Arrivals are sublinear in the
+  audience, because a linear rate would want forty staff at thirty million people served, which is
+  twice the desks in the largest office in the game.
+
 ---
 
 ## [0.5.0] - 2026-09-20
