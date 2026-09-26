@@ -302,6 +302,33 @@ namespace ScalingLaws.Tests.PlayMode
             }
         }
 
+
+        /// <summary>
+        /// The ROLE tab of somebody on the support desk, which is the second place the author asked
+        /// for the three ladders.
+        ///
+        /// **The card is 860px and the management page is the width of the window**, so the same
+        /// three cards are laid out differently in the two places and only one of them has ever been
+        /// looked at. This is the other one.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheSupportLaddersDrawOnAPersonCard()
+        {
+            var simulation = Campaign();
+
+            simulation.State.Staff.Add(new Hire(
+                PositionCatalog.Get(PlayerSkill.Support).Role, 3, simulation.State.Date, "Ada",
+                PlayerSkill.Support, HireSource.Remote, 90.0));
+
+            var index = simulation.State.Staff.Hires.Count - 1;
+
+            var panel = new PersonPanel(() => simulation, () => { });
+            panel.Show(index);
+            panel.ShowRole();
+
+            yield return Capture(panel.Build(), "person_support.png");
+        }
+
         /// <summary>The panel on its own, built the way the management screen builds it.</summary>
         private static VisualElement Desk(CompanySimulation simulation) =>
             new SupportPanel(simulation, () => { }, () => { }, _ => { }).Build();

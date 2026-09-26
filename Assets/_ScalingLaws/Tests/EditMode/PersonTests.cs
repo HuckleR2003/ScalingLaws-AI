@@ -5,6 +5,7 @@ using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
+using ScalingLaws.UI;
 
 namespace ScalingLaws.Tests.EditMode
 {
@@ -268,5 +269,75 @@ namespace ScalingLaws.Tests.EditMode
             Assert.AreEqual(Hire.DefaultStartHour, upgraded.staff[0].startHour);
             Assert.AreEqual(Hire.DefaultEndHour, upgraded.staff[0].endHour);
         }
+
+        /// <summary>
+        /// The person who answers the post carries the desk's three ladders on their own card.
+        ///
+        /// **The author asked for these in two places and a green suite proves neither.** The desk
+        /// is complete in `Simulation/` and reachable from the management page, so every test around
+        /// it passes whether or not this card ever draws a thing. That is the failure this project
+        /// has recorded twelve times, which is why this fixture builds the real panel and reads the
+        /// words out of the tree rather than asserting that a method exists.
+        ///
+        /// Somebody in another job must not get it: three research ladders about the queue on the
+        /// card of an infrastructure engineer is a screen that has stopped being about a person.
+        /// </summary>
+        [Test]
+        public void TheSupportLaddersAreOnTheCardOfSomebodyOnTheDeskAndNobodyElse()
+        {
+            var simulation = Company();
+
+            simulation.State.Staff.Add(new Hire(
+                PositionCatalog.Get(PlayerSkill.Support).Role, 3, new GameDate(0), "Ada",
+                PlayerSkill.Support, HireSource.Remote, 90.0));
+
+            simulation.State.Staff.Add(new Hire(
+                StaffRole.InfrastructureEngineer, 3, new GameDate(0), "Ben",
+                PlayerSkill.Development, HireSource.Remote, 90.0));
+
+            var onTheDesk = RoleWords(simulation, 0);
+            var somebodyElse = RoleWords(simulation, 1);
+
+            foreach (var key in new[]
+            {
+                "support.upgrade.deflection", "support.upgrade.training", "support.upgrade.agents"
+            })
+            {
+                var title = Loc.T(key);
+
+                Assert.That(onTheDesk, Does.Contain(title),
+                    $"{title} is missing from the card of the person who answers the post");
+                Assert.That(somebodyElse, Does.Not.Contain(title),
+                    $"{title} is on the card of somebody who is not on the desk");
+            }
+        }
+
+        /// <summary>Everything written on one person's ROLE tab.</summary>
+        private static List<string> RoleWords(CompanySimulation simulation, int index)
+        {
+            var panel = new PersonPanel(() => simulation, () => { });
+            panel.Show(index);
+            panel.ShowRole();
+
+            var found = new List<string>();
+
+            void Walk(UnityEngine.UIElements.VisualElement element)
+            {
+                if (element is UnityEngine.UIElements.Label label && !string.IsNullOrEmpty(label.text))
+                {
+                    found.Add(label.text);
+                }
+
+                foreach (var child in element.Children())
+                {
+                    Walk(child);
+                }
+            }
+
+            Walk(panel.Build());
+
+            return found;
+        }
+
     }
 }

@@ -286,6 +286,24 @@ namespace ScalingLaws.UI
             return block;
         }
 
+
+        /// <summary>
+        /// The three ladders on their own, stacked, for the person card.
+        ///
+        /// **The same builder the management desk uses, not a second copy.** The author asked for
+        /// these in two places, and the trap in that is two panels quoting different levels or
+        /// charging different prices for the same rung a month after somebody edits one of them.
+        /// Everything above the ladders stays on the desk: a queue, a wait and a hiring button are
+        /// facts about the company, and the card they would be drawn on is about one person.
+        /// </summary>
+        public VisualElement BuildLaddersFor(SupportDesk desk)
+        {
+            var grid = BuildLadders(desk);
+            grid.AddToClassList("support__ladders--stacked");
+
+            return grid;
+        }
+
         private VisualElement BuildLadders(SupportDesk desk)
         {
             var grid = new VisualElement();

@@ -745,6 +745,24 @@ namespace ScalingLaws.UI
             more.AddToClassList("pp__note--quiet");
             body.Add(more);
 
+            // **The support ladders, on the card of somebody who is on the desk.** The author asked
+            // for these in two places, and this is the second: a player looking at the person who
+            // answers the post is the player who wants to know what would make that easier. It is
+            // the management desk's own builder rather than a copy, so a level bought here is the
+            // level the desk reads and the price cannot drift between the two screens.
+            if (hire.Position == PlayerSkill.Support)
+            {
+                var desk = new Label(Loc.T("person.role_support"));
+                desk.AddToClassList("pp__section");
+                desk.AddToClassList("pp__section--after");
+                body.Add(desk);
+
+                var ladders = new SupportPanel(simulation, null, changed,
+                    why => problem = why ?? string.Empty);
+
+                body.Add(ladders.BuildLaddersFor(simulation.State.Support));
+            }
+
             return body;
         }
 

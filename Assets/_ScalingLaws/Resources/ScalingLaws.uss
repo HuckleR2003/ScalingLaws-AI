@@ -13424,6 +13424,14 @@
     margin-bottom: 10px;
 }
 
+/* A second heading on the same tab. The plain rule has no top margin because the first one on a
+   page sits under the tab bar, which already spaces it; a second one lands hard against whatever
+   was written above it and the two read as one paragraph. Stated as a modifier rather than added
+   to the rule, or every first heading in the card moves down by this much. */
+.pp__section--after {
+    margin-top: 18px;
+}
+
 .pp__want {
     flex-direction: row;
     align-items: center;
@@ -21757,6 +21765,26 @@
 }
 .support__ladders {
     flex-direction: row;
+}
+
+/* The same three ladders inside the person card, which is 860px of window with 48px of padding in
+   it rather than a page. Stacked, because three cards across that width put every description on
+   four lines beside a price button on two.
+
+   **`flex-basis: auto` and `flex-grow: 0` are the whole rule.** On the management page these are a
+   row, so they share the width from a zero basis, which is right there and catastrophic in a
+   column: each card takes no height of its own and the three draw on top of each other and on top
+   of the heading above them. That is the deformation this stylesheet has been caught by four times,
+   and the first render of this card was it again. */
+.support__ladders--stacked {
+    flex-direction: column;
+    flex-shrink: 0;
+}
+.support__ladders--stacked .support__ladder {
+    flex-grow: 0;
+    flex-basis: auto;
+    margin-right: 0;
+    margin-bottom: 8px;
 }
 .support__ladder {
     flex-grow: 1;

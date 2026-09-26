@@ -61,6 +61,10 @@ go in. This file is the draft for the store update post, so anything vague here 
   once enough people are being served to have a problem. He says so, and offers to walk through the
   desk. The walkthrough opens on the product page rather than on the desk, because the desk is
   reached from one button on the model banner and nothing else in the game points at it.
+- **The same three ladders are on the card of the person who answers the post.** Open somebody on
+  the team screen, go to their ROLE tab, and if they are on the desk the three things that would
+  make the queue easier are there with the level and the price. It is the management desk's own
+  builder rather than a second copy, so a rung bought on one screen is the rung the other reads.
 
 ### Fixed
 
@@ -95,7 +99,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1451 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1452 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 
