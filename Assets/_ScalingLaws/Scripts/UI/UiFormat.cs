@@ -147,6 +147,25 @@ namespace ScalingLaws.UI
         public static string Milliseconds(double milliseconds) =>
             Number(milliseconds, 0) + " ms";
 
+
+        /// <summary>
+        /// Hours, and days once there are enough of them to stop being readable.
+        ///
+        /// A support queue is measured in hours because the thresholds are in hours, and "62 h" is
+        /// a figure a player can hold; "3.4 days" is the same figure once it stops fitting in a
+        /// working week. Through `Number`, so the decimal separator is the invariant one: this is
+        /// the sixth place in this project where a raw format string would have printed a Polish
+        /// comma into an English sentence.
+        /// </summary>
+        public static string Hours(double hours)
+        {
+            var safe = double.IsFinite(hours) ? Math.Max(0.0, hours) : 0.0;
+
+            return safe >= 48.0
+                ? Number(safe / 24.0, 1) + " d"
+                : Number(safe, 0) + " h";
+        }
+
         public static string PetaflopDays(double petaflopDays) => Count(petaflopDays) + " PF-days";
     }
 }

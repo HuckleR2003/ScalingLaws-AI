@@ -112,7 +112,55 @@ namespace ScalingLaws.Data
                 new("walk_room_done", "walk.room.done", GuideTarget.Room)
             });
 
-        private static readonly Walkthrough[] Entries = { ServerRoom };
+        /// <summary>The one Emil rings about the first time the desk takes a ticket.</summary>
+        public const string SupportId = "walk_support";
+
+        /// <summary>
+        /// The desk, walked through on the day it starts mattering.
+        ///
+        /// **It opens on SITE rather than on the desk**, which is the opposite of the room's and is
+        /// deliberate. The room has an icon of its own and the player has already found it; the
+        /// management page is reached from a button on the product banner and nothing else in the
+        /// game points at it, so the first thing worth teaching is where the door is. Walking
+        /// somebody straight through a door they cannot find again has taught them nothing.
+        ///
+        /// Everything after that rings a part of the panel in the order a person reads it: what the
+        /// number means, what is queueing, who is on it, and only then the three things that can be
+        /// bought. The ladders are last because they are the expensive answer and hiring is the
+        /// cheap one, and a tour that opens on the shop teaches the wrong lesson about a queue.
+        /// </summary>
+        private static readonly Walkthrough Support = new(
+            SupportId,
+            "walk.support.title",
+            "walk.support.blurb",
+            GuideTarget.Site,
+            new List<GuideStep>
+            {
+                // The way in. Satisfied by the page opening, never by a button on the strip: the
+                // whole point of this step is that the player presses the thing they will have to
+                // press again tomorrow.
+                // The id is written out here and again where the shell reports it, the same as every
+                // other waiting step: `WalkthroughTests` can only read literals, and a step whose id
+                // it cannot find is a player locked inside a screen with the bottom bar shut.
+                new("walk_support_open", "walk.support.open", GuideTarget.Support,
+                    highlight: "mb__manage", waitForClick: true),
+
+                new("walk_support_verdict", "walk.support.verdict", GuideTarget.Support,
+                    highlight: "support__verdict"),
+
+                new("walk_support_queue", "walk.support.queue", GuideTarget.Support,
+                    highlight: "support__queue"),
+
+                new("walk_support_staff", "walk.support.staff", GuideTarget.Support,
+                    highlight: "support__buttons"),
+
+                new("walk_support_ladders", "walk.support.ladders", GuideTarget.Support,
+                    highlight: "support__ladders"),
+
+                new("walk_support_done", "walk.support.done", GuideTarget.Support)
+            });
+
+        private static readonly Walkthrough[] Entries = { ServerRoom, Support };
 
         public static IReadOnlyList<Walkthrough> All => Entries;
 

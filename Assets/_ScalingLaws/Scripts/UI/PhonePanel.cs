@@ -177,6 +177,75 @@ namespace ScalingLaws.UI
             }).ExecuteLater(WakeDelay / 2);
         }
 
+
+        /// <summary>
+        /// He rings, unprompted, because something in the company just started happening.
+        ///
+        /// **The difference from `RingFrom` is whose phone it is.** A caller from outside gets a
+        /// thread that is thrown away when they hang up, because a rival's legal department has no
+        /// business in the cousin's messenger. This is the cousin, so it opens his chat, replays it,
+        /// and everything he says here is kept: a player who scrolls back a year later reads the
+        /// afternoon the desk opened, in order, with everything else he said.
+        ///
+        /// **It offers rather than starts.** Nothing was tapped to bring this call on, and a
+        /// walkthrough holds the interface shut for its whole length, so beginning one on somebody
+        /// who has not agreed to it is the exact trap the lock was built to avoid. Declining leaves
+        /// the composer, so the conversation is still a conversation.
+        /// </summary>
+        public void RingAbout(IReadOnlyList<string> lines, Walkthrough walkthrough)
+        {
+            if (lines == null || lines.Count == 0)
+            {
+                return;
+            }
+
+            Close();
+            returning = false;
+
+            BuildFrame();
+
+            frame.schedule.Execute(() =>
+            {
+                screen.AddToClassList("phone__screen--on");
+
+                OpenChat();
+                ReplayThread();
+
+                var delay = 0f;
+
+                foreach (var line in lines)
+                {
+                    // Typing first, then the words, at the same rhythm every other call here uses.
+                    var text = line;
+                    var typeAt = delay;
+                    var sayAt = delay + 0.9f;
+
+                    screen.schedule.Execute(() => ShowTyping(true))
+                        .ExecuteLater((long)(typeAt * 1000f));
+
+                    screen.schedule.Execute(() =>
+                    {
+                        ShowTyping(false);
+                        Send(text, false);
+                    }).ExecuteLater((long)(sayAt * 1000f));
+
+                    delay = sayAt + 0.6f;
+                }
+
+                screen.schedule.Execute(() =>
+                {
+                    if (walkthrough != null)
+                    {
+                        OfferWalkthrough(walkthrough);
+
+                        return;
+                    }
+
+                    ShowComposer();
+                }).ExecuteLater((long)(delay * 1000f) + 200);
+            }).ExecuteLater(WakeDelay);
+        }
+
         /// <summary>The handset and its dark screen. Shared, so the two entry points cannot drift.</summary>
         private void BuildFrame()
         {

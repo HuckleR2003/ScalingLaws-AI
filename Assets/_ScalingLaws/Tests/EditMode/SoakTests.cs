@@ -176,7 +176,7 @@ namespace ScalingLaws.Tests.EditMode
                     Assert.DoesNotThrow(() =>
                     {
                         var management = new ManagementScreen(simulation,
-                            () => { }, () => { }, () => { }, () => { });
+                            () => { }, () => { }, () => { }, () => { }, () => { });
 
                         management.Refresh();
                         management.ShowDesk(true);

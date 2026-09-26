@@ -50,6 +50,17 @@ go in. This file is the draft for the store update post, so anything vague here 
   so a name goes in the moment there is one. The tier that promises a candidate you can hire on the
   TEAM screen is not built, so the card does not mention it, and a test fails if that copy ever
   appears before the feature does.
+- **The support desk has a screen, on the management page under the standing.** One verdict at the
+  top, which is the average time somebody waits for an answer and what that is costing the product;
+  the queue behind it split into the three kinds of post; who is on the desk and two ways to put
+  somebody else there; then the three things that can be researched instead. HIRE opens the team
+  screen with the job already chosen, and HIRE REMOTELY pays an agency about a third over the wage
+  for somebody who starts today and needs no desk.
+- **Emil rings the day the first ticket arrives, once in a campaign.** Support is the only system in
+  the game that starts on its own: nothing is bought and nothing is clicked, the post simply begins
+  once enough people are being served to have a problem. He says so, and offers to walk through the
+  desk. The walkthrough opens on the product page rather than on the desk, because the desk is
+  reached from one button on the model banner and nothing else in the game points at it.
 
 ### Fixed
 
@@ -80,6 +91,11 @@ go in. This file is the draft for the store update post, so anything vague here 
   one answer to "what is this product like to use" rather than two. Support agents take their share
   of the fleet off the top, priced through the same per-person serving arithmetic as everybody else.
   A v62 campaign opens with an empty desk, because it received no post.
+- **Save v64** carries whether the first ticket has already been announced. It records a day that
+  happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
+  player has been working for months. A v63 file that already had post counts as told; one with an
+  empty desk is announced on the day the post starts, exactly as a new campaign is.
+- **1451 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

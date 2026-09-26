@@ -267,6 +267,46 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The support desk on the management page, in both languages.
+        ///
+        /// **Rendered on a desk that is behind**, because an empty one draws three zeroes and a row
+        /// of grey buttons and proves nothing about the layout. The Polish is the case worth looking
+        /// at: the verdict line, the two hiring buttons and the three ladder cards are all sized for
+        /// English words and every one of them is longer here.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheSupportDeskDraws()
+        {
+            var simulation = Campaign();
+
+            // A month of post against half a founder, which is the state a player who has not
+            // noticed the desk arrives in. It is the screen this panel exists to explain.
+            for (var day = 0; day < 40; day++)
+            {
+                simulation.State.Support.Advance(2_000_000.0, simulation.SupportPeople());
+            }
+
+            var previous = Loc.Current;
+
+            try
+            {
+                Loc.Current = Language.English;
+                yield return Capture(Desk(simulation), "support_desk_en.png");
+
+                Loc.Current = Language.Polish;
+                yield return Capture(Desk(simulation), "support_desk_pl.png");
+            }
+            finally
+            {
+                Loc.Current = previous;
+            }
+        }
+
+        /// <summary>The panel on its own, built the way the management screen builds it.</summary>
+        private static VisualElement Desk(CompanySimulation simulation) =>
+            new SupportPanel(simulation, () => { }, () => { }, _ => { }).Build();
+
+        /// <summary>
         /// The fund card, which asks real people for money and therefore has to look like a notice
         /// rather than a banner. Rendered in both languages because the Polish sentences are longer
         /// and a fixed 312px card is exactly where that shows.

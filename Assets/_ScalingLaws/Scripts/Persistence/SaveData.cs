@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 63;
+        public const int CurrentVersion = 64;
 
         public int version = CurrentVersion;
 
@@ -1044,6 +1044,15 @@ namespace ScalingLaws.Persistence
 
         /// <summary>See <see cref="supportLowHours"/>.</summary>
         public int supportAgentsWorking;
+
+        /// <summary>
+        /// v64. Whether the campaign has already been told about its first ticket.
+        ///
+        /// It records a day that happened rather than a state of the desk, which is why it is here
+        /// and not worked out on load: a desk two years into a campaign cannot say whether anybody
+        /// was ever told it opened, and guessing wrong rings the phone again.
+        /// </summary>
+        public bool supportAnnounced;
 
         /// <summary>
         /// The store room: cabinets bought and not standing, by kind, and loose fans.

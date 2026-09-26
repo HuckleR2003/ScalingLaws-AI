@@ -1193,7 +1193,8 @@ namespace ScalingLaws.UI
                 () => Show(Screen.Release),
                 () => Show(Screen.Marketing),
                 () => Show(Screen.Fleet),
-                () => Show(Screen.Upgrade));
+                () => Show(Screen.Upgrade),
+                () => Show(Screen.Team));
 
             mail = new MailScreen(simulation, RefreshChrome)
             {
@@ -2138,6 +2139,11 @@ namespace ScalingLaws.UI
                 case Screen.Management:
                     management.Refresh();
                     host.Add(management.Root);
+
+                    // The walkthrough step that says to open the desk is satisfied by the desk
+                    // opening, never by a button on the strip. The id is a literal here and in the
+                    // catalog because `WalkthroughTests` reads literals and nothing else.
+                    GuideOverlay.Reached?.Invoke("walk_support_open");
                     break;
                 case Screen.News:
                     news.Refresh();
@@ -2604,6 +2610,7 @@ namespace ScalingLaws.UI
             GuideTarget.Funding => Screen.Funding,
             GuideTarget.Ranking => Screen.Ranking,
             GuideTarget.Room => Screen.Room,
+            GuideTarget.Support => Screen.Management,
             _ => null
         };
 
@@ -3812,6 +3819,15 @@ namespace ScalingLaws.UI
                     RingTheirLawyers(state.SmearThreat);
                 }
 
+                // **The desk opened and nobody clicked anything to open it.** Every other system
+                // here is reached by a decision, so it can be explained on the screen the decision
+                // is made on; the post simply starts. He rings on the day it does, once per
+                // campaign, and the flag that says so is in the save.
+                if (companyEvent.Type == CompanyEventType.FirstSupportTicket)
+                {
+                    RingAboutTheDesk();
+                }
+
                 // **The tour waits for these rather than narrating them.** Reported here because
                 // every way of moving the clock already comes through this method, so a run that
                 // finishes while the player is on another tab still moves the step on.
@@ -3996,6 +4012,37 @@ namespace ScalingLaws.UI
                 Loc.T("threat.call.line2"),
                 Loc.T("threat.call.line3")
             });
+        }
+
+        /// <summary>
+        /// The cousin, on the day the desk takes its first ticket.
+        ///
+        /// **Skipped while his own phone is already up**, the same rule the lawyers' call follows
+        /// and for the same reason: the opening conversation is the one that has to finish. The
+        /// flag in the save is already set by then, so this is not deferred, it is simply not said.
+        /// That is the right trade. A company whose tutorial is still running is a company on its
+        /// first model, and the desk it just opened will be behind by an hour for weeks yet.
+        ///
+        /// He offers the walkthrough rather than starting it, and the walkthrough opens on SITE
+        /// rather than on the desk, because the first thing to learn is where the door is.
+        /// </summary>
+        private void RingAboutTheDesk()
+        {
+            if (phone == null || phone.IsOpen)
+            {
+                return;
+            }
+
+            WalkthroughCatalog.TryGet(WalkthroughCatalog.SupportId, out var walkthrough);
+
+            phone.RingAbout(
+                new[]
+                {
+                    Loc.T("support.call.line1"),
+                    Loc.T("support.call.line2"),
+                    Loc.T("support.call.line3")
+                },
+                walkthrough);
         }
 
         /// <summary>

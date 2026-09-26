@@ -120,6 +120,16 @@ namespace ScalingLaws.Simulation
         public SupportDesk Support { get; } = new();
 
         /// <summary>
+        /// Whether the day the first ticket arrived has already been announced.
+        ///
+        /// **Causal, and saved from v64.** The announcement is a phone call and a walkthrough, and
+        /// a flag rebuilt from the desk would make both of them arrive again on the first tick after
+        /// every load, for the rest of the campaign. Ninth time in this project that something which
+        /// looked derivable turned out to be a fact about a day that happened.
+        /// </summary>
+        public bool SupportAnnounced { get; set; }
+
+        /// <summary>
         /// Cabinets and fans the company has paid for and not stood up.
         ///
         /// The other half of the floor. See <see cref="ServerStock"/> for why buying and placing

@@ -41,9 +41,9 @@ inside three years. That is intentional.
 | `Assets/_ScalingLaws/Scripts/Data/` | Pure data libraries plus lookups. No economics, no state. |
 | `Assets/_ScalingLaws/Scripts/Simulation/` | The rules. Also no UnityEngine, so tests run in milliseconds. |
 | `Assets/_ScalingLaws/Scripts/Persistence/` | Save format, migration, PlayerPrefs I/O. The only folder that imports UnityEngine. |
-| `Assets/_ScalingLaws/Scripts/UI/` | 128 files. UI Toolkit panels, consumers only: nothing here decides anything. |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1418 tests across 163 fixtures. No scene is loaded by any of them. Count them with the command in `CLAUDE.md`; this line has been wrong three times. |
-| `Assets/_ScalingLaws/Tests/PlayMode/` | 65 tests across 15 fixtures. These load a scene, which is the point: they are the only ones that can see a layout fault. |
+| `Assets/_ScalingLaws/Scripts/UI/` | 131 files. UI Toolkit panels, consumers only: nothing here decides anything. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1451 tests across 167 fixtures. No scene is loaded by any of them. Count them with the command in `CLAUDE.md`; this line has been wrong three times. |
+| `Assets/_ScalingLaws/Tests/PlayMode/` | 71 tests across 15 fixtures. These load a scene, which is the point: they are the only ones that can see a layout fault. |
 | `Assets/_ScalingLaws/Art/Textures/ambientCG/`, `Art/Models/PolyHaven/` | Photographed materials and furniture, CC0, with a LICENSE.txt in each. |
 | `Assets/_ScalingLaws/Art/Models/CGTrader/` | Server racks and a TV set. Local only: the licence forbids redistribution, so it is gitignored and every use falls back. |
 

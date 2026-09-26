@@ -88,6 +88,15 @@ namespace ScalingLaws.Data
         public const double AgentSpeed = 0.65;
 
         /// <summary>
+        /// What a contractor hired on the spot costs over one found through the hiring screen.
+        ///
+        /// The same shape as the furnished office pack: **convenience is priced, not free.** A
+        /// player who wants somebody answering the post this afternoon pays about a third more than
+        /// a player who spends a week finding one, and both end up in the same roster.
+        /// </summary>
+        public const double RemotePremium = 1.35;
+
+        /// <summary>
         /// What one working agent takes out of the fleet, expressed as people it stops serving.
         ///
         /// **Derived rather than a constant of its own.** An agent reads and answers all day, so it

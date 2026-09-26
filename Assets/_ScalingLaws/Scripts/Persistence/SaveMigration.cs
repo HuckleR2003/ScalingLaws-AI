@@ -164,6 +164,7 @@ namespace ScalingLaws.Persistence
                     60 => UpgradeV60ToV61(current),
                     61 => UpgradeV61ToV62(current),
                     62 => UpgradeV62ToV63(current),
+                    63 => UpgradeV63ToV64(current),
                     _ => current
                 };
             }
@@ -1950,6 +1951,43 @@ namespace ScalingLaws.Persistence
         }
 
 
+
+        /// <summary>
+        /// v63 to v64: whether the first ticket has already been announced.
+        ///
+        /// **A v63 desk that has post has had its first ticket**, so the flag is set and the phone
+        /// stays quiet. That is the least flattering reading available and it is the right one: the
+        /// alternative is a campaign three years in being rung up about a queue it has been working
+        /// since 2023, which reads as the game having lost its place rather than as a helpful note.
+        ///
+        /// A v63 file with an empty desk has genuinely not taken one yet, so it is left false and
+        /// gets the call on the day the post starts, exactly as a new campaign does.
+        /// </summary>
+        public static SaveData UpgradeV63ToV64(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 64;
+
+            var hasPost = data.supportLowHours > 0.0
+                || data.supportMediumHours > 0.0
+                || data.supportHighHours > 0.0
+                || data.supportJudgedHours > 0.0;
+
+            data.supportAnnounced = hasPost;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                hasPost
+                    ? "v63 to v64: this desk already had post, so its first ticket counts as told "
+                      + "about and nobody rings to announce a queue that is years old."
+                    : "v63 to v64: this desk is empty, so the first ticket is still ahead of it and "
+                      + "will be announced on the day it arrives.");
+
+            return data;
+        }
         /// <summary>
         /// v62 to v63: the support desk, empty, because a v62 company did not have one.
         ///

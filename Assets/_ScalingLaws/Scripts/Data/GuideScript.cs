@@ -32,7 +32,16 @@ namespace ScalingLaws.Data
         Ranking = 12,
 
         /// <summary>The basement, for the step where he hands over the keys to it.</summary>
-        Room = 13
+        Room = 13,
+
+        /// <summary>
+        /// The management desk, where the support panel lives.
+        ///
+        /// **It has no slot on the bottom bar**, and that is the whole reason it is on this list: a
+        /// target the bar cannot ring falls through to the highlight class, and locking to it shuts
+        /// every slot, which is what a walkthrough on a screen reached from a banner needs.
+        /// </summary>
+        Support = 14
     }
 
     /// <summary>

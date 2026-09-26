@@ -37,6 +37,9 @@ namespace ScalingLaws.UI
         private readonly Action openFleet;
         private readonly Action openUpgrade;
 
+        /// <summary>The way to the hiring screen, for the support desk's own hire button.</summary>
+        private readonly Action openTeam;
+
         private Tab showing = Tab.Page;
 
         /// <summary>
@@ -67,13 +70,14 @@ namespace ScalingLaws.UI
         }
 
         public ManagementScreen(CompanySimulation simulation, Action openRelease,
-            Action openMarketing, Action openFleet, Action openUpgrade)
+            Action openMarketing, Action openFleet, Action openUpgrade, Action openTeam)
         {
             this.simulation = simulation;
             this.openRelease = openRelease;
             this.openMarketing = openMarketing;
             this.openFleet = openFleet;
             this.openUpgrade = openUpgrade;
+            this.openTeam = openTeam;
 
             Root = new VisualElement();
             Root.AddToClassList("content");
@@ -665,6 +669,14 @@ namespace ScalingLaws.UI
             Root.Add(UiParts.KpiRow(product, PaidShare()));
             Root.Add(BuildFlagshipControl());
             Root.Add(BuildStandingPanel());
+
+            // **The desk goes above the audience table on purpose.** What the people you already
+            // have are experiencing decides whether the table below keeps its numbers.
+            Root.Add(new SupportPanel(
+                simulation,
+                openTeam,
+                Refresh,
+                why => lastFailure = why ?? string.Empty).Build());
             Root.Add(BuildAudienceTable());
             Root.Add(BuildRivalPanel());
         }

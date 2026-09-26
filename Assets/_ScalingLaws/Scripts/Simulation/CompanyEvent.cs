@@ -143,7 +143,18 @@ namespace ScalingLaws.Simulation
         /// Raised by the order rather than by the day, so it is said once, at the moment a player
         /// can still do something with it: the next batch is the one that gets refused.
         /// </summary>
-        SitePowerNearlyFull = 61
+        SitePowerNearlyFull = 61,
+
+        /// <summary>
+        /// The first ticket the desk has ever taken.
+        ///
+        /// Raised once per campaign, from the day the post starts arriving, and the flag that says
+        /// so is saved: a player who reloads the afternoon the desk opened must not be told about
+        /// their first ticket a second time. It exists because support is the one system here that
+        /// starts working on its own, without the player having bought, built or clicked anything,
+        /// so nothing else in the game would ever mention that it had begun.
+        /// </summary>
+        FirstSupportTicket = 62
     }
 
     /// <summary>

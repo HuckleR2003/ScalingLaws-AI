@@ -37,7 +37,7 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         private static ManagementScreen Screen(CompanySimulation simulation) =>
-            new(simulation, () => { }, () => { }, () => { }, () => { });
+            new(simulation, () => { }, () => { }, () => { }, () => { }, () => { });
 
         private static List<string> Words(VisualElement root)
         {

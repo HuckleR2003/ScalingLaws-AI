@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ScalingLaws.Data;
+using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
 
 namespace ScalingLaws.Tests.EditMode
@@ -300,6 +301,115 @@ namespace ScalingLaws.Tests.EditMode
                 "the cluster is the same in both; only the desk differs");
             Assert.That(abandoned.ExperienceMultiplier, Is.LessThan(0.81));
             Assert.That(answered.ExperienceMultiplier, Is.GreaterThan(1.07));
+        }
+
+        /// <summary>
+        /// The call that says the post has started is made once in a campaign, and surviving a save
+        /// is the half of that which matters.
+        ///
+        /// **Support is the only system here that starts without being started.** Nothing is bought
+        /// and nothing is clicked; enough people are being served that some of them write in. So the
+        /// announcement is the only thing that ever tells a player the desk exists, and a flag
+        /// rebuilt from the desk rather than saved would ring the phone again on the first tick
+        /// after every load, for the rest of the campaign.
+        /// </summary>
+        [Test]
+        public void TheFirstTicketIsAnnouncedOnceAndSurvivesASave()
+        {
+            var simulation = Serving();
+
+            Assert.That(Announcements(simulation), Is.Zero,
+                "nothing has been served yet, so there is no post to announce");
+
+            var said = 0;
+
+            for (var day = 0; day < 120; day++)
+            {
+                simulation.AdvanceDay();
+                said += Announcements(simulation);
+            }
+
+            Assert.That(said, Is.EqualTo(1),
+                "the desk opened once, so it is announced once");
+            Assert.IsTrue(simulation.State.SupportAnnounced);
+
+            var back = SaveStore.Restore(SaveStore.Parse(
+                UnityEngine.JsonUtility.ToJson(SaveStore.Capture(simulation.State))));
+
+            Assert.IsTrue(back.SupportAnnounced,
+                "a reloaded campaign has already been told");
+
+            var reloaded = new CompanySimulation(back);
+            reloaded.SetRentedPetaflops(80.0);
+
+            var again = 0;
+
+            for (var day = 0; day < 60; day++)
+            {
+                reloaded.AdvanceDay();
+                again += Announcements(reloaded);
+            }
+
+            Assert.That(again, Is.Zero,
+                "reloading must not ring the phone about a queue the player has been working for "
+                + "months");
+        }
+
+        /// <summary>
+        /// A v63 campaign that already had post is not rung up about its first ticket.
+        ///
+        /// The least flattering reading available, and the right one: the alternative is a company
+        /// three years in being told the post has started, which reads as the game having lost its
+        /// place. A v63 file with an empty desk genuinely has not taken one, so it is left to be
+        /// announced on the day it does.
+        /// </summary>
+        [Test]
+        public void AnOlderDeskWithPostCountsAsAlreadyToldAndAnEmptyOneDoesNot()
+        {
+            var busy = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            busy.version = 63;
+            busy.supportLowHours = 14.0;
+
+            var upgraded = SaveMigration.UpgradeV63ToV64(busy);
+
+            Assert.That(upgraded.version, Is.EqualTo(64));
+            Assert.IsTrue(upgraded.supportAnnounced);
+            StringAssert.Contains("v63 to v64", SaveMigration.LastMigrationNotes);
+
+            var quiet = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            quiet.version = 63;
+
+            Assert.IsFalse(SaveMigration.UpgradeV63ToV64(quiet).supportAnnounced,
+                "an empty desk has its first ticket still ahead of it");
+        }
+
+        /// <summary>A company with a model on sale and a cluster to serve it from.</summary>
+        private static CompanySimulation Serving(uint seed = 404)
+        {
+            var simulation = new CompanySimulation(new CompanyState("Adco", seed));
+            simulation.SetRentedPetaflops(80.0);
+
+            simulation.State.AddDeployedModel(new DeployedModel(
+                "Atlas One", ArchitectureId.DenseTransformer, 48.0,
+                simulation.State.Date, 2e10, 1.0, ModelType.General));
+
+            return simulation;
+        }
+
+        /// <summary>Drains the queue and counts what it said about the desk opening.</summary>
+        private static int Announcements(CompanySimulation simulation)
+        {
+            var said = 0;
+
+            while (simulation.State.TryDequeueEvent(out var companyEvent))
+            {
+                if (companyEvent.Type == CompanyEventType.FirstSupportTicket)
+                {
+                    said++;
+                }
+            }
+
+            return said;
         }
     }
 }

@@ -839,6 +839,8 @@ namespace ScalingLaws.Simulation
                 served * SimUnits.TokensPerBillion / Math.Max(1.0, TokensPerUserPerDayServed()),
                 SupportPeople());
 
+            AnnounceTheFirstTicket();
+
             var servingCost = SimUnits.ToDollars(
                 profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier
                 * State.Skills.OperatingCostMultiplier());
@@ -5259,6 +5261,33 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Nothing to everything, on the author's thresholds: 96 hours to 48.</summary>
         public double SupportQuality() => State.Support.Quality();
+        /// <summary>
+        /// Says, once in a campaign, that the desk has taken its first ticket.
+        ///
+        /// **Support is the only system in this game that starts on its own.** A cluster is bought,
+        /// a model is designed, an office is moved into; the post simply begins arriving the day
+        /// enough people are being served to have a problem worth describing, and until this method
+        /// existed nothing anywhere said so. The penalty for ignoring it is a fifth of the
+        /// happiness, which is a large thing to discover from a falling graph.
+        ///
+        /// **Backlog, not arrivals.** Arrivals are a fraction of a ticket a day for a long time, and
+        /// a company whose desk is never behind by even an hour has nothing to be told about yet.
+        /// Waiting for an hour of work to be owed is waiting for the first ticket somebody is
+        /// actually sitting on.
+        /// </summary>
+        private void AnnounceTheFirstTicket()
+        {
+            if (State.SupportAnnounced || State.Support.BacklogHours <= 0.0)
+            {
+                return;
+            }
+
+            State.SupportAnnounced = true;
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.FirstSupportTicket, State.Date, Loc.T("support.first.event")));
+        }
+
 
         /// <summary>
         /// Buys one level of one ladder. **Research points are the real price**, the same currency
@@ -5302,6 +5331,73 @@ namespace ScalingLaws.Simulation
         /// in both directions: the fleet gives the capacity back the moment one is switched off.
         /// </summary>
         public void SetSupportAgents(int agents) => State.Support.SetAgentsWorking(agents);
+
+        /// <summary>Hours of work arriving today, for the line that says whether the desk keeps up.</summary>
+        public double SupportArrivingHoursPerDay()
+        {
+            var served = UsersServedToday();
+            var tickets = State.Support.TicketsPerDay(served);
+            var hours = 0.0;
+
+            foreach (TicketClass kind in Enum.GetValues(typeof(TicketClass)))
+            {
+                hours += tickets * SupportCatalog.ShareOf(kind) * SupportCatalog.HoursOf(kind);
+            }
+
+            return hours * (1.0 - SupportCatalog.TrainingAt(State.Support.TrainingLevel));
+        }
+
+        /// <summary>
+        /// People the cluster actually kept served yesterday, which is what generates the post.
+        /// Read from the same quality record the market reads, so the desk and the market cannot
+        /// disagree about how many people got through.
+        /// </summary>
+        public double UsersServedToday()
+        {
+            var tokens = Math.Min(State.LastQuality.Demanded, State.LastQuality.Capacity)
+                * SimUnits.TokensPerBillion;
+
+            return tokens / Math.Max(1.0, TokensPerUserPerDayServed());
+        }
+
+        /// <summary>What one remote support contractor costs a day, at the agency premium.</summary>
+        public double RemoteSupportDailyUsd() =>
+            PositionCatalog.Get(PlayerSkill.Support).BaseHourlyWageUsd
+            * SupportCatalog.RemotePremium * SupportCatalog.HoursPerPersonPerDay;
+
+        /// <summary>
+        /// Hires one support contractor on the spot, remotely, with no conversation and no desk.
+        ///
+        /// **This is a shortcut into the hiring the game already has, not a second way to hire.**
+        /// The person lands in the same roster through the same `Add`, counts in the same payroll,
+        /// and is paid the position's own wage with an agency premium on top, which is what makes
+        /// the shortcut a trade rather than a strictly better button: the hiring screen is where a
+        /// cheaper person is found, and finding one takes days the queue may not have.
+        /// </summary>
+        public bool TryHireSupportRemotely(out string why)
+        {
+            var daily = RemoteSupportDailyUsd();
+            var month = (long)Math.Round(daily * 30.0);
+
+            if (State.CashUsd < month)
+            {
+                why = Loc.T("support.needs_cash", month.ToString("N0", CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            var hire = new Hire(PositionCatalog.Get(PlayerSkill.Support).Role, 55, State.Date,
+                Loc.T("support.remote_name"), PlayerSkill.Support, HireSource.Remote,
+                PositionCatalog.Get(PlayerSkill.Support).BaseHourlyWageUsd * SupportCatalog.RemotePremium);
+
+            if (!State.Staff.Add(hire))
+            {
+                why = Loc.T("support.hire_refused");
+                return false;
+            }
+
+            why = null;
+            return true;
+        }
 
         /// <summary>
         /// The share of what this company serves that anybody is invoiced for, from the mix of

@@ -21603,3 +21603,203 @@
     color: rgba(150, 160, 178, 0.78);
     white-space: normal;
 }
+
+/* The support desk on the management page. Reads as a report: one verdict, the queue behind it,
+   then what can be done about it. Nothing animates: a queue that pulses reads as an alarm, and
+   this panel is also opened on days when everything is answered. */
+.support {
+    /* The panel root. It sits under the standing panel on the management desk and is the only
+       thing on that page a player can spend money from, so it is marked with the same coral the
+       kicker uses rather than being another indistinguishable card in the stack. */
+    border-left-width: 2px;
+    border-left-color: rgba(236, 132, 118, 0.55);
+    padding-left: 16px;
+}
+.support__kicker {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(236, 132, 118, 0.92);
+    margin-bottom: 10px;
+}
+.support__verdict {
+    margin-bottom: 14px;
+}
+.support__hours {
+    font-size: 34px;
+    color: rgb(238, 242, 250);
+}
+.support__hours--bad {
+    color: rgb(226, 118, 110);
+}
+.support__hours--good {
+    color: rgb(150, 208, 168);
+}
+.support__caption {
+    font-size: 12px;
+    color: rgba(168, 178, 196, 0.85);
+    margin-bottom: 8px;
+}
+.support__effect {
+    font-size: 15px;
+    color: rgb(150, 208, 168);
+    white-space: normal;
+}
+.support__effect--bad {
+    color: rgb(226, 118, 110);
+}
+.support__note {
+    font-size: 11px;
+    color: rgba(150, 160, 178, 0.8);
+    white-space: normal;
+    margin-top: 6px;
+}
+.support__queue {
+    flex-direction: row;
+    margin-bottom: 14px;
+}
+.support__class {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 0;
+    padding: 10px 12px 12px 12px;
+    margin-right: 10px;
+    border-radius: 8px;
+    border-left-width: 3px;
+    border-left-color: rgba(120, 132, 156, 0.6);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.support__class--high {
+    border-left-color: rgb(226, 118, 110);
+}
+.support__class--medium {
+    border-left-color: rgb(226, 186, 118);
+}
+.support__class--low {
+    border-left-color: rgba(140, 170, 214, 0.9);
+}
+.support__classname {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(196, 206, 224, 0.9);
+    white-space: normal;
+    margin-bottom: 6px;
+}
+.support__classhours {
+    font-size: 19px;
+    color: rgb(236, 240, 248);
+}
+.support__classnote {
+    font-size: 11px;
+    color: rgba(150, 160, 178, 0.8);
+}
+.support__staffing {
+    margin-bottom: 14px;
+}
+.support__staffline {
+    font-size: 12.5px;
+    color: rgba(214, 222, 236, 0.9);
+    white-space: normal;
+    margin-bottom: 8px;
+}
+.support__buttons {
+    flex-direction: row;
+}
+.support__button {
+    height: 32px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(242, 246, 252);
+    background-color: rgba(58, 72, 96, 0.95);
+    border-radius: 6px;
+    border-width: 0;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 8px;
+    padding-left: 14px;
+    padding-right: 14px;
+}
+/* The agency. **Quieter than the plain button, not louder**: it is the same hire with a third
+   added to the wage, and drawing the expensive convenience as the bright one on the row is how a
+   player ends up paying the premium by reflex. It reads as an alternative, which is what it is. */
+.support__button--remote {
+    background-color: rgba(58, 72, 96, 0.28);
+    border-width: 1px;
+    border-color: rgba(150, 162, 184, 0.45);
+    color: rgba(214, 222, 236, 0.92);
+}
+.support__agents {
+    margin-bottom: 14px;
+}
+.support__agentline {
+    font-size: 12.5px;
+    color: rgba(214, 222, 236, 0.9);
+    margin-bottom: 6px;
+}
+.support__agentrow {
+    flex-direction: row;
+    margin-bottom: 4px;
+}
+.support__step {
+    width: 34px;
+    height: 30px;
+    font-size: 15px;
+    -unity-text-align: middle-center;
+    color: rgb(238, 242, 250);
+    background-color: rgba(58, 72, 96, 0.95);
+    border-radius: 6px;
+    border-width: 0;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 8px;
+}
+.support__ladders {
+    flex-direction: row;
+}
+.support__ladder {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 0;
+    padding: 12px;
+    margin-right: 10px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.support__laddername {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(236, 132, 118, 0.92);
+    white-space: normal;
+    margin-bottom: 6px;
+}
+.support__ladderbody {
+    font-size: 11.5px;
+    color: rgba(196, 206, 224, 0.82);
+    white-space: normal;
+    margin-bottom: 8px;
+}
+.support__laddernow {
+    font-size: 20px;
+    color: rgb(238, 242, 250);
+}
+.support__ladderlevel {
+    font-size: 11px;
+    color: rgba(150, 160, 178, 0.8);
+    margin-bottom: 10px;
+}
+.support__ladderbuy {
+    margin-right: 0;
+    margin-bottom: 6px;
+}
+.support__laddernext {
+    font-size: 11px;
+    color: rgba(168, 178, 196, 0.8);
+}
+.support__ladderdone {
+    font-size: 11.5px;
+    color: rgba(150, 208, 168, 0.9);
+}
