@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 62;
+        public const int CurrentVersion = 63;
 
         public int version = CurrentVersion;
 
@@ -516,6 +516,14 @@ namespace ScalingLaws.Persistence
 
         public double qualityCapacity;
         public double qualityPackagedShare;
+
+        /// <summary>
+        /// v63. What the support desk was doing to the experience on the last day recorded.
+        ///
+        /// Zero in a file written before the desk existed, which the loader reads as one: a v62
+        /// company had no desk to judge, so its experience was the cluster alone.
+        /// </summary>
+        public double qualitySupportMultiplier;
 
         /// <summary>Registered users per day, oldest first, up to ninety. Added in v20.</summary>
         public List<double> userHistory = new();
@@ -1005,6 +1013,37 @@ namespace ScalingLaws.Persistence
         /// count. The counts are still in `hallAccelerators`; this is what they are.
         /// </summary>
         public List<int> hallCards = new();
+
+        /// <summary>
+        /// v63. The support desk: hours of work owed on each class of ticket, the three ladders and
+        /// how many agents are switched on.
+        ///
+        /// **Hours rather than a list of tickets**, because that is what the desk actually carries:
+        /// a list would be a list to migrate for the rest of the project's life and it would say
+        /// exactly the same thing.
+        /// </summary>
+        public double supportLowHours;
+
+        /// <summary>The month-long average the market is judging, in hours. See <see cref="supportLowHours"/>.</summary>
+        public double supportJudgedHours;
+
+        /// <summary>See <see cref="supportLowHours"/>.</summary>
+        public double supportMediumHours;
+
+        /// <summary>See <see cref="supportLowHours"/>.</summary>
+        public double supportHighHours;
+
+        /// <summary>See <see cref="supportLowHours"/>.</summary>
+        public int supportDeflection;
+
+        /// <summary>See <see cref="supportLowHours"/>.</summary>
+        public int supportTraining;
+
+        /// <summary>See <see cref="supportLowHours"/>.</summary>
+        public int supportAgentLevel;
+
+        /// <summary>See <see cref="supportLowHours"/>.</summary>
+        public int supportAgentsWorking;
 
         /// <summary>
         /// The store room: cabinets bought and not standing, by kind, and loose fans.

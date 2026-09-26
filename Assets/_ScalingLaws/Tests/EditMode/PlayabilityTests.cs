@@ -69,6 +69,37 @@ namespace ScalingLaws.Tests.EditMode
                 BuyDataWhenAffordable();
                 KeepOptimising();
                 StartARunWhenIdle();
+                StaffTheDesk();
+            }
+
+            /// <summary>
+            /// Keep somebody on the support desk once there is post to answer.
+            ///
+            /// **A player who sees an abandoned queue hires, so the operator has to.** Without this
+            /// the guard was measuring whether a company that ignores a control survives, which is
+            /// not what it is for: it is the third time this fixture has had to be taught to use a
+            /// control that the game grew, after the parameter ceiling and the product line.
+            ///
+            /// One head per forty tickets a day, which is about what the desk's own arithmetic asks
+            /// for, and remote because a seated hire needs a free desk and this fixture is not about
+            /// the lease.
+            /// </summary>
+            private void StaffTheDesk()
+            {
+                // **Read from the desk, never from the last report.** `AYearFourSaveRunsIdentically`
+                // rebuilds the operator after loading, so anything this decision remembers between
+                // days is a difference between the run that saved and the run that loaded, and the
+                // guard reads that as the simulation diverging. The queue is saved; a field on the
+                // operator is not.
+                if (state.CashUsd < 2_000_000
+                    || simulation.SupportHours() <= SupportCatalog.AnsweredHours
+                    || state.Staff.CountOfPosition(PlayerSkill.Support) >= 12)
+                {
+                    return;
+                }
+
+                state.Staff.Add(new Hire(StaffRole.GoToMarket, 55, state.Date, "Support",
+                    PlayerSkill.Support, HireSource.Remote, 12.0));
             }
 
             /// <summary>
@@ -834,5 +865,6 @@ namespace ScalingLaws.Tests.EditMode
                 ArchitectureBlueprint.Default(ArchitectureId.CustomFamilyA)).IsFeasible, Is.True);
             Assert.That(state.ComputeTierLadder().Count, Is.EqualTo(3));
         }
+
     }
 }

@@ -59,6 +59,11 @@ go in. This file is the draft for the store update post, so anything vague here 
   capacity it had paid for on the compute screen, and every training run it asked for came back
   "needs N GB of accelerator memory, fleet offers 0 GB". The memory is derived from the generation
   the packages are provisioned on, by the same arithmetic the slider already used.
+- **People hired remotely disappeared when the game was loaded.** The loader clamped the roster to
+  the desks the lease pays for, counting heads, while hiring counts seats and lets a remote hire
+  join a company with no office at all. So anybody hired remotely beyond the desk count was deleted
+  on the next load, silently, with their work and their payroll. It counts seats now, the same rule
+  hiring follows, and two tests hold both halves.
 
 ### Under the hood
 
@@ -69,6 +74,12 @@ go in. This file is the draft for the store update post, so anything vague here 
   answered and the product is experienced eight per cent better. Arrivals are sublinear in the
   audience, because a linear rate would want forty staff at thirty million people served, which is
   twice the desks in the largest office in the game.
+- **The desk is wired into the day, the market and the save (v63).** The post arrives on the people
+  actually served, the queue is judged on its average over a month rather than on today, and what it
+  does to the experience multiplies the same figure the cluster's own reliability does, so there is
+  one answer to "what is this product like to use" rather than two. Support agents take their share
+  of the fleet off the top, priced through the same per-person serving arithmetic as everybody else.
+  A v62 campaign opens with an empty desk, because it received no post.
 
 ---
 

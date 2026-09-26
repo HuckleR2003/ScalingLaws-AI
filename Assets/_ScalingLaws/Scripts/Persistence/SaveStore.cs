@@ -480,6 +480,17 @@ namespace ScalingLaws.Persistence
             state.Hall.Capture(data.hallRacks, data.hallAccelerators, data.hallFans);
             state.Hall.CaptureRoom(data.hallCoolers, data.hallOverclock);
             state.Hall.CaptureCards(data.hallCards);
+
+            // The desk, in hours owed and levels bought. Nothing derived: a backlog is a thing that
+            // happened, and no other field could rebuild it.
+            data.supportLowHours = state.Support.BacklogHoursOf(TicketClass.Low);
+            data.supportJudgedHours = state.Support.JudgedHours;
+            data.supportMediumHours = state.Support.BacklogHoursOf(TicketClass.Medium);
+            data.supportHighHours = state.Support.BacklogHoursOf(TicketClass.High);
+            data.supportDeflection = state.Support.DeflectionLevel;
+            data.supportTraining = state.Support.TrainingLevel;
+            data.supportAgentLevel = state.Support.AgentLevel;
+            data.supportAgentsWorking = state.Support.AgentsWorking;
             state.Warehouse.Capture(data.storeRackKinds, data.storeRackCounts, out data.storeFans);
             state.Power.Capture(data.powerPlantSites, data.powerPlantReadyDays);
 
@@ -602,6 +613,11 @@ namespace ScalingLaws.Persistence
             data.qualityDemanded = state.LastQuality.Demanded;
             data.qualityCapacity = state.LastQuality.Capacity;
             data.qualityPackagedShare = state.LastQuality.PackagedShare;
+
+            // **And the desk, because `LastQuality` is causal and now carries two facts.** Saving
+            // the cluster and forgetting the support multiplier replays the day after a load with a
+            // desk nobody is judging, which is the exact shape the save replay guards catch.
+            data.qualitySupportMultiplier = state.LastQuality.SupportMultiplier;
             state.Users.Capture(data.userHistory);
             data.researchPoints = state.ResearchPoints;
             data.researchFundingMode = (int)state.ResearchFunding;
@@ -1226,6 +1242,11 @@ namespace ScalingLaws.Persistence
             state.Hall.Restore(safe.hallRacks, safe.hallAccelerators, safe.hallFans);
             state.Hall.RestoreRoom(safe.hallCoolers, safe.hallOverclock);
             state.Hall.RestoreCards(safe.hallCards);
+            state.Support.Restore(
+                safe.supportLowHours, safe.supportMediumHours, safe.supportHighHours,
+                safe.supportJudgedHours,
+                safe.supportDeflection, safe.supportTraining, safe.supportAgentLevel,
+                safe.supportAgentsWorking);
             state.Warehouse.Restore(safe.storeRackKinds, safe.storeRackCounts, safe.storeFans);
             state.Power.Restore(safe.powerPlantSites, safe.powerPlantReadyDays);
             state.Staff.Owned.Clear();
@@ -1597,7 +1618,8 @@ namespace ScalingLaws.Persistence
                     new GameDate(Math.Max(0, flat.startedDayIndex))));
             }
             state.LastQuality = new ServiceQuality(
-                safe.qualityDemanded, safe.qualityCapacity, safe.qualityPackagedShare);
+                safe.qualityDemanded, safe.qualityCapacity, safe.qualityPackagedShare,
+                safe.qualitySupportMultiplier <= 0.0 ? 1.0 : safe.qualitySupportMultiplier);
 
             for (var index = 0; index < HostingCatalog.All.Count; index++)
             {
@@ -2265,10 +2287,36 @@ namespace ScalingLaws.Persistence
             safe.staff.RemoveAll(static hire =>
                 hire == null || !Enum.IsDefined(typeof(StaffRole), hire.role) || hire.role == (int)StaffRole.None);
 
+            // **Seats rather than heads, which is the rule hiring already follows.**
+            // `StaffRoster.Add` lets a remote hire join a company with no office at all, because a
+            // remote hire needs no desk. This clamp counted heads, so a company that hired remotely
+            // beyond its desk count lost those people the next time it loaded: no message, no error,
+            // and the payroll quietly fell with them. Found when the balance operator was taught to
+            // hire for the first time in the project's life and twelve remote people came back as
+            // zero.
+            //
+            // Seated hires are still clamped, oldest first, because a lease really does cap desks.
             var desks = OfficeCatalog.Get((OfficeTier)safe.officeTier).Desks;
-            if (safe.staff.Count > desks)
+            var seated = 0;
+
+            for (var index = 0; index < safe.staff.Count; index++)
             {
-                safe.staff.RemoveRange(desks, safe.staff.Count - desks);
+                var hire = safe.staff[index];
+                var isRemote = Enum.IsDefined(typeof(HireSource), hire.source)
+                    && (HireSource)hire.source == HireSource.Remote;
+
+                if (isRemote)
+                {
+                    continue;
+                }
+
+                seated++;
+                if (seated > desks)
+                {
+                    safe.staff.RemoveAt(index);
+                    index--;
+                    seated--;
+                }
             }
 
             foreach (var hire in safe.staff)

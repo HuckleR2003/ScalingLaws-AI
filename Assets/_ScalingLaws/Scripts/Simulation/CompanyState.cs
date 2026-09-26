@@ -112,6 +112,14 @@ namespace ScalingLaws.Simulation
         public ServerHall Hall { get; } = new(BasementColumns, BasementRows);
 
         /// <summary>
+        /// The support desk: the post, what is owed on it, and the three ladders bought for it.
+        ///
+        /// Lives on the state rather than being derived, because a backlog is a thing that happened
+        /// and cannot be recomputed from anywhere else. Saved from v63.
+        /// </summary>
+        public SupportDesk Support { get; } = new();
+
+        /// <summary>
         /// Cabinets and fans the company has paid for and not stood up.
         ///
         /// The other half of the floor. See <see cref="ServerStock"/> for why buying and placing

@@ -38,16 +38,30 @@ namespace ScalingLaws.Simulation
         /// <summary>The worst the reliability term is allowed to make a product look.</summary>
         public const double WorstReliability = 0.35;
 
-        public ServiceQuality(double demandedBillions, double capacityBillions, double packagedShare)
+        public ServiceQuality(double demandedBillions, double capacityBillions, double packagedShare,
+            double supportMultiplier = 1.0)
         {
             Demanded = Math.Max(0.0, SimUnits.Finite(demandedBillions));
             Capacity = Math.Max(0.0, SimUnits.Finite(capacityBillions));
             PackagedShare = Math.Clamp(SimUnits.Finite(packagedShare), 0.0, 1.0);
 
+            // **The support desk multiplies into the one number the market already reads.** It is
+            // not a second opinion about how people feel: waiting four days for an answer and
+            // waiting nine seconds for a reply are the same complaint from the customer's side, so
+            // they land on the same figure. Defaulted to 1.0 so every caller written before the
+            // desk existed, and every test that does not care about it, is untouched.
+            SupportMultiplier = Math.Clamp(SimUnits.Finite(supportMultiplier), 0.0, 2.0);
+
             Utilisation = Capacity <= 0.0
                 ? Demanded > 0.0 ? 1.0 : 0.0
                 : Math.Clamp(Demanded / Capacity, 0.0, 1.0);
         }
+
+        /// <summary>
+        /// What the support desk does to the experience: 0.80 when the post is abandoned, 1.08 when
+        /// it is answered inside two days. One, exactly, for a company that has no desk to judge.
+        /// </summary>
+        public double SupportMultiplier { get; }
 
         /// <summary>Tokens people wanted today.</summary>
         public double Demanded { get; }
@@ -118,6 +132,27 @@ namespace ScalingLaws.Simulation
                     WorstReliability, 1.0);
             }
         }
+
+        /// <summary>
+        /// The cluster and the desk together, and **this is the figure the market reads.**
+        ///
+        /// `Reliability` stays what it always was, the cluster's own answer, because the operations
+        /// panel is reporting on the cluster and a player looking at milliseconds is not asking
+        /// about the post. What a customer experiences is both.
+        ///
+        /// No ceiling of one, deliberately. A desk answering inside two days is worth eight per cent
+        /// **more** than a product with no desk to judge, which is the whole reason to staff one.
+        ///
+        /// **A multiplier of zero means no desk, not a dead one, and that distinction cost an
+        /// afternoon.** This is a struct, `CompanyState.LastQuality` starts as `default`, and
+        /// `default(struct)` does not run the constructor: every field is zero, including this one.
+        /// Read literally, a company on its first morning was serving its customers at a fifth of
+        /// the attractiveness it had earned, before the desk had received a single ticket, and
+        /// `ShippingOnceAndCoastingLosesTheMarket` found it by losing two thirds of the share a
+        /// 2022 model should have. This file already warns about the same trap for `RoomUpgrades`.
+        /// </summary>
+        public double ExperienceMultiplier =>
+            Math.Max(0.20, Reliability * (SupportMultiplier <= 0.0 ? 1.0 : SupportMultiplier));
 
         /// <summary>A sentence for the operations panel. Says what and why, never only a colour.</summary>
         public string Headline => Status switch

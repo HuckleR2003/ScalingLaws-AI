@@ -69,6 +69,17 @@ namespace ScalingLaws.Data
         public const double HoursPerPersonPerDay = 6.0;
 
         /// <summary>
+        /// How much of a person the founder is worth on the desk.
+        ///
+        /// **A one-person company answers its own post**, and without this every campaign would
+        /// open with an abandoned queue and a fifth off the product before the player had any way
+        /// to hire anybody. Half a person, because they are also training models and running the
+        /// company: enough to carry a young product to about a hundred thousand people served,
+        /// which is where the first support hire becomes a real decision rather than a formality.
+        /// </summary>
+        public const double FounderShare = 0.5;
+
+        /// <summary>
         /// An agent is slower than a person and only takes the ordinary post.
         ///
         /// The author's figure, and it has to stay under one: an agent that matched a person would
@@ -88,6 +99,22 @@ namespace ScalingLaws.Data
 
         /// <summary>Past this the queue reads as abandoned and the product is judged on it.</summary>
         public const double AbandonedHours = 96.0;
+
+        /// <summary>
+        /// How long the desk is judged over, in days.
+        ///
+        /// **A queue is judged on its average, not on today.** Without this a company that shipped
+        /// its first model on Monday was reported as abandoning its post on Tuesday, because one
+        /// day of arrivals against a founder working alone is already past four days of waiting, and
+        /// the market took a fifth off a product that was two days old. That is not what a customer
+        /// experiences and it is not what the author asked for: he asked for the **average time to
+        /// resolve a ticket**, which is a month of evidence, not a snapshot.
+        ///
+        /// A month also sets how fast a repair is felt. Hire two people and the judgement climbs
+        /// back over about four weeks, which is roughly how long it takes a real audience to notice
+        /// that somebody started answering.
+        /// </summary>
+        public const double JudgementDays = 30.0;
 
         /// <summary>Under this the desk is answering while the problem is still fresh.</summary>
         public const double AnsweredHours = 48.0;

@@ -497,5 +497,64 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(safe.assets, Is.Empty);
             Assert.That(safe.models, Is.Empty);
         }
+
+        /// <summary>
+        /// **Remote people are not furniture, and the loader used to think they were.**
+        ///
+        /// `StaffRoster.Add` lets a remote hire join a company with no office, because they need no
+        /// desk. The loader clamped the roster to the desk count regardless, so a company that hired
+        /// remotely beyond its desks lost those people on the next load, silently, with their work
+        /// and their payroll. It shipped, and nothing caught it, because no fixture in this project
+        /// had ever hired anybody.
+        /// </summary>
+        [Test]
+        public void RemoteHiresSurviveALoadIntoAnOfficeWithNoDeskForThem()
+        {
+            var state = new CompanyState("Prometheus AI", 4242);
+            for (var index = 0; index < 12; index++)
+            {
+                state.Staff.Add(new Hire(StaffRole.GoToMarket, 55, state.Date, "Remote",
+                    PlayerSkill.Support, HireSource.Remote, 12.0));
+            }
+
+            var seatsAtHome = OfficeCatalog.Get(state.Staff.Office).Desks;
+            Assert.That(state.Staff.Headcount, Is.GreaterThan(seatsAtHome),
+                "the point of the test is a roster larger than the lease");
+
+            var restored = SaveStore.Restore(
+                SaveStore.Parse(JsonUtility.ToJson(SaveStore.Capture(state))));
+
+            Assert.That(restored.Staff.Headcount, Is.EqualTo(12),
+                "everybody was remote, so the lease has nothing to say about them");
+            Assert.That(restored.Staff.CountOfPosition(PlayerSkill.Support), Is.EqualTo(12));
+        }
+
+        /// <summary>The other half: a desk really is a cap for anybody who needs one.</summary>
+        [Test]
+        public void SeatedHiresAreStillClampedToTheDesksTheLeasePaysFor()
+        {
+            var state = new CompanyState("Prometheus AI", 4242);
+            var desks = OfficeCatalog.Get(state.Staff.Office).Desks;
+
+            var captured = SaveStore.Capture(state);
+            for (var index = 0; index < desks + 4; index++)
+            {
+                captured.staff.Add(new HireData
+                {
+                    role = (int)StaffRole.ResearchScientist,
+                    skill = 50,
+                    startedDayIndex = 0,
+                    name = "Seated",
+                    position = (int)PlayerSkill.Development,
+                    source = (int)HireSource.Agency,
+                    hourlyWageUsd = 20.0
+                });
+            }
+
+            var restored = SaveStore.Restore(SaveStore.Parse(JsonUtility.ToJson(captured)));
+
+            Assert.That(restored.Staff.Headcount, Is.EqualTo(desks),
+                "a lease caps the people who need a chair, and it always did");
+        }
     }
 }

@@ -830,6 +830,15 @@ namespace ScalingLaws.Simulation
 
             var (share, demanded, served, revenue) = ServeMarket(openProfile, market);
 
+            // **The post arrives after the market has been served, on the people actually served.**
+            // Held users never write in, because nobody who could not get through has a problem
+            // worth describing. Tomorrow's market reads the desk the same way it reads the cluster:
+            // one day late, which is the only honest order when today's experience is not known
+            // until today has happened.
+            State.Support.Advance(
+                served * SimUnits.TokensPerBillion / Math.Max(1.0, TokensPerUserPerDayServed()),
+                SupportPeople());
+
             var servingCost = SimUnits.ToDollars(
                 profile.DailyOperatingCostUsd * State.Founder.OperatingCostMultiplier
                 * State.Skills.OperatingCostMultiplier());
@@ -5165,7 +5174,7 @@ namespace ScalingLaws.Simulation
                     // Yesterday's measured experience, because today's is not known until the market
                     // has been served. One day of lag is honest and it stops the calculation eating
                     // its own tail.
-                    State.LastQuality.Reliability));
+                    State.LastQuality.ExperienceMultiplier));
             }
 
             for (var index = 0; index < rivals.Count; index++)
@@ -5235,6 +5244,64 @@ namespace ScalingLaws.Simulation
                 ? tokens / users
                 : AudienceCatalog.Get(AudienceSegment.Consumer).IntensityIn(State.Date.Year);
         }
+
+        /// <summary>
+        /// Who is on the desk: everybody hired into support, plus half the founder.
+        ///
+        /// One reading, used by the day loop, by the market and by every screen, so the hours a
+        /// player is told about are the hours the queue is actually worked through.
+        /// </summary>
+        public double SupportPeople() =>
+            State.Staff.CountOfPosition(PlayerSkill.Support) + SupportCatalog.FounderShare;
+
+        /// <summary>How long a ticket arriving today waits, in hours.</summary>
+        public double SupportHours() => State.Support.AverageHours(SupportPeople());
+
+        /// <summary>Nothing to everything, on the author's thresholds: 96 hours to 48.</summary>
+        public double SupportQuality() => State.Support.Quality();
+
+        /// <summary>
+        /// Buys one level of one ladder. **Research points are the real price**, the same currency
+        /// the tree is bought in, and the cash is small on purpose: this is the second place points
+        /// have ever had to go.
+        /// </summary>
+        public bool TryBuySupportUpgrade(SupportCatalog.Upgrade upgrade, out string why)
+        {
+            var level = State.Support.LevelOf(upgrade);
+            if (level >= SupportCatalog.MostLevelsOf(upgrade))
+            {
+                why = Loc.T("support.at_the_top");
+                return false;
+            }
+
+            var points = SupportCatalog.PointsFor(upgrade, level + 1);
+            var cash = SupportCatalog.CashFor(upgrade, level + 1);
+
+            if (State.ResearchPoints < points)
+            {
+                why = Loc.T("support.needs_points", points.ToString(CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            if (State.CashUsd < cash)
+            {
+                why = Loc.T("support.needs_cash", cash.ToString("N0", CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - points);
+            State.PostCash(LedgerLine.Research, cash);
+            State.Support.RecordUpgrade(upgrade);
+
+            why = null;
+            return true;
+        }
+
+        /// <summary>
+        /// Switches agents on or off. Clamped to the seats bought, and it takes effect the same day
+        /// in both directions: the fleet gives the capacity back the moment one is switched off.
+        /// </summary>
+        public void SetSupportAgents(int agents) => State.Support.SetAgentsWorking(agents);
 
         /// <summary>
         /// The share of what this company serves that anybody is invoiced for, from the mix of
@@ -5722,12 +5789,19 @@ namespace ScalingLaws.Simulation
             }
 
             var capacityTokens = servingPetaflops * SimUnits.FlopsPerPetaflop * SimUnits.SecondsPerDay / flopPerToken;
-            var capacityBillions = capacityTokens / SimUnits.TokensPerBillion;
+
+            // **Support agents are served before the customers are.** An agent reads and answers all
+            // day, on the same fleet, so it takes its share off the top exactly as a crowd of people
+            // would, and it is priced through the same per-person serving arithmetic rather than a
+            // constant of its own. Switch them off and the capacity comes back the same day.
+            var agentTokens = State.Support.UsersOwedToAgents * TokensPerUserPerDayServed();
+            var capacityBillions = Math.Max(0.0, capacityTokens - agentTokens) / SimUnits.TokensPerBillion;
             var served = Math.Min(demanded, capacityBillions);
 
             // What today was like to use, recorded for tomorrow's market and for the operations panel.
             State.LastQuality = new ServiceQuality(
-                demanded, capacityBillions, State.Pool.PackagedQuality);
+                demanded, capacityBillions, State.Pool.PackagedQuality,
+                State.Support.ServiceMultiplier());
 
             // The split that makes a free tier a strategy rather than a giveaway. Every token costs
             // the same to produce; only some of them are invoiced.

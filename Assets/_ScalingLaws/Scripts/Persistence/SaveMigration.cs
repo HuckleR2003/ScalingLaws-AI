@@ -163,6 +163,7 @@ namespace ScalingLaws.Persistence
                     59 => UpgradeV59ToV60(current),
                     60 => UpgradeV60ToV61(current),
                     61 => UpgradeV61ToV62(current),
+                    62 => UpgradeV62ToV63(current),
                     _ => current
                 };
             }
@@ -1948,6 +1949,43 @@ namespace ScalingLaws.Persistence
             return data;
         }
 
+
+        /// <summary>
+        /// v62 to v63: the support desk, empty, because a v62 company did not have one.
+        ///
+        /// **Nothing is invented and nothing is punished.** A backlog cannot be reconstructed from
+        /// anything a v62 file recorded, and inventing one would charge an old campaign for post it
+        /// never received. The desk opens empty and fills on the first day from the people the
+        /// company is actually serving, which is the only true reading of a game in which the post
+        /// did not exist until now.
+        ///
+        /// The founder counts as half a person on it from the same first day, so a company that
+        /// never hires support is not judged as abandoning a queue it was never told about.
+        /// </summary>
+        public static SaveData UpgradeV62ToV63(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 63;
+
+            data.supportLowHours = 0.0;
+            data.supportJudgedHours = 0.0;
+            data.supportMediumHours = 0.0;
+            data.supportHighHours = 0.0;
+            data.supportDeflection = 0;
+            data.supportTraining = 0;
+            data.supportAgentLevel = 0;
+            data.supportAgentsWorking = 0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v62 to v63: the support desk opens empty. A v62 campaign received no post, so none "
+                + "is invented for it; the first day's arrivals are the first thing in the queue.");
+
+            return data;
+        }
         /// <summary>
         /// v61 to v62: which cards stand in which cabinet. Empty in an older file because a v61
         /// room filled itself and never recorded it.
