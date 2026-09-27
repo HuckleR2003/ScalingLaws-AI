@@ -86,6 +86,11 @@ go in. This file is the draft for the store update post, so anything vague here 
   to fix it. They reach the notice and the news page now, split the way the rest of the game splits
   them: what is public goes on the wire, what is a letter and its answer does not. A guard walks
   every event type and fails on one that nothing reads, so the third time cannot happen quietly.
+- **Nothing tested the migration chain, only its steps.** Every version bump ships a test of its
+  own step, on a file with exactly the fields that step cares about, which says nothing about five
+  of them running in order over a real campaign. A save written by 0.5.0 now has to open in this
+  build, keep its money, its model and its research, and still play sixty days afterwards, and every
+  version from v40 forward has to reach the current one. A chain of green steps is not a green chain.
 - **`GrantOffered` is declared and raised by nothing**, which the same guard found on its first run.
   Kept rather than renumbered, and named as unused so the next reader knows the slot is free rather
   than broken.
@@ -200,7 +205,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1483 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1486 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 
