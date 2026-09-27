@@ -184,6 +184,19 @@ namespace ScalingLaws.Tests.PlayMode
             shell.OpenScreenByName("Research");
             yield return Capture(null, settings, texture, "consortium_en.png");
 
+            // The board with something signed on it. The main sweep runs before any of this exists,
+            // so the sections it is there to show have never been in a frame.
+            shell.Simulation.State.Deals.Add(new StandingDeal(ally, RelationOffer.DistributionLicence,
+                shell.Simulation.State.Date, shell.Simulation.State.Date.AddDays(164)));
+
+            shell.OpenScreenByName("Ranking");
+            yield return Capture(null, settings, texture, "allies_en.png");
+
+            Loc.Current = Language.Polish;
+            shell.OpenScreenByName("Ranking");
+            yield return Capture(null, settings, texture, "allies_pl.png");
+            Loc.Current = Language.English;
+
             Loc.Current = Language.Polish;
             shell.OpenScreenByName("Research");
             yield return Capture(null, settings, texture, "consortium_pl.png");

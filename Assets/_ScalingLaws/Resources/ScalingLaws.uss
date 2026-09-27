@@ -22511,3 +22511,151 @@
 .rhist__delta--bad {
     color: rgba(232, 120, 110, 0.95);
 }
+
+/* ---- what the company has going with other labs, in the top bar ------------------------------ */
+
+/* **Violet, which nothing else in the bar is.** The money is white, the reputation is coral, the
+   effects carry their own art. A partnership is the only thing up there that belongs to two
+   companies, and it is the one colour this game already uses for the alliance track and the
+   consortium panel, so the corner and the screen it opens are plainly the same subject. */
+.ally {
+    flex-direction: row;
+    align-items: center;
+    height: 26px;
+    padding-left: 10px;
+    padding-right: 12px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 10px;
+    margin-bottom: 0;
+    border-radius: 13px;
+    border-width: 1px;
+    border-color: rgba(176, 158, 255, 0.55);
+    background-color: rgba(120, 110, 200, 0.16);
+}
+
+.ally:hover {
+    background-color: rgba(140, 126, 225, 0.28);
+}
+
+/* The shield. Square and small: the bar is 26px of usable height and the mark has to sit inside
+   it without pushing the row, which is the fault that once overflowed the bottom bar by 166px. */
+.ally__mark {
+    width: 18px;
+    height: 18px;
+    margin-right: 7px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.ally__count {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(206, 194, 255);
+    margin-right: 6px;
+}
+
+.ally__word {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    color: rgba(196, 186, 255, 0.85);
+}
+
+/* ---- what the company has signed, on the ranking board --------------------------------------- */
+
+.allies {
+    flex-shrink: 0;
+    margin-bottom: 14px;
+}
+
+.allies__title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgb(132, 145, 164);
+    margin-bottom: 8px;
+}
+
+/* **One rectangle per arrangement, full width.** The author asked for large rectangular sections
+   and they are right: each of these carries four facts and a sentence, and four of those side by
+   side is a table nobody reads. The lit left edge is the kind, so the three sorts are told apart
+   without a second heading on each. */
+.ally-card {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+    padding: 14px 16px 14px 16px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+    border-left-width: 3px;
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.ally-card--alliance {
+    border-left-color: rgb(176, 158, 255);
+}
+
+.ally-card--deal {
+    border-left-color: rgb(150, 200, 255);
+}
+
+.ally-card--campaign {
+    border-left-color: rgb(140, 210, 170);
+}
+
+/* The empty state is a panel and not an absence: a heading with nothing under it reads as a
+   section that failed to load, which this project has shipped twice. */
+.ally-card--empty {
+    border-left-color: rgba(150, 162, 186, 0.5);
+}
+
+.ally-card__kicker {
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    color: rgba(160, 172, 196, 0.85);
+    margin-bottom: 4px;
+}
+
+.ally-card__name {
+    font-size: 17px;
+    color: rgb(238, 243, 252);
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
+.ally-card__note {
+    font-size: 12px;
+    color: rgba(172, 182, 204, 0.9);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+/* Two across, because four rows down a full-width card leaves most of it empty and the pairs are
+   short. They wrap on a narrow window rather than squashing. */
+.ally-card__rows {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.ally-card__row {
+    width: 48%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-right: 2%;
+    margin-bottom: 5px;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.ally-card__label {
+    font-size: 11.5px;
+    color: rgba(150, 162, 186, 0.9);
+}
+
+.ally-card__value {
+    font-size: 12.5px;
+    color: rgb(226, 233, 246);
+    white-space: normal;
+    flex-shrink: 1;
+    margin-left: 10px;
+}

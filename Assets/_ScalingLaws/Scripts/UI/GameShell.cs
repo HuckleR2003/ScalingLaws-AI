@@ -393,6 +393,7 @@ namespace ScalingLaws.UI
         private Label pointsLabel;
         private Label fansLabel;
         private EffectBadges effectBadges;
+        private AllianceBadge allianceBadge;
 
         /// <summary>
         /// One person, opened.
@@ -1601,6 +1602,13 @@ namespace ScalingLaws.UI
             dateLabel = new Label();
             dateLabel.AddToClassList("topbar__stat");
             dateLabel.AddToClassList("topbar__stat--muted");
+            // **The right of the bar, opposite the effects.** The left is what is temporarily true
+            // about the company and mostly happened to it; this is permanent until somebody ends it,
+            // it was agreed rather than suffered, and it belongs to two companies. Two kinds of
+            // fact sharing a corner would teach the player that the corner means nothing.
+            allianceBadge = new AllianceBadge(() => Show(Screen.Ranking));
+            right.Add(allianceBadge.Root);
+
             right.Add(BuildServerLoad());
             right.Add(rankLabel);
             right.Add(companyLabel);
@@ -2839,6 +2847,228 @@ namespace ScalingLaws.UI
             return banner;
         }
 
+
+        /// <summary>
+        /// Everything the company has agreed with another lab, one panel each.
+        ///
+        /// **On the ranking board because that is the page about the other companies.** The rival
+        /// card says what one lab thinks of you; this says what you have signed across all of them,
+        /// which is a different question and was answerable nowhere. The badge in the top bar opens
+        /// this page.
+        ///
+        /// One rectangle per arrangement, each stating the same four things in the same order: what
+        /// it is, what it gives, what it costs and how long it has left. **A panel that states
+        /// three of the four is worse than a table**, because the player then has to remember which
+        /// one is missing.
+        /// </summary>
+        private VisualElement BuildAllianceSections()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("allies");
+
+            var heading = new Label(Loc.T("allies.title"));
+            heading.AddToClassList("allies__title");
+            block.Add(heading);
+
+            var drawn = 0;
+
+            foreach (var pair in simulation.State.Alliances.Signed)
+            {
+                block.Add(AllianceSection(pair.Key, pair.Value));
+                drawn++;
+            }
+
+            foreach (var deal in simulation.State.Deals)
+            {
+                if (deal.IsLiveOn(simulation.State.Date))
+                {
+                    block.Add(DealSection(deal));
+                    drawn++;
+                }
+            }
+
+            if (simulation.State.Campaign is { } campaign && campaign.IsLiveOn(simulation.State.Date))
+            {
+                block.Add(CampaignSection(campaign));
+                drawn++;
+            }
+
+            // **The empty case is a panel, not an absence.** A heading with nothing under it reads
+            // as a section that failed to load, which is the fault this project has recorded for
+            // the hiring screen and for the announced offices.
+            if (drawn == 0)
+            {
+                var empty = new VisualElement();
+                empty.AddToClassList("ally-card");
+                empty.AddToClassList("ally-card--empty");
+
+                var what = new Label(Loc.T("allies.none"));
+                what.AddToClassList("ally-card__name");
+                empty.Add(what);
+
+                var how = new Label(Loc.T("allies.none.note"));
+                how.AddToClassList("ally-card__note");
+                empty.Add(how);
+
+                block.Add(empty);
+            }
+
+            return block;
+        }
+
+        /// <summary>The four rows every one of these panels carries, in the same order.</summary>
+        private static VisualElement AllianceCard(string kicker, string name, string note,
+            (string Label, string Value)[] rows, string tone)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("ally-card");
+            card.AddToClassList(tone);
+
+            var top = new Label(kicker);
+            top.AddToClassList("ally-card__kicker");
+            card.Add(top);
+
+            var title = new Label(name);
+            title.AddToClassList("ally-card__name");
+            card.Add(title);
+
+            if (!string.IsNullOrEmpty(note))
+            {
+                var body = new Label(note);
+                body.AddToClassList("ally-card__note");
+                card.Add(body);
+            }
+
+            var grid = new VisualElement();
+            grid.AddToClassList("ally-card__rows");
+
+            foreach (var (label, value) in rows)
+            {
+                var row = new VisualElement();
+                row.AddToClassList("ally-card__row");
+
+                var left = new Label(label);
+                left.AddToClassList("ally-card__label");
+                row.Add(left);
+
+                var right = new Label(value);
+                right.AddToClassList("ally-card__value");
+                row.Add(right);
+
+                grid.Add(row);
+            }
+
+            card.Add(grid);
+
+            return card;
+        }
+
+        private VisualElement AllianceSection(CompetitorId lab, int level)
+        {
+            var held = simulation.State.Alliances.DaysAtLevel(lab, simulation.State.Date);
+            var next = level + 1;
+
+            var waiting = next > LabAlliances.TopLevel
+                ? Loc.T("alliance.fail.top")
+                : Loc.T("allies.row.next_in",
+                    Math.Max(0, LabAlliances.DaysNeededFor(next) - held).ToString());
+
+            return AllianceCard(
+                Loc.T("allies.kind.alliance"),
+                CompetitorCatalog.NameOf(lab),
+                Loc.T(LevelGivesKeyOf(level)),
+                new[]
+                {
+                    (Loc.T("allies.row.level"), Loc.T(LevelNameKeyOf(level))),
+                    (Loc.T("allies.row.held"), Loc.T("allies.row.days", held.ToString())),
+                    (Loc.T("allies.row.paid"), UiFormat.Money(LabAlliances.FeeFor(level))),
+                    (Loc.T("allies.row.next"), waiting)
+                },
+                "ally-card--alliance");
+        }
+
+        private VisualElement DealSection(StandingDeal deal)
+        {
+            var definition = RelationOfferCatalog.Get(deal.Offer);
+            var left = Math.Max(0, deal.Ends.DayIndex - simulation.State.Date.DayIndex);
+
+            return AllianceCard(
+                Loc.T("allies.kind.deal"),
+                $"{CompetitorCatalog.NameOf(deal.Lab)}  ·  {definition.DisplayName}",
+                definition.Description,
+                new[]
+                {
+                    (Loc.T("allies.row.gives"), Loc.T(GivesKeyOf(deal.Offer))),
+                    (Loc.T("allies.row.cost"), definition.CashCostUsd > 0
+                        ? UiFormat.Money(definition.CashCostUsd)
+                        : Loc.T("allies.row.points_only", definition.PointCost.ToString())),
+                    (Loc.T("allies.row.term"), Loc.T("allies.row.days", definition.TermDays.ToString())),
+                    (Loc.T("allies.row.left"), Loc.T("allies.row.days", left.ToString()))
+                },
+                "ally-card--deal");
+        }
+
+        private VisualElement CampaignSection(ResearchCampaign campaign)
+        {
+            var members = campaign.Members.Count + 1;
+
+            var points = ResearchCampaignCatalog.PointsPerDay
+                * ResearchCampaignCatalog.PointsMultiplier(members)
+                * ResearchCampaignCatalog.RateFor(campaign.Term);
+
+            var names = new string[campaign.Members.Count];
+
+            for (var index = 0; index < campaign.Members.Count; index++)
+            {
+                names[index] = CompetitorCatalog.NameOf(campaign.Members[index]);
+            }
+
+            return AllianceCard(
+                Loc.T("allies.kind.campaign"),
+                string.Join(Loc.T("gate.join"), names),
+                Loc.T("campaign.strap"),
+                new[]
+                {
+                    (Loc.T("allies.row.gives"),
+                        Loc.T("allies.row.points_day", UiFormat.Points(points))),
+                    (Loc.T("allies.row.cost"),
+                        Loc.T("allies.row.per_day",
+                            UiFormat.Money(CompanySimulation.CampaignDailyCostUsd(members)))),
+                    (Loc.T("allies.row.term"),
+                        Loc.T("allies.row.days",
+                            ResearchCampaignCatalog.DaysIn(campaign.Term).ToString())),
+                    (Loc.T("allies.row.left"),
+                        Loc.T("allies.row.days",
+                            campaign.DaysLeft(simulation.State.Date).ToString()))
+                },
+                "ally-card--campaign");
+        }
+
+        /// <summary>Written out, never assembled: the key guard reads literals only.</summary>
+        private static string LevelNameKeyOf(int level) => level switch
+        {
+            1 => "alliance.name1",
+            2 => "alliance.name2",
+            _ => "alliance.name3"
+        };
+
+        /// <summary>See <see cref="LevelNameKeyOf"/>.</summary>
+        private static string LevelGivesKeyOf(int level) => level switch
+        {
+            1 => "alliance.gives1",
+            2 => "alliance.gives2",
+            _ => "alliance.gives3"
+        };
+
+        /// <summary>What a running deal is actually worth, in one line. See above for the shape.</summary>
+        private static string GivesKeyOf(RelationOffer offer) => offer switch
+        {
+            RelationOffer.PublishFinding => "allies.gives.publish",
+            RelationOffer.JointEvaluation => "allies.gives.evaluate",
+            RelationOffer.DistributionLicence => "allies.gives.distribution",
+            _ => "allies.gives.capacity"
+        };
+
         private VisualElement BuildRankingScreen()
         {
             // The strap is carried by the terms row rather than sitting above it, so the board
@@ -2852,6 +3082,11 @@ namespace ScalingLaws.UI
             // wondering what they could do about them, which is the only moment the offer means
             // anything. A sixteenth slot on the bar would also overflow it.
             page.Add(BuildInvestingBanner());
+
+            // **What the company has signed, above the board rather than under it.** A player who
+            // came here from the badge in the top bar came for this, and a section below twelve
+            // rows of arithmetic is a section they scroll past.
+            page.Add(BuildAllianceSections());
 
             var panel = new VisualElement();
             panel.AddToClassList("panel");
@@ -4476,6 +4711,7 @@ namespace ScalingLaws.UI
             RefreshCashArrows(state);
             RefreshStanding(state);
             effectBadges?.Refresh(state);
+            allianceBadge?.Refresh(simulation);
 
             pointsLabel.text = UiFormat.Points(state.ResearchPoints);
             pointsButton.tooltip = state.ResearchPointsToday > 0.0

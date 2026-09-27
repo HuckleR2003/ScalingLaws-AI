@@ -1,4 +1,5 @@
-﻿using ScalingLaws.Data;
+﻿using System;
+using ScalingLaws.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -84,6 +85,31 @@ namespace ScalingLaws.UI
         /// The title is the thing, the body is why the player would go there. Both are needed: a
         /// title alone is the label that is already printed under the icon.
         /// </summary>
+        /// <summary>
+        /// Attaches a card whose words are read when the cursor arrives, not when it is attached.
+        ///
+        /// **For a control whose card changes while it is on screen.** The plain `Attach` captures
+        /// two strings, so a caller with moving text has to call it again on every refresh, and
+        /// every one of those registers another `MouseEnter` handler on the same element: after a
+        /// minute of play the card opens forty times per hover. This one is registered once.
+        /// </summary>
+        public static void AttachLive(VisualElement target, Func<string> title, Func<string> body,
+            Placement placement = Placement.Above)
+        {
+            if (target == null || title == null)
+            {
+                return;
+            }
+
+            target.tooltip = string.Empty;
+
+            target.RegisterCallback<MouseEnterEvent>(_ =>
+                Show(target, title(), body?.Invoke() ?? string.Empty, default, placement));
+
+            target.RegisterCallback<MouseLeaveEvent>(_ => HideFor(target));
+            target.RegisterCallback<DetachFromPanelEvent>(_ => HideFor(target));
+        }
+
         public static void Attach(VisualElement target, string title, string body,
             Placement placement = Placement.Above)
         {
