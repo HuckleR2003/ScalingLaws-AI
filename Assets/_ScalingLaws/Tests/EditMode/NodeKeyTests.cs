@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using ScalingLaws.Data;
+using ScalingLaws.Simulation;
 
 namespace ScalingLaws.Tests.EditMode
 {
@@ -120,5 +121,90 @@ namespace ScalingLaws.Tests.EditMode
                 Loc.Current = before;
             }
         }
+
+        /// <summary>
+        /// Every node hands something over, and the card can say what.
+        ///
+        /// **This is the guard for a fault the author found by reading a card.** `ModelSeries` cost
+        /// three million dollars, seventy five days and a hundred and twenty petaflop-days, listed
+        /// nothing at all under its name, and was read by no caller anywhere in the game: not the
+        /// simulation, not the creator, not the market. A player could research it and nothing
+        /// whatsoever changed. `ResearchRewards` derives what a node gives from the node itself, so
+        /// a node that gives nothing comes back empty, and an empty answer is the signal.
+        ///
+        /// Thirteenth mechanism in this project with nothing joining its two halves, and the first
+        /// that was a node rather than a control. The others were caught by a caller sweep, which
+        /// cannot see this one: the node was perfectly well formed and simply meant nothing.
+        /// </summary>
+        [Test]
+        public void EveryNodeGivesTheCompanySomething()
+        {
+            var empty = new List<string>();
+
+            foreach (var node in ResearchTree.All)
+            {
+                if (ResearchRewards.Of(node).Count == 0)
+                {
+                    empty.Add($"{node.Id} ({node.DisplayName})");
+                }
+            }
+
+            CollectionAssert.IsEmpty(empty,
+                "These nodes cost money, days and compute and hand over nothing a player can point "
+                + "at. Either they gate something and `ResearchRewards.Controls` should say so, or "
+                + "they do not and they should not be on the board: "
+                + string.Join(", ", empty));
+        }
+
+        /// <summary>
+        /// The one the fault was found on, end to end: the node gates the control it claims to.
+        ///
+        /// **A reward line is a promise and this is the half that keeps it.** Listing "shipping a
+        /// model as a version" under a node that does not actually gate that is the same fault one
+        /// layer up, and it would pass the test above.
+        /// </summary>
+        [Test]
+        public void UntilTheSeriesNodeLandsAModelCannotJoinALineTheCompanySells()
+        {
+            var simulation = new CompanySimulation(new CompanyState("Adco", 77u));
+            simulation.SetRentedPetaflops(400.0);
+            simulation.State.CashUsd = 200_000_000;
+
+            simulation.State.AddDeployedModel(new DeployedModel(
+                "Atlas One", ArchitectureId.DenseTransformer, 40.0,
+                simulation.State.Date, 2e10, 1.0, ModelType.General, family: "Atlas"));
+
+            Assert.IsFalse(simulation.CanShipVersions(),
+                "a fresh company has not researched it");
+
+            // Built by hand rather than through the planner, and small: a compute-optimal shape
+            // for any real budget is over the opening scale ceiling, and this test is about the
+            // line rather than about the slider.
+            var joining = new ModelBlueprint("Atlas Two",
+                ArchitectureId.DenseTransformer, 4.0, 80.0,
+                DatasetSource.WebCrawl, ModelType.General, "Atlas");
+
+            Assert.IsFalse(simulation.TryStartTraining(joining, out var why),
+                "the line picker was open from the first day of the campaign, which is what made "
+                + "the node worthless");
+
+            StringAssert.Contains(ResearchTree.Get(ResearchNodeId.ModelSeries).DisplayName, why);
+
+            // A line of its own was always allowed and still is: a model that joins none starts one
+            // named after itself, and gating that would lock a player out of naming their first
+            // product.
+            var ownLine = new ModelBlueprint("Beacon One",
+                ArchitectureId.DenseTransformer, 4.0, 80.0,
+                DatasetSource.WebCrawl, ModelType.General, "Beacon");
+
+            Assert.IsTrue(simulation.TryStartTraining(ownLine, out var ownWhy), ownWhy);
+
+            Assert.IsTrue(simulation.TryCancelTraining(out _, out var cancelWhy), cancelWhy);
+            simulation.State.UnlockedResearch.Add(ResearchNodeId.ModelSeries);
+
+            Assert.IsTrue(simulation.CanShipVersions());
+            Assert.IsTrue(simulation.TryStartTraining(joining, out var afterWhy), afterWhy);
+        }
+
     }
 }

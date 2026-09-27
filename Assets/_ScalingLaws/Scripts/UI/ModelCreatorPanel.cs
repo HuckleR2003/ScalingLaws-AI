@@ -829,6 +829,17 @@ namespace ScalingLaws.UI
             familyField = new DropdownField(Loc.T("create.model_family"));
             familyField.AddToClassList("field");
             familyField.RegisterValueChangedCallback(_ => Reprice());
+
+            // **Left enabled on purpose.** A disabled dropdown takes no pointer event, so the one
+            // thing a player does when a control refuses them, which is press it again, would go on
+            // producing nothing. It holds one row until the node lands and says why when pressed.
+            familyField.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (!simulation.CanShipVersions())
+                {
+                    Refuse(Loc.T("create.series"), ResearchNodeId.ModelSeries, null);
+                }
+            });
             series.Add(familyField);
 
             familyHint = new Label();
@@ -872,11 +883,21 @@ namespace ScalingLaws.UI
             familyLines.Clear();
             familyLines.Add(NewLineOption);
 
-            foreach (var model in simulation.State.DeployedModels)
+            // **The lines the company sells are only offered once `ModelSeries` is researched.**
+            // Until then the dropdown holds one row and the hint names the node, because a list of
+            // products that refuses every one of them reads as a bug rather than as a lock. The
+            // rule itself is in `TryStartTraining`; this is the half the player can see.
+            var versions = simulation.CanShipVersions();
+
+            if (versions)
             {
-                if (model != null && model.Family.Length > 0 && !familyLines.Contains(model.Family))
+                foreach (var model in simulation.State.DeployedModels)
                 {
-                    familyLines.Add(model.Family);
+                    if (model != null && model.Family.Length > 0
+                        && !familyLines.Contains(model.Family))
+                    {
+                        familyLines.Add(model.Family);
+                    }
                 }
             }
 
@@ -890,9 +911,17 @@ namespace ScalingLaws.UI
                 ? Loc.T("create.new_line_note")
                 : Loc.T("create.supersedes_note", ChosenFamily());
 
-            familyHint.text = ChosenFamily().Length == 0
-                ? Loc.T("create.line_new")
-                : Loc.T("create.supersedes", ChosenFamily());
+            familyHint.text = !versions
+                ? Loc.T("create.line_needs",
+                    ResearchTree.Get(ResearchNodeId.ModelSeries).DisplayName)
+                : ChosenFamily().Length == 0
+                    ? Loc.T("create.line_new")
+                    : Loc.T("create.supersedes", ChosenFamily());
+
+            // The hint is a sentence somebody has to notice. Clicking the control that refused is
+            // the thing a player actually does, so the dropdown answers it the way every other
+            // locked control on these pages now does.
+            familyHint.EnableInClassList("field__hint--locked", !versions);
         }
 
         /// <summary>Empty for a new line, otherwise the line the player picked.</summary>
@@ -951,6 +980,8 @@ namespace ScalingLaws.UI
             {
                 if (!unlocked)
                 {
+                    Refuse(definition.DisplayName, definition.Requires, null);
+
                     return;
                 }
 
@@ -963,7 +994,6 @@ namespace ScalingLaws.UI
             tile.AddToClassList(AccentFor(definition.Type));
             tile.EnableInClassList("type-tile--on", picked);
             tile.EnableInClassList("type-tile--locked", !unlocked);
-            tile.SetEnabled(unlocked);
 
             var name = new Label(definition.ShortName.ToUpperInvariant());
             name.AddToClassList("type-tile__name");
@@ -1738,7 +1768,17 @@ namespace ScalingLaws.UI
             foreach (var definition in TrainingChoiceCatalog.AllPrecisions)
             {
                 var captured = definition.Precision;
-                var open = TrainingChoiceCatalog.IsAvailableOn(captured, simulation.State.Date);
+                var shipped = TrainingChoiceCatalog.IsAvailableOn(captured, simulation.State.Date);
+                var gate = TrainingChoiceCatalog.GateFor(captured);
+
+                // **Two gates, and only one of them was ever drawn.** The silicon has to have
+                // shipped and the technique has to have been researched, and `Reprice` has always
+                // dropped an unresearched precision back to FP64 on the quiet. So a player could
+                // pick FP8 the month the hardware landed, watch the card light up, and train at
+                // double precision for the rest of the campaign with nothing anywhere saying so.
+                // That is the silent-wrong class this project keeps finding; the card is shut on
+                // both gates now and the refusal says which one it is.
+                var open = shipped && Allowed(gate);
 
                 var card = NewChoiceCard(
                     definition.DisplayName,
@@ -1749,8 +1789,12 @@ namespace ScalingLaws.UI
                         ? Loc.T("create.precision_card",
                             UiFormat.Number(definition.Throughput, 2),
                             UiFormat.Number(definition.Instability, 1))
-                        : Loc.T("create.needs_silicon", definition.Earliest.ToString()),
-                    () => { blueprintPrecision = captured; RepriceAndRebuild(); });
+                        : shipped
+                            ? Loc.T("create.needs", ResearchTree.Get(gate).DisplayName)
+                            : Loc.T("create.needs_silicon", definition.Earliest.ToString()),
+                    () => { blueprintPrecision = captured; RepriceAndRebuild(); },
+                    () => Refuse(definition.DisplayName, shipped ? gate : ResearchNodeId.None,
+                        shipped ? null : Loc.T("gate.silicon", definition.Earliest.ToString())));
 
                 row.Add(card);
             }
@@ -1801,14 +1845,26 @@ namespace ScalingLaws.UI
         /// <summary>
         /// One card in a row of them. The shape the creator should have been using all along.
         /// </summary>
+        /// <summary>
+        /// One of the cards in a row of choices, open or shut.
+        ///
+        /// **A shut card stays enabled and takes the click.** It used to be `SetEnabled(false)`,
+        /// and a disabled element in UI Toolkit dispatches no pointer events at all, so clicking
+        /// AGGRESSIVE on a company that has not researched deduplication did nothing whatsoever:
+        /// no sentence, no sound, no way to tell a locked control from a broken one. The refusal
+        /// is <paramref name="refused"/> now, which says what is missing and offers the way to it.
+        /// </summary>
         private VisualElement NewChoiceCard(string title, string pitch, bool picked, bool open,
-            string figures, Action clicked)
+            string figures, Action clicked, Action refused = null)
         {
-            var card = new Button(open ? clicked : null);
+            var card = new Button(open ? clicked : refused);
             card.AddToClassList("choice-card");
             card.EnableInClassList("choice-card--on", picked);
             card.EnableInClassList("choice-card--shut", !open);
-            card.SetEnabled(open);
+
+            // Enabled either way: shut is a look, not a dead control. Only a card with nothing to
+            // say about why it is shut goes back to refusing the pointer.
+            card.SetEnabled(open || refused != null);
 
             var name = new Label(title.ToUpperInvariant());
             name.AddToClassList("choice-card__title");
@@ -2070,7 +2126,8 @@ namespace ScalingLaws.UI
                             UiFormat.Percent(definition.TokensKept, 0),
                             UiFormat.Number(definition.Quality, 2))
                         : Loc.T("create.needs", ResearchTree.Get(gate).DisplayName),
-                    () => { blueprintDedup = captured; RepriceAndRebuild(); }));
+                    () => { blueprintDedup = captured; RepriceAndRebuild(); },
+                    () => Refuse(definition.DisplayName, gate, null)));
             }
 
             panel.Add(row);
@@ -2873,6 +2930,27 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>Whether the company has the node an option needs, or the option needs none.</summary>
+
+        /// <summary>
+        /// Says why a control on this screen refused, in the one place all of them say it.
+        ///
+        /// A node opens the research card; a sentence is for a lock no research can lift, which on
+        /// these pages means a calendar. **One method rather than a call to `GateNotice` at every
+        /// site**, because the two halves have to keep agreeing about which kind of lock is which,
+        /// and there are five sites.
+        /// </summary>
+        private void Refuse(string subject, ResearchNodeId gate, string sentence)
+        {
+            if (gate != ResearchNodeId.None)
+            {
+                GateNotice.NeedsResearch(subject, new[] { gate }, simulation.State.HasResearch);
+
+                return;
+            }
+
+            GateNotice.Says(subject, sentence ?? string.Empty);
+        }
+
         private bool Allowed(ResearchNodeId gate) =>
             gate == ResearchNodeId.None || simulation.State.HasResearch(gate);
 

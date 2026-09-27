@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 64;
+        public const int CurrentVersion = 65;
 
         public int version = CurrentVersion;
 
@@ -644,6 +644,14 @@ namespace ScalingLaws.Persistence
         public List<int> founderTraits = new();
         public double defaultPriceMultiplier = 1.0;
         public List<int> unlockedResearch = new();
+
+        /// <summary>
+        /// v65. Nodes the player asked to be shown on the board, from a control that refused them.
+        ///
+        /// What was asked for, never the road to it: the missing prerequisites are derived, and
+        /// freezing them here would keep marking a node the player has since finished.
+        /// </summary>
+        public List<int> wantedResearch = new();
 
         public bool hasResearchProject;
         public int researchNode;

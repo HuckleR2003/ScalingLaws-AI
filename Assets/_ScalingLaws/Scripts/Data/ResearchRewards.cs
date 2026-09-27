@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace ScalingLaws.Data
 {
-    /// <summary>What kind of thing a node hands over. Six, because six is what the game has.</summary>
+    /// <summary>What kind of thing a node hands over. Seven, because seven is what the game has.</summary>
     public enum RewardKind
     {
         /// <summary>A family the creator can build from.</summary>
@@ -22,7 +22,10 @@ namespace ScalingLaws.Data
         ModelType = 4,
 
         /// <summary>More room on a slider: scale, or one of the architecture directions.</summary>
-        Ceiling = 5
+        Ceiling = 5,
+
+        /// <summary>A control on a screen that does nothing until this node lands.</summary>
+        Control = 6
     }
 
     /// <summary>One thing a node gives, as a kind and a name.</summary>
@@ -58,6 +61,34 @@ namespace ScalingLaws.Data
     /// </summary>
     public static class ResearchRewards
     {
+        /// <summary>
+        /// Nodes whose reward is a control rather than a thing in a catalogue.
+        ///
+        /// Written out because there is nowhere else for it to live: the rule each of these opens
+        /// is a line in `CompanySimulation`, and a node has no field that could point at one. Keep
+        /// it to genuine controls. Anything that unlocks a corpus, a family, a tier, a type, an
+        /// upgrade line or a ceiling is already read off the node and must not be repeated here.
+        /// </summary>
+        private static readonly Dictionary<ResearchNodeId, string> Controls = new()
+        {
+            { ResearchNodeId.ModelSeries, "unlock.series" },
+
+            // The four Operations nodes. `RoomUpgrades.From` reads each one directly, so there is
+            // no table to walk: the rule is a constructor argument in `Data/RoomUpgrades.cs`.
+            { ResearchNodeId.RackTelemetry, "unlock.telemetry" },
+            { ResearchNodeId.AirflowModelling, "unlock.airflow" },
+            { ResearchNodeId.LiquidLoops, "unlock.liquid" },
+            { ResearchNodeId.OwnSubstation, "unlock.substation" },
+
+            // Statecraft. Each is one `HasResearch` in `CompanySimulation.Statecraft.cs`.
+            { ResearchNodeId.SovereignLiaison, "unlock.liaison" },
+            { ResearchNodeId.ContinuousOversight, "unlock.oversight" },
+            { ResearchNodeId.RedundantInference, "unlock.redundant" },
+
+            // The knowledge cutoff on the DATA stage, which this node makes cheaper to keep fresh.
+            { ResearchNodeId.ContinuousDataPipeline, "unlock.pipeline" }
+        };
+
         /// <summary>Everything this node opens, in the order a card should read them.</summary>
         public static IReadOnlyList<ResearchReward> Of(ResearchNodeId id) => Of(ResearchTree.Get(id));
 
@@ -107,6 +138,66 @@ namespace ScalingLaws.Data
             // slider or one of the five architecture directions changes what the player is allowed
             // to build, and it said so nowhere: the ladders are tables that name a node, so the node
             // itself carried no sign of being on one.
+            // **A node whose whole reward is a control that starts working.** Nothing on the
+            // node itself can say so: there is no field for "the line picker on the FOUNDATION
+            // stage", and the rule lives in `CompanySimulation`. So the pairs are written out here,
+            // one row each, and `ResearchRewardTests` fails on a node that gives nothing at all.
+            //
+            // This exists because `ModelSeries` cost three million dollars, seventy five days and a
+            // hundred and twenty petaflop-days and was read by no caller anywhere in the game. The
+            // author found it by reading a card that listed nothing under a node he had paid for.
+            // **Every catalogue that names a node, read the same way the ceilings already are.**
+            // The first version of this method only knew about fields on the node itself, so the
+            // thirty nodes whose whole job is to open a row in some other table came back empty and
+            // their cards listed nothing. Each block below is one of those tables, walked in the
+            // one direction that cannot drift: the catalogue says which node opens it, so a rung
+            // added tomorrow reports itself without anybody editing a description.
+
+            foreach (var precision in TrainingChoiceCatalog.AllPrecisions)
+            {
+                if (TrainingChoiceCatalog.GateFor(precision.Precision) == node.Id)
+                {
+                    rewards.Add(new ResearchReward(RewardKind.Control, precision.DisplayName));
+                }
+            }
+
+            foreach (var pass in TrainingChoiceCatalog.AllPasses)
+            {
+                if (TrainingChoiceCatalog.GateFor(pass.Pass) == node.Id)
+                {
+                    rewards.Add(new ResearchReward(RewardKind.Control, pass.DisplayName));
+                }
+            }
+
+            foreach (var tier in SafetyModuleCatalog.All)
+            {
+                if (tier.Requires == node.Id)
+                {
+                    rewards.Add(new ResearchReward(RewardKind.Control, tier.DisplayName));
+                }
+            }
+
+            foreach (var rung in TokenizerCatalog.All)
+            {
+                if (rung.OpensWith == node.Id)
+                {
+                    rewards.Add(new ResearchReward(RewardKind.Control, rung.DisplayName));
+                }
+            }
+
+            foreach (var place in OfficeCatalog.All)
+            {
+                if (OfficeUnlocks.RequiredFor(place.Tier) == node.Id)
+                {
+                    rewards.Add(new ResearchReward(RewardKind.Control, place.DisplayName));
+                }
+            }
+
+            if (Controls.TryGetValue(node.Id, out var control))
+            {
+                rewards.Add(new ResearchReward(RewardKind.Control, Loc.T(control)));
+            }
+
             if (ScaleCeiling.Ladder.Any(rung => rung.Node == node.Id))
             {
                 rewards.Add(new ResearchReward(RewardKind.Ceiling, Loc.T("unlock.scale_ceiling")));
@@ -118,6 +209,36 @@ namespace ScalingLaws.Data
                 {
                     rewards.Add(new ResearchReward(RewardKind.Ceiling,
                         Loc.T("unlock.arch_ceiling", Loc.T(ArchitectureCeiling.KeyFor(direction.Key)))));
+                }
+            }
+
+            // **A node whose only job is to be on the way to others still has a job.** Three of
+            // them are pure junctions: the starting node and two late-era roots that nothing reads
+            // but four and three nodes respectively need. A card listing nothing under one of those
+            // reads as a node that does not work, when the honest answer is that it opens the road.
+            //
+            // Last, and only when nothing else was found, so a node that genuinely hands something
+            // over says that instead: "opens two more nodes" is the weakest true thing a card can
+            // say and it must never crowd out a corpus or a ceiling.
+            if (rewards.Count == 0)
+            {
+                var opens = 0;
+
+                foreach (var other in ResearchTree.All)
+                {
+                    foreach (var prerequisite in other.Prerequisites)
+                    {
+                        if (prerequisite == node.Id)
+                        {
+                            opens++;
+                        }
+                    }
+                }
+
+                if (opens > 0)
+                {
+                    rewards.Add(new ResearchReward(RewardKind.Control,
+                        Loc.T("unlock.opens_road", opens.ToString())));
                 }
             }
 

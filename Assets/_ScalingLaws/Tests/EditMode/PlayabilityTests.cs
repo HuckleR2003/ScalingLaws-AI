@@ -399,9 +399,16 @@ namespace ScalingLaws.Tests.EditMode
                 // year share fall through the floor, which is the same shape as the scale ceiling
                 // two months ago: the operator could not use a control, and the control was not
                 // wrong. A player ships Muse 2 as the next version of Muse, so this does too.
+                // **And a version of Muse is not something a company can ship on day one.**
+                // `ModelSeries` gates joining a line the company already sells, so until that node
+                // lands each release starts a line of its own, exactly as a player does. Third time
+                // this fixture has had to be taught a control rather than have the control loosened:
+                // the operator could not use it, and the control was not wrong.
+                var line = simulation.CanShipVersions() ? "Muse" : $"Muse {modelNumber + 1}";
+
                 var blueprint = TrainingPlanner.OptimalBlueprintForBudget(
                         $"Muse {++modelNumber}", architecture, budget, state.OwnedDataSources)
-                    .WithFamily("Muse");
+                    .WithFamily(line);
 
                 // A compute-optimal shape can also ask for a model larger than the company knows how
                 // to hold together. A player meets that as a slider that stops; the operator meets

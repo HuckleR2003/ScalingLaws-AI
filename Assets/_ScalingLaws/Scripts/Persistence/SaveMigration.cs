@@ -165,6 +165,7 @@ namespace ScalingLaws.Persistence
                     61 => UpgradeV61ToV62(current),
                     62 => UpgradeV62ToV63(current),
                     63 => UpgradeV63ToV64(current),
+                    64 => UpgradeV64ToV65(current),
                     _ => current
                 };
             }
@@ -1952,6 +1953,32 @@ namespace ScalingLaws.Persistence
 
 
 
+
+        /// <summary>
+        /// v64 to v65: nothing is wanted.
+        ///
+        /// **The empty list is the only true reading, not a shortcut.** The set records a player
+        /// pressing GO TO RESEARCH on a control that refused them, and a v64 campaign was played in
+        /// a game where no control offered that. Reconstructing it from what the company has not
+        /// researched would mark most of the board yellow on the first load, which is the opposite
+        /// of what the mark is for.
+        /// </summary>
+        public static SaveData UpgradeV64ToV65(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 65;
+            data.wantedResearch = new List<int>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v64 to v65: nothing is marked on the research board. A v64 campaign had no control "
+                + "that could ask for a node, so it asked for none.");
+
+            return data;
+        }
         /// <summary>
         /// v63 to v64: whether the first ticket has already been announced.
         ///

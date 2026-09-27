@@ -1129,6 +1129,29 @@ namespace ScalingLaws.UI
             // one they waved away in the corner. Same door as the chip: the overlay owns the strip.
             phone.startWalkthrough = walkthrough => guide?.StartWalkthrough(walkthrough);
 
+            // **A control that refused the player hands the node back through here.** The notice
+            // itself knows nothing about screens: it collects what was clicked and what would open
+            // it, and this is the one place that decides the board is where that question is
+            // answered. The mark is on the campaign rather than on the session, so it survives the
+            // night the player quit on.
+            GateNotice.Wanted = nodes =>
+            {
+                if (nodes == null || nodes.Count == 0)
+                {
+                    return;
+                }
+
+                state.WantedResearch.Clear();
+
+                foreach (var node in nodes)
+                {
+                    state.WantedResearch.Add(node);
+                }
+
+                selectedResearch = nodes[0];
+                Show(Screen.Research);
+            };
+
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome,
                 () => current == Screen.Site);
 

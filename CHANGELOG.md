@@ -65,8 +65,36 @@ go in. This file is the draft for the store update post, so anything vague here 
   the team screen, go to their ROLE tab, and if they are on the desk the three things that would
   make the queue easier are there with the level and the price. It is the management desk's own
   builder rather than a second copy, so a rung bought on one screen is the rung the other reads.
+- **Clicking something the company cannot use yet now answers.** A notice at the foot of the screen
+  says the technology has to be researched, names the node with its own picture, and carries one
+  wide button to the board, where that node and everything still missing on the way to it are ringed
+  in yellow until they are done. Every locked control was silent before this, and two of them were
+  disabled outright, which in this interface means the click was never delivered at all: pressing
+  AGGRESSIVE or a locked precision card produced nothing whatsoever. The mark on the board is saved
+  with the campaign, so quitting for the night does not lose it.
+- **CONTINUE in the creator says what is missing instead of doing nothing.** The reason was already
+  on screen in small grey type beside a button that looked broken, and a playtest read the button.
+  Pressing it now puts the sentence at the foot of the screen and rings whatever is missing: the
+  traits still to pick, the lab grid, the map, or BACK when the founder has no name yet.
 
 ### Fixed
+
+- **A research node that cost three million dollars and did nothing.** MODEL SERIES AND VERSIONING
+  listed no reward on its card because it had none: nothing anywhere in the game read it, and the
+  line picker it claims to open worked from the first day of a campaign. It gates that picker now,
+  so a release can only carry the name of a product already on sale once the node lands. Until then
+  each model starts a line of its own, which is what the game already did for a model that joined
+  none. Found by the author reading a card.
+- **Thirty nodes listed nothing under their names.** The card derives what a node gives from the
+  node itself, and it could only see the fields the node carries, so every node whose job is to open
+  a row in some other table came back empty: the precisions, the deduplication passes, the twelve
+  safety tiers, the three tokenizer rungs, the four room upgrades, the two premises and the three
+  statecraft nodes. All of them say what they open now, read from the catalogue that names them. A
+  node that is only a junction says how many nodes it opens the way to.
+- **The BRANDING page came apart.** The rows listing families the company has not licensed are
+  `.corpus-row`, which is sized at a third of its panel for the DATA stage where three sit side by
+  side. In the identity column that is a sliver, and the name wrapped one character to a line down a
+  vertical strip with the price floating beside it. Reported from a laptop with a photograph.
 
 - **A fleet of reserved packages had no memory in it, so it could not train anything.** The three
   hosting packages added their petaflops, their utilisation and their bill to the fleet and never
@@ -99,7 +127,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1452 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1460 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

@@ -1114,6 +1114,24 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
+            // **Shipping a model as a version of an existing line is what `ModelSeries` buys.**
+            // Reported by the author: that node cost three million dollars, seventy five days and a
+            // hundred and twenty petaflop-days, and nothing in the game read it. Not one caller, so
+            // the line picker on the FOUNDATION stage worked from the first day of the campaign and
+            // the node was a purchase that changed no number. Thirteenth mechanism in this project
+            // with nothing joining its two halves, and the first one that was a node rather than a
+            // control.
+            //
+            // Enforced here rather than in the dropdown, because the rule has to hold wherever a
+            // run is started from, which is the same reason the scale ceiling lives in this method.
+            if (blueprint.HasFamily && !CanShipVersions() && SellsLine(blueprint.Family))
+            {
+                failureReason = Loc.T("train.needs_research",
+                    ResearchTree.Get(ResearchNodeId.ModelSeries).DisplayName);
+
+                return false;
+            }
+
             failureReason = string.Empty;
 
             // The three technologies that open the Scale and Data options. Checked here rather than
@@ -3028,6 +3046,10 @@ namespace ScalingLaws.Simulation
             }
 
             State.UnlockedResearch.Add(project.Node);
+
+            // A node that is finished is no longer wanted. The board derives the mark and would
+            // stop drawing it anyway; this keeps the saved set from collecting work already done.
+            State.WantedResearch.Remove(project.Node);
             State.ActiveResearch = null;
 
             var node = ResearchTree.Get(project.Node);
@@ -5253,6 +5275,38 @@ namespace ScalingLaws.Simulation
         /// One reading, used by the day loop, by the market and by every screen, so the hours a
         /// player is told about are the hours the queue is actually worked through.
         /// </summary>
+        /// <summary>
+        /// Whether a new model may join a line the company already sells.
+        ///
+        /// Without it every release starts its own line named after itself, which is what the game
+        /// already did for a model that joined none. With it the name carries its audience across,
+        /// and carries the reputation of a bad version across too.
+        /// </summary>
+        public bool CanShipVersions() => State.HasResearch(ResearchNodeId.ModelSeries);
+
+        /// <summary>
+        /// Whether the company already sells something in this line.
+        ///
+        /// **Joining an existing line is the gated thing, not naming one.** A model that joins no
+        /// line starts one called after itself and always could, so refusing every named blueprint
+        /// would lock a player out of naming their first product. Compared case-insensitively,
+        /// because the dropdown hands back what is on the shelf and a player typing it themselves
+        /// should not be able to slip past the gate on a capital letter.
+        /// </summary>
+        private bool SellsLine(string family)
+        {
+            foreach (var model in State.DeployedModels)
+            {
+                if (model != null
+                    && string.Equals(model.Family, family, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public double SupportPeople() =>
             State.Staff.CountOfPosition(PlayerSkill.Support) + SupportCatalog.FounderShare;
 

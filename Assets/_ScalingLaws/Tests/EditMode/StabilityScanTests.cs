@@ -59,9 +59,16 @@ namespace ScalingLaws.Tests.EditMode
                 if (who != Archetype.Passive && simulation.State.ActiveRun == null
                     && simulation.State.Shelf.Count == 0 && day % 220 == 10)
                 {
+                    // **One line only once the company can ship versions.** `ModelSeries`
+                    // gates joining a line that is already on sale, so until it lands each scan
+                    // starts its own, which is what a player does. Without this every release
+                    // after the first is refused and fourteen years of "keeps shipping" ships
+                    // exactly one model.
+                    var line = simulation.CanShipVersions() ? "Scan" : $"Scan {generation}";
+
                     var blueprint = new ModelBlueprint($"Scan {generation}",
                         ArchitectureId.DenseTransformer, 4.0 * generation, 80.0 * generation,
-                        DatasetSource.WebCrawl, ModelType.General, "Scan");
+                        DatasetSource.WebCrawl, ModelType.General, line);
 
                     if (simulation.TryStartTraining(blueprint, out _))
                     {

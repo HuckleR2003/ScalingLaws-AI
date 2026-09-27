@@ -197,6 +197,11 @@ namespace ScalingLaws.Persistence
                 data.unlockedResearch.Add((int)node);
             }
 
+            foreach (var node in state.WantedResearch)
+            {
+                data.wantedResearch.Add((int)node);
+            }
+
             foreach (var loan in state.Loans.Loans)
             {
                 data.loans.Add(new LoanData
@@ -1000,6 +1005,17 @@ namespace ScalingLaws.Persistence
             foreach (var node in safe.unlockedResearch)
             {
                 state.UnlockedResearch.Add((ResearchNodeId)node);
+            }
+
+            state.WantedResearch.Clear();
+            foreach (var node in safe.wantedResearch)
+            {
+                // A node already finished is not still wanted. Cheaper to drop it here than to
+                // leave the board marking work the company has done.
+                if (!state.UnlockedResearch.Contains((ResearchNodeId)node))
+                {
+                    state.WantedResearch.Add((ResearchNodeId)node);
+                }
             }
 
             state.FounderName = safe.founderName;
@@ -2372,6 +2388,8 @@ namespace ScalingLaws.Persistence
             safe.unlockedResearch ??= new List<int>();
             safe.founderTraits.RemoveAll(static id => !Enum.IsDefined(typeof(FounderTrait), id));
             safe.unlockedResearch.RemoveAll(static id => !Enum.IsDefined(typeof(ResearchNodeId), id));
+            safe.wantedResearch ??= new List<int>();
+            safe.wantedResearch.RemoveAll(static id => !Enum.IsDefined(typeof(ResearchNodeId), id));
             safe.defaultPriceMultiplier = Math.Clamp(Finite(safe.defaultPriceMultiplier, 1.0), 0.05, 10.0);
 
             if (!Enum.IsDefined(typeof(CompanyArchetype), safe.archetype))

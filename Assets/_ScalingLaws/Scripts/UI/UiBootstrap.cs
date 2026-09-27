@@ -149,6 +149,7 @@ namespace ScalingLaws.UI
             // once, here, because this is the one function every document already calls.
             InsightTip.Host = root;
             Toast.Host = root;
+            GateNotice.Host = root;
         }
 
         /// <summary>

@@ -209,9 +209,18 @@ namespace ScalingLaws.UI
             return scroll;
         }
 
-        /// <summary>The BACK and CONTINUE pair every creator page ends with, pinned to the right.</summary>
+        /// <summary>
+        /// The BACK and CONTINUE pair every creator page ends with, pinned to the right.
+        ///
+        /// **CONTINUE stays live when the page is not ready.** It used to be `SetEnabled(false)`,
+        /// which in UI Toolkit dispatches no pointer event at all, so a player who had not picked
+        /// their traits pressed the one button on the page and the game did not react in any way.
+        /// The reason was on screen the whole time, in small grey type beside a button that looked
+        /// broken, and a playtest read the button rather than the caption. Pressing it now says the
+        /// sentence in the notice at the foot of the screen and rings whatever is missing.
+        /// </summary>
         private VisualElement Footer(string continueText, Action onContinue, Action onBack, bool ready,
-            string blockedReason)
+            string blockedReason, string subject = null, Action nudge = null)
         {
             var footer = new VisualElement();
             footer.AddToClassList("creator-footer");
@@ -229,15 +238,76 @@ namespace ScalingLaws.UI
             back.style.width = 150;
             footer.Add(back);
 
-            var forward = new Button(onContinue) { text = continueText };
+            var forward = new Button(() =>
+            {
+                if (ready)
+                {
+                    onContinue?.Invoke();
+
+                    return;
+                }
+
+                GateNotice.Says(subject, blockedReason);
+                nudge?.Invoke();
+            })
+            { text = continueText };
+
             forward.AddToClassList("menu-button");
             forward.AddToClassList("menu-button--primary");
+
+            // Shut is a look, not a dead control: the class draws it as unavailable and the click
+            // still arrives, which is the whole repair.
+            forward.EnableInClassList("menu-button--shut", !ready);
             forward.style.width = 230;
             forward.style.marginLeft = 10;
-            forward.SetEnabled(ready);
             footer.Add(forward);
 
             return footer;
+        }
+
+
+        /// <summary>
+        /// Rings every trait the player could still pick.
+        ///
+        /// **Queried off the page rather than held in a field.** This page is rebuilt on every
+        /// click, so a list of cards captured when it was built points at elements that have left
+        /// the tree, which is the lifetime fault that took four reports to find in the tutorial.
+        ///
+        /// A picked card is left alone: the question is which of the rest to take, and ringing the
+        /// two already chosen answers a question nobody asked.
+        /// </summary>
+        private static void RingTheTraits(VisualElement page)
+        {
+            foreach (var card in page.Query<VisualElement>(className: "trait-card").ToList())
+            {
+                card.EnableInClassList("creator-ring",
+                    !card.ClassListContains("trait-card--picked")
+                    && !card.ClassListContains("trait-card--locked"));
+            }
+        }
+
+        /// <summary>
+        /// Rings whichever of the three things this page needs is missing, and only that one.
+        ///
+        /// The page refuses for three reasons in a fixed order, so the ring follows the same order
+        /// the sentence does: a player told to name their founder should not also be looking at a
+        /// lit map.
+        /// </summary>
+        private static void RingWhatIsMissing(VisualElement page, bool chosen, bool named)
+        {
+            // **The founder is named on the page before this one**, so the ring for that case goes
+            // on BACK rather than on a field that is not here. The sentence says the same thing.
+            // Found while wiring this: the old caption told the player to name their founder
+            // "above", pointing at a control one page away.
+            var wanted = !chosen ? "lab-grid" : !named ? "menu-button--quiet" : "region__map";
+
+            foreach (var name in new[] { "lab-grid", "menu-button--quiet", "region__map" })
+            {
+                foreach (var element in page.Query<VisualElement>(className: name).ToList())
+                {
+                    element.EnableInClassList("creator-ring", name == wanted);
+                }
+            }
         }
 
         private static Label Hint(string text)
@@ -1259,9 +1329,16 @@ namespace ScalingLaws.UI
             var remaining = FounderTraitCatalog.TraitsPerFounder - chosenTraits.Count;
             // One sentence where English had two. Polish counts in three forms, not two, so the
             // number goes to the end of the line rather than into the middle of a noun.
+            // **The nudge rings every trait that could still be picked**, which is the answer to
+            // "which of these does it mean": a sentence saying two are needed, over a grid of eight
+            // cards where four are hidden behind SHOW MORE, is a sentence about nothing in view.
             page.Add(Footer(Loc.T("create.continue"), () => Show(Stage.Company), () => Show(Stage.Intro),
                 remaining == 0,
-                Loc.T("create.traits_left", remaining)));
+                remaining >= FounderTraitCatalog.TraitsPerFounder
+                    ? Loc.T("gate.traits_missing")
+                    : Loc.T("gate.traits_partial"),
+                null,
+                () => RingTheTraits(page)));
 
             return page;
         }
@@ -1706,8 +1783,10 @@ namespace ScalingLaws.UI
             page.Add(Footer(Loc.T("menu.begin_january"), Begin, () => Show(Stage.Founder),
                 CompanyIsChosen && named && placed,
                 !CompanyIsChosen ? Loc.T("menu.pick_a_lab")
-                    : !named ? Loc.T("menu.needs_a_name")
-                    : Loc.T("menu.needs_a_country")));
+                    : !named ? Loc.T("gate.founder_missing")
+                    : Loc.T("gate.region_missing"),
+                null,
+                () => RingWhatIsMissing(page, CompanyIsChosen, named)));
 
             return page;
         }

@@ -268,6 +268,20 @@ namespace ScalingLaws.Simulation
         /// <summary>Technology tree nodes already completed.</summary>
         public HashSet<ResearchNodeId> UnlockedResearch { get; }
 
+        /// <summary>
+        /// Nodes the player has asked to be shown on the board, from a control that refused them.
+        ///
+        /// **Saved from v65, because it is a decision rather than a reading.** A player who clicks
+        /// a locked precision card, presses GO TO RESEARCH and then quits for the night has said
+        /// what they are going for, and a mark that evaporates on load is a mark they have to find
+        /// again from a screen that no longer explains why.
+        ///
+        /// It holds what was asked for, never the road to it: the missing prerequisites are a pure
+        /// function of this set and what the company has researched, and storing them would freeze
+        /// a road that finishing one node is supposed to shorten.
+        /// </summary>
+        public HashSet<ResearchNodeId> WantedResearch { get; } = new();
+
         /// <summary>The node being researched, or null. One at a time.</summary>
         public ResearchProject ActiveResearch { get; set; }
 

@@ -247,6 +247,23 @@ namespace ScalingLaws.UI
                 if (pickable)
                 {
                     Pick(standing.Trait);
+
+                    return;
+                }
+
+                // **A tile can be shut for three reasons and only one of them is answerable.**
+                // Research is; a date that has not arrived and a trait already at its ceiling are
+                // not, and a notice offering to go and research those would be pointing at nothing.
+                // Silence is still wrong for the first, which is the common one.
+                if (!standing.IsAvailable && standing.Needs != ResearchNodeId.None)
+                {
+                    GateNotice.NeedsResearch(definition.DisplayName,
+                        new[] { standing.Needs }, simulation.State.HasResearch);
+                }
+                else if (!standing.IsAvailable)
+                {
+                    GateNotice.Says(definition.DisplayName,
+                        Loc.T("gate.not_yet", definition.AvailableFrom.ToString()));
                 }
             });
 

@@ -1072,6 +1072,11 @@ namespace ScalingLaws.UI
             step.EnableInClassList("rsafety__step--locked",
                 !owned && !standing.IsInProgress && !standing.CanStart);
 
+            // The safety tiles are the second surface a node is drawn on, so they take the mark
+            // too. A player sent here by the creator's SAFETY stage lands on a board where the
+            // thing they were sent for is the only unmarked square otherwise.
+            step.EnableInClassList("rsafety__step--wanted", IsWanted(id));
+
             step.RegisterCallback<ClickEvent>(click =>
             {
                 selectedResearch = id;
@@ -1156,6 +1161,12 @@ namespace ScalingLaws.UI
 
             card.EnableInClassList("rnode--picked", selectedResearch == node.Id);
 
+            // **Yellow, and it stays.** Every other mark on this board is a state of the node; this
+            // one is a state of the player, set by pressing GO TO RESEARCH on a control that
+            // refused them. It covers the node they asked for and the road to it, because a node
+            // they cannot start yet is not an answer to "where do I go".
+            card.EnableInClassList("rnode--wanted", IsWanted(node.Id));
+
             var body = new VisualElement();
             body.AddToClassList("rnode__body");
 
@@ -1220,6 +1231,39 @@ namespace ScalingLaws.UI
         /// Every pip is cleared first. Without that the red accumulates across clicks and the board
         /// ends up showing the union of every road the player has ever looked at.
         /// </summary>
+        /// <summary>
+        /// Whether the board should be marking this node.
+        ///
+        /// True for a node the player asked for and for anything still missing on the way to it.
+        /// **Derived on every read rather than stored**, so finishing a prerequisite shortens the
+        /// road by itself and nothing has to remember to rub a mark out.
+        /// </summary>
+        private bool IsWanted(ResearchNodeId id)
+        {
+            if (state.WantedResearch.Count == 0)
+            {
+                return false;
+            }
+
+            if (state.WantedResearch.Contains(id))
+            {
+                return !state.HasResearch(id);
+            }
+
+            foreach (var wanted in state.WantedResearch)
+            {
+                foreach (var missing in ResearchTree.MissingPrerequisites(wanted, state.HasResearch))
+                {
+                    if (missing == id)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private void MarkTheRoadTo(ResearchNodeId id)
         {
             foreach (var pair in treePips)

@@ -27,6 +27,12 @@ namespace ScalingLaws.UI
             { RewardKind.UpgradeLine, "unlock_upgrade" },
             { RewardKind.ModelType, "unlock_type" },
             { RewardKind.Ceiling, "unlock_ceiling" }
+
+            // **`Control` is deliberately absent.** There is no picture for it yet and `Get` answers a
+            // missing row with null, which draws the empty plate every loader here falls back to.
+            // Naming a file that is not on disk is the fault `ArtTests` exists to catch, and it has
+            // caught it once already: three research nodes shipped with named icons and no art.
+            // Listed in `Docs/NeededGraphics.md`.
         };
 
         private static readonly Dictionary<RewardKind, Texture2D> Loaded = new();
@@ -55,6 +61,7 @@ namespace ScalingLaws.UI
             RewardKind.UpgradeLine => "unlock.upgrade_line",
             RewardKind.ModelType => "unlock.model_type",
             RewardKind.Ceiling => "unlock.ceiling",
+            RewardKind.Control => "unlock.control",
             _ => "unlock.model_type"
         };
     }

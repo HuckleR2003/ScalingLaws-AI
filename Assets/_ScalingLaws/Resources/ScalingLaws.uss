@@ -7698,6 +7698,24 @@
     flex-shrink: 0;
 }
 
+/* **The licence rows are not corpus rows, however much they look like one.**
+
+   `.corpus-row` is `width: 32.5%`, which is right on the DATA stage where the corpora go three
+   across a full-width panel, and catastrophic here: these sit in the identity column of the
+   BRANDING stage, so a third of that is a sliver, and `.corpus-row__words` carries `min-width: 0`,
+   which lets a name shrink until it wraps one character per line. That is what the author was sent
+   a photograph of: "Efficient attention" printed as a vertical stack of single letters with the
+   price floating beside it.
+
+   **Two classes on purpose.** At equal specificity the later rule in the sheet wins, and this is
+   the same repair `.rackface.roombuild__face` needed for the identical fault in the cabinet shop:
+   a card sized for a wide modal, reused in a narrow rail. Second time, so the lesson is written
+   here rather than only in the commit: **a width in per cent belongs to the panel it was measured
+   in, and reusing the class anywhere else has to restate it.** */
+.family-offers .corpus-row {
+    width: 100%;
+}
+
 .family-offers__heading {
     font-size: 11px;
     letter-spacing: 1.4px;
@@ -19803,6 +19821,18 @@
     opacity: 0.45;
 }
 
+/* **Asked for, and it stays until it is done.** Every other mark on this board is a state of the
+   node; this is a state of the player, set by pressing GO TO RESEARCH on a control that refused
+   them, and it is the one thing on the board that is neither blue nor green nor red. Full opacity
+   is half the mark: a wanted node is usually also locked, and a yellow ring at 45% reads as a
+   node somebody has already crossed off. */
+.rnode--wanted {
+    opacity: 1;
+    border-color: rgb(240, 196, 84);
+    border-width: 2px;
+    background-color: rgba(240, 196, 84, 0.10);
+}
+
 /* What the player clicked, and in red whatever it is waiting on. Both are a ring rather than a
    fill, so a state and a selection can be true at the same time. */
 .rnode--picked {
@@ -21181,6 +21211,13 @@
     opacity: 0.55;
 }
 
+/* The same mark on the second surface a node is drawn on. See `.rnode--wanted`. */
+.rsafety__step--wanted {
+    opacity: 1;
+    border-color: rgb(240, 196, 84);
+    border-width: 2px;
+}
+
 /* ---- research funding: the points beside the money ------------------------------------------ */
 .rfund__amount {
     flex-direction: row;
@@ -21830,4 +21867,151 @@
 .support__ladderdone {
     font-size: 11.5px;
     color: rgba(150, 208, 168, 0.9);
+}
+
+/* The reply to clicking something the company cannot use yet.
+
+   **Anchored to the bottom, not the top.** The announcement notice lives at 64px and times out;
+   this one is an answer to a click and it sits under the control that refused, where the eye
+   already is. It clears the bottom bar by its own height plus the bar's, so it can never cover the
+   clock or the speed controls, which are the two things a player presses while reading it.
+
+   Blue into violet, which is the accent this game already carries on the time dial and the started
+   notice, so a third colour is not introduced to say "wait". */
+.gate {
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    bottom: 96px;
+    padding: 18px 22px 20px 22px;
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: rgba(150, 130, 255, 0.55);
+    background-color: rgba(20, 18, 46, 0.97);
+    transition-property: opacity, translate;
+    transition-duration: 0.22s;
+}
+
+.gate--arriving {
+    opacity: 0;
+    translate: 0 14px;
+}
+
+.gate__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.gate__kicker {
+    font-size: 11px;
+    letter-spacing: 2.4px;
+    color: rgba(176, 158, 255, 0.95);
+}
+
+.gate__close {
+    width: 26px;
+    height: 22px;
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    color: rgba(206, 214, 236, 0.9);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    border-width: 0;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+/* The sentence. White and plain on purpose: everything else in this card is furniture around it. */
+.gate__line {
+    font-size: 16px;
+    color: rgb(240, 243, 255);
+    white-space: normal;
+}
+
+.gate__research {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+.gate__row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* The node's own picture, at the size the research board draws it, so the player is looking for
+   something they have already seen rather than for a name in a list. */
+.gate__icon {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    margin-right: 14px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.gate__words {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.gate__caption {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: rgba(158, 166, 196, 0.9);
+    margin-bottom: 4px;
+}
+
+.gate__name {
+    font-size: 19px;
+    color: rgb(244, 247, 255);
+    white-space: normal;
+}
+
+/* Wide, because it is the only thing on the card to press and a narrow button beside a 64px icon
+   reads as a footnote. */
+.gate__go {
+    height: 40px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+    color: rgb(18, 16, 38);
+    background-color: rgb(176, 158, 255);
+    border-radius: 8px;
+    border-width: 0;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+/* The ring a refused CONTINUE puts on whatever is missing.
+
+   **One class for every creator page**, because the three things that can be missing live in three
+   different widgets and a ring per widget is three chances for one of them to be forgotten. It is
+   the same yellow the research board marks a wanted node with: on both screens it means the same
+   sentence, which is "this is the thing you were just told about". */
+.creator-ring {
+    border-width: 2px;
+    border-color: rgb(240, 196, 84);
+    border-radius: 8px;
+}
+
+/* A CONTINUE that is not ready. It still takes the click, which is the whole repair, so this says
+   only that pressing it will not move the page on. */
+.menu-button--shut {
+    opacity: 0.55;
+}
+
+/* A hint under a control that is shut. The sentence names the node that opens it, so it is the
+   most useful line in that panel rather than a footnote, and the colour says the control above it
+   is not going to answer until that node lands. */
+.field__hint--locked {
+    color: rgba(240, 196, 84, 0.92);
 }
