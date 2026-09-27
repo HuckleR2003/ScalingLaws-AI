@@ -245,5 +245,46 @@ namespace ScalingLaws.Tests.EditMode
                 Loc.Current = was;
             }
         }
+
+        /// <summary>
+        /// The tile and the research node that opens it have to be called the same thing.
+        ///
+        /// **They were not, and in Polish one of the two was half English.** Researching
+        /// "Licencjonowana ASSA warstwowa" produced a tile reading "Licencjonowane Stacked-ASSA",
+        /// which is two names for one rung with nothing anywhere saying they are the same thing.
+        /// A tester read the second name as something new appearing after the upgrade, which is
+        /// exactly what it looks like.
+        ///
+        /// Keys are literals on both sides, so `EveryKeyTheInterfaceAsksForExists` still sees them.
+        /// </summary>
+        [Test]
+        public void ASafetyRungIsCalledTheSameOnItsTileAndOnItsResearchNode()
+        {
+            var rungs = new[]
+            {
+                ("safety.assa1", "node.assa1"),
+                ("safety.assa2", "node.assa2"),
+                ("safety.assa3", "node.assa3")
+            };
+
+            foreach (var language in new[] { Language.English, Language.Polish })
+            {
+                var was = Loc.Current;
+                Loc.Current = language;
+
+                foreach (var (tile, node) in rungs)
+                {
+                    var onTheTile = Loc.T(tile);
+                    var onTheBoard = Loc.T(node);
+
+                    Assert.That(onTheTile, Is.EqualTo(onTheBoard),
+                        language + ": the safety tile says \"" + onTheTile + "\" and the research "
+                        + "node that grants it says \"" + onTheBoard + "\". A player cannot tell "
+                        + "those are the same rung.");
+                }
+
+                Loc.Current = was;
+            }
+        }
     }
 }

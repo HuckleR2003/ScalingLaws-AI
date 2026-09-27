@@ -121,6 +121,13 @@ namespace ScalingLaws.UI
         /// this one is Polish. Every number the player reads goes through this file for exactly
         /// that reason and it has caught the same fault three times.
         /// </summary>
+        /// <summary>
+        /// A temperature, whole degrees. Through this file for the reason everything else here is:
+        /// a raw format string follows the machine's culture and this one is Polish.
+        /// </summary>
+        public static string Celsius(double celsius) =>
+            Number(SimUnits.Finite(celsius), 0) + " °C";
+
         public static string Kilowatts(double kilowatts)
         {
             var power = SimUnits.Finite(kilowatts);

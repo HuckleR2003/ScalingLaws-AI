@@ -315,6 +315,39 @@ namespace ScalingLaws.Data
         }
 
         /// <summary>
+        /// The air a cabinet is fed, in Celsius. The middle of what a real hall is kept at.
+        /// </summary>
+        public const double InletCelsius = 22.0;
+
+        /// <summary>
+        /// How much hotter a cabinet running at exactly its rated cooling gets.
+        ///
+        /// So a cabinet inside its budget sits in the thirties and one at twice its budget is in
+        /// the fifties, which is where hardware starts being shortened rather than just slowed.
+        /// </summary>
+        public const double RiseAtRatedCelsius = 15.0;
+
+        /// <summary>
+        /// What a cabinet reads on a thermometer, derived from the one ratio everything else uses.
+        ///
+        /// **Nothing in this simulation models a temperature and this does not add one.** It is the
+        /// heat-over-cooling ratio the throttle already runs on, stated in the unit a person thinks
+        /// in. That is the whole reason it lives here beside <see cref="HeatOf"/> rather than in the
+        /// panel that draws it: the colour, the word and the number are three readings of one fact,
+        /// and this project has already been caught with four copies of the heat thresholds
+        /// disagreeing about the same cabinet.
+        ///
+        /// An empty cabinet is room temperature rather than cold, for the same reason `HeatOf`
+        /// answers `Idle` at zero: nothing in it is not the same as nothing wrong with it.
+        /// </summary>
+        public static double CelsiusAt(double ratio)
+        {
+            var heat = Math.Max(0.0, SimUnits.Finite(ratio));
+
+            return InletCelsius + RiseAtRatedCelsius * heat;
+        }
+
+        /// <summary>
         /// The phrase-book stem for a state, so the word and the colour cannot drift.
         ///
         /// Written out rather than built from the enum name, for the reason every catalog here

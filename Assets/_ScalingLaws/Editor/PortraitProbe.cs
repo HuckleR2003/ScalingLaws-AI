@@ -71,5 +71,71 @@ namespace ScalingLaws.EditorTools
 
             Debug.Log($"PORTRAIT {(flat == 0 ? "ALL LIVE" : flat + " FLAT")}{lines}");
         }
+
+        /// <summary>
+        /// Every pair of glasses on one face, written out to be looked at.
+        ///
+        /// **The probe above steps the look and never touches the glasses**, so fourteen frames
+        /// proved the faces render and none of them could answer the only question anybody has
+        /// asked about the glasses, which is whether they are on the nose or inside the skull.
+        /// A tester reported the second. This is how that gets measured: render it and look.
+        ///
+        /// Runs from the command line, so it works without opening the editor:
+        ///   Unity.exe -batchmode -projectPath . -executeMethod
+        ///     ScalingLaws.EditorTools.PortraitProbe.ProbeGlasses -quit
+        /// </summary>
+        [MenuItem("Scaling Laws/Characters/Probe glasses")]
+        public static void ProbeGlasses()
+        {
+            var studio = new ScalingLaws.UI.PortraitStudio();
+
+            if (!studio.Open())
+            {
+                Debug.LogError("GLASSES no looks found");
+                return;
+            }
+
+            System.IO.Directory.CreateDirectory("PortraitProof~");
+
+            var lines = "";
+
+            // **Three faces, not one.** The packs are built at different scales: one has its head
+            // bone at 2.24m and another at 1.53m, and the placement is a fraction of that height,
+            // so a pair that sits correctly on one face proves nothing about the next one.
+            var looks = Mathf.Min(3, studio.LookCount);
+
+            for (var face = 0; face < looks; face++)
+            {
+            for (var index = 0; index < studio.GlassesCount; index++)
+            {
+                // Two passes, for the reason the look probe states: skinning settles a frame late.
+                studio.RenderNow();
+                studio.RenderNow();
+
+                var read = new Texture2D(studio.Texture.width, studio.Texture.height,
+                    TextureFormat.RGB24, false);
+
+                var was = RenderTexture.active;
+                RenderTexture.active = studio.Texture;
+                read.ReadPixels(new Rect(0, 0, studio.Texture.width, studio.Texture.height), 0, 0);
+                read.Apply();
+                RenderTexture.active = was;
+
+                System.IO.File.WriteAllBytes(
+                    $"PortraitProof~/glasses_{index}_{studio.LookName}.png", read.EncodeToPNG());
+
+                lines += $"\n  glasses {index} on {studio.LookName}";
+
+                Object.DestroyImmediate(read);
+                studio.StepGlasses(1);
+            }
+
+                studio.StepLook(1);
+            }
+
+            studio.Close();
+
+            Debug.Log($"GLASSES {looks * studio.GlassesCount} frames{lines}");
+        }
     }
 }

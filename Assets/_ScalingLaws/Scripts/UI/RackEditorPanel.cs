@@ -992,6 +992,13 @@ namespace ScalingLaws.UI
             block.Add(UiParts.StatLine(Loc.T("rack.accelerators"),
                 $"{square.Accelerators} / {definition.Slots}"));
             block.Add(UiParts.StatLine(Loc.T("rack.fans"), square.Fans.ToString()));
+
+            // **One bar, and everything on it comes off the ratio the throttle itself runs on.**
+            // Asked for by a tester in exactly these terms: a load bar in the room's own colours
+            // with a temperature in it. The colour is `RackHeatPalette`, which the floor tiles and
+            // the corner banner already read, so a cabinet cannot be amber here and green there.
+            block.Add(HeatBar(heat, cooling));
+
             block.Add(UiParts.StatLine(Loc.T("rack.heat"), UiFormat.Kilowatts(heat)));
             block.Add(UiParts.StatLine(Loc.T("rack.cooling"), UiFormat.Kilowatts(cooling)));
             block.Add(UiParts.StatLine(Loc.T("rack.draw"), UiFormat.Kilowatts(draw)));
@@ -1052,6 +1059,72 @@ namespace ScalingLaws.UI
 
             return Loc.T("rack.next_reading",
                 UiFormat.Kilowatts(heat), UiFormat.Percent(factor, 0));
+        }
+
+
+        /// <summary>
+        /// How hard this cabinet is working its own cooling, as a bar, with what that is in degrees.
+        ///
+        /// **Asked for in these words: a load bar in the room's colours with a temperature in it.**
+        /// Everything on it is one number read three ways. The fill is heat over cooling, which is
+        /// the ratio `ThrottleFactor` runs on; the colour is `RackHeatPalette.Of(HeatOf(ratio))`,
+        /// which the floor tiles and the corner banner already read, so a cabinet cannot be amber
+        /// in one place and green in another; and the degrees come from
+        /// `ServerRackCatalog.CelsiusAt`, which is the same ratio in the unit a person thinks in.
+        ///
+        /// **The track runs to the throttle point, not to the ratio.** A cabinet at three times its
+        /// cooling would otherwise draw a bar two thirds empty at the moment it is worst, because
+        /// there is no top to scale to. Past the point where throughput starts being lost the bar
+        /// is simply full and red, which is the true reading: there is no worse state to show.
+        /// </summary>
+        private static VisualElement HeatBar(double heat, double cooling)
+        {
+            var ratio = cooling > 0.0 ? heat / cooling : 0.0;
+            var state = ServerRackCatalog.HeatOf(ratio);
+            var colour = RackHeatPalette.Of(state);
+
+            var block = new VisualElement();
+            block.AddToClassList("rackbar");
+
+            var head = new VisualElement();
+            head.AddToClassList("rackbar__head");
+
+            var what = new Label(Loc.T("rack.bar.load"));
+            what.AddToClassList("rackbar__label");
+            head.Add(what);
+
+            var word = new Label(Loc.T(ServerRackCatalog.KeyFor(state)));
+            word.AddToClassList("rackbar__state");
+            word.style.color = colour;
+            head.Add(word);
+
+            block.Add(head);
+
+            var track = new VisualElement();
+            track.AddToClassList("rackbar__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("rackbar__fill");
+            fill.style.backgroundColor = colour;
+            fill.style.width = new StyleLength(Length.Percent(
+                (float)(Math.Clamp(ratio / ServerRackCatalog.ThrottleFreeHeadroom, 0.0, 1.0) * 100.0)));
+
+            track.Add(fill);
+
+            // Inside the bar, which is where it was asked for, and `PickingMode.Ignore` so the
+            // number cannot eat a click meant for anything the panel puts under it later.
+            var degrees = new Label(UiFormat.Celsius(ServerRackCatalog.CelsiusAt(ratio)));
+            degrees.AddToClassList("rackbar__degrees");
+            degrees.pickingMode = PickingMode.Ignore;
+            track.Add(degrees);
+
+            block.Add(track);
+
+            var note = new Label(Loc.T(ServerRackCatalog.KeyFor(state) + ".note"));
+            note.AddToClassList("rackbar__note");
+            block.Add(note);
+
+            return block;
         }
 
         private VisualElement BuildActions(CompanySimulation simulation, int column, int row,

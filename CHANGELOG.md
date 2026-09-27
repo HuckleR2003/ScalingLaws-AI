@@ -111,6 +111,24 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Fixed
 
+- **The glasses sat inside the head.** Only the arms cleared the cheekbones; the lenses and the
+  bridge were behind the face, which is what a tester described as them being in the middle of the
+  skull. They are on the nose now, checked on three faces because the character packs are built at
+  different scales and one face that looks right proves nothing about the next.
+- **The self-audit ladder had two names for every rung, and in Polish one of them was half
+  English.** Researching one thing produced a tile calling it something else, with nothing anywhere
+  saying they were the same. Every rung now reads the same on the board and on the tile, in plain
+  words rather than in an acronym nobody expands.
+- **The precision cards say what the run would take at each one.** Narrower numbers really do
+  shorten the calendar, and always did, but on a short run every option rounds to the same whole
+  number of days and the control looked broken. Four cards reading the same figure now say plainly
+  that this particular run is too short for the choice to matter.
+- **An opened cabinet has a cooling bar with a temperature in it**, in the same five colours the
+  floor tiles use, so a cabinet cannot be amber in one place and green in another.
+- **The research node about efficient attention no longer opens on four pieces of jargon.** It says
+  what the technique does to the run instead of what it is called.
+- **PRZEGRZANIE stopped breaking in half.** A one-word heading in a row was taking whatever width
+  was left over and wrapping after the ninth letter.
 - **The news screen was in English in a Polish campaign, and so was every event message.** The
   right hand column, the section headings, the membership buttons, and every line the wire prints:
   "E-Solutions released Helpdesk assistant at capability 24,0" where even the number was wrong,
@@ -278,7 +296,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   else in this file is: a cooldown that lived only in memory would make quitting and reloading a
   fresh call with everybody. A v68 campaign has rung nobody, because it had no telephone, and
   starting it on cooldown would charge it for calls it never made.
-- **1501 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1504 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

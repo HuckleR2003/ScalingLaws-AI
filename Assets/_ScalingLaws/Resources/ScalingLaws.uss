@@ -14912,6 +14912,11 @@
     margin-right: 14px;
     color: rgb(255, 255, 255);
     -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+    /* **One word, on one line.** In a row a label takes whatever width is left over, so the Polish
+       PRZEGRZANIE broke after the ninth letter and read as PRZEGRZANI / E. A heading that is a
+       single word should not be allowed to wrap, and it should keep its own width in the row. */
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .rackalarm--warm .rackalarm__word,
@@ -22136,6 +22141,74 @@
 
 /* The line under an opened cabinet saying that a slot can be clicked. 11.5px because the floor is
    11 and this is a caption rather than a control. */
+
+/* ---- how hard a cabinet is working its own cooling ------------------------------------------ */
+
+/* One bar, three readings of the same ratio: the fill, the colour and the degrees inside it. The
+   colour comes from RackHeatPalette in code rather than from here, because the floor tiles and the
+   corner banner read the same table and four copies of these thresholds have disagreed once. */
+.rackbar {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.rackbar__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+}
+
+.rackbar__label {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: rgba(150, 162, 186, 0.9);
+}
+
+.rackbar__state {
+    font-size: 11.5px;
+    letter-spacing: 1.2px;
+}
+
+.rackbar__track {
+    height: 22px;
+    border-radius: 6px;
+    overflow: hidden;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+/* Absolute, so the fill growing underneath does not push the number along the bar with it. */
+.rackbar__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 6px;
+}
+
+/* **Its own plate, because it has to be readable over five different fills and over the empty
+   track as well.** Dark text is right on the amber fill and invisible on the bare track at low
+   load, which is what the first render came back with; light text is right on the track and poor
+   on amber. A plate under the number is the only answer that works at every load. */
+.rackbar__degrees {
+    align-self: center;
+    padding: 1px 8px 2px 8px;
+    border-radius: 5px;
+    background-color: rgba(10, 12, 18, 0.72);
+    font-size: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(232, 238, 250);
+}
+
+.rackbar__note {
+    margin-top: 5px;
+    font-size: 11px;
+    color: rgba(150, 162, 186, 0.85);
+    white-space: normal;
+}
+
 .rackmodal__how {
     margin-top: 8px;
     font-size: 11.5px;

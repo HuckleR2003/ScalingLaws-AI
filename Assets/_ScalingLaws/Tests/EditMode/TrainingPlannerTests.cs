@@ -190,5 +190,51 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(lateProjection.ProjectedCapability, Is.GreaterThan(earlyProjection.ProjectedCapability + 5.0),
                 "Four years of better recipes must be worth real capability on the same run.");
         }
+
+        /// <summary>
+        /// Narrower numbers finish sooner, and the screen has to be able to show it.
+        ///
+        /// **Reported as "changing the precision does not change the training time".** It does, in
+        /// the arithmetic: throughput runs 1.00, 1.30, 2.10, 3.36 and the calendar is petaflop-days
+        /// divided by it. What it cannot do is show a difference on a run so short that every
+        /// answer rounds to the same whole number of days, and the creator quotes whole days.
+        ///
+        /// So this measures the thing a player is actually looking at: the day count on the screen,
+        /// on a run big enough to have a calendar, and requires each rung to be strictly shorter
+        /// than the one before it.
+        /// </summary>
+        [Test]
+        public void EachStepDownInPrecisionFinishesStrictlySooner()
+        {
+            var profile = RentedFleet(500, GameDate.FromCalendar(2024, 1, 1), out var market);
+
+            var order = new[]
+            {
+                TrainingPrecision.Float64,
+                TrainingPrecision.Float32,
+                TrainingPrecision.BFloat16,
+                TrainingPrecision.Float8
+            };
+
+            var previous = int.MaxValue;
+
+            foreach (var precision in order)
+            {
+                var blueprint = new ModelBlueprint(
+                    "Muse", ArchitectureId.DenseTransformer, 60, 1_200, DatasetSource.WebCrawl)
+                    .WithPrecision(precision);
+
+                var projection = TrainingPlanner.Project(blueprint, profile, market, 0.0);
+
+                Assert.That(projection.IsFeasible, Is.True, projection.BlockingReason);
+
+                Assert.That(projection.TrainingDays, Is.LessThan(previous),
+                    precision + " takes " + projection.TrainingDays + " days, which is not fewer "
+                    + "than the " + previous + " the precision above it takes. A player changing "
+                    + "this control has to see the calendar move.");
+
+                previous = projection.TrainingDays;
+            }
+        }
     }
 }

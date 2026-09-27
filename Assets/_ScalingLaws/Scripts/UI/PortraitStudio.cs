@@ -58,10 +58,22 @@ namespace ScalingLaws.UI
         public static readonly Vector3 Somewhere = new(0f, -4000f, 0f);
 
         /// <summary>How far above the head bone the eyes are, at a 1.6m head height.</summary>
-        public const float EyeRise = 0.145f;
+        public const float EyeRise = 0.125f;
 
-        /// <summary>And how far in front of it. Scaled with the model, because the packs differ.</summary>
-        public const float EyeReach = 0.115f;
+        /// <summary>
+        /// And how far in front of it. Scaled with the model, because the packs differ.
+        ///
+        /// **Both numbers were wrong and only a render could say so.** At 0.145 and 0.115 the
+        /// glasses sat inside the skull: the arms stuck out past the cheekbones and the lenses and
+        /// bridge were behind the face mesh, which a tester reported as the glasses being in the
+        /// middle of the head. Nothing failed, because there is nothing here a test can measure.
+        ///
+        /// `Scaling Laws > Characters > Probe glasses` renders every pair on three faces and writes
+        /// them to `PortraitProof~`. **Run it after touching either number**, and look: the packs
+        /// are built at different scales, so one face that looks right proves nothing about the
+        /// next, and that is why the probe does three.
+        /// </summary>
+        public const float EyeReach = 0.190f;
 
         private GameObject rig;
         private Camera camera;

@@ -1789,6 +1789,7 @@ namespace ScalingLaws.UI
                         ? Loc.T("create.precision_card",
                             UiFormat.Number(definition.Throughput, 2),
                             UiFormat.Number(definition.Instability, 1))
+                            + "\n" + DaysAt(captured)
                         : shipped
                             ? Loc.T("create.needs", ResearchTree.Get(gate).DisplayName)
                             : Loc.T("create.needs_silicon", definition.Earliest.ToString()),
@@ -1807,6 +1808,32 @@ namespace ScalingLaws.UI
             panel.Add(note);
 
             return panel;
+        }
+
+        /// <summary>
+        /// What this run would take at one precision, on the card offering it.
+        ///
+        /// **Reported as the control doing nothing.** It does: throughput runs 1.00, 1.30, 2.10,
+        /// 3.36 and the calendar is petaflop-days divided by it, which
+        /// `TrainingPlannerTests.EachStepDownInPrecisionFinishesStrictlySooner` measures. What a
+        /// player sees is the day count above, and on a small run every answer rounds to the same
+        /// whole number of days, so the screen looked broken while the arithmetic was right.
+        ///
+        /// Putting the figure on each card turns that into an answer rather than a silence: four
+        /// cards reading the same number say plainly that this run is too short for the choice to
+        /// matter, which is a true and useful thing to learn on the screen where it is made.
+        ///
+        /// Four extra projections per rebuild of this page. `Project` is arithmetic over a struct
+        /// and the page is rebuilt on a click, not per frame.
+        /// </summary>
+        private string DaysAt(TrainingPrecision precision)
+        {
+            var projection = simulation.Project(CurrentBlueprint().WithPrecision(precision),
+                Proposal());
+
+            return projection.IsFeasible
+                ? Loc.T("create.precision_days", projection.TrainingDays.ToString())
+                : Loc.T("create.precision_days_none");
         }
 
         /// <summary>Many thin layers or few fat ones. Capability against what a token costs.</summary>

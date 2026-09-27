@@ -399,5 +399,47 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(simulation.Profile.DailyOperatingCostUsd, Is.GreaterThan(emptyRoom),
                 "And the draw is invoiced, at the room's own tariff.");
         }
+
+        /// <summary>
+        /// The thermometer and the colour are two readings of one ratio, and they have to agree.
+        ///
+        /// **Nothing in this simulation models a temperature.** `CelsiusAt` states the heat-over-
+        /// cooling ratio in the unit a person thinks in, so the only thing worth holding is that it
+        /// never disagrees with the band the same ratio lands in: a cabinet the room calls cool
+        /// cannot read hotter than one the room calls cooking.
+        ///
+        /// This project has had four separate copies of these thresholds, disagreeing about the
+        /// same cabinet, which is why the number lives beside `HeatOf` rather than in the panel.
+        /// </summary>
+        [Test]
+        public void TheThermometerAgreesWithTheColourItIsDrawnIn()
+        {
+            Assert.That(ServerRackCatalog.CelsiusAt(0.0),
+                Is.EqualTo(ServerRackCatalog.InletCelsius).Within(0.001),
+                "an empty cabinet is the temperature of the room it is standing in");
+
+            var previous = double.MinValue;
+
+            for (var ratio = 0.0; ratio <= 2.0; ratio += 0.05)
+            {
+                var celsius = ServerRackCatalog.CelsiusAt(ratio);
+
+                Assert.That(celsius, Is.GreaterThan(previous),
+                    "a cabinet working its cooling harder has to read hotter, at ratio " + ratio);
+
+                previous = celsius;
+            }
+
+            // The point where throughput starts being lost. A cabinet there is warm rather than on
+            // fire, and one at twice its budget is somewhere a person would not put their hand.
+            var atTheLimit = ServerRackCatalog.CelsiusAt(ServerRackCatalog.ThrottleFreeHeadroom);
+
+            Assert.That(atTheLimit, Is.InRange(30.0, 45.0),
+                "the throttle point reads " + atTheLimit + " degrees, which is not a number "
+                + "anybody would recognise as a cabinet at the edge of what it can shed");
+
+            Assert.That(ServerRackCatalog.CelsiusAt(2.0), Is.GreaterThan(atTheLimit + 8.0),
+                "twice the cooling budget has to read meaningfully hotter than the limit");
+        }
     }
 }
