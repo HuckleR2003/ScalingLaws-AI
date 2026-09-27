@@ -147,6 +147,12 @@ go in. This file is the draft for the store update post, so anything vague here 
   puts the lab in reach of the telephone; level two opens joint research; level three sells their
   capacity at cost instead of at the premium everybody else pays. Before this, one and three moved
   no number in the game at all.
+- **The standing tab was rebuilt with the same language.** The scale is drawn whole now, with all
+  five bands at the width of the range each one covers and a marker where the lab actually sits, so
+  a player can see how close the next band is. It used to be one stripe floating in the middle of
+  nothing, which says a relationship is bad and not how bad. What has moved it is a list of rows
+  with a lit edge in the direction each one went, in a card rather than flush against the edge of
+  the panel.
 - **What the two of you have done together is kept.** Terms that ran their course, terms that ended
   early and offers that were refused, newest first, with the one still running marked. Nothing in
   the game remembered a finished licence before: the row was deleted when its term ran out.

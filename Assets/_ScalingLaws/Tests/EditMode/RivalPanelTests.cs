@@ -109,7 +109,7 @@ namespace ScalingLaws.Tests.EditMode
             var simulation = Company();
 
             var quiet = Panel(simulation, CompetitorId.OpenAi)
-                .Query<VisualElement>(className: "rival__history").ToList();
+                .Query<VisualElement>(className: "rhist").ToList();
 
             Assert.That(quiet, Is.Empty,
                 "Nothing has happened with this lab, so there is nothing to list.");
@@ -118,7 +118,7 @@ namespace ScalingLaws.Tests.EditMode
                 -14.0, "relation.reason.poached", "Somebody");
 
             var loud = Panel(simulation, CompetitorId.OpenAi)
-                .Query<VisualElement>(className: "rival__entry").ToList();
+                .Query<VisualElement>(className: "rhist__row").ToList();
 
             Assert.That(loud, Is.Not.Empty, "The thing that happened is not on the card.");
         }

@@ -189,59 +189,46 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// Where the relationship stands, as a band with a sentence under it.
+        /// Where the relationship stands, on a scale with all five bands marked on it.
         ///
-        /// The number is on the bar and not in words, because "minus sixty-three" is a fact nobody
-        /// can act on and "hostile, competing against your interests on purpose" is one they can.
+        /// **The bar used to be a stripe floating in the middle of nothing.** It carried the one
+        /// number the card is about and gave it no context at all: a fill ending two thirds of the
+        /// way left says the relationship is bad and not how bad, nor how far it is from the next
+        /// thing that changes. The five bands are drawn on the track now, the one the lab is in is
+        /// lit, and the marker sits where they actually are.
+        ///
+        /// The words stay the headline. "Minus sixty-three" is a fact nobody can act on and
+        /// "hostile, competing against your interests on purpose" is one they can.
         /// </summary>
         private static VisualElement BuildStanding(CompanySimulation simulation, CompetitorId lab)
         {
             var value = simulation.State.Relations.With(lab);
-            var band = RivalRelations.BandFor(value);
+            var band = RelationScale.BandFor(value);
 
             var panel = new VisualElement();
-            panel.AddToClassList("rival__standing");
+            panel.AddToClassList("rstand");
 
-            var heading = new Label(Loc.T("relation.title"));
-            heading.AddToClassList("dossier__heading");
-            panel.Add(heading);
+            var head = new VisualElement();
+            head.AddToClassList("rstand__head");
 
-            var row = new VisualElement();
-            row.AddToClassList("rival__bandrow");
-
-            var name = new Label(RivalRelations.NameOf(band));
-            name.AddToClassList("rival__band");
+            var name = new Label(RelationScale.NameOf(band));
+            name.AddToClassList("rstand__band");
             name.AddToClassList(BandTextClass(band));
-            row.Add(name);
+            head.Add(name);
 
             var reading = new Label(value.ToString("+0;-0;0",
                 System.Globalization.CultureInfo.InvariantCulture));
 
-            reading.AddToClassList("rival__value");
-            row.Add(reading);
+            reading.AddToClassList("rstand__value");
+            head.Add(reading);
 
-            panel.Add(row);
+            panel.Add(head);
 
-            // The scale runs both ways from the middle, so the fill grows left of centre when a
-            // relationship has gone bad. A bar that only ever grows rightward cannot show that.
-            var track = new VisualElement();
-            track.AddToClassList("rival__track");
-
-            var fill = new VisualElement();
-            fill.AddToClassList("rival__fill");
-            fill.AddToClassList(BandClass(band));
-
-            var half = Math.Abs(value) / (RivalRelations.Best * 2.0) * 100.0;
-
-            fill.style.left = Length.Percent((float)(value >= 0 ? 50.0 : 50.0 - half));
-            fill.style.width = Length.Percent((float)half);
-
-            track.Add(fill);
-            panel.Add(track);
-
-            var note = new Label(RivalRelations.NoteFor(band));
-            note.AddToClassList("rival__note");
+            var note = new Label(RelationScale.NoteFor(band));
+            note.AddToClassList("rstand__note");
             panel.Add(note);
+
+            panel.Add(BuildBandTrack(value, band));
 
             // **What kind of company this is, which the board has never said.** It says who is
             // ahead, and a player had no way of knowing whether the lab above them is the one that
@@ -250,6 +237,55 @@ namespace ScalingLaws.UI
             panel.Add(BuildTraits(simulation, lab));
 
             return panel;
+        }
+
+        /// <summary>
+        /// The whole scale with the five bands on it, and a marker where this lab is.
+        ///
+        /// **Every band is the width of the range it covers**, so the track is the scale rather
+        /// than a decoration of it: Neutral is wide because it is wide, and Rivalry is a sliver at
+        /// the end because almost nothing gets that far. A player can see how close the next band
+        /// is, which is the question a single fill can never answer.
+        /// </summary>
+        private static VisualElement BuildBandTrack(double value, RelationBand band)
+        {
+            var track = new VisualElement();
+            track.AddToClassList("rstand__track");
+
+            var span = RelationScale.Best - RelationScale.Worst;
+
+            // Bottom to top, because the track reads left to right and the scale does too.
+            var edges = new[]
+            {
+                (RelationScale.Worst, RelationScale.HostileAbove, RelationBand.Rivalry),
+                (RelationScale.HostileAbove, RelationScale.TenseAbove, RelationBand.Hostile),
+                (RelationScale.TenseAbove, RelationScale.NeutralAbove, RelationBand.Tense),
+                (RelationScale.NeutralAbove, RelationScale.FriendlyAbove, RelationBand.Neutral),
+                (RelationScale.FriendlyAbove, RelationScale.Best, RelationBand.Friendly)
+            };
+
+            foreach (var (from, to, which) in edges)
+            {
+                var segment = new VisualElement();
+                segment.AddToClassList("rstand__seg");
+                segment.AddToClassList(BandClass(which));
+                segment.EnableInClassList("rstand__seg--on", which == band);
+
+                segment.style.width = Length.Percent((float)((to - from) / span * 100.0));
+                track.Add(segment);
+            }
+
+            // The marker, out of flow so it can sit anywhere along the track without pushing a band
+            // sideways. Clamped inside the ends, or at the extremes half of it hangs off the edge.
+            var marker = new VisualElement();
+            marker.AddToClassList("rstand__marker");
+
+            var at = (value - RelationScale.Worst) / span * 100.0;
+            marker.style.left = Length.Percent((float)Math.Clamp(at, 1.0, 99.0));
+
+            track.Add(marker);
+
+            return track;
         }
 
         /// <summary>
@@ -295,13 +331,22 @@ namespace ScalingLaws.UI
             return block;
         }
 
+        /// <summary>
+        /// What has moved the relationship, newest first.
+        ///
+        /// **Rows in a card rather than two columns of loose text.** It had no card at all and sat
+        /// flush against the edge of the panel under the one that did, so the two halves of this
+        /// tab read as two screens. Each row carries a lit edge in the direction it moved, which is
+        /// the same mark the work list on the other tab uses for the same reason: a column of
+        /// numbers where some are good and some are bad is a column nobody reads twice.
+        /// </summary>
         private static VisualElement BuildHistory(IReadOnlyList<RelationEntry> history)
         {
             var panel = new VisualElement();
-            panel.AddToClassList("rival__history");
+            panel.AddToClassList("rhist");
 
             var heading = new Label(Loc.T("relation.history"));
-            heading.AddToClassList("dossier__heading");
+            heading.AddToClassList("rhist__heading");
             panel.Add(heading);
 
             // Newest first, and capped: the recent half is what a player is deciding against, and a
@@ -309,20 +354,23 @@ namespace ScalingLaws.UI
             for (var index = 0; index < history.Count && index < 6; index++)
             {
                 var entry = history[index];
+                var good = entry.Delta >= 0.0;
 
                 var row = new VisualElement();
-                row.AddToClassList("rival__entry");
+                row.AddToClassList("rhist__row");
+                row.EnableInClassList("rhist__row--good", good);
+                row.EnableInClassList("rhist__row--bad", !good);
+
+                var text = new Label(entry.Reason);
+                text.AddToClassList("rhist__reason");
+                row.Add(text);
 
                 var delta = new Label(entry.Delta.ToString("+0;-0",
                     System.Globalization.CultureInfo.InvariantCulture));
 
-                delta.AddToClassList("rival__delta");
-                delta.EnableInClassList("rival__delta--bad", entry.Delta < 0.0);
+                delta.AddToClassList("rhist__delta");
+                delta.EnableInClassList("rhist__delta--bad", !good);
                 row.Add(delta);
-
-                var text = new Label(entry.Reason);
-                text.AddToClassList("rival__reason");
-                row.Add(text);
 
                 panel.Add(row);
             }

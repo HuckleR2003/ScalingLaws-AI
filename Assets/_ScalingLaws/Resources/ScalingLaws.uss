@@ -22385,3 +22385,129 @@
     font-size: 11px;
     color: rgba(150, 162, 186, 0.9);
 }
+
+/* ---- where the relationship stands ----------------------------------------------------------- */
+
+/* The first version of this had no card at all: a heading, a stripe floating in the middle of
+   nothing, and two rows of text flush against the edge of the panel. Same shape as the other three
+   sections now, so the four tabs read as one card rather than as four screens. */
+.rstand {
+    flex-shrink: 0;
+    margin-bottom: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.rstand__head {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.rstand__band {
+    font-size: 22px;
+}
+
+.rstand__value {
+    font-size: 15px;
+    color: rgba(160, 172, 196, 0.85);
+}
+
+.rstand__note {
+    font-size: 12.5px;
+    color: rgba(180, 190, 212, 0.9);
+    white-space: normal;
+    margin-bottom: 12px;
+}
+
+/* **The scale, not a decoration of it.** Every band is as wide as the range it covers, so Neutral
+   is broad because it is broad and Rivalry is a sliver because almost nothing gets that far. A
+   player can see how close the next band is, which a single fill can never answer. */
+.rstand__track {
+    flex-direction: row;
+    height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.rstand__seg {
+    height: 14px;
+    opacity: 0.22;
+}
+
+/* The band they are actually in. Everything else is there for scale. */
+.rstand__seg--on {
+    opacity: 1;
+}
+
+/* Out of flow, so it can sit anywhere along the track without pushing a band sideways. */
+.rstand__marker {
+    position: absolute;
+    top: -3px;
+    width: 3px;
+    height: 20px;
+    border-radius: 2px;
+    background-color: rgb(244, 248, 255);
+}
+
+/* What has moved the relationship. Rows in a card, with a lit edge in the direction each one went,
+   the same mark the work list on the TOGETHER tab uses: a column of numbers where some are good and
+   some are bad is a column nobody reads twice. */
+.rhist {
+    flex-shrink: 0;
+    padding: 12px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.rhist__heading {
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    color: rgb(132, 145, 164);
+    margin-bottom: 8px;
+}
+
+.rhist__row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 9px 7px 9px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.rhist__row--good {
+    border-left-color: rgb(140, 210, 170);
+}
+
+.rhist__row--bad {
+    border-left-color: rgba(232, 120, 110, 0.75);
+}
+
+.rhist__reason {
+    font-size: 12px;
+    color: rgb(222, 230, 244);
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+.rhist__delta {
+    font-size: 12.5px;
+    color: rgb(140, 210, 170);
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.rhist__delta--bad {
+    color: rgba(232, 120, 110, 0.95);
+}
