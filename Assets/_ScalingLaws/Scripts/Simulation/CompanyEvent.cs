@@ -181,7 +181,10 @@ namespace ScalingLaws.Simulation
         CampaignFinished = 70,
 
         /// <summary>It ended early, whoever ended it. The break fee is on the event.</summary>
-        CampaignLeft = 71
+        CampaignLeft = 71,
+
+        /// <summary>Another lab wants to renew something that just ran out.</summary>
+        RenewalOffered = 72
     }
 
     /// <summary>

@@ -130,6 +130,11 @@ namespace ScalingLaws.Simulation
 
                     Remember(ended.Lab, ended.Offer, ended.Started, DealOutcome.Finished);
 
+                    // **And half the time they ring about it.** A term that always waits to be
+                    // noticed is a subscription; one the other company sometimes brings up is two
+                    // companies that have been working together.
+                    MaybeOfferRenewal(ended.Lab, ended.Offer);
+
                     State.RaiseEvent(new CompanyEvent(CompanyEventType.DealEnded, State.Date,
                         Loc.T("offer.event.ended",
                             RelationOfferCatalog.Get(ended.Offer).DisplayName,
@@ -402,6 +407,123 @@ namespace ScalingLaws.Simulation
                 Loc.T("alliance.event.broken", CompetitorCatalog.NameOf(lab))));
         }
 
+
+
+        // ---- renewing something that ran its term ---------------------------------------------
+
+        /// <summary>
+        /// The chance the other side rings you about it rather than waiting to be asked.
+        ///
+        /// **Half, and it is the difference between a relationship and a supplier.** A term that
+        /// ends and always waits for the player to notice is a subscription; one where the other
+        /// company sometimes calls first is two companies that have been working together. The
+        /// author asked for exactly this number.
+        /// </summary>
+        public const double TheyCallFirstChance = 0.5;
+
+        /// <summary>How long a renewal stays on the table before it is assumed to be a no.</summary>
+        public const int RenewalOpenDays = 14;
+
+        /// <summary>
+        /// Whether they proposed it themselves, which is what an accepted renewal costs nothing to
+        /// find out: no letter, no waiting, no roll. That is the whole value of being called.
+        /// </summary>
+        public bool RenewalIsOnTheTable =>
+            State.Renewal.HasValue
+            && State.Renewal.Value.OpenedOn.DayIndex + RenewalOpenDays > State.Date.DayIndex;
+
+        /// <summary>
+        /// Takes a renewal the other side offered. Charged, and it starts today.
+        ///
+        /// **No acceptance roll, and that is the point.** Sending the same offer again through
+        /// `TrySendOffer` is always available and costs a wait and a chance of a no. When they rang
+        /// you, they have already said yes, so the only question left is whether the company can
+        /// pay for it.
+        /// </summary>
+        public bool TryAcceptRenewal(out string why)
+        {
+            if (!RenewalIsOnTheTable)
+            {
+                why = Loc.T("renew.fail.gone");
+                return false;
+            }
+
+            var renewal = State.Renewal.Value;
+            var definition = RelationOfferCatalog.Get(renewal.Offer);
+
+            if (State.ResearchPoints < definition.PointCost)
+            {
+                why = Loc.T("offer.fail.points", definition.PointCost.ToString());
+                return false;
+            }
+
+            if (State.CashUsd < definition.CashCostUsd)
+            {
+                why = Loc.T("offer.fail.cash");
+                return false;
+            }
+
+            State.ResearchPoints -= definition.PointCost;
+
+            if (definition.CashCostUsd > 0)
+            {
+                State.PostCash(LedgerLine.Marketing, definition.CashCostUsd);
+            }
+
+            State.Deals.Add(new StandingDeal(renewal.Lab, renewal.Offer, State.Date,
+                State.Date.AddDays(definition.TermDays)));
+
+            State.Relations.Record(renewal.Lab, State.Date, definition.RelationGain * 0.5,
+                ReasonKeyFor(renewal.Offer), CompetitorCatalog.NameOf(renewal.Lab));
+
+            State.Renewal = null;
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.OfferAccepted, State.Date,
+                Loc.T("renew.event.taken", definition.DisplayName,
+                    CompetitorCatalog.NameOf(renewal.Lab)),
+                -definition.CashCostUsd));
+
+            why = string.Empty;
+            return true;
+        }
+
+        /// <summary>Puts it down. Nothing is charged and the relation is not touched.</summary>
+        public void DeclineRenewal() => State.Renewal = null;
+
+        /// <summary>
+        /// Rolls for whether they ring about a term that has just run out.
+        ///
+        /// **Only for something that was worth renewing.** A published finding has no term, and a
+        /// company does not telephone about a paper. Its own stream, keyed on the day and the lab,
+        /// so adding this cannot shift a draw the balance suite depends on.
+        /// </summary>
+        private void MaybeOfferRenewal(CompetitorId lab, RelationOffer offer)
+        {
+            if (RelationOfferCatalog.Get(offer).TermDays <= 0 || State.Renewal.HasValue)
+            {
+                return;
+            }
+
+            // They do not ring somebody they have fallen out with in the meantime.
+            if (State.Relations.BandWith(lab) < RelationBand.Neutral)
+            {
+                return;
+            }
+
+            var random = new DeterministicRandom(RelationMix(
+                State.RosterSeed, (uint)lab, (uint)State.Date.DayIndex, 0x4E5Eu));
+
+            if (!random.NextChance(TheyCallFirstChance))
+            {
+                return;
+            }
+
+            State.Renewal = new PendingRenewal(lab, offer, State.Date);
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.RenewalOffered, State.Date,
+                Loc.T("renew.event.offered", RelationOfferCatalog.Get(offer).DisplayName,
+                    CompetitorCatalog.NameOf(lab))));
+        }
 
         // ---- the joint research campaign ------------------------------------------------------
 

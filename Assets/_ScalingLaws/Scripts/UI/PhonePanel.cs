@@ -993,6 +993,71 @@ namespace ScalingLaws.UI
             }).ExecuteLater(WakeDelay);
         }
 
+
+        /// <summary>
+        /// A caller who says nothing: the handset arrives, shows who it is, and leaves.
+        ///
+        /// **For a call that is announcing rather than talking.** The cousin's calls are
+        /// conversations and the lawyers' call is a speech, and both need the chat, the bubbles and
+        /// a way to hang up. A lab ringing to say they would like to carry on is none of that: the
+        /// decision is on the card that follows, so a handset that stayed would be a handset the
+        /// player has to dismiss before they can read the thing it was announcing.
+        ///
+        /// Nothing is kept. No thread, no history, no row on the home screen, the same rule
+        /// `RingFrom` follows.
+        /// </summary>
+        public void RingShort(string caller, string note, Texture2D logo, Action then)
+        {
+            if (host == null || string.IsNullOrWhiteSpace(caller))
+            {
+                then?.Invoke();
+                return;
+            }
+
+            Close();
+            returning = false;
+
+            BuildFrame();
+
+            frame.schedule.Execute(() =>
+            {
+                screen.AddToClassList("phone__screen--on");
+                screen.Clear();
+
+                var card = new VisualElement();
+                card.AddToClassList("phone__calling");
+
+                if (logo != null)
+                {
+                    var mark = new VisualElement();
+                    mark.AddToClassList("phone__callinglogo");
+                    mark.style.backgroundImage = new StyleBackground(logo);
+                    card.Add(mark);
+                }
+
+                var who = new Label(caller);
+                who.AddToClassList("phone__callingwho");
+                card.Add(who);
+
+                var what = new Label(note ?? string.Empty);
+                what.AddToClassList("phone__callingnote");
+                card.Add(what);
+
+                screen.Add(card);
+
+                // A second and a half, which is the author's own number and is long enough to read
+                // a name and short enough that nobody reaches for a button.
+                screen.schedule.Execute(() =>
+                {
+                    Close();
+                    then?.Invoke();
+                }).ExecuteLater(ShortCallMilliseconds);
+            }).ExecuteLater(WakeDelay);
+        }
+
+        /// <summary>How long a call that only announces stays on screen.</summary>
+        public const int ShortCallMilliseconds = 1500;
+
         /// <summary>An initial on a coloured disc, for a caller who has no portrait.</summary>
         private static VisualElement Disc(int size, string name)
         {

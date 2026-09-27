@@ -622,5 +622,173 @@ namespace ScalingLaws.Tests.EditMode
             StringAssert.Contains("v66 to v67", SaveMigration.LastMigrationNotes);
         }
 
+
+        /// <summary>
+        /// A term that runs out is sometimes brought up by the other side, and taking it is cheap.
+        ///
+        /// **Half the time, which is the author's own number**, and it is the difference between a
+        /// relationship and a subscription: a term that always waits to be noticed is the second
+        /// one. Driven across many seeds rather than asserted on one, because a coin that came up
+        /// heads once proves nothing about the coin.
+        /// </summary>
+        [Test]
+        public void SometimesTheyRingAboutATermThatRanOutAndSometimesTheyDoNot()
+        {
+            var rang = 0;
+            var runs = 40;
+
+            for (var seed = 0u; seed < runs; seed++)
+            {
+                var simulation = Company(seed + 1);
+                var lab = CompetitorId.Cohere;
+
+                Warm(simulation, lab, RivalRelations.Best);
+
+                simulation.State.Deals.Add(new StandingDeal(lab, RelationOffer.CapacityPurchase,
+                    simulation.State.Date, simulation.State.Date.AddDays(2)));
+
+                for (var day = 0; day < 4; day++)
+                {
+                    simulation.AdvanceDay();
+                }
+
+                if (simulation.State.Renewal.HasValue)
+                {
+                    rang++;
+                }
+            }
+
+            Assert.That(rang, Is.GreaterThan(runs / 6),
+                "they never ring, so a term ending is a subscription lapsing");
+
+            Assert.That(rang, Is.LessThan(runs * 5 / 6),
+                "they always ring, so the roll is not a roll");
+        }
+
+        /// <summary>
+        /// Taking a renewal they offered costs the money and starts today, with no roll.
+        ///
+        /// **That is the whole value of being called.** Sending the same offer again is always
+        /// available and costs a wait and a chance of a no; when they rang, they have already said
+        /// yes and the only question left is whether the company can pay.
+        /// </summary>
+        [Test]
+        public void ARenewalTheyOfferedStartsAtOnceAndCostsWhatTheOfferCosts()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+            var offer = RelationOffer.CapacityPurchase;
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            simulation.State.Renewal = new PendingRenewal(lab, offer, simulation.State.Date);
+
+            var before = simulation.State.CashUsd;
+
+            Assert.IsTrue(simulation.TryAcceptRenewal(out var why), why);
+
+            Assert.That(simulation.State.CashUsd,
+                Is.EqualTo(before - RelationOfferCatalog.Get(offer).CashCostUsd),
+                "it costs what the offer costs and nothing extra for the convenience");
+
+            Assert.That(simulation.State.Deals, Has.Count.EqualTo(1),
+                "and it is running today rather than waiting on an answer");
+
+            Assert.IsNull(simulation.State.Renewal);
+        }
+
+        [Test]
+        public void ARenewalLeftAloneGoesOffTheTableAndCostsNothing()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date);
+
+            Assert.IsTrue(simulation.RenewalIsOnTheTable);
+
+            var before = simulation.State.CashUsd;
+
+            for (var day = 0; day < CompanySimulation.RenewalOpenDays + 1; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.IsFalse(simulation.RenewalIsOnTheTable,
+                "a fortnight of silence is an answer");
+
+            Assert.That(simulation.State.CashUsd, Is.LessThanOrEqualTo(before),
+                "and ignoring it charges nothing beyond the ordinary daily bill");
+
+            Assert.IsFalse(simulation.TryAcceptRenewal(out var why));
+            Assert.That(why, Is.Not.Empty);
+        }
+
+        /// <summary>
+        /// A lab the company has fallen out with in the meantime does not ring.
+        ///
+        /// Read from the band rather than from a second record, the same way everything else in
+        /// this system reads it.
+        /// </summary>
+        [Test]
+        public void NobodyRingsSomebodyTheyHaveFallenOutWith()
+        {
+            for (var seed = 0u; seed < 20; seed++)
+            {
+                var simulation = Company(seed + 100);
+                var lab = CompetitorId.Cohere;
+
+                Warm(simulation, lab, RivalRelations.HostileAbove);
+
+                simulation.State.Deals.Add(new StandingDeal(lab, RelationOffer.CapacityPurchase,
+                    simulation.State.Date, simulation.State.Date.AddDays(2)));
+
+                for (var day = 0; day < 4; day++)
+                {
+                    simulation.AdvanceDay();
+                }
+
+                Assert.IsNull(simulation.State.Renewal,
+                    "a lab that is hostile telephoned to ask about carrying on");
+            }
+        }
+
+        [Test]
+        public void ARenewalOnTheTableSurvivesASave()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.DistributionLicence,
+                simulation.State.Date);
+
+            var back = SaveStore.Restore(SaveStore.Parse(
+                UnityEngine.JsonUtility.ToJson(SaveStore.Capture(simulation.State))));
+
+            Assert.IsTrue(back.Renewal.HasValue,
+                "the roll for whether they rang has happened, so a reload must not get a second go");
+
+            Assert.That(back.Renewal.Value.Lab, Is.EqualTo(lab));
+            Assert.That(back.Renewal.Value.Offer, Is.EqualTo(RelationOffer.DistributionLicence));
+        }
+
+        /// <summary>v67 to v68: nobody has offered to renew anything, because nothing could.</summary>
+        [Test]
+        public void AnOlderCampaignHasNoRenewalWaiting()
+        {
+            var data = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            data.version = 67;
+            data.renewalLab = 999;
+
+            var upgraded = SaveMigration.UpgradeV67ToV68(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(68));
+            Assert.That(upgraded.renewalLab, Is.EqualTo(-1));
+            StringAssert.Contains("v67 to v68", SaveMigration.LastMigrationNotes);
+        }
+
     }
 }

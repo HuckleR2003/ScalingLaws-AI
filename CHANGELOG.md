@@ -76,6 +76,23 @@ go in. This file is the draft for the store update post, so anything vague here 
   on screen in small grey type beside a button that looked broken, and a playtest read the button.
   Pressing it now puts the sentence at the foot of the screen and rings whatever is missing: the
   traits still to pick, the lab grid, the map, or BACK when the founder has no name yet.
+- **A badge in the top right when somebody is working with you.** It sits on the opposite side of
+  the bar from the effects, in its own colour, and hovering it lists every lab and what the
+  arrangement with them is: what is signed, what is running, and the joint programme if there is
+  one. At the foot of the card is the way through to the detail, which opens the ranking on large
+  rectangular sections saying what each one gives, what it cost and how long it has left. The badge
+  is not there at all when nothing is signed, rather than sitting empty.
+- **A term that runs out is brought up by the other side, half the time.** When it is, the telephone
+  rings with their name and their mark on it for a second and a half, then goes, and the card
+  underneath asks what to do about it: RENEW IT and NOT NOW, the same width, because sleeping on it
+  is a real answer. The offer stays on the table for a fortnight either way and the badge in the
+  corner goes on carrying it, so NOT NOW is choosing to think about it rather than choosing to lose
+  it. Taking one they offered costs what the offer costs and starts today with no waiting and no
+  chance of a refusal, which is the whole value of having been called.
+- **The card carries the ladder to the next alliance level.** Current level on the left, the one
+  being worked towards on the right, and the bar between them fills with days rather than with
+  money, with how many are left written underneath. Deciding whether to carry on with somebody is
+  the one moment where "where is this going" is worth having in front of you.
 
 ### Fixed
 
@@ -205,7 +222,11 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1486 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **Save v68** carries whether a lab has offered to renew a term, which lab and which arrangement.
+  The roll for whether they rang has already happened by the time it is written, so a reload must
+  not get a second go at it, and that is the same reason an open inspection and a filed lawsuit are
+  in the file. A v67 campaign has nothing waiting: there was no mechanism to offer one.
+- **1492 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

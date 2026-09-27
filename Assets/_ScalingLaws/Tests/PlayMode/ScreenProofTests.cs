@@ -260,6 +260,52 @@ namespace ScalingLaws.Tests.PlayMode
             }
         }
 
+        /// <summary>
+        /// The card a lab gets when it rings about carrying on.
+        ///
+        /// **Every band of it filled**, because an empty one proves nothing: the sentence, the tile
+        /// of facts, the ladder between two levels and both buttons. The Polish is the demanding
+        /// case, as it is everywhere else on these cards.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheRenewalCardDraws()
+        {
+            var host = new VisualElement();
+            host.style.width = 1600;
+            host.style.height = 500;
+            GateNotice.Host = host;
+
+            var rows = new List<(string, string)>
+            {
+                (Loc.T("allies.row.gives"), Loc.T("allies.gives.capacity")),
+                (Loc.T("allies.row.cost"), UiFormat.Money(4_000_000)),
+                (Loc.T("allies.row.term"), Loc.T("allies.row.days", "180"))
+            };
+
+            var ladder = new GateNotice.AllianceProgress(
+                Loc.T("alliance.name1"), Loc.T("alliance.name2"), 0.34,
+                Loc.T("renew.row.to_next") + ": " + Loc.T("allies.row.days", "119"));
+
+            var previous = Loc.Current;
+
+            try
+            {
+                Loc.Current = Language.Polish;
+
+                GateNotice.Decide(Loc.T("renew.title"),
+                    Loc.T("renew.line", "Gohere", Loc.T("offer.capacity")),
+                    rows, Loc.T("renew.yes"), () => { }, Loc.T("renew.later"), () => { }, ladder);
+
+                yield return Capture(host, "renewal_pl.png");
+            }
+            finally
+            {
+                Loc.Current = previous;
+                GateNotice.Hide();
+                GateNotice.Host = null;
+            }
+        }
+
         [UnityTest]
         public IEnumerator TheAchievementsPageDraws()
         {

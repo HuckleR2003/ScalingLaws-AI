@@ -168,6 +168,7 @@ namespace ScalingLaws.Persistence
                     64 => UpgradeV64ToV65(current),
                     65 => UpgradeV65ToV66(current),
                     66 => UpgradeV66ToV67(current),
+                    67 => UpgradeV67ToV68(current),
                     _ => current
                 };
             }
@@ -1958,6 +1959,32 @@ namespace ScalingLaws.Persistence
 
 
 
+
+        /// <summary>
+        /// v67 to v68: nobody has offered to renew anything.
+        ///
+        /// **The only true reading.** A v67 campaign was played in a game where a term ran out and
+        /// nothing followed it, so there was no roll to have happened and no offer to carry. Terms
+        /// that run out after the load get the roll like any other.
+        /// </summary>
+        public static SaveData UpgradeV67ToV68(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 68;
+            data.renewalLab = -1;
+            data.renewalKind = 0;
+            data.renewalDay = 0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v67 to v68: no renewal is waiting. A v67 campaign had no mechanism to offer one, "
+                + "so there is nothing to carry forward.");
+
+            return data;
+        }
         /// <summary>
         /// v66 to v67: nothing was ever done together, because there was nothing to do.
         ///

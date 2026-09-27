@@ -229,6 +229,14 @@ namespace ScalingLaws.Persistence
                 data.dealPastOutcomes.Add((int)past.Outcome);
             }
 
+            data.renewalLab = state.Renewal.HasValue ? (int)state.Renewal.Value.Lab : -1;
+
+            if (state.Renewal.HasValue)
+            {
+                data.renewalKind = (int)state.Renewal.Value.Offer;
+                data.renewalDay = state.Renewal.Value.OpenedOn.DayIndex;
+            }
+
             data.campaignTerm = state.Campaign == null ? -1 : (int)state.Campaign.Term;
 
             if (state.Campaign != null)
@@ -1124,6 +1132,15 @@ namespace ScalingLaws.Persistence
                         ? Math.Max(started, safe.dealPastEndDays[index])
                         : started),
                     outcome));
+            }
+
+            state.Renewal = null;
+
+            if (Enum.IsDefined(typeof(CompetitorId), safe.renewalLab)
+                && Enum.IsDefined(typeof(RelationOffer), safe.renewalKind))
+            {
+                state.Renewal = new PendingRenewal((CompetitorId)safe.renewalLab,
+                    (RelationOffer)safe.renewalKind, new GameDate(Math.Max(0, safe.renewalDay)));
             }
 
             state.Campaign = null;

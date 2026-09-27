@@ -158,6 +158,9 @@ namespace ScalingLaws.Simulation
         /// <summary>The joint research programme running, or null. One at a time. Saved from v66.</summary>
         public ResearchCampaign Campaign { get; set; }
 
+        /// <summary>A renewal another lab has put on the table, or null. One at a time. Saved from v68.</summary>
+        public PendingRenewal? Renewal { get; set; }
+
         /// <summary>
         /// Cabinets and fans the company has paid for and not stood up.
         ///

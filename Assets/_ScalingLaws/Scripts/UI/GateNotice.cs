@@ -47,6 +47,23 @@ namespace ScalingLaws.UI
         /// <summary>What the notice on screen is offering, or null when it offers nothing.</summary>
         private static List<ResearchNodeId> offered;
 
+        /// <summary>Where an alliance stands, for the bar on a decision card.</summary>
+        public readonly struct AllianceProgress
+        {
+            public AllianceProgress(string nowText, string nextText, double share, string note)
+            {
+                NowText = nowText;
+                NextText = nextText;
+                Share = share;
+                Note = note;
+            }
+
+            public string NowText { get; }
+            public string NextText { get; }
+            public double Share { get; }
+            public string Note { get; }
+        }
+
         /// <summary>
         /// Says that a control needs research, and offers the way to it.
         ///
@@ -98,6 +115,171 @@ namespace ScalingLaws.UI
             }
 
             Build(subject, sentence, null);
+        }
+
+
+        /// <summary>
+        /// A decision put to the player: a sentence, the facts under it, and two ways to answer.
+        ///
+        /// **The same card as the rest of this class and that is deliberate.** A locked control, a
+        /// creator page that will not continue and a lab asking to carry on are three different
+        /// subjects with one shape in common: something answered the player, it sits under whatever
+        /// they were looking at, and it stays until they deal with it. Three separate notices with
+        /// that lifetime would be three places to get the click-eating wrong, which this project
+        /// has already shipped twice.
+        ///
+        /// It differs from the announcement notice in every way that matters: that one arrives at
+        /// the top, holds three seconds and leaves, and **a timed announcement carrying two buttons
+        /// is two buttons that vanish while the cursor is travelling towards them**.
+        /// </summary>
+        public static void Decide(string kicker, string sentence,
+            IReadOnlyList<(string Label, string Value)> rows,
+            string yesText, Action yes, string noText, Action no,
+            AllianceProgress? progress = null)
+        {
+            if (Host == null || string.IsNullOrEmpty(sentence))
+            {
+                return;
+            }
+
+            Hide();
+
+            frame = new VisualElement();
+            frame.AddToClassList("gate");
+            frame.AddToClassList("gate--decide");
+            frame.pickingMode = PickingMode.Ignore;
+
+            var head = new VisualElement();
+            head.AddToClassList("gate__head");
+            head.pickingMode = PickingMode.Ignore;
+
+            var top = new Label(kicker ?? string.Empty);
+            top.AddToClassList("gate__kicker");
+            head.Add(top);
+            frame.Add(head);
+
+            var line = new Label(sentence);
+            line.AddToClassList("gate__line");
+            frame.Add(line);
+
+            if (rows != null && rows.Count > 0)
+            {
+                frame.Add(Tile(rows));
+            }
+
+            if (progress.HasValue)
+            {
+                frame.Add(Ladder(progress.Value));
+            }
+
+            var buttons = new VisualElement();
+            buttons.AddToClassList("gate__buttons");
+
+            var take = new Button(() =>
+            {
+                Hide();
+                yes?.Invoke();
+            })
+            { text = yesText };
+
+            take.AddToClassList("gate__go");
+            take.AddToClassList("gate__go--half");
+            buttons.Add(take);
+
+            var leave = new Button(() =>
+            {
+                Hide();
+                no?.Invoke();
+            })
+            { text = noText };
+
+            leave.AddToClassList("gate__later");
+            buttons.Add(leave);
+
+            frame.Add(buttons);
+            Host.Add(frame);
+
+            frame.AddToClassList("gate--arriving");
+            frame.schedule.Execute(() => frame?.RemoveFromClassList("gate--arriving")).ExecuteLater(16);
+        }
+
+        /// <summary>The facts, in the same shape the ranking board states them.</summary>
+        private static VisualElement Tile(IReadOnlyList<(string Label, string Value)> rows)
+        {
+            var tile = new VisualElement();
+            tile.AddToClassList("gate__tile");
+            tile.pickingMode = PickingMode.Ignore;
+
+            foreach (var (label, value) in rows)
+            {
+                var row = new VisualElement();
+                row.AddToClassList("gate__tilerow");
+                row.pickingMode = PickingMode.Ignore;
+
+                var left = new Label(label);
+                left.AddToClassList("gate__rowlabel");
+                row.Add(left);
+
+                var right = new Label(value);
+                right.AddToClassList("gate__rowvalue");
+                row.Add(right);
+
+                tile.Add(row);
+            }
+
+            return tile;
+        }
+
+        /// <summary>
+        /// Where the alliance with them stands, and how far it is to the next rung.
+        ///
+        /// **Current level on the left, the one being worked towards on the right, and the bar
+        /// between them fills with days.** Asked for by name, and it is the right thing to put on
+        /// this card in particular: a company deciding whether to carry on with somebody is exactly
+        /// the moment the answer to "where is this going" is worth having in front of them.
+        /// </summary>
+        private static VisualElement Ladder(AllianceProgress progress)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("gate__ladder");
+            block.pickingMode = PickingMode.Ignore;
+
+            var row = new VisualElement();
+            row.AddToClassList("gate__ladderrow");
+            row.pickingMode = PickingMode.Ignore;
+
+            var now = new Label(progress.NowText);
+            now.AddToClassList("gate__laddernow");
+            row.Add(now);
+
+            var track = new VisualElement();
+            track.AddToClassList("gate__laddertrack");
+            track.pickingMode = PickingMode.Ignore;
+
+            var fill = new VisualElement();
+            fill.AddToClassList("gate__ladderfill");
+            fill.pickingMode = PickingMode.Ignore;
+            fill.style.width = new StyleLength(
+                Length.Percent((float)(Math.Clamp(progress.Share, 0.0, 1.0) * 100.0)));
+
+            track.Add(fill);
+            row.Add(track);
+
+            var next = new Label(progress.NextText);
+            next.AddToClassList("gate__laddernext");
+            row.Add(next);
+
+            block.Add(row);
+
+            if (!string.IsNullOrEmpty(progress.Note))
+            {
+                var note = new Label(progress.Note);
+                note.AddToClassList("gate__laddernote");
+                note.pickingMode = PickingMode.Ignore;
+                block.Add(note);
+            }
+
+            return block;
         }
 
         /// <summary>Takes it down. Safe to call when nothing is up, which is the common case.</summary>

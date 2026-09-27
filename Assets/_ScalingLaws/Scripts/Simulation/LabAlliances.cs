@@ -108,6 +108,27 @@ namespace ScalingLaws.Simulation
         public int Days => Math.Max(0, Ended.DayIndex - Started.DayIndex);
     }
 
+    /// <summary>
+    /// A renewal the other side has put on the table, waiting for an answer.
+    ///
+    /// **Causal, and saved.** The roll for whether they rang has already happened, so dropping
+    /// this on load would let a reload buy a second go at it, and would also lose an offer the
+    /// player might have been sleeping on. Thirteenth time in this project.
+    /// </summary>
+    public readonly struct PendingRenewal
+    {
+        public PendingRenewal(CompetitorId lab, RelationOffer offer, GameDate openedOn)
+        {
+            Lab = lab;
+            Offer = offer;
+            OpenedOn = openedOn;
+        }
+
+        public CompetitorId Lab { get; }
+        public RelationOffer Offer { get; }
+        public GameDate OpenedOn { get; }
+    }
+
     /// <summary>Something signed and running: a licence, an evaluation, a capacity term.</summary>
     public readonly struct StandingDeal
     {

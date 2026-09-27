@@ -22659,3 +22659,153 @@
     flex-shrink: 1;
     margin-left: 10px;
 }
+
+/* ---- a decision put to the player, on the same card as the rest ------------------------------ */
+
+/* Wider than the plain notice, because this one carries a tile of facts and a ladder rather than a
+   sentence and a button. Still anchored to the bottom: it is an answer to something and it sits
+   where the eye already is. */
+.gate--decide {
+    left: 18%;
+    right: 18%;
+}
+
+.gate__tile {
+    margin-top: 12px;
+    padding: 12px 14px 8px 14px;
+    border-radius: 9px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.gate__tilerow {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.gate__rowlabel {
+    font-size: 11.5px;
+    color: rgba(158, 168, 192, 0.9);
+}
+
+.gate__rowvalue {
+    font-size: 12.5px;
+    color: rgb(230, 236, 250);
+    white-space: normal;
+    flex-shrink: 1;
+    margin-left: 12px;
+}
+
+/* **Current level on the left, the one being worked towards on the right, days in between.** The
+   author asked for exactly this, and a decision about carrying on with somebody is the right
+   moment for it: it is the one place where "where is this going" has an answer worth reading. */
+.gate__ladder {
+    margin-top: 12px;
+}
+
+.gate__ladderrow {
+    flex-direction: row;
+    align-items: center;
+}
+
+.gate__laddernow {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    color: rgb(206, 194, 255);
+    flex-shrink: 0;
+}
+
+.gate__laddertrack {
+    flex-grow: 1;
+    height: 8px;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.gate__ladderfill {
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgb(176, 158, 255);
+}
+
+.gate__laddernext {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    color: rgba(176, 158, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.gate__laddernote {
+    font-size: 11px;
+    color: rgba(150, 162, 186, 0.9);
+    margin-top: 5px;
+}
+
+.gate__buttons {
+    flex-direction: row;
+    margin-top: 14px;
+}
+
+/* Half each, so neither answer is the loud one. Taking a renewal and sleeping on it are both
+   real answers here, and a full-width yes over a small no is a card that has decided for you. */
+.gate__go--half {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 8px;
+}
+
+.gate__later {
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 40px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+    color: rgba(206, 214, 236, 0.92);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(150, 162, 186, 0.35);
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+/* ---- a caller who only announces ------------------------------------------------------------- */
+
+.phone__calling {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.phone__callinglogo {
+    width: 76px;
+    height: 76px;
+    margin-bottom: 16px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.phone__callingwho {
+    font-size: 19px;
+    color: rgb(238, 243, 252);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.phone__callingnote {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: rgba(176, 158, 255, 0.9);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}

@@ -145,3 +145,14 @@ Assets/_ScalingLaws/Logs.meta
 # CGTrader models: royalty-free licence allows use in the game, not redistribution of the files.
 /Assets/_ScalingLaws/Art/Models/CGTrader/
 /Assets/_ScalingLaws/Art/Models/CGTrader.meta
+
+# Every tool in this project writes its frames to a folder ending in a tilde, which is Unity's own
+# convention for "not an asset". They were listed one by one above and CitySnapshot~ was the one
+# that got forgotten, so the pattern is the rule rather than the list.
+*~/
+
+# Archives of the asset folder. One was sitting here at 566 MB against GitHub's 100 MB ceiling,
+# which is the fault that killed three pushes with HTTP 408 and read like a network problem.
+*.rar
+*.zip
+*.7z

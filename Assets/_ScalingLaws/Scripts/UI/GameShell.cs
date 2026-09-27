@@ -4086,6 +4086,13 @@ namespace ScalingLaws.UI
                     RingAboutTheDesk();
                 }
 
+                // **They ring about a term that ran out.** Half the time, and only for something with
+                // a term worth renewing: a company does not telephone about a paper.
+                if (companyEvent.Type == CompanyEventType.RenewalOffered)
+                {
+                    RingAboutRenewal();
+                }
+
                 // **The tour waits for these rather than narrating them.** Reported here because
                 // every way of moving the clock already comes through this method, so a run that
                 // finishes while the player is on another tab still moves the step on.
@@ -4329,6 +4336,113 @@ namespace ScalingLaws.UI
                 Loc.T("threat.call.line2"),
                 Loc.T("threat.call.line3")
             });
+        }
+
+
+        /// <summary>
+        /// They ring about a term that ran out, and then the card asks what to do about it.
+        ///
+        /// **The phone first, for a second and a half, and then it goes.** That is the author's own
+        /// shape and it is right: a company that telephones is a different fact from a letter, and
+        /// the handset arriving and leaving is the whole of what makes it feel like one. The card
+        /// underneath is where the decision actually lives, because a decision on a handset that is
+        /// already sliding off screen is a decision nobody reads.
+        ///
+        /// Skipped while the cousin's own phone is up, the same rule the lawyers' call follows.
+        /// The offer stays on the table for a fortnight either way, so nothing is lost by it.
+        /// </summary>
+        private void RingAboutRenewal()
+        {
+            if (!simulation.RenewalIsOnTheTable)
+            {
+                return;
+            }
+
+            var renewal = simulation.State.Renewal.Value;
+
+            if (phone != null && !phone.IsOpen)
+            {
+                phone.RingShort(CompetitorCatalog.NameOf(renewal.Lab),
+                    Loc.T("renew.calling"), LabLogos.Get(renewal.Lab), ShowRenewalCard);
+
+                return;
+            }
+
+            ShowRenewalCard();
+        }
+
+        /// <summary>
+        /// The card: what they want, what it is worth, and where the alliance with them is going.
+        ///
+        /// **Both buttons are real answers.** Later is not a dismissal that loses the offer: it
+        /// stays on the table for a fortnight and the badge in the corner goes on carrying it, so
+        /// pressing it is choosing to think about it rather than choosing to lose it.
+        /// </summary>
+        private void ShowRenewalCard()
+        {
+            if (!simulation.RenewalIsOnTheTable)
+            {
+                return;
+            }
+
+            var renewal = simulation.State.Renewal.Value;
+            var definition = RelationOfferCatalog.Get(renewal.Offer);
+            var them = CompetitorCatalog.NameOf(renewal.Lab);
+
+            var rows = new List<(string, string)>
+            {
+                (Loc.T("allies.row.gives"), Loc.T(GivesKeyOf(renewal.Offer))),
+                (Loc.T("allies.row.cost"), definition.CashCostUsd > 0
+                    ? UiFormat.Money(definition.CashCostUsd)
+                    : Loc.T("allies.row.points_only", definition.PointCost.ToString())),
+                (Loc.T("allies.row.term"),
+                    Loc.T("allies.row.days", definition.TermDays.ToString()))
+            };
+
+            GateNotice.Decide(
+                Loc.T("renew.title"),
+                Loc.T("renew.line", them, definition.DisplayName),
+                rows,
+                Loc.T("renew.yes"),
+                () =>
+                {
+                    simulation.TryAcceptRenewal(out var why);
+
+                    if (!string.IsNullOrEmpty(why))
+                    {
+                        GateNotice.Says(them, why);
+                    }
+
+                    RefreshChrome();
+                },
+                Loc.T("renew.later"),
+                () => { },
+                LadderFor(renewal.Lab));
+        }
+
+        /// <summary>
+        /// Where the alliance with one lab stands, for the bar on the card.
+        ///
+        /// Null when there is nothing signed, because a bar from nothing to nothing is furniture.
+        /// </summary>
+        private GateNotice.AllianceProgress? LadderFor(CompetitorId lab)
+        {
+            var level = simulation.State.Alliances.LevelWith(lab);
+
+            if (level <= 0 || level >= LabAlliances.TopLevel)
+            {
+                return null;
+            }
+
+            var held = simulation.State.Alliances.DaysAtLevel(lab, simulation.State.Date);
+            var needed = LabAlliances.DaysNeededFor(level + 1);
+            var left = Math.Max(0, needed - held);
+
+            return new GateNotice.AllianceProgress(
+                Loc.T(LevelNameKeyOf(level)),
+                Loc.T(LevelNameKeyOf(level + 1)),
+                needed <= 0 ? 1.0 : held / (double)needed,
+                Loc.T("renew.row.to_next") + ": " + Loc.T("allies.row.days", left.ToString()));
         }
 
         /// <summary>

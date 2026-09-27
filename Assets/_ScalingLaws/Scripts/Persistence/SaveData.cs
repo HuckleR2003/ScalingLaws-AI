@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 67;
+        public const int CurrentVersion = 68;
 
         public int version = CurrentVersion;
 
@@ -734,6 +734,20 @@ namespace ScalingLaws.Persistence
 
         /// <summary>See <see cref="dealPastLabs"/>.</summary>
         public List<int> dealPastOutcomes = new();
+
+        /// <summary>
+        /// v68. A renewal another lab has put on the table, or a lab of minus one for none.
+        ///
+        /// **Causal.** The roll for whether they rang has happened, so dropping it would let a
+        /// reload buy a second go at it and would lose an offer the player was sleeping on.
+        /// </summary>
+        public int renewalLab = -1;
+
+        /// <summary>See <see cref="renewalLab"/>.</summary>
+        public int renewalKind;
+
+        /// <summary>See <see cref="renewalLab"/>.</summary>
+        public int renewalDay;
 
         public bool hasResearchProject;
         public int researchNode;
