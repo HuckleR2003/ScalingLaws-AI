@@ -267,6 +267,15 @@ namespace ScalingLaws.UI
                         side.Add(premises);
                     }
 
+                    // And the joint programme under both, because it is the second place points
+                    // come from and this is the only screen about where they come from.
+                    var consortium = BuildCampaignPanel();
+
+                    if (consortium != null)
+                    {
+                        side.Add(consortium);
+                    }
+
                     // Under the premises, where the author asked for it: the safety ladders.
                     side.Add(BuildSafetyBoard(board));
 
@@ -1262,6 +1271,139 @@ namespace ScalingLaws.UI
             }
 
             return false;
+        }
+
+
+        /// <summary>
+        /// The joint research programme, under the funding panel it belongs beside.
+        ///
+        /// **This screen is the only one about where points come from**, and a consortium is the
+        /// second place they come from, so it goes here rather than on a rival's card. What is on
+        /// the rival's card is the relationship; what is here is the laboratory.
+        ///
+        /// It draws nothing at all until somebody is at the working-group level, because a panel
+        /// explaining a programme the player cannot open for nine months is nine months of furniture
+        /// on the screen they spend the most time reading.
+        /// </summary>
+        private VisualElement BuildCampaignPanel()
+        {
+            var running = simulation.State.Campaign;
+            var candidates = simulation.CampaignCandidates();
+
+            if (running == null && candidates.Count == 0)
+            {
+                return null;
+            }
+
+            var panel = new VisualElement();
+            panel.AddToClassList("panel");
+            panel.AddToClassList("rcampaign");
+
+            var title = new Label(Loc.T("campaign.title"));
+            title.AddToClassList("rcampaign__title");
+            panel.Add(title);
+
+            if (running != null)
+            {
+                var members = running.Members.Count + 1;
+
+                var line = new Label(Loc.T("campaign.running",
+                    NamesOf(running.Members),
+                    running.DaysLeft(simulation.State.Date).ToString(),
+                    UiFormat.Points(ResearchCampaignCatalog.PointsPerDay
+                        * ResearchCampaignCatalog.PointsMultiplier(members)
+                        * ResearchCampaignCatalog.RateFor(running.Term))));
+
+                line.AddToClassList("rcampaign__line");
+                panel.Add(line);
+
+                var fee = (long)(CompanySimulation.CampaignDailyCostUsd(members)
+                    * running.DaysLeft(simulation.State.Date)
+                    * ResearchCampaignCatalog.BreakFeeShare);
+
+                var note = new Label(Loc.T("campaign.leave_note", UiFormat.Money(fee)));
+                note.AddToClassList("rcampaign__note");
+                panel.Add(note);
+
+                var leave = new Button(() =>
+                {
+                    simulation.TryLeaveCampaign(out _);
+                    Show(current);
+                })
+                { text = Loc.T("campaign.leave") };
+
+                leave.AddToClassList("button");
+                leave.AddToClassList("rcampaign__leave");
+                panel.Add(leave);
+
+                return panel;
+            }
+
+            var strap = new Label(Loc.T("campaign.strap"));
+            strap.AddToClassList("rcampaign__note");
+            panel.Add(strap);
+
+            // **The value is printed as a comparison, not as a multiplier.** "3.7x" is a number the
+            // player has to trust; "eighty-four points a day for twenty-five thousand, which alone
+            // would be fourteen a day for forty-two" is one they can check.
+            var alone = ResearchCampaignCatalog.PointsPerDay;
+            var pair = alone * ResearchCampaignCatalog.PointsMultiplier(2);
+
+            var value = new Label(Loc.T("campaign.value",
+                UiFormat.Points(pair),
+                UiFormat.Money(CompanySimulation.CampaignDailyCostUsd(2)),
+                UiFormat.Points(alone),
+                UiFormat.Money(CompanySimulation.CampaignDailyCostUsd(1))));
+
+            value.AddToClassList("rcampaign__value");
+            panel.Add(value);
+
+            foreach (var term in ResearchCampaignCatalog.Terms)
+            {
+                var captured = term;
+
+                var open = new Button(() =>
+                {
+                    // Everybody who qualifies, up to the size of the room. Asking the player to
+                    // pick from a list of two would be a choice with no difference in it while
+                    // there is nobody at that level but the one lab.
+                    var room = new List<CompetitorId>();
+
+                    foreach (var lab in simulation.CampaignCandidates())
+                    {
+                        if (room.Count + 1 < ResearchCampaignCatalog.MostMembers)
+                        {
+                            room.Add(lab);
+                        }
+                    }
+
+                    simulation.TryStartCampaign(captured, room, out _);
+                    Show(current);
+                })
+                {
+                    text = $"{Loc.T(ResearchCampaignCatalog.KeyFor(term))}  ·  "
+                        + $"{ResearchCampaignCatalog.DaysIn(term)}"
+                };
+
+                open.AddToClassList("button");
+                open.AddToClassList("rcampaign__term");
+                panel.Add(open);
+            }
+
+            return panel;
+        }
+
+        /// <summary>The labs in the room, as a sentence the panel can print.</summary>
+        private static string NamesOf(IReadOnlyList<CompetitorId> members)
+        {
+            var names = new string[members.Count];
+
+            for (var index = 0; index < members.Count; index++)
+            {
+                names[index] = CompetitorCatalog.NameOf(members[index]);
+            }
+
+            return string.Join(Loc.T("gate.join"), names);
         }
 
         private void MarkTheRoadTo(ResearchNodeId id)

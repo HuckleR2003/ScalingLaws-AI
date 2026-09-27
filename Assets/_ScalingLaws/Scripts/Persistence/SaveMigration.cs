@@ -1987,6 +1987,8 @@ namespace ScalingLaws.Persistence
             data.allianceLevels = new List<int>();
             data.allianceSinceDays = new List<int>();
             data.allianceEverSigned = new List<int>();
+            data.campaignTerm = -1;
+            data.campaignMembers = new List<int>();
 
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v65 to v66: nothing is signed with anybody and no offer is waiting. A v65 campaign "

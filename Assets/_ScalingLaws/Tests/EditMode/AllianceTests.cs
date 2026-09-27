@@ -327,5 +327,170 @@ namespace ScalingLaws.Tests.EditMode
             }
         }
 
+
+        /// <summary>
+        /// The consortium's whole claim: the money goes two to three times further inside one.
+        ///
+        /// **The author gave this number and this is it measured from the other side.** Two members
+        /// each pay sixty per cent of what one would and the room makes 2.2 times the points, so a
+        /// dollar buys about three and two thirds of what it buys alone. Reaching the same place by
+        /// yourself costs about three and a half times as much.
+        /// </summary>
+        [Test]
+        public void TheMoneyGoesAboutThreeTimesFurtherInsideAConsortium()
+        {
+            var two = ResearchCampaignCatalog.ValueMultiple(2);
+            var three = ResearchCampaignCatalog.ValueMultiple(3);
+
+            Assert.That(two, Is.GreaterThan(2.0),
+                "the author asked for two to three times, and under two it is not worth signing");
+
+            Assert.That(three, Is.GreaterThan(two),
+                "a third member has to be worth asking");
+
+            Assert.That(ResearchCampaignCatalog.PointsMultiplier(3),
+                Is.LessThan(ResearchCampaignCatalog.PointsMultiplier(2) * 1.5),
+                "and sublinear, or a full room is simply the correct answer and who you ask stops "
+                + "mattering");
+        }
+
+        /// <summary>
+        /// **Nine months of somebody liking you, and no way to pay it down.** The working-group
+        /// level is a hundred and eighty days at level one, which is itself ninety days of Friendly.
+        /// A company with two hundred million dollars is refused exactly as a poor one is.
+        /// </summary>
+        [Test]
+        public void ACompanyWithNoAlliesCannotOpenAProgrammeAtAnyPrice()
+        {
+            var simulation = Company();
+            simulation.State.CashUsd = 5_000_000_000;
+
+            Assert.IsFalse(simulation.TryStartCampaign(CampaignTerm.Quarter,
+                new[] { CompetitorId.Cohere }, out var why));
+
+            StringAssert.Contains(CompetitorCatalog.NameOf(CompetitorId.Cohere), why,
+                "the refusal names the lab that is not far enough along");
+
+            StringAssert.Contains(
+                ResearchCampaignCatalog.NeedsAllianceLevel.ToString(), why,
+                "and the level it would have to reach, because that is the answer to \"why not\"");
+        }
+
+        [Test]
+        public void APointOfTheProgrammeArrivesEveryDayRatherThanAtTheEnd()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Ally(simulation, lab, ResearchCampaignCatalog.NeedsAllianceLevel);
+
+            var before = simulation.State.ResearchPoints;
+
+            Assert.IsTrue(simulation.TryStartCampaign(CampaignTerm.Quarter, new[] { lab },
+                out var why), why);
+
+            simulation.AdvanceDay();
+
+            var afterOneDay = simulation.State.ResearchPoints;
+
+            Assert.That(afterOneDay, Is.GreaterThan(before),
+                "a laboratory that has run for a day has learned a day of things");
+
+            for (var day = 0; day < 10; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(simulation.State.ResearchPoints, Is.GreaterThan(afterOneDay),
+                "and it keeps arriving");
+        }
+
+        /// <summary>
+        /// Walking out early forfeits the term and costs the fee.
+        ///
+        /// **Without it, joining and leaving on the last profitable day is the dominant line** and
+        /// every programme in the game would be taken and abandoned.
+        /// </summary>
+        [Test]
+        public void WalkingOutEarlyCostsMoreThanSittingOutTheTerm()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Ally(simulation, lab, ResearchCampaignCatalog.NeedsAllianceLevel);
+
+            Assert.IsTrue(simulation.TryStartCampaign(CampaignTerm.Year, new[] { lab },
+                out var why), why);
+
+            var before = simulation.State.CashUsd;
+
+            Assert.IsTrue(simulation.TryLeaveCampaign(out var leaveWhy), leaveWhy);
+
+            Assert.That(simulation.State.CashUsd, Is.LessThan(before),
+                "the break fee is charged on the way out");
+
+            Assert.IsNull(simulation.State.Campaign);
+        }
+
+        /// <summary>
+        /// A programme cannot outlive the alliance holding it up.
+        ///
+        /// Read from the alliance level rather than hooked onto the break, which is the same rule
+        /// the levels themselves follow: one place decides an alliance has ended.
+        /// </summary>
+        [Test]
+        public void AProgrammeCollapsesWithTheAllianceBehindIt()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Ally(simulation, lab, ResearchCampaignCatalog.NeedsAllianceLevel);
+
+            Assert.IsTrue(simulation.TryStartCampaign(CampaignTerm.Half, new[] { lab },
+                out var why), why);
+
+            // One smear's worth, recorded exactly the way the smear code records it.
+            simulation.State.Relations.Record(lab, simulation.State.Date, -80.0,
+                "relation.reason.smeared", "Adco");
+
+            simulation.AdvanceDay();
+
+            Assert.IsNull(simulation.State.Campaign,
+                "nothing in the smear code knows about research programmes, and it did not have to");
+        }
+
+        [Test]
+        public void AProgrammeSurvivesASaveWithEverybodyStillInTheRoom()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Ally(simulation, lab, ResearchCampaignCatalog.NeedsAllianceLevel);
+
+            Assert.IsTrue(simulation.TryStartCampaign(CampaignTerm.Year, new[] { lab },
+                out var why), why);
+
+            var back = SaveStore.Restore(SaveStore.Parse(
+                UnityEngine.JsonUtility.ToJson(SaveStore.Capture(simulation.State))));
+
+            Assert.IsNotNull(back.Campaign);
+            Assert.That(back.Campaign.Term, Is.EqualTo(CampaignTerm.Year));
+            Assert.That(back.Campaign.Members, Has.Count.EqualTo(1));
+            Assert.That(back.Campaign.Members[0], Is.EqualTo(lab));
+        }
+
+        /// <summary>Puts a lab at an alliance level without waiting the calendar out.</summary>
+        private static void Ally(CompanySimulation simulation, CompetitorId lab, int level)
+        {
+            simulation.State.Relations.Record(lab, simulation.State.Date,
+                RivalRelations.Best - simulation.State.Relations.With(lab),
+                "relation.reason.published");
+
+            for (var step = 0; step < level; step++)
+            {
+                simulation.State.Alliances.Sign(lab, simulation.State.Date);
+            }
+        }
+
     }
 }

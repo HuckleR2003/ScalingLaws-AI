@@ -169,6 +169,26 @@ namespace ScalingLaws.Tests.PlayMode
             shell.Simulation.State.Guide.Stage = GuideStage.Finished;
             Loc.Current = Language.English;
 
+            // **The joint research panel, which draws nothing until somebody is at the working
+            // group level.** Nine months of a relationship is a long way past where any assembled
+            // campaign starts, so without putting a lab there by hand this panel has never once
+            // appeared in a proof frame.
+            var ally = CompetitorId.Cohere;
+
+            shell.Simulation.State.Relations.Record(ally, shell.Simulation.State.Date,
+                RivalRelations.Best, "relation.reason.published");
+
+            shell.Simulation.State.Alliances.Sign(ally, shell.Simulation.State.Date);
+            shell.Simulation.State.Alliances.Sign(ally, shell.Simulation.State.Date);
+
+            shell.OpenScreenByName("Research");
+            yield return Capture(null, settings, texture, "consortium_en.png");
+
+            Loc.Current = Language.Polish;
+            shell.OpenScreenByName("Research");
+            yield return Capture(null, settings, texture, "consortium_pl.png");
+            Loc.Current = Language.English;
+
             // And again in Polish, on the four screens the author asked to have translated.
             Loc.Current = Language.Polish;
 

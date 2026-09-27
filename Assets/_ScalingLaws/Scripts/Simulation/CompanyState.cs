@@ -144,6 +144,9 @@ namespace ScalingLaws.Simulation
         /// <summary>What has been signed with each lab, and how long it has held. Saved from v66.</summary>
         public LabAlliances Alliances { get; } = new();
 
+        /// <summary>The joint research programme running, or null. One at a time. Saved from v66.</summary>
+        public ResearchCampaign Campaign { get; set; }
+
         /// <summary>
         /// Cabinets and fans the company has paid for and not stood up.
         ///

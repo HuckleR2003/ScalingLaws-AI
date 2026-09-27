@@ -697,6 +697,23 @@ namespace ScalingLaws.Persistence
         /// </summary>
         public List<int> allianceEverSigned = new();
 
+        /// <summary>
+        /// v66. The joint research programme running, or a term of minus one for none.
+        ///
+        /// **Causal.** It pays points every day it runs, so a campaign dropped on load is a year of
+        /// a laboratory that never happened.
+        /// </summary>
+        public int campaignTerm = -1;
+
+        /// <summary>See <see cref="campaignTerm"/>.</summary>
+        public int campaignStartDay;
+
+        /// <summary>See <see cref="campaignTerm"/>.</summary>
+        public int campaignEndDay;
+
+        /// <summary>The other labs in the room. The player is not in this list.</summary>
+        public List<int> campaignMembers = new();
+
         public bool hasResearchProject;
         public int researchNode;
         public int researchStartedDayIndex;

@@ -220,6 +220,19 @@ namespace ScalingLaws.Persistence
             state.Alliances.Capture(data.allianceLabs, data.allianceLevels,
                 data.allianceSinceDays, data.allianceEverSigned);
 
+            data.campaignTerm = state.Campaign == null ? -1 : (int)state.Campaign.Term;
+
+            if (state.Campaign != null)
+            {
+                data.campaignStartDay = state.Campaign.Started.DayIndex;
+                data.campaignEndDay = state.Campaign.Ends.DayIndex;
+
+                foreach (var lab in state.Campaign.Members)
+                {
+                    data.campaignMembers.Add((int)lab);
+                }
+            }
+
             foreach (var loan in state.Loans.Loans)
             {
                 data.loans.Add(new LoanData
@@ -1073,6 +1086,32 @@ namespace ScalingLaws.Persistence
 
             state.Alliances.Restore(safe.allianceLabs, safe.allianceLevels,
                 safe.allianceSinceDays, safe.allianceEverSigned);
+
+            state.Campaign = null;
+
+            if (Enum.IsDefined(typeof(CampaignTerm), safe.campaignTerm))
+            {
+                var inRoom = new List<CompetitorId>();
+
+                foreach (var lab in safe.campaignMembers)
+                {
+                    if (Enum.IsDefined(typeof(CompetitorId), lab))
+                    {
+                        inRoom.Add((CompetitorId)lab);
+                    }
+                }
+
+                // A programme with nobody left in it is not a programme. Dropped rather than
+                // restored empty, which would pay the single-member multiplier forever.
+                if (inRoom.Count > 0)
+                {
+                    var start = Math.Max(0, safe.campaignStartDay);
+
+                    state.Campaign = new ResearchCampaign((CampaignTerm)safe.campaignTerm,
+                        new GameDate(start),
+                        new GameDate(Math.Max(start, safe.campaignEndDay)), inRoom);
+                }
+            }
 
             state.WantedResearch.Clear();
             foreach (var node in safe.wantedResearch)
@@ -2467,6 +2506,7 @@ namespace ScalingLaws.Persistence
             safe.allianceLevels ??= new List<int>();
             safe.allianceSinceDays ??= new List<int>();
             safe.allianceEverSigned ??= new List<int>();
+            safe.campaignMembers ??= new List<int>();
             safe.wantedResearch.RemoveAll(static id => !Enum.IsDefined(typeof(ResearchNodeId), id));
             safe.defaultPriceMultiplier = Math.Clamp(Finite(safe.defaultPriceMultiplier, 1.0), 0.05, 10.0);
 

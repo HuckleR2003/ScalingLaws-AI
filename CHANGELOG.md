@@ -131,6 +131,17 @@ go in. This file is the draft for the store update post, so anything vague here 
   to answer. The alliance line prints the days the next level is waiting on even though they cannot
   be hurried, because a player who can see "another two hundred and eleven days" understands they
   are looking at a calendar rather than at a price.
+- **Joint research programmes.** A campaign opened with a lab at the working-group level pays
+  research points **every day it runs** rather than in a lump at the end, and everybody in the room
+  pays a share of the bill. Two labs each pay sixty per cent of what one would and the room makes
+  2.2 times the points, so a dollar goes about three and two thirds as far: reaching the same place
+  alone costs roughly three and a half times as much. Modelled on the Frontier Model Forum and its
+  AI Safety Fund, where four labs that compete on everything else paid into one pot.
+- **The calendar on it cannot be bought.** The working-group level is a hundred and eighty days at
+  the level below, which itself took ninety days of the relation being held Friendly, so the
+  cheapest consortium in the game is nine months of somebody liking you. Walking out early forfeits
+  the rest of the term and costs a break fee, or joining and leaving on the last profitable day
+  would be the only line anybody played.
 - **Save v66** carries the offers in flight, the running deals and what is signed. A v65 campaign
   keeps every relation it accumulated and has nothing signed, because it was played in a game where
   a relation could only fall.
@@ -152,7 +163,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1471 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1477 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

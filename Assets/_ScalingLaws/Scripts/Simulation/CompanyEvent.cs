@@ -172,7 +172,16 @@ namespace ScalingLaws.Simulation
         AllianceSigned = 67,
 
         /// <summary>Something hostile cost a level of one.</summary>
-        AllianceBroken = 68
+        AllianceBroken = 68,
+
+        /// <summary>A joint research programme began.</summary>
+        CampaignStarted = 69,
+
+        /// <summary>It ran to the end of its term.</summary>
+        CampaignFinished = 70,
+
+        /// <summary>It ended early, whoever ended it. The break fee is on the event.</summary>
+        CampaignLeft = 71
     }
 
     /// <summary>

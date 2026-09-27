@@ -119,6 +119,7 @@ namespace ScalingLaws.Simulation
             }
 
             AdvanceAlliances();
+            AdvanceCampaign();
 
             for (var index = State.Deals.Count - 1; index >= 0; index--)
             {
@@ -328,6 +329,224 @@ namespace ScalingLaws.Simulation
 
             State.RaiseEvent(new CompanyEvent(CompanyEventType.AllianceBroken, State.Date,
                 Loc.T("alliance.event.broken", CompetitorCatalog.NameOf(lab))));
+        }
+
+
+        // ---- the joint research campaign ------------------------------------------------------
+
+        /// <summary>
+        /// Starts a campaign with the labs named, or says why it cannot.
+        ///
+        /// **A member has to be at the working-group level**, which is a hundred and eighty days at
+        /// level one on top of the ninety it took to get there. That is deliberate and it is the
+        /// whole reason this is not a purchase: the cheapest consortium in the game is nine months
+        /// of somebody liking you, and nothing in the account shortens that.
+        /// </summary>
+        public bool TryStartCampaign(CampaignTerm term, IReadOnlyList<CompetitorId> partners,
+            out string why)
+        {
+            if (State.Campaign != null)
+            {
+                why = Loc.T("campaign.fail.running");
+                return false;
+            }
+
+            var members = new List<CompetitorId>();
+
+            if (partners != null)
+            {
+                foreach (var lab in partners)
+                {
+                    if (members.Contains(lab))
+                    {
+                        continue;
+                    }
+
+                    if (State.Alliances.LevelWith(lab) < ResearchCampaignCatalog.NeedsAllianceLevel)
+                    {
+                        why = Loc.T("campaign.fail.level", CompetitorCatalog.NameOf(lab),
+                            ResearchCampaignCatalog.NeedsAllianceLevel.ToString());
+
+                        return false;
+                    }
+
+                    members.Add(lab);
+                }
+            }
+
+            if (members.Count == 0)
+            {
+                why = Loc.T("campaign.fail.nobody");
+                return false;
+            }
+
+            if (members.Count + 1 > ResearchCampaignCatalog.MostMembers)
+            {
+                why = Loc.T("campaign.fail.crowded",
+                    ResearchCampaignCatalog.MostMembers.ToString());
+
+                return false;
+            }
+
+            var daily = CampaignDailyCostUsd(members.Count + 1);
+
+            // A month is checked rather than charged: a programme the company cannot fund past its
+            // first fortnight is a break fee wearing a research budget.
+            if (State.CashUsd < daily * 30)
+            {
+                why = Loc.T("campaign.fail.cash");
+                return false;
+            }
+
+            State.Campaign = new ResearchCampaign(term, State.Date,
+                State.Date.AddDays(ResearchCampaignCatalog.DaysIn(term)), members);
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.CampaignStarted, State.Date,
+                Loc.T("campaign.event.started", MemberNames(members),
+                    ResearchCampaignCatalog.DaysIn(term).ToString())));
+
+            why = string.Empty;
+            return true;
+        }
+
+        /// <summary>
+        /// A day of the campaign: the bill is paid and the points arrive.
+        ///
+        /// **Points daily rather than in a lump at the end**, which is what the author asked for and
+        /// is also the only honest shape: a laboratory that has been running four months has learned
+        /// four months of things, and a programme that pays nothing until it finishes is a purchase
+        /// with a delay on it.
+        ///
+        /// A company that cannot pay the day's bill is dropped rather than allowed to run it for
+        /// nothing, and that costs the break fee, because the other side was relying on the money.
+        /// </summary>
+        private void AdvanceCampaign()
+        {
+            var campaign = State.Campaign;
+
+            if (campaign == null)
+            {
+                return;
+            }
+
+            if (!campaign.IsLiveOn(State.Date))
+            {
+                State.Campaign = null;
+
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.CampaignFinished, State.Date,
+                    Loc.T("campaign.event.finished", MemberNames(campaign.Members))));
+
+                return;
+            }
+
+            // **An alliance that has gone cold cannot go on funding a joint programme.** Read here
+            // rather than hooked onto the break, for the same reason the levels are: there is one
+            // place that decides an alliance has ended and everything else reads it.
+            foreach (var lab in campaign.Members)
+            {
+                if (State.Alliances.LevelWith(lab) < ResearchCampaignCatalog.NeedsAllianceLevel)
+                {
+                    LeaveCampaign("campaign.event.collapsed");
+                    return;
+                }
+            }
+
+            var daily = CampaignDailyCostUsd(campaign.Members.Count + 1);
+
+            if (State.CashUsd < daily)
+            {
+                LeaveCampaign("campaign.event.dropped");
+                return;
+            }
+
+            State.PostCash(LedgerLine.Research, daily);
+
+            var points = ResearchCampaignCatalog.PointsPerDay
+                * ResearchCampaignCatalog.PointsMultiplier(campaign.Members.Count + 1)
+                * ResearchCampaignCatalog.RateFor(campaign.Term);
+
+            State.ResearchPoints += SimUnits.Finite(points);
+            State.ResearchPointsToday += SimUnits.Finite(points);
+        }
+
+        /// <summary>Walks out. The remaining term is forfeit and the break fee is charged.</summary>
+        public bool TryLeaveCampaign(out string why)
+        {
+            if (State.Campaign == null)
+            {
+                why = Loc.T("campaign.fail.none");
+                return false;
+            }
+
+            LeaveCampaign("campaign.event.left");
+
+            why = string.Empty;
+            return true;
+        }
+
+        /// <summary>
+        /// One body for every way out that is not the term running out.
+        ///
+        /// Three callers reach it and they differ in one word, which is exactly the shape that gets
+        /// a fee wrong when it is written three times.
+        /// </summary>
+        private void LeaveCampaign(string reasonKey)
+        {
+            var campaign = State.Campaign;
+
+            if (campaign == null)
+            {
+                return;
+            }
+
+            var left = Math.Max(0, campaign.Ends.DayIndex - State.Date.DayIndex);
+
+            var fee = (long)(CampaignDailyCostUsd(campaign.Members.Count + 1) * left
+                * ResearchCampaignCatalog.BreakFeeShare);
+
+            State.Campaign = null;
+
+            if (fee > 0)
+            {
+                State.PostCash(LedgerLine.Research, fee);
+            }
+
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.CampaignLeft, State.Date,
+                Loc.T(reasonKey, MemberNames(campaign.Members)), -fee));
+        }
+
+        /// <summary>What a day of the programme costs this company, at this many members.</summary>
+        public static long CampaignDailyCostUsd(int members) =>
+            (long)(ResearchCampaignCatalog.CostPerDayUsd
+                * ResearchCampaignCatalog.CostShare(members));
+
+        /// <summary>The labs in the room, as a sentence.</summary>
+        private static string MemberNames(IReadOnlyList<CompetitorId> members)
+        {
+            var names = new string[members.Count];
+
+            for (var index = 0; index < members.Count; index++)
+            {
+                names[index] = CompetitorCatalog.NameOf(members[index]);
+            }
+
+            return string.Join(Loc.T("gate.join"), names);
+        }
+
+        /// <summary>Everybody who could be asked into a campaign today.</summary>
+        public List<CompetitorId> CampaignCandidates()
+        {
+            var found = new List<CompetitorId>();
+
+            foreach (var pair in State.Alliances.Signed)
+            {
+                if (pair.Value >= ResearchCampaignCatalog.NeedsAllianceLevel)
+                {
+                    found.Add(pair.Key);
+                }
+            }
+
+            return found;
         }
 
         /// <summary>The capability of one rival today, or zero when they have nothing on sale.</summary>

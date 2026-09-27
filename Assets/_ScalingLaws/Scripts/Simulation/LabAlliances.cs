@@ -29,6 +29,37 @@ namespace ScalingLaws.Simulation
         public int DaysWaiting(GameDate today) => Math.Max(0, today.DayIndex - Sent.DayIndex);
     }
 
+
+    /// <summary>
+    /// A joint research programme the company is running with one or two allied labs.
+    ///
+    /// **Causal, and saved.** It pays points every day it runs, so a campaign dropped on load is a
+    /// year of a laboratory that never happened. Twelfth time in this project.
+    /// </summary>
+    public sealed class ResearchCampaign
+    {
+        public ResearchCampaign(CampaignTerm term, GameDate started, GameDate ends,
+            IReadOnlyList<CompetitorId> members)
+        {
+            Term = term;
+            Started = started;
+            Ends = ends;
+            Members = members ?? new List<CompetitorId>();
+        }
+
+        public CampaignTerm Term { get; }
+        public GameDate Started { get; }
+        public GameDate Ends { get; }
+
+        /// <summary>The other labs in the room. The player is not in this list.</summary>
+        public IReadOnlyList<CompetitorId> Members { get; }
+
+        public bool IsLiveOn(GameDate date) => date.DayIndex < Ends.DayIndex;
+
+        /// <summary>Days still to run, for the screen.</summary>
+        public int DaysLeft(GameDate date) => Math.Max(0, Ends.DayIndex - date.DayIndex);
+    }
+
     /// <summary>Something signed and running: a licence, an evaluation, a capacity term.</summary>
     public readonly struct StandingDeal
     {
