@@ -160,8 +160,28 @@ namespace ScalingLaws.UI
             SetBool("Walking", route.Count > 0);
         }
 
+        /// <summary>
+        /// Whether the clock is running. A paused game is a still room.
+        ///
+        /// **Static, and that is deliberate.** Every person in the office is a copy of the same
+        /// prefab and the pause is one fact about the whole game, so a field per actor would be a
+        /// dozen copies of one boolean and a dozen chances for one of them to be stale. The shell
+        /// sets it in the same place it sets the clock speed.
+        ///
+        /// It stops the walk rather than the animation: somebody frozen mid-stride with their legs
+        /// still moving is worse than either. `Walking` goes false with it, so the clip settles
+        /// into the idle it would have reached on arriving.
+        /// </summary>
+        public static bool ClockIsRunning { get; set; } = true;
+
         private void Update()
         {
+            if (!ClockIsRunning)
+            {
+                SetBool("Walking", false);
+                return;
+            }
+
             if (HasArrived)
             {
                 return;

@@ -863,8 +863,10 @@ namespace ScalingLaws.UI
             }
 
             var face = new RackFace();
-            face.Show(square.Rack, fills);
 
+            // **The handlers go on before the cabinet is shown, and the class re-applies them if
+            // they do not.** Showing first left every slot ignoring the pointer, because that is
+            // what a null handler means, so a card put into a cabinet could never be taken out.
             // **A click on a slot takes out what is in it**, back to the store: a card to its
             // tile, a fan to the store room. The other half of fitting, asked for with it.
             face.SlotClicked = slot =>
@@ -916,7 +918,21 @@ namespace ScalingLaws.UI
                 return slot < used ? Loc.T("rack.slot.fan") : string.Empty;
             };
 
+            face.Show(square.Rack, fills);
+
             block.Add(face);
+
+            // **Said out loud rather than left to a tooltip.** Taking a card out is the only way to
+            // make room for a fan in a cabinet the room has already filled, and a tester who could
+            // not find it reported the fan button as broken. A hover tip is not discoverable by
+            // somebody who does not already know there is something to hover.
+            if (cards.Count > 0)
+            {
+                var how = new Label(Loc.T("rack.full.tip"));
+                how.AddToClassList("rackmodal__how");
+                block.Add(how);
+            }
+
             return block;
         }
 
@@ -1047,8 +1063,31 @@ namespace ScalingLaws.UI
             var canAfford = simulation.State.CashUsd >= ServerRackCatalog.FanPriceUsd;
             var hasRoom = simulation.State.Hall.FreeSlots(column, row) >= ServerRackCatalog.FanSlots;
 
+            // **It stays enabled and answers, which is the standing rule here and the reason this
+            // was reported as the button breaking.** A cabinet refills itself with every card the
+            // company owns, so as soon as the parts arrive there is no free slot and the only
+            // thing the player saw was a dead button with a tooltip on it. `SetEnabled(false)`
+            // dispatches no pointer events, so a disabled control cannot explain itself, and this
+            // one had the single most useful thing in the room to say: take a card out first.
             var add = new Button(() =>
             {
+                if (!hasRoom)
+                {
+                    AudioDirector.Deny();
+                    announce?.Invoke(Loc.T("rack.full"), Loc.T("rack.full.how"));
+
+                    return;
+                }
+
+                if (!canAfford)
+                {
+                    AudioDirector.Deny();
+                    announce?.Invoke(Loc.T("rack.add_fan_short"),
+                        Loc.T("rack.fan.cash", UiFormat.Money(ServerRackCatalog.FanPriceUsd)));
+
+                    return;
+                }
+
                 if (simulation.TryFitFan(column, row, out _))
                 {
                     GuideOverlay.Reached?.Invoke("walk_room_fit");
@@ -1062,7 +1101,10 @@ namespace ScalingLaws.UI
 
             add.AddToClassList("button");
             add.AddToClassList("button--primary");
-            add.SetEnabled(canAfford && hasRoom);
+
+            // Shut is a look, not a dead control. The class greys it so the row still reads at a
+            // glance, and the click still lands and still says why.
+            add.EnableInClassList("button--shut", !canAfford || !hasRoom);
             add.tooltip = hasRoom ? string.Empty : Loc.T("rack.full");
             row_.Add(add);
 

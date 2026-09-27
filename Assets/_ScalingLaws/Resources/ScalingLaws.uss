@@ -125,6 +125,16 @@
     -unity-font-style: bold;
     letter-spacing: 3px;
     font-size: 14px;
+    /* **A Button with an explicit height does not centre its own label.** This stylesheet already
+       records that for the release planner and this selector never got it, so WSTECZ and DALEJ in
+       the creator drew their words at the top left corner of a 50px box and read as overflowing. */
+    -unity-text-align: middle-center;
+}
+
+/* In the creator the two are the last row of a page rather than a stack in a menu, and the stack's
+   spacing under them was leaving a band of nothing below the page it belongs to. */
+.stage-footer .menu-button {
+    margin-bottom: 0;
 }
 
 .menu-button:hover {
@@ -21619,12 +21629,21 @@
    cent of white and every word on it is dimmer than the dimmest caption on any panel. The words
    lift when the cursor comes within fifty pixels, which is what lets them be this faint. */
 
+/* **Out past the page's own padding, so the drawing reaches the edge of the window.**
+
+   An absolute child is laid out from its parent's padding box, so at 0 the grid stopped 26px short
+   on every side and the creator ended in a band of flat colour with the DALEJ button sitting in it.
+   A tester read that as the page being cut off, which is exactly what it looked like.
+
+   The 26 is `.content`'s padding written a second time, because USS has no calc(). That is two
+   statements of one fact, so `StylesheetTests.TheDrawingCoversThePagePaddingAsWell` holds them
+   together rather than a comment asking the next reader to remember. */
 .bpg {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
+    left: -26px;
+    right: -26px;
+    top: -26px;
+    bottom: -26px;
 }
 
 .bpg__marks {
@@ -22106,6 +22125,23 @@
    only that pressing it will not move the page on. */
 .menu-button--shut {
     opacity: 0.55;
+}
+
+/* The same look for the room's own buttons, and it is there for the same reason: the fan button
+   went dead the moment a cabinet filled itself, which is exactly when it had something worth
+   saying. Greyed, still clickable, still able to explain itself. */
+.button--shut {
+    opacity: 0.55;
+}
+
+/* The line under an opened cabinet saying that a slot can be clicked. 11.5px because the floor is
+   11 and this is a caption rather than a control. */
+.rackmodal__how {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: rgba(150, 162, 186, 0.9);
+    -unity-text-align: middle-center;
+    white-space: normal;
 }
 
 /* A hint under a control that is shut. The sentence names the node that opens it, so it is the

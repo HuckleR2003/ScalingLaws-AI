@@ -258,5 +258,42 @@ namespace ScalingLaws.Tests.EditMode
                 "UI Toolkit has no positional pseudo classes. These rules parse, warn in every "
                 + "player's log and style nothing:\n  " + string.Join("\n  ", found));
         }
+
+        /// <summary>
+        /// The creator's drawing has to reach past the page's own padding, by exactly that padding.
+        ///
+        /// **Two statements of one fact, held together rather than commented.** An absolute child
+        /// is laid out from its parent's padding box, so the blueprint grid at zero stopped short
+        /// of the window on every side and the creator ended in a band of flat colour with the
+        /// forward button sitting in it. A tester read that as the page being cut off. USS has no
+        /// calc(), so the inset is the padding written again with a minus in front, and this is
+        /// what stops the two drifting the next time either is touched.
+        /// </summary>
+        [Test]
+        public void TheDrawingCoversThePagePaddingAsWell()
+        {
+            var sheet = Sheet;
+
+            var page = Regex.Match(sheet, @"\.content \{[^}]*?padding:\s*(\d+)px");
+
+            Assert.IsTrue(page.Success, "the page rule no longer states a padding in pixels");
+
+            var padding = int.Parse(page.Groups[1].Value);
+
+            var ground = Regex.Match(sheet, @"\.bpg \{[^}]*?\}", RegexOptions.Singleline);
+
+            Assert.IsTrue(ground.Success, "the blueprint ground rule is gone");
+
+            foreach (var side in new[] { "left", "right", "top", "bottom" })
+            {
+                var inset = Regex.Match(ground.Value, side + @":\s*(-?\d+)px");
+
+                Assert.IsTrue(inset.Success, "the blueprint ground does not state " + side);
+
+                Assert.That(int.Parse(inset.Groups[1].Value), Is.EqualTo(-padding),
+                    "the drawing and the page it is under disagree about the padding on the "
+                    + side + ", so the page ends in a band of flat colour on that side");
+            }
+        }
     }
 }

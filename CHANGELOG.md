@@ -111,6 +111,33 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Fixed
 
+- **A card put into a cabinet could never be taken out again.** Clicking a slot in an opened cabinet
+  has always been the way to pull a card, and it has never once worked: the cabinet was drawn before
+  the window said what a click should do, and a slot with no handler behind it is built to ignore
+  the pointer. So every slot in the game was inert, and the hover tips explaining them never
+  appeared either. The cabinet now says out loud that a slot can be clicked, rather than leaving it
+  to a tooltip nobody could find.
+- **The fan button went dead instead of explaining itself.** A cabinet fills itself with every card
+  the company owns, so the moment the parts arrive there is no free slot and the one button in the
+  room with something useful to say was greyed out and unclickable. It stays clickable now and says
+  the useful thing: take a card out, and the fan goes in the slot it leaves.
+- **The office stops when the game stops.** The founder went on walking across a company whose date
+  was frozen, because the people in the room run on their own clock. Pausing with the bar or opening
+  the menu now stills the room.
+- **Emil no longer sits on top of the page he is talking about.** The strip is half see-through when
+  the cursor is away from it and solid when it is on it, and the page reserves the height the strip
+  actually measures rather than a number written down once. That number was too small by exactly the
+  portrait, which hangs above the bar, so his head covered the bottom band of whatever was open. On
+  the creator's review page that was the summary, and there was no way to read it.
+- **The tour was wrong about the basement.** It offered room for another four to six cabinets on a
+  floor with twelve empty squares. It says twelve now, and a test counts the floor and fails if the
+  two ever disagree again.
+- **The creator no longer ends in a band of flat colour.** The drawing the creator is laid out on is
+  an absolute child, so it stopped short of the window by the page's own padding on every side, and
+  the forward button sat in the gap looking cut off. WSTECZ and DALEJ also drew their words in the
+  top left corner of their own boxes, which is what a styled button with a fixed height does unless
+  it is told otherwise.
+
 - **Nine kinds of event happened and told the player nothing.** Everything the relations system
   raises went into the queue and was read by no screen, no notice and no wire: a signed alliance, an
   offer answered days later, a research programme collapsing with the partnership behind it. This is
@@ -245,7 +272,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   else in this file is: a cooldown that lived only in memory would make quitting and reloading a
   fresh call with everybody. A v68 campaign has rung nobody, because it had no telephone, and
   starting it on cooldown would charge it for calls it never made.
-- **1499 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1501 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

@@ -782,6 +782,13 @@ namespace ScalingLaws.UI
             PollPauseKey();
             PollAutosave();
 
+            // **The room stops with the clock.** The people in the office are MonoBehaviours with
+            // their own Update, so pausing the simulation left the founder walking across a company
+            // whose date was frozen. Set here rather than only where the speed changes, because the
+            // pause menu is a second way to stop the game and it returns before that code runs.
+            OfficeActor.ClockIsRunning = clock.Speed != SimSpeed.Paused
+                && !(pause is { IsOpen: true });
+
             // The clock does not advance while the pause menu is up. Pausing has to actually pause,
             // or a player who opened the menu to save comes back to a company three days older.
             if (pause is { IsOpen: true })
@@ -1011,6 +1018,11 @@ namespace ScalingLaws.UI
                         : null),
                 () => Show(current),
                 AlreadyDone);
+
+            // **The strip changes height with the length of what he is saying**, so one measurement
+            // taken on the first step is the constant this replaced with a longer life. Re-reserve
+            // whenever it actually changes, which is a handful of times a tour.
+            guide.SizeChanged = ReserveForTheStrip;
 
             guide.skippedTheTour = () =>
             {
@@ -2084,7 +2096,14 @@ namespace ScalingLaws.UI
             // page sat underneath it and could not be read. Hiding it outside the office was the
             // other option and it is worse: half the steps say "open COMPUTE", and a tour whose
             // instructions vanish on the tab it just told you to open is no tour at all.
+            //
+            // **The reserve is measured, not written down.** It was 168px in the stylesheet, and
+            // the strip is taller than that because the portrait hangs above the bar on a negative
+            // margin: a tester found Emil's head sitting over the creator's review summary with no
+            // way to read what was underneath. The class stays as the reserve for the first frame,
+            // before anything has been laid out to measure.
             scroller.EnableInClassList("page-scroll--guided", guide is { IsShowing: true });
+            ReserveForTheStrip();
 
             // Only when the scroller itself was replaced. When it was kept, the offset was never
             // lost, and setting it again against content that is still being laid out is how the
@@ -2143,6 +2162,32 @@ namespace ScalingLaws.UI
         /// Split out of `Show` so the whole switch sits inside one guard rather than each case
         /// carrying its own, and so the guard's scope is obvious from the shape of the code.
         /// </summary>
+
+        /// <summary>
+        /// Keeps the foot of the open page clear of the tour strip, by what the strip measures.
+        ///
+        /// **One number, read from the thing it is about.** The stylesheet carried 168px, written
+        /// once and checked by nothing, and the strip is taller than that because the portrait
+        /// hangs above the bar on a negative margin. Two statements of one fact is the
+        /// disagreement with a date on it, and this one had a date: a tester could not read the
+        /// creator's review summary under Emil's head.
+        ///
+        /// Zero while the strip is down, so an ordinary page keeps its whole height.
+        /// </summary>
+        private void ReserveForTheStrip()
+        {
+            if (pageScroller == null)
+            {
+                return;
+            }
+
+            var showing = guide is { IsShowing: true };
+
+            pageScroller.style.paddingBottom = showing && guide.MeasuredHeight > 0f
+                ? guide.MeasuredHeight + GuideOverlay.StripClearance
+                : new StyleLength(StyleKeyword.Null);
+        }
+
         private void BuildScreenInto(VisualElement host, Screen screen)
         {
             switch (screen)

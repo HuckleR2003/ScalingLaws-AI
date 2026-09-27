@@ -1,6 +1,7 @@
 ﻿using System;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.UI
@@ -211,6 +212,48 @@ namespace ScalingLaws.UI
         }
 
         public bool IsShowing => strip != null && strip.parent != null;
+
+        /// <summary>
+        /// How tall the strip actually is, measured, or zero while it is not up.
+        ///
+        /// **A constant was wrong and nothing could tell.** The page reserved 168px at its foot for
+        /// the tour bar, which was written once and never measured, and the strip is taller than
+        /// that: the portrait hangs above the bar on a negative margin, so Emil's head sat over the
+        /// bottom band of whatever page was open. A tester reported exactly that, on the creator's
+        /// review summary, and the only honest reserve is the one the strip reports about itself.
+        /// </summary>
+        public float MeasuredHeight { get; private set; }
+
+        /// <summary>
+        /// Raised when <see cref="MeasuredHeight"/> changes, so the page can re-reserve.
+        ///
+        /// The strip grows and shrinks with the length of the line and with whether the step
+        /// carries buttons, so one measurement taken on the first step is another constant with a
+        /// longer life.
+        /// </summary>
+        public Action SizeChanged { get; set; }
+
+        /// <summary>
+        /// A little air between the bottom of the page and the top of the strip.
+        ///
+        /// Measured clearance alone puts the last line of a page against the portrait's edge, and
+        /// two things touching read as one thing overlapping.
+        /// </summary>
+        public const float StripClearance = 24f;
+
+        /// <summary>Re-reads the strip's height after a layout pass and tells whoever asked.</summary>
+        private void MeasureStrip(GeometryChangedEvent _)
+        {
+            var now = strip == null ? 0f : strip.resolvedStyle.height;
+
+            if (Mathf.Approximately(now, MeasuredHeight))
+            {
+                return;
+            }
+
+            MeasuredHeight = now;
+            SizeChanged?.Invoke();
+        }
 
         // ---- walkthroughs -----------------------------------------------------------------------
 
@@ -610,6 +653,9 @@ namespace ScalingLaws.UI
             // own, and turning picking back on to get one would put a dead surface over the page.
             host.RegisterCallback<MouseMoveEvent>(FadeIfPointerIsOver);
 
+            // Measured rather than assumed. See MeasuredHeight for what the assumption cost.
+            strip.RegisterCallback<GeometryChangedEvent>(MeasureStrip);
+
             var speaker = new VisualElement();
             speaker.AddToClassList("guide__speaker");
             speaker.pickingMode = PickingMode.Ignore;
@@ -855,16 +901,18 @@ namespace ScalingLaws.UI
         /// <summary>
         /// How solid the strip is when nobody is looking at it.
         ///
-        /// **This used to be the other way round and it was backwards.** The strip dropped to a
-        /// fifth of its opacity while the cursor rested on it, so the one moment a player was
-        /// deliberately reading the instruction was the one moment it faded out from under them.
-        /// The intent was to keep it from covering the page; the page reserves its height now, so
-        /// there is nothing left to uncover and only the reading was being harmed.
+        /// **This has now been wrong in both directions.** It started at a fifth while the cursor
+        /// rested on it, so the one moment a player was deliberately reading the instruction was
+        /// the moment it faded out from under them. Setting it to 0.86 fixed that and introduced
+        /// the opposite fault: a tester reported that Emil's head covers the review summary in the
+        /// creator and there is no way to read what is underneath, because 0.86 is opaque.
         ///
-        /// Not fully solid at rest, because a strip that never changes is a strip the eye stops
-        /// treating as live. Readable at rest, certain under the cursor.
+        /// The page reserves the strip's height, so this only matters where something floats over
+        /// the page rather than flowing under it, and that is exactly where it matters most. Half
+        /// is legible enough to keep the instruction in the corner of the eye and thin enough to
+        /// read a figure through. Certain under the cursor, as before.
         /// </summary>
-        public const float RestingOpacity = 0.86f;
+        public const float RestingOpacity = 0.5f;
 
         /// <summary>
         /// Brings the strip fully forward while the pointer is over it.

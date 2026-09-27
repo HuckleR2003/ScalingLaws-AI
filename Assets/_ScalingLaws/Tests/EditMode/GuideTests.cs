@@ -215,5 +215,54 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(reloaded.Guide.Stage, Is.EqualTo(GuideStage.Finished),
                 "A reloaded save that reopens the tutorial is worse than one that never had it.");
         }
+
+        /// <summary>
+        /// What the tour says is in the basement has to be what is in the basement.
+        ///
+        /// **Reported by a tester who counted the squares.** Emil said another four to six cabinets
+        /// would fit and the floor has twelve empty ones, which is the shape of fault this project
+        /// keeps recording: a number written into prose once, checked by nothing, and read by
+        /// somebody who then trusts the rest of the sentence less.
+        ///
+        /// The count is written as digits in both languages on purpose, so one test covers both
+        /// and a translator cannot quietly drop it.
+        /// </summary>
+        [Test]
+        public void TheTourSaysHowManySquaresTheBasementActuallyHasLeft()
+        {
+            var state = new CompanyState("Prometheus AI", 7u);
+            var simulation = new CompanySimulation(state);
+
+            simulation.TryOpenServerRoom(true, out var why);
+            Assert.IsTrue(state.HasServerRoom, why);
+
+            var free = 0;
+
+            for (var column = 0; column < state.Hall.Columns; column++)
+            {
+                for (var row = 0; row < state.Hall.Rows; row++)
+                {
+                    if (state.Hall.At(column, row).IsEmpty)
+                    {
+                        free++;
+                    }
+                }
+            }
+
+            Assert.That(free, Is.GreaterThan(0), "the fixture found a full floor and measured nothing");
+
+            foreach (var language in new[] { Language.English, Language.Polish })
+            {
+                var was = Loc.Current;
+                Loc.Current = language;
+
+                var line = Loc.T("guide.step.gift_racks");
+
+                Loc.Current = was;
+
+                StringAssert.Contains(free.ToString(), line,
+                    "the tour quotes a number of free squares that the basement does not have");
+            }
+        }
     }
 }

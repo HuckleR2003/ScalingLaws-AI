@@ -187,11 +187,63 @@ namespace ScalingLaws.UI
         /// <summary>
         /// Called with the slot's index, top first, when a slot is clicked. Null draws a face that
         /// cannot be clicked, which is what the shop and the room's cards want.
+        ///
+        /// **Setting it re-applies the slots, and that is not a convenience.** `Show` decides
+        /// whether a slot takes the pointer by reading this, so a caller that showed the cabinet
+        /// first and assigned the handler afterwards got a face where every slot was
+        /// `PickingMode.Ignore` for ever. That is exactly what the cabinet window did, and it meant
+        /// a card could be put into a cabinet and never taken out again. The class owns the
+        /// invariant now rather than the order the caller happens to write two lines in.
         /// </summary>
-        public System.Action<int> SlotClicked { get; set; }
+        public System.Action<int> SlotClicked
+        {
+            get => slotClicked;
+            set
+            {
+                slotClicked = value;
+                ApplySlotBehaviour();
+            }
+        }
+
+        private System.Action<int> slotClicked;
 
         /// <summary>The hover text for a slot, by index. Null or empty for none.</summary>
-        public System.Func<int, string> SlotTip { get; set; }
+        public System.Func<int, string> SlotTip
+        {
+            get => slotTip;
+            set
+            {
+                slotTip = value;
+                ApplySlotBehaviour();
+            }
+        }
+
+        private System.Func<int, string> slotTip;
+
+        /// <summary>
+        /// Whether a slot takes the pointer, and what it says on hover.
+        ///
+        /// Split out of <see cref="Show"/> because it depends on two things that arrive at
+        /// different times: what is in the cabinet, and what the window wants done about it.
+        /// </summary>
+        private void ApplySlotBehaviour()
+        {
+            for (var index = 0; index < children.Count; index++)
+            {
+                var slot = children[index];
+
+                // A slot ignores the pointer unless there is something in it to take out: an empty
+                // slot that swallowed clicks would stop a drag landing on the cabinet behind it.
+                var clickable = slotClicked != null && index < lit.Count && lit[index];
+
+                slot.pickingMode = clickable ? PickingMode.Position : PickingMode.Ignore;
+                slot.tooltip = slotTip?.Invoke(index) ?? string.Empty;
+                slot.EnableInClassList("rackslot--clickable", clickable);
+            }
+        }
+
+        /// <summary>Whether each slot has anything in it, kept so the behaviour can be re-applied.</summary>
+        private readonly List<bool> lit = new();
 
         /// <summary>
         /// Sets what this cabinet is and what is in it, top slot first.
@@ -231,6 +283,8 @@ namespace ScalingLaws.UI
                 last.RemoveFromHierarchy();
             }
 
+            lit.Clear();
+
             if (wanted == 0)
             {
                 return;
@@ -250,14 +304,12 @@ namespace ScalingLaws.UI
                 slot.style.height = Length.Percent(each * 100f);
 
                 slot.Show(fills[index]);
-                // A slot ignores the pointer unless there is something in it to take out: an empty
-                // slot that swallowed clicks would stop a drag landing on the cabinet behind it.
-                var clickable = SlotClicked != null && fills[index].Lit > 0.0;
-
-                slot.pickingMode = clickable ? PickingMode.Position : PickingMode.Ignore;
-                slot.tooltip = SlotTip?.Invoke(index) ?? string.Empty;
-                slot.EnableInClassList("rackslot--clickable", clickable);
+                lit.Add(fills[index].Lit > 0.0);
             }
+
+            // **After the loop, and it reads the handlers rather than the other way round.** What
+            // is in the cabinet and what the window wants done about it arrive separately.
+            ApplySlotBehaviour();
         }
     }
 }
