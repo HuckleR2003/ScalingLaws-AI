@@ -657,6 +657,25 @@ namespace ScalingLaws.Tests.PlayMode
 
             panel.ShowActions();
             yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_actions.png");
+
+            // **The fourth section, and the only one about doing something with them rather than
+            // to them.** Rendered in Polish as well: the offer bodies are the longest sentences on
+            // any card in this game and the Polish ones are longer again, so a card that is going
+            // to deform deforms here.
+            panel.ShowTogether();
+            yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_together_en.png");
+
+            var previous = Loc.Current;
+
+            try
+            {
+                Loc.Current = Language.Polish;
+                yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_together_pl.png");
+            }
+            finally
+            {
+                Loc.Current = previous;
+            }
         }
 
         /// <summary>

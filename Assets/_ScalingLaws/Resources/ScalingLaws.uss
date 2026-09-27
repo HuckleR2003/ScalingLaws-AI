@@ -22015,3 +22015,106 @@
 .field__hint--locked {
     color: rgba(240, 196, 84, 0.92);
 }
+
+/* The section of a rival's card about what the two companies have between them.
+
+   Cards down a column rather than across a row, because each one is a paragraph the player has to
+   read before deciding, and four of those side by side is a table nobody reads. */
+.together {
+    flex-shrink: 0;
+}
+
+.together__alliance {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(150, 130, 255, 0.35);
+    background-color: rgba(120, 110, 200, 0.07);
+}
+
+.together__level {
+    font-size: 12px;
+    letter-spacing: 1.8px;
+    color: rgb(196, 186, 255);
+    margin-bottom: 8px;
+}
+
+/* Why the next level cannot be signed. The most useful line on the card when it is there, because
+   it is usually a number of days rather than a price, which is the whole design. */
+.together__why {
+    font-size: 12px;
+    color: rgba(200, 208, 228, 0.82);
+    white-space: normal;
+}
+
+.together__waiting {
+    font-size: 12.5px;
+    color: rgb(240, 196, 84);
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.together__running {
+    font-size: 12.5px;
+    color: rgb(140, 210, 170);
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.together__offer {
+    flex-shrink: 0;
+    margin-bottom: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.together__name {
+    font-size: 14px;
+    color: rgb(232, 238, 250);
+    margin-bottom: 4px;
+}
+
+.together__body {
+    font-size: 12px;
+    color: rgba(176, 186, 208, 0.9);
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.together__price {
+    font-size: 11.5px;
+    color: rgba(150, 162, 186, 0.9);
+    margin-bottom: 8px;
+}
+
+.together__note {
+    font-size: 12.5px;
+    color: rgb(240, 196, 84);
+    white-space: normal;
+    margin-top: 4px;
+}
+
+/* The button on an offer card. **Filled and not full width**: the first render drew four ghost
+   outlines the width of the card, which is the same thing the three intelligence memberships did
+   before they were rebuilt, and both times it read as an empty input field rather than as
+   something to press. */
+.together__send {
+    width: 42%;
+    height: 34px;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    -unity-text-align: middle-center;
+    color: rgb(18, 16, 38);
+    background-color: rgb(176, 158, 255);
+    border-radius: 7px;
+    border-width: 0;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}

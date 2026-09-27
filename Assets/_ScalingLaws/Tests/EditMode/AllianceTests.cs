@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -299,5 +300,32 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.That(simulation.State.CashUsd, Is.LessThan(before));
         }
+
+        /// <summary>
+        /// Both ways into this system are reachable from a screen.
+        ///
+        /// **This project has shipped thirteen mechanisms a player could not reach**, and the last
+        /// one was a research node that cost three million dollars and was read by no caller. The
+        /// sweep is crude on purpose: it proves the name appears in `Scripts/UI/`, not that a click
+        /// arrives, which is what the render is for.
+        /// </summary>
+        [Test]
+        public void TheOfferAndTheSigningAreBothReachableFromTheInterface()
+        {
+            var root = System.IO.Path.Combine(
+                UnityEngine.Application.dataPath, "_ScalingLaws", "Scripts", "UI");
+
+            var code = string.Join("\n",
+                System.IO.Directory.GetFiles(root, "*.cs", System.IO.SearchOption.AllDirectories)
+                    .Select(System.IO.File.ReadAllText));
+
+            foreach (var name in new[] { "TrySendOffer", "TrySignAlliance" })
+            {
+                StringAssert.Contains(name, code,
+                    $"{name} is complete in Simulation and no screen calls it, which is the "
+                    + "fault this project has recorded thirteen times");
+            }
+        }
+
     }
 }

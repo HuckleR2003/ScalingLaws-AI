@@ -50,7 +50,10 @@ namespace ScalingLaws.UI
         {
             Standing = 0,
             People = 1,
-            Actions = 2
+            Actions = 2,
+
+            /// <summary>What the two of you have signed, and the four ways to add to it.</summary>
+            Together = 3
         }
 
         public RivalPanel(Func<CompanySimulation> company, Action changed)
@@ -91,6 +94,15 @@ namespace ScalingLaws.UI
         /// shipped once. The scroller is the floor against that, and every block inside states
         /// `flex-shrink: 0` for the same reason.
         /// </summary>
+        /// <summary>
+        /// Opens the section about what the two companies have signed.
+        ///
+        /// **Exists so a test and a render can reach it**, the same seam `ManagementScreen.ShowDesk`
+        /// and `PartsShop.Order` exist for: an EditMode element has no panel, so a click sent to the
+        /// tab button is never dispatched and everything behind it goes unmeasured.
+        /// </summary>
+        public void ShowTogether() => tab = RivalTab.Together;
+
         public VisualElement Build(CompetitorId lab, Func<VisualElement> actions = null)
         {
             var simulation = company();
@@ -105,6 +117,10 @@ namespace ScalingLaws.UI
             {
                 case RivalTab.People:
                     block.Add(BuildRoster(simulation, lab));
+                    break;
+
+                case RivalTab.Together:
+                    block.Add(BuildTogether(simulation, lab));
                     break;
 
                 case RivalTab.Actions:
@@ -147,6 +163,7 @@ namespace ScalingLaws.UI
             strip.Add(TabButton(RivalTab.Standing, Loc.T("relation.title")));
             strip.Add(TabButton(RivalTab.People, Loc.T("poach.title")));
             strip.Add(TabButton(RivalTab.Actions, Loc.T("smear.title")));
+            strip.Add(TabButton(RivalTab.Together, Loc.T("together.title")));
 
             return strip;
         }
@@ -425,6 +442,180 @@ namespace ScalingLaws.UI
             }
 
             return row;
+        }
+
+
+        /// <summary>
+        /// What the two companies have between them, and the four ways to add to it.
+        ///
+        /// **The whole section is about one lab**, so everything on it names that lab rather than
+        /// listing the board: an offer is a letter to somebody, not a policy.
+        ///
+        /// Order matters here. What is signed comes first because it is the answer to "where are
+        /// we", the waiting offer next because it is the thing the player is expecting, then the
+        /// four offers, and the alliance last because it is the slowest and least urgent of them.
+        /// A panel that opens on the expensive button teaches the wrong lesson about a relationship.
+        /// </summary>
+        private VisualElement BuildTogether(CompanySimulation simulation, CompetitorId lab)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("together");
+
+            block.Add(BuildAllianceLine(simulation, lab));
+
+            var pending = simulation.State.PendingOffers.Find(entry => entry.Lab == lab);
+
+            if (pending.Lab == lab && simulation.State.PendingOffers.Count > 0)
+            {
+                var definition = RelationOfferCatalog.Get(pending.Offer);
+                var left = definition.DaysToAnswer - pending.DaysWaiting(simulation.State.Date);
+
+                var waiting = new Label(Loc.T("together.waiting",
+                    definition.DisplayName, Math.Max(0, left).ToString()));
+
+                waiting.AddToClassList("together__waiting");
+                block.Add(waiting);
+            }
+
+            foreach (var deal in simulation.State.Deals)
+            {
+                if (deal.Lab != lab || !deal.IsLiveOn(simulation.State.Date))
+                {
+                    continue;
+                }
+
+                var running = new Label(Loc.T("together.running",
+                    RelationOfferCatalog.Get(deal.Offer).DisplayName,
+                    Math.Max(0, deal.Ends.DayIndex - simulation.State.Date.DayIndex).ToString()));
+
+                running.AddToClassList("together__running");
+                block.Add(running);
+            }
+
+            foreach (var definition in RelationOfferCatalog.All)
+            {
+                block.Add(BuildOfferCard(simulation, lab, definition));
+            }
+
+            if (!string.IsNullOrEmpty(outcomeNote))
+            {
+                var note = new Label(outcomeNote);
+                note.AddToClassList("together__note");
+                block.Add(note);
+            }
+
+            return block;
+        }
+
+        /// <summary>
+        /// The alliance: what level, how long it has held, and what the next one is waiting on.
+        ///
+        /// **The days are printed even when they cannot be hurried**, because that is the whole
+        /// design: a player who can see "another two hundred and eleven days" understands they are
+        /// looking at a calendar rather than at a price.
+        /// </summary>
+        private VisualElement BuildAllianceLine(CompanySimulation simulation, CompetitorId lab)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("together__alliance");
+
+            var level = simulation.State.Alliances.LevelWith(lab);
+
+            var heading = new Label(level == 0
+                ? Loc.T("alliance.none")
+                : Loc.T("alliance.level", level.ToString(),
+                    simulation.State.Alliances.DaysAtLevel(lab, simulation.State.Date).ToString()));
+
+            heading.AddToClassList("together__level");
+            card.Add(heading);
+
+            var band = simulation.State.Relations.BandWith(lab);
+
+            if (simulation.State.Alliances.CanSignNext(lab, simulation.State.Date, band, out var next)
+                && next <= LabAlliances.TopLevel)
+            {
+                var sign = new Button(() =>
+                {
+                    simulation.TrySignAlliance(lab, out var why);
+                    outcomeNote = why;
+                    changed?.Invoke();
+                })
+                {
+                    text = Loc.T("alliance.sign", next.ToString(),
+                        UiFormat.Money(LabAlliances.FeeFor(next)))
+                };
+
+                sign.AddToClassList("button");
+                sign.AddToClassList("button--primary");
+                card.Add(sign);
+
+                return card;
+            }
+
+            // Why not, in the same sentence the simulation would have refused with, so the card and
+            // the till can never disagree about what is missing.
+            simulation.TrySignAlliance(lab, out var blocked);
+
+            if (!string.IsNullOrEmpty(blocked))
+            {
+                var why = new Label(blocked);
+                why.AddToClassList("together__why");
+                card.Add(why);
+            }
+
+            return card;
+        }
+
+        /// <summary>One offer: what it is, what it costs, and the button that sends it.</summary>
+        private VisualElement BuildOfferCard(CompanySimulation simulation, CompetitorId lab,
+            RelationOfferDefinition definition)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("together__offer");
+
+            var name = new Label(definition.DisplayName);
+            name.AddToClassList("together__name");
+            card.Add(name);
+
+            var body = new Label(definition.Description);
+            body.AddToClassList("together__body");
+            card.Add(body);
+
+            // **What is free is not printed.** The first render showed `$0` under an offer that
+            // costs no money, which is a figure the player has to read and then discard, and this
+            // card already asks them to read four paragraphs.
+            var parts = new List<string>();
+
+            if (definition.PointCost > 0)
+            {
+                parts.Add(Loc.T("together.points", definition.PointCost.ToString()));
+            }
+
+            if (definition.CashCostUsd > 0)
+            {
+                parts.Add(UiFormat.Money(definition.CashCostUsd));
+            }
+
+            parts.Add(Loc.T("together.answer", definition.DaysToAnswer.ToString()));
+
+            var price = new Label(string.Join("  ·  ", parts));
+
+            price.AddToClassList("together__price");
+            card.Add(price);
+
+            var send = new Button(() =>
+            {
+                simulation.TrySendOffer(lab, definition.Offer, out var why);
+                outcomeNote = why;
+                changed?.Invoke();
+            })
+            { text = Loc.T("together.send") };
+
+            send.AddToClassList("button");
+            send.AddToClassList("together__send");
+            card.Add(send);
+
+            return card;
         }
 
         private VisualElement BuildOffer(CompanySimulation simulation, RivalStaffMember member)
