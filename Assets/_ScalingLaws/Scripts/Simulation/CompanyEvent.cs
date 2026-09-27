@@ -154,7 +154,25 @@ namespace ScalingLaws.Simulation
         /// starts working on its own, without the player having bought, built or clicked anything,
         /// so nothing else in the game would ever mention that it had begun.
         /// </summary>
-        FirstSupportTicket = 62
+        FirstSupportTicket = 62,
+
+        /// <summary>An offer went out to another lab. They have not answered yet.</summary>
+        OfferSent = 63,
+
+        /// <summary>They said yes. Whatever it buys starts today.</summary>
+        OfferAccepted = 64,
+
+        /// <summary>They said no. The cost of asking is not returned.</summary>
+        OfferRefused = 65,
+
+        /// <summary>A term ran out. Its own type, because the wire files it as news and not as loss.</summary>
+        DealEnded = 66,
+
+        /// <summary>A level was signed with a lab.</summary>
+        AllianceSigned = 67,
+
+        /// <summary>Something hostile cost a level of one.</summary>
+        AllianceBroken = 68
     }
 
     /// <summary>

@@ -110,6 +110,26 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Under the hood
 
+- **Relations can go up, and nothing on screen reads it yet.** Every way a relation moved was
+  something the player did to somebody: seven recorders, all negative, so a player who never
+  attacked anybody sat at Neutral with fourteen labs for fourteen years and a good relation bought
+  nothing. There are four offers now, each the player's side of a deal the industry actually did,
+  with the sources in `Docs/RELATIONS_PLAN.md`: publish a finding, evaluate each other's models,
+  licence them your model to distribute, buy capacity from their fleet. An offer is paid for on
+  sending and **answered days later**, never on the click.
+- **Alliances are earned in days that cannot be bought.** Three levels, each needing time at the one
+  below with the relation held Friendly throughout: ninety days, then a hundred and eighty, then a
+  year. The fee is the small part. An alliance whose relation cools falls a level on its own, which
+  is derived from the band rather than hooked onto every hostile act, because six places charge a
+  relation and a seventh will be written one day.
+- **A lab you ever signed with stays callable forever**, whatever happens afterwards.
+- **Every lab was drawn as Tense on day one.** `Neutral` is documented as where everybody starts and
+  its threshold sat above the starting value, so fourteen companies the player had never touched all
+  read as cooling. Found by an offer that asks for Neutral and could not be made to anybody, ever.
+- **Save v66** carries the offers in flight, the running deals and what is signed. A v65 campaign
+  keeps every relation it accumulated and has nothing signed, because it was played in a game where
+  a relation could only fall.
+
 - **The support desk exists as rules, and nothing on screen reads it yet.** `SupportDesk` and
   `SupportCatalog`: post arrives with the audience, people answer the outage first and the agents
   only ever answer ordinary questions, and the average wait falls out of backlog over throughput.
@@ -127,7 +147,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1460 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1470 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

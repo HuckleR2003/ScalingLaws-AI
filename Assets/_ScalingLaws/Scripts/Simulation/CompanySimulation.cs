@@ -950,6 +950,7 @@ namespace ScalingLaws.Simulation
             ReportNewlyUnlockedTiers(previousLadder);
 
             State.Relations.Advance();
+            AdvanceOffers();
             State.Effects.Advance(State.Date);
             AwardSafeHarbourIfEarned();
             AdvanceInvestorDesk();

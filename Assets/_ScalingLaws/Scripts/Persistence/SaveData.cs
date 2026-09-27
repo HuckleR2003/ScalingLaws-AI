@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 65;
+        public const int CurrentVersion = 66;
 
         public int version = CurrentVersion;
 
@@ -652,6 +652,50 @@ namespace ScalingLaws.Persistence
         /// freezing them here would keep marking a node the player has since finished.
         /// </summary>
         public List<int> wantedResearch = new();
+
+        /// <summary>
+        /// v66. Offers sent to other labs and not yet answered.
+        ///
+        /// **Causal.** The answer is rolled when the days run out, so an unanswered offer is a coin
+        /// that has not landed. Dropping it would let a reload buy a different answer, and it would
+        /// delete the wait, which is the only thing an offer is from the player's chair.
+        /// </summary>
+        public List<int> offerLabs = new();
+
+        /// <summary>See <see cref="offerLabs"/>.</summary>
+        public List<int> offerKinds = new();
+
+        /// <summary>See <see cref="offerLabs"/>.</summary>
+        public List<int> offerSentDays = new();
+
+        /// <summary>v66. Deals signed and still running, by lab, kind, and the days they span.</summary>
+        public List<int> dealLabs = new();
+
+        /// <summary>See <see cref="dealLabs"/>.</summary>
+        public List<int> dealKinds = new();
+
+        /// <summary>See <see cref="dealLabs"/>.</summary>
+        public List<int> dealStartDays = new();
+
+        /// <summary>See <see cref="dealLabs"/>.</summary>
+        public List<int> dealEndDays = new();
+
+        /// <summary>v66. What has been signed with each lab and the day that level was reached.</summary>
+        public List<int> allianceLabs = new();
+
+        /// <summary>See <see cref="allianceLabs"/>.</summary>
+        public List<int> allianceLevels = new();
+
+        /// <summary>See <see cref="allianceLabs"/>.</summary>
+        public List<int> allianceSinceDays = new();
+
+        /// <summary>
+        /// v66. Every lab anything was ever signed with, whatever happened afterwards.
+        ///
+        /// Kept separately from the levels and never cleared: a number you keep after a friendship
+        /// cools is how that works in life, and it is what makes a lab callable forever.
+        /// </summary>
+        public List<int> allianceEverSigned = new();
 
         public bool hasResearchProject;
         public int researchNode;

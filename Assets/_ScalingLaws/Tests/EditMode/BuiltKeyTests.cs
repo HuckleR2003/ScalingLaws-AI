@@ -206,8 +206,8 @@ namespace ScalingLaws.Tests.EditMode
                         Check($"{language}/{benefit.Benefit}.note", benefit.Note, broken);
                     }
 
-                    foreach (Simulation.RelationBand band
-                        in Enum.GetValues(typeof(Simulation.RelationBand)))
+                    foreach (Data.RelationBand band
+                        in Enum.GetValues(typeof(Data.RelationBand)))
                     {
                         Check($"{language}/{band}", Simulation.RivalRelations.NameOf(band), broken);
                         Check($"{language}/{band}.note",

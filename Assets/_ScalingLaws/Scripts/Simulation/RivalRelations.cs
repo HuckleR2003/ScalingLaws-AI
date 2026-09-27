@@ -5,25 +5,6 @@ using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
-    /// <summary>How a rival feels about you, as a band rather than a number.</summary>
-    public enum RelationBand
-    {
-        /// <summary>Actively looking for a way to cost you something.</summary>
-        Rivalry = 0,
-
-        /// <summary>Competing against your interests on purpose.</summary>
-        Hostile = 1,
-
-        /// <summary>Cooling. Nothing has happened yet and something is going to.</summary>
-        Tense = 2,
-
-        /// <summary>Competitive and professional. Where everybody starts.</summary>
-        Neutral = 3,
-
-        /// <summary>Would take the call, and might say yes.</summary>
-        Friendly = 4
-    }
-
     /// <summary>Why a relation moved, and by how much. One line of a company's memory.</summary>
     public readonly struct RelationEntry
     {
@@ -72,38 +53,24 @@ namespace ScalingLaws.Simulation
     /// </summary>
     public sealed class RivalRelations
     {
-        /// <summary>The scale. Symmetric on purpose: being liked is as reachable as being hated.</summary>
-        public const double Worst = -100.0;
-        public const double Best = 100.0;
+        // **The scale itself lives in `Data/RelationScale`**, because the offers catalogue has
+        // to name a band and `Data/` may not depend on `Simulation/`. These forward rather than
+        // being deleted, so no caller anywhere had to move, and there is still exactly one place
+        // each number is written down.
+        public const double Worst = RelationScale.Worst;
+        public const double Best = RelationScale.Best;
+        public const double Start = RelationScale.Start;
+        public const double CousinBaseline = RelationScale.CousinBaseline;
+        public const double DriftPerDay = RelationScale.DriftPerDay;
+        public const double FriendlyAbove = RelationScale.FriendlyAbove;
+        public const double NeutralAbove = RelationScale.NeutralAbove;
+        public const double TenseAbove = RelationScale.TenseAbove;
+        public const double HostileAbove = RelationScale.HostileAbove;
 
-        /// <summary>Where every lab starts. Competitive, professional, no history.</summary>
-        public const double Start = 0.0;
-
-        /// <summary>
-        /// Where the cousin starts, and where he returns to.
-        ///
-        /// **A baseline rather than a stored value, and the difference matters.** Relations drift
-        /// back toward where they belong, so a stored 70 would decay to indifference in about five
-        /// years and the one company in the game that is family would quietly become a stranger
-        /// without anybody doing anything. The player can still damage it, and it will heal.
-        /// </summary>
-        public const double CousinBaseline = 70.0;
-
-        /// <summary>Where this particular lab sits when nothing has happened with it.</summary>
-        public static double BaselineFor(CompetitorId lab) =>
-            lab == CompetitorId.ESolutions ? CousinBaseline : Start;
-
-        /// <summary>How much a relation returns toward neutral each day.</summary>
-        public const double DriftPerDay = 0.035;
+        public static double BaselineFor(CompetitorId lab) => RelationScale.BaselineFor(lab);
 
         /// <summary>Entries kept. Past this it is an archive nobody reads, not a memory.</summary>
         public const int HistoryKept = 40;
-
-        // ---- the bands, and they are what the interface shows ------------------------------------
-        public const double FriendlyAbove = 40.0;
-        public const double NeutralAbove = 5.0;
-        public const double TenseAbove = -35.0;
-        public const double HostileAbove = -70.0;
 
         private readonly Dictionary<CompetitorId, double> standing = new();
         private readonly List<RelationEntry> history = new();
@@ -117,31 +84,12 @@ namespace ScalingLaws.Simulation
 
         public RelationBand BandWith(CompetitorId lab) => BandFor(With(lab));
 
-        public static RelationBand BandFor(double value) =>
-            value >= FriendlyAbove ? RelationBand.Friendly
-            : value >= NeutralAbove ? RelationBand.Neutral
-            : value >= TenseAbove ? RelationBand.Tense
-            : value >= HostileAbove ? RelationBand.Hostile
-            : RelationBand.Rivalry;
+        public static RelationBand BandFor(double value) => RelationScale.BandFor(value);
 
-        public static string NameOf(RelationBand band) => band switch
-        {
-            RelationBand.Friendly => Loc.T("relation.friendly"),
-            RelationBand.Neutral => Loc.T("relation.neutral"),
-            RelationBand.Tense => Loc.T("relation.tense"),
-            RelationBand.Hostile => Loc.T("relation.hostile"),
-            _ => Loc.T("relation.rivalry")
-        };
+        public static string NameOf(RelationBand band) => RelationScale.NameOf(band);
 
         /// <summary>What a band means for how that lab behaves, in one sentence.</summary>
-        public static string NoteFor(RelationBand band) => band switch
-        {
-            RelationBand.Friendly => Loc.T("relation.friendly.note"),
-            RelationBand.Neutral => Loc.T("relation.neutral.note"),
-            RelationBand.Tense => Loc.T("relation.tense.note"),
-            RelationBand.Hostile => Loc.T("relation.hostile.note"),
-            _ => Loc.T("relation.rivalry.note")
-        };
+        public static string NoteFor(RelationBand band) => RelationScale.NoteFor(band);
 
         /// <summary>
         /// Moves a relation and records why.

@@ -1,0 +1,303 @@
+using NUnit.Framework;
+using ScalingLaws.Core;
+using ScalingLaws.Data;
+using ScalingLaws.Persistence;
+using ScalingLaws.Simulation;
+
+namespace ScalingLaws.Tests.EditMode
+{
+    /// <summary>
+    /// Relations that can go up, and what a company signs when they do.
+    ///
+    /// **Every way a relation moved before this was something the player did to somebody.** Seven
+    /// recorders, all negative, so a player who never attacked anybody sat at Neutral with fourteen
+    /// labs for fourteen years and a good relation bought nothing, because there was no way to have
+    /// one. These hold the other direction, and the two rules that keep it from being a purchase:
+    /// an offer is answered in days rather than on the click, and a level is earned in days that
+    /// cannot be paid for.
+    /// </summary>
+    public sealed class AllianceTests
+    {
+        private static CompanySimulation Company(uint seed = 31)
+        {
+            var simulation = new CompanySimulation(new CompanyState("Adco", seed));
+            simulation.State.CashUsd = 200_000_000;
+            simulation.State.ResearchPoints = 5_000;
+            simulation.SetRentedPetaflops(200.0);
+
+            return simulation;
+        }
+
+        private static void Warm(CompanySimulation simulation, CompetitorId lab, double to)
+        {
+            simulation.State.Relations.Record(lab, simulation.State.Date,
+                to - simulation.State.Relations.With(lab), "relation.reason.published");
+        }
+
+        /// <summary>
+        /// The band a fresh campaign is in with everybody, which has to be the one it is named.
+        ///
+        /// **It was not.** `Neutral` is documented as where everybody starts and its threshold sat
+        /// at 5.0 against a start of 0.0, so all fourteen labs were drawn as `Tense` on day one:
+        /// every company the player had never touched reading as cooling. Nothing caught it because
+        /// nothing until now asked a question the answer mattered to. An offer that needs Neutral
+        /// could not be made to anybody, ever, which is how it surfaced.
+        /// </summary>
+        [Test]
+        public void EverybodyStartsInTheBandThatIsNamedAfterStarting()
+        {
+            Assert.That(RelationScale.BandFor(RelationScale.Start), Is.EqualTo(RelationBand.Neutral));
+
+            Assert.That(RelationScale.BandFor(RelationScale.CousinBaseline),
+                Is.EqualTo(RelationBand.Friendly),
+                "and the cousin starts as family");
+
+            var simulation = Company();
+
+            Assert.That(simulation.State.Relations.BandWith(CompetitorId.Cohere),
+                Is.EqualTo(RelationBand.Neutral),
+                "a company on its first morning has not annoyed anybody");
+        }
+
+        [Test]
+        public void AnOfferIsPaidForOnSendingAndAnsweredDaysLater()
+        {
+            var simulation = Company();
+            var before = simulation.State.ResearchPoints;
+
+            Assert.IsTrue(simulation.TrySendOffer(
+                CompetitorId.Cohere, RelationOffer.PublishFinding, out var why), why);
+
+            Assert.That(simulation.State.ResearchPoints,
+                Is.EqualTo(before - RelationOfferCatalog.Get(RelationOffer.PublishFinding).PointCost),
+                "the cost is paid on sending, whatever they answer");
+
+            Assert.That(simulation.State.PendingOffers.Count, Is.EqualTo(1),
+                "and it is waiting, not decided");
+
+            for (var day = 0; day < RelationOfferCatalog.Get(RelationOffer.PublishFinding)
+                     .DaysToAnswer + 1; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(simulation.State.PendingOffers, Is.Empty, "nobody answered");
+        }
+
+        /// <summary>
+        /// **The cheap rung has to stay reachable**, so a published finding is never refused and it
+        /// reaches everybody. It is the only move a company with no money can make, and a relation
+        /// system whose first rung costs a million dollars is one the early game cannot see.
+        /// </summary>
+        [Test]
+        public void APublishedFindingIsNeverRefusedAndEverybodyNoticesALittle()
+        {
+            Assert.That(
+                RelationOfferCatalog.AcceptanceChance(
+                    RelationOffer.PublishFinding, RivalRelations.Worst, 90.0, 1.0),
+                Is.EqualTo(1.0),
+                "nobody turns down reading a paper, even a lab that hates you");
+
+            var simulation = Company();
+
+            Assert.IsTrue(simulation.TrySendOffer(
+                CompetitorId.Cohere, RelationOffer.PublishFinding, out var why), why);
+
+            Assert.That(simulation.State.Relations.With(CompetitorId.OpenAi),
+                Is.GreaterThan(RivalRelations.Start),
+                "a paper is public, so a lab it was not aimed at still read it");
+
+            for (var day = 0; day < 6; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(simulation.State.Relations.With(CompetitorId.Cohere),
+                Is.GreaterThan(RivalRelations.Start),
+                "and the lab it was published with gains more than the rest");
+        }
+
+        /// <summary>
+        /// A lab well ahead of you has less to gain and says so. Nothing new is invented for that:
+        /// it reads the relation and the capability gap, both of which the game already keeps.
+        /// </summary>
+        [Test]
+        public void ALabFarAheadIsHarderToSignThanOneBehind()
+        {
+            var ahead = RelationOfferCatalog.AcceptanceChance(
+                RelationOffer.DistributionLicence, 50.0, theirCapability: 80.0, yourCapability: 20.0);
+
+            var behind = RelationOfferCatalog.AcceptanceChance(
+                RelationOffer.DistributionLicence, 50.0, theirCapability: 30.0, yourCapability: 60.0);
+
+            Assert.That(behind, Is.GreaterThan(ahead));
+
+            var hated = RelationOfferCatalog.AcceptanceChance(
+                RelationOffer.DistributionLicence, -80.0, 40.0, 40.0);
+
+            var liked = RelationOfferCatalog.AcceptanceChance(
+                RelationOffer.DistributionLicence, 80.0, 40.0, 40.0);
+
+            Assert.That(liked, Is.GreaterThan(hated * 2.0),
+                "where the relation stands is the strongest term, which is the whole point");
+        }
+
+        /// <summary>
+        /// **The calendar on an alliance cannot be bought.** Level three needs a year at level two,
+        /// and a company with two hundred million dollars is refused exactly as a poor one is. That
+        /// is the spine of this game applied to a relationship.
+        /// </summary>
+        [Test]
+        public void ALevelIsEarnedInDaysAndMoneyCannotBringItForward()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.FriendlyAbove + 20.0);
+
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+            Assert.That(simulation.State.Alliances.LevelWith(lab), Is.EqualTo(1));
+
+            Assert.IsFalse(simulation.TrySignAlliance(lab, out var tooSoon),
+                "the second level is ninety days away and the account is full");
+
+            StringAssert.Contains(
+                Loc.T("alliance.fail.days", LabAlliances.DaysNeededFor(2).ToString()).Substring(0, 6),
+                tooSoon);
+
+            for (var day = 0; day < LabAlliances.DaysNeededFor(2) + 1; day++)
+            {
+                // Kept warm on purpose: the drift would take an untended relation back to neutral
+                // and the level would fall, which is the next test rather than this one.
+                Warm(simulation, lab, RivalRelations.FriendlyAbove + 20.0);
+                simulation.AdvanceDay();
+            }
+
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var later), later);
+            Assert.That(simulation.State.Alliances.LevelWith(lab), Is.EqualTo(2));
+        }
+
+        /// <summary>
+        /// An alliance nobody keeps warm falls apart, and it falls faster than it climbed.
+        ///
+        /// **Derived from the band rather than hooked onto every hostile act.** Six places in this
+        /// simulation charge a relation and a seventh will be written one day; a rule that has to be
+        /// remembered at each of them is a rule that gets forgotten at one.
+        /// </summary>
+        [Test]
+        public void AnAllianceLeftToCoolLosesItsLevelWithoutAnybodyCallingIn()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.FriendlyAbove + 5.0);
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+
+            // One smear's worth of damage, recorded the way every hostile act in the game does.
+            simulation.State.Relations.Record(lab, simulation.State.Date, -60.0,
+                "relation.reason.smeared", "Adco");
+
+            simulation.AdvanceDay();
+
+            Assert.That(simulation.State.Alliances.LevelWith(lab), Is.Zero,
+                "nothing in the smear code knows about alliances, and it did not have to");
+
+            Assert.IsTrue(simulation.State.Alliances.CanCall(lab),
+                "the number survives the friendship, which is the author's own rule");
+        }
+
+        [Test]
+        public void ADealRunsForItsTermAndThenStopsMattering()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            simulation.State.Deals.Add(new StandingDeal(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date, simulation.State.Date.AddDays(10)));
+
+            Assert.That(simulation.AlliedPetaflops(), Is.GreaterThan(0.0));
+
+            for (var day = 0; day < 12; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(simulation.State.Deals, Is.Empty);
+            Assert.That(simulation.AlliedPetaflops(), Is.Zero,
+                "a term that ran out must stop paying, or it is an income guarantee");
+        }
+
+        /// <summary>
+        /// Everything here is causal, so all of it is saved. Eleventh time in this project.
+        /// </summary>
+        [Test]
+        public void OffersDealsAndAlliancesAllSurviveASave()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.FriendlyAbove + 20.0);
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+            Assert.IsTrue(simulation.TrySendOffer(
+                CompetitorId.OpenAi, RelationOffer.CapacityPurchase, out var offerWhy), offerWhy);
+
+            simulation.State.Deals.Add(new StandingDeal(lab, RelationOffer.DistributionLicence,
+                simulation.State.Date, simulation.State.Date.AddDays(100)));
+
+            var back = SaveStore.Restore(SaveStore.Parse(
+                UnityEngine.JsonUtility.ToJson(SaveStore.Capture(simulation.State))));
+
+            Assert.That(back.Alliances.LevelWith(lab), Is.EqualTo(1));
+            Assert.IsTrue(back.Alliances.CanCall(lab));
+            Assert.That(back.PendingOffers.Count, Is.EqualTo(1));
+            Assert.That(back.PendingOffers[0].Lab, Is.EqualTo(CompetitorId.OpenAi));
+            Assert.That(back.Deals.Count, Is.EqualTo(1));
+            Assert.That(back.Deals[0].Offer, Is.EqualTo(RelationOffer.DistributionLicence));
+        }
+
+        /// <summary>
+        /// v65 to v66: nothing signed, nothing waiting, and the relations kept exactly as they are.
+        /// </summary>
+        [Test]
+        public void AnOlderCampaignKeepsItsEnemiesAndHasNothingSigned()
+        {
+            var data = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            data.version = 65;
+            data.allianceLabs = null;
+            data.offerLabs = null;
+
+            var upgraded = SaveMigration.UpgradeV65ToV66(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(66));
+            Assert.That(upgraded.allianceLabs, Is.Empty);
+            Assert.That(upgraded.offerLabs, Is.Empty);
+            StringAssert.Contains("v65 to v66", SaveMigration.LastMigrationNotes);
+        }
+
+        /// <summary>
+        /// **Nothing here pays a dividend**, and that is the line this system is not allowed to
+        /// cross. Everything an alliance buys is points, capacity, reach or a smaller chance of
+        /// something going wrong. A relation that paid money would be an income guarantee, which is
+        /// against the spine of the game.
+        /// </summary>
+        [Test]
+        public void NoOfferEverPutsMoneyIntoTheAccount()
+        {
+            foreach (var definition in RelationOfferCatalog.All)
+            {
+                Assert.That(definition.CashCostUsd, Is.GreaterThanOrEqualTo(0),
+                    $"{definition.Offer} pays the company to accept it");
+            }
+
+            var simulation = Company();
+            var before = simulation.State.CashUsd;
+
+            Assert.IsTrue(simulation.TrySendOffer(
+                CompetitorId.Cohere, RelationOffer.CapacityPurchase, out var why), why);
+
+            Assert.That(simulation.State.CashUsd, Is.LessThan(before));
+        }
+    }
+}

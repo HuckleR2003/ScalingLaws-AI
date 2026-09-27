@@ -166,6 +166,7 @@ namespace ScalingLaws.Persistence
                     62 => UpgradeV62ToV63(current),
                     63 => UpgradeV63ToV64(current),
                     64 => UpgradeV64ToV65(current),
+                    65 => UpgradeV65ToV66(current),
                     _ => current
                 };
             }
@@ -1954,6 +1955,46 @@ namespace ScalingLaws.Persistence
 
 
 
+
+        /// <summary>
+        /// v65 to v66: no offers out, no deals running, nothing signed with anybody.
+        ///
+        /// **The only true reading.** A v65 campaign was played in a game where a relation could
+        /// only ever fall: there were seven recorders and all of them were something the player did
+        /// to somebody. Nobody in that game could have sent an offer, so nobody had one waiting.
+        ///
+        /// Whatever relations that campaign accumulated are kept exactly as they stand, so a player
+        /// who spent four years making enemies loads into this version with those enemies and a new
+        /// way out of it, which is the honest continuation.
+        /// </summary>
+        public static SaveData UpgradeV65ToV66(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 66;
+
+            data.offerLabs = new List<int>();
+            data.offerKinds = new List<int>();
+            data.offerSentDays = new List<int>();
+            data.dealLabs = new List<int>();
+            data.dealKinds = new List<int>();
+            data.dealStartDays = new List<int>();
+            data.dealEndDays = new List<int>();
+            data.allianceLabs = new List<int>();
+            data.allianceLevels = new List<int>();
+            data.allianceSinceDays = new List<int>();
+            data.allianceEverSigned = new List<int>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v65 to v66: nothing is signed with anybody and no offer is waiting. A v65 campaign "
+                + "played a game where a relation could only fall, so it had no way to make one. "
+                + "The relations themselves are kept as they stand.");
+
+            return data;
+        }
         /// <summary>
         /// v64 to v65: nothing is wanted.
         ///

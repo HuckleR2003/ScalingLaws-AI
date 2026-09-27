@@ -130,6 +130,21 @@ namespace ScalingLaws.Simulation
         public bool SupportAnnounced { get; set; }
 
         /// <summary>
+        /// Offers sent to other labs and not yet answered. Saved from v66.
+        ///
+        /// **Causal.** The answer is rolled when the days run out, so an unanswered offer is a coin
+        /// that has not landed; dropping it would let a reload buy a different answer and would
+        /// delete the wait, which is the only thing an offer is from the player's chair.
+        /// </summary>
+        public List<PendingOffer> PendingOffers { get; } = new();
+
+        /// <summary>Deals signed and still running: a licence, an evaluation, a capacity term.</summary>
+        public List<StandingDeal> Deals { get; } = new();
+
+        /// <summary>What has been signed with each lab, and how long it has held. Saved from v66.</summary>
+        public LabAlliances Alliances { get; } = new();
+
+        /// <summary>
         /// Cabinets and fans the company has paid for and not stood up.
         ///
         /// The other half of the floor. See <see cref="ServerStock"/> for why buying and placing

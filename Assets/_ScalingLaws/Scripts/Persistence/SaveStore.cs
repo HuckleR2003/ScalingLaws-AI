@@ -202,6 +202,24 @@ namespace ScalingLaws.Persistence
                 data.wantedResearch.Add((int)node);
             }
 
+            foreach (var pending in state.PendingOffers)
+            {
+                data.offerLabs.Add((int)pending.Lab);
+                data.offerKinds.Add((int)pending.Offer);
+                data.offerSentDays.Add(pending.Sent.DayIndex);
+            }
+
+            foreach (var deal in state.Deals)
+            {
+                data.dealLabs.Add((int)deal.Lab);
+                data.dealKinds.Add((int)deal.Offer);
+                data.dealStartDays.Add(deal.Started.DayIndex);
+                data.dealEndDays.Add(deal.Ends.DayIndex);
+            }
+
+            state.Alliances.Capture(data.allianceLabs, data.allianceLevels,
+                data.allianceSinceDays, data.allianceEverSigned);
+
             foreach (var loan in state.Loans.Loans)
             {
                 data.loans.Add(new LoanData
@@ -1006,6 +1024,55 @@ namespace ScalingLaws.Persistence
             {
                 state.UnlockedResearch.Add((ResearchNodeId)node);
             }
+
+            state.PendingOffers.Clear();
+
+            for (var index = 0; index < safe.offerLabs.Count; index++)
+            {
+                if (!Enum.IsDefined(typeof(CompetitorId), safe.offerLabs[index])
+                    || index >= safe.offerKinds.Count
+                    || !Enum.IsDefined(typeof(RelationOffer), safe.offerKinds[index]))
+                {
+                    continue;
+                }
+
+                var sent = index < safe.offerSentDays.Count
+                    ? Math.Max(0, safe.offerSentDays[index])
+                    : 0;
+
+                state.PendingOffers.Add(new PendingOffer(
+                    (CompetitorId)safe.offerLabs[index],
+                    (RelationOffer)safe.offerKinds[index],
+                    new GameDate(sent)));
+            }
+
+            state.Deals.Clear();
+
+            for (var index = 0; index < safe.dealLabs.Count; index++)
+            {
+                if (!Enum.IsDefined(typeof(CompetitorId), safe.dealLabs[index])
+                    || index >= safe.dealKinds.Count
+                    || !Enum.IsDefined(typeof(RelationOffer), safe.dealKinds[index]))
+                {
+                    continue;
+                }
+
+                var started = index < safe.dealStartDays.Count
+                    ? Math.Max(0, safe.dealStartDays[index])
+                    : 0;
+
+                var ends = index < safe.dealEndDays.Count
+                    ? Math.Max(started, safe.dealEndDays[index])
+                    : started;
+
+                state.Deals.Add(new StandingDeal(
+                    (CompetitorId)safe.dealLabs[index],
+                    (RelationOffer)safe.dealKinds[index],
+                    new GameDate(started), new GameDate(ends)));
+            }
+
+            state.Alliances.Restore(safe.allianceLabs, safe.allianceLevels,
+                safe.allianceSinceDays, safe.allianceEverSigned);
 
             state.WantedResearch.Clear();
             foreach (var node in safe.wantedResearch)
@@ -2389,6 +2456,17 @@ namespace ScalingLaws.Persistence
             safe.founderTraits.RemoveAll(static id => !Enum.IsDefined(typeof(FounderTrait), id));
             safe.unlockedResearch.RemoveAll(static id => !Enum.IsDefined(typeof(ResearchNodeId), id));
             safe.wantedResearch ??= new List<int>();
+            safe.offerLabs ??= new List<int>();
+            safe.offerKinds ??= new List<int>();
+            safe.offerSentDays ??= new List<int>();
+            safe.dealLabs ??= new List<int>();
+            safe.dealKinds ??= new List<int>();
+            safe.dealStartDays ??= new List<int>();
+            safe.dealEndDays ??= new List<int>();
+            safe.allianceLabs ??= new List<int>();
+            safe.allianceLevels ??= new List<int>();
+            safe.allianceSinceDays ??= new List<int>();
+            safe.allianceEverSigned ??= new List<int>();
             safe.wantedResearch.RemoveAll(static id => !Enum.IsDefined(typeof(ResearchNodeId), id));
             safe.defaultPriceMultiplier = Math.Clamp(Finite(safe.defaultPriceMultiplier, 1.0), 0.05, 10.0);
 
