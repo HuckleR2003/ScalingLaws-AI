@@ -39,6 +39,53 @@ namespace ScalingLaws.Simulation
 
             switch (raised.Type)
             {
+                // ---- who is working with whom -------------------------------------------------
+                //
+                // **These are public and the rest of the relations system is not.** An alliance and
+                // a joint programme are announced by everybody who signs one, which is what the
+                // Frontier Model Forum was; an offer sent and an offer refused are a letter and its
+                // answer, and a wire that reported those would be reading the player's post.
+                //
+                // Premieres rather than the Wire, because this section is what shipped and a
+                // partnership is a thing two companies shipped together.
+                case CompanyEventType.AllianceSigned:
+                    item = new NewsItem(raised.Date, NewsSection.Premieres,
+                        $"{company} signs a partnership", raised.Message, "Wire", true,
+                        NewsWeight.Notable);
+
+                    return true;
+
+                case CompanyEventType.AllianceBroken:
+                    item = new NewsItem(raised.Date, NewsSection.Scandals,
+                        $"{company} loses a partner", raised.Message, "Wire", true,
+                        NewsWeight.Notable);
+
+                    return true;
+
+                case CompanyEventType.CampaignStarted:
+                    item = new NewsItem(raised.Date, NewsSection.Premieres,
+                        $"{company} opens joint research", raised.Message, "Wire", true,
+                        NewsWeight.Notable);
+
+                    return true;
+
+                case CompanyEventType.CampaignFinished:
+                    item = new NewsItem(raised.Date, NewsSection.Wire,
+                        $"{company} closes a joint programme", raised.Message, "Wire", true,
+                        NewsWeight.Routine);
+
+                    return true;
+
+                // **Walking out is the one of these that is a story.** A programme that ran its
+                // whole term is a line on the wire; one abandoned halfway is something the other
+                // side has an opinion about.
+                case CompanyEventType.CampaignLeft:
+                    item = new NewsItem(raised.Date, NewsSection.Scandals,
+                        $"{company} walks out of a programme", raised.Message, "Wire", true,
+                        NewsWeight.Notable);
+
+                    return true;
+
                 // ---- trouble, ours and theirs -------------------------------------------------
                 case CompanyEventType.SafetyIncident:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,

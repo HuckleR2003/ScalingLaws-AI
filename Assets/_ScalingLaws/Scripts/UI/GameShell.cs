@@ -4003,6 +4003,65 @@ namespace ScalingLaws.UI
                     break;
                 }
 
+                // **An answer is not the player's own click coming back.** Everything this switch
+                // deliberately stays quiet about is something the player just did; these arrive days
+                // later from somebody else, and the whole point of making an offer wait was that the
+                // answer is a moment. Nine event types were raised by the relations system and read
+                // by nothing at all, which is the fault the wire itself was built to fix.
+                case CompanyEventType.OfferAccepted:
+                    startedNotice?.Show(Loc.T("notice.offer_yes"), companyEvent.Message,
+                        NoticeTone.Special, Loc.T("notice.see"), () => Show(Screen.Ranking));
+
+                    break;
+
+                case CompanyEventType.OfferRefused:
+                    startedNotice?.Show(Loc.T("notice.offer_no"), companyEvent.Message);
+                    break;
+
+                // A term running out is not a surprise, but it is money and capacity leaving, and
+                // nothing else on any screen would say the day it happened.
+                case CompanyEventType.DealEnded:
+                    startedNotice?.Show(Loc.T("notice.deal_ended"), companyEvent.Message);
+                    break;
+
+                // **Gold, and rationed to occasions.** Signing a level takes ninety days at the
+                // least and a year at the most, which is the definition of an occasion.
+                case CompanyEventType.AllianceSigned:
+                    startedNotice?.Show(Loc.T("notice.alliance"), companyEvent.Message,
+                        NoticeTone.Special, Loc.T("notice.see"), () => Show(Screen.Ranking));
+
+                    break;
+
+                // Red, because it is always something the player did and never a surprise they
+                // wanted. A level takes months to earn back.
+                case CompanyEventType.AllianceBroken:
+                    startedNotice?.Show(Loc.T("notice.alliance_lost"), companyEvent.Message,
+                        NoticeTone.Alert);
+
+                    break;
+
+                case CompanyEventType.CampaignStarted:
+                    // **`notice.campaign` was already taken by a marketing campaign being booked.**
+                    // Two facts sharing an address, and the second one silently wins: the phrase
+                    // guard caught it the first time this compiled.
+                    startedNotice?.Show(Loc.T("notice.joint"), companyEvent.Message,
+                        NoticeTone.Special, Loc.T("notice.see"), () => Show(Screen.Research));
+
+                    break;
+
+                case CompanyEventType.CampaignFinished:
+                    startedNotice?.Show(Loc.T("notice.campaign_done"), companyEvent.Message);
+                    break;
+
+                // **The one that can happen without the player asking for it.** A programme drops
+                // when the day's bill goes unpaid or when the alliance behind it cools, and both of
+                // those arrive as a surprise with a break fee attached.
+                case CompanyEventType.CampaignLeft:
+                    startedNotice?.Show(Loc.T("notice.campaign_left"), companyEvent.Message,
+                        NoticeTone.Alert);
+
+                    break;
+
                 // **The one that happens to the company.** Red, longer, and with the way to the story
                 // on it, because a scandal found a week later is a scandal nobody answered.
                 case CompanyEventType.ModelScandal:

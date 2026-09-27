@@ -79,6 +79,17 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Fixed
 
+- **Nine kinds of event happened and told the player nothing.** Everything the relations system
+  raises went into the queue and was read by no screen, no notice and no wire: a signed alliance, an
+  offer answered days later, a research programme collapsing with the partnership behind it. This is
+  the second time this project has shipped that shape, and the wire itself was built the first time
+  to fix it. They reach the notice and the news page now, split the way the rest of the game splits
+  them: what is public goes on the wire, what is a letter and its answer does not. A guard walks
+  every event type and fails on one that nothing reads, so the third time cannot happen quietly.
+- **`GrantOffered` is declared and raised by nothing**, which the same guard found on its first run.
+  Kept rather than renumbered, and named as unused so the next reader knows the slot is free rather
+  than broken.
+
 - **Looking at a rival card could sign an alliance and charge the fee.** The card called the method
   that signs in order to read the refusal out of it, which is harmless on a card that cannot sign
   and is a purchase nobody asked for on a card that can. A render caught it: a company at level one
@@ -189,7 +200,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1481 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1483 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 
