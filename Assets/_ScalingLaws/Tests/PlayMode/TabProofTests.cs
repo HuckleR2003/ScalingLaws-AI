@@ -205,7 +205,12 @@ namespace ScalingLaws.Tests.PlayMode
             // And again in Polish, on the four screens the author asked to have translated.
             Loc.Current = Language.Polish;
 
-            foreach (var name in new[] { "Family", "Upgrade", "ReleasePlan", "Research" })
+            // **`Feed` is on this list because it was reported as untranslated.** The whole right
+            // hand column of the news screen was English in a Polish campaign: `NewsCatalog` stored
+            // its own words, which is the catalog fault eighteen others were converted for, and
+            // `NewsDesk` built its headlines by interpolation. A render is the only thing that
+            // answers whether that is actually finished.
+            foreach (var name in new[] { "Family", "Upgrade", "ReleasePlan", "Research", "News" })
             {
                 shell.OpenScreenByName(name);
                 yield return Capture(null, settings, texture, $"pl_{name.ToLowerInvariant()}.png");

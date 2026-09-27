@@ -308,12 +308,25 @@ namespace ScalingLaws.Tests.EditMode
             var screen = new NewsScreen(simulation, (_, _) => { });
             screen.Refresh();
 
-            Assert.IsTrue(Says(screen.Root, "Requires TrendSearch Team membership"),
-                "Event Hunter has to say which membership is missing, and it is not the one already "
-                + "being paid for.");
+            // **Built from the same phrase the screen builds it from, not typed again here.** That
+            // sentence used to be an English literal in `NewsScreen` and it is a key now, because
+            // the whole right hand column of this screen stayed English in a Polish campaign. A
+            // test carrying its own copy of the words would go red on the translation rather than
+            // on the behaviour, which is the opposite of what it is for.
+            var expected = Loc.T("news.desk.needs_two",
+                NewsCatalog.OutletName(IntelTier.TrendSearch),
+                NewsCatalog.OutletName(IntelTier.NationalPress));
 
-            Assert.IsTrue(Says(screen.Root, "National Press is paid and it is not enough on its own"),
-                "And it has to acknowledge the money already spent, or it reads as a bug.");
+            Assert.IsTrue(Says(screen.Root, expected),
+                "Event Hunter has to say which membership is missing, that it is not the one "
+                + "already being paid for, and it has to acknowledge the money already spent, or "
+                + "it reads as a bug.");
+
+            StringAssert.Contains(NewsCatalog.OutletName(IntelTier.TrendSearch), expected,
+                "the phrase stopped naming the membership that is actually missing");
+
+            StringAssert.Contains(NewsCatalog.OutletName(IntelTier.NationalPress), expected,
+                "the phrase stopped naming the membership the player has already paid for");
         }
 
         [Test]
@@ -326,7 +339,8 @@ namespace ScalingLaws.Tests.EditMode
             var screen = new NewsScreen(simulation, (_, _) => { });
             screen.Refresh();
 
-            Assert.IsFalse(Says(screen.Root, "Requires TrendSearch Team membership"),
+            // Read from the book for the same reason its opposite number above is.
+            Assert.IsFalse(Says(screen.Root, Loc.T("news.desk.hunter.locked")),
                 "A member who has paid for both is still being told to pay.");
         }
 

@@ -94,8 +94,8 @@ namespace ScalingLaws.UI
 
             var monthly = simulation.MonthlyIntelRetainerUsd();
             var spend = new Label(monthly > 0L
-                ? UiFormat.Money(monthly) + " a month on memberships"
-                : "No memberships. The right hand column is closed.");
+                ? Loc.T("news.spend", UiFormat.Money(monthly))
+                : Loc.T("news.none.memberships"));
 
             spend.AddToClassList("news__spend");
             right.Add(spend);
@@ -112,13 +112,12 @@ namespace ScalingLaws.UI
             column.AddToClassList("news-col");
             column.AddToClassList("news-col--wire");
 
-            column.Add(SectionTitle("LATEST", "rule--wire"));
+            column.Add(SectionTitle(Loc.T("news.latest"), "rule--wire"));
 
             var stories = simulation.State.News.In(NewsSection.Wire, 28);
             if (stories.Count == 0)
             {
-                column.Add(Empty("Nothing filed yet. The wire fills as the company and the field do "
-                    + "things worth reporting."));
+                column.Add(Empty(Loc.T("news.none.wire")));
 
                 return column;
             }
@@ -173,10 +172,10 @@ namespace ScalingLaws.UI
             column.AddToClassList("news-col--middle");
 
             column.Add(Section(Loc.T("news.scandals"), "rule--scandal", NewsSection.Scandals, 4,
-                "Nothing has gone wrong yet. It will."));
+                Loc.T("news.none.scandals")));
 
             column.Add(Section(Loc.T("news.premieres"), "rule--premiere", NewsSection.Premieres, 4,
-                "No launches yet, yours or theirs."));
+                Loc.T("news.none.premieres")));
 
             return column;
         }
@@ -303,8 +302,7 @@ namespace ScalingLaws.UI
                 var stories = state.News.In(desk.Section, 4);
                 if (stories.Count == 0)
                 {
-                    panel.Add(Empty("Paid up. The desk files when it has something, not on a "
-                        + "schedule you set."));
+                    panel.Add(Empty(Loc.T("news.none.paid")));
                 }
                 else
                 {
@@ -331,8 +329,8 @@ namespace ScalingLaws.UI
 
             var lockNote = new Label(!hasFirst
                 ? desk.LockedNote
-                : $"Requires {NewsCatalog.OutletName(desk.AlsoRequires)} membership. "
-                    + $"{NewsCatalog.OutletName(desk.Requires)} is paid and it is not enough on its own.");
+                : Loc.T("news.desk.needs_two", NewsCatalog.OutletName(desk.AlsoRequires),
+                    NewsCatalog.OutletName(desk.Requires)));
 
             lockNote.AddToClassList("desk__locked");
             panel.Add(lockNote);
@@ -359,8 +357,9 @@ namespace ScalingLaws.UI
             var button = new Button(() => setMembership(tier, !held))
             {
                 text = held
-                    ? $"CANCEL {NewsCatalog.OutletName(tier).ToUpperInvariant()}"
-                    : $"JOIN {NewsCatalog.OutletName(tier).ToUpperInvariant()}  {UiFormat.Money(price)}/MO"
+                    ? Loc.T("news.cancel", NewsCatalog.OutletName(tier).ToUpperInvariant())
+                    : Loc.T("news.join", NewsCatalog.OutletName(tier).ToUpperInvariant(),
+                        UiFormat.Money(price))
             };
 
             button.AddToClassList("desk__join");

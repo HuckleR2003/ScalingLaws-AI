@@ -111,6 +111,12 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Fixed
 
+- **The news screen was in English in a Polish campaign, and so was every event message.** The
+  right hand column, the section headings, the membership buttons, and every line the wire prints:
+  "E-Solutions released Helpdesk assistant at capability 24,0" where even the number was wrong,
+  because a raw format string follows the machine's own language and this one is Polish. All of it
+  reads properly now, in both languages, including the notices and the inbox, which are fed by the
+  same messages.
 - **A card put into a cabinet could never be taken out again.** Clicking a slot in an opened cabinet
   has always been the way to pull a card, and it has never once worked: the cabinet was drawn before
   the window said what a click should do, and a slot with no handler behind it is built to ignore

@@ -30,25 +30,38 @@ namespace ScalingLaws.Data
         EventHunter = 5
     }
 
-    /// <summary>One paid section, what it costs, and what it is allowed to print.</summary>
+    /// <summary>What one paid section costs, what it is allowed to print, and who publishes it.</summary>
     public readonly struct NewsDeskDefinition
     {
-        public NewsDeskDefinition(NewsSection section, string title, string outlet, IntelTier requires,
-            IntelTier alsoRequires, string pitch, string lockedNote)
+        public NewsDeskDefinition(NewsSection section, string key, string outlet, IntelTier requires,
+            IntelTier alsoRequires)
         {
             Section = section;
-            Title = title ?? string.Empty;
+            this.key = key;
             Outlet = outlet ?? string.Empty;
             Requires = requires;
             AlsoRequires = alsoRequires;
-            Pitch = pitch ?? string.Empty;
-            LockedNote = lockedNote ?? string.Empty;
         }
 
-        public NewsSection Section { get; }
-        public string Title { get; }
+        /// <summary>
+        /// The stem the three readable parts hang off.
+        ///
+        /// **This row used to store its own English.** A catalog built once at type load keeps
+        /// whatever language it was built in, which is the fault eighteen other catalogs in this
+        /// game were converted for; this one was missed, and the whole right hand side of the news
+        /// screen stayed English in a Polish campaign. A tester reported exactly that.
+        ///
+        /// The three keys are written out below rather than concatenated at the call site, so
+        /// `LocalisationTests.EveryKeyTheInterfaceAsksForExists` can still see them as literals.
+        /// </summary>
+        private readonly string key;
 
-        /// <summary>Who publishes it, which is who the invoice comes from.</summary>
+        public NewsSection Section { get; }
+
+        /// <summary>Resolved per read, so a language change mid-campaign reaches it.</summary>
+        public string Title => Loc.T(key + ".title");
+
+        /// <summary>Who publishes it, which is who the invoice comes from. A name, not a phrase.</summary>
         public string Outlet { get; }
 
         public IntelTier Requires { get; }
@@ -63,10 +76,10 @@ namespace ScalingLaws.Data
         /// </summary>
         public IntelTier AlsoRequires { get; }
 
-        public string Pitch { get; }
+        public string Pitch => Loc.T(key + ".pitch");
 
         /// <summary>What the panel says while it is shut.</summary>
-        public string LockedNote { get; }
+        public string LockedNote => Loc.T(key + ".locked");
 
         public bool NeedsTwo => AlsoRequires != IntelTier.PublicNews;
     }
@@ -87,23 +100,15 @@ namespace ScalingLaws.Data
 
         private static readonly NewsDeskDefinition[] Desks =
         {
-            new(NewsSection.TotalTrueNews, "TOTAL TRUE NEWS", "TrendSearch Team",
-                IntelTier.TrendSearch, IntelTier.PublicNews,
-                "Whether a thing is worth doing. The desk that will tell you a launch is not worth "
-                + "buying and that waiting two months gets you a cheaper part that works.",
-                "Requires TrendSearch Team membership."),
+            new(NewsSection.TotalTrueNews, "news.desk.tt", "TrendSearch Team",
+                IntelTier.TrendSearch, IntelTier.PublicNews),
 
-            new(NewsSection.ItSpy, "IT SPY", "KnownWords",
-                IntelTier.KnownWords, IntelTier.PublicNews,
-                "What the other labs are actually doing. Revenue, technology, how many models they "
-                + "have built and how many are still on sale.",
-                "Requires KnownWords membership."),
+            new(NewsSection.ItSpy, "news.desk.spy", "KnownWords",
+                IntelTier.KnownWords, IntelTier.PublicNews),
 
             // The one that needs two. See NewsDeskDefinition.AlsoRequires for why.
-            new(NewsSection.EventHunter, "EVENT HUNTER", "National Press",
-                IntelTier.NationalPress, IntelTier.TrendSearch,
-                "What is coming and roughly when. Hardware, launches, the shape of the next quarter.",
-                "Requires TrendSearch Team membership.")
+            new(NewsSection.EventHunter, "news.desk.hunter", "National Press",
+                IntelTier.NationalPress, IntelTier.TrendSearch)
         };
 
         public static IReadOnlyList<NewsDeskDefinition> PaidDesks => Desks;
@@ -136,22 +141,22 @@ namespace ScalingLaws.Data
             IntelTier.NationalPress => "National Press",
             IntelTier.KnownWords => "KnownWords",
             IntelTier.TrendSearch => "TrendSearch Team",
-            _ => "Public news"
+            _ => Loc.T("news.outlet.public")
         };
 
-        /// <summary>What each outfit tells the player it is for, on the membership card.</summary>
+        /// <summary>
+        /// What each outfit tells the player it is for, on the membership card.
+        ///
+        /// **A literal per arm, never a key built from the enum name.** `LocalisationTests` reads
+        /// literals and a concatenated key is invisible to it, which has already cost this project
+        /// one shipped screen of raw keys.
+        /// </summary>
         public static string OutletPitch(IntelTier tier) => tier switch
         {
-            IntelTier.NationalPress =>
-                "Wide coverage, first to print, wrong often enough that acting on it unread is its own "
-                + "kind of decision.",
-            IntelTier.KnownWords =>
-                "A desk that only watches the other labs. Nothing about the market, everything about "
-                + "who is building what.",
-            IntelTier.TrendSearch =>
-                "The expensive one. Long lead time, the highest hit rate in the game, and still not "
-                + "certain, because nobody sells certainty.",
-            _ => "Whatever is already public. Arrives with the news rather than before it."
+            IntelTier.NationalPress => Loc.T("news.pitch.press"),
+            IntelTier.KnownWords => Loc.T("news.pitch.known"),
+            IntelTier.TrendSearch => Loc.T("news.pitch.trend"),
+            _ => Loc.T("news.pitch.public")
         };
 
         /// <summary>Sections a company can read for nothing.</summary>

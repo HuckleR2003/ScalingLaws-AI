@@ -768,6 +768,17 @@ namespace ScalingLaws.Simulation
         private static string Whole(double value) => value.ToString("N0",
             System.Globalization.CultureInfo.InvariantCulture);
 
+        /// <summary>
+        /// The one culture every figure that reaches a player is formatted in.
+        ///
+        /// **The event messages are read on the wire, in the notices and in the inbox**, and they
+        /// were built by interpolation until a tester found the whole news screen in English in a
+        /// Polish campaign. Moving them into the phrase book meant every figure in them needed a
+        /// culture, and `UiFormat` lives in `UI/`, which this layer may not read.
+        /// </summary>
+        private static readonly System.Globalization.CultureInfo Invariant =
+            System.Globalization.CultureInfo.InvariantCulture;
+
         // ------------------------------------------------------------------ tick
 
         /// <summary>Runs one day and returns what happened.</summary>
@@ -1229,7 +1240,9 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.TrainingStarted,
                 State.Date,
-                $"Started {blueprint.Name}: {projection.TrainingPetaflopDays:N0} PF-days, about {projection.TrainingDays} days at today's fleet.",
+                Loc.T("ev.train.started", blueprint.Name,
+                    projection.TrainingPetaflopDays.ToString("N0", Invariant),
+                    projection.TrainingDays.ToString(Invariant)),
                 projection.ComputeCashCostUsd));
 
             return true;
@@ -1666,7 +1679,8 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.HardwareOrdered,
                 State.Date,
-                $"Ordered {units:N0}x {generation.DisplayName} for {tierDefinition.DisplayName}, arriving in {terms.LeadTimeDays} days.",
+                Loc.T("ev.hw.ordered", units.ToString("N0", Invariant), generation.DisplayName,
+                    tierDefinition.DisplayName, terms.LeadTimeDays.ToString(Invariant)),
                 total));
 
             // Raised once, by the order that crosses the line, rather than every day the site sits
@@ -1676,7 +1690,8 @@ namespace ScalingLaws.Simulation
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.SitePowerNearlyFull,
                     State.Date,
-                    $"Site power at {power.DrawAfterKilowatts:N0} of {power.CapacityKilowatts:N0} kW once this order lands."));
+                    Loc.T("ev.hw.power", power.DrawAfterKilowatts.ToString("N0", Invariant),
+                        power.CapacityKilowatts.ToString("N0", Invariant))));
             }
 
             return true;
@@ -1900,7 +1915,8 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.HardwareSold,
                 State.Date,
-                $"Sold {sellUnits:N0}x {asset.GenerationId} for ${proceedsUsd:N0}, against ${recovered:N0} paid.",
+                Loc.T("ev.hw.sold", sellUnits.ToString("N0", Invariant), asset.GenerationId.ToString(),
+                    Usd(proceedsUsd), Usd(recovered)),
                 proceedsUsd));
 
             return true;
@@ -2092,7 +2108,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ArchitectureAdopted,
                 State.Date,
-                $"Adopted {architecture.DisplayName}.",
+                Loc.T("ev.arch.adopted", architecture.DisplayName),
                 architecture.AdoptionCostUsd));
 
             return true;
@@ -2169,7 +2185,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.DataSourceAcquired,
                 State.Date,
-                $"Acquired {definition.DisplayName}.",
+                Loc.T("ev.data.acquired", definition.DisplayName),
                 definition.AcquisitionCostUsd));
 
             return true;
@@ -2221,8 +2237,11 @@ namespace ScalingLaws.Simulation
                 CompanyEventType.ModelReleased,
                 State.Date,
                 waited > 0
-                    ? $"{model.Name} is live after {waited} days on the shelf. Par moved {slippage:0.0} capability against it while it waited. Frontier stands at {market.FrontierCapability:0.0}."
-                    : $"{model.Name} is live. Frontier stands at {market.FrontierCapability:0.0}."));
+                    ? Loc.T("ev.model.live_waited", model.Name, waited.ToString(Invariant),
+                        slippage.ToString("0.0", Invariant),
+                        market.FrontierCapability.ToString("0.0", Invariant))
+                    : Loc.T("ev.model.live", model.Name,
+                        market.FrontierCapability.ToString("0.0", Invariant))));
 
             // **The clean slate a company gets exactly once.** People look at a new lab
             // because it is new, and that attention is not earned by the product and does not come
@@ -2335,8 +2354,8 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ModelShelved,
                 State.Date,
-                $"{model.Name} has been withdrawn from sale after "
-                + $"{model.DaysOnSale} days and {UsdText(model.LifetimeRevenueUsd)} earned."));
+                Loc.T("ev.model.withdrawn", model.Name, model.DaysOnSale.ToString(Invariant),
+                    UsdText(model.LifetimeRevenueUsd))));
 
             return true;
         }
@@ -2827,8 +2846,8 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.UpgradeStarted,
                 State.Date,
-                $"{subject}: {string.Join(", ", names)}, about {days} days."
-                + (onShelf ? " Before release." : string.Empty),
+                Loc.T("ev.upgrade.started", subject, string.Join(", ", names), days.ToString(Invariant))
+                + (onShelf ? Loc.T("ev.upgrade.before_release") : string.Empty),
                 cost));
 
             return true;
@@ -3025,8 +3044,9 @@ namespace ScalingLaws.Simulation
                 free
                     ? Loc.T("guide.favour.spent", node.DisplayName, standing.DurationDays)
                     : node.HasWarning
-                        ? $"{node.DisplayName} begun. {node.Warning}"
-                        : $"{node.DisplayName} begun, about {standing.DurationDays} days.",
+                        ? Loc.T("ev.research.begun_warned", node.DisplayName, node.Warning)
+                        : Loc.T("ev.research.begun", node.DisplayName,
+                            standing.DurationDays.ToString(Invariant)),
                 node.CostUsd));
 
             return true;
@@ -3078,7 +3098,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ResearchCompleted,
                 State.Date,
-                $"{node.DisplayName} is done.{granted}.",
+                Loc.T("ev.research.done", node.DisplayName, granted),
                 project.CashPaidUsd));
         }
 
@@ -3229,7 +3249,8 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ArchitectureResearchStarted,
                 State.Date,
-                $"{blueprint.Name}: family programme started, about {ArchitectureDesigner.DurationDays(blueprint)} days.",
+                Loc.T("ev.arch.programme", blueprint.Name,
+                    ArchitectureDesigner.DurationDays(blueprint).ToString(Invariant)),
                 cash));
 
             return true;
@@ -3368,9 +3389,11 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ArchitectureResearchCompleted,
                 State.Date,
-                $"{resolved.DisplayName} is ready: {resolved.ActiveParameterFraction:0.000} active fraction "
-                + $"({saving:P0} off the compute bill), {resolved.CapabilityBonus:0.0} capability bonus, "
-                + $"serving at {resolved.InferenceCostMultiplier:0.00}x.",
+                Loc.T("ev.arch.ready", resolved.DisplayName,
+                    resolved.ActiveParameterFraction.ToString("0.000", Invariant),
+                    saving.ToString("P0", Invariant),
+                    resolved.CapabilityBonus.ToString("0.0", Invariant),
+                    resolved.InferenceCostMultiplier.ToString("0.00", Invariant)),
                 project.CashPaidUsd));
         }
 
@@ -3492,8 +3515,11 @@ namespace ScalingLaws.Simulation
                 CompanyEventType.FundingOffered,
                 State.Date,
                 offer.IsDownRound
-                    ? $"{definition.DisplayName} offered as a down round: ${offer.RaiseUsd:N0} for {offer.EquitySold:P1}. Market is {sentiment}."
-                    : $"{definition.DisplayName} offered: ${offer.RaiseUsd:N0} for {offer.EquitySold:P1} at ${offer.PreMoneyValuationUsd:N0} pre. Market is {sentiment}.",
+                    ? Loc.T("ev.funding.down", definition.DisplayName, Usd(offer.RaiseUsd),
+                        offer.EquitySold.ToString("P1", Invariant), sentiment)
+                    : Loc.T("ev.funding.offered", definition.DisplayName, Usd(offer.RaiseUsd),
+                        offer.EquitySold.ToString("P1", Invariant),
+                        Usd(offer.PreMoneyValuationUsd), sentiment),
                 offer.RaiseUsd));
 
             return true;
@@ -3653,7 +3679,8 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.StaffLeft,
                 State.Date,
-                $"{StaffCatalog.Get(hire.Role).DisplayName} at skill {hire.Skill} left the company."));
+                Loc.T("ev.staff.left", StaffCatalog.Get(hire.Role).DisplayName,
+                    hire.Skill.ToString(Invariant))));
 
             return true;
         }
@@ -3775,8 +3802,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.OfficeMoved,
                 State.Date,
-                $"Bought {definition.DisplayName} outright for {Usd(definition.PurchasePriceUsd)}. "
-                + "No rent on it again.",
+                Loc.T("ev.office.bought", definition.DisplayName, Usd(definition.PurchasePriceUsd)),
                 owed));
 
             return true;
@@ -3852,10 +3878,11 @@ namespace ScalingLaws.Simulation
                 CompanyEventType.OfficeMoved,
                 State.Date,
                 furnished > 0
-                    ? $"Moved into {definition.DisplayName}: {definition.Desks} desks at "
-                      + $"${definition.MonthlyRentUsd:N0} a month, furnished on the way in with "
-                      + $"{furnished} pieces."
-                    : $"Moved into {definition.DisplayName}: {definition.Desks} desks at ${definition.MonthlyRentUsd:N0} a month.",
+                    ? Loc.T("ev.office.moved_furnished", definition.DisplayName,
+                        definition.Desks.ToString(Invariant), Usd(definition.MonthlyRentUsd),
+                        furnished.ToString(Invariant))
+                    : Loc.T("ev.office.moved", definition.DisplayName,
+                        definition.Desks.ToString(Invariant), Usd(definition.MonthlyRentUsd)),
                 owed));
 
             return true;
@@ -4053,8 +4080,8 @@ namespace ScalingLaws.Simulation
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.HiringNotice, State.Date,
-                $"IThand.hck partnership signed. Remote contracts now capped at "
-                + $"{HiringChannels.PartneredRemoteSeats}.",
+                Loc.T("ev.hire.partnership",
+                    HiringChannels.PartneredRemoteSeats.ToString(Invariant)),
                 HiringChannels.PartnershipCostUsd));
 
             return string.Empty;
@@ -4093,7 +4120,7 @@ namespace ScalingLaws.Simulation
 
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.HiringNotice, State.Date,
-                    $"{candidate.Name} replied about the {definition.Title} position.", 0L));
+                    Loc.T("ev.hire.replied", candidate.Name, definition.Title), 0L));
             }
         }
 
@@ -4156,7 +4183,7 @@ namespace ScalingLaws.Simulation
 
                     State.RaiseEvent(new CompanyEvent(
                         CompanyEventType.HiringNotice, State.Date,
-                        $"{candidate.Name} withdrew from the {candidate.Definition.Title} process.",
+                        Loc.T("ev.hire.withdrew", candidate.Name, candidate.Definition.Title),
                         0L));
 
                     return OfferVerdict.WalkedAway;
@@ -4215,9 +4242,9 @@ namespace ScalingLaws.Simulation
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.StaffHired, State.Date,
-                $"{candidate.Name} joined as {definition.Title} "
-                + $"({HiringChannels.Get(candidate.Source).DisplayName.ToLowerInvariant()}), "
-                + $"${hourlyUsd:N2} an hour.",
+                Loc.T("ev.hire.joined", candidate.Name, definition.Title,
+                    HiringChannels.Get(candidate.Source).DisplayName.ToLowerInvariant(),
+                    "$" + hourlyUsd.ToString("N2", Invariant)),
                 signingBonusUsd));
 
             return OfferVerdict.Accepted;
@@ -4486,7 +4513,7 @@ namespace ScalingLaws.Simulation
                 CompanyEventType.SafetyIncident,
                 State.Date,
                 incident.FineUsd > 0
-                    ? $"{incident.Headline} Penalty ${incident.FineUsd:N0}."
+                    ? Loc.T("ev.safety.fined", incident.Headline, Usd(incident.FineUsd))
                     : incident.Headline,
                 incident.FineUsd));
         }
@@ -4513,7 +4540,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.SafetyIncident,
                 State.Date,
-                $"A regulator opened an inspection into {modelName}."));
+                Loc.T("ev.safety.inspection", modelName)));
         }
 
         /// <summary>
@@ -4590,7 +4617,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.SafetyIncident,
                 State.Date,
-                $"Regulator closed a case with no penalty. {module.DisplayName} held."));
+                Loc.T("ev.safety.held", module.DisplayName)));
         }
 
         // ------------------------------------------------------------------ debt
@@ -4686,8 +4713,9 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.LoanTaken,
                 State.Date,
-                $"{definition.DisplayName} drawn: ${definition.PrincipalUsd:N0} now, ${definition.TotalRepaymentUsd:N0} back "
-                + $"over {definition.TermDays} days from {State.Date.AddDays(definition.GraceDays)}.",
+                Loc.T("ev.loan.drawn", definition.DisplayName, Usd(definition.PrincipalUsd),
+                    Usd(definition.TotalRepaymentUsd), definition.TermDays.ToString(Invariant),
+                    State.Date.AddDays(definition.GraceDays).ToString()),
                 definition.PrincipalUsd));
 
             return true;
@@ -4730,7 +4758,7 @@ namespace ScalingLaws.Simulation
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.LoanMissed,
                     State.Date,
-                    $"Missed ${due - paid:N0} of scheduled repayments.",
+                    Loc.T("ev.loan.missed", Usd(due - paid)),
                     due - paid));
             }
 
@@ -4749,8 +4777,9 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.LoanDefaulted,
                 State.Date,
-                $"{definition.DisplayName} has been in arrears for {LoanBook.ArrearsBeforeDefault} days. "
-                + $"The lender has called it publicly and the company has lost {definition.ReputationOnDefault:P0} of its standing.",
+                Loc.T("ev.loan.defaulted", definition.DisplayName,
+                    LoanBook.ArrearsBeforeDefault.ToString(Invariant),
+                    definition.ReputationOnDefault.ToString("P0", Invariant)),
                 defaulted.OutstandingUsd));
         }
 
@@ -4999,8 +5028,8 @@ namespace ScalingLaws.Simulation
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.UpgradeCompleted,
                     State.Date,
-                    $"{subject}: {string.Join(", ", applied)}."
-                    + (project.OnShelf ? " It ships with the model." : string.Empty),
+                    Loc.T("ev.upgrade.done", subject, string.Join(", ", applied))
+                    + (project.OnShelf ? Loc.T("ev.upgrade.ships_with") : string.Empty),
                     project.CashPaidUsd));
             }
         }
@@ -5066,7 +5095,9 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.TrainingCompleted,
                 State.Date,
-                $"{run.Blueprint.Name} finished at capability {measured:0.0}, {(delta >= 0 ? "+" : "")}{delta:0.0} against projection. It is on the shelf until you ship it.",
+                Loc.T("ev.train.finished", run.Blueprint.Name,
+                    measured.ToString("0.0", Invariant),
+                    (delta >= 0 ? "+" : "") + delta.ToString("0.0", Invariant)),
                 run.ComputeCashSpentUsd));
         }
 
@@ -5981,7 +6012,8 @@ namespace ScalingLaws.Simulation
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.DemandUnserved,
                     State.Date,
-                    $"Turned away {(demanded - served):N0}B tokens. The fleet cannot serve what the market is asking for."));
+                    Loc.T("ev.demand.unserved",
+                        (demanded - served).ToString("N0", Invariant))));
             }
 
             return (share, demanded, served, revenue);
@@ -6108,7 +6140,7 @@ namespace ScalingLaws.Simulation
                     State.RaiseEvent(new CompanyEvent(
                         CompanyEventType.MarketingFinished,
                         State.Date,
-                        $"The {campaign.TermMonths} month campaign has run its course."));
+                        Loc.T("ev.marketing.done", campaign.TermMonths.ToString(Invariant))));
                 }
             }
         }
@@ -6167,7 +6199,8 @@ namespace ScalingLaws.Simulation
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.RivalReleased,
                     State.Date,
-                    $"{lab.LabName} released {lab.LiveModelName} at capability {lab.LiveCapability:0.0}."));
+                    Loc.T("ev.rival.released", lab.LabName, lab.LiveModelName,
+                        lab.LiveCapability.ToString("0.0", Invariant))));
             }
         }
 
@@ -6478,7 +6511,7 @@ namespace ScalingLaws.Simulation
             letter.DueDayIndex = State.Date.DayIndex + DemandGraceDays;
 
             State.RaiseEvent(new CompanyEvent(CompanyEventType.TaxDemanded, State.Date,
-                $"Corporation tax for {year} is due: {Usd(owed)}.", owed));
+                Loc.T("ev.tax.due", year.ToString(Invariant), Usd(owed)), owed));
         }
 
         /// <summary>
@@ -6511,8 +6544,8 @@ namespace ScalingLaws.Simulation
                     State.Reputation -= LateStandingLoss;
 
                     State.RaiseEvent(new CompanyEvent(CompanyEventType.DemandOverdue, State.Date,
-                        $"{letter.Subject} is overdue. It is now growing at "
-                        + $"{LatePenaltyPerYear:P0} a year.", letter.AmountUsd));
+                        Loc.T("ev.tax.overdue", letter.Subject,
+                            LatePenaltyPerYear.ToString("P0", Invariant)), letter.AmountUsd));
                 }
             }
         }
@@ -6764,8 +6797,8 @@ namespace ScalingLaws.Simulation
             letter.DueDayIndex += step;
 
             State.RaiseEvent(new CompanyEvent(CompanyEventType.TaxDeferred, State.Date,
-                $"Tax deferred {step} days for {Usd(added)}. Now {Usd(letter.AmountUsd)}, "
-                + $"due {new GameDate(letter.DueDayIndex)}.", added));
+                Loc.T("ev.tax.deferred", step.ToString(Invariant), Usd(added),
+                    Usd(letter.AmountUsd), new GameDate(letter.DueDayIndex).ToString()), added));
 
             return true;
         }
@@ -6827,7 +6860,8 @@ namespace ScalingLaws.Simulation
 
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.StaffHired, State.Date,
-                $"Hired a {legacy.DisplayName.ToLowerInvariant()} at band {letter.Skill}.", fee));
+                Loc.T("ev.hire.legacy", legacy.DisplayName.ToLowerInvariant(),
+                    letter.Skill.ToString(Invariant)), fee));
 
             letter.IsClosed = true;
             letter.Outcome = $"Hired at {Usd(letter.AskingSalaryUsd)} a year.";
@@ -6945,7 +6979,8 @@ namespace ScalingLaws.Simulation
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.IntelReceived,
                     State.Date,
-                    $"{signal.Headline} (desk confidence {signal.Confidence:P0})."));
+                    Loc.T("ev.intel.received", signal.Headline,
+                        signal.Confidence.ToString("P0", Invariant))));
             }
         }
 
@@ -7069,7 +7104,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.FundingExpired,
                 State.Date,
-                $"The {FundingCatalog.Get(offer.Stage).DisplayName} term sheet lapsed unsigned."));
+                Loc.T("ev.funding.lapsed", FundingCatalog.Get(offer.Stage).DisplayName)));
         }
 
         /// <summary>
@@ -7135,7 +7170,8 @@ namespace ScalingLaws.Simulation
                     State.RaiseEvent(new CompanyEvent(
                         CompanyEventType.HardwareDelivered,
                         State.Date,
-                        $"{asset.Units:N0}x {asset.GenerationId} came online in {asset.Tier}."));
+                        Loc.T("ev.hw.online", asset.Units.ToString("N0", Invariant),
+                        asset.GenerationId.ToString(), asset.Tier.ToString())));
                 }
             }
         }
@@ -7151,7 +7187,7 @@ namespace ScalingLaws.Simulation
                     State.RaiseEvent(new CompanyEvent(
                         CompanyEventType.ComputeTierUnlocked,
                         State.Date,
-                        $"{definition.DisplayName} is now open."));
+                        Loc.T("ev.tier.open", definition.DisplayName)));
                 }
             }
         }
@@ -7170,7 +7206,7 @@ namespace ScalingLaws.Simulation
                 State.RaiseEvent(new CompanyEvent(
                     CompanyEventType.CreditLineBreached,
                     State.Date,
-                    $"The account is under water. The credit line covers ${CompanyState.CreditLineUsd:N0}.",
+                    Loc.T("ev.credit.breached", Usd(CompanyState.CreditLineUsd)),
                     State.CashUsd));
             }
 

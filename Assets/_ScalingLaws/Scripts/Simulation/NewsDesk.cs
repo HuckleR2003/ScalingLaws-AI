@@ -35,7 +35,7 @@ namespace ScalingLaws.Simulation
         public static bool TryFile(in CompanyEvent raised, string companyName, out NewsItem item)
         {
             item = default;
-            var company = string.IsNullOrWhiteSpace(companyName) ? "The company" : companyName;
+            var company = string.IsNullOrWhiteSpace(companyName) ? Loc.T("news.company.anon") : companyName;
 
             switch (raised.Type)
             {
@@ -50,28 +50,28 @@ namespace ScalingLaws.Simulation
                 // partnership is a thing two companies shipped together.
                 case CompanyEventType.AllianceSigned:
                     item = new NewsItem(raised.Date, NewsSection.Premieres,
-                        $"{company} signs a partnership", raised.Message, "Wire", true,
+                        Loc.T("news.h.ally_signed", company), raised.Message, Loc.T("news.outlet.wire"), true,
                         NewsWeight.Notable);
 
                     return true;
 
                 case CompanyEventType.AllianceBroken:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} loses a partner", raised.Message, "Wire", true,
+                        Loc.T("news.h.ally_lost", company), raised.Message, Loc.T("news.outlet.wire"), true,
                         NewsWeight.Notable);
 
                     return true;
 
                 case CompanyEventType.CampaignStarted:
                     item = new NewsItem(raised.Date, NewsSection.Premieres,
-                        $"{company} opens joint research", raised.Message, "Wire", true,
+                        Loc.T("news.h.joint_open", company), raised.Message, Loc.T("news.outlet.wire"), true,
                         NewsWeight.Notable);
 
                     return true;
 
                 case CompanyEventType.CampaignFinished:
                     item = new NewsItem(raised.Date, NewsSection.Wire,
-                        $"{company} closes a joint programme", raised.Message, "Wire", true,
+                        Loc.T("news.h.joint_closed", company), raised.Message, Loc.T("news.outlet.wire"), true,
                         NewsWeight.Routine);
 
                     return true;
@@ -81,7 +81,7 @@ namespace ScalingLaws.Simulation
                 // side has an opinion about.
                 case CompanyEventType.CampaignLeft:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} walks out of a programme", raised.Message, "Wire", true,
+                        Loc.T("news.h.joint_walked", company), raised.Message, Loc.T("news.outlet.wire"), true,
                         NewsWeight.Notable);
 
                     return true;
@@ -89,30 +89,33 @@ namespace ScalingLaws.Simulation
                 // ---- trouble, ours and theirs -------------------------------------------------
                 case CompanyEventType.SafetyIncident:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} under scrutiny", raised.Message, "Wire", true, NewsWeight.Loud);
+                        Loc.T("news.h.scrutiny", company), raised.Message, Loc.T("news.outlet.wire"),
+                        true, NewsWeight.Loud);
                     return true;
 
                 case CompanyEventType.LoanDefaulted:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} defaults on a loan",
-                        raised.Message + " Lenders price the next one accordingly.",
-                        "Wire", true, NewsWeight.Loud);
+                        Loc.T("news.h.default", company),
+                        raised.Message + " " + Loc.T("news.h.default_note"),
+                        Loc.T("news.outlet.wire"), true, NewsWeight.Loud);
                     return true;
 
                 case CompanyEventType.LoanMissed:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} misses a repayment", raised.Message, "Wire", true, NewsWeight.Notable);
+                        Loc.T("news.h.missed", company), raised.Message, Loc.T("news.outlet.wire"),
+                        true, NewsWeight.Notable);
                     return true;
 
                 case CompanyEventType.CreditLineBreached:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} is out of room at the bank", raised.Message, "Wire", true,
+                        Loc.T("news.h.no_room", company), raised.Message, Loc.T("news.outlet.wire"), true,
                         NewsWeight.Loud);
                     return true;
 
                 case CompanyEventType.Bankrupt:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} folds", raised.Message, "Wire", true, NewsWeight.Loud);
+                        Loc.T("news.h.folds", company), raised.Message, Loc.T("news.outlet.wire"),
+                        true, NewsWeight.Loud);
                     return true;
 
                 // **Both halves of a smear, and they are opposite stories.** One that lands is
@@ -142,25 +145,27 @@ namespace ScalingLaws.Simulation
                 // the demand you attracted is the weakness a reader would notice first.
                 case CompanyEventType.DemandUnserved:
                     item = new NewsItem(raised.Date, NewsSection.Scandals,
-                        $"{company} is turning customers away", raised.Message, "Wire", true,
+                        Loc.T("news.h.turning_away", company), raised.Message, Loc.T("news.outlet.wire"), true,
                         NewsWeight.Notable);
                     return true;
 
                 // ---- what shipped ----------------------------------------------------------------
                 case CompanyEventType.ModelReleased:
                     item = new NewsItem(raised.Date, NewsSection.Premieres,
-                        $"{company} ships", raised.Message, "Wire", true, NewsWeight.Loud);
+                        Loc.T("news.h.ships", company), raised.Message, Loc.T("news.outlet.wire"),
+                        true, NewsWeight.Loud);
                     return true;
 
                 case CompanyEventType.RivalReleased:
                     item = new NewsItem(raised.Date, NewsSection.Premieres,
-                        raised.Message, "A new entry on the board. Par moves whether or not anything "
-                        + "of yours changed today.", "Wire", false, NewsWeight.Notable);
+                        raised.Message, Loc.T("news.rival.body"), Loc.T("news.outlet.wire"), false,
+                        NewsWeight.Notable);
                     return true;
 
                 case CompanyEventType.ModelShelved:
                     item = new NewsItem(raised.Date, NewsSection.Premieres,
-                        $"{company} finishes a run", raised.Message, "Wire", true, NewsWeight.Routine);
+                        Loc.T("news.h.finishes_run", company), raised.Message, Loc.T("news.outlet.wire"),
+                        true, NewsWeight.Routine);
                     return true;
 
                 // ---- the company's own business --------------------------------------------------
@@ -169,14 +174,16 @@ namespace ScalingLaws.Simulation
                 case CompanyEventType.ResearchCompleted:
                 case CompanyEventType.ArchitectureResearchCompleted:
                     item = new NewsItem(raised.Date, NewsSection.Wire,
-                        $"{company}: work finished", raised.Message, "Wire", true, NewsWeight.Notable);
+                        Loc.T("news.h.work_done", company), raised.Message, Loc.T("news.outlet.wire"),
+                        true, NewsWeight.Notable);
                     return true;
 
                 case CompanyEventType.FundingClosed:
                 case CompanyEventType.LoanTaken:
                 case CompanyEventType.LoanSettled:
                     item = new NewsItem(raised.Date, NewsSection.Wire,
-                        $"{company}: money", raised.Message, "Wire", true, NewsWeight.Notable);
+                        Loc.T("news.h.money", company), raised.Message, Loc.T("news.outlet.wire"),
+                        true, NewsWeight.Notable);
                     return true;
 
                 case CompanyEventType.FundingOffered:
@@ -188,7 +195,8 @@ namespace ScalingLaws.Simulation
                 case CompanyEventType.StaffLeft:
                 case CompanyEventType.MarketingFinished:
                     item = new NewsItem(raised.Date, NewsSection.Wire,
-                        $"{company}", raised.Message, "Wire", true, NewsWeight.Routine);
+                        Loc.T("news.h.plain", company), raised.Message, Loc.T("news.outlet.wire"), true,
+                        NewsWeight.Routine);
                     return true;
 
                 // ---- deliberately not printed -----------------------------------------------------
@@ -248,11 +256,10 @@ namespace ScalingLaws.Simulation
             {
                 // The honesty flag, in the one place a player will actually read it. A dated event
                 // past what is known is the game's guess and has to say so.
-                body += "\n\nProjection. This is where the game expects this to go, not something "
-                    + "that has been announced.";
+                body += "\n\n" + Loc.T("news.chapter.projection");
             }
 
-            return new NewsItem(chapter.On, section, $"{lab.Name}: {chapter.Headline}", body,
+            return new NewsItem(chapter.On, section, Loc.T("news.chapter.head", lab.Name, chapter.Headline), body,
                 lab.Name, isAboutPlayer: false, weight);
         }
 
@@ -293,8 +300,9 @@ namespace ScalingLaws.Simulation
             };
 
             var body = signal.Detail
-                + $"\n\nFiled {signal.IssuedOn}, looking {signal.LeadTimeDays} days out. "
-                + $"The desk puts {signal.Confidence:P0} on this.";
+                + "\n\n" + Loc.T("news.signal.filed", signal.IssuedOn.ToString(),
+                    signal.LeadTimeDays.ToString(Invariant),
+                    signal.Confidence.ToString("P0", Invariant));
 
             return new NewsItem(signal.IssuedOn, section, signal.Headline, body,
                 NewsCatalog.OutletName(signal.Tier), false,
@@ -313,36 +321,52 @@ namespace ScalingLaws.Simulation
             double revenuePerYearUsd, int shipped)
         {
             var headline = revenuePerYearUsd >= 1_000_000.0
-                ? $"{lab.LabName} is running at ${revenuePerYearUsd / 1_000_000.0:N0}M a year"
-                : $"{lab.LabName} is barely earning";
+                ? Loc.T("news.spy.earning", lab.LabName,
+                    "$" + (revenuePerYearUsd / 1_000_000.0).ToString("N0", Invariant) + "M")
+                : Loc.T("news.spy.barely", lab.LabName);
 
             var lines = new List<string>
             {
-                $"On sale: {(lab.HasShipped ? lab.LiveModelName : "nothing")}"
-                    + (lab.HasShipped ? $", scoring {lab.LiveCapability:0.0}." : "."),
-                $"Built to date: {shipped} model{(shipped == 1 ? string.Empty : "s")}, "
-                    + $"{(lab.HasShipped ? 1 : 0)} of them still on sale.",
-                $"Focus: {ModelTypeCatalog.Get(lab.LiveType).DisplayName}.",
-                $"Audience: about {users:N0} people.",
+                lab.HasShipped
+                    ? Loc.T("news.spy.onsale", lab.LiveModelName,
+                        lab.LiveCapability.ToString("0.0", Invariant))
+                    : Loc.T("news.spy.onsale_none"),
+                Loc.T("news.spy.built",
+                    shipped == 1
+                        ? Loc.T("news.spy.model_one")
+                        : Loc.T("news.spy.models", shipped.ToString(Invariant)),
+                    (lab.HasShipped ? 1 : 0).ToString(Invariant)),
+                Loc.T("news.spy.focus", ModelTypeCatalog.Get(lab.LiveType).DisplayName),
+                Loc.T("news.spy.audience", users.ToString("N0", Invariant)),
                 lab.LivePrice > 1.05
-                    ? $"They charge {(lab.LivePrice - 1.0):P0} over the going rate."
+                    ? Loc.T("news.spy.dear", (lab.LivePrice - 1.0).ToString("P0", Invariant))
                     : lab.LivePrice < 0.95
-                        ? $"They undercut the going rate by {(1.0 - lab.LivePrice):P0}."
-                        : "They price at the going rate."
+                        ? Loc.T("news.spy.cheap", (1.0 - lab.LivePrice).ToString("P0", Invariant))
+                        : Loc.T("news.spy.par")
             };
 
             if (lab.IsWaitingForHardware)
             {
                 // The single most actionable thing this desk can find. A lab sitting out a hardware
                 // cycle is a lab that will come back with something better than what is on sale now.
-                lines.Add($"They have stopped shipping and are waiting on {lab.WaitingFor}. "
-                    + $"Their next launch has slipped {lab.AccumulatedDelayDays} days so far, which "
-                    + "means whatever lands will be trained on newer silicon than yours.");
+                lines.Add(Loc.T("news.spy.stalled", lab.WaitingFor,
+                    lab.AccumulatedDelayDays.ToString(Invariant)));
             }
 
             return new NewsItem(date, NewsSection.ItSpy, headline, string.Join("\n", lines),
-                "KnownWords", false,
+                NewsCatalog.OutletName(IntelTier.KnownWords), false,
                 lab.IsWaitingForHardware ? NewsWeight.Loud : NewsWeight.Routine);
         }
+
+        /// <summary>
+        /// The one culture every figure filed by this desk is formatted in.
+        ///
+        /// **`Simulation/` may not reach into `UI/`, so `UiFormat` is out of bounds here**, and the
+        /// rule it exists to enforce applies all the same: a raw `:N0` or `:P0` follows the
+        /// machine's own language, and this project has shipped `$20,00` and `0,70x` on that fault
+        /// five separate times.
+        /// </summary>
+        private static readonly System.Globalization.CultureInfo Invariant =
+            System.Globalization.CultureInfo.InvariantCulture;
     }
 }
