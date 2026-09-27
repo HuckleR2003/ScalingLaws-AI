@@ -790,5 +790,81 @@ namespace ScalingLaws.Simulation
                 return value == 0 ? 0x85EBCA6Bu : value;
             }
         }
+
+
+        // ---- the telephone ---------------------------------------------------------------------
+
+        /// <summary>
+        /// How often one lab can be rung up. A month, which is a call rather than a habit.
+        /// </summary>
+        public const int CallCooldownDays = 30;
+
+        /// <summary>
+        /// What a call is worth, and **it is deliberately less than a month of drift**.
+        ///
+        /// Relations fall back toward their baseline at <see cref="RelationScale.DriftPerDay"/>,
+        /// which is 1.05 over thirty days. A call is 0.9, so ringing somebody every month for a
+        /// year slows the cooling and never reverses it: an alliance is still held up by offers
+        /// and by the things the two companies actually do together.
+        ///
+        /// **That ordering is the mechanic, not the number.** If a free call outpaced the drift,
+        /// a player who signed one alliance in 2023 would hold it for the rest of the campaign
+        /// without doing anything else, and the whole point of an alliance being able to cool
+        /// would be gone. `AMonthlyCallAloneDoesNotHoldARelationUp` is the guard.
+        /// </summary>
+        public const double CallWarmth = 0.9;
+
+        /// <summary>
+        /// The day a lab was last rung, or a negative number for one that never has been.
+        ///
+        /// **Saved, because it is a fact about a day rather than a number that can be worked out.**
+        /// Without it, quitting and reloading is a fresh call with everybody, which is the same
+        /// reload-your-way-out this project has closed four times already.
+        /// </summary>
+        public int LastCalled(CompetitorId lab) => State.Alliances.LastCalled(lab);
+
+        /// <summary>How many days until this lab can be rung again. Zero when it can be today.</summary>
+        public int DaysUntilCallable(CompetitorId lab)
+        {
+            var last = State.Alliances.LastCalled(lab);
+
+            return last < 0
+                ? 0
+                : Math.Max(0, last + CallCooldownDays - State.Date.DayIndex);
+        }
+
+        /// <summary>
+        /// Rings a lab the company has ever signed with. Free, and it warms the relation a little.
+        ///
+        /// **The gate is `CanCall`, which is having signed something with them once, ever.** That
+        /// is the author's own rule and it is what stops this being a free way in: a player cannot
+        /// telephone their way to an alliance, because the telephone is a thing an alliance gave
+        /// them. A number you keep after a friendship cools is how that works in life.
+        ///
+        /// Nothing is announced. A call is the player's own click arriving a second later, and this
+        /// project files those under the events it deliberately does not print.
+        /// </summary>
+        public bool TryCallLab(CompetitorId lab, out string why)
+        {
+            if (!State.Alliances.CanCall(lab))
+            {
+                why = Loc.T("call.fail.stranger");
+                return false;
+            }
+
+            var wait = DaysUntilCallable(lab);
+
+            if (wait > 0)
+            {
+                why = Loc.T("call.fail.soon", wait.ToString());
+                return false;
+            }
+
+            State.Alliances.RecordCall(lab, State.Date);
+            State.Relations.Record(lab, State.Date, CallWarmth, "relation.reason.called");
+
+            why = string.Empty;
+            return true;
+        }
     }
 }

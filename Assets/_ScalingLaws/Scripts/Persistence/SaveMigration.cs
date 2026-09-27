@@ -169,6 +169,7 @@ namespace ScalingLaws.Persistence
                     65 => UpgradeV65ToV66(current),
                     66 => UpgradeV66ToV67(current),
                     67 => UpgradeV67ToV68(current),
+                    68 => UpgradeV68ToV69(current),
                     _ => current
                 };
             }
@@ -1982,6 +1983,32 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v67 to v68: no renewal is waiting. A v67 campaign had no mechanism to offer one, "
                 + "so there is nothing to carry forward.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v68 to v69: nobody has been telephoned, so everybody can be rung today.
+        ///
+        /// **The least flattering reading would be the opposite**, and it is the wrong one here.
+        /// Nothing about a v68 campaign gave the player a way to ring anybody, so no call has been
+        /// spent and starting everyone on cooldown would charge them for calls they never made.
+        /// An empty record is the honest one: the cooldown starts the first time somebody rings.
+        /// </summary>
+        public static SaveData UpgradeV68ToV69(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 69;
+            data.allianceCalledLabs = new List<int>();
+            data.allianceCalledDays = new List<int>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v68 to v69: nobody has been telephoned. A v68 campaign had no telephone, so no "
+                + "call has been spent and every lab that can be rung can be rung today.");
 
             return data;
         }

@@ -93,6 +93,21 @@ go in. This file is the draft for the store update post, so anything vague here 
   being worked towards on the right, and the bar between them fills with days rather than with
   money, with how many are left written underneath. Deciding whether to carry on with somebody is
   the one moment where "where is this going" is worth having in front of you.
+- **The phone keeps the number of every lab you have ever signed something with.** A new list on the
+  handset, under the messenger, and it only appears once there is somebody in it. Each row is their
+  mark, their name, where the two of you stand, and one button. A lab the company fell out with
+  years ago is still in there, at whatever band it has fallen to, because that is the whole point of
+  keeping the number.
+- **A call is free, takes a month to come round again, and is worth less than a month of cooling.**
+  Relations drift back toward where they started, and a call recovers a little under what thirty
+  days of that drift takes away, so ringing somebody every month slows the cooling and never
+  reverses it. An alliance is still held up by the things the two companies actually do together.
+  It is also the one thing here that cannot be used to make a friend: you can only ring a lab that
+  signed something with you first.
+- **What they say on the phone is read out of the game, never invented.** Where the relation stands,
+  what level was signed with you, what is still running and roughly how many days are left. All four
+  are facts their card on the ranking board states as well, so somebody who rings them up hears what
+  they would have read.
 
 ### Fixed
 
@@ -226,7 +241,11 @@ go in. This file is the draft for the store update post, so anything vague here 
   The roll for whether they rang has already happened by the time it is written, so a reload must
   not get a second go at it, and that is the same reason an open inspection and a filed lawsuit are
   in the file. A v67 campaign has nothing waiting: there was no mechanism to offer one.
-- **1492 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **Save v69** carries the day each lab was last telephoned. Causal for the same reason everything
+  else in this file is: a cooldown that lived only in memory would make quitting and reloading a
+  fresh call with everybody. A v68 campaign has rung nobody, because it had no telephone, and
+  starting it on cooldown would charge it for calls it never made.
+- **1499 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

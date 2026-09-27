@@ -17271,6 +17271,105 @@
     background-color: rgba(255, 255, 255, 0.09);
 }
 
+/* ---- the address book on the phone ---------------------------------------------------------- */
+
+/* It scrolls, because a company fourteen years in may have signed with most of the board, and the
+   phone is a fixed-height frame. */
+.book {
+    flex-grow: 1;
+    margin-top: 6px;
+    /* The phone screen centres its children and sizes them to their content, so without this a
+       long lab name would set the width of every row and a longer one would push past the frame. */
+    align-self: stretch;
+}
+
+/* A row is a mark, two lines of words and one control. Stated as a row because a row is a column
+   until it says so, which this stylesheet has been caught by twice. */
+.book__row {
+    flex-direction: row;
+    align-items: center;
+    margin: 6px 12px 0 12px;
+    padding: 8px 10px;
+    min-height: 52px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.book__mark {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.book__words {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.book__name {
+    font-size: 13px;
+    color: rgb(228, 234, 246);
+    white-space: normal;
+}
+
+.book__band {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    color: rgba(150, 162, 186, 0.92);
+    margin-top: 2px;
+}
+
+/* The button is the only thing on the row that does anything, and it says so in a word. A row that
+   rang somebody when it was clicked to be read is the fault the silicon rail shipped. */
+.book__call {
+    flex-shrink: 0;
+    width: 78px;
+    height: 32px;
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    -unity-text-align: middle-center;
+    border-width: 1px;
+    border-color: rgba(176, 158, 255, 0.55);
+    border-radius: 8px;
+    background-color: rgba(176, 158, 255, 0.16);
+    color: rgb(214, 204, 255);
+}
+
+.book__call:hover {
+    border-color: rgba(176, 158, 255, 0.9);
+    background-color: rgba(176, 158, 255, 0.3);
+}
+
+/* Flat, and deliberately not a disabled button: a disabled control in UI Toolkit dispatches no
+   pointer events, so it cannot explain itself. This is a plate with the days on it. */
+.book__wait {
+    flex-shrink: 0;
+    width: 78px;
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    color: rgba(150, 162, 186, 0.8);
+}
+
+.book__empty {
+    margin: 16px 14px;
+    font-size: 12px;
+    color: rgba(150, 162, 186, 0.92);
+    white-space: normal;
+}
+
+.book__note {
+    align-self: stretch;
+    margin: 8px 14px 0 14px;
+    font-size: 11px;
+    color: rgba(150, 162, 186, 0.8);
+    white-space: normal;
+}
+
 /* ---- the furnishings tick ------------------------------------------------------------------- */
 
 /* Hand drawn rather than a themed Toggle.

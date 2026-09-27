@@ -323,6 +323,27 @@ namespace ScalingLaws.UI
             }
 
             screen.Add(HomeRow(Loc.T("phone.menu.messenger"), OpenMessenger));
+
+            // **Only when there is somebody in it.** The address book is a thing an alliance gave
+            // the player, so a row leading to an empty list would advertise a feature nothing in
+            // the first years of a campaign can reach.
+            var simulation = company?.Invoke();
+            var known = false;
+
+            if (simulation != null)
+            {
+                foreach (var _ in simulation.State.Alliances.EverSigned)
+                {
+                    known = true;
+                    break;
+                }
+            }
+
+            if (known)
+            {
+                screen.Add(HomeRow(Loc.T("phone.menu.partners"), ShowContacts));
+            }
+
             screen.Add(HomeRow(Loc.T("phone.menu.close"), () => Collapse(false)));
         }
 
@@ -333,6 +354,229 @@ namespace ScalingLaws.UI
 
             return row;
         }
+
+        // ---- labs the company has worked with ----------------------------------------------------
+
+        /// <summary>
+        /// Everybody the company has ever signed anything with, and a way to ring them.
+        ///
+        /// **The list is the feature as much as the call is.** `LabAlliances.EverSigned` has been
+        /// kept and never cleared since the day alliances were written, on the author's own rule
+        /// that a number you keep after a friendship cools is how that works in life, and until now
+        /// nothing anywhere read it. A lab that fell out with the company years ago is still in
+        /// here, shown at whatever band it has fallen to rather than removed, because that is the
+        /// point of keeping it.
+        ///
+        /// It is not on the home screen at all when nothing has ever been signed, the same rule the
+        /// badge in the top bar follows: an empty address book is furniture.
+        /// </summary>
+        /// <summary>
+        /// The address book, opened for a proof render, with no wake animation in front of it.
+        ///
+        /// Same two reasons as <see cref="OpenMessengerForProof"/>: a test dispatches no clicks so
+        /// the home row can never be pressed, and the panel's scheduler does not tick until the
+        /// phone is mounted, so every queued `ExecuteLater` fires at once and puts the home screen
+        /// back over the top of whatever was opened.
+        /// </summary>
+        public void OpenContactsForProof()
+        {
+            Close();
+            returning = false;
+
+            BuildFrame();
+
+            screen.AddToClassList("phone__screen--on");
+            ShowContacts();
+        }
+
+        private void ShowContacts()
+        {
+            screen.Clear();
+
+            var head = new VisualElement();
+            head.AddToClassList("home__head");
+
+            var title = new Label(Loc.T("phone.partners.title"));
+            title.AddToClassList("home__title");
+            head.Add(title);
+
+            screen.Add(head);
+
+            var simulation = company?.Invoke();
+            var list = new ScrollView(ScrollViewMode.Vertical);
+            list.AddToClassList("book");
+            screen.Add(list);
+
+            var any = false;
+
+            if (simulation != null)
+            {
+                foreach (var lab in simulation.State.Alliances.EverSigned)
+                {
+                    list.Add(ContactRow(simulation, lab));
+                    any = true;
+                }
+            }
+
+            if (!any)
+            {
+                var empty = new Label(Loc.T("phone.partners.none"));
+                empty.AddToClassList("book__empty");
+                list.Add(empty);
+            }
+            else
+            {
+                var note = new Label(Loc.T("phone.partners.note"));
+                note.AddToClassList("book__note");
+                screen.Add(note);
+            }
+
+            screen.Add(HomeRow(Loc.T("phone.menu.back"), ShowHome));
+        }
+
+        /// <summary>
+        /// One lab: their mark, their name, where the relation stands, and the call button.
+        ///
+        /// **The row is not the button.** A card that rings somebody when the player clicked it to
+        /// read it is the fault the silicon rail shipped, where sixty four accelerators left the
+        /// account on a click meant for the figures beside the price. The button carries the word
+        /// on its own, and a lab that cannot be rung today shows the days left on a flat plate.
+        /// </summary>
+        private VisualElement ContactRow(CompanySimulation simulation, CompetitorId lab)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("book__row");
+
+            var logo = LabLogos.Get(lab);
+
+            if (logo != null)
+            {
+                var mark = new VisualElement();
+                mark.AddToClassList("book__mark");
+                mark.style.backgroundImage = new StyleBackground(logo);
+                row.Add(mark);
+            }
+
+            var words = new VisualElement();
+            words.AddToClassList("book__words");
+
+            var name = new Label(CompetitorCatalog.NameOf(lab));
+            name.AddToClassList("book__name");
+            words.Add(name);
+
+            var band = simulation.State.Relations.BandWith(lab);
+            var where = new Label(RivalRelations.NameOf(band));
+            where.AddToClassList("book__band");
+            words.Add(where);
+
+            row.Add(words);
+
+            var wait = simulation.DaysUntilCallable(lab);
+
+            if (wait > 0)
+            {
+                var soon = new Label(Loc.T("phone.partners.wait", wait.ToString()));
+                soon.AddToClassList("book__wait");
+                row.Add(soon);
+
+                return row;
+            }
+
+            var call = new Button(() => CallLab(simulation, lab))
+            { text = Loc.T("phone.partners.ready") };
+
+            call.AddToClassList("book__call");
+            row.Add(call);
+
+            return row;
+        }
+
+        /// <summary>
+        /// Rings them: the rule runs first, and what they say is read off what the rule found.
+        ///
+        /// **The simulation decides and the phone reports.** `TryCallLab` is the only thing that
+        /// moves a relation or spends the cooldown, so a call that is refused says so and changes
+        /// nothing, and there is no second copy of the cooldown living in the interface.
+        ///
+        /// Nothing is kept. No thread and no row on the home screen, the same rule `RingFrom` and
+        /// `RingShort` follow: a rival's office has no business in the cousin's messenger.
+        /// </summary>
+        private void CallLab(CompanySimulation simulation, CompetitorId lab)
+        {
+            var them = CompetitorCatalog.NameOf(lab);
+
+            if (!simulation.TryCallLab(lab, out var why))
+            {
+                ShowContacts();
+
+                var refused = new Label(why);
+                refused.AddToClassList("book__note");
+                screen.Add(refused);
+
+                return;
+            }
+
+            RingFrom(them, CallLines(simulation, lab));
+        }
+
+        /// <summary>
+        /// What they say, and every line of it is read out of the simulation.
+        ///
+        /// **A call that invented anything would be the one screen in this game a player could not
+        /// check.** Where the relation stands, what level was signed, what is still running and how
+        /// long is left: all four are facts the rival card states as well, which is the point.
+        /// Somebody who rings them up hears the same thing they would have read.
+        /// </summary>
+        private static List<string> CallLines(CompanySimulation simulation, CompetitorId lab)
+        {
+            var lines = new List<string>
+            {
+                Loc.T("call.line.hello", simulation.State.CompanyName),
+                Loc.T("call.line.stand",
+                    RivalRelations.NameOf(simulation.State.Relations.BandWith(lab)))
+            };
+
+            var level = simulation.State.Alliances.LevelWith(lab);
+
+            if (level > 0)
+            {
+                lines.Add(Loc.T("call.line.level", Loc.T(AllianceLevelKey(level))));
+            }
+
+            var spoke = false;
+
+            foreach (var deal in simulation.State.Deals)
+            {
+                if (deal.Lab != lab || !deal.IsLiveOn(simulation.State.Date))
+                {
+                    continue;
+                }
+
+                lines.Add(Loc.T("call.line.running",
+                    RelationOfferCatalog.Get(deal.Offer).DisplayName,
+                    Math.Max(0, deal.Ends.DayIndex - simulation.State.Date.DayIndex).ToString()));
+
+                spoke = true;
+            }
+
+            if (!spoke)
+            {
+                lines.Add(Loc.T("call.line.nothing"));
+            }
+
+            return lines;
+        }
+
+        /// <summary>
+        /// The name of an alliance level. **A literal per arm**, because `LocalisationTests` reads
+        /// literals and a key built by concatenation is invisible to it.
+        /// </summary>
+        private static string AllianceLevelKey(int level) => level switch
+        {
+            1 => "alliance.name1",
+            2 => "alliance.name2",
+            _ => "alliance.name3"
+        };
 
         /// <summary>
         /// Resumes the tour: one line, the dots, and the phone leaves.

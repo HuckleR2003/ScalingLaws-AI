@@ -196,6 +196,15 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private readonly HashSet<CompetitorId> everSigned = new();
 
+        /// <summary>
+        /// The day each lab was last telephoned, as a day index.
+        ///
+        /// **Separate from the levels, because calling somebody is not signing anything with
+        /// them.** A lab whose alliance has been broken back to nothing still has a last-call day,
+        /// and it still matters: the cooldown is about the call, not about the alliance.
+        /// </summary>
+        private readonly Dictionary<CompetitorId, int> lastCalled = new();
+
         /// <summary>Where a lab stands. Zero for anybody nothing has been signed with.</summary>
         public int LevelWith(CompetitorId lab) => levels.TryGetValue(lab, out var level) ? level : 0;
 
@@ -211,6 +220,14 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Whether this lab can be telephoned. Once true, true forever.</summary>
         public bool CanCall(CompetitorId lab) => everSigned.Contains(lab);
+
+        /// <summary>The day this lab was last rung, or -1 for one that never has been.</summary>
+        public int LastCalled(CompetitorId lab) =>
+            lastCalled.TryGetValue(lab, out var day) ? day : -1;
+
+        /// <summary>Writes down that they were rung today. The caller owns the cooldown rule.</summary>
+        public void RecordCall(CompetitorId lab, GameDate today) =>
+            lastCalled[lab] = today.DayIndex;
 
         /// <summary>Everybody currently at a level, for the board and the wire.</summary>
         public IEnumerable<KeyValuePair<CompetitorId, int>> Signed => levels;
@@ -272,11 +289,13 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Restores a saved campaign. Unknown labs and impossible levels are dropped.</summary>
         public void Restore(IReadOnlyList<int> labs, IReadOnlyList<int> levelValues,
-            IReadOnlyList<int> sinceDays, IReadOnlyList<int> ever)
+            IReadOnlyList<int> sinceDays, IReadOnlyList<int> ever,
+            IReadOnlyList<int> calledLabs = null, IReadOnlyList<int> calledDays = null)
         {
             levels.Clear();
             heldSince.Clear();
             everSigned.Clear();
+            lastCalled.Clear();
 
             if (labs != null && levelValues != null)
             {
@@ -302,27 +321,41 @@ namespace ScalingLaws.Simulation
                 }
             }
 
-            if (ever == null)
+            if (ever != null)
+            {
+                foreach (var lab in ever)
+                {
+                    if (Enum.IsDefined(typeof(CompetitorId), lab))
+                    {
+                        everSigned.Add((CompetitorId)lab);
+                    }
+                }
+            }
+
+            if (calledLabs == null || calledDays == null)
             {
                 return;
             }
 
-            foreach (var lab in ever)
+            for (var index = 0; index < calledLabs.Count && index < calledDays.Count; index++)
             {
-                if (Enum.IsDefined(typeof(CompetitorId), lab))
+                if (Enum.IsDefined(typeof(CompetitorId), calledLabs[index]))
                 {
-                    everSigned.Add((CompetitorId)lab);
+                    lastCalled[(CompetitorId)calledLabs[index]] = Math.Max(0, calledDays[index]);
                 }
             }
         }
 
         /// <summary>Writes the current state out, for the save.</summary>
-        public void Capture(List<int> labs, List<int> levelValues, List<int> sinceDays, List<int> ever)
+        public void Capture(List<int> labs, List<int> levelValues, List<int> sinceDays,
+            List<int> ever, List<int> calledLabs = null, List<int> calledDays = null)
         {
             labs?.Clear();
             levelValues?.Clear();
             sinceDays?.Clear();
             ever?.Clear();
+            calledLabs?.Clear();
+            calledDays?.Clear();
 
             foreach (var pair in levels)
             {
@@ -334,6 +367,12 @@ namespace ScalingLaws.Simulation
             foreach (var lab in everSigned)
             {
                 ever?.Add((int)lab);
+            }
+
+            foreach (var pair in lastCalled)
+            {
+                calledLabs?.Add((int)pair.Key);
+                calledDays?.Add(pair.Value);
             }
         }
     }

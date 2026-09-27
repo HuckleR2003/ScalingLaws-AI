@@ -1169,6 +1169,52 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The address book: who the company has worked with, and who can be rung today.
+        ///
+        /// **Three labs in three different states**, because a list where every row looks the same
+        /// answers nothing. One signed and callable, one signed and rung this week, one the company
+        /// fell out with years ago and can still ring. The last is the whole reason the list is
+        /// kept, and it is the row most likely to be drawn wrong.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheAddressBookDraws()
+        {
+            var simulation = Campaign();
+            var state = simulation.State;
+            state.Guide.Stage = GuideStage.Finished;
+
+            var friendly = CompetitorId.Cohere;
+            var recent = CompetitorId.AlephAlpha;
+            var fallen = CompetitorId.StabilityAi;
+
+            foreach (var lab in new[] { friendly, recent, fallen })
+            {
+                state.Relations.Record(lab, state.Date,
+                    RivalRelations.Best - state.Relations.With(lab), "relation.reason.published");
+
+                simulation.TrySignAlliance(lab, out _);
+            }
+
+            simulation.TryCallLab(recent, out _);
+
+            state.Relations.Record(fallen, state.Date,
+                RivalRelations.HostileAbove - state.Relations.With(fallen),
+                "relation.reason.sued");
+
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            var phone = new PhonePanel(host, _ => { }, () => simulation)
+            {
+                progressForMenu = () => state.Guide
+            };
+
+            phone.OpenContactsForProof();
+
+            yield return Capture(host, "address_book.png");
+        }
+
+        /// <summary>
         /// The world map, with a region chosen and a country in it.
         ///
         /// **The state that shows every colour at once.** An untouched map is one flat grey and

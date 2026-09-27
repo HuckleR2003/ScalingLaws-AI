@@ -218,7 +218,8 @@ namespace ScalingLaws.Persistence
             }
 
             state.Alliances.Capture(data.allianceLabs, data.allianceLevels,
-                data.allianceSinceDays, data.allianceEverSigned);
+                data.allianceSinceDays, data.allianceEverSigned,
+                data.allianceCalledLabs, data.allianceCalledDays);
 
             foreach (var past in state.DealHistory)
             {
@@ -1102,7 +1103,8 @@ namespace ScalingLaws.Persistence
             }
 
             state.Alliances.Restore(safe.allianceLabs, safe.allianceLevels,
-                safe.allianceSinceDays, safe.allianceEverSigned);
+                safe.allianceSinceDays, safe.allianceEverSigned,
+                safe.allianceCalledLabs, safe.allianceCalledDays);
 
             state.DealHistory.Clear();
 
@@ -2562,6 +2564,8 @@ namespace ScalingLaws.Persistence
             safe.allianceLevels ??= new List<int>();
             safe.allianceSinceDays ??= new List<int>();
             safe.allianceEverSigned ??= new List<int>();
+            safe.allianceCalledLabs ??= new List<int>();
+            safe.allianceCalledDays ??= new List<int>();
             safe.campaignMembers ??= new List<int>();
             safe.dealPastLabs ??= new List<int>();
             safe.dealPastKinds ??= new List<int>();

@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 68;
+        public const int CurrentVersion = 69;
 
         public int version = CurrentVersion;
 
@@ -696,6 +696,18 @@ namespace ScalingLaws.Persistence
         /// cools is how that works in life, and it is what makes a lab callable forever.
         /// </summary>
         public List<int> allianceEverSigned = new();
+
+        /// <summary>
+        /// v69. The day each lab was last telephoned, paired with <see cref="allianceCalledDays"/>.
+        ///
+        /// **Causal, and that is why it is here.** The cooldown is thirty days; without this, a
+        /// reload is a fresh call with everybody, which is the reload-your-way-out this project has
+        /// already closed on an open inspection, a filed suit, a smear letter and a renewal.
+        /// </summary>
+        public List<int> allianceCalledLabs = new();
+
+        /// <summary>See <see cref="allianceCalledLabs"/>.</summary>
+        public List<int> allianceCalledDays = new();
 
         /// <summary>
         /// v66. The joint research programme running, or a term of minus one for none.

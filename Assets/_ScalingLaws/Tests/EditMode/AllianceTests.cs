@@ -790,5 +790,185 @@ namespace ScalingLaws.Tests.EditMode
             StringAssert.Contains("v67 to v68", SaveMigration.LastMigrationNotes);
         }
 
+        /// <summary>
+        /// A lab nothing was ever signed with has no number, however well the two get on.
+        ///
+        /// **The gate is having signed something, not the relation**, which is what stops the
+        /// telephone being a free way in: it is a thing an alliance gave the player rather than a
+        /// way to reach one.
+        /// </summary>
+        [Test]
+        public void ALabNothingWasEverSignedWithCannotBeRung()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            var before = simulation.State.Relations.With(lab);
+
+            Assert.IsFalse(simulation.TryCallLab(lab, out var why),
+                "a lab with no history at all answered the telephone");
+
+            Assert.That(why, Is.Not.Empty);
+
+            Assert.That(simulation.State.Relations.With(lab), Is.EqualTo(before),
+                "a refused call moved the relation anyway");
+        }
+
+        /// <summary>A lab that was signed with once stays callable even after it all fell apart.</summary>
+        [Test]
+        public void ALabSignedWithOnceStaysCallableAfterTheAllianceIsGone()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+
+            simulation.BreakAlliance(lab);
+            Warm(simulation, lab, RivalRelations.HostileAbove);
+
+            Assert.That(simulation.State.Alliances.LevelWith(lab), Is.Zero,
+                "the fixture did not actually take the alliance away");
+
+            Assert.IsTrue(simulation.TryCallLab(lab, out var refused), refused);
+        }
+
+        /// <summary>
+        /// One call a month, and reloading is not a second one.
+        ///
+        /// **The day is saved for exactly this reason.** Every other roll this project keeps in the
+        /// file is kept because a reload must not get another go at it, and a cooldown living only
+        /// in memory is the same hole with a cheaper prize.
+        /// </summary>
+        [Test]
+        public void ACallSpendsTheMonthAndSurvivesASave()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+            Assert.IsTrue(simulation.TryCallLab(lab, out var first), first);
+
+            Assert.IsFalse(simulation.TryCallLab(lab, out var second),
+                "two calls in one afternoon");
+
+            Assert.That(second, Is.Not.Empty);
+
+            var back = SaveStore.Restore(SaveStore.Parse(
+                UnityEngine.JsonUtility.ToJson(SaveStore.Capture(simulation.State))));
+
+            Assert.That(back.Alliances.LastCalled(lab),
+                Is.EqualTo(simulation.State.Alliances.LastCalled(lab)),
+                "a reload handed the player a fresh call");
+
+            Assert.That(simulation.DaysUntilCallable(lab),
+                Is.EqualTo(CompanySimulation.CallCooldownDays));
+        }
+
+        /// <summary>The month runs out and they can be rung again.</summary>
+        [Test]
+        public void TheMonthRunsOutAndTheyCanBeRungAgain()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+            Assert.IsTrue(simulation.TryCallLab(lab, out var first), first);
+
+            for (var day = 0; day < CompanySimulation.CallCooldownDays; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(simulation.DaysUntilCallable(lab), Is.Zero);
+            Assert.IsTrue(simulation.TryCallLab(lab, out var again), again);
+        }
+
+        /// <summary>
+        /// **A call is worth less than a month of drift, and that ordering is the mechanic.**
+        ///
+        /// If ringing somebody up outpaced the cooling, a player who signed one alliance in 2023
+        /// would hold it for the rest of the campaign for free and an alliance could never cool,
+        /// which is the case the break rule was written for. So this measures a year of a company
+        /// whose only move is the telephone and requires it to have lost ground.
+        /// </summary>
+        [Test]
+        public void AMonthlyCallAloneDoesNotHoldARelationUp()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+
+            var start = simulation.State.Relations.With(lab);
+            var calls = 0;
+
+            for (var day = 0; day < 365; day++)
+            {
+                if (simulation.DaysUntilCallable(lab) == 0 && simulation.TryCallLab(lab, out _))
+                {
+                    calls++;
+                }
+
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(calls, Is.GreaterThanOrEqualTo(12),
+                "the fixture never actually rang anybody, so it measured nothing");
+
+            Assert.That(simulation.State.Relations.With(lab), Is.LessThan(start),
+                "a year of nothing but telephone calls held the relation where it was");
+        }
+
+        /// <summary>
+        /// A call the rule allowed moves the relation, and it says why in the history.
+        ///
+        /// Nothing in this system may move a relation without a reason the player can read, and a
+        /// free move with no line against it is the shape that rule exists to forbid.
+        /// </summary>
+        [Test]
+        public void ACallWarmsTheRelationAndSaysSoInTheHistory()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+            Assert.IsTrue(simulation.TrySignAlliance(lab, out var why), why);
+
+            Warm(simulation, lab, 20.0);
+
+            var before = simulation.State.Relations.With(lab);
+
+            Assert.IsTrue(simulation.TryCallLab(lab, out var refused), refused);
+
+            Assert.That(simulation.State.Relations.With(lab),
+                Is.EqualTo(before + CompanySimulation.CallWarmth).Within(0.0001));
+
+            Assert.That(simulation.State.Relations.History.Last().ReasonKey,
+                Is.EqualTo("relation.reason.called"));
+        }
+
+        /// <summary>v68 to v69: nobody has been telephoned, so nobody is on cooldown.</summary>
+        [Test]
+        public void AnOlderCampaignHasRungNobody()
+        {
+            var data = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            data.version = 68;
+            data.allianceCalledLabs = new System.Collections.Generic.List<int> { 3 };
+            data.allianceCalledDays = new System.Collections.Generic.List<int> { 900 };
+
+            var upgraded = SaveMigration.UpgradeV68ToV69(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(69));
+            Assert.That(upgraded.allianceCalledLabs, Is.Empty);
+            Assert.That(upgraded.allianceCalledDays, Is.Empty);
+            StringAssert.Contains("v68 to v69", SaveMigration.LastMigrationNotes);
+        }
+
     }
 }
