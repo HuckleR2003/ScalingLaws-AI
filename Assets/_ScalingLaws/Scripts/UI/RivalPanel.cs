@@ -448,54 +448,20 @@ namespace ScalingLaws.UI
         /// <summary>
         /// What the two companies have between them, and the four ways to add to it.
         ///
-        /// **The whole section is about one lab**, so everything on it names that lab rather than
-        /// listing the board: an offer is a letter to somebody, not a policy.
-        ///
-        /// Order matters here. What is signed comes first because it is the answer to "where are
-        /// we", the waiting offer next because it is the thing the player is expecting, then the
-        /// four offers, and the alliance last because it is the slowest and least urgent of them.
-        /// A panel that opens on the expensive button teaches the wrong lesson about a relationship.
+        /// **Three bands down the card and they answer three different questions.** Where the
+        /// alliance stands and what is between it and the next level; what can be put to them today
+        /// and how likely each is to be taken; and what the two of you have already done together.
+        /// The first version of this was a column of four paragraphs with a button under each, which
+        /// answered the second question four times and the other two not at all.
         /// </summary>
         private VisualElement BuildTogether(CompanySimulation simulation, CompetitorId lab)
         {
             var block = new VisualElement();
             block.AddToClassList("together");
 
-            block.Add(BuildAllianceLine(simulation, lab));
-
-            var pending = simulation.State.PendingOffers.Find(entry => entry.Lab == lab);
-
-            if (pending.Lab == lab && simulation.State.PendingOffers.Count > 0)
-            {
-                var definition = RelationOfferCatalog.Get(pending.Offer);
-                var left = definition.DaysToAnswer - pending.DaysWaiting(simulation.State.Date);
-
-                var waiting = new Label(Loc.T("together.waiting",
-                    definition.DisplayName, Math.Max(0, left).ToString()));
-
-                waiting.AddToClassList("together__waiting");
-                block.Add(waiting);
-            }
-
-            foreach (var deal in simulation.State.Deals)
-            {
-                if (deal.Lab != lab || !deal.IsLiveOn(simulation.State.Date))
-                {
-                    continue;
-                }
-
-                var running = new Label(Loc.T("together.running",
-                    RelationOfferCatalog.Get(deal.Offer).DisplayName,
-                    Math.Max(0, deal.Ends.DayIndex - simulation.State.Date.DayIndex).ToString()));
-
-                running.AddToClassList("together__running");
-                block.Add(running);
-            }
-
-            foreach (var definition in RelationOfferCatalog.All)
-            {
-                block.Add(BuildOfferCard(simulation, lab, definition));
-            }
+            block.Add(BuildLadder(simulation, lab));
+            block.Add(BuildOfferRow(simulation, lab));
+            block.Add(BuildWorkList(simulation, lab));
 
             if (!string.IsNullOrEmpty(outcomeNote))
             {
@@ -508,82 +474,236 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// The alliance: what level, how long it has held, and what the next one is waiting on.
+        /// The alliance as a track with three stops on it and a bar running between them.
         ///
-        /// **The days are printed even when they cannot be hurried**, because that is the whole
-        /// design: a player who can see "another two hundred and eleven days" understands they are
-        /// looking at a calendar rather than at a price.
+        /// **The bar fills with days, never with money**, which is the whole design and the one
+        /// thing a number could never say on its own. A player looking at a bar two thirds across
+        /// with "another sixty-one days" under it understands they are waiting rather than saving.
+        ///
+        /// Each stop says what it opens, because a ladder whose rungs are unlabelled is a ladder
+        /// nobody has a reason to climb. All three are real: level one makes offers land more often
+        /// and puts the lab in the telephone, level two opens joint research, level three sells
+        /// capacity at cost.
         /// </summary>
-        private VisualElement BuildAllianceLine(CompanySimulation simulation, CompetitorId lab)
+        private VisualElement BuildLadder(CompanySimulation simulation, CompetitorId lab)
         {
             var card = new VisualElement();
-            card.AddToClassList("together__alliance");
+            card.AddToClassList("tog-ladder");
 
             var level = simulation.State.Alliances.LevelWith(lab);
-
-            var heading = new Label(level == 0
-                ? Loc.T("alliance.none")
-                : Loc.T("alliance.level", level.ToString(),
-                    simulation.State.Alliances.DaysAtLevel(lab, simulation.State.Date).ToString()));
-
-            heading.AddToClassList("together__level");
-            card.Add(heading);
-
             var band = simulation.State.Relations.BandWith(lab);
+            var held = simulation.State.Alliances.DaysAtLevel(lab, simulation.State.Date);
 
-            if (simulation.State.Alliances.CanSignNext(lab, simulation.State.Date, band, out var next)
-                && next <= LabAlliances.TopLevel)
+            var head = new VisualElement();
+            head.AddToClassList("tog-ladder__head");
+
+            var name = new Label(level == 0
+                ? Loc.T("alliance.none")
+                : Loc.T("alliance.level", level.ToString(), held.ToString()));
+
+            name.AddToClassList("tog-ladder__name");
+            head.Add(name);
+
+            var next = level + 1;
+
+            var ready = next <= LabAlliances.TopLevel
+                && simulation.State.Alliances.CanSignNext(lab, simulation.State.Date, band, out _);
+
+            if (next <= LabAlliances.TopLevel)
             {
-                var sign = new Button(() =>
+                if (ready)
                 {
-                    simulation.TrySignAlliance(lab, out var why);
-                    outcomeNote = why;
-                    changed?.Invoke();
-                })
-                {
-                    text = Loc.T("alliance.sign", next.ToString(),
-                        UiFormat.Money(LabAlliances.FeeFor(next)))
-                };
+                    var sign = new Button(() =>
+                    {
+                        simulation.TrySignAlliance(lab, out var why);
+                        outcomeNote = why;
+                        changed?.Invoke();
+                    })
+                    {
+                        text = Loc.T("alliance.sign", next.ToString(),
+                            UiFormat.Money(LabAlliances.FeeFor(next)))
+                    };
 
-                sign.AddToClassList("button");
-                sign.AddToClassList("button--primary");
-                card.Add(sign);
-
-                return card;
+                    sign.AddToClassList("button");
+                    sign.AddToClassList("tog-ladder__sign");
+                    head.Add(sign);
+                }
             }
 
-            // Why not, in the same sentence the simulation would have refused with, so the card and
-            // the till can never disagree about what is missing.
-            simulation.TrySignAlliance(lab, out var blocked);
+            card.Add(head);
+
+            // The track. Three segments, one per level, each filled by how far this company has
+            // come through it. A level already signed is full; the one being worked on is partial;
+            // the ones past it are empty.
+            var track = new VisualElement();
+            track.AddToClassList("tog-ladder__track");
+
+            for (var step = 1; step <= LabAlliances.TopLevel; step++)
+            {
+                var segment = new VisualElement();
+                segment.AddToClassList("tog-ladder__seg");
+
+                var fill = new VisualElement();
+                fill.AddToClassList("tog-ladder__fill");
+
+                var share = step <= level
+                    ? 1.0
+                    : step == level + 1
+                        ? Progress(simulation, lab, level, held, band)
+                        : 0.0;
+
+                fill.style.width = new StyleLength(Length.Percent((float)(share * 100.0)));
+                segment.Add(fill);
+                track.Add(segment);
+            }
+
+            card.Add(track);
+
+            var stops = new VisualElement();
+            stops.AddToClassList("tog-ladder__stops");
+
+            for (var step = 1; step <= LabAlliances.TopLevel; step++)
+            {
+                var stop = new VisualElement();
+                stop.AddToClassList("tog-ladder__stop");
+                stop.EnableInClassList("tog-ladder__stop--on", step <= level);
+
+                var title = new Label(Loc.T(LevelKey(step)));
+                title.AddToClassList("tog-ladder__stopname");
+                stop.Add(title);
+
+                var gives = new Label(Loc.T(LevelGivesKey(step)));
+                gives.AddToClassList("tog-ladder__stopgives");
+                stop.Add(gives);
+
+                stops.Add(stop);
+            }
+
+            card.Add(stops);
+
+            // What the next stop is waiting on, in the simulation's own words so the card and the
+            // till can never disagree about what is missing.
+            //
+            // **Only asked when the answer is no.** `TrySignAlliance` is not a question, it is the
+            // thing that signs, and the first version of this card called it unconditionally to
+            // read the refusal out of it. On a card where the level could be signed, drawing the
+            // card signed it and charged the fee, which the render caught: a company at level one
+            // came back from being looked at sitting at level two. **A read must never write, and
+            // a `Try` method is a write however harmless its out parameter looks.**
+            var blocked = simulation.WhyNotAlliance(lab);
 
             if (!string.IsNullOrEmpty(blocked))
             {
                 var why = new Label(blocked);
-                why.AddToClassList("together__why");
+                why.AddToClassList("tog-ladder__why");
                 card.Add(why);
             }
 
             return card;
         }
 
-        /// <summary>One offer: what it is, what it costs, and the button that sends it.</summary>
-        private VisualElement BuildOfferCard(CompanySimulation simulation, CompetitorId lab,
-            RelationOfferDefinition definition)
+        /// <summary>
+        /// How far through the next level this company is, from zero to one.
+        ///
+        /// The first level has no calendar of its own: it waits on the relation being warm enough,
+        /// so its bar reads how far up the band the relation has come. Everything above it is days.
+        /// </summary>
+        private static double Progress(CompanySimulation simulation, CompetitorId lab, int level,
+            int held, RelationBand band)
         {
-            var card = new VisualElement();
-            card.AddToClassList("together__offer");
+            if (band < LabAlliances.HoldsAt)
+            {
+                var value = simulation.State.Relations.With(lab);
+                var floor = RelationScale.NeutralAbove;
+                var roof = RelationScale.FriendlyAbove;
+
+                return Math.Clamp((value - floor) / Math.Max(1.0, roof - floor), 0.0, 0.99);
+            }
+
+            if (level == 0)
+            {
+                return 1.0;
+            }
+
+            var needed = LabAlliances.DaysNeededFor(level + 1);
+
+            return Math.Clamp(held / (double)Math.Max(1, needed), 0.0, 1.0);
+        }
+
+        /// <summary>Written out, never assembled: the key guard reads literals only.</summary>
+        private static string LevelKey(int level) => level switch
+        {
+            1 => "alliance.name1",
+            2 => "alliance.name2",
+            _ => "alliance.name3"
+        };
+
+        /// <summary>See <see cref="LevelKey"/>.</summary>
+        private static string LevelGivesKey(int level) => level switch
+        {
+            1 => "alliance.gives1",
+            2 => "alliance.gives2",
+            _ => "alliance.gives3"
+        };
+
+        /// <summary>
+        /// The four offers, across rather than down.
+        ///
+        /// **Each one says how likely it is to be taken.** That is the change that makes this a
+        /// decision rather than a gamble: a player about to spend sixty research points on a letter
+        /// can see whether it is worth sending, and the reading comes from state the game already
+        /// keeps rather than from a new number. Wide bands on purpose, because what matters is
+        /// whether to send it and not that they will refuse 23% of the time.
+        /// </summary>
+        private VisualElement BuildOfferRow(CompanySimulation simulation, CompetitorId lab)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("tog-row");
+
+            var pending = simulation.State.PendingOffers.Find(entry => entry.Lab == lab);
+            var waiting = simulation.State.PendingOffers.Count > 0 && pending.Lab == lab;
+
+            foreach (var definition in RelationOfferCatalog.All)
+            {
+                row.Add(BuildOfferTile(simulation, lab, definition, waiting, pending));
+            }
+
+            return row;
+        }
+
+        private VisualElement BuildOfferTile(CompanySimulation simulation, CompetitorId lab,
+            RelationOfferDefinition definition, bool waiting, PendingOffer pending)
+        {
+            var tile = new VisualElement();
+            tile.AddToClassList("tog-tile");
+
+            var chance = RelationOfferCatalog.AcceptanceChance(
+                definition.Offer, simulation.State.Relations.With(lab),
+                simulation.RivalCapability(lab), simulation.OurCapabilityToday(),
+                simulation.State.Alliances.LevelWith(lab));
+
+            var odds = RelationOfferCatalog.OddsOf(chance);
+            tile.AddToClassList(RelationOfferCatalog.ClassFor(odds));
+
+            var mine = waiting && pending.Offer == definition.Offer;
+
+            var kicker = new Label(mine
+                ? Loc.T("together.sent",
+                    Math.Max(0, definition.DaysToAnswer
+                        - pending.DaysWaiting(simulation.State.Date)).ToString())
+                : Loc.T(RelationOfferCatalog.KeyFor(odds)));
+
+            kicker.AddToClassList("tog-tile__odds");
+            tile.Add(kicker);
 
             var name = new Label(definition.DisplayName);
-            name.AddToClassList("together__name");
-            card.Add(name);
+            name.AddToClassList("tog-tile__name");
+            tile.Add(name);
 
             var body = new Label(definition.Description);
-            body.AddToClassList("together__body");
-            card.Add(body);
+            body.AddToClassList("tog-tile__body");
+            tile.Add(body);
 
-            // **What is free is not printed.** The first render showed `$0` under an offer that
-            // costs no money, which is a figure the player has to read and then discard, and this
-            // card already asks them to read four paragraphs.
             var parts = new List<string>();
 
             if (definition.PointCost > 0)
@@ -599,9 +719,8 @@ namespace ScalingLaws.UI
             parts.Add(Loc.T("together.answer", definition.DaysToAnswer.ToString()));
 
             var price = new Label(string.Join("  ·  ", parts));
-
-            price.AddToClassList("together__price");
-            card.Add(price);
+            price.AddToClassList("tog-tile__price");
+            tile.Add(price);
 
             var send = new Button(() =>
             {
@@ -612,10 +731,99 @@ namespace ScalingLaws.UI
             { text = Loc.T("together.send") };
 
             send.AddToClassList("button");
-            send.AddToClassList("together__send");
-            card.Add(send);
+            send.AddToClassList("tog-tile__send");
 
-            return card;
+            // **Shut is a look, not a dead control.** A disabled button takes no pointer event, and
+            // the one thing a player does when something refuses them is press it again.
+            send.SetEnabled(!waiting);
+            tile.Add(send);
+
+            return tile;
+        }
+
+        /// <summary>
+        /// What the two companies have done together: what is running, then what is finished.
+        ///
+        /// **The author asked for this by name and it is the half a relationship screen usually
+        /// forgets.** A bar and four buttons say where you are; this says how you got there, and it
+        /// is the only place in the game that remembers a licence ran nine months in 2024 and ended
+        /// well. Newest first, because the question is almost always about the last one.
+        /// </summary>
+        private static VisualElement BuildWorkList(CompanySimulation simulation, CompetitorId lab)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("tog-work");
+
+            var heading = new Label(Loc.T("together.work"));
+            heading.AddToClassList("tog-work__heading");
+            block.Add(heading);
+
+            var rows = 0;
+
+            foreach (var deal in simulation.State.Deals)
+            {
+                if (deal.Lab != lab || !deal.IsLiveOn(simulation.State.Date))
+                {
+                    continue;
+                }
+
+                block.Add(WorkRow(
+                    RelationOfferCatalog.Get(deal.Offer).DisplayName,
+                    Loc.T("together.days_left",
+                        Math.Max(0, deal.Ends.DayIndex - simulation.State.Date.DayIndex).ToString()),
+                    "tog-work__row--live"));
+
+                rows++;
+            }
+
+            var history = simulation.State.DealHistory;
+
+            for (var index = history.Count - 1; index >= 0; index--)
+            {
+                var past = history[index];
+
+                if (past.Lab != lab)
+                {
+                    continue;
+                }
+
+                block.Add(WorkRow(
+                    RelationOfferCatalog.Get(past.Offer).DisplayName,
+                    past.Outcome == DealOutcome.Refused
+                        ? Loc.T("together.was_refused")
+                        : Loc.T("together.ran_for", past.Days.ToString()),
+                    past.Outcome == DealOutcome.Refused
+                        ? "tog-work__row--refused"
+                        : "tog-work__row--done"));
+
+                rows++;
+            }
+
+            if (rows == 0)
+            {
+                var empty = new Label(Loc.T("together.nothing_yet"));
+                empty.AddToClassList("tog-work__empty");
+                block.Add(empty);
+            }
+
+            return block;
+        }
+
+        private static VisualElement WorkRow(string what, string when, string tone)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("tog-work__row");
+            row.AddToClassList(tone);
+
+            var left = new Label(what);
+            left.AddToClassList("tog-work__what");
+            row.Add(left);
+
+            var right = new Label(when);
+            right.AddToClassList("tog-work__when");
+            row.Add(right);
+
+            return row;
         }
 
         private VisualElement BuildOffer(CompanySimulation simulation, RivalStaffMember member)

@@ -220,6 +220,15 @@ namespace ScalingLaws.Persistence
             state.Alliances.Capture(data.allianceLabs, data.allianceLevels,
                 data.allianceSinceDays, data.allianceEverSigned);
 
+            foreach (var past in state.DealHistory)
+            {
+                data.dealPastLabs.Add((int)past.Lab);
+                data.dealPastKinds.Add((int)past.Offer);
+                data.dealPastStartDays.Add(past.Started.DayIndex);
+                data.dealPastEndDays.Add(past.Ended.DayIndex);
+                data.dealPastOutcomes.Add((int)past.Outcome);
+            }
+
             data.campaignTerm = state.Campaign == null ? -1 : (int)state.Campaign.Term;
 
             if (state.Campaign != null)
@@ -1086,6 +1095,36 @@ namespace ScalingLaws.Persistence
 
             state.Alliances.Restore(safe.allianceLabs, safe.allianceLevels,
                 safe.allianceSinceDays, safe.allianceEverSigned);
+
+            state.DealHistory.Clear();
+
+            for (var index = 0; index < safe.dealPastLabs.Count; index++)
+            {
+                if (!Enum.IsDefined(typeof(CompetitorId), safe.dealPastLabs[index])
+                    || index >= safe.dealPastKinds.Count
+                    || !Enum.IsDefined(typeof(RelationOffer), safe.dealPastKinds[index]))
+                {
+                    continue;
+                }
+
+                var outcome = index < safe.dealPastOutcomes.Count
+                    && Enum.IsDefined(typeof(DealOutcome), safe.dealPastOutcomes[index])
+                        ? (DealOutcome)safe.dealPastOutcomes[index]
+                        : DealOutcome.Ended;
+
+                var started = index < safe.dealPastStartDays.Count
+                    ? Math.Max(0, safe.dealPastStartDays[index])
+                    : 0;
+
+                state.DealHistory.Add(new DealRecord(
+                    (CompetitorId)safe.dealPastLabs[index],
+                    (RelationOffer)safe.dealPastKinds[index],
+                    new GameDate(started),
+                    new GameDate(index < safe.dealPastEndDays.Count
+                        ? Math.Max(started, safe.dealPastEndDays[index])
+                        : started),
+                    outcome));
+            }
 
             state.Campaign = null;
 
@@ -2507,6 +2546,11 @@ namespace ScalingLaws.Persistence
             safe.allianceSinceDays ??= new List<int>();
             safe.allianceEverSigned ??= new List<int>();
             safe.campaignMembers ??= new List<int>();
+            safe.dealPastLabs ??= new List<int>();
+            safe.dealPastKinds ??= new List<int>();
+            safe.dealPastStartDays ??= new List<int>();
+            safe.dealPastEndDays ??= new List<int>();
+            safe.dealPastOutcomes ??= new List<int>();
             safe.wantedResearch.RemoveAll(static id => !Enum.IsDefined(typeof(ResearchNodeId), id));
             safe.defaultPriceMultiplier = Math.Clamp(Finite(safe.defaultPriceMultiplier, 1.0), 0.05, 10.0);
 

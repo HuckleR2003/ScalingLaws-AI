@@ -22024,73 +22024,16 @@
     flex-shrink: 0;
 }
 
-.together__alliance {
-    flex-shrink: 0;
-    margin-bottom: 12px;
-    padding: 12px;
-    border-radius: 8px;
-    border-width: 1px;
-    border-color: rgba(150, 130, 255, 0.35);
-    background-color: rgba(120, 110, 200, 0.07);
-}
 
-.together__level {
-    font-size: 12px;
-    letter-spacing: 1.8px;
-    color: rgb(196, 186, 255);
-    margin-bottom: 8px;
-}
 
 /* Why the next level cannot be signed. The most useful line on the card when it is there, because
    it is usually a number of days rather than a price, which is the whole design. */
-.together__why {
-    font-size: 12px;
-    color: rgba(200, 208, 228, 0.82);
-    white-space: normal;
-}
 
-.together__waiting {
-    font-size: 12.5px;
-    color: rgb(240, 196, 84);
-    white-space: normal;
-    margin-bottom: 6px;
-}
 
-.together__running {
-    font-size: 12.5px;
-    color: rgb(140, 210, 170);
-    white-space: normal;
-    margin-bottom: 6px;
-}
 
-.together__offer {
-    flex-shrink: 0;
-    margin-bottom: 8px;
-    padding: 12px;
-    border-radius: 8px;
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.09);
-    background-color: rgba(255, 255, 255, 0.03);
-}
 
-.together__name {
-    font-size: 14px;
-    color: rgb(232, 238, 250);
-    margin-bottom: 4px;
-}
 
-.together__body {
-    font-size: 12px;
-    color: rgba(176, 186, 208, 0.9);
-    white-space: normal;
-    margin-bottom: 8px;
-}
 
-.together__price {
-    font-size: 11.5px;
-    color: rgba(150, 162, 186, 0.9);
-    margin-bottom: 8px;
-}
 
 .together__note {
     font-size: 12.5px;
@@ -22103,21 +22046,6 @@
    outlines the width of the card, which is the same thing the three intelligence memberships did
    before they were rebuilt, and both times it read as an empty input field rather than as
    something to press. */
-.together__send {
-    width: 42%;
-    height: 34px;
-    font-size: 11px;
-    letter-spacing: 1.6px;
-    -unity-text-align: middle-center;
-    color: rgb(18, 16, 38);
-    background-color: rgb(176, 158, 255);
-    border-radius: 7px;
-    border-width: 0;
-    margin-left: 0;
-    margin-top: 0;
-    margin-right: 0;
-    margin-bottom: 0;
-}
 
 /* The joint research programme, under the funding panel on the research screen.
 
@@ -22189,4 +22117,271 @@
     margin-top: 0;
     margin-right: 0;
     margin-bottom: 0;
+}
+
+/* ---- the section of a rival's card about working with them ---------------------------------- */
+
+/* **The ladder, and the bar on it fills with days rather than with money.** That is the one thing
+   about this mechanic a number could never say on its own: a player looking at a track two thirds
+   across with "another sixty-one days" under it understands they are waiting rather than saving. */
+.tog-ladder {
+    flex-shrink: 0;
+    margin-bottom: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(150, 130, 255, 0.40);
+    background-color: rgba(120, 110, 200, 0.08);
+}
+
+.tog-ladder__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.tog-ladder__name {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: rgb(202, 192, 255);
+}
+
+.tog-ladder__sign {
+    height: 32px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    -unity-text-align: middle-center;
+    color: rgb(18, 16, 38);
+    background-color: rgb(176, 158, 255);
+    border-radius: 7px;
+    border-width: 0;
+    padding-left: 14px;
+    padding-right: 14px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+/* Three segments with a gap between them, so the track reads as three stops rather than as one
+   long bar somebody has divided up. A gap is a margin here because USS has no gap property. */
+.tog-ladder__track {
+    flex-direction: row;
+    height: 8px;
+    margin-bottom: 8px;
+}
+
+.tog-ladder__seg {
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.tog-ladder__fill {
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgb(176, 158, 255);
+}
+
+.tog-ladder__stops {
+    flex-direction: row;
+}
+
+/* Each stop says what it opens, because a ladder whose rungs are unlabelled is one nobody has a
+   reason to climb. Dimmed until it is reached, and all three are real. */
+.tog-ladder__stop {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 1;
+    margin-right: 6px;
+    opacity: 0.45;
+}
+
+.tog-ladder__stop--on {
+    opacity: 1;
+}
+
+.tog-ladder__stopname {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    color: rgb(196, 186, 255);
+    margin-bottom: 2px;
+}
+
+.tog-ladder__stopgives {
+    font-size: 11px;
+    color: rgba(176, 186, 208, 0.85);
+    white-space: normal;
+}
+
+.tog-ladder__why {
+    font-size: 12px;
+    color: rgba(240, 196, 84, 0.92);
+    white-space: normal;
+    margin-top: 10px;
+}
+
+/* ---- the four offers, across ----------------------------------------------------------------- */
+
+.tog-row {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 14px;
+}
+
+/* **Equal quarters that shrink together.** `flex-basis: 0` with `flex-grow: 1` is what makes four
+   tiles of very different text lengths come out the same width, which is the whole reason they read
+   as a row of choices rather than as four paragraphs of different importance. */
+.tog-tile {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 1;
+    margin-right: 8px;
+    padding: 12px;
+    border-radius: 9px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* The odds, as the loudest thing on the tile. It is the line that decides whether the rest is worth
+   reading, so it is at the top and it carries the only colour on the card. */
+.tog-tile__odds {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.tog-tile--certain .tog-tile__odds {
+    color: rgb(140, 210, 170);
+}
+
+.tog-tile--likely .tog-tile__odds {
+    color: rgb(150, 200, 255);
+}
+
+.tog-tile--even .tog-tile__odds {
+    color: rgb(240, 196, 84);
+}
+
+.tog-tile--unlikely .tog-tile__odds {
+    color: rgba(232, 120, 110, 0.95);
+}
+
+.tog-tile--certain {
+    border-color: rgba(140, 210, 170, 0.30);
+}
+
+.tog-tile--likely {
+    border-color: rgba(150, 200, 255, 0.28);
+}
+
+.tog-tile--even {
+    border-color: rgba(240, 196, 84, 0.28);
+}
+
+.tog-tile--unlikely {
+    border-color: rgba(232, 120, 110, 0.28);
+}
+
+.tog-tile__name {
+    font-size: 13.5px;
+    color: rgb(234, 240, 252);
+    white-space: normal;
+    margin-bottom: 5px;
+}
+
+.tog-tile__body {
+    font-size: 11px;
+    color: rgba(170, 180, 202, 0.88);
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.tog-tile__price {
+    font-size: 11px;
+    color: rgba(146, 158, 182, 0.9);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.tog-tile__send {
+    height: 30px;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    -unity-text-align: middle-center;
+    color: rgb(18, 16, 38);
+    background-color: rgb(176, 158, 255);
+    border-radius: 6px;
+    border-width: 0;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+/* ---- what the two of you have already done --------------------------------------------------- */
+
+.tog-work {
+    flex-shrink: 0;
+    padding: 12px;
+    border-radius: 9px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.tog-work__heading {
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    color: rgb(132, 145, 164);
+    margin-bottom: 8px;
+}
+
+.tog-work__empty {
+    font-size: 12px;
+    color: rgba(150, 160, 180, 0.8);
+    white-space: normal;
+}
+
+/* A lit left edge for the one that is running, the same mark the premises list uses for the office
+   the company is in. Everything finished is the same weight as everything else finished. */
+.tog-work__row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 9px 7px 9px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    border-left-width: 2px;
+    border-left-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tog-work__row--live {
+    border-left-color: rgb(140, 210, 170);
+}
+
+.tog-work__row--done {
+    border-left-color: rgba(150, 162, 186, 0.6);
+}
+
+.tog-work__row--refused {
+    border-left-color: rgba(232, 120, 110, 0.7);
+}
+
+.tog-work__what {
+    font-size: 12px;
+    color: rgb(222, 230, 244);
+}
+
+.tog-work__when {
+    font-size: 11px;
+    color: rgba(150, 162, 186, 0.9);
 }

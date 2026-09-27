@@ -167,6 +167,7 @@ namespace ScalingLaws.Persistence
                     63 => UpgradeV63ToV64(current),
                     64 => UpgradeV64ToV65(current),
                     65 => UpgradeV65ToV66(current),
+                    66 => UpgradeV66ToV67(current),
                     _ => current
                 };
             }
@@ -1956,6 +1957,37 @@ namespace ScalingLaws.Persistence
 
 
 
+
+        /// <summary>
+        /// v66 to v67: nothing was ever done together, because there was nothing to do.
+        ///
+        /// **The empty list is the only true reading and reconstructing one would be worse than
+        /// wrong.** A v66 campaign could sign deals and did not keep them: the rows were removed
+        /// when a term ran out and never written anywhere. So the history of a v66 file is not
+        /// missing, it never existed, and inventing a plausible one is exactly what the honesty
+        /// flag forbids. Anything signed after the load is recorded from that day.
+        /// </summary>
+        public static SaveData UpgradeV66ToV67(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 67;
+
+            data.dealPastLabs = new List<int>();
+            data.dealPastKinds = new List<int>();
+            data.dealPastStartDays = new List<int>();
+            data.dealPastEndDays = new List<int>();
+            data.dealPastOutcomes = new List<int>();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v66 to v67: the record of work done with other labs starts empty. A v66 file did "
+                + "not keep one, so there is nothing to carry forward and nothing is invented.");
+
+            return data;
+        }
         /// <summary>
         /// v65 to v66: no offers out, no deals running, nothing signed with anybody.
         ///

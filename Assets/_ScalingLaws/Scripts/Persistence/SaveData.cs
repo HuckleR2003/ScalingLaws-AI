@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 66;
+        public const int CurrentVersion = 67;
 
         public int version = CurrentVersion;
 
@@ -713,6 +713,27 @@ namespace ScalingLaws.Persistence
 
         /// <summary>The other labs in the room. The player is not in this list.</summary>
         public List<int> campaignMembers = new();
+
+        /// <summary>
+        /// v67. Everything that ever happened between the company and another lab.
+        ///
+        /// **A record, not a derivation.** Nothing else in the game remembers that a licence ran
+        /// nine months in 2024 and ended well, and a relationship with no history behind it is a
+        /// number on a bar.
+        /// </summary>
+        public List<int> dealPastLabs = new();
+
+        /// <summary>See <see cref="dealPastLabs"/>.</summary>
+        public List<int> dealPastKinds = new();
+
+        /// <summary>See <see cref="dealPastLabs"/>.</summary>
+        public List<int> dealPastStartDays = new();
+
+        /// <summary>See <see cref="dealPastLabs"/>.</summary>
+        public List<int> dealPastEndDays = new();
+
+        /// <summary>See <see cref="dealPastLabs"/>.</summary>
+        public List<int> dealPastOutcomes = new();
 
         public bool hasResearchProject;
         public int researchNode;

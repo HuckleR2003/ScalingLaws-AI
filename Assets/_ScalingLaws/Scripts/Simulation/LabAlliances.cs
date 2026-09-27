@@ -60,6 +60,54 @@ namespace ScalingLaws.Simulation
         public int DaysLeft(GameDate date) => Math.Max(0, Ends.DayIndex - date.DayIndex);
     }
 
+
+    /// <summary>How a piece of work between two companies ended.</summary>
+    public enum DealOutcome
+    {
+        /// <summary>It ran its whole term.</summary>
+        Finished = 0,
+
+        /// <summary>It ended early, whoever ended it.</summary>
+        Ended = 1,
+
+        /// <summary>They said no, so it never started.</summary>
+        Refused = 2
+    }
+
+    /// <summary>
+    /// Something that happened between the two companies, kept after it stopped mattering.
+    ///
+    /// **A record, not a derivation.** Nothing else in the game remembers that a licence ran for
+    /// nine months in 2024 and ended well, and a relationship with no history behind it is a number
+    /// on a bar. The author asked for the list of current and older work together by name, and this
+    /// is what that list reads.
+    ///
+    /// Capped, because a fourteen-year campaign making one offer a month is a hundred and sixty
+    /// rows, which is an archive rather than a memory. Same reasoning and the same shape as
+    /// `RivalRelations.HistoryKept`.
+    /// </summary>
+    public readonly struct DealRecord
+    {
+        public DealRecord(CompetitorId lab, RelationOffer offer, GameDate started, GameDate ended,
+            DealOutcome outcome)
+        {
+            Lab = lab;
+            Offer = offer;
+            Started = started;
+            Ended = ended;
+            Outcome = outcome;
+        }
+
+        public CompetitorId Lab { get; }
+        public RelationOffer Offer { get; }
+        public GameDate Started { get; }
+        public GameDate Ended { get; }
+        public DealOutcome Outcome { get; }
+
+        /// <summary>How long it ran, in days. Zero for something that was never agreed.</summary>
+        public int Days => Math.Max(0, Ended.DayIndex - Started.DayIndex);
+    }
+
     /// <summary>Something signed and running: a licence, an evaluation, a capacity term.</summary>
     public readonly struct StandingDeal
     {

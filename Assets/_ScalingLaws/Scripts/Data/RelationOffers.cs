@@ -30,6 +30,30 @@ namespace ScalingLaws.Data
         CapacityPurchase = 3
     }
 
+
+    /// <summary>
+    /// How likely an offer is to be taken, in words rather than in a percentage.
+    ///
+    /// **A player deciding whether to spend sixty research points on a letter needs to know the
+    /// odds, and a number to two decimal places is not knowing them.** The bands are wide on
+    /// purpose: the point is that a lab well ahead of you and cross with you will probably say no,
+    /// not that they will say no 23% of the time.
+    /// </summary>
+    public enum OfferOdds
+    {
+        /// <summary>They are not going to take this.</summary>
+        Unlikely = 0,
+
+        /// <summary>It could go either way.</summary>
+        Even = 1,
+
+        /// <summary>They will probably say yes.</summary>
+        Likely = 2,
+
+        /// <summary>Nobody turns this down.</summary>
+        Certain = 3
+    }
+
     /// <summary>What one offer costs, what it moves, and what it needs to be possible at all.</summary>
     public readonly struct RelationOfferDefinition
     {
@@ -159,7 +183,7 @@ namespace ScalingLaws.Data
         /// reading a paper. That is what keeps the first rung reachable.
         /// </summary>
         public static double AcceptanceChance(RelationOffer offer, double relation,
-            double theirCapability, double yourCapability)
+            double theirCapability, double yourCapability, int allianceLevel = 0)
         {
             if (offer == RelationOffer.PublishFinding)
             {
@@ -175,7 +199,50 @@ namespace ScalingLaws.Data
                 ? 0.0
                 : System.Math.Clamp((theirCapability - yourCapability) / theirCapability, -0.5, 0.6);
 
-            return System.Math.Clamp(standing * 1.15 - gap * 0.55, 0.05, 0.95);
+            // **What is signed counts for something on its own.** A lab that has put its name to
+            // an alliance with you is not weighing this letter the way a stranger would, which is
+            // most of what an alliance is worth before it starts paying in compute or in points.
+            var signed = System.Math.Clamp(allianceLevel, 0, LevelsThatHelp) * PerLevel;
+
+            return System.Math.Clamp(standing * 1.15 - gap * 0.55 + signed, 0.05, 0.95);
         }
+
+        /// <summary>How much each signed level adds to the chance of a yes.</summary>
+        public const double PerLevel = 0.12;
+
+        /// <summary>Levels past this stop helping, because the answer is already almost always yes.</summary>
+        public const int LevelsThatHelp = 3;
+
+        /// <summary>
+        /// The same chance in words, which is what the screen shows.
+        ///
+        /// **Wide bands on purpose.** What a player needs before spending sixty research points on
+        /// a letter is whether it is worth sending, and a figure to two decimal places is a number
+        /// they cannot act on. The thresholds are where the sentence changes rather than where the
+        /// arithmetic does.
+        /// </summary>
+        public static OfferOdds OddsOf(double chance) =>
+            chance >= 0.95 ? OfferOdds.Certain
+            : chance >= 0.62 ? OfferOdds.Likely
+            : chance >= 0.34 ? OfferOdds.Even
+            : OfferOdds.Unlikely;
+
+        /// <summary>Written out, never assembled: the guard that checks keys reads literals only.</summary>
+        public static string KeyFor(OfferOdds odds) => odds switch
+        {
+            OfferOdds.Certain => "odds.certain",
+            OfferOdds.Likely => "odds.likely",
+            OfferOdds.Even => "odds.even",
+            _ => "odds.unlikely"
+        };
+
+        /// <summary>See <see cref="KeyFor"/>. The class the tile wears, so the colour follows it.</summary>
+        public static string ClassFor(OfferOdds odds) => odds switch
+        {
+            OfferOdds.Certain => "tog-tile--certain",
+            OfferOdds.Likely => "tog-tile--likely",
+            OfferOdds.Even => "tog-tile--even",
+            _ => "tog-tile--unlikely"
+        };
     }
 }

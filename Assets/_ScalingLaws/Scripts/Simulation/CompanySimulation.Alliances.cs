@@ -128,6 +128,8 @@ namespace ScalingLaws.Simulation
                     var ended = State.Deals[index];
                     State.Deals.RemoveAt(index);
 
+                    Remember(ended.Lab, ended.Offer, ended.Started, DealOutcome.Finished);
+
                     State.RaiseEvent(new CompanyEvent(CompanyEventType.DealEnded, State.Date,
                         Loc.T("offer.event.ended",
                             RelationOfferCatalog.Get(ended.Offer).DisplayName,
@@ -185,7 +187,8 @@ namespace ScalingLaws.Simulation
 
             var chance = RelationOfferCatalog.AcceptanceChance(
                 pending.Offer, State.Relations.With(pending.Lab),
-                CapabilityOf(pending.Lab), OurCapability());
+                CapabilityOf(pending.Lab), OurCapability(),
+                State.Alliances.LevelWith(pending.Lab));
 
             // Its own stream, keyed on the day the offer went out and on who it went to, so adding
             // this mechanic cannot shift a single draw the balance suite depends on.
@@ -194,6 +197,8 @@ namespace ScalingLaws.Simulation
 
             if (!random.NextChance(chance))
             {
+                Remember(pending.Lab, pending.Offer, pending.Sent, DealOutcome.Refused);
+
                 State.RaiseEvent(new CompanyEvent(CompanyEventType.OfferRefused, State.Date,
                     Loc.T("offer.event.refused", definition.DisplayName, them)));
 
@@ -221,6 +226,37 @@ namespace ScalingLaws.Simulation
             RelationOffer.DistributionLicence => "relation.reason.licensed",
             _ => "relation.reason.bought_capacity"
         };
+
+        /// <summary>
+        /// Writes one line into the history of what the two companies have done together.
+        ///
+        /// **One body, four callers**, because a refusal, a finished term and an early exit are the
+        /// same row with a different last word, and three copies of that is three chances to write
+        /// the wrong date into one of them.
+        /// </summary>
+        private void Remember(CompetitorId lab, RelationOffer offer, GameDate started,
+            DealOutcome outcome)
+        {
+            State.DealHistory.Add(new DealRecord(lab, offer, started, State.Date, outcome));
+
+            while (State.DealHistory.Count > CompanyState.DealsKept)
+            {
+                State.DealHistory.RemoveAt(0);
+            }
+        }
+
+        /// <summary>
+        /// What a signed level is worth to this lab in particular, past the offers it makes easier.
+        ///
+        /// **Level three sells capacity at cost.** That is the one place an alliance touches a
+        /// number the fleet reads, and it is the reason to climb past two once the research
+        /// programmes are open: everything below is about being able to ask, and this is about the
+        /// price when they say yes.
+        /// </summary>
+        public double CapacityPremiumWith(CompetitorId lab) =>
+            State.Alliances.LevelWith(lab) >= LabAlliances.TopLevel
+                ? 1.0
+                : RelationOfferCatalog.CapacityPremium;
 
         /// <summary>Whether a deal of this kind is running with anybody at all.</summary>
         public bool HasDeal(RelationOffer offer)
@@ -260,12 +296,25 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public double AlliedPetaflops()
         {
-            if (!HasDeal(RelationOffer.CapacityPurchase))
+            var most = 0.0;
+
+            foreach (var deal in State.Deals)
             {
-                return 0.0;
+                if (deal.Offer != RelationOffer.CapacityPurchase || !deal.IsLiveOn(State.Date))
+                {
+                    continue;
+                }
+
+                // **At cost from a deep ally, at a premium from everybody else.** The same money
+                // buys more capacity from a lab that has signed three levels with you, which is the
+                // one place an alliance reaches a number the fleet reads.
+                var share = RelationOfferCatalog.CapacityShare
+                    * (RelationOfferCatalog.CapacityPremium / CapacityPremiumWith(deal.Lab));
+
+                most = Math.Max(most, State.Pool.RentedPetaflops * share);
             }
 
-            return State.Pool.RentedPetaflops * RelationOfferCatalog.CapacityShare;
+            return most;
         }
 
         // ---- the alliance itself ------------------------------------------------------------
@@ -276,22 +325,44 @@ namespace ScalingLaws.Simulation
         /// **The fee is charged here and the clock is not for sale.** Level three needs a year at
         /// level two with nothing hostile in between, and there is no way to pay that down.
         /// </summary>
+        /// <summary>
+        /// Why the next level cannot be signed with this lab, or empty when it can.
+        ///
+        /// **Reads and never writes, which is the whole reason it exists.** The rival card used to
+        /// call `TrySignAlliance` to get this sentence out of its `out` parameter, so drawing a card
+        /// whose level was ready signed the alliance and charged the fee. A render caught it: a
+        /// company at level one came back from being looked at sitting at level two. A `Try` method
+        /// is a write however harmless its out parameter looks.
+        /// </summary>
+        public string WhyNotAlliance(CompetitorId lab)
+        {
+            var band = State.Relations.BandWith(lab);
+
+            if (State.Alliances.CanSignNext(lab, State.Date, band, out var next))
+            {
+                return string.Empty;
+            }
+
+            return band < LabAlliances.HoldsAt
+                ? Loc.T("alliance.fail.band", RelationScale.NameOf(LabAlliances.HoldsAt))
+                : next > LabAlliances.TopLevel
+                    ? Loc.T("alliance.fail.top")
+                    : Loc.T("alliance.fail.days",
+                        (LabAlliances.DaysNeededFor(next)
+                            - State.Alliances.DaysAtLevel(lab, State.Date)).ToString());
+        }
+
         public bool TrySignAlliance(CompetitorId lab, out string why)
         {
             var band = State.Relations.BandWith(lab);
 
-            if (!State.Alliances.CanSignNext(lab, State.Date, band, out var next))
+            if (!State.Alliances.CanSignNext(lab, State.Date, band, out _))
             {
-                why = band < LabAlliances.HoldsAt
-                    ? Loc.T("alliance.fail.band", RelationScale.NameOf(LabAlliances.HoldsAt))
-                    : next > LabAlliances.TopLevel
-                        ? Loc.T("alliance.fail.top")
-                        : Loc.T("alliance.fail.days",
-                            (LabAlliances.DaysNeededFor(next)
-                                - State.Alliances.DaysAtLevel(lab, State.Date)).ToString());
-
+                why = WhyNotAlliance(lab);
                 return false;
             }
+
+            var next = State.Alliances.LevelWith(lab) + 1;
 
             var fee = LabAlliances.FeeFor(next);
 
@@ -550,6 +621,12 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>The capability of one rival today, or zero when they have nothing on sale.</summary>
+        /// <summary>What one rival is selling today, on the player's own scale. For the screens.</summary>
+        public double RivalCapability(CompetitorId lab) => CapabilityOf(lab);
+
+        /// <summary>What this company is selling, on the same scale. For the screens.</summary>
+        public double OurCapabilityToday() => OurCapability();
+
         private double CapabilityOf(CompetitorId lab)
         {
             foreach (var entry in State.Rivals.LiveModels(State.Date))

@@ -79,6 +79,13 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Fixed
 
+- **Looking at a rival card could sign an alliance and charge the fee.** The card called the method
+  that signs in order to read the refusal out of it, which is harmless on a card that cannot sign
+  and is a purchase nobody asked for on a card that can. A render caught it: a company at level one
+  came back from being looked at sitting at level two. A `Try` method is a write however harmless
+  its out parameter looks, so there is a read-only way to ask now, and a test holds that looking
+  changes nothing.
+
 - **A research node that cost three million dollars and did nothing.** MODEL SERIES AND VERSIONING
   listed no reward on its card because it had none: nothing anywhere in the game read it, and the
   line picker it claims to open worked from the first day of a campaign. It gates that picker now,
@@ -126,11 +133,23 @@ go in. This file is the draft for the store update post, so anything vague here 
 - **Every lab was drawn as Tense on day one.** `Neutral` is documented as where everybody starts and
   its threshold sat above the starting value, so fourteen companies the player had never touched all
   read as cooling. Found by an offer that asks for Neutral and could not be made to anybody, ever.
-- **The rival card has a fourth section, TOGETHER.** What is signed with them, what is waiting on
-  an answer, what is running, and the four offers with what each one costs and how long they take
-  to answer. The alliance line prints the days the next level is waiting on even though they cannot
-  be hurried, because a player who can see "another two hundred and eleven days" understands they
-  are looking at a calendar rather than at a price.
+- **The TOGETHER section is three bands answering three different questions.** A track across the
+  top that fills with **days rather than money**, with all three alliance levels named and what each
+  one opens written under it; the four offers as tiles across, each saying how likely that lab is to
+  take it; and underneath, what the two companies have already done together. The first version was
+  a column of four paragraphs with a button under each, which answered one question four times and
+  the other two not at all.
+- **Every offer says its odds before it is sent.** A player about to spend sixty research points on
+  a letter can see whether it is worth sending, read from the relation, the capability gap and what
+  is already signed. Wide bands on purpose: what matters is whether to send it, not that they will
+  refuse 23% of the time.
+- **All three alliance levels are worth something now.** Level one makes offers land more often and
+  puts the lab in reach of the telephone; level two opens joint research; level three sells their
+  capacity at cost instead of at the premium everybody else pays. Before this, one and three moved
+  no number in the game at all.
+- **What the two of you have done together is kept.** Terms that ran their course, terms that ended
+  early and offers that were refused, newest first, with the one still running marked. Nothing in
+  the game remembered a finished licence before: the row was deleted when its term ran out.
 - **Joint research programmes.** A campaign opened with a lab at the working-group level pays
   research points **every day it runs** rather than in a lump at the end, and everybody in the room
   pays a share of the bill. Two labs each pay sixty per cent of what one would and the room makes
@@ -142,7 +161,8 @@ go in. This file is the draft for the store update post, so anything vague here 
   cheapest consortium in the game is nine months of somebody liking you. Walking out early forfeits
   the rest of the term and costs a break fee, or joining and leaving on the last profitable day
   would be the only line anybody played.
-- **Save v66** carries the offers in flight, the running deals and what is signed. A v65 campaign
+- **Save v67** carries the offers in flight, the running deals, what is signed, and the record of
+  what the two companies have done together. A v65 campaign
   keeps every relation it accumulated and has nothing signed, because it was played in a game where
   a relation could only fall.
 
@@ -163,7 +183,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   happened rather than a state of the desk, so a reload cannot ring the phone about a queue the
   player has been working for months. A v63 file that already had post counts as told; one with an
   empty desk is announced on the day the post starts, exactly as a new campaign is.
-- **1477 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1481 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

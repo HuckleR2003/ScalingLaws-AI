@@ -662,6 +662,37 @@ namespace ScalingLaws.Tests.PlayMode
             // to them.** Rendered in Polish as well: the offer bodies are the longest sentences on
             // any card in this game and the Polish ones are longer again, so a card that is going
             // to deform deforms here.
+            // **Put something in every band of the card before framing it.** An empty one renders
+            // a bar at zero, four tiles that all read the same odds, and an empty history, which
+            // proves nothing about the layout it is there to prove. So: a warm relation, a level
+            // signed, one term running and two things already finished.
+            // **The relation has to clear Friendly after the two knocks above**, which it did not
+            // on the first attempt: the poach and the report take it to minus twenty-three, so a
+            // sixty-two point gift lands on thirty-nine against a threshold of forty and the frame
+            // came back showing the wrong half of the bar. Warmed to the top of the scale instead.
+            simulation.State.Relations.Record(lab, simulation.State.Date,
+                RivalRelations.Best, "relation.reason.published");
+
+            simulation.State.Alliances.Sign(lab, simulation.State.Date);
+
+            // Sixty days into the second level, so the track shows a level signed, one a third of
+            // the way through, and one untouched. An empty bar proves nothing about a bar.
+            for (var day = 0; day < 60; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            simulation.State.Deals.Add(new StandingDeal(lab, RelationOffer.DistributionLicence,
+                simulation.State.Date, simulation.State.Date.AddDays(141)));
+
+            simulation.State.DealHistory.Add(new DealRecord(lab, RelationOffer.JointEvaluation,
+                simulation.State.Date.AddDays(-300), simulation.State.Date.AddDays(-210),
+                DealOutcome.Finished));
+
+            simulation.State.DealHistory.Add(new DealRecord(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date.AddDays(-120), simulation.State.Date.AddDays(-120),
+                DealOutcome.Refused));
+
             panel.ShowTogether();
             yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_together_en.png");
 

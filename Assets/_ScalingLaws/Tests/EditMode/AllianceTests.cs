@@ -492,5 +492,135 @@ namespace ScalingLaws.Tests.EditMode
             }
         }
 
+
+        /// <summary>
+        /// **Drawing a card must not change the company.** This is a ratchet for a shipped bug.
+        ///
+        /// The rival card called `TrySignAlliance` to read the refusal out of its `out` parameter,
+        /// which is fine on a card that cannot sign and signs the alliance on a card that can. A
+        /// render caught it: a company at level one came back from being looked at sitting at level
+        /// two, with the fee gone from the account and an event on the wire nobody had asked for.
+        ///
+        /// A `Try` method is a write however harmless its out parameter looks. `WhyNotAlliance`
+        /// exists because a screen needs the sentence without the signing.
+        /// </summary>
+        [Test]
+        public void ReadingWhyAnAllianceIsBlockedNeverSignsIt()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.FriendlyAbove + 20.0);
+
+            var cash = simulation.State.CashUsd;
+            var level = simulation.State.Alliances.LevelWith(lab);
+
+            for (var look = 0; look < 5; look++)
+            {
+                simulation.WhyNotAlliance(lab);
+            }
+
+            Assert.That(simulation.State.Alliances.LevelWith(lab), Is.EqualTo(level),
+                "looking at the card signed the alliance");
+
+            Assert.That(simulation.State.CashUsd, Is.EqualTo(cash),
+                "and charged the fee for it");
+
+            Assert.That(simulation.State.HasQueuedEvents, Is.False,
+                "and told the player it had happened");
+
+            // And the sentence is still there to read when it genuinely cannot be signed.
+            Warm(simulation, lab, RivalRelations.Start);
+
+            Assert.That(simulation.WhyNotAlliance(lab), Is.Not.Empty);
+        }
+
+        /// <summary>
+        /// A signed level makes an offer land more often, which is what level one is for.
+        ///
+        /// Before this, levels one and three moved no number in the game at all: one set a flag for
+        /// a telephone nothing calls yet and three did nothing whatsoever. A ladder whose middle
+        /// rung is the only real one is a ladder with two decorations on it.
+        /// </summary>
+        [Test]
+        public void EachSignedLevelIsWorthSomethingAndTheTopOneSellsCapacityAtCost()
+        {
+            var cold = RelationOfferCatalog.AcceptanceChance(
+                RelationOffer.DistributionLicence, 50.0, 40.0, 40.0, allianceLevel: 0);
+
+            var signed = RelationOfferCatalog.AcceptanceChance(
+                RelationOffer.DistributionLicence, 50.0, 40.0, 40.0, allianceLevel: 1);
+
+            Assert.That(signed, Is.GreaterThan(cold),
+                "a lab that has put its name to an alliance weighs the letter differently");
+
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Assert.That(simulation.CapacityPremiumWith(lab),
+                Is.EqualTo(RelationOfferCatalog.CapacityPremium),
+                "a stranger charges the premium");
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            for (var step = 0; step < LabAlliances.TopLevel; step++)
+            {
+                simulation.State.Alliances.Sign(lab, simulation.State.Date);
+            }
+
+            Assert.That(simulation.CapacityPremiumWith(lab), Is.EqualTo(1.0),
+                "and the deepest alliance sells it at cost, which is what the top rung is for");
+        }
+
+        /// <summary>
+        /// What happened between the two companies is kept after it stops mattering.
+        ///
+        /// **The author asked for the list of current and older work by name**, and nothing in the
+        /// game remembered a finished term: the row was removed when it ran out and written nowhere.
+        /// </summary>
+        [Test]
+        public void AFinishedTermAndARefusalBothStayInTheRecord()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            simulation.State.Deals.Add(new StandingDeal(lab, RelationOffer.DistributionLicence,
+                simulation.State.Date, simulation.State.Date.AddDays(3)));
+
+            for (var day = 0; day < 5; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            Assert.That(simulation.State.DealHistory, Is.Not.Empty,
+                "a term that ran out is the thing a history is mostly made of");
+
+            Assert.That(simulation.State.DealHistory[0].Outcome, Is.EqualTo(DealOutcome.Finished));
+
+            var back = SaveStore.Restore(SaveStore.Parse(
+                UnityEngine.JsonUtility.ToJson(SaveStore.Capture(simulation.State))));
+
+            Assert.That(back.DealHistory, Has.Count.EqualTo(simulation.State.DealHistory.Count));
+            Assert.That(back.DealHistory[0].Lab, Is.EqualTo(lab));
+            Assert.That(back.DealHistory[0].Outcome, Is.EqualTo(DealOutcome.Finished));
+        }
+
+        /// <summary>v66 to v67: the record starts empty, because a v66 file never kept one.</summary>
+        [Test]
+        public void AnOlderCampaignHasNoRecordOfWorkAndNoneIsInvented()
+        {
+            var data = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            data.version = 66;
+            data.dealPastLabs = null;
+
+            var upgraded = SaveMigration.UpgradeV66ToV67(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(67));
+            Assert.That(upgraded.dealPastLabs, Is.Empty);
+            StringAssert.Contains("v66 to v67", SaveMigration.LastMigrationNotes);
+        }
+
     }
 }

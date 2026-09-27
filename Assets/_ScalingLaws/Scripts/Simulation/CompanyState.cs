@@ -141,6 +141,17 @@ namespace ScalingLaws.Simulation
         /// <summary>Deals signed and still running: a licence, an evaluation, a capacity term.</summary>
         public List<StandingDeal> Deals { get; } = new();
 
+        /// <summary>
+        /// Everything that ever happened between the company and another lab, newest last.
+        ///
+        /// Kept after it stopped mattering, because a relationship with no history behind it is a
+        /// number on a bar. Capped at <see cref="DealsKept"/>; past that it is an archive.
+        /// </summary>
+        public List<DealRecord> DealHistory { get; } = new();
+
+        /// <summary>Rows of history kept. Same reasoning as the relation memory.</summary>
+        public const int DealsKept = 30;
+
         /// <summary>What has been signed with each lab, and how long it has held. Saved from v66.</summary>
         public LabAlliances Alliances { get; } = new();
 
