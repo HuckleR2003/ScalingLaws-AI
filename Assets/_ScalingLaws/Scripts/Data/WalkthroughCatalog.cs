@@ -145,6 +145,18 @@ namespace ScalingLaws.Data
                 new("walk_support_open", "walk.support.open", GuideTarget.Support,
                     highlight: "mb__manage", waitForClick: true),
 
+                // **The tab, pressed by the player rather than opened for them.**
+                //
+                // A tester walked this and reported that after the management page opened there
+                // was nothing on it about support at all. That was true: the desk was a strip
+                // three panels down a tab they were not on, and the tour went straight to ringing
+                // a class that was not in the tree. The desk has a tab of its own now, so the step
+                // that was missing is the one where they find it, and the same rule applies as to
+                // the button above: a player who is shown a door without pressing it has not
+                // learned where it is.
+                new("walk_support_tab", "walk.support.tab", GuideTarget.Support,
+                    highlight: "mg-tab--support", waitForClick: true),
+
                 new("walk_support_verdict", "walk.support.verdict", GuideTarget.Support,
                     highlight: "sup__satis"),
 

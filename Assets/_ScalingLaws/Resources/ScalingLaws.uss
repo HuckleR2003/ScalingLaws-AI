@@ -23307,3 +23307,9 @@
     flex-shrink: 0;
     padding: 26px 16px;
 }
+
+/* The support tab, named apart from the other four so the walkthrough can ring this one rather
+   than all five at once. It carries no look of its own: the tab styling is `.mg-tab`, and giving
+   this one a different appearance would say it is a different kind of tab, which it is not. */
+.mg-tab--support {
+}

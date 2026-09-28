@@ -2246,20 +2246,13 @@ namespace ScalingLaws.UI
                     break;
                 case Screen.Management:
 
-                    // **The walkthrough about the desk opens the desk's own tab.** Support has a
-                    // tab of its own now, and every step of that walkthrough rings a class that
-                    // only exists while it is open, so without this the tour would point at four
-                    // things in a row that are not in the tree. A ring on nothing is the same to
-                    // a player as a tour that has stopped working.
-                    if (guide?.RunningWalkthrough?.Id == WalkthroughCatalog.SupportId)
-                    {
-                        management.ShowSupport();
-                    }
-                    else
-                    {
-                        management.Refresh();
-                    }
-
+                    // **The walkthrough does not open the support tab for the player any more.**
+                    // It did for one afternoon, and that was the wrong repair: the step the tester
+                    // said was missing is the one where they find the tab themselves, and opening
+                    // it for them skips exactly that. The tab now has a step of its own that waits
+                    // for the click, and the screen keeps whichever tab is open afterwards, so the
+                    // steps that follow still ring something.
+                    management.Refresh();
                     host.Add(management.Root);
 
                     // The walkthrough step that says to open the desk is satisfied by the desk

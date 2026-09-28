@@ -118,6 +118,16 @@ namespace ScalingLaws.UI
             showing = tab;
             armed = null;
             lastFailure = string.Empty;
+
+            // The walkthrough step that says to open the desk is satisfied by the desk opening,
+            // never by a button on the strip. The id is a literal here and in the catalogue,
+            // because `WalkthroughTests` reads literals and a step it cannot find is a player
+            // locked inside a screen with the bar shut.
+            if (tab == Tab.Support)
+            {
+                GuideOverlay.Reached?.Invoke("walk_support_tab");
+            }
+
             Refresh();
         }
 
@@ -233,10 +243,15 @@ namespace ScalingLaws.UI
             // Satisfaction is the one number on this screen that decides whether the audience below
             // it stays, and it was previously unreadable without opening a panel three sections
             // down. A player who never presses this tab still sees the desk falling over.
-            tabs.Add(TabButton(
+            var support = TabButton(
                 Loc.T("mg.support.tab", UiFormat.Percent(simulation.State.Support.Quality())),
                 showing == Tab.Support,
-                () => Open(Tab.Support)));
+                () => Open(Tab.Support));
+
+            // **A class of its own so the walkthrough can ring this one tab.** `mg-tab` is on all
+            // five and ringing them all points at nothing in particular.
+            support.AddToClassList("mg-tab--support");
+            tabs.Add(support);
 
             return tabs;
         }
