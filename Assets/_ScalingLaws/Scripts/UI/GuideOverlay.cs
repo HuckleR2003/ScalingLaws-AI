@@ -253,9 +253,17 @@ namespace ScalingLaws.UI
         /// </summary>
         public const float StripClearance = 24f;
 
-        /// <summary>Re-reads the strip's height after a layout pass and tells whoever asked.</summary>
+        /// <summary>
+        /// Re-reads the strip's height after a layout pass and tells whoever asked.
+        ///
+        /// It also re-applies the fade, because this is the one callback a rebuilt strip is
+        /// guaranteed to raise. See <see cref="ApplyFade"/> for why that cannot wait for the next
+        /// mouse move.
+        /// </summary>
         private void MeasureStrip(GeometryChangedEvent _)
         {
+            ApplyFade(true);
+
             var now = strip == null ? 0f : strip.resolvedStyle.height;
 
             if (Mathf.Approximately(now, MeasuredHeight))
@@ -945,14 +953,33 @@ namespace ScalingLaws.UI
         /// </summary>
         private void FadeIfPointerIsOver(MouseMoveEvent move)
         {
-            if (strip == null || strip.parent == null)
+            lastPointer = move.mousePosition;
+            ApplyFade(false);
+        }
+
+        /// <summary>
+        /// Sets the strip's opacity from where the pointer was last seen.
+        ///
+        /// **`force` is what the reported bug needed and it is not an optimisation flag.** Pressing
+        /// NEXT advances the step, which rebuilds the strip, and a fresh strip is built at
+        /// <see cref="RestingOpacity"/> while <see cref="faded"/> still says the pointer is over it
+        /// from a moment ago. The next mouse move then agrees with the stale field and returns
+        /// early, so the bar the player is still pointing at stays half transparent until they take
+        /// the cursor off it and bring it back. A tester reported exactly that, in those words.
+        ///
+        /// So the rebuild re-applies rather than assuming, and it does not wait for a mouse move:
+        /// a player who clicks and holds the cursor still produces no further events at all.
+        /// </summary>
+        private void ApplyFade(bool force)
+        {
+            if (strip == null || strip.parent == null || float.IsNaN(lastPointer.x))
             {
                 return;
             }
 
-            var over = strip.worldBound.Contains(move.mousePosition);
+            var over = strip.worldBound.Contains(lastPointer);
 
-            if (over == faded)
+            if (!force && over == faded)
             {
                 return;
             }
@@ -962,6 +989,14 @@ namespace ScalingLaws.UI
         }
 
         private bool faded;
+
+        /// <summary>
+        /// Where the mouse was last seen, in panel space.
+        ///
+        /// NaN until the pointer has moved once, because a strip built before the player has
+        /// touched the mouse must stay at its resting opacity rather than guess at the origin.
+        /// </summary>
+        private Vector2 lastPointer = new(float.NaN, float.NaN);
 
         /// <summary>Takes the ring off everything. Public so the shell can clear it on a repaint.</summary>
         public void ClearHighlight()

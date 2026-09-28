@@ -7372,11 +7372,19 @@
     background-color: rgba(255, 255, 255, 0.02);
 }
 
+/* **It wraps, and it has to be told to stretch before it can.** `.choice-card` is
+   `align-items: flex-start`, so a child sizes to its own content and a title longer than the card
+   simply runs out of it. The four knowledge-cutoff cards are the case that showed it: in Polish
+   they read DZISIAJ, 6 MIESIECY WSTECZ, 12 MIESIECY WSTECZ and 24 MIESIACE WSTECZ, and the last
+   three printed on top of each other across the row. English never showed it, because TODAY and
+   6 MONTHS BACK fit the space that happened to be there. Same family as `.rackalarm__word`. */
 .choice-card__title {
     font-size: 15px;
     letter-spacing: 1.4px;
     -unity-font-style: bold;
     color: rgb(238, 244, 252);
+    white-space: normal;
+    align-self: stretch;
 }
 
 .choice-card__figures {

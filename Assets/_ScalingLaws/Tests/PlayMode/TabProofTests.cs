@@ -499,11 +499,15 @@ namespace ScalingLaws.Tests.PlayMode
 
                 yield return null;
 
-                foreach (var step in new[] { "create_review", "create_data" })
+                // **The page is driven through the creator's own seam, not through the step.**
+                // Setting `Guide.Step` alone leaves the creator on whatever page it was last on,
+                // so the first version of this rendered the review page twice and called one of
+                // them DANE, which is a frame that proves nothing.
+                foreach (var stop in new[] { ("review", 6), ("data", 3) })
                 {
                     for (var index = 0; index < GuideScript.Steps.Count; index++)
                     {
-                        if (GuideScript.Steps[index].Id != step)
+                        if (GuideScript.Steps[index].Id != "create_" + stop.Item1)
                         {
                             continue;
                         }
@@ -513,20 +517,21 @@ namespace ScalingLaws.Tests.PlayMode
                     }
 
                     shell.OpenScreenByName("Create");
+                    shell.Creator.Stage = stop.Item2;
 
                     for (var pass = 0; pass < 30; pass++)
                     {
                         yield return null;
                     }
 
-                    var name = step.Replace("create_", string.Empty);
+                    var name = stop.Item1;
                     yield return Capture(null, settings, texture, $"small_{size.y}_{name}.png");
 
                     var footer = document.rootVisualElement.Q(className: "stage-footer");
                     var header = document.rootVisualElement.Q(className: "stage-header");
                     var page = document.rootVisualElement.Q(className: "content-host");
 
-                    Debug.Log($"SMALL {size.x}x{size.y} {step}: "
+                    Debug.Log($"SMALL {size.x}x{size.y} {stop.Item1}: "
                         + $"page={page?.worldBound} header={header?.worldBound} "
                         + $"footer={footer?.worldBound}");
                 }
@@ -664,6 +669,104 @@ namespace ScalingLaws.Tests.PlayMode
                 Is.LessThanOrEqualTo(strip.worldBound.yMin + 0.5f),
                 $"{what}: the button row is behind the tour strip. "
                 + $"footer {footer.worldBound}, strip {strip.worldBound}");
+        }
+
+        /// <summary>
+        /// The tour bar stays lit after NEXT, for as long as the cursor is still on it.
+        ///
+        /// **Reported in these words: it goes transparent the instant you click and only takes its
+        /// colours back when you move the mouse onto it again.** Pressing NEXT advances the step,
+        /// which rebuilds the strip; the new one is built at the resting opacity while the field
+        /// that remembers whether the pointer is over it still says yes from a moment ago, so the
+        /// next mouse move agrees with the stale answer and returns without touching anything. A
+        /// player who clicks and holds the cursor still never produces that move at all.
+        ///
+        /// The pointer is put on the bar and left there. Nothing else in this test moves it, which
+        /// is the case the bug lives in.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheTourBarStaysLitUnderTheCursorAfterNext()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            var document = Object.FindFirstObjectByType<UIDocument>();
+
+            Assert.That(shell, Is.Not.Null);
+            Assert.That(document, Is.Not.Null);
+
+            var settings = Object.Instantiate(document.panelSettings);
+            var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+            texture.Create();
+
+            settings.targetTexture = texture;
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(Width, Height);
+            document.panelSettings = settings;
+
+            foreach (var ringing in document.rootVisualElement.Query(className: "phone").ToList())
+            {
+                ringing.RemoveFromHierarchy();
+            }
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Touring;
+            shell.Simulation.State.Guide.Step = 2;
+            shell.OpenScreenByName("Site");
+
+            for (var pass = 0; pass < 20; pass++)
+            {
+                yield return null;
+            }
+
+            var root = document.rootVisualElement;
+            var strip = root.Q(className: "guide");
+
+            Assert.That(strip, Is.Not.Null, "the tour strip is not up");
+
+            // The cursor goes on the bar and stays there.
+            var onIt = strip.worldBound.center;
+
+            using (var move = MouseMoveEvent.GetPooled(onIt, 0, 0, Vector2.zero, EventModifiers.None))
+            {
+                move.target = root;
+                root.SendEvent(move);
+            }
+
+            // The strip carries a 0.32s opacity transition, so `resolvedStyle` lags the style by
+            // about twenty frames and reading it on the next one measures the animation rather
+            // than the decision.
+            yield return new WaitForSeconds(0.6f);
+
+            Assert.That(strip.resolvedStyle.opacity, Is.EqualTo(1f).Within(0.01f),
+                "the bar should be fully lit while the pointer is on it");
+
+            // NEXT, which is what rebuilds it. Driven through the step rather than the button,
+            // because what is being measured is the rebuild and not the click.
+            shell.Simulation.State.Guide.Step = 3;
+            shell.OpenScreenByName("Site");
+
+            for (var pass = 0; pass < 20; pass++)
+            {
+                yield return null;
+            }
+
+            yield return new WaitForSeconds(0.6f);
+
+            var after = root.Q(className: "guide");
+            Assert.That(after, Is.Not.Null, "the tour strip left the screen on NEXT");
+
+            Assert.That(after.resolvedStyle.opacity, Is.EqualTo(1f).Within(0.01f),
+                "the bar went transparent under a cursor that never moved off it");
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Finished;
+
+            texture.Release();
+            Object.DestroyImmediate(texture);
+            Object.DestroyImmediate(settings);
         }
     }
 }
