@@ -880,6 +880,14 @@ namespace ScalingLaws.UI
         /// </summary>
         private void PollScrollKeys()
         {
+            // **Whichever scroller the open page actually has.** For most screens that is the
+            // shell's own; the creator carries its own around its middle band, because its
+            // heading and its buttons are pinned and must not move. Reading the field alone left
+            // the arrow keys dead on the one screen with the most to read on it.
+            var pageScroller = current == Screen.Create
+                ? creator?.StageScroller
+                : this.pageScroller;
+
             if (shortcuts == null || pageScroller == null || pageScroller.panel == null)
             {
                 return;
@@ -1921,7 +1929,7 @@ namespace ScalingLaws.UI
             var keepScroller = !changed
                 && pageScroller != null
                 && pageScroller.parent == contentHost
-                && screen is not (Screen.Site or Screen.Room);
+                && screen is not (Screen.Site or Screen.Room or Screen.Create);
 
             if (keepScroller)
             {
@@ -1977,6 +1985,15 @@ namespace ScalingLaws.UI
             // clock the bar carries. Computed once, here, because a second reading of it is how the
             // room ends up scrolled and the disc ends up over a document at the same time.
             var fillsTheWindow = screen is Screen.Site or Screen.Room;
+
+            // **And a third answer, which is not the same question.** The creator is a document,
+            // so it keeps the rectangular clock and everything else a document gets, and it still
+            // must not go in the shell's scroller: its own stylesheet pins the heading and the two
+            // buttons and gives the middle whatever is left, and none of that works inside a
+            // ScrollView, whose content container sizes to its content. Put there, the whole page
+            // scrolled as one piece and took its own title and its own way forward off the screen
+            // with it. The two rooms own their scrolling for the older reason above.
+            var ownsItsScrolling = fillsTheWindow || screen == Screen.Create;
 
             // The disc hangs about 170px above the bar and no page reserves for it, so it was
             // covering the bottom-left corner of every document screen. A room has nothing there
@@ -2048,8 +2065,8 @@ namespace ScalingLaws.UI
             // sat at its minimum height with the floor cropped across the middle and a band of
             // empty page underneath. The build rail carries its own scroller, which is the part
             // of that screen that is a document.
-            var host = fillsTheWindow ? contentHost : scroller;
-            if (!fillsTheWindow && scroller.parent != contentHost)
+            var host = ownsItsScrolling ? contentHost : scroller;
+            if (!ownsItsScrolling && scroller.parent != contentHost)
             {
                 contentHost.Add(scroller);
             }
@@ -2176,16 +2193,25 @@ namespace ScalingLaws.UI
         /// </summary>
         private void ReserveForTheStrip()
         {
-            if (pageScroller == null)
+            var showing = guide is { IsShowing: true };
+            var wanted = showing && guide.MeasuredHeight > 0f
+                ? guide.MeasuredHeight + GuideOverlay.StripClearance
+                : 0f;
+
+            if (pageScroller != null)
             {
-                return;
+                pageScroller.style.paddingBottom = wanted > 0f
+                    ? wanted
+                    : new StyleLength(StyleKeyword.Null);
             }
 
-            var showing = guide is { IsShowing: true };
-
-            pageScroller.style.paddingBottom = showing && guide.MeasuredHeight > 0f
-                ? guide.MeasuredHeight + GuideOverlay.StripClearance
-                : new StyleLength(StyleKeyword.Null);
+            // **The creator is not in that scroller and still has to clear the strip.** It is
+            // mounted straight into the window so it can pin its own heading and buttons, so the
+            // reserve is a margin under the whole page instead of padding inside a scroller. Told
+            // unconditionally rather than only while the creator is open: the page is a kept
+            // element, so a reserve left on it from the last visit would shorten it on the next
+            // one with nothing on screen to explain why.
+            creator?.ReserveAtTheFoot(current == Screen.Create ? wanted : 0f);
         }
 
         private void BuildScreenInto(VisualElement host, Screen screen)

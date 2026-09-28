@@ -1922,6 +1922,16 @@
     transition-timing-function: ease-out-cubic;
 }
 
+/* The stage's own scroller, filling the band the header and the footer leave it.
+
+   It exists so that a stage taller than that band scrolls on its own instead of taking the
+   heading and the two buttons with it. `.stage-host` clips, so without this a tall stage was
+   simply cut rather than reachable. */
+.stage-scroll {
+    flex-grow: 1;
+    width: 100%;
+}
+
 .stage-host--entering {
     translate: 22px 14px;
     opacity: 0;

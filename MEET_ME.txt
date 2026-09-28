@@ -1,4 +1,4 @@
-SCALING LAWS 0.5.0
+SCALING LAWS 0.6.0
 Tycoon o firmie AI / An AI company tycoon
 HCK Labs, Marcin "HCK" Firmuga
 
@@ -24,8 +24,25 @@ Jak zacząć:
 Sterowanie: spacja pauzuje, 1/2/3 to prędkość, strzałki przewijają stronę. Lewy przycisk myszy
 wybiera, prawy cofa albo oddala.
 
-Zapisy: gra zapisuje się sama i przez ZAPISZ. Kampanie z 0.4.0 wczytują się i zachowują historię.
-Format zapisu idzie z v56 na v62 i każdy krok to prawdziwa migracja, nie reset.
+Zapisy: gra zapisuje się sama i przez ZAPISZ. Kampanie z 0.5.0 wczytują się i zachowują historię.
+Format zapisu idzie z v62 na v69 i każdy krok to prawdziwa migracja, nie reset.
+
+
+CO JEST NOWEGO W 0.6.0
+
+Inne laboratoria przestają być wierszem w tabeli. Do tej pory relacje mogły tylko spadać: siedem
+rzeczy je ruszało i każda była czymś, co robiłeś komuś. Teraz możesz coś laboratorium
+zaproponować, sojusz zdobywa się dniami i nie da się go kupić, wspólny program badawczy sprawia,
+że pieniądze idą jakieś trzy i pół raza dalej, w rogu ekranu stoi odznaka mówiąca, z kim
+pracujesz, a telefon trzyma numer do każdego, z kim kiedykolwiek coś podpisałeś. Kiedy termin się
+kończy, w połowie przypadków to oni dzwonią pierwsi.
+
+Poza tym cały tydzień poprawek, a dwie rzeczy nigdy wcześniej nie działały ani razu: karty nie
+dało się wyjąć z szafy serwerowej, a cały ekran SERWIS był po angielsku w polskiej kampanii. Obie
+znalazła osoba, która nie jest autorem, siadając do gry.
+
+Jeśli coś jest niejasne albo się psuje, napisz. To jest najbardziej użyteczna rzecz, jaką możesz
+z tym buildem zrobić.
 
 
 IN ENGLISH
@@ -51,8 +68,25 @@ Where to start:
 Controls: space pauses, 1/2/3 set the speed, the arrow keys scroll a page. Left click selects,
 right click goes back or zooms out.
 
-Saves: the game autosaves and saves from SAVE. Campaigns from 0.4.0 load and keep their history.
-The format moves from v56 to v62 and every step is a real migration rather than a reset.
+Saves: the game autosaves and saves from SAVE. Campaigns from 0.5.0 load and keep their history.
+The format moves from v62 to v69 and every step is a real migration rather than a reset.
+
+
+WHAT IS NEW IN 0.6.0
+
+Other laboratories stop being a row on a table. Relations could only ever fall before this: seven
+things moved them and every one was something you did to somebody. Now there are four things you
+can put to a lab, an alliance that is earned in days and cannot be bought, a joint research
+programme that makes the money go about three and a half times as far, a badge in the corner of
+the screen saying who you are working with, and a telephone that keeps the number of everyone you
+ever signed with. When a term runs out, half the time they ring you first.
+
+The rest is a week of repairs, and two of them had never worked once: a part could be put into a
+server cabinet and never taken out, and the whole news screen was in English in a Polish campaign.
+Both were found by somebody who is not the author sitting down with the game.
+
+If something is unclear or breaks, tell me. That is the most useful thing you can do with this
+build.
 
 
 CO JEST W PACZCE / WHAT IS IN THIS ZIP

@@ -114,6 +114,23 @@ namespace ScalingLaws.UI
         private readonly VisualElement effectBanner = new();
         private readonly VisualElement stageHost = new();
 
+        /// <summary>
+        /// The one part of this page that is allowed to scroll.
+        ///
+        /// **The title, the stage rail and the two buttons are not in it, and that is the point.**
+        /// The whole creator used to sit inside the shell's page scroller, so a page taller than
+        /// the window scrolled as one piece and took its own heading and its own WSTECZ/DALEJ with
+        /// it. Under the tour that is not a hypothetical: the strip reserves the foot of the
+        /// screen, the tour then scrolls its highlight into view, and a tester was left on a page
+        /// with no title at the top and no way forward at the bottom, twice, on two different
+        /// stages. Leaving and coming back appeared to repair it because that put the offset back
+        /// to zero, which restores the heading and nothing else.
+        ///
+        /// A stage is a document and may be taller than the room it is given. A heading and a
+        /// forward button are neither.
+        /// </summary>
+        private readonly ScrollView stageScroll = new();
+
         // The four choices the cards set. Held here rather than on a kept blueprint because the
         // blueprint is rebuilt from the controls on every reprice, which is what keeps one source of
         // truth for what the run will be. Every one starts on the neutral option.
@@ -321,6 +338,27 @@ namespace ScalingLaws.UI
 
         public VisualElement Root => root;
 
+        /// <summary>The middle band, which is the only part of this page that scrolls.</summary>
+        public ScrollView StageScroller => stageScroll;
+
+        /// <summary>
+        /// Keeps this much room clear below the page for the tour strip floating over it.
+        ///
+        /// **A margin on the page rather than padding inside a scroller**, because this page is no
+        /// longer in the shell's scroller: it is mounted straight into the window so its heading
+        /// and its buttons can be pinned. Shortening the page is therefore the only way to keep
+        /// the last row of it above the strip, and shortening the page is exactly right — the
+        /// stage in the middle takes the loss and scrolls, which is what a stage is for.
+        ///
+        /// Zero when nothing is up, which is the ordinary case and costs nothing.
+        /// </summary>
+        public void ReserveAtTheFoot(float pixels)
+        {
+            root.style.marginBottom = pixels > 0f
+                ? pixels
+                : new StyleLength(StyleKeyword.Null);
+        }
+
         /// <summary>Rebuilds everything that can change between visits, then reprices the plan.</summary>
         public void Refresh()
         {
@@ -414,6 +452,22 @@ namespace ScalingLaws.UI
             root.Add(effectBanner);
 
             stageHost.AddToClassList("stage-host");
+
+            // **Hidden bars, like every other scroller in this game.** The runtime theme's takes
+            // its width out of the content, so a stage would re-flow the moment it grew past the
+            // room it is given, and these stages grow and shrink as the campaign does.
+            stageScroll.AddToClassList("stage-scroll");
+            stageScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            stageScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+
+            // One thing scrolls a page and it is not a focused ScrollView deciding to help. Same
+            // reasoning as the shell's page scroller, and the same one line.
+            stageScroll.focusable = false;
+
+            // Outside the content container, so it costs the stage no width.
+            stageScroll.hierarchy.Add(new PageScrollbar(stageScroll));
+
+            stageHost.Add(stageScroll);
             root.Add(stageHost);
 
             var footer = new VisualElement();
@@ -598,8 +652,8 @@ namespace ScalingLaws.UI
 
             if (page != null)
             {
-                stageHost.Clear();
-                stageHost.Add(page);
+                stageScroll.Clear();
+                stageScroll.Add(page);
             }
 
             backButton.SetEnabled(stage > 0);

@@ -221,6 +221,18 @@ namespace ScalingLaws.UI
         /// that: the portrait hangs above the bar on a negative margin, so Emil's head sat over the
         /// bottom band of whatever page was open. A tester reported exactly that, on the creator's
         /// review summary, and the only honest reserve is the one the strip reports about itself.
+        ///
+        /// **Do not shrink this to the bar.** That was the next thing tried, on the reasoning that
+        /// the portrait hangs up and to the left of the bar and therefore off the page. Measured,
+        /// it does not: at 1920x1080 the bar runs x 269 to 1651 and the portrait sits at x 596 to
+        /// 692, squarely inside it, 84px above it and squarely over the page. Reserving to the bar
+        /// puts Emil's head back on the text, which is the report this was written for.
+        ///
+        /// What the taller reserve did expose is a second fault with a different cause: the
+        /// creator was 838px of page in a 647px window, the tour scrolls its own highlight into
+        /// view, and that took the stage heading off the top and the WSTECZ/DALEJ row off the
+        /// bottom at once. The repair for that is in the creator, which now pins its heading and
+        /// its buttons and scrolls only the stage between them. Neither fault is the other's fix.
         /// </summary>
         public float MeasuredHeight { get; private set; }
 

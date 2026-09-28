@@ -38,6 +38,40 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+### Fixed
+
+- **The model creator no longer loses its own heading and its own buttons while the tour is
+  running.** Reported twice by a tester, on two different pages and in almost the same words: on
+  PRZEGLĄD the section title and the WSTECZ/DALEJ row were simply not there, the right-hand half of
+  MARKA went missing, and leaving the page and coming back appeared to repair it. Measured, it was
+  one fault. The whole creator sat inside the page scroller the rest of the game uses, the tour
+  reserves the foot of the screen for the strip Emil talks from, and the tour then scrolls its own
+  highlight into view. On a page 838px tall in a 647px window that lands in the middle, which takes
+  the title off the top and the buttons off the bottom at the same time; going away and coming back
+  put the scroll back to zero, which restores the title and nothing else.
+
+  The creator is now laid out the way its own stylesheet always said it should be: the title and
+  stage rail are pinned to the top, the WSTECZ/DALEJ row to the bottom, and only the stage between
+  them scrolls. Nothing the player needs in order to leave a page can be scrolled away from them.
+
+### Save compatibility
+
+Unchanged. Nothing about this touches the save format, which stays at **v69**.
+
+### Under the hood
+
+- **1,505 EditMode tests and 76 PlayMode**, measured from `TestResults.xml` and `PlayResults.xml`
+  rather than remembered. Two of the PlayMode ones are new: a reproduction that renders the two
+  reported pages with the tour on them, and `TheCreatorStillFitsWhileTheTourIsUp`, which walks every
+  step of the tour that opens the creator and fails if the heading or the buttons are off the screen
+  or behind the strip. It was run against the old arrangement first and failed there, which is the
+  only thing that makes a guard worth having.
+- The reserve at the foot of the page was **not** the fault and has not been reduced. Shrinking it
+  to the bar was the obvious next move and the geometry refuses it: at 1920x1080 the bar runs from
+  x 269 to x 1651 and Emil's portrait sits at x 596, inside it and over the page, which is the
+  report the measured reserve was written for in the first place. Both readings are now in the
+  source beside the number.
+
 ---
 
 ## [0.6.0] - 2026-09-28

@@ -226,5 +226,213 @@ namespace ScalingLaws.Tests.PlayMode
 
             Debug.Log($"[Scaling Laws] {GameShell.ScreenNames.Count} tabs in {ProofFolder}.");
         }
+
+        /// <summary>
+        /// The creator with the tour running on it, on the two pages a tester reported cut off.
+        ///
+        /// **Reported twice and in almost the same words**: on PRZEGLĄD the section heading and its
+        /// buttons are not there, the right-hand side of MARKA goes missing, and leaving the page
+        /// and coming back repairs both. A fault that repairs itself on a rebuild is a fault about
+        /// the first layout pass, which no EditMode test can see and which no other frame in this
+        /// file catches, because every other creator shot here is taken with the tour finished.
+        ///
+        /// Two frames per page: the first paint, and the same page after going away and returning.
+        /// If they differ, the pair says what the difference is, which is why this exists.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheCreatorUnderTheTourIsNotCutOff()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            Assert.That(shell, Is.Not.Null, "The game scene has no shell on it.");
+
+            var document = Object.FindFirstObjectByType<UIDocument>();
+            Assert.That(document, Is.Not.Null);
+
+            // **The language is flipped after the shell was built, so a handful of labels in
+            // these frames read English on a Polish page.** That is this fixture, not the game:
+            // the creator's title and its BACK button are set once in `Build`, and the game picks
+            // its language before the shell exists and reloads the scene when it is changed. Do
+            // not go looking for a translation bug in `tour_*.png`.
+            Loc.Current = Language.Polish;
+
+            var settings = Object.Instantiate(document.panelSettings);
+            var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+            texture.Create();
+
+            settings.targetTexture = texture;
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(Width, Height);
+
+            document.panelSettings = settings;
+
+            foreach (var ringing in document.rootVisualElement.Query(className: "phone").ToList())
+            {
+                ringing.RemoveFromHierarchy();
+            }
+
+            yield return null;
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Touring;
+
+            foreach (var page in new[] { "create_brand", "create_review" })
+            {
+                var step = -1;
+
+                for (var index = 0; index < GuideScript.Steps.Count; index++)
+                {
+                    if (GuideScript.Steps[index].Id == page)
+                    {
+                        step = index;
+                        break;
+                    }
+                }
+
+                Assert.That(step, Is.GreaterThanOrEqualTo(0), "no tour step called " + page);
+
+                shell.Simulation.State.Guide.Step = step;
+
+                var name = page.Replace("create_", string.Empty);
+
+                // How a player gets here: the tour opens the screen and puts the creator on the
+                // page the step names. Nothing else is touched, so this is the first paint.
+                shell.OpenScreenByName("Create");
+
+                yield return Capture(null, settings, texture, $"tour_{name}_first.png");
+
+                // And this is "go away and come back", which the tester says repairs it.
+                shell.OpenScreenByName("Research");
+                yield return null;
+                shell.OpenScreenByName("Create");
+
+                yield return Capture(null, settings, texture, $"tour_{name}_again.png");
+            }
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Finished;
+            Loc.Current = Language.English;
+
+            texture.Release();
+            Object.DestroyImmediate(texture);
+            Object.DestroyImmediate(settings);
+        }
+
+        /// <summary>
+        /// The creator's heading and its two buttons stay on the screen while the tour is running.
+        ///
+        /// **Reported twice, on two different stages, in almost the same words**: on PRZEGLĄD the
+        /// section heading and its buttons are not there, the right-hand side of MARKA goes
+        /// missing, and leaving the page and coming back repairs it. Measured, the cause was one
+        /// thing: the whole creator sat inside the shell's page scroller, the tour reserves the
+        /// foot of the screen for its strip, and the tour then scrolls its own highlight into
+        /// view. On a page 838px tall in a 647px window that lands somewhere in the middle, which
+        /// cuts the heading off the top and the buttons off the bottom at the same time. Going
+        /// away and coming back put the offset back to zero, which restores the heading only.
+        ///
+        /// So this does not measure the reserve, which was never the fault. It measures the two
+        /// things that must never move: the heading is on the screen, the buttons are on the
+        /// screen, and the buttons are above the strip rather than behind it.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheCreatorStillFitsWhileTheTourIsUp()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            var document = Object.FindFirstObjectByType<UIDocument>();
+
+            Assert.That(shell, Is.Not.Null, "The game scene has no shell on it.");
+            Assert.That(document, Is.Not.Null);
+
+            var settings = Object.Instantiate(document.panelSettings);
+            var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+            texture.Create();
+
+            settings.targetTexture = texture;
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(Width, Height);
+
+            document.panelSettings = settings;
+
+            foreach (var ringing in document.rootVisualElement.Query(className: "phone").ToList())
+            {
+                ringing.RemoveFromHierarchy();
+            }
+
+            yield return null;
+
+            // Polish on purpose: it is what the tester was playing, and it is the longer of the
+            // two languages, so the strip at the foot of the screen is at its tallest here.
+            Loc.Current = Language.Polish;
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Touring;
+
+            var root = document.rootVisualElement;
+
+            // Every step of the tour that opens the creator, because the two the tester found were
+            // two different stages and nothing says a third is safe.
+            for (var at = 0; at < GuideScript.Steps.Count; at++)
+            {
+                var step = GuideScript.Steps[at];
+
+                if (step.CreatorStage < 0)
+                {
+                    continue;
+                }
+
+                shell.Simulation.State.Guide.Step = at;
+
+                shell.OpenScreenByName("Create");
+
+                // The tour rings its highlight on a delay and scrolls to it afterwards, which is
+                // the half of this that did the damage. Waiting past that is the whole point.
+                for (var pass = 0; pass < 40; pass++)
+                {
+                    yield return null;
+                }
+
+                var header = root.Q(className: "stage-header");
+                var footer = root.Q(className: "stage-footer");
+                var page = root.Q(className: "content-host");
+                var strip = root.Q(className: "guide");
+
+                Assert.That(header, Is.Not.Null, $"{step.Id}: no stage header on the creator.");
+                Assert.That(footer, Is.Not.Null, $"{step.Id}: no stage footer on the creator.");
+                Assert.That(page, Is.Not.Null, $"{step.Id}: no content host.");
+                Assert.That(strip, Is.Not.Null, $"{step.Id}: the tour strip is not up.");
+
+                var window = page.worldBound;
+                var head = header.worldBound;
+                var foot = footer.worldBound;
+                var bar = strip.worldBound;
+
+                Assert.That(head.yMin, Is.GreaterThanOrEqualTo(window.yMin - 0.5f),
+                    $"{step.Id}: the stage heading is above the top of the page, so it is cut off. "
+                    + $"heading {head}, page {window}");
+
+                Assert.That(foot.yMax, Is.LessThanOrEqualTo(window.yMax + 0.5f),
+                    $"{step.Id}: the WSTECZ/DALEJ row is below the bottom of the page, so it is cut "
+                    + $"off. footer {foot}, page {window}");
+
+                Assert.That(foot.yMax, Is.LessThanOrEqualTo(bar.yMin + 0.5f),
+                    $"{step.Id}: the WSTECZ/DALEJ row is behind the tour strip. footer {foot}, "
+                    + $"strip {bar}");
+            }
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Finished;
+            Loc.Current = Language.English;
+
+            texture.Release();
+            Object.DestroyImmediate(texture);
+            Object.DestroyImmediate(settings);
+        }
     }
 }
