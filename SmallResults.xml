@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 16:18:23Z" end-time="2026-09-28 16:19:25Z" duration="61,6485272">
+  <test-suite type="TestSuite" id="1100" name="Scaling Laws" fullname="Scaling Laws" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 16:18:23Z" end-time="2026-09-28 16:19:25Z" duration="61.648527" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1093" name="ScalingLaws.Tests.PlayMode.dll" fullname="C:/Users/kemat/Desktop/HCK_Labs/ScalingLaws/Library/ScriptAssemblies/ScalingLaws.Tests.PlayMode.dll" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 16:18:23Z" end-time="2026-09-28 16:19:25Z" duration="61.585543" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="1556" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1094" name="ScalingLaws" fullname="ScalingLaws" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 16:18:23Z" end-time="2026-09-28 16:19:25Z" duration="61.554455" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1095" name="Tests" fullname="ScalingLaws.Tests" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 16:18:23Z" end-time="2026-09-28 16:19:25Z" duration="61.502240" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1096" name="PlayMode" fullname="ScalingLaws.Tests.PlayMode" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 16:18:23Z" end-time="2026-09-28 16:19:25Z" duration="61.479747" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1077" name="TabProofTests" fullname="ScalingLaws.Tests.PlayMode.TabProofTests" classname="ScalingLaws.Tests.PlayMode.TabProofTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-28 16:18:23Z" end-time="2026-09-28 16:19:25Z" duration="61.464380" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1078" name="EveryTabDraws" fullname="ScalingLaws.Tests.PlayMode.TabProofTests.EveryTabDraws" methodname="EveryTabDraws" classname="ScalingLaws.Tests.PlayMode.TabProofTests" runstate="Runnable" seed="2143980871" result="Passed" start-time="2026-09-28 16:18:24Z" end-time="2026-09-28 16:19:10Z" duration="45.980430" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_frame"
+BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_body"
+[Scaling Laws] 22 tabs in C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\TabProof~.
+]]></output>
+              </test-case>
+              <test-case id="1080" name="TheCreatorStillFitsWhileTheTourIsUp" fullname="ScalingLaws.Tests.PlayMode.TabProofTests.TheCreatorStillFitsWhileTheTourIsUp" methodname="TheCreatorStillFitsWhileTheTourIsUp" classname="ScalingLaws.Tests.PlayMode.TabProofTests" runstate="Runnable" seed="1337502464" result="Passed" start-time="2026-09-28 16:19:10Z" end-time="2026-09-28 16:19:17Z" duration="7.172023" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_frame"
+BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_body"
+]]></output>
+              </test-case>
+              <test-case id="1079" name="TheCreatorUnderTheTourIsNotCutOff" fullname="ScalingLaws.Tests.PlayMode.TabProofTests.TheCreatorUnderTheTourIsNotCutOff" methodname="TheCreatorUnderTheTourIsNotCutOff" classname="ScalingLaws.Tests.PlayMode.TabProofTests" runstate="Runnable" seed="432902221" result="Passed" start-time="2026-09-28 16:19:17Z" end-time="2026-09-28 16:19:21Z" duration="3.795736" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_frame"
+BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_body"
+]]></output>
+              </test-case>
+              <test-case id="1081" name="TheCreatorUnderTheTourOnASmallerWindow" fullname="ScalingLaws.Tests.PlayMode.TabProofTests.TheCreatorUnderTheTourOnASmallerWindow" methodname="TheCreatorUnderTheTourOnASmallerWindow" classname="ScalingLaws.Tests.PlayMode.TabProofTests" runstate="Runnable" seed="1993798186" result="Passed" start-time="2026-09-28 16:19:21Z" end-time="2026-09-28 16:19:25Z" duration="4.427020" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_frame"
+BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_body"
+SMALL 1600x900 create_review: page=(x:0.00, y:51.60, width:1920.00, height:943.20) header=(x:26.40, y:78.00, width:1867.20, height:42.00) footer=(x:26.40, y:621.60, width:1867.20, height:51.60)
+SMALL 1600x900 create_data: page=(x:0.00, y:51.60, width:1920.00, height:943.20) header=(x:26.40, y:78.00, width:1867.20, height:42.00) footer=(x:26.40, y:621.60, width:1867.20, height:51.60)
+SMALL 1366x768 create_review: page=(x:0.00, y:52.02, width:1920.47, height:943.36) header=(x:25.31, y:77.32, width:1869.86, height:43.58) footer=(x:25.31, y:622.82, width:1869.86, height:52.02)
+SMALL 1366x768 create_data: page=(x:0.00, y:52.02, width:1920.47, height:943.36) header=(x:25.31, y:77.32, width:1869.86, height:43.58) footer=(x:25.31, y:622.82, width:1869.86, height:52.02)
+Saving results to: C:/Users/kemat/AppData/LocalLow/HCK Labs/Scaling Laws\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

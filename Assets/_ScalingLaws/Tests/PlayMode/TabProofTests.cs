@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using ScalingLaws.Core;
@@ -42,10 +43,14 @@ namespace ScalingLaws.Tests.PlayMode
 
             yield return new WaitForSeconds(0.7f);
 
-            var readable = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+            // **The texture's own size, never the constant.** Every frame here used to be
+            // 1920x1080 so the two could not disagree, and the first proof taken at another size
+            // read past the end of the buffer and failed with a d3d12 message about bounds rather
+            // than anything to do with the page.
+            var readable = new Texture2D(texture.width, texture.height, TextureFormat.RGB24, false);
             var previous = RenderTexture.active;
             RenderTexture.active = texture;
-            readable.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
+            readable.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
             readable.Apply();
             RenderTexture.active = previous;
 
@@ -433,6 +438,110 @@ namespace ScalingLaws.Tests.PlayMode
             texture.Release();
             Object.DestroyImmediate(texture);
             Object.DestroyImmediate(settings);
+        }
+
+        /// <summary>
+        /// The creator under the tour, in a window smaller than the one every other proof uses.
+        ///
+        /// **Every "cut off at the bottom" report in this project has come from a laptop**, and the
+        /// panel is `ScaleWithScreenSize` against a 1920x1080 reference with `match 0.5`, so at
+        /// exactly 1920x1080 the scale is one and a proof render and the laptop see the same page.
+        /// They plainly do not, which means the game's window is not 1920x1080 on that machine:
+        /// windowed mode, a taskbar, or a display scale. Rather than guess which, this renders the
+        /// page at sizes a laptop actually gives and looks at what breaks.
+        ///
+        /// It is a proof rather than an assertion on purpose. What is wrong at a small size is a
+        /// layout judgement, and the frames are the evidence.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheCreatorUnderTheTourOnASmallerWindow()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            var document = Object.FindFirstObjectByType<UIDocument>();
+
+            Assert.That(shell, Is.Not.Null);
+            Assert.That(document, Is.Not.Null);
+
+            Loc.Current = Language.Polish;
+
+            foreach (var ringing in document.rootVisualElement.Query(className: "phone").ToList())
+            {
+                ringing.RemoveFromHierarchy();
+            }
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Touring;
+
+            // 1366x768 is the commonest laptop panel still shipping; 1600x900 is a 1920 screen
+            // running windowed with a taskbar. Both are 16:9, so nothing here is about aspect.
+            // **Nothing is destroyed until the loop is over.** The document still points at the
+            // settings it was last given, so freeing one at the end of an iteration leaves the
+            // next `Instantiate(document.panelSettings)` reading a destroyed object, and the run
+            // dies on a missing reference rather than on anything about the page.
+            var spent = new List<Object>();
+
+            foreach (var size in new[] { new Vector2Int(1600, 900), new Vector2Int(1366, 768) })
+            {
+                var settings = Object.Instantiate(document.panelSettings);
+                var texture = new RenderTexture(size.x, size.y, 24, RenderTextureFormat.ARGB32);
+                texture.Create();
+
+                settings.targetTexture = texture;
+                settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+                settings.referenceResolution = new Vector2Int(Width, Height);
+
+                document.panelSettings = settings;
+
+                yield return null;
+
+                foreach (var step in new[] { "create_review", "create_data" })
+                {
+                    for (var index = 0; index < GuideScript.Steps.Count; index++)
+                    {
+                        if (GuideScript.Steps[index].Id != step)
+                        {
+                            continue;
+                        }
+
+                        shell.Simulation.State.Guide.Step = index;
+                        break;
+                    }
+
+                    shell.OpenScreenByName("Create");
+
+                    for (var pass = 0; pass < 30; pass++)
+                    {
+                        yield return null;
+                    }
+
+                    var name = step.Replace("create_", string.Empty);
+                    yield return Capture(null, settings, texture, $"small_{size.y}_{name}.png");
+
+                    var footer = document.rootVisualElement.Q(className: "stage-footer");
+                    var header = document.rootVisualElement.Q(className: "stage-header");
+                    var page = document.rootVisualElement.Q(className: "content-host");
+
+                    Debug.Log($"SMALL {size.x}x{size.y} {step}: "
+                        + $"page={page?.worldBound} header={header?.worldBound} "
+                        + $"footer={footer?.worldBound}");
+                }
+
+                spent.Add(texture);
+                spent.Add(settings);
+            }
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Finished;
+            Loc.Current = Language.English;
+
+            foreach (var thing in spent)
+            {
+                Object.DestroyImmediate(thing);
+            }
         }
     }
 }
