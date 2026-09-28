@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="35" result="Passed" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:52:34Z" duration="184,5097305">
+  <test-suite type="TestSuite" id="1100" name="Scaling Laws" fullname="Scaling Laws" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:52:34Z" duration="184.509731" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1093" name="ScalingLaws.Tests.PlayMode.dll" fullname="C:/Users/kemat/Desktop/HCK_Labs/ScalingLaws/Library/ScriptAssemblies/ScalingLaws.Tests.PlayMode.dll" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:52:34Z" duration="184.472036" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="21696" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1094" name="ScalingLaws" fullname="ScalingLaws" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:52:34Z" duration="184.460861" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1095" name="Tests" fullname="ScalingLaws.Tests" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:52:34Z" duration="184.453188" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1096" name="PlayMode" fullname="ScalingLaws.Tests.PlayMode" runstate="Runnable" testcasecount="77" result="Passed" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:52:34Z" duration="184.450608" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1037" name="ScreenProofTests" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" testcasecount="35" result="Passed" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:52:34Z" duration="184.444751" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1040" name="TheAchievementsPageDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheAchievementsPageDraws" methodname="TheAchievementsPageDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="767844000" result="Passed" start-time="2026-09-28 18:49:30Z" end-time="2026-09-28 18:49:32Z" duration="1.741826" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\achievements.png
+]]></output>
+              </test-case>
+              <test-case id="1066" name="TheAddressBookDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheAddressBookDraws" methodname="TheAddressBookDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="624660562" result="Passed" start-time="2026-09-28 18:49:32Z" end-time="2026-09-28 18:49:33Z" duration="1.148708" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\address_book.png
+]]></output>
+              </test-case>
+              <test-case id="1057" name="TheCabinetChooserDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheCabinetChooserDraws" methodname="TheCabinetChooserDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="548391549" result="Passed" start-time="2026-09-28 18:49:33Z" end-time="2026-09-28 18:49:34Z" duration="1.502420" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\cabinets.png
+]]></output>
+              </test-case>
+              <test-case id="1044" name="TheDataStageDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheDataStageDraws" methodname="TheDataStageDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="192867063" result="Passed" start-time="2026-09-28 18:49:34Z" end-time="2026-09-28 18:49:36Z" duration="1.216207" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\create_data.png
+]]></output>
+              </test-case>
+              <test-case id="1053" name="TheInvestingScreenDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheInvestingScreenDraws" methodname="TheInvestingScreenDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1604366857" result="Passed" start-time="2026-09-28 18:49:36Z" end-time="2026-09-28 18:49:37Z" duration="1.090726" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\investing.png
+]]></output>
+              </test-case>
+              <test-case id="1049" name="TheLicensingRowsDrawWhenEveryFamilyIsPublished" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheLicensingRowsDrawWhenEveryFamilyIsPublished" methodname="TheLicensingRowsDrawWhenEveryFamilyIsPublished" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="661235426" result="Passed" start-time="2026-09-28 18:49:37Z" end-time="2026-09-28 18:49:38Z" duration="1.069972" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\create_licensing.png
+]]></output>
+              </test-case>
+              <test-case id="1065" name="TheMessengerDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheMessengerDraws" methodname="TheMessengerDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="2078848836" result="Passed" start-time="2026-09-28 18:49:38Z" end-time="2026-09-28 18:49:39Z" duration="1.316655" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\messenger.png
+]]></output>
+              </test-case>
+              <test-case id="1070" name="TheOfferBookDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheOfferBookDraws" methodname="TheOfferBookDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1267564767" result="Passed" start-time="2026-09-28 18:49:39Z" end-time="2026-09-28 18:49:40Z" duration="1.018090" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\offer_book.png
+]]></output>
+              </test-case>
+              <test-case id="1063" name="TheOfficeChooserDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheOfficeChooserDraws" methodname="TheOfficeChooserDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1520357605" result="Passed" start-time="2026-09-28 18:49:40Z" end-time="2026-09-28 18:49:43Z" duration="3.090695" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\offices.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\offices_locked.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\offices_deal.png
+]]></output>
+              </test-case>
+              <test-case id="1055" name="TheOpenedCabinetDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheOpenedCabinetDraws" methodname="TheOpenedCabinetDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="568817604" result="Passed" start-time="2026-09-28 18:49:43Z" end-time="2026-09-28 18:49:45Z" duration="2.140497" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\cabinet.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\cabinet_sell.png
+]]></output>
+              </test-case>
+              <test-case id="1045" name="TheOrderWindowDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheOrderWindowDraws" methodname="TheOrderWindowDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="171832818" result="Passed" start-time="2026-09-28 18:49:45Z" end-time="2026-09-28 18:49:46Z" duration="1.016451" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\room_order.png
+]]></output>
+              </test-case>
+              <test-case id="1056" name="TheOverheatingRoomDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheOverheatingRoomDraws" methodname="TheOverheatingRoomDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1448506808" result="Passed" start-time="2026-09-28 18:49:46Z" end-time="2026-09-28 18:49:52Z" duration="6.004606" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\cabinet_hot.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\room_hot.png
+]]></output>
+              </test-case>
+              <test-case id="1059" name="ThePauseMenuDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.ThePauseMenuDraws" methodname="ThePauseMenuDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1227582557" result="Passed" start-time="2026-09-28 18:49:52Z" end-time="2026-09-28 18:49:57Z" duration="4.761414" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\pause.png
+]]></output>
+              </test-case>
+              <test-case id="1062" name="ThePersonCardDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.ThePersonCardDraws" methodname="ThePersonCardDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1098508053" result="Passed" start-time="2026-09-28 18:49:57Z" end-time="2026-09-28 18:50:10Z" duration="12.952496" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\person.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\person_schedule.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\person_role.png
+]]></output>
+              </test-case>
+              <test-case id="1054" name="ThePropertyTabDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.ThePropertyTabDraws" methodname="ThePropertyTabDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="666824843" result="Passed" start-time="2026-09-28 18:50:10Z" end-time="2026-09-28 18:50:19Z" duration="8.996150" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\estate_empty.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\estate_building.png
+]]></output>
+              </test-case>
+              <test-case id="1046" name="TheRegionPageShowsTheMouseLegend" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheRegionPageShowsTheMouseLegend" methodname="TheRegionPageShowsTheMouseLegend" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1622650597" result="Passed" start-time="2026-09-28 18:50:19Z" end-time="2026-09-28 18:50:24Z" duration="4.904130" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\creator_region.png
+]]></output>
+              </test-case>
+              <test-case id="1064" name="TheReleasePlannerDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheReleasePlannerDraws" methodname="TheReleasePlannerDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1278678466" result="Passed" start-time="2026-09-28 18:50:24Z" end-time="2026-09-28 18:50:29Z" duration="4.964771" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\release_plan.png
+]]></output>
+              </test-case>
+              <test-case id="1039" name="TheRenewalCardDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheRenewalCardDraws" methodname="TheRenewalCardDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1807977196" result="Passed" start-time="2026-09-28 18:50:29Z" end-time="2026-09-28 18:50:34Z" duration="4.687314" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\renewal_pl.png
+]]></output>
+              </test-case>
+              <test-case id="1061" name="TheReportCardDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheReportCardDraws" methodname="TheReportCardDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="118045030" result="Passed" start-time="2026-09-28 18:50:34Z" end-time="2026-09-28 18:50:38Z" duration="4.644979" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\report.png
+]]></output>
+              </test-case>
+              <test-case id="1048" name="TheReviewStageDrawsTheComparison" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheReviewStageDrawsTheComparison" methodname="TheReviewStageDrawsTheComparison" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="339870752" result="Passed" start-time="2026-09-28 18:50:38Z" end-time="2026-09-28 18:50:47Z" duration="8.862391" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\create_review.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\create_review_versus.png
+]]></output>
+              </test-case>
+              <test-case id="1052" name="TheRivalCardDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheRivalCardDraws" methodname="TheRivalCardDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1084189264" result="Passed" start-time="2026-09-28 18:50:47Z" end-time="2026-09-28 18:51:08Z" duration="20.835683" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\rival_card.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\rival_people.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\rival_actions.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\rival_together_en.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\rival_together_pl.png
+]]></output>
+              </test-case>
+              <test-case id="1060" name="TheSaveSlotsDraw" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheSaveSlotsDraw" methodname="TheSaveSlotsDraw" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="291880267" result="Passed" start-time="2026-09-28 18:51:08Z" end-time="2026-09-28 18:51:13Z" duration="4.774163" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\slots.png
+]]></output>
+              </test-case>
+              <test-case id="1047" name="TheScaleStageDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheScaleStageDraws" methodname="TheScaleStageDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="188854834" result="Passed" start-time="2026-09-28 18:51:13Z" end-time="2026-09-28 18:51:18Z" duration="4.936285" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\create_scale.png
+]]></output>
+              </test-case>
+              <test-case id="1038" name="TheSettingsSheetListsTheTesters" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheSettingsSheetListsTheTesters" methodname="TheSettingsSheetListsTheTesters" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="355532773" result="Passed" start-time="2026-09-28 18:51:18Z" end-time="2026-09-28 18:51:34Z" duration="16.739740" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\menu_settings_pl.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\menu_testers_pl.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\menu_settings_en.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\menu_credits_en.png
+]]></output>
+              </test-case>
+              <test-case id="1058" name="TheSiliconShopDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheSiliconShopDraws" methodname="TheSiliconShopDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="57993099" result="Passed" start-time="2026-09-28 18:51:34Z" end-time="2026-09-28 18:51:39Z" duration="4.727460" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\silicon_shop.png
+]]></output>
+              </test-case>
+              <test-case id="1072" name="TheStateBoardDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheStateBoardDraws" methodname="TheStateBoardDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="802223327" result="Passed" start-time="2026-09-28 18:51:39Z" end-time="2026-09-28 18:51:44Z" duration="4.716230" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\state_board.png
+]]></output>
+              </test-case>
+              <test-case id="1041" name="TheSupportDeskDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheSupportDeskDraws" methodname="TheSupportDeskDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="372471030" result="Passed" start-time="2026-09-28 18:51:44Z" end-time="2026-09-28 18:51:53Z" duration="8.690231" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\support_desk_en.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\support_desk_pl.png
+]]></output>
+              </test-case>
+              <test-case id="1043" name="TheSupporterCardDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheSupporterCardDraws" methodname="TheSupporterCardDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1520758164" result="Passed" start-time="2026-09-28 18:51:53Z" end-time="2026-09-28 18:52:01Z" duration="8.762465" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\support_card_en.png
+No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\support_card_pl.png
+]]></output>
+              </test-case>
+              <test-case id="1042" name="TheSupportLaddersDrawOnAPersonCard" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheSupportLaddersDrawOnAPersonCard" methodname="TheSupportLaddersDrawOnAPersonCard" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="874925307" result="Passed" start-time="2026-09-28 18:52:01Z" end-time="2026-09-28 18:52:06Z" duration="4.643225" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\person_support.png
+]]></output>
+              </test-case>
+              <test-case id="1068" name="TheTourAsksTheArchitectureQuestion" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheTourAsksTheArchitectureQuestion" methodname="TheTourAsksTheArchitectureQuestion" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1968513556" result="Passed" start-time="2026-09-28 18:52:06Z" end-time="2026-09-28 18:52:11Z" duration="4.788835" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\guide_offer.png
+]]></output>
+              </test-case>
+              <test-case id="1069" name="TheTourSaysWhenItIsWaitingOnTheClock" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheTourSaysWhenItIsWaitingOnTheClock" methodname="TheTourSaysWhenItIsWaitingOnTheClock" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1596579816" result="Passed" start-time="2026-09-28 18:52:11Z" end-time="2026-09-28 18:52:15Z" duration="4.683657" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\guide_waiting.png
+]]></output>
+              </test-case>
+              <test-case id="1050" name="TheUpgradeScreenDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheUpgradeScreenDraws" methodname="TheUpgradeScreenDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="128888868" result="Passed" start-time="2026-09-28 18:52:15Z" end-time="2026-09-28 18:52:20Z" duration="4.851074" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\upgrade.png
+]]></output>
+              </test-case>
+              <test-case id="1051" name="TheUpgradeScreenDrawsWithABasketInIt" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheUpgradeScreenDrawsWithABasketInIt" methodname="TheUpgradeScreenDrawsWithABasketInIt" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1856713483" result="Passed" start-time="2026-09-28 18:52:20Z" end-time="2026-09-28 18:52:25Z" duration="4.714521" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\upgrade_picked.png
+]]></output>
+              </test-case>
+              <test-case id="1067" name="TheWorldMapDraws" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheWorldMapDraws" methodname="TheWorldMapDraws" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="1386579275" result="Passed" start-time="2026-09-28 18:52:25Z" end-time="2026-09-28 18:52:30Z" duration="4.689490" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\world_map.png
+]]></output>
+              </test-case>
+              <test-case id="1071" name="TheWorldMapDrawsBeforeAnythingIsPicked" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheWorldMapDrawsBeforeAnythingIsPicked" methodname="TheWorldMapDrawsBeforeAnythingIsPicked" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="973219026" result="Passed" start-time="2026-09-28 18:52:30Z" end-time="2026-09-28 18:52:34Z" duration="4.733434" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\world_map_empty.png
+Saving results to: C:/Users/kemat/AppData/LocalLow/HCK Labs/Scaling Laws\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

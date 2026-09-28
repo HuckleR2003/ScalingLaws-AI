@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4,6335673">
+  <test-suite type="TestSuite" id="1102" name="Scaling Laws" fullname="Scaling Laws" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4.633567" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1095" name="ScalingLaws.Tests.PlayMode.dll" fullname="C:/Users/kemat/Desktop/HCK_Labs/ScalingLaws/Library/ScriptAssemblies/ScalingLaws.Tests.PlayMode.dll" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4.607911" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="17288" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1096" name="ScalingLaws" fullname="ScalingLaws" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4.604522" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1097" name="Tests" fullname="ScalingLaws.Tests" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4.601530" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1098" name="PlayMode" fullname="ScalingLaws.Tests.PlayMode" runstate="Runnable" testcasecount="79" result="Passed" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4.593465" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1078" name="TabProofTests" fullname="ScalingLaws.Tests.PlayMode.TabProofTests" classname="ScalingLaws.Tests.PlayMode.TabProofTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4.585870" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1083" name="TheLastPageKeepsItsButtonWhicheverTileIsPicked" fullname="ScalingLaws.Tests.PlayMode.TabProofTests.TheLastPageKeepsItsButtonWhicheverTileIsPicked" methodname="TheLastPageKeepsItsButtonWhicheverTileIsPicked" classname="ScalingLaws.Tests.PlayMode.TabProofTests" runstate="Runnable" seed="1335845988" result="Passed" start-time="2026-09-28 18:57:54Z" end-time="2026-09-28 18:57:58Z" duration="4.570177" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_frame"
+BoxCollider does not support negative scale or size.
+The effective box size has been forced positive and is likely to give unexpected collision geometry.
+If you absolutely need to use negative scaling you can use the convex MeshCollider. Scene hierarchy path "(Prb)SeparatorDoor/separatorDoor/separatorDoor_body"
+Saving results to: C:/Users/kemat/AppData/LocalLow/HCK Labs/Scaling Laws\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

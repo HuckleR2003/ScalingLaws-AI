@@ -113,28 +113,42 @@ namespace ScalingLaws.UI
                 card.Add(BuildAlarm(hot, heatNow, roomNow));
             }
 
-            // **Two columns: the parts on the left, the cabinet on the right.**
+            // **Three columns: the store, the cabinet, and the desk beside it.**
             //
-            // Reported twice, the second time as still broken: you can buy silicon and there is no
-            // way to put it anywhere. The bay is the answer, and it is on the left because that is
-            // where the author asked for it and because the thing being filled should be the thing
-            // in the middle of the screen.
+            // It was two, with the cabinet column carrying the drawing *and* the figures *and* the
+            // overclock *and* the buttons stacked under each other. That column is a 430px drawing
+            // plus about 300px of text and controls, on top of a head, a state band and sometimes
+            // an alarm, and the card has no scroller: measured, it ran past the bottom of a
+            // 943px page and cut DODAJ WENTYLATOR in half. A tester reported it twice as fans
+            // being impossible to add, which is exactly what it looks like from the chair.
+            //
+            // Splitting the column takes the card's height from `max(drawing, desk)` rather than
+            // from their sum, which is the only repair that does not shrink something a player
+            // has to read. The author asked for this shape by name.
             var body = new VisualElement();
             body.AddToClassList("rackmodal__body");
 
-            // **The equipment window on the left, the cabinet on the right**, as in the author's
-            // sketch of 2026-09-18. It was on the right for one build; the sketch settled it.
+            // **The equipment window on the left**, as in the author's sketch of 2026-09-18. It was
+            // on the right for one build; the sketch settled it.
             body.Add(BuildStore(simulation, column, row));
 
+            // The middle is the cabinet and nothing else, and it stays the drop target: a card
+            // dragged out of the store is dropped on the thing it goes into, never on the figures
+            // about it.
             var cabinet = new VisualElement();
             cabinet.AddToClassList("rackmodal__cabinet");
             cabinetColumn = cabinet;
             cabinet.Add(BuildSlots(simulation, square, definition, column, row));
-            cabinet.Add(BuildStats(simulation, square, definition));
-            cabinet.Add(BuildOverclock(simulation, column, row, roomNow));
-            cabinet.Add(BuildActions(simulation, column, row, square));
-
             body.Add(cabinet);
+
+            // Everything that is a reading or a decision, in its own column on the right.
+            var desk = new VisualElement();
+            desk.AddToClassList("rackmodal__desk");
+            desk.Add(BuildStats(simulation, square, definition));
+            desk.Add(BuildOverclock(simulation, column, row, roomNow));
+            desk.Add(BuildActions(simulation, column, row, square));
+
+            body.Add(desk);
             card.Add(body);
 
             if (selling.HasValue && HardwareCatalog.TryGet(selling.Value, out var forSale))

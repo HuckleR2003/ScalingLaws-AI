@@ -905,6 +905,103 @@ namespace ScalingLaws.Tests.PlayMode
         }
 
         /// <summary>
+        /// The opened cabinet fits the window it is drawn in, with everything on it reachable.
+        ///
+        /// **Reported twice, both times as fans being impossible to add, and both times that was
+        /// exactly what it looked like.** The card carries a head, a state band, sometimes an
+        /// alarm, and a column holding a 430px drawing of the cabinet stacked on the figures, the
+        /// overclock and the buttons. There is no scroller on a modal, so the sum ran past the
+        /// bottom of the window and DODAJ WENTYLATOR was cut in half. A control that is half off
+        /// the screen is a control a player cannot press, and nothing failed.
+        ///
+        /// The repair was three columns instead of two, so the height is the taller of the drawing
+        /// and the desk rather than their sum. This measures the card against the window, which is
+        /// the fact that was wrong, rather than the arrangement, which is a design decision and
+        /// may change again.
+        ///
+        /// **The hot cabinet is the one measured on purpose**: it is the tallest the card ever
+        /// gets, because the overheating alarm is only on it.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOpenedCabinetFitsTheWindow()
+        {
+            var simulation = Campaign();
+            simulation.State.CashUsd = 4_000_000_000L;
+            simulation.TryOpenServerRoom(true, out _);
+
+            simulation.State.Pool.AddAsset(new HardwareAsset(
+                HardwareGenerationId.AcceleratorA100, ComputeTier.ColocatedServers, 9,
+                simulation.State.Date, 10_000, 0));
+
+            simulation.Advance(1);
+
+            for (var index = 0; index < 5; index++)
+            {
+                simulation.TryFitCard(0, 0, HardwareGenerationId.AcceleratorA100, out _);
+            }
+
+            var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+            texture.Create();
+
+            var settings = ScriptableObject.CreateInstance<PanelSettings>();
+            settings.themeStyleSheet =
+                Resources.Load<ThemeStyleSheet>("UnityThemes/UnityDefaultRuntimeTheme")
+                ?? Resources.Load<ThemeStyleSheet>("unity default runtime theme");
+
+            settings.targetTexture = texture;
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(Width, Height);
+
+            var host = new GameObject("CabinetFits");
+            var document = host.AddComponent<UIDocument>();
+            document.panelSettings = settings;
+
+            var root = document.rootVisualElement;
+            UiBootstrap.Prepare(root, null);
+            root.style.flexGrow = 1;
+
+            var panel = new RackEditorPanel(() => simulation, () => { });
+            root.Add(panel.Build(0, 0));
+
+            for (var pass = 0; pass < 20; pass++)
+            {
+                yield return null;
+            }
+
+            var card = root.Q(className: "rackmodal__card");
+            Assert.That(card, Is.Not.Null, "the cabinet card is not in the tree");
+
+            var window = root.worldBound;
+            var box = card.worldBound;
+
+            Assert.That(box.yMin, Is.GreaterThanOrEqualTo(window.yMin - 0.5f),
+                $"the cabinet card starts above the window. card {box}, window {window}");
+
+            Assert.That(box.yMax, Is.LessThanOrEqualTo(window.yMax + 0.5f),
+                $"the cabinet card runs past the bottom of the window, so whatever is at its foot "
+                + $"cannot be pressed. card {box}, window {window}");
+
+            Assert.That(box.xMax, Is.LessThanOrEqualTo(window.xMax + 0.5f),
+                $"the cabinet card runs past the right of the window. card {box}, window {window}");
+
+            // And the button the reports were about, by name rather than by position.
+            var fan = root.Q<Button>(className: "button--primary");
+            Assert.That(fan, Is.Not.Null, "the add-a-fan button is not on the card");
+
+            var button = fan.worldBound;
+
+            Assert.That(button.yMax, Is.LessThanOrEqualTo(window.yMax + 0.5f),
+                $"the add-a-fan button is off the bottom of the window. button {button}, "
+                + $"window {window}");
+
+            Object.DestroyImmediate(host);
+            Object.DestroyImmediate(settings);
+
+            texture.Release();
+            Object.DestroyImmediate(texture);
+        }
+
+        /// <summary>
         /// The room in build mode: the floor on the left, the shop and the store room on the right.
         ///
         /// Until the four cabinets could all be bought, the room placed an enclosed rack and only

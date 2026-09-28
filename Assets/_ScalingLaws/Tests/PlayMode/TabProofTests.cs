@@ -543,5 +543,127 @@ namespace ScalingLaws.Tests.PlayMode
                 Object.DestroyImmediate(thing);
             }
         }
+
+        /// <summary>
+        /// The last page of the creator, with the tour up and the commercial option chosen.
+        ///
+        /// **Reported as SKOMERCJALIZUJ cutting ZACZNIJ TRENING off completely.** Picking that tile
+        /// opens the pricing and free-tier panels under it, so the page grows by a few hundred
+        /// pixels at the moment the player is about to commit, and the button that commits is at
+        /// the foot of it. The same family as the review page, on the one page where being unable
+        /// to reach the button means the whole run cannot be started.
+        ///
+        /// Both states are rendered, because what matters is that choosing the taller one does not
+        /// take the button away.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheLastPageKeepsItsButtonWhicheverTileIsPicked()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            var document = Object.FindFirstObjectByType<UIDocument>();
+
+            Assert.That(shell, Is.Not.Null);
+            Assert.That(document, Is.Not.Null);
+
+            Loc.Current = Language.Polish;
+
+            var settings = Object.Instantiate(document.panelSettings);
+            var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+            texture.Create();
+
+            settings.targetTexture = texture;
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(Width, Height);
+            document.panelSettings = settings;
+
+            foreach (var ringing in document.rootVisualElement.Query(className: "phone").ToList())
+            {
+                ringing.RemoveFromHierarchy();
+            }
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Touring;
+
+            for (var index = 0; index < GuideScript.Steps.Count; index++)
+            {
+                if (GuideScript.Steps[index].Id != "create_review")
+                {
+                    continue;
+                }
+
+                shell.Simulation.State.Guide.Step = index;
+                break;
+            }
+
+            shell.OpenScreenByName("Create");
+
+            for (var pass = 0; pass < 20; pass++)
+            {
+                yield return null;
+            }
+
+            // The last page, which is where the report is. Driven through the property rather than
+            // by pressing DALEJ seven times: an EditMode-style click is never dispatched and this
+            // seam exists for exactly that.
+            shell.Creator.Stage = 7;
+
+            for (var pass = 0; pass < 20; pass++)
+            {
+                yield return null;
+            }
+
+            var root = document.rootVisualElement;
+
+            yield return Capture(null, settings, texture, "deploy_local.png");
+            CheckTheButtonIsReachable(root, "keep local");
+
+            // **The tile a player presses, and the one the report is about.** Choosing it opens the
+            // pricing and free-tier panels, which is the growth that pushed the button off. Driven
+            // through the seam: the tile is a Button whose words are in a child label, so it cannot
+            // be found by its own text.
+            shell.Creator.Commercialise = true;
+
+            for (var pass = 0; pass < 20; pass++)
+            {
+                yield return null;
+            }
+
+            yield return Capture(null, settings, texture, "deploy_sell.png");
+            CheckTheButtonIsReachable(root, "commercialise");
+
+            shell.Simulation.State.Guide.Stage = GuideStage.Finished;
+            Loc.Current = Language.English;
+
+            texture.Release();
+            Object.DestroyImmediate(texture);
+            Object.DestroyImmediate(settings);
+        }
+
+        /// <summary>The footer is on the screen and the strip is not sitting on it.</summary>
+        private static void CheckTheButtonIsReachable(VisualElement root, string what)
+        {
+            var footer = root.Q(className: "stage-footer");
+            var page = root.Q(className: "content-host");
+            var strip = root.Q(className: "guide");
+
+            Assert.That(footer, Is.Not.Null, $"{what}: no stage footer");
+            Assert.That(page, Is.Not.Null, $"{what}: no content host");
+            Assert.That(strip, Is.Not.Null, $"{what}: the tour strip is not up");
+
+            Assert.That(footer.worldBound.yMax,
+                Is.LessThanOrEqualTo(page.worldBound.yMax + 0.5f),
+                $"{what}: the button row is below the bottom of the page. "
+                + $"footer {footer.worldBound}, page {page.worldBound}");
+
+            Assert.That(footer.worldBound.yMax,
+                Is.LessThanOrEqualTo(strip.worldBound.yMin + 0.5f),
+                $"{what}: the button row is behind the tour strip. "
+                + $"footer {footer.worldBound}, strip {strip.worldBound}");
+        }
     }
 }

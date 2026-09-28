@@ -14799,11 +14799,19 @@
     background-color: rgba(4, 6, 11, 0.78);
 }
 
-/* **Wide enough for two columns.** It was 560px, which is the width of one cabinet, and the
-   parts bay on the left takes 334 of that: the uplink strip is a fixed 384px and it overhung the
-   left column, drawing the fabric ports over the list of what the company owns. */
+/* **Wide enough for three columns**, which is what stops it being too tall.
+
+   It was 560px, which is the width of one cabinet, and the parts bay on the left takes 334 of
+   that: the uplink strip is a fixed 384px and it overhung the left column, drawing the fabric
+   ports over the list of what the company owns. Then 920 for two columns.
+
+   Now 1180, because the figures and the buttons moved out of the cabinet column and into one of
+   their own. The card has no scroller and a 430px drawing stacked on 300px of controls ran past
+   the bottom of the window: the fan button was cut in half and reported twice as fans being
+   impossible to add. Three columns cost width, which there is plenty of at a 1920 reference, and
+   save height, which there is none of. */
 .rackmodal__card {
-    width: 920px;
+    width: 1180px;
     padding: 20px 22px 18px 22px;
     border-radius: 10px;
     background-color: rgb(17, 21, 30);
@@ -20786,10 +20794,19 @@
     min-height: 0;
 }
 
+/* The middle. It carries the uplink strip, which is a stated 384px because USS has no
+   aspect-ratio, so this may never be allowed below that width. */
 .rackmodal__cabinet {
     flex-grow: 1;
-    flex-shrink: 1;
-    min-width: 0;
+    flex-shrink: 0;
+    min-width: 400px;
+}
+
+/* The readings and the decisions, beside the cabinet rather than under it. */
+.rackmodal__desk {
+    width: 340px;
+    flex-shrink: 0;
+    margin-left: 18px;
 }
 
 .rackbay {

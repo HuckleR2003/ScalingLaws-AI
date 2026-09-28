@@ -342,6 +342,30 @@ namespace ScalingLaws.UI
         public ScrollView StageScroller => stageScroll;
 
         /// <summary>
+        /// Whether the finished model is going on sale, which is the choice the last page is about.
+        ///
+        /// **A seam rather than a click**, the same one `ManagementScreen.ShowDesk` and
+        /// `PartsShop.Order` exist for: the tile is a `Button` whose words live in a child label,
+        /// so a test cannot find it by its own text, and a click sent to it in a fixture with no
+        /// panel is never dispatched at all. Choosing it opens the pricing and free-tier panels,
+        /// which is the growth that once pushed START TRAINING off the bottom of the window.
+        /// </summary>
+        public bool Commercialise
+        {
+            get => commercialise;
+            set
+            {
+                if (commercialise == value)
+                {
+                    return;
+                }
+
+                commercialise = value;
+                ShowStage();
+            }
+        }
+
+        /// <summary>
         /// Keeps this much room clear below the page for the tour strip floating over it.
         ///
         /// **A margin on the page rather than padding inside a scroller**, because this page is no

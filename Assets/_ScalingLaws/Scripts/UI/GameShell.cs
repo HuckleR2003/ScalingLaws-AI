@@ -52,6 +52,12 @@ namespace ScalingLaws.UI
         public CompanySimulation Simulation => simulation;
 
         /// <summary>
+        /// The model creator, for tooling. Same reason <see cref="Simulation"/> is here: until it
+        /// existed there was no way to put the creator on a page without clicking to it.
+        /// </summary>
+        public ModelCreatorPanel Creator => creator;
+
+        /// <summary>
         /// The premises page, for tooling.
         ///
         /// **Two testers reported that clicking a bigger office does nothing**, and the chooser
