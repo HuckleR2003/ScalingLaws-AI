@@ -38,6 +38,24 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+---
+
+## [0.6.0] - 2026-09-28
+
+**Other laboratories become somebody you work with rather than a row on a table.** Relations could
+only ever fall before this: seven things moved them and every one was something you did to somebody,
+so a player who attacked nobody sat at neutral with fourteen companies for fourteen years and the
+whole system was invisible. Now there are four things you can put to a lab, an alliance that is
+earned in days and cannot be bought, a joint research programme that makes the money go about three
+and a half times as far, a badge in the corner of the screen that says who you are working with, and
+a telephone that keeps the number of everyone you ever signed with. A term that runs out is brought
+up by the other side half the time, and when it is, the phone rings.
+
+The release also carries the week's repairs, and two of them had never worked at all: a part could
+be put into a server cabinet and never taken out, and the whole news screen was in English in a
+Polish campaign. Both were found by somebody who is not the author sitting down with the game.
+
+
 ### Added
 
 - **The Steam launch fund is in the game, in the two menus a player already opens.** A flat card in
@@ -296,7 +314,7 @@ go in. This file is the draft for the store update post, so anything vague here 
   else in this file is: a cooldown that lived only in memory would make quitting and reloading a
   fresh call with everybody. A v68 campaign has rung nobody, because it had no telephone, and
   starting it on cooldown would charge it for calls it never made.
-- **1504 EditMode tests**, counted from `TestResults.xml` rather than remembered.
+- **1505 EditMode tests**, counted from `TestResults.xml` rather than remembered.
 
 ---
 

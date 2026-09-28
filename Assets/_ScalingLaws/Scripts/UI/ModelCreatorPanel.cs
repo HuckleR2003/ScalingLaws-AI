@@ -138,6 +138,21 @@ namespace ScalingLaws.UI
         private long lastComputeBillUsd;
 
         /// <summary>
+        /// The blueprint the strip at the top of the page was actually costed from.
+        ///
+        /// **So the cards and the strip cannot disagree.** The precision cards quote what this run
+        /// would take at each option, and the first version of that built its own blueprint from
+        /// the controls. On the opening render that ran before the page had been priced once, so
+        /// the cards reported a run that would not start while the strip above them said eleven
+        /// days. Two readings of one thing, from two sources, which is the disagreement this
+        /// project keeps writing down.
+        /// </summary>
+        private ModelBlueprint pricedBlueprint;
+
+        /// <summary>False until <see cref="Reprice"/> has run once. See <see cref="pricedBlueprint"/>.</summary>
+        private bool hasPriced;
+
+        /// <summary>
         /// Kept between rebuilds rather than built with the page.
         ///
         /// The DATA page is rebuilt on every repricing, and a field built with it would restart its
@@ -319,8 +334,37 @@ namespace ScalingLaws.UI
             // and the reprice below wrote that ten straight back to the company.
             SyncRentCeiling();
             rentedSlider.SetValueWithoutNotify(OpeningRent());
+
+            // **The stage is built before this method has ever run**, and until it has there is no
+            // corpus list, so anything on a page that reads the priced run reads a blueprint with
+            // no data in it. The precision cards do, and reported a run blocked for want of a
+            // corpus beside a strip correctly printing eleven days.
+            //
+            // Rebuilt once, on the first pricing, and never again from here. `Refresh` is also
+            // what a day rollover calls, and rebuilding the page every second and a half is the
+            // fault this project already shipped on the tour strip: the control under the cursor
+            // is destroyed between the press and the release.
+            // **Not `hasPriced`.** The constructor prices the page once on its way through, before
+            // the corpus list exists, so that flag is already true by the time this runs and the
+            // rebuild never happened. This one is about the corpora, so it tracks the corpora.
+            var first = !hasListedCorpora;
+            hasListedCorpora = true;
+
             Reprice();
+
+            if (first)
+            {
+                ShowStage();
+            }
         }
+
+        /// <summary>
+        /// Whether <see cref="Refresh"/> has ever run, which is when the corpus list first exists.
+        ///
+        /// See the note in `Refresh`. The page is built before any of this and anything on it that
+        /// reads the priced run reads a blueprint with no data in it.
+        /// </summary>
+        private bool hasListedCorpora;
 
         /// <summary>
         /// Where the rent handle starts: what the company has, or a suggestion when it has none.
@@ -1780,16 +1824,20 @@ namespace ScalingLaws.UI
                 // both gates now and the refusal says which one it is.
                 var open = shipped && Allowed(gate);
 
+                // Empty until the page has been priced once, and an empty line would otherwise
+                // leave a blank row under the reading on every card.
+                var days = DaysAt(captured);
+                var reading = Loc.T("create.precision_card",
+                    UiFormat.Number(definition.Throughput, 2),
+                    UiFormat.Number(definition.Instability, 1));
+
                 var card = NewChoiceCard(
                     definition.DisplayName,
                     definition.Pitch,
                     blueprintPrecision == captured,
                     open,
                     open
-                        ? Loc.T("create.precision_card",
-                            UiFormat.Number(definition.Throughput, 2),
-                            UiFormat.Number(definition.Instability, 1))
-                            + "\n" + DaysAt(captured)
+                        ? string.IsNullOrEmpty(days) ? reading : reading + "\n" + days
                         : shipped
                             ? Loc.T("create.needs", ResearchTree.Get(gate).DisplayName)
                             : Loc.T("create.needs_silicon", definition.Earliest.ToString()),
@@ -1828,12 +1876,23 @@ namespace ScalingLaws.UI
         /// </summary>
         private string DaysAt(TrainingPrecision precision)
         {
-            var projection = simulation.Project(CurrentBlueprint().WithPrecision(precision),
-                Proposal());
+            // **Nothing until the page has been priced once.** The stage is built before the first
+            // reprice on the opening render, and a card that answers from an unpriced page reports
+            // a run that will not start next to a strip saying eleven days.
+            if (!hasPriced)
+            {
+                return string.Empty;
+            }
 
+            var projection = simulation.Project(pricedBlueprint.WithPrecision(precision), Proposal());
+
+            // **The reason, not a generic refusal.** The first version said only that the run would
+            // not start, which is a card disagreeing with a strip two inches above it that is still
+            // printing a day count and a bill. Saying which thing is in the way is the only version
+            // of this line that is worth the space, and it is what the player has to act on.
             return projection.IsFeasible
                 ? Loc.T("create.precision_days", projection.TrainingDays.ToString())
-                : Loc.T("create.precision_days_none");
+                : projection.BlockingReason ?? string.Empty;
         }
 
         /// <summary>Many thin layers or few fat ones. Capability against what a token costs.</summary>
@@ -3063,6 +3122,10 @@ namespace ScalingLaws.UI
             var profile = simulation.ProfileWith(Proposal());
 
             lastComputeBillUsd = projection.ComputeCashCostUsd;
+
+            // Kept so the precision cards quote the same run this strip just costed. See the field.
+            pricedBlueprint = blueprint;
+            hasPriced = true;
 
             // The screen beside the controls. Everything on it is read off the projection and the
             // company, and none of it repeats the four figures on the strip above.

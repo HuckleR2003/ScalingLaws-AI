@@ -236,5 +236,38 @@ namespace ScalingLaws.Tests.EditMode
                 previous = projection.TrainingDays;
             }
         }
+
+        /// <summary>
+        /// Re-stating a blueprint's own precision must not change whether the run will start.
+        ///
+        /// **The precision cards quote the same run at each option**, and they build that by taking
+        /// the blueprint the page was costed from and calling `WithPrecision`. If that helper loses
+        /// anything, the card reports a run that will not start while the strip above it prints a
+        /// day count, which is two readings of one thing disagreeing on the busiest screen in the
+        /// game. `EveryWithHelperKeepsEveryOtherField` holds the fields; this holds the answer.
+        /// </summary>
+        [Test]
+        public void RestatingThePrecisionChangesNothingAboutWhetherTheRunStarts()
+        {
+            var profile = RentedFleet(500, GameDate.FromCalendar(2024, 1, 1), out var market);
+
+            var blueprint = new ModelBlueprint(
+                "Muse", ArchitectureId.DenseTransformer, 60, 1_200, DatasetSource.WebCrawl);
+
+            var straight = TrainingPlanner.Project(blueprint, profile, market, 0.0);
+            var restated = TrainingPlanner.Project(
+                blueprint.WithPrecision(blueprint.Precision), profile, market, 0.0);
+
+            Assert.That(restated.IsFeasible, Is.EqualTo(straight.IsFeasible),
+                "restating the precision flipped whether the run is feasible: \""
+                + straight.BlockingReason + "\" became \"" + restated.BlockingReason + "\"");
+
+            Assert.That(restated.TrainingDays, Is.EqualTo(straight.TrainingDays),
+                "restating the precision changed the calendar");
+
+            Assert.That(restated.ProjectedCapability,
+                Is.EqualTo(straight.ProjectedCapability).Within(0.0001),
+                "restating the precision changed the model");
+        }
     }
 }
