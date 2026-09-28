@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 69;
+        public const int CurrentVersion = 70;
 
         public int version = CurrentVersion;
 
@@ -1160,6 +1160,16 @@ namespace ScalingLaws.Persistence
 
         /// <summary>See <see cref="supportLowHours"/>.</summary>
         public int supportAgentsWorking;
+
+        /// <summary>
+        /// v70. How many tickets the desk has answered since the company opened.
+        ///
+        /// A record rather than a derivation, so it has to be written: the backlog says what is
+        /// left, and nothing left in a save can say what is gone. A v69 file starts at zero, which
+        /// understates a company that has been answering post for years and is the only honest
+        /// reading of a file written before anybody was counting.
+        /// </summary>
+        public double supportResolved;
 
         /// <summary>
         /// v64. Whether the campaign has already been told about its first ticket.

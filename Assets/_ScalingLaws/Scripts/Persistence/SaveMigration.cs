@@ -170,6 +170,7 @@ namespace ScalingLaws.Persistence
                     66 => UpgradeV66ToV67(current),
                     67 => UpgradeV67ToV68(current),
                     68 => UpgradeV68ToV69(current),
+                    69 => UpgradeV69ToV70(current),
                     _ => current
                 };
             }
@@ -2009,6 +2010,37 @@ namespace ScalingLaws.Persistence
             LastMigrationNotes = Append(LastMigrationNotes,
                 "v68 to v69: nobody has been telephoned. A v68 campaign had no telephone, so no "
                 + "call has been spent and every lab that can be rung can be rung today.");
+
+            return data;
+        }
+
+        /// <summary>
+        /// v69 to v70: the desk has answered nothing on the record, however long it has been open.
+        ///
+        /// **The understatement is the honest answer and a reconstruction would be a fabrication.**
+        /// A count of letters answered cannot be worked out after the fact from anything a v69 file
+        /// holds: the backlog is what is still owed, and a desk three years old with an empty queue
+        /// and a desk opened yesterday with an empty queue are the same save. Multiplying an
+        /// audience by a rate and a number of days would produce a confident figure nobody could
+        /// check, on the one screen whose whole job is to be checkable.
+        ///
+        /// So the counter starts at zero and begins counting from the first day after the load. It
+        /// is wrong about the past, it says so by being zero, and it is right from here.
+        /// </summary>
+        public static SaveData UpgradeV69ToV70(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 70;
+            data.supportResolved = 0.0;
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v69 to v70: the support desk's answered count starts at zero. Nothing in a v69 "
+                + "save records it and no other field could rebuild it, so counting begins now "
+                + "rather than being invented backwards.");
 
             return data;
         }

@@ -51,6 +51,7 @@ namespace ScalingLaws.Data
         {
             new Tester("MiNatix", "tester.natalka", "Testers/minatix"),
             new Tester("Francisco T", "tester.francisco"),
+            new Tester("Samanta", "tester.samanta"),
         };
 
         /// <summary>

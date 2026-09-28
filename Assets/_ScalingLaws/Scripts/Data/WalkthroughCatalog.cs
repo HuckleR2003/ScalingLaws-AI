@@ -146,13 +146,13 @@ namespace ScalingLaws.Data
                     highlight: "mb__manage", waitForClick: true),
 
                 new("walk_support_verdict", "walk.support.verdict", GuideTarget.Support,
-                    highlight: "support__verdict"),
+                    highlight: "sup__satis"),
 
                 new("walk_support_queue", "walk.support.queue", GuideTarget.Support,
-                    highlight: "support__queue"),
+                    highlight: "sup__queue"),
 
                 new("walk_support_staff", "walk.support.staff", GuideTarget.Support,
-                    highlight: "support__buttons"),
+                    highlight: "sup__acts"),
 
                 new("walk_support_ladders", "walk.support.ladders", GuideTarget.Support,
                     highlight: "support__ladders"),

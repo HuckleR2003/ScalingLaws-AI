@@ -545,6 +545,7 @@ namespace ScalingLaws.Persistence
             data.supportTraining = state.Support.TrainingLevel;
             data.supportAgentLevel = state.Support.AgentLevel;
             data.supportAgentsWorking = state.Support.AgentsWorking;
+            data.supportResolved = state.Support.TicketsResolved;
             data.supportAnnounced = state.SupportAnnounced;
             state.Warehouse.Capture(data.storeRackKinds, data.storeRackCounts, out data.storeFans);
             state.Power.Capture(data.powerPlantSites, data.powerPlantReadyDays);
@@ -1427,7 +1428,7 @@ namespace ScalingLaws.Persistence
                 safe.supportLowHours, safe.supportMediumHours, safe.supportHighHours,
                 safe.supportJudgedHours,
                 safe.supportDeflection, safe.supportTraining, safe.supportAgentLevel,
-                safe.supportAgentsWorking);
+                safe.supportAgentsWorking, safe.supportResolved);
             state.SupportAnnounced = safe.supportAnnounced;
             state.Warehouse.Restore(safe.storeRackKinds, safe.storeRackCounts, safe.storeFans);
             state.Power.Restore(safe.powerPlantSites, safe.powerPlantReadyDays);

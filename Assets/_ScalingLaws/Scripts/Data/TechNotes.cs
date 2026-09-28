@@ -147,6 +147,16 @@ namespace ScalingLaws.Data
 
         public static Note TraitLevels => From("tech.traitlevel");
 
+        /// <summary>
+        /// The desk, on the tab that is named after its own satisfaction figure.
+        ///
+        /// **Both ends are a real answer, which is the test this file is held to.** A desk big
+        /// enough to answer everything is a payroll and a slice of the cluster; a desk with nobody
+        /// on it is free and costs a fifth of how the product is experienced. Neither is the
+        /// correct one and the note does not pretend otherwise.
+        /// </summary>
+        public static Note SupportDesk => From("tech.supportdesk");
+
         public static Note Pricing => From("tech.pricing");
 
         public static Note FreeTier => From("tech.freetier");

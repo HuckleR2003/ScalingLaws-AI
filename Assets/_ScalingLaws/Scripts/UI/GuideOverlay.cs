@@ -337,6 +337,16 @@ namespace ScalingLaws.UI
         /// Opens the screen it happens on first, because every step after this rings something that
         /// has to already be in the tree.
         /// </summary>
+        /// <summary>
+        /// The walkthrough on screen, or null when the opening tour is what is running.
+        ///
+        /// **Read by the shell to put a screen on the right tab before the highlight runs.** A
+        /// walkthrough that rings a class sitting behind an unopened tab points at nothing, which
+        /// is the same fault as pointing off screen and reads to a player as the tour being
+        /// broken. Exposed rather than adding a second record of which one is up.
+        /// </summary>
+        public Walkthrough RunningWalkthrough => running;
+
         public void StartWalkthrough(Walkthrough walkthrough)
         {
             if (walkthrough == null || walkthrough.Steps.Count == 0)

@@ -66,7 +66,19 @@ namespace ScalingLaws.UI
             /// stranger sees, what the desk sees and what the company used to sell, and "what are
             /// my users actually on" is the fourth question about the same product.
             /// </summary>
-            Versions
+            Versions,
+
+            /// <summary>
+            /// The support desk.
+            ///
+            /// **Asked for by name, and it is a promotion rather than a move.** It was a strip
+            /// under the standing panel on the desk tab, below three other panels, on the one
+            /// screen a player reaches through a single button on a banner. A desk is the only
+            /// system in this game that starts without being started and the only one whose
+            /// failure is invisible until the market has already moved, so burying it was the
+            /// worst possible place for it.
+            /// </summary>
+            Support
         }
 
         public ManagementScreen(CompanySimulation simulation, Action openRelease,
@@ -98,6 +110,9 @@ namespace ScalingLaws.UI
         /// <summary>Opens the version list. Tooling and the tab reach it the same way.</summary>
         public void ShowVersions() => Open(Tab.Versions);
 
+        /// <summary>Opens the support desk. Tooling and the tab reach it the same way.</summary>
+        public void ShowSupport() => Open(Tab.Support);
+
         private void Open(Tab tab)
         {
             showing = tab;
@@ -121,6 +136,7 @@ namespace ScalingLaws.UI
                 Tab.Desk => Loc.T("mg.management"),
                 Tab.Archive => Loc.T("mg.archive"),
                 Tab.Versions => Loc.T("mg.versions"),
+                Tab.Support => Loc.T("mg.support"),
                 _ => Loc.T("mg.official_page")
             });
 
@@ -132,6 +148,7 @@ namespace ScalingLaws.UI
                 Tab.Desk => Loc.T("mg.desk.strap"),
                 Tab.Versions => Loc.T("mg.versions.strap"),
                 Tab.Archive => Loc.T("mg.archive.strap"),
+                Tab.Support => Loc.T("mg.support.strap"),
                 _ => Loc.T("mg.stranger_sees")
             });
 
@@ -155,6 +172,20 @@ namespace ScalingLaws.UI
             if (showing == Tab.Archive)
             {
                 BuildArchive();
+                return;
+            }
+
+            // **Before the "nothing on sale" guard, deliberately.** The post arrives from people
+            // being served, which outlives any one product: a company between releases still has a
+            // queue, still has people on the desk, and is exactly when a backlog goes unnoticed.
+            if (showing == Tab.Support)
+            {
+                Root.Add(new SupportPanel(
+                    simulation,
+                    openTeam,
+                    Refresh,
+                    why => lastFailure = why ?? string.Empty).Build());
+
                 return;
             }
 
@@ -197,6 +228,15 @@ namespace ScalingLaws.UI
             tabs.Add(TabButton(Loc.T("mg.management"), showing == Tab.Desk, () => Open(Tab.Desk)));
             tabs.Add(TabButton(Loc.T("mg.versions"), showing == Tab.Versions, () => Open(Tab.Versions)));
             tabs.Add(TabButton(Loc.T("mg.archive"), showing == Tab.Archive, () => Open(Tab.Archive)));
+
+            // **The figure is in the name of the tab and that is the point of the tab existing.**
+            // Satisfaction is the one number on this screen that decides whether the audience below
+            // it stays, and it was previously unreadable without opening a panel three sections
+            // down. A player who never presses this tab still sees the desk falling over.
+            tabs.Add(TabButton(
+                Loc.T("mg.support.tab", UiFormat.Percent(simulation.State.Support.Quality())),
+                showing == Tab.Support,
+                () => Open(Tab.Support)));
 
             return tabs;
         }
@@ -670,13 +710,6 @@ namespace ScalingLaws.UI
             Root.Add(BuildFlagshipControl());
             Root.Add(BuildStandingPanel());
 
-            // **The desk goes above the audience table on purpose.** What the people you already
-            // have are experiencing decides whether the table below keeps its numbers.
-            Root.Add(new SupportPanel(
-                simulation,
-                openTeam,
-                Refresh,
-                why => lastFailure = why ?? string.Empty).Build());
             Root.Add(BuildAudienceTable());
             Root.Add(BuildRivalPanel());
         }

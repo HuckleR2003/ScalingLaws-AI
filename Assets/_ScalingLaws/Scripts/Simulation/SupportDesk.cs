@@ -44,8 +44,93 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public double JudgedHours { get; private set; }
 
+        /// <summary>
+        /// How many tickets the desk has answered since the company opened.
+        ///
+        /// **A record, not a derivation, which is why it is saved.** How many were answered in
+        /// 2023 cannot be worked out from a backlog in 2027: the backlog is what is left, and this
+        /// is what is gone. Same reasoning as a model's lifetime revenue, and the same rule about
+        /// what a number like this may be built from.
+        ///
+        /// **Abandoned post is not counted.** What nobody answers inside the judgement window is
+        /// written off in <see cref="Advance"/>, and a desk that lets a month of post rot must not
+        /// be able to report it as work done.
+        /// </summary>
+        public double TicketsResolved { get; private set; }
+
         /// <summary>Hours of work owed on one class of ticket.</summary>
         public double BacklogHoursOf(TicketClass kind) => backlogHours[(int)kind];
+
+        /// <summary>
+        /// What one ticket of this class costs the desk today, in hours.
+        ///
+        /// Continuous training makes every ticket quicker, so this is the catalogue figure after
+        /// whatever has been researched. It is one method because three callers need it and three
+        /// copies of it is how the room ended up with four sets of heat thresholds.
+        /// </summary>
+        public double HoursPerTicketOf(TicketClass kind) =>
+            SupportCatalog.HoursOf(kind) * (1.0 - SupportCatalog.TrainingAt(TrainingLevel));
+
+        /// <summary>
+        /// How many tickets of this class are waiting.
+        ///
+        /// The queue is carried as hours because that is what a desk spends, and a player counts in
+        /// letters. This is the one conversion between the two and it is arithmetic, not a second
+        /// store: nothing here is remembered and nothing here can drift from the hours above it.
+        /// </summary>
+        public double TicketsWaitingOf(TicketClass kind)
+        {
+            var each = HoursPerTicketOf(kind);
+            return each <= 0.0 ? 0.0 : backlogHours[(int)kind] / each;
+        }
+
+        /// <summary>
+        /// How long the oldest letter of this class has been waiting, in hours.
+        ///
+        /// **The queue discipline lives here and nowhere else.** <see cref="Advance"/> gives the
+        /// people to the worst trouble first and the agents to the ordinary post only, so what a
+        /// letter waits for is everything served ahead of it, not its own class alone: a low
+        /// ticket waits behind every outage and every ordinary fault before anybody reaches it.
+        /// Writing that arithmetic on a screen instead would be a second reading of the rule, and
+        /// this project has had four copies of one threshold disagreeing about the same cabinet.
+        ///
+        /// A class with nothing in it has nobody waiting. A class nothing can reach is
+        /// <see cref="SupportCatalog.AbandonedHours"/> by definition rather than infinity, the same
+        /// answer <see cref="AverageHours"/> gives for the same reason.
+        /// </summary>
+        public double WaitHoursOf(TicketClass kind, double supportPeople)
+        {
+            var owed = backlogHours[(int)kind];
+
+            if (owed <= 0.0)
+            {
+                return 0.0;
+            }
+
+            var peopleHours = Math.Max(0.0, supportPeople) * SupportCatalog.HoursPerPersonPerDay;
+            var high = backlogHours[(int)TicketClass.High];
+            var medium = backlogHours[(int)TicketClass.Medium];
+
+            var ahead = kind switch
+            {
+                TicketClass.High => high,
+                TicketClass.Medium => high + medium,
+                _ => owed
+            };
+
+            // Low is the only class two things reach, and only with what the worse post leaves.
+            var rate = kind == TicketClass.Low
+                ? AgentHoursPerDay + Math.Max(0.0, peopleHours - high - medium)
+                : peopleHours;
+
+            if (rate <= 0.0)
+            {
+                return SupportCatalog.AbandonedHours;
+            }
+
+            return Math.Min(SupportCatalog.AbandonedHours,
+                SimUnits.Finite(ahead / rate * 24.0));
+        }
 
         /// <summary>Everything owed, in hours.</summary>
         public double BacklogHours => backlogHours[0] + backlogHours[1] + backlogHours[2];
@@ -116,11 +201,19 @@ namespace ScalingLaws.Simulation
                 var spent = Math.Min(peopleHours, backlogHours[kind]);
                 backlogHours[kind] -= spent;
                 peopleHours -= spent;
+
+                // **Counted here rather than from the backlog, and only for hours actually
+                // worked.** The write-off below shortens the queue without anybody having
+                // answered anything, so a counter taken from the difference in backlog would
+                // credit a neglected desk for the post it lost.
+                TicketsResolved += TicketsIn(spent, (TicketClass)kind, quicker);
             }
 
             // Then the agents, on the ordinary post and nothing else.
             var lowSpent = Math.Min(agentHours, backlogHours[(int)TicketClass.Low]);
             backlogHours[(int)TicketClass.Low] -= lowSpent;
+
+            TicketsResolved += TicketsIn(lowSpent, TicketClass.Low, quicker);
 
             // **What nobody answers inside the judgement window is written off, not carried.**
             // A person who waited a month for a password does not wait a second month; they have
@@ -146,6 +239,18 @@ namespace ScalingLaws.Simulation
             var today = AverageHours(supportPeople);
             JudgedHours += (today - JudgedHours) / SupportCatalog.JudgementDays;
             JudgedHours = Math.Clamp(SimUnits.Finite(JudgedHours), 0.0, SupportCatalog.AbandonedHours);
+        }
+
+        /// <summary>
+        /// Hours of work turned back into letters, at the rate that day's training was buying.
+        ///
+        /// Taken as an argument rather than read off the level, so the day's own figure is used
+        /// rather than whatever has been researched by the time anybody asks.
+        /// </summary>
+        private static double TicketsIn(double hours, TicketClass kind, double quicker)
+        {
+            var each = SupportCatalog.HoursOf(kind) * quicker;
+            return each <= 0.0 ? 0.0 : Math.Max(0.0, SimUnits.Finite(hours / each));
         }
 
         /// <summary>
@@ -239,8 +344,10 @@ namespace ScalingLaws.Simulation
 
         /// <summary>Restores a saved desk. Levels first: the seats decide the working count.</summary>
         public void Restore(double low, double medium, double high, double judgedHours,
-            int deflection, int training, int agentLevel, int working)
+            int deflection, int training, int agentLevel, int working, double resolved = 0.0)
         {
+            TicketsResolved = Math.Max(0.0, SimUnits.Finite(resolved));
+
             backlogHours[0] = Math.Max(0.0, SimUnits.Finite(low));
             backlogHours[1] = Math.Max(0.0, SimUnits.Finite(medium));
             backlogHours[2] = Math.Max(0.0, SimUnits.Finite(high));

@@ -23027,3 +23027,258 @@
     -unity-text-align: middle-center;
     white-space: normal;
 }
+
+/* ---- the support tab -------------------------------------------------------------------------
+
+   Borrowed, knowingly, from a support page in a game the author liked: a narrow column of what is
+   true on the left, a wide table of what is outstanding on the right, and a grey bar titling each
+   of them. What makes it read is that there is no chrome between the two, so the eye crosses from
+   "we are answering in three hours" to "and here is what is still waiting" without a border in the
+   way.
+
+   The two columns are a row that does not wrap. At this page width the left rail is fixed and the
+   table takes whatever is left, which is the only arrangement where the table's four columns stay
+   in the same place as the queue grows and shrinks. */
+
+.sup {
+    flex-shrink: 0;
+}
+
+.sup__top {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+/* The grey bar over each half. Deliberately the same on both, because two differently weighted
+   headings would rank the columns and neither of them is the subordinate one. */
+.sup__head {
+    flex-shrink: 0;
+    height: 34px;
+    -unity-text-align: middle-center;
+    font-size: 12px;
+    letter-spacing: 1.4px;
+    -unity-font-style: bold;
+    color: rgb(214, 226, 242);
+    background-color: rgba(255, 255, 255, 0.07);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.sup__stats {
+    width: 300px;
+    flex-shrink: 0;
+    margin-right: 14px;
+}
+
+.sup__statsbody {
+    flex-shrink: 0;
+    padding: 16px 14px 14px 14px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+/* The face and the figure on one line, centred, because together they are one statement. */
+.sup__satis {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sup__face {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+.sup__big {
+    font-size: 38px;
+    -unity-font-style: bold;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.sup__satisrow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.sup__capbold {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(150, 166, 188);
+}
+
+/* What the desk is doing to the product, which is the sentence this whole panel exists to say. */
+.sup__verdict {
+    font-size: 12.5px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    color: rgb(126, 191, 143);
+    flex-shrink: 0;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.sup__verdict--bad {
+    color: rgb(209, 106, 98);
+}
+
+/* A figure over its caption. Three of them, stacked, separated by a hairline rather than by a
+   border on each: boxes inside a box is the pattern that made the old panel read as a form. */
+.sup__cell {
+    flex-shrink: 0;
+    padding: 10px 0 9px 0;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+.sup__cellfigure {
+    font-size: 19px;
+    -unity-text-align: middle-center;
+    color: rgb(236, 243, 252);
+}
+
+.sup__cellnote {
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    color: rgb(150, 166, 188);
+}
+
+.sup__acts {
+    flex-shrink: 0;
+    margin-top: 12px;
+}
+
+.sup__button {
+    height: 34px;
+    font-size: 11.5px;
+    letter-spacing: 0.8px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    margin: 0 0 6px 0;
+    padding: 0 10px;
+    border-width: 1px;
+    border-radius: 6px;
+    border-color: rgba(120, 176, 255, 0.55);
+    background-color: rgba(120, 176, 255, 0.16);
+    color: rgb(224, 236, 252);
+}
+
+/* Quieter than the plain hire, never louder. The agency is the same person at a third more, and an
+   expensive convenience drawn as the bright button on the row gets pressed by reflex. */
+.sup__button--remote {
+    border-color: rgba(255, 255, 255, 0.16);
+    background-color: rgba(255, 255, 255, 0.04);
+    color: rgb(168, 182, 202);
+}
+
+.sup__note {
+    font-size: 11px;
+    white-space: normal;
+    color: rgb(140, 154, 174);
+    flex-shrink: 0;
+    margin-top: 8px;
+}
+
+.sup__queue {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.sup__queuebody {
+    flex-shrink: 0;
+    padding: 6px 4px 8px 4px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.sup__row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 0 12px;
+}
+
+.sup__row--head {
+    min-height: 28px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.09);
+}
+
+.sup__row--head .sup__field {
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    color: rgb(138, 154, 176);
+}
+
+/* The lit left edge is the class, and it is the only colour on the row. Colouring the whole row by
+   severity turns a table into three warnings and stops the eye reading down a column. */
+.sup__row--high {
+    border-left-width: 3px;
+    border-left-color: rgb(209, 106, 98);
+}
+
+.sup__row--medium {
+    border-left-width: 3px;
+    border-left-color: rgb(214, 160, 74);
+}
+
+.sup__row--low {
+    border-left-width: 3px;
+    border-left-color: rgb(120, 176, 255);
+}
+
+.sup__field {
+    font-size: 12.5px;
+    color: rgb(206, 218, 234);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.sup__classname {
+    -unity-font-style: bold;
+    color: rgb(236, 243, 252);
+}
+
+/* Past the point where the market has stopped waiting, which is the figure the desk is judged on
+   rather than a number chosen to look alarming. */
+.sup__late {
+    color: rgb(209, 106, 98);
+    -unity-font-style: bold;
+}
+
+.sup__c1 {
+    width: 26%;
+}
+
+.sup__c2 {
+    width: 22%;
+}
+
+.sup__c3 {
+    width: 22%;
+}
+
+.sup__c4 {
+    width: 30%;
+}
+
+.sup__clear {
+    font-size: 13px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    color: rgb(150, 166, 188);
+    flex-shrink: 0;
+    padding: 26px 16px;
+}

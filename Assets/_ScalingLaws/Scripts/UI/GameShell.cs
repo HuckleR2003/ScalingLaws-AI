@@ -2239,7 +2239,21 @@ namespace ScalingLaws.UI
                     host.Add(BuildMarketingScreen());
                     break;
                 case Screen.Management:
-                    management.Refresh();
+
+                    // **The walkthrough about the desk opens the desk's own tab.** Support has a
+                    // tab of its own now, and every step of that walkthrough rings a class that
+                    // only exists while it is open, so without this the tour would point at four
+                    // things in a row that are not in the tree. A ring on nothing is the same to
+                    // a player as a tour that has stopped working.
+                    if (guide?.RunningWalkthrough?.Id == WalkthroughCatalog.SupportId)
+                    {
+                        management.ShowSupport();
+                    }
+                    else
+                    {
+                        management.Refresh();
+                    }
+
                     host.Add(management.Root);
 
                     // The walkthrough step that says to open the desk is satisfied by the desk

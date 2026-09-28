@@ -33,110 +33,319 @@ namespace ScalingLaws.UI
             this.failed = failed;
         }
 
+        /// <summary>
+        /// The whole tab: what the desk is achieving on the left, what is still owed on the right.
+        ///
+        /// **It was a strip buried under the standing panel and it is a tab of its own now**,
+        /// because the author asked for it and because a desk three panels down the management page
+        /// is a desk nobody opens until the audience has already gone. The satisfaction figure is in
+        /// the name of the tab for the same reason: it is the one number here that can be read
+        /// without opening anything.
+        ///
+        /// The shape is borrowed on purpose from a support page in a game the author liked: a narrow
+        /// column of what is true, a wide table of what is outstanding, a grey bar titling each, and
+        /// no chrome in between.
+        ///
+        /// **What is deliberately not borrowed is the list of individual letters.** This game carries
+        /// the queue as hours of work owed rather than as thousands of objects, which is a decision
+        /// recorded in <see cref="SupportDesk"/> and the reason the desk costs nothing to simulate.
+        /// A table of ticket numbers with names beside them would therefore be invented, and the
+        /// honesty flag covers a support screen exactly as it covers a hardware specification. Every
+        /// row here is a class of post the simulation genuinely tracks and every figure on it is
+        /// read from the desk.
+        /// </summary>
         public VisualElement Build()
         {
             var desk = simulation.State.Support;
             var people = simulation.SupportPeople();
 
             var panel = new VisualElement();
-            panel.AddToClassList("panel");
-            panel.AddToClassList("support");
+            panel.AddToClassList("sup");
 
-            var kicker = new Label(Loc.T("support.desk.kicker"));
-            kicker.AddToClassList("support__kicker");
-            panel.Add(kicker);
+            var top = new VisualElement();
+            top.AddToClassList("sup__top");
 
-            panel.Add(BuildVerdict(desk, people));
-            panel.Add(BuildQueue(desk));
-            panel.Add(BuildStaffing(desk, people));
+            top.Add(BuildStats(desk, people));
+            top.Add(BuildTickets(desk, people));
+
+            panel.Add(top);
 
             if (desk.AgentSlots > 0)
             {
                 panel.Add(BuildAgents(desk));
             }
 
+            // **The shop is last and that is a design decision, not a layout one.** Hiring is the
+            // cheap answer to a backlog and research is the expensive one, and a panel that opens
+            // on the ladders teaches the wrong lesson about a queue.
             panel.Add(BuildLadders(desk));
 
             return panel;
         }
 
         /// <summary>
-        /// The headline: how long an answer takes, and what that is worth to the product.
+        /// The left column: how the desk is doing, what that is worth, and the figures behind it.
         ///
-        /// **The second line is the one that matters** and it is why this panel exists. A player can
-        /// read "62 hours" and not know whether that is good; "this is costing the product eleven
-        /// per cent of how it is experienced" cannot be misread.
+        /// **The face is beside the percentage and the sentence is under both**, in that order.
+        /// The question a player arrives with is "is this all right", and a bare 72% cannot answer
+        /// it: there is no scale printed anywhere near it. "This is costing the product eleven per
+        /// cent of how it is experienced" cannot be misread.
         /// </summary>
-        private VisualElement BuildVerdict(SupportDesk desk, double people)
+        private VisualElement BuildStats(SupportDesk desk, double people)
         {
-            var block = new VisualElement();
-            block.AddToClassList("support__verdict");
+            var column = new VisualElement();
+            column.AddToClassList("sup__stats");
 
-            var hours = desk.JudgedHours;
+            column.Add(Heading(Loc.T("sup.stats")));
+
+            var body = new VisualElement();
+            body.AddToClassList("sup__statsbody");
+
             var quality = desk.Quality();
+
+            var satisfaction = new VisualElement();
+            satisfaction.AddToClassList("sup__satis");
+
+            var face = new SupportFace(quality);
+            satisfaction.Add(face);
+
+            var figure = new Label(UiFormat.Percent(quality));
+            figure.AddToClassList("sup__big");
+            figure.style.color = face.Tone;
+            satisfaction.Add(figure);
+
+            body.Add(satisfaction);
+
+            var caption = new VisualElement();
+            caption.AddToClassList("sup__satisrow");
+
+            var word = new Label(Loc.T("sup.satisfaction"));
+            word.AddToClassList("sup__capbold");
+            caption.Add(word);
+            var note = TechNotes.SupportDesk;
+
+            caption.Add(InsightTip.InfoBadge(note.Title,
+                new InsightTip.Reading(note.What, note.Affects, note.High, note.Low)));
+            body.Add(caption);
+
             var effect = desk.ServiceMultiplier() - 1.0;
-
-            var figure = new Label(UiFormat.Hours(hours));
-            figure.AddToClassList("support__hours");
-            figure.EnableInClassList("support__hours--bad", quality < 0.5);
-            figure.EnableInClassList("support__hours--good", quality >= 0.999);
-            block.Add(figure);
-
-            var caption = new Label(Loc.T("support.desk.to_an_answer"));
-            caption.AddToClassList("support__caption");
-            block.Add(caption);
 
             var verdict = new Label(effect >= 0.0
                 ? Loc.T("support.desk.helping", UiFormat.Percent(effect))
                 : Loc.T("support.desk.costing", UiFormat.Percent(-effect)));
 
-            verdict.AddToClassList("support__effect");
-            verdict.EnableInClassList("support__effect--bad", effect < 0.0);
-            block.Add(verdict);
+            verdict.AddToClassList("sup__verdict");
+            verdict.EnableInClassList("sup__verdict--bad", effect < 0.0);
+            body.Add(verdict);
 
-            var note = new Label(Loc.T("support.desk.judged_over_a_month"));
-            note.AddToClassList("support__note");
-            block.Add(note);
+            body.Add(Cell(UiFormat.Hours(desk.JudgedHours), Loc.T("sup.average_wait")));
+            body.Add(Cell(UiFormat.Count(desk.TicketsResolved), Loc.T("sup.resolved")));
+            body.Add(Cell(
+                UiFormat.Count(desk.TicketsPerDay(simulation.UsersServedToday())),
+                Loc.T("sup.arriving")));
 
-            return block;
+            var actions = new VisualElement();
+            actions.AddToClassList("sup__acts");
+
+            var hire = new Button(() => openTeam?.Invoke()) { text = Loc.T("support.hire") };
+            hire.AddToClassList("sup__button");
+            actions.Add(hire);
+
+            var remote = new Button(() =>
+            {
+                if (!simulation.TryHireSupportRemotely(out var why))
+                {
+                    failed?.Invoke(why);
+                    return;
+                }
+
+                changed?.Invoke();
+            })
+            {
+                text = Loc.T("support.hire_remote",
+                    UiFormat.Money((long)Math.Round(simulation.RemoteSupportDailyUsd())))
+            };
+
+            // **Quieter than the plain hire, never louder.** It is the same person with a third
+            // added to the wage, and an expensive convenience drawn as the bright button on a row
+            // gets pressed by reflex.
+            remote.AddToClassList("sup__button");
+            remote.AddToClassList("sup__button--remote");
+            actions.Add(remote);
+
+            body.Add(actions);
+
+            var who = new Label(Loc.T("support.desk.on_the_desk",
+                UiFormat.Number(people, 1),
+                UiFormat.Hours(desk.CapacityHoursPerDay(people)),
+                UiFormat.Hours(simulation.SupportArrivingHoursPerDay())));
+
+            who.AddToClassList("sup__note");
+            body.Add(who);
+
+            column.Add(body);
+
+            return column;
         }
 
         /// <summary>
-        /// What is waiting, by how bad it is. Hours rather than a count of tickets, because hours
-        /// are what a person on the desk spends and what the queue is actually made of.
+        /// The right column: what is still owed, worst first.
+        ///
+        /// Three rows rather than a thousand, and the reason is written in <see cref="Build"/>.
+        /// What each row carries is what somebody looking at a queue wants to know: how many are in
+        /// it, how long the one at the front has been there, and whether anybody is reaching it at
+        /// all.
         /// </summary>
-        private VisualElement BuildQueue(SupportDesk desk)
+        private VisualElement BuildTickets(SupportDesk desk, double people)
+        {
+            var column = new VisualElement();
+            column.AddToClassList("sup__queue");
+
+            column.Add(Heading(Loc.T("sup.unresolved")));
+
+            var body = new VisualElement();
+            body.AddToClassList("sup__queuebody");
+
+            if (desk.BacklogHours <= 0.0)
+            {
+                // **An empty desk says so rather than drawing an empty table.** A header row over
+                // nothing reads as a screen that failed to load the rest of itself.
+                var clear = new Label(Loc.T("sup.nothing_waiting"));
+                clear.AddToClassList("sup__clear");
+                body.Add(clear);
+                column.Add(body);
+                return column;
+            }
+
+            var head = new VisualElement();
+            head.AddToClassList("sup__row");
+            head.AddToClassList("sup__row--head");
+
+            head.Add(Field(Loc.T("sup.col.class"), "sup__c1"));
+            head.Add(Field(Loc.T("sup.col.waiting"), "sup__c2"));
+            head.Add(Field(Loc.T("sup.col.oldest"), "sup__c3"));
+            head.Add(Field(Loc.T("sup.col.worked"), "sup__c4"));
+
+            body.Add(head);
+
+            foreach (var kind in new[] { TicketClass.High, TicketClass.Medium, TicketClass.Low })
+            {
+                body.Add(TicketRow(desk, kind, people));
+            }
+
+            column.Add(body);
+
+            return column;
+        }
+
+        private VisualElement TicketRow(SupportDesk desk, TicketClass kind, double people)
         {
             var row = new VisualElement();
-            row.AddToClassList("support__queue");
+            row.AddToClassList("sup__row");
+            row.AddToClassList(RowClassOf(kind));
 
-            row.Add(QueueCard(TicketClass.High, desk.BacklogHoursOf(TicketClass.High)));
-            row.Add(QueueCard(TicketClass.Medium, desk.BacklogHoursOf(TicketClass.Medium)));
-            row.Add(QueueCard(TicketClass.Low, desk.BacklogHoursOf(TicketClass.Low)));
+            var name = Field(Loc.T(NameKeyOf(kind)), "sup__c1");
+            name.AddToClassList("sup__classname");
+            row.Add(name);
+
+            row.Add(Field(
+                Loc.T("sup.letters", UiFormat.Count(desk.TicketsWaitingOf(kind))), "sup__c2"));
+
+            // **At the ceiling this is not a wait, and printing the ceiling says nothing.**
+            // `AbandonedHours` is where the simulation stops counting, because somebody who has
+            // waited a month for a password has already left rather than waited a second month. A
+            // desk far enough behind puts every class on that number, and the first render came
+            // back with the same figure three times, which reads as a column that is broken rather
+            // than as a company in trouble. The word is the honest reading and it is a different
+            // statement from a duration.
+            var waited = desk.WaitHoursOf(kind, people);
+            var lost = waited >= SupportCatalog.AbandonedHours;
+
+            var oldest = Field(lost ? Loc.T("sup.abandoned") : UiFormat.Hours(waited), "sup__c3");
+            oldest.EnableInClassList("sup__late", waited >= SupportCatalog.AnsweredHours);
+            row.Add(oldest);
+
+            row.Add(Field(WorkedBy(desk, kind, people), "sup__c4"));
 
             return row;
         }
 
-        private static VisualElement QueueCard(TicketClass kind, double hours)
+        /// <summary>
+        /// Who actually reaches this class, which is not the same as who is employed.
+        ///
+        /// **Agents answer the ordinary post and nothing else**, so a company with ten agents and
+        /// nobody at all has nobody on its outages. This column is the only place in the game that
+        /// says so at the moment the player is looking at the outage.
+        /// </summary>
+        private static string WorkedBy(SupportDesk desk, TicketClass kind, double people)
         {
-            var card = new VisualElement();
-            card.AddToClassList("support__class");
-            card.AddToClassList(ClassOf(kind));
+            var staff = people > 0.0 ? UiFormat.Number(people, 1) : string.Empty;
+            var agents = kind == TicketClass.Low ? desk.AgentsWorking : 0;
 
-            var name = new Label(Loc.T(NameKeyOf(kind)));
-            name.AddToClassList("support__classname");
-            card.Add(name);
+            if (staff.Length == 0 && agents == 0)
+            {
+                return Loc.T("sup.worked.nobody");
+            }
 
-            var waiting = new Label(UiFormat.Hours(hours));
-            waiting.AddToClassList("support__classhours");
-            card.Add(waiting);
+            if (agents == 0)
+            {
+                return Loc.T("sup.worked.people", staff);
+            }
 
-            var note = new Label(Loc.T("support.class.waiting"));
-            note.AddToClassList("support__classnote");
-            card.Add(note);
-
-            return card;
+            return staff.Length == 0
+                ? Loc.T("sup.worked.agents", agents.ToString())
+                : Loc.T("sup.worked.both", staff, agents.ToString());
         }
+
+        /// <summary>The grey bar a section is titled with, which is the whole look being borrowed.</summary>
+        private static Label Heading(string text)
+        {
+            var head = new Label(text);
+            head.AddToClassList("sup__head");
+            return head;
+        }
+
+        /// <summary>A figure over its caption, which is the left column's entire vocabulary.</summary>
+        private static VisualElement Cell(string figure, string caption)
+        {
+            var cell = new VisualElement();
+            cell.AddToClassList("sup__cell");
+
+            var big = new Label(figure);
+            big.AddToClassList("sup__cellfigure");
+            cell.Add(big);
+
+            var note = new Label(caption);
+            note.AddToClassList("sup__cellnote");
+            cell.Add(note);
+
+            return cell;
+        }
+
+        /// <summary>
+        /// One cell of the table on the right. Named apart from <see cref="Cell"/> on purpose:
+        /// they are different shapes in two columns of the same screen, and one name for both is
+        /// how a figure ends up drawn in the wrong vocabulary.
+        /// </summary>
+        private static Label Field(string text, string column)
+        {
+            var cell = new Label(text);
+            cell.AddToClassList("sup__field");
+            cell.AddToClassList(column);
+            return cell;
+        }
+
+        /// <summary>
+        /// **Written out, never assembled**, for the reason the other switches in this file give:
+        /// `StylesheetTests` reads literals, so a class built by concatenation is invisible to it
+        /// and collapses whatever it is on without anything failing.
+        /// </summary>
+        private static string RowClassOf(TicketClass kind) => kind switch
+        {
+            TicketClass.Low => "sup__row--low",
+            TicketClass.Medium => "sup__row--medium",
+            _ => "sup__row--high"
+        };
 
         /// <summary>
         /// Written out rather than built from the enum name, because a key made by concatenation is
@@ -154,13 +363,6 @@ namespace ScalingLaws.UI
             _ => "support.class.high"
         };
 
-        private static string ClassOf(TicketClass kind) => kind switch
-        {
-            TicketClass.Low => "support__class--low",
-            TicketClass.Medium => "support__class--medium",
-            _ => "support__class--high"
-        };
-
         private static string TitleKeyOf(SupportCatalog.Upgrade upgrade) => upgrade switch
         {
             SupportCatalog.Upgrade.Deflection => "support.upgrade.deflection",
@@ -174,62 +376,6 @@ namespace ScalingLaws.UI
             SupportCatalog.Upgrade.ContinuousTraining => "support.upgrade.training.note",
             _ => "support.upgrade.agents.note"
         };
-
-        /// <summary>
-        /// Who is on the desk, what they can get through, and the two ways to add somebody.
-        ///
-        /// **Both buttons lead into the hiring the game already has.** One opens it with the job
-        /// chosen, the other pays an agency premium to skip the conversation entirely, which is the
-        /// same trade the furnished office pack makes: convenience costs money rather than replacing
-        /// the system it shortcuts.
-        /// </summary>
-        private VisualElement BuildStaffing(SupportDesk desk, double people)
-        {
-            var block = new VisualElement();
-            block.AddToClassList("support__staffing");
-
-            var line = new Label(Loc.T("support.desk.on_the_desk",
-                UiFormat.Number(people, 1),
-                UiFormat.Hours(desk.CapacityHoursPerDay(people)),
-                UiFormat.Hours(simulation.SupportArrivingHoursPerDay())));
-
-            line.AddToClassList("support__staffline");
-            block.Add(line);
-
-            var buttons = new VisualElement();
-            buttons.AddToClassList("support__buttons");
-
-            var hire = new Button(() => openTeam?.Invoke()) { text = Loc.T("support.hire") };
-            hire.AddToClassList("support__button");
-            buttons.Add(hire);
-
-            var remote = new Button(() =>
-            {
-                if (!simulation.TryHireSupportRemotely(out var why))
-                {
-                    failed?.Invoke(why);
-                    return;
-                }
-
-                changed?.Invoke();
-            })
-            {
-                text = Loc.T("support.hire_remote",
-                    UiFormat.Money((long)Math.Round(simulation.RemoteSupportDailyUsd())))
-            };
-
-            remote.AddToClassList("support__button");
-            remote.AddToClassList("support__button--remote");
-            buttons.Add(remote);
-
-            block.Add(buttons);
-
-            var note = new Label(Loc.T("support.hire_remote_note"));
-            note.AddToClassList("support__note");
-            block.Add(note);
-
-            return block;
-        }
 
         /// <summary>
         /// The agents, and what they are eating. **The fleet cost is printed beside the control that

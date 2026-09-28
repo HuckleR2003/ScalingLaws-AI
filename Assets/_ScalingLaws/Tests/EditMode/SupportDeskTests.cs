@@ -411,5 +411,152 @@ namespace ScalingLaws.Tests.EditMode
 
             return said;
         }
+
+        /// <summary>
+        /// Hours and letters are the same queue said two ways, and they may never disagree.
+        ///
+        /// The desk carries hours because that is what a person on it spends; the screen counts
+        /// letters because that is what a player counts. One conversion, in the class that owns
+        /// the queue, so the two readings cannot drift the way four copies of one heat threshold
+        /// once did.
+        /// </summary>
+        [Test]
+        public void TheLettersWaitingAndTheHoursOwedAreTheSameQueue()
+        {
+            var desk = new SupportDesk();
+
+            for (var day = 0; day < 40; day++)
+            {
+                desk.Advance(4_000_000.0, 0.0);
+            }
+
+            foreach (var kind in new[] { TicketClass.Low, TicketClass.Medium, TicketClass.High })
+            {
+                var letters = desk.TicketsWaitingOf(kind);
+                var hours = desk.BacklogHoursOf(kind);
+
+                Assert.That(letters, Is.GreaterThan(0.0), $"{kind} has a backlog and no letters");
+                Assert.That(letters * desk.HoursPerTicketOf(kind), Is.EqualTo(hours).Within(0.0001),
+                    $"{kind}: the letters waiting do not add up to the hours owed");
+            }
+        }
+
+        /// <summary>
+        /// An ordinary letter waits behind every outage, because that is how the desk works.
+        ///
+        /// **This is the assertion that makes the class split mean anything.** `Advance` gives the
+        /// people to the worst trouble first, so a low ticket is not waiting for its own queue, it
+        /// is waiting for both of the queues in front of it as well. A reading that answered only
+        /// out of the low backlog would tell a player their password request is nearly answered
+        /// while nobody has reached it for a week.
+        /// </summary>
+        [Test]
+        public void AnOrdinaryLetterWaitsBehindTheOutages()
+        {
+            var desk = new SupportDesk();
+
+            for (var day = 0; day < 40; day++)
+            {
+                desk.Advance(4_000_000.0, 1.0);
+            }
+
+            var high = desk.WaitHoursOf(TicketClass.High, 1.0);
+            var medium = desk.WaitHoursOf(TicketClass.Medium, 1.0);
+            var low = desk.WaitHoursOf(TicketClass.Low, 1.0);
+
+            Assert.That(medium, Is.GreaterThanOrEqualTo(high),
+                "an ordinary fault cannot be answered sooner than the outage in front of it");
+            Assert.That(low, Is.GreaterThanOrEqualTo(medium),
+                "a password cannot be answered sooner than the fault in front of it");
+        }
+
+        /// <summary>A class with nothing in it has nobody waiting, and no desk at all is the cap.</summary>
+        [Test]
+        public void NothingWaitingIsNoWaitAndNobodyOnTheDeskIsTheCap()
+        {
+            var desk = new SupportDesk();
+
+            Assert.That(desk.WaitHoursOf(TicketClass.High, 3.0), Is.EqualTo(0.0));
+
+            for (var day = 0; day < 10; day++)
+            {
+                desk.Advance(4_000_000.0, 0.0);
+            }
+
+            Assert.That(desk.WaitHoursOf(TicketClass.High, 0.0),
+                Is.EqualTo(SupportCatalog.AbandonedHours),
+                "a queue nobody can reach is abandoned, not infinite");
+        }
+
+        /// <summary>
+        /// A desk that answers nothing has answered nothing, however much post it loses.
+        ///
+        /// **The write-off is what this is guarding.** What nobody answers inside the judgement
+        /// window is dropped, so the backlog of a neglected desk stops growing and eventually
+        /// falls. A counter taken from the change in backlog would read that as work done and
+        /// credit the worst desk in the game with thousands of answers.
+        /// </summary>
+        [Test]
+        public void ADeskWithNobodyOnItHasAnsweredNothing()
+        {
+            var desk = new SupportDesk();
+
+            for (var day = 0; day < 120; day++)
+            {
+                desk.Advance(4_000_000.0, 0.0);
+            }
+
+            Assert.That(desk.TicketsResolved, Is.EqualTo(0.0),
+                "nobody worked a single hour, so nothing was answered");
+
+            var staffed = new SupportDesk();
+
+            for (var day = 0; day < 120; day++)
+            {
+                staffed.Advance(4_000_000.0, 3.0);
+            }
+
+            Assert.That(staffed.TicketsResolved, Is.GreaterThan(0.0));
+        }
+
+        /// <summary>
+        /// The count survives a save, because nothing left in the file could rebuild it.
+        ///
+        /// A backlog says what is still owed. It cannot say what is gone, so this is a record and
+        /// records are written. Thirteenth time in this project that something has had to be saved
+        /// for that reason rather than for being causal.
+        /// </summary>
+        [Test]
+        public void TheAnsweredCountSurvivesASave()
+        {
+            var state = new CompanyState("Prometheus AI", 77u);
+
+            for (var day = 0; day < 60; day++)
+            {
+                state.Support.Advance(4_000_000.0, 2.0);
+            }
+
+            var answered = state.Support.TicketsResolved;
+            Assert.That(answered, Is.GreaterThan(0.0));
+
+            var back = SaveStore.Restore(SaveStore.Capture(state));
+
+            Assert.That(back.Support.TicketsResolved, Is.EqualTo(answered).Within(0.0001));
+        }
+
+        /// <summary>v69 to v70: nothing in an older file says how much post was ever answered.</summary>
+        [Test]
+        public void AnOlderCampaignHasNoAnsweredCount()
+        {
+            var data = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            data.version = 69;
+            data.supportResolved = 918.0;
+
+            var upgraded = SaveMigration.UpgradeV69ToV70(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(70));
+            Assert.That(upgraded.supportResolved, Is.EqualTo(0.0));
+            StringAssert.Contains("v69 to v70", SaveMigration.LastMigrationNotes);
+        }
     }
 }

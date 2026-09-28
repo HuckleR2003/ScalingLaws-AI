@@ -38,6 +38,26 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+### Added
+
+- **The support desk has a tab of its own, with its satisfaction figure in the name of the tab.**
+  It was a strip buried under three other panels on the management desk, on a screen reached by one
+  button on a banner, which is the worst place in the game for the only system that starts without
+  being started and whose failure is invisible until the market has already moved. It sits beside
+  OFFICIAL PAGE, MANAGEMENT, VERSIONS and ARCHIVE now, and a player who never opens it still sees
+  the percentage fall.
+
+  The tab is a narrow column of what is true and a wide table of what is still owed. On the left:
+  satisfaction as a drawn face and a figure, the sentence saying what that is worth to the product,
+  the average time to an answer, how many letters have been answered since the company opened, how
+  many arrive a day, and the two ways to put somebody on the desk. On the right: one row per class
+  of post, with how many are waiting, how long the oldest has been there, and who actually reaches
+  it. Agents answer the ordinary post and nothing else, so a company with ten agents and nobody at
+  all reads "nobody" against its outages, which is the truth and was not said anywhere before.
+
+- **A count of letters the desk has answered.** It is a record rather than a derivation: a backlog
+  says what is still owed and nothing in a save could say what is gone.
+
 ### Fixed
 
 - **The model creator no longer loses its own heading and its own buttons while the tour is
@@ -56,11 +76,14 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ### Save compatibility
 
-Unchanged. Nothing about this touches the save format, which stays at **v69**.
+**Save v70.** Campaigns from every earlier version load and keep their history. The only new field
+is the desk's answered count, and a v69 file starts it at zero rather than inventing a figure: the
+number cannot be worked out after the fact from anything an older save holds, and a confident
+reconstruction on the one screen whose job is to be checkable would be worse than an honest zero.
 
 ### Under the hood
 
-- **1,505 EditMode tests and 76 PlayMode**, measured from `TestResults.xml` and `PlayResults.xml`
+- **1,511 EditMode tests and 76 PlayMode**, measured from `TestResults.xml` and `PlayResults.xml`
   rather than remembered. Two of the PlayMode ones are new: a reproduction that renders the two
   reported pages with the tour on them, and `TheCreatorStillFitsWhileTheTourIsUp`, which walks every
   step of the tour that opens the creator and fails if the heading or the buttons are off the screen
