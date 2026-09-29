@@ -17,6 +17,8 @@ namespace ScalingLaws.Persistence
         private const string MasterVolumeKey = Prefix + "MasterVolume";
         private const string MusicVolumeKey = Prefix + "MusicVolume";
         private const string FullscreenKey = Prefix + "Fullscreen";
+        private const string WindowWidthKey = Prefix + "WindowWidth";
+        private const string WindowHeightKey = Prefix + "WindowHeight";
         private const string ReduceMotionKey = Prefix + "ReduceMotion";
         private const string LanguageKey = Prefix + "Language";
         private const string AutosaveKey = Prefix + "AutosaveMinutes";
@@ -100,6 +102,41 @@ namespace ScalingLaws.Persistence
         public static bool ReduceMotion { get; private set; }
 
         /// <summary>
+        /// The windowed size the player chose, or zero for the one the game works out itself.
+        ///
+        /// **There was no way to set this at all**, which is a gap on a game going to a store: the
+        /// only control was a fullscreen tick, and windowed meant whatever `WindowedSize` derived
+        /// from the display. That is a reasonable default and it is not an answer to somebody whose
+        /// laptop draws the game differently from everybody else's machine.
+        ///
+        /// Zero rather than a default pair, so "the game decides" stays a real option rather than
+        /// being one row of the list that happens to match today's arithmetic.
+        /// </summary>
+        public static int WindowWidth { get; private set; }
+
+        /// <summary>See <see cref="WindowWidth"/>.</summary>
+        public static int WindowHeight { get; private set; }
+
+        /// <summary>
+        /// The windowed sizes offered, smallest first, plus "let the game decide" as (0, 0).
+        ///
+        /// **Every one of them is 16:9**, which is the reference the panel scales against, so none
+        /// of them changes the layout: they change how crisp it is and how much of the desktop the
+        /// game takes. A list with a 16:10 or a 4:3 in it would be offering the player a way to
+        /// make the interface reflow, which is a different feature and needs the screens measured
+        /// at that shape first.
+        /// </summary>
+        public static readonly (int Width, int Height)[] WindowSizes =
+        {
+            (0, 0),
+            (1280, 720),
+            (1366, 768),
+            (1600, 900),
+            (1920, 1080),
+            (2560, 1440)
+        };
+
+        /// <summary>
         /// Which language the interface is in.
         ///
         /// **A preference, not campaign state.** Somebody who reads Polish reads Polish in every
@@ -164,6 +201,8 @@ namespace ScalingLaws.Persistence
             MasterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MasterVolumeKey, DefaultMasterVolume));
             MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumeKey, DefaultMusicVolume));
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, 1) == 1;
+            WindowWidth = Mathf.Clamp(PlayerPrefs.GetInt(WindowWidthKey, 0), 0, 32_000);
+            WindowHeight = Mathf.Clamp(PlayerPrefs.GetInt(WindowHeightKey, 0), 0, 32_000);
             ReduceMotion = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
             HasSeenOpening = PlayerPrefs.GetInt(SeenOpeningKey, 0) == 1;
             DebugUnlocked = PlayerPrefs.GetInt(DebugUnlockedKey, 0) == 1;
@@ -220,6 +259,30 @@ namespace ScalingLaws.Persistence
         {
             Fullscreen = value;
             PlayerPrefs.SetInt(FullscreenKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+            ApplyDisplayMode();
+        }
+
+        /// <summary>
+        /// Chooses the windowed size. Zero for either side means the game works it out.
+        ///
+        /// It turns fullscreen off, because picking a window size and staying fullscreen is a
+        /// setting that appears to do nothing, which this project has shipped enough of.
+        /// </summary>
+        public static void SetWindowSize(int width, int height)
+        {
+            WindowWidth = Mathf.Clamp(width, 0, 32_000);
+            WindowHeight = Mathf.Clamp(height, 0, 32_000);
+
+            PlayerPrefs.SetInt(WindowWidthKey, WindowWidth);
+            PlayerPrefs.SetInt(WindowHeightKey, WindowHeight);
+
+            if (WindowWidth > 0 && WindowHeight > 0)
+            {
+                Fullscreen = false;
+                PlayerPrefs.SetInt(FullscreenKey, 0);
+            }
+
             PlayerPrefs.Save();
             ApplyDisplayMode();
         }
@@ -318,6 +381,18 @@ namespace ScalingLaws.Persistence
             if (Fullscreen)
             {
                 Screen.SetResolution(display.width, display.height, FullScreenMode.FullScreenWindow);
+
+                return;
+            }
+
+            // The player's own choice wins over the derived one. It is clamped to the display,
+            // because a window larger than the screen it is on is a title bar nobody can reach.
+            if (WindowWidth > 0 && WindowHeight > 0)
+            {
+                Screen.SetResolution(
+                    Mathf.Min(WindowWidth, display.width),
+                    Mathf.Min(WindowHeight, display.height),
+                    FullScreenMode.Windowed);
 
                 return;
             }

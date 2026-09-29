@@ -23395,3 +23395,12 @@
 .mg-heroblock {
     flex-shrink: 0;
 }
+
+/* The display readout on the settings sheet. A reading, not a control, so it is set in the hint
+   colour and given room to wrap: it carries five facts and one of them is a ratio nobody should
+   have to scroll sideways for. */
+.pause__display {
+    white-space: normal;
+    margin-top: 8px;
+    -unity-font-style: normal;
+}

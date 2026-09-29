@@ -440,6 +440,60 @@ namespace ScalingLaws.UI
             block.Add(Toggle("pause.fullscreen", GameSettings.Fullscreen,
                 value => GameSettings.SetFullscreen(value)));
 
+            // **A window size, which this game has never offered.** The only display control was a
+            // fullscreen tick, and windowed meant whatever the game derived from the display. That
+            // is a fine default and it is not an answer to somebody whose machine draws the game
+            // differently from everybody else's.
+            var window = new VisualElement();
+            window.AddToClassList("pause__setting");
+
+            var windowLabel = new Label(Loc.T("settings.window"));
+            windowLabel.AddToClassList("pause__label");
+            window.Add(windowLabel);
+
+            var sizes = new VisualElement();
+            sizes.AddToClassList("pause__choices");
+
+            foreach (var size in GameSettings.WindowSizes)
+            {
+                var pick = size;
+
+                var chip = new Button(() =>
+                {
+                    GameSettings.SetWindowSize(pick.Width, pick.Height);
+                    changed?.Invoke();
+                })
+                {
+                    text = pick.Width == 0
+                        ? Loc.T("settings.window.auto")
+                        : $"{pick.Width}x{pick.Height}"
+                };
+
+                chip.AddToClassList("pause__chip");
+                chip.EnableInClassList("pause__chip--on",
+                    GameSettings.WindowWidth == pick.Width
+                    && GameSettings.WindowHeight == pick.Height);
+
+                sizes.Add(chip);
+            }
+
+            window.Add(sizes);
+            block.Add(window);
+
+            // **What this machine is actually drawing, in one line.** Two people spent three days
+            // describing two different screens; a screenshot of this answers it in four numbers
+            // that whoever reads them can check. It is a reading, not a setting.
+            var report = new Label(DisplayReport.Line(block));
+            report.AddToClassList("pause__hint");
+            report.AddToClassList("pause__display");
+
+            // Measured after it has been laid out into a panel, or the panel it is asked about is
+            // the one it is not in yet and the line comes back short.
+            report.RegisterCallback<GeometryChangedEvent>(_ =>
+                report.text = DisplayReport.Line(report));
+
+            block.Add(report);
+
             block.Add(BuildKeys());
 
             return block;
