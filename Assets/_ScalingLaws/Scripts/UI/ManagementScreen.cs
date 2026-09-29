@@ -409,7 +409,16 @@ namespace ScalingLaws.UI
             //
             // Returned inside a wrapper rather than added to the root from here, because this method
             // is called into a layout that decides where its result goes.
+            //
+            // **And the wrapper carries a class, which is the whole reason this comment is longer
+            // than it was.** It had none, so it had no `flex-shrink: 0`, so the page's column
+            // squeezed it: the browser mock, the status strip and the card underneath were pressed
+            // into less height than the three of them need and drew across each other and across
+            // the plans panel below. Measured on the official page, three blocks overlapping:
+            // status 414-465, card 455-605, plans 523-707. This project's most-repeated fault, and
+            // it surfaced now because the support meter made the card taller.
             var block = new VisualElement();
+            block.AddToClassList("mg-heroblock");
 
             var shopfront = new VisualElement();
             shopfront.AddToClassList("mg-front");
@@ -460,12 +469,66 @@ namespace ScalingLaws.UI
             score.AddToClassList("mg-hero__score");
             right.Add(score);
 
+            // **The desk, on the page a stranger reads, as a bar rather than as pips.**
+            //
+            // Asked for by name, and the shape is the argument: five pips say how much people
+            // prefer the product to their next best option, which is a judgement with five
+            // meaningful steps. Satisfaction with the post is a percentage that moves a point at a
+            // time, and five dots cannot show a desk slipping from 84 to 71. It is also the one
+            // figure on this page that a player can do something about the same afternoon.
+            //
+            // The colour comes from `SupportFace.ToneFor`, which is what the tab's own face reads,
+            // so the bar here and the face there cannot say different things.
+            right.Add(BuildSupportMeter());
+
             var who = new Label(Loc.T("mg.people_use_it", UiFormat.Count(product.Subscribers)));
             who.AddToClassList("mg-hero__who");
             right.Add(who);
 
             hero.Add(right);
             block.Add(hero);
+            return block;
+        }
+
+        /// <summary>
+        /// Satisfaction with the support desk, as a percentage over a bar.
+        ///
+        /// It carries a button to the tab it belongs to, because the whole reason this figure is
+        /// on the public page is that the desk is the one thing here a player can fix today.
+        /// </summary>
+        private VisualElement BuildSupportMeter()
+        {
+            var quality = simulation.State.Support.Quality();
+            var tone = SupportFace.ToneFor(quality);
+
+            var block = new VisualElement();
+            block.AddToClassList("mg-sup");
+
+            var head = new VisualElement();
+            head.AddToClassList("mg-sup__head");
+
+            var caption = new Label(Loc.T("mg.support"));
+            caption.AddToClassList("mg-sup__caption");
+            head.Add(caption);
+
+            var figure = new Label(UiFormat.Percent(quality));
+            figure.AddToClassList("mg-sup__figure");
+            figure.style.color = tone;
+            head.Add(figure);
+
+            block.Add(head);
+
+            var track = new VisualElement();
+            track.AddToClassList("mg-sup__track");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("mg-sup__fill");
+            fill.style.width = new Length((float)(Math.Clamp(quality, 0.0, 1.0) * 100.0), LengthUnit.Percent);
+            fill.style.backgroundColor = tone;
+            track.Add(fill);
+
+            block.Add(track);
+
             return block;
         }
 

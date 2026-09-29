@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Passed" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0,5495741">
+  <test-suite type="TestSuite" id="1000" name="Scaling Laws" fullname="Scaling Laws" runstate="Runnable" testcasecount="1511" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.549574" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2683" name="ScalingLaws.Tests.EditMode.dll" fullname="C:/Users/kemat/Desktop/HCK_Labs/ScalingLaws/Library/ScriptAssemblies/ScalingLaws.Tests.EditMode.dll" runstate="Runnable" testcasecount="1511" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.524663" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="10160" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2684" name="ScalingLaws" fullname="ScalingLaws" runstate="Runnable" testcasecount="1511" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.505747" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2685" name="Tests" fullname="ScalingLaws.Tests" runstate="Runnable" testcasecount="1511" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.487495" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2686" name="EditMode" fullname="ScalingLaws.Tests.EditMode" runstate="Runnable" testcasecount="1460" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.467757" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2499" name="StylesheetTests" fullname="ScalingLaws.Tests.EditMode.StylesheetTests" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.447553" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2504" name="EveryClassTheInterfaceUsesIsStyled" fullname="ScalingLaws.Tests.EditMode.StylesheetTests.EveryClassTheInterfaceUsesIsStyled" methodname="EveryClassTheInterfaceUsesIsStyled" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" seed="2085141130" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.141512" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2500" name="EveryLengthIsInAUnitUssUnderstands" fullname="ScalingLaws.Tests.EditMode.StylesheetTests.EveryLengthIsInAUnitUssUnderstands" methodname="EveryLengthIsInAUnitUssUnderstands" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" seed="50331837" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.046716" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2503" name="NoRuleSetsTheSamePropertyTwice" fullname="ScalingLaws.Tests.EditMode.StylesheetTests.NoRuleSetsTheSamePropertyTwice" methodname="NoRuleSetsTheSamePropertyTwice" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" seed="874078090" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.058748" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2505" name="NoRuleUsesASelectorUiToolkitCannotRead" fullname="ScalingLaws.Tests.EditMode.StylesheetTests.NoRuleUsesASelectorUiToolkitCannotRead" methodname="NoRuleUsesASelectorUiToolkitCannotRead" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" seed="1596351862" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.058610" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2502" name="NoSelectorIsDefinedTwice" fullname="ScalingLaws.Tests.EditMode.StylesheetTests.NoSelectorIsDefinedTwice" methodname="NoSelectorIsDefinedTwice" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" seed="889254281" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.038065" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2501" name="NothingIsSetSmallerThanTheFloor" fullname="ScalingLaws.Tests.EditMode.StylesheetTests.NothingIsSetSmallerThanTheFloor" methodname="NothingIsSetSmallerThanTheFloor" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" seed="1524139808" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.061247" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2506" name="TheDrawingCoversThePagePaddingAsWell" fullname="ScalingLaws.Tests.EditMode.StylesheetTests.TheDrawingCoversThePagePaddingAsWell" methodname="TheDrawingCoversThePagePaddingAsWell" classname="ScalingLaws.Tests.EditMode.StylesheetTests" runstate="Runnable" seed="383965522" result="Passed" start-time="2026-09-29 01:05:06Z" end-time="2026-09-29 01:05:06Z" duration="0.006820" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/kemat/AppData/LocalLow/HCK Labs/Scaling Laws\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -5102,8 +5102,10 @@
     align-items: flex-end;
 }
 
+/* Half again as big, asked for by name. It is the verdict on the whole product and it was set at
+   the size of a caption, under five dots a player has to count. */
 .mg-hero__score {
-    font-size: 20px;
+    font-size: 30px;
     -unity-font-style: bold;
     color: rgb(248, 240, 240);
     margin-top: 4px;
@@ -5120,11 +5122,12 @@
     align-items: center;
 }
 
+/* The pips grow with the figure under them, or the row reads as a caption over a headline. */
 .mg-pip {
-    width: 12px;
-    height: 12px;
-    border-radius: 6px;
-    margin-left: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    margin-left: 5px;
     background-color: rgba(255, 255, 255, 0.10);
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.14);
@@ -12613,12 +12616,26 @@
     color: rgb(230, 238, 250);
 }
 
+/* **The caret was always there and was drawn almost black.**
+ *
+ * `--unity-cursor-color` comes from the runtime theme, which is written for an editor window on a
+ * light grey field. Every text field in this game is a dark plate, so the bar was the right shape,
+ * in the right place, blinking at the right rate, and invisible. A tester reported it as there
+ * being no cursor at all and no way to tell where typing would land, which is what that looks
+ * like from the chair. Same family as the styled form controls above: the theme is correct for
+ * somewhere this game is not.
+ *
+ * The selection colour goes with it for the same reason: a dark highlight over dark text is a
+ * selection nobody can see they have made.
+ */
 .unity-base-text-field__input {
     padding: 7px 10px;
     font-size: 13px;
     background-color: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.13);
     color: rgb(232, 240, 252);
+    --unity-cursor-color: rgb(236, 243, 252);
+    --unity-selection-color: rgba(226, 190, 44, 0.35);
 }
 
 .unity-base-text-field__input:focus {
@@ -17793,14 +17810,22 @@
  * root rather than inside a screen has to step aside for it, at the same 344 the room's own corner
  * banner already uses. One number, three tenants.
  */
+/* **The left edge, above the clock, asked for in those words.**
+ *
+ * It used to sit at `right: 344, top: 656`, tucked under the room's own corner banner because the
+ * right side of that screen is fully spoken for: the build rail owns the edge and the banner owns
+ * the lane inside it. That is true and it put a green card in the middle of the floor the player
+ * is trying to click on, which is what got it reported as being in the way.
+ *
+ * The left of the room is empty apart from the time dial, which hangs about 170px above a 96px
+ * bar, so the card clears both and nothing else lives there. */
 .has-right-rail .prompts {
     position: absolute;
     width: 268px;
-    /* Under the room's own corner banner, which already holds 344 to 680 from y 145 to 635. The
-       right side of this screen is fully spoken for: the build rail owns the edge and the banner
-       owns the lane inside it, so the only free space is the strip below the banner. */
-    right: 344px;
-    top: 656px;
+    left: 22px;
+    bottom: 286px;
+    right: auto;
+    top: auto;
 }
 
 /* **The phone gets out of the way of the things that live in that corner.** It is 330 wide at the
@@ -23312,4 +23337,61 @@
    than all five at once. It carries no look of its own: the tab styling is `.mg-tab`, and giving
    this one a different appearance would say it is a different kind of tab, which it is not. */
 .mg-tab--support {
+}
+
+/* ---- the support meter on the official page ---------------------------------------------------
+ *
+ * A percentage over a bar, deliberately not pips. Five dots can say how much people prefer this
+ * product to their next best option, which is a judgement with five real steps; they cannot say
+ * that a desk has slipped from 84 to 71, which is the shape satisfaction with the post actually
+ * moves in. The colour is set from `SupportFace.ToneFor` in code, so this bar and the face on the
+ * support tab read the same bands.
+ */
+.mg-sup {
+    align-self: stretch;
+    flex-shrink: 0;
+    margin-top: 12px;
+}
+
+.mg-sup__head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.mg-sup__caption {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(150, 166, 188);
+}
+
+.mg-sup__figure {
+    font-size: 17px;
+    -unity-font-style: bold;
+}
+
+.mg-sup__track {
+    height: 8px;
+    margin-top: 5px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.09);
+    overflow: hidden;
+}
+
+.mg-sup__fill {
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* The shopfront, the status strip and the card about the product, as one block on the page.
+
+   **It exists for the one declaration in it.** An unstyled wrapper takes the default `flex-shrink`
+   of 1, so a page taller than its window squeezes it rather than overflowing, and UI Toolkit
+   squeezes by drawing children on top of each other rather than by clipping. The three blocks
+   inside were measured overlapping by 10 and 82 pixels, and the panel below ran up into them.
+   Same family as `.panel`, `.trait-card` and every other thing in this sheet that had to be told
+   not to shrink. */
+.mg-heroblock {
+    flex-shrink: 0;
 }

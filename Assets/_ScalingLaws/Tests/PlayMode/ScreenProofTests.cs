@@ -1485,5 +1485,72 @@ namespace ScalingLaws.Tests.PlayMode
 
             yield return Capture(board.Build(), "state_board.png");
         }
+
+        /// <summary>
+        /// The official page and the support tab, which nothing has ever rendered.
+        ///
+        /// **This screen is reached from one button on one banner and is not a bottom bar slot**,
+        /// so the twenty-tab sweep has never walked it and no frame of it existed. It now carries
+        /// the desk's satisfaction as a bar and a rating set half again as large, both asked for
+        /// by name, and neither could be looked at.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOfficialPageAndTheSupportTabDraw()
+        {
+            var simulation = Campaign();
+
+            // The desk only has a queue once people are being served, and a page with a perfect
+            // 100% says nothing about whether the bar reads at any other value.
+            for (var day = 0; day < 90; day++)
+            {
+                simulation.State.Support.Advance(3_000_000.0, 0.4);
+            }
+
+            var page = new ManagementScreen(simulation, () => { }, () => { }, () => { },
+                () => { }, () => { });
+
+            page.Refresh();
+            yield return Capture(page.Root, "official_page.png");
+
+            // **The three blocks down this page must not land on each other.**
+            //
+            // They did. `BuildHero` returned an unstyled wrapper, so it took the default
+            // `flex-shrink` of 1 and the page's column squeezed it: UI Toolkit squeezes by drawing
+            // children over each other rather than by clipping, so the status strip sat inside the
+            // card and the plans panel ran up 82px into both. Measured, in that order,
+            // 414-465 / 455-605 / 523-707.
+            //
+            // It surfaced when the support meter made the card taller, which is the point: the
+            // wrapper had been shrinkable since it was written and nothing on the page was tall
+            // enough to show it. This measures the rectangles rather than the declaration, so the
+            // next thing added to this page cannot bring it back a different way.
+            var blocks = new[] { "mg-hero", "mg-status", "mg-plans" };
+            var seen = new List<(string Name, Rect Box)>();
+
+            foreach (var name in blocks)
+            {
+                var found = page.Root.Q(className: name);
+                Assert.That(found, Is.Not.Null, $"the official page has no .{name} on it");
+                seen.Add((name, found.worldBound));
+            }
+
+            for (var first = 0; first < seen.Count; first++)
+            {
+                for (var second = first + 1; second < seen.Count; second++)
+                {
+                    var a = seen[first];
+                    var b = seen[second];
+
+                    Assert.That(a.Box.Overlaps(b.Box), Is.False,
+                        $".{a.Name} {a.Box} and .{b.Name} {b.Box} are drawn on top of each other");
+                }
+            }
+
+            var desk = new ManagementScreen(simulation, () => { }, () => { }, () => { },
+                () => { }, () => { });
+
+            desk.ShowSupport();
+            yield return Capture(desk.Root, "official_support.png");
+        }
     }
 }

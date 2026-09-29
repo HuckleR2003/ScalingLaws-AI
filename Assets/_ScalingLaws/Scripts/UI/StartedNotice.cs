@@ -53,6 +53,24 @@ namespace ScalingLaws.UI
         /// <summary>And its bar runs for the same share of the longer hold.</summary>
         public const int AlertSweepMilliseconds = SweepMilliseconds * 5 / 2;
 
+        /// <summary>
+        /// How long a notice carrying a button stays up: four times the plain hold.
+        ///
+        /// **A notice is read and a button is travelled to, and those are not the same length of
+        /// time.** Three seconds is right for a sentence that has to be noticed and may be
+        /// ignored; it is not enough to see a card appear in the corner, decide the answer matters
+        /// and get the cursor onto SEE DETAILS before the card has gone. A tester reported exactly
+        /// that on the card saying a lab had agreed, which is one of the few moments in this game
+        /// worth interrupting somebody for.
+        ///
+        /// It is keyed on the button rather than on the tone, because the tone says how important
+        /// the news is and the button says whether there is anything to do about it.
+        /// </summary>
+        public const int ActionHoldMilliseconds = HoldMilliseconds * 4;
+
+        /// <summary>And its bar runs for the same share of that hold.</summary>
+        public const int ActionSweepMilliseconds = SweepMilliseconds * 4;
+
         /// <summary>How often an alert swaps between red and white.</summary>
         public const int FlashMilliseconds = 420;
 
@@ -140,11 +158,23 @@ namespace ScalingLaws.UI
 
             var hold = HoldMilliseconds;
 
+            // A card with something to press stays up long enough to press it, whatever its tone.
+            if (action != null)
+            {
+                hold = ActionHoldMilliseconds;
+
+                var reach = new TimeValue(ActionSweepMilliseconds, TimeUnit.Millisecond);
+                fill.style.transitionDuration = new List<TimeValue> { reach, reach };
+            }
+
             if (tone == NoticeTone.Alert)
             {
-                hold = AlertHoldMilliseconds;
+                hold = Math.Max(hold, AlertHoldMilliseconds);
 
-                var sweep = new TimeValue(AlertSweepMilliseconds, TimeUnit.Millisecond);
+                var sweep = new TimeValue(
+                    action != null ? ActionSweepMilliseconds : AlertSweepMilliseconds,
+                    TimeUnit.Millisecond);
+
                 fill.style.transitionDuration = new List<TimeValue> { sweep, sweep };
 
                 shown.schedule.Execute(() =>

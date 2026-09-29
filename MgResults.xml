@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1,6798319">
+  <test-suite type="TestSuite" id="1104" name="Scaling Laws" fullname="Scaling Laws" runstate="Runnable" testcasecount="81" result="Failed" site="Child" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1.679832" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1097" name="ScalingLaws.Tests.PlayMode.dll" fullname="C:/Users/kemat/Desktop/HCK_Labs/ScalingLaws/Library/ScriptAssemblies/ScalingLaws.Tests.PlayMode.dll" runstate="Runnable" testcasecount="81" result="Failed" site="Child" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1.658247" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="12672" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1098" name="ScalingLaws" fullname="ScalingLaws" runstate="Runnable" testcasecount="81" result="Failed" site="Child" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1.650233" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1099" name="Tests" fullname="ScalingLaws.Tests" runstate="Runnable" testcasecount="81" result="Failed" site="Child" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1.645292" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1100" name="PlayMode" fullname="ScalingLaws.Tests.PlayMode" runstate="Runnable" testcasecount="81" result="Failed" site="Child" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1.643490" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1037" name="ScreenProofTests" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1.639578" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1074" name="TheOfficialPageAndTheSupportTabDraw" fullname="ScalingLaws.Tests.PlayMode.ScreenProofTests.TheOfficialPageAndTheSupportTabDraw" methodname="TheOfficialPageAndTheSupportTabDraw" classname="ScalingLaws.Tests.PlayMode.ScreenProofTests" runstate="Runnable" seed="794385886" result="Failed" start-time="2026-09-29 01:18:25Z" end-time="2026-09-29 01:18:27Z" duration="1.622757" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  .mg-hero (x:26.00, y:455.00, width:1868.00, height:150.00) and .mg-status (x:26.00, y:414.00, width:1868.00, height:51.00) are drawn on top of each other
+  Expected: False
+  But was:  True
+]]></message>
+                  <stack-trace><![CDATA[at ScalingLaws.Tests.PlayMode.ScreenProofTests+<TheOfficialPageAndTheSupportTabDraw>d__48.MoveNext () [0x001f7] in C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\Assets\_ScalingLaws\Tests\PlayMode\ScreenProofTests.cs:1544
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[No Theme Style Sheet set to PanelSettings , UI will not render properly
+[Scaling Laws] wrote C:\Users\kemat\Desktop\HCK_Labs\ScalingLaws\ScreenProof~\official_page.png
+Saving results to: C:/Users/kemat/AppData/LocalLow/HCK Labs/Scaling Laws\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

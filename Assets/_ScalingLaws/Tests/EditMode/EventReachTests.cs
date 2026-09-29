@@ -42,7 +42,6 @@ namespace ScalingLaws.Tests.EditMode
             [CompanyEventType.HardwareOrdered] = "announced by the order itself",
             [CompanyEventType.StaffHired] = "the player just pressed it",
             [CompanyEventType.SkillLevelled] = "the corner banner draws it",
-            [CompanyEventType.OfferSent] = "the player just pressed it; the answer is the moment",
             [CompanyEventType.Notice] = "already a sentence somebody chose to show",
 
             // **Declared and never raised by anything, which this guard found on its first run.**

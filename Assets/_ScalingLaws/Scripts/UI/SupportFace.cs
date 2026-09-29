@@ -51,11 +51,26 @@ namespace ScalingLaws.UI
         /// Written out rather than interpolated: a face halfway between green and red is an
         /// ambiguous face, and the bands are where the mouth changes anyway.
         /// </summary>
-        public Color Tone => quality >= Content
-            ? UiParts.Good
-            : quality >= Unhappy
-                ? new Color(0.84f, 0.64f, 0.26f)
-                : UiParts.Bad;
+        public Color Tone => ToneFor(quality);
+
+        /// <summary>
+        /// The same three tones, for anything else that draws the desk's satisfaction.
+        ///
+        /// **One reading, because two would drift.** The official page prints the figure with a
+        /// bar behind it and this draws a face, and a bar that is amber beside a face that is
+        /// still smiling is the disagreement with a date on it. This project has had four copies
+        /// of one set of heat thresholds saying different things about the same cabinet.
+        /// </summary>
+        public static Color ToneFor(double quality)
+        {
+            var clamped = Mathf.Clamp01((float)quality);
+
+            return clamped >= Content
+                ? UiParts.Good
+                : clamped >= Unhappy
+                    ? new Color(0.84f, 0.64f, 0.26f)
+                    : UiParts.Bad;
+        }
 
         private void Draw(MeshGenerationContext context)
         {

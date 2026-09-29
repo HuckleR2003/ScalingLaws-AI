@@ -4334,6 +4334,17 @@ namespace ScalingLaws.UI
                 // later from somebody else, and the whole point of making an offer wait was that the
                 // answer is a moment. Nine event types were raised by the relations system and read
                 // by nothing at all, which is the fault the wire itself was built to fix.
+                // **The one thing the player just did that still has to be announced.** Everything
+                // else in this switch stays quiet because it is a click coming back a second
+                // later, and that rule holds here too except for one fact: sending an offer
+                // changes nothing a player can see. The card does not move, no money is obviously
+                // gone, and the answer is days away, so the only reading available is that the
+                // button did not work. It is the plain blue notice, with no button, because there
+                // is nothing to do but wait.
+                case CompanyEventType.OfferSent:
+                    startedNotice?.Show(Loc.T("notice.offer_sent"), companyEvent.Message);
+                    break;
+
                 case CompanyEventType.OfferAccepted:
                     startedNotice?.Show(Loc.T("notice.offer_yes"), companyEvent.Message,
                         NoticeTone.Special, Loc.T("notice.see"), () => Show(Screen.Ranking));
