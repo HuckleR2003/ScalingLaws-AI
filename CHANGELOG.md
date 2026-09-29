@@ -38,62 +38,91 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+---
+
+## [0.6.1] - 2026-09-29
+
+**A test build, not the release.** 0.6.2 is the one that goes out. This exists so the game can be
+opened in fullscreen on two machines that have been describing two different screens for three days,
+and so the second of them can finally say what it is drawing.
+
+**The headline is a contract that took your money and did nothing.** A distribution licence costs
+$1.2M to arrange and runs for 270 days, and for the whole of that term it changed nothing at all:
+the line that was supposed to widen your audience had no caller anywhere in the game, and the line
+that was supposed to charge the partner their thirty per cent was named only inside its own
+catalogue. Both are connected now, together, because wiring the reach without the cut would have
+handed out twenty-two per cent more audience for nothing.
+
 ### Added
 
-- **The support desk has a tab of its own, with its satisfaction figure in the name of the tab.**
-  It was a strip buried under three other panels on the management desk, on a screen reached by one
-  button on a banner, which is the worst place in the game for the only system that starts without
-  being started and whose failure is invisible until the market has already moved. It sits beside
-  OFFICIAL PAGE, MANAGEMENT, VERSIONS and ARCHIVE now, and a player who never opens it still sees
-  the percentage fall.
+- **The game says what it is drawing.** One line on the settings sheet: the window, the logical page
+  the interface is laid out on, the scale between them, the shape of the window as a ratio, and
+  whether it is fullscreen. Every report of a page being cut off has come from one machine, every
+  proof render taken at the same nominal resolution has shown the page whole, and until now there
+  was nothing on any screen that could tell those two apart.
+- **A window size, which this game has never offered.** The only display control was a fullscreen
+  tick. It is a list of 16:9 sizes plus "let the game decide", and every one of them is held by a
+  test to the shape the interface was actually laid out for.
+- **The support desk has a tab of its own, with its satisfaction in the name of the tab.** It was a
+  strip buried under three other panels, on a screen reached by one button on one banner, and it is
+  the only system in the game that starts without being started.
+- **A count of letters the desk has answered**, and the queue now says how many are waiting and how
+  long the oldest has been there rather than only how many hours of work are owed.
+- **The official page carries the desk's satisfaction as a bar**, and the rating beside it is half
+  again as large.
+- **A distribution licence is a contract now.** Agreeing is not signing: they say yes, a card
+  arrives with the term, the people it would reach, their commission and what is left for you, and
+  the player signs it or turns it down. The button that starts the conversation says SETTLE THE
+  DETAILS, because that is what it does.
 
-  The tab is a narrow column of what is true and a wide table of what is still owed. On the left:
-  satisfaction as a drawn face and a figure, the sentence saying what that is worth to the product,
-  the average time to an answer, how many letters have been answered since the company opened, how
-  many arrive a day, and the two ways to put somebody on the desk. On the right: one row per class
-  of post, with how many are waiting, how long the oldest has been there, and who actually reaches
-  it. Agents answer the ordinary post and nothing else, so a company with ten agents and nobody at
-  all reads "nobody" against its outages, which is the truth and was not said anywhere before.
+### Changed
 
-- **A count of letters the desk has answered.** It is a record rather than a derivation: a backlog
-  says what is still owed and nothing in a save could say what is gone.
+- The partner's share has its own line in the books, so the trade is visible from both sides rather
+  than being a bigger audience with no price on it.
+- A notice carrying a button stays up four times as long. Three seconds is right for a sentence that
+  may be ignored and is not enough to see a card, decide it matters, and reach the button.
+- Sending a proposal to another lab says so. It is the one thing the player does whose click changes
+  nothing visible, so the only reading available was that the button had not worked.
 
 ### Fixed
 
-- **The model creator no longer loses its own heading and its own buttons while the tour is
-  running.** Reported twice by a tester, on two different pages and in almost the same words: on
-  PRZEGLĄD the section title and the WSTECZ/DALEJ row were simply not there, the right-hand half of
-  MARKA went missing, and leaving the page and coming back appeared to repair it. Measured, it was
-  one fault. The whole creator sat inside the page scroller the rest of the game uses, the tour
-  reserves the foot of the screen for the strip Emil talks from, and the tour then scrolls its own
-  highlight into view. On a page 838px tall in a 647px window that lands in the middle, which takes
-  the title off the top and the buttons off the bottom at the same time; going away and coming back
-  put the scroll back to zero, which restores the title and nothing else.
-
-  The creator is now laid out the way its own stylesheet always said it should be: the title and
-  stage rail are pinned to the top, the WSTECZ/DALEJ row to the bottom, and only the stage between
-  them scrolls. Nothing the player needs in order to leave a page can be scrolled away from them.
+- **The model creator keeps its own heading and its own buttons while the tutorial is running.** It
+  was losing both: the page is taller than the window, the tour reserves the foot of the screen and
+  then scrolls its own highlight into view, which clipped the title off the top and the WSTECZ /
+  DALEJ row off the bottom at once. The only way out was to leave the page and start the model
+  again.
+- **The button that adds a fan to a server cabinet is on the screen.** It was cut in half by the
+  bottom of the window, reported twice as fans being impossible to add, which is exactly what that
+  looks like.
+- **The tour bar stays lit while the cursor is on it.** It went transparent the instant NEXT was
+  pressed and only took its colours back when the mouse was moved onto it again, so a player
+  clicking through was pressing a half-transparent button.
+- **There is a cursor in the text fields.** There always was. It was drawn almost black on a dark
+  field: right shape, right place, right blink rate, invisible.
+- **The support walkthrough has the step it was missing**, the one where the player finds the tab.
+  Before the tab existed it rang a class that was not in the tree and carried on talking about
+  something invisible.
+- Four knowledge-cutoff labels on the DATA page printed on top of each other in Polish.
+- The green walkthrough card in the server room moves to the left edge, out of the floor the player
+  is trying to click on.
+- Three blocks on the official page were drawn across each other, because the block holding them had
+  no class and therefore no `flex-shrink: 0`.
 
 ### Save compatibility
 
-**Save v70.** Campaigns from every earlier version load and keep their history. The only new field
-is the desk's answered count, and a v69 file starts it at zero rather than inventing a figure: the
-number cannot be worked out after the fact from anything an older save holds, and a confident
-reconstruction on the one screen whose job is to be checkable would be worse than an honest zero.
+**Save v71.** Campaigns from every earlier version load and keep their history. Two new fields: the
+support desk's answered count and the distribution partner's ledger line, both starting empty on an
+older file because nothing in a v69 or v70 save could say what they were and a confident figure
+invented into either would be a charge nobody paid.
 
 ### Under the hood
 
-- **1,511 EditMode tests and 76 PlayMode**, measured from `TestResults.xml` and `PlayResults.xml`
-  rather than remembered. Two of the PlayMode ones are new: a reproduction that renders the two
-  reported pages with the tour on them, and `TheCreatorStillFitsWhileTheTourIsUp`, which walks every
-  step of the tour that opens the creator and fails if the heading or the buttons are off the screen
-  or behind the strip. It was run against the old arrangement first and failed there, which is the
-  only thing that makes a guard worth having.
-- The reserve at the foot of the page was **not** the fault and has not been reduced. Shrinking it
-  to the bar was the obvious next move and the geometry refuses it: at 1920x1080 the bar runs from
-  x 269 to x 1651 and Emil's portrait sits at x 596, inside it and over the page, which is the
-  report the measured reserve was written for in the first place. Both readings are now in the
-  source beside the number.
+- **1,519 EditMode tests and 81 PlayMode**, measured from the result files rather than remembered.
+- Every fix above that could have a ratchet has one, and each was run against the broken code first.
+  A guard that has only ever passed proves nothing.
+- Three of them found something the repair had not: the support walkthrough had been ringing nothing
+  since the day it was written, 1366x768 is not 16:9, and an unstyled wrapper on the official page
+  had been shrinkable since the method was written and only showed when something on it grew.
 
 ---
 

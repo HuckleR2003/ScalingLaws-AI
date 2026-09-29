@@ -121,14 +121,28 @@ namespace ScalingLaws.UI
         /// one number rather than three shapes, so there is no band where the face is drawn by a
         /// different piece of code and no chance of a mouth that does not meet its own corners.
         /// </summary>
+        /// <summary>
+        /// Which way the mouth curves, from -1 at the worst desk to +1 at the best.
+        ///
+        /// **It was the wrong way round and it shipped that way for a day.** Screen space runs
+        /// downwards, so a control point *below* the corners pulls the middle of the curve down and
+        /// draws a smile, and one above them draws a frown. The first version read
+        /// `Lerp(1, -1, quality)` under a comment confidently asserting the opposite, so a desk at
+        /// nine per cent satisfaction smiled in red and a perfect one frowned in green.
+        ///
+        /// Nothing could catch it but looking: the colour was right, the percentage was right, the
+        /// face was drawn, and the only thing wrong was the sign of one number inside a curve.
+        /// Pure and public so a test can hold the direction now that one can.
+        /// </summary>
+        public static float MouthBend(double quality) =>
+            Mathf.Lerp(-1f, 1f, Mathf.Clamp01((float)quality));
+
         private void DrawMouth(Painter2D painter, Vector2 centre, float radius, Color tone)
         {
             var mouth = centre.y + radius * 0.22f;
             var reach = radius * 0.42f;
 
-            // +1 at the worst, -1 at the best. Screen space runs downwards, so a negative bend
-            // lifts the middle of the curve and draws a smile.
-            var bend = Mathf.Lerp(1f, -1f, Mathf.InverseLerp(0f, 1f, quality));
+            var bend = MouthBend(quality);
 
             var left = new Vector2(centre.x - reach, mouth);
             var right = new Vector2(centre.x + reach, mouth);

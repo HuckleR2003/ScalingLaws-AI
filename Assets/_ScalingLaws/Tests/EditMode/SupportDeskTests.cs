@@ -2,6 +2,7 @@ using NUnit.Framework;
 using ScalingLaws.Data;
 using ScalingLaws.Persistence;
 using ScalingLaws.Simulation;
+using ScalingLaws.UI;
 
 namespace ScalingLaws.Tests.EditMode
 {
@@ -557,6 +558,48 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(upgraded.version, Is.EqualTo(70));
             Assert.That(upgraded.supportResolved, Is.EqualTo(0.0));
             StringAssert.Contains("v69 to v70", SaveMigration.LastMigrationNotes);
+        }
+
+        /// <summary>
+        /// A bad desk frowns and a good one smiles, which is not what shipped.
+        ///
+        /// **Found by looking at a render and by nothing else.** The tab drew a face at nine per
+        /// cent satisfaction, in red, with the percentage correct beside it, smiling. Screen space
+        /// runs downwards, so a control point below the mouth's corners pulls the middle down and
+        /// draws a smile; the first version had the sign the other way round under a comment
+        /// asserting the opposite. Colour right, figure right, face drawn, one number inverted.
+        ///
+        /// The sign convention is the whole test: negative bends the middle up, which is a frown.
+        /// </summary>
+        [Test]
+        public void ABadDeskFrownsAndAGoodOneSmiles()
+        {
+            Assert.That(SupportFace.MouthBend(0.0), Is.LessThan(0f),
+                "a desk answering nothing has to frown: negative lifts the middle of the curve");
+
+            Assert.That(SupportFace.MouthBend(1.0), Is.GreaterThan(0f),
+                "a desk answering everything has to smile");
+
+            Assert.That(SupportFace.MouthBend(0.5), Is.EqualTo(0f).Within(1e-6),
+                "halfway is a flat mouth, so neither end is drawn as the correct answer");
+
+            // Monotonic, or some band in the middle would read worse than a band below it.
+            Assert.That(SupportFace.MouthBend(0.2), Is.LessThan(SupportFace.MouthBend(0.8)));
+        }
+
+        /// <summary>The three tones, and the one reading both the face and the bar take them from.</summary>
+        [Test]
+        public void TheToneAndTheMouthAgreeAboutWhichEndIsWhich()
+        {
+            Assert.That(SupportFace.ToneFor(0.0), Is.EqualTo(UiParts.Bad));
+            Assert.That(SupportFace.ToneFor(1.0), Is.EqualTo(UiParts.Good));
+
+            // Out of range in both directions is clamped rather than extrapolated: a desk cannot
+            // be better than answered or worse than abandoned.
+            Assert.That(SupportFace.ToneFor(-5.0), Is.EqualTo(UiParts.Bad));
+            Assert.That(SupportFace.ToneFor(5.0), Is.EqualTo(UiParts.Good));
+            Assert.That(SupportFace.MouthBend(-5.0), Is.EqualTo(SupportFace.MouthBend(0.0)));
+            Assert.That(SupportFace.MouthBend(5.0), Is.EqualTo(SupportFace.MouthBend(1.0)));
         }
     }
 }

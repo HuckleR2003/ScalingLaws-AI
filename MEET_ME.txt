@@ -1,4 +1,4 @@
-SCALING LAWS 0.6.0
+SCALING LAWS 0.6.1  (build testowy / a test build)
 Tycoon o firmie AI / An AI company tycoon
 HCK Labs, Marcin "HCK" Firmuga
 
@@ -25,21 +25,29 @@ Sterowanie: spacja pauzuje, 1/2/3 to prędkość, strzałki przewijają stronę.
 wybiera, prawy cofa albo oddala.
 
 Zapisy: gra zapisuje się sama i przez ZAPISZ. Kampanie z 0.5.0 wczytują się i zachowują historię.
-Format zapisu idzie z v62 na v69 i każdy krok to prawdziwa migracja, nie reset.
+Format zapisu idzie z v62 na v71 i każdy krok to prawdziwa migracja, nie reset.
 
 
-CO JEST NOWEGO W 0.6.0
+CO JEST NOWEGO W 0.6.1
 
-Inne laboratoria przestają być wierszem w tabeli. Do tej pory relacje mogły tylko spadać: siedem
-rzeczy je ruszało i każda była czymś, co robiłeś komuś. Teraz możesz coś laboratorium
-zaproponować, sojusz zdobywa się dniami i nie da się go kupić, wspólny program badawczy sprawia,
-że pieniądze idą jakieś trzy i pół raza dalej, w rogu ekranu stoi odznaka mówiąca, z kim
-pracujesz, a telefon trzyma numer do każdego, z kim kiedykolwiek coś podpisałeś. Kiedy termin się
-kończy, w połowie przypadków to oni dzwonią pierwsi.
+To jest build testowy. Oficjalny będzie 0.6.2. Ten istnieje po to, żeby otworzyć grę na pełnym
+ekranie na dwóch maszynach, które od trzech dni opisują dwa różne ekrany.
 
-Poza tym cały tydzień poprawek, a dwie rzeczy nigdy wcześniej nie działały ani razu: karty nie
-dało się wyjąć z szafy serwerowej, a cały ekran SERWIS był po angielsku w polskiej kampanii. Obie
-znalazła osoba, która nie jest autorem, siadając do gry.
+NAJPIERW TO, O CO PROSIMY: w menu pauzy, na dole ustawień, jest teraz jedna linijka z liczbami:
+okno, strona, skala, proporcje i tryb. Zrób jej zrzut. Jest też wybór rozmiaru okna, którego
+wcześniej w tej grze w ogóle nie było.
+
+Kontrakt, który brał pieniądze i nie robił nic. Licencja dystrybucyjna kosztuje 1,2 mln i trwa
+270 dni, i przez cały ten czas nie zmieniała niczego: linijka, która miała poszerzyć twoją
+publiczność, nie miała ani jednego wywołania, a ta, która miała pobierać partnerowi trzydzieści
+procent, była nazwana tylko we własnym katalogu. Teraz obie działają, razem.
+
+Kreator modelu nie gubi już własnego tytułu i własnych przycisków podczas samouczka. Przycisk
+dodania wentylatora jest na ekranie, a nie ucięty dołem okna. Pasek samouczka nie gaśnie pod
+kursorem po kliknięciu DALEJ. W polach tekstowych widać kursor, który zawsze tam był i był
+rysowany prawie na czarno na ciemnym tle. Wsparcie ma własną zakładkę z procentem w nazwie.
+
+Prawie wszystko z tej listy wyszło z kartek, które zapisała Samanta, grając w to na poważnie.
 
 Jeśli coś jest niejasne albo się psuje, napisz. To jest najbardziej użyteczna rzecz, jaką możesz
 z tym buildem zrobić.
@@ -69,21 +77,30 @@ Controls: space pauses, 1/2/3 set the speed, the arrow keys scroll a page. Left 
 right click goes back or zooms out.
 
 Saves: the game autosaves and saves from SAVE. Campaigns from 0.5.0 load and keep their history.
-The format moves from v62 to v69 and every step is a real migration rather than a reset.
+The format moves from v62 to v71 and every step is a real migration rather than a reset.
 
 
-WHAT IS NEW IN 0.6.0
+WHAT IS NEW IN 0.6.1
 
-Other laboratories stop being a row on a table. Relations could only ever fall before this: seven
-things moved them and every one was something you did to somebody. Now there are four things you
-can put to a lab, an alliance that is earned in days and cannot be bought, a joint research
-programme that makes the money go about three and a half times as far, a badge in the corner of
-the screen saying who you are working with, and a telephone that keeps the number of everyone you
-ever signed with. When a term runs out, half the time they ring you first.
+This is a test build. The official one will be 0.6.2. It exists so the game can be opened in
+fullscreen on two machines that have spent three days describing two different screens.
 
-The rest is a week of repairs, and two of them had never worked once: a part could be put into a
-server cabinet and never taken out, and the whole news screen was in English in a Polish campaign.
-Both were found by somebody who is not the author sitting down with the game.
+THE THING WE ARE ASKING FOR FIRST: in the pause menu, at the foot of the settings, there is now one
+line of numbers: the window, the page, the scale, the shape and the mode. Take a screenshot of it.
+There is also a window size, which this game has never offered before.
+
+A contract that took your money and did nothing. A distribution licence costs $1.2M and runs for
+270 days, and for the whole of that term it changed nothing at all: the line that was meant to widen
+your audience had no caller anywhere in the game, and the line meant to charge the partner their
+thirty per cent was named only inside its own catalogue. Both work now, and they work together.
+
+The model creator keeps its own title and its own buttons while the tutorial is running. The button
+that adds a fan is on the screen rather than cut in half by the bottom of the window. The tour bar
+stays lit under the cursor after NEXT is pressed. There is a cursor in the text fields, which there
+always was, drawn almost black on a dark field. Support has a tab of its own with its satisfaction
+in the name of it.
+
+Almost all of this came off pages Samanta wrote while playing it properly.
 
 If something is unclear or breaks, tell me. That is the most useful thing you can do with this
 build.
