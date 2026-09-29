@@ -116,18 +116,63 @@ namespace ScalingLaws.Tests.EditMode
             var upgraded = SaveMigration.UpgradeV56ToV57(data);
 
             Assert.AreEqual(57, upgraded.version);
-            Assert.AreEqual(2 * Ledger.Lines.Count, upgraded.ledgerAmounts.Count,
-                "The old months were not widened to the new set of lines.");
 
-            var books = new Ledger();
-            books.Restore(upgraded.ledgerMonths, upgraded.ledgerAmounts);
+            // **The width this step produces, not the width the game has today.**
+            //
+            // This read `Ledger.Lines.Count` and passed for as long as v57 happened to be the
+            // newest ledger shape. The moment a second line was appended it failed, naming the
+            // step that had done nothing wrong: one migration widens by one column and the
+            // catalogue had grown by two. A step is measured against its own target or it breaks
+            // every time a later one is written.
+            const int v57Width = oldWidth + 1;
 
-            Assert.AreEqual(5_000L, books.MonthTotal(24_290, LedgerLine.Salaries),
-                "The books of a loaded campaign were thrown away on the way through the migration.");
+            Assert.AreEqual(2 * v57Width, upgraded.ledgerAmounts.Count,
+                "v56 to v57 widens a month by exactly one column.");
 
-            Assert.AreEqual(5_001L, books.MonthTotal(24_291, LedgerLine.Salaries));
-            Assert.AreEqual(0L, books.MonthTotal(24_291, LedgerLine.OfficeRent),
+            // **Nothing is read back out of a half-migrated row, and that is not squeamishness.**
+            // `Ledger.Restore` expects one column per line in today's catalogue, so a row that has
+            // been widened by one step out of two does not fit it and comes back empty. The
+            // content assertions belong after the whole chain, below, where the row is the shape
+            // the game actually loads.
+
+            // **And the whole chain, which is the assertion that cannot go stale.** However many
+            // ledger lines are appended after this, a v56 file run all the way forward has to
+            // arrive at exactly as many columns as the catalogue has rows, with its salaries still
+            // in the salaries column.
+            var whole = new SaveData
+            {
+                version = 56,
+                ledgerMonths = new List<int> { 24_290, 24_291 },
+                ledgerAmounts = new List<long>()
+            };
+
+            for (var month = 0; month < 2; month++)
+            {
+                for (var column = 0; column < oldWidth; column++)
+                {
+                    whole.ledgerAmounts.Add(column == salaries ? 5_000L + month : 0L);
+                }
+            }
+
+            var carried = SaveStore.Parse(UnityEngine.JsonUtility.ToJson(whole));
+
+            Assert.AreEqual(SaveData.CurrentVersion, carried.version);
+            Assert.AreEqual(2 * Ledger.Lines.Count, carried.ledgerAmounts.Count,
+                "A v56 file carried all the way forward has to end with one column per ledger line.");
+
+            var carriedBooks = new Ledger();
+            carriedBooks.Restore(carried.ledgerMonths, carried.ledgerAmounts);
+
+            Assert.AreEqual(5_000L, carriedBooks.MonthTotal(24_290, LedgerLine.Salaries),
+                "A column was inserted rather than appended somewhere along the chain.");
+
+            Assert.AreEqual(5_001L, carriedBooks.MonthTotal(24_291, LedgerLine.Salaries));
+
+            Assert.AreEqual(0L, carriedBooks.MonthTotal(24_291, LedgerLine.OfficeRent),
                 "A v56 month cannot say what its rent was, so its rent line is zero, not a guess.");
+
+            Assert.AreEqual(0L, carriedBooks.MonthTotal(24_291, LedgerLine.PartnerShare),
+                "No partner share was ever charged before v71, so an older month records none.");
         }
     }
 }

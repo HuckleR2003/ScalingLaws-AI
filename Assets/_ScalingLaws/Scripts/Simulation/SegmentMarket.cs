@@ -421,7 +421,7 @@ namespace ScalingLaws.Simulation
         public const double CatalogueNesting = 0.35;
 
         public double Advance(IReadOnlyList<MarketEntrant> entrants, GameDate date,
-            double totalTokensPerDay, Awareness playerAwareness = null)
+            double totalTokensPerDay, Awareness playerAwareness = null, double playerReach = 1.0)
         {
             if (entrants == null || entrants.Count == 0)
             {
@@ -450,8 +450,15 @@ namespace ScalingLaws.Simulation
                     // A rival is an established lab, so their brand is how well known they are: it
                     // needs no new data and it means the player starts unknown against companies
                     // people have already heard of, which is the position marketing exists to fix.
+                    // **A distribution partner is more people having heard of you and nothing
+                    // else.** Their channel carries the model to an audience the company does not
+                    // reach, which is awareness; it does not make the model better, cheaper or
+                    // faster, and folding it anywhere else would have been a quality bonus wearing
+                    // a contract. Consideration saturates at one, so a company everybody already
+                    // knows gains nothing, which is the honest reading of a channel.
                     var known = entrants[entry].IsPlayer
-                        ? playerAwareness?.In(definition.Segment) ?? 1.0
+                        ? Math.Clamp((playerAwareness?.In(definition.Segment) ?? 1.0) * playerReach,
+                            0.0, 1.0)
                         : entrants[entry].Brand;
 
                     var score = Attractiveness(entrants[entry], definition, date, known);

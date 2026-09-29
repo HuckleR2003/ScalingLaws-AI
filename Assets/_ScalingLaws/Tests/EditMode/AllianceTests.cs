@@ -970,5 +970,179 @@ namespace ScalingLaws.Tests.EditMode
             StringAssert.Contains("v68 to v69", SaveMigration.LastMigrationNotes);
         }
 
+
+        /// <summary>
+        /// A distribution licence reaches somebody, and the partner is paid for reaching them.
+        ///
+        /// **Both halves of this were written and neither was read.** `AllianceReachMultiplier` had
+        /// no caller anywhere in the game and `DistributionShare` was named only in its own
+        /// catalogue, so a licence cost $1.2M, warmed the relation and did nothing at all for the
+        /// whole of its 270 day term. Fourteenth mechanism in this project finished underneath with
+        /// nothing on top of it, and the first one where the missing half was a *charge* rather
+        /// than a control: what shipped was not a dead feature, it was free money waiting to be
+        /// connected.
+        ///
+        /// The two are tested together on purpose. Wiring the reach without the cut would have
+        /// handed the player twenty-two per cent more audience for nothing, which the spine of this
+        /// game forbids in as many words.
+        /// </summary>
+        [Test]
+        public void ADistributionLicenceBuysReachAndThePartnerIsPaidForIt()
+        {
+            Assert.That(RelationOfferCatalog.DistributionShare, Is.GreaterThan(0.0));
+            Assert.That(RelationOfferCatalog.DistributionReach, Is.GreaterThan(0.0));
+
+            var alone = new CompanySimulation(new CompanyState("Alone", 4242u));
+            var signed = new CompanySimulation(new CompanyState("Signed", 4242u));
+
+            Assert.That(alone.AllianceReachMultiplier(), Is.EqualTo(1.0),
+                "a company with no licence is reached by nobody on its behalf");
+
+            Assert.That(alone.DistributionCutUsd(1_000_000L), Is.EqualTo(0L),
+                "a company with no partner pays no partner");
+
+            signed.State.Deals.Add(new StandingDeal(
+                CompetitorId.Cohere, RelationOffer.DistributionLicence,
+                signed.State.Date, signed.State.Date.AddDays(270)));
+
+            Assert.That(signed.AllianceReachMultiplier(),
+                Is.EqualTo(1.0 + RelationOfferCatalog.DistributionReach).Within(1e-9),
+                "the licence has to reach the market as the catalogue says it does");
+
+            // **The cut is on what came through them, not on everything.** At the catalogue's own
+            // figures the channel brings 22% more audience, so 22/122 of today's takings arrived
+            // that way and the partner keeps 30% of those. Written out rather than copied from the
+            // method, so the two have to agree rather than being the same line twice.
+            var reach = 1.0 + RelationOfferCatalog.DistributionReach;
+            var expected = (long)System.Math.Round(
+                1_000_000L * ((reach - 1.0) / reach) * RelationOfferCatalog.DistributionShare);
+
+            Assert.That(signed.DistributionCutUsd(1_000_000L), Is.EqualTo(expected),
+                "the partner keeps their share of what their own channel sold");
+
+            Assert.That(signed.DistributionCutUsd(1_000_000L), Is.LessThan(1_000_000L),
+                "a partner cannot keep more than the company earned");
+        }
+
+        /// <summary>
+        /// The licence is worth taking and it is not free money.
+        ///
+        /// **The number that matters is the one in between.** Twenty-two per cent more audience
+        /// against thirty per cent of what that audience paid nets the company somewhere under
+        /// twenty and comfortably over nothing; if it ever reached the reach figure the cut would
+        /// have stopped being charged, and if it ever went negative nobody would sign one.
+        /// </summary>
+        [Test]
+        public void TheChannelIsWorthTakingAndIsNotFree()
+        {
+            var simulation = new CompanySimulation(new CompanyState("Prometheus AI", 77u));
+
+            simulation.State.Deals.Add(new StandingDeal(
+                CompetitorId.Cohere, RelationOffer.DistributionLicence,
+                simulation.State.Date, simulation.State.Date.AddDays(270)));
+
+            var reach = simulation.AllianceReachMultiplier();
+            const long takings = 10_000_000L;
+
+            var kept = takings - simulation.DistributionCutUsd(takings);
+            var net = kept / (double)takings * reach;
+
+            Assert.That(net, Is.GreaterThan(1.0),
+                "nobody would sign a channel that leaves them worse off");
+
+            Assert.That(net, Is.LessThan(reach),
+                "the channel is not free: some of what it sold stays with the partner");
+        }
+
+        /// <summary>
+        /// Agreeing to a licence is not signing one, and the term does not start until it is signed.
+        ///
+        /// **The author's reading and the reason this offer is different.** The other three are a
+        /// yes or a no to terms that are fixed by what the thing is. A distribution licence is
+        /// somebody selling your product in their shop on their own margin, so what they agree to
+        /// is talking about it; the contract arrives, the player reads what it is worth, and signs
+        /// or does not.
+        ///
+        /// Driven through the state rather than by waiting out a roll, because what is being
+        /// measured is the branch and not the dice.
+        /// </summary>
+        [Test]
+        public void AgreeingToALicenceOpensAContractRatherThanStartingATerm()
+        {
+            var simulation = Company();
+            Warm(simulation, CompetitorId.Cohere, 45.0);
+
+            // A licence needs something to licence: `needsLiveModel` is true on that row and the
+            // refusal says so plainly, which is how this fixture found out.
+            simulation.State.AddDeployedModel(new DeployedModel(
+                "Aurora", ArchitectureId.DenseTransformer, capability: 40.0,
+                releaseDate: simulation.State.Date, activeParameterCount: 8.0,
+                priceMultiplier: 1.0));
+
+            simulation.TrySendOffer(CompetitorId.Cohere, RelationOffer.DistributionLicence,
+                out var why);
+
+            Assert.That(why, Is.Null.Or.Empty, "the offer could not be sent at all");
+
+            var definition = RelationOfferCatalog.Get(RelationOffer.DistributionLicence);
+
+            // Answer day. Run it until the pending offer has been decided one way or the other.
+            for (var day = 0; day <= definition.DaysToAnswer + 1; day++)
+            {
+                simulation.Advance(1);
+            }
+
+            if (simulation.State.Renewal == null)
+            {
+                // They said no, which is a legal answer and not what this test is about.
+                Assert.That(simulation.HasDeal(RelationOffer.DistributionLicence), Is.False,
+                    "a refused licence cannot have started a term either");
+
+                return;
+            }
+
+            Assert.That(simulation.State.Renewal.Value.Offer,
+                Is.EqualTo(RelationOffer.DistributionLicence));
+
+            Assert.That(simulation.HasDeal(RelationOffer.DistributionLicence), Is.False,
+                "the term must not start until the contract is signed");
+
+            Assert.That(simulation.AllianceReachMultiplier(), Is.EqualTo(1.0),
+                "an unsigned contract reaches nobody");
+
+            simulation.TryAcceptRenewal(out var refusal);
+
+            Assert.That(refusal, Is.Null.Or.Empty, $"the contract could not be signed: {refusal}");
+
+            Assert.That(simulation.HasDeal(RelationOffer.DistributionLicence), Is.True,
+                "signing the contract starts the term");
+
+            Assert.That(simulation.AllianceReachMultiplier(), Is.GreaterThan(1.0));
+        }
+
+        /// <summary>
+        /// The contract quotes four figures and two of them are catalogue facts.
+        ///
+        /// The term and the partner's share cannot be wrong; the audience and the money are
+        /// today's trading multiplied by a reach the licence has not had yet, which is a projection
+        /// and is labelled as one on the card. What this holds is that none of the four is ever
+        /// nonsense: no negative money, no share outside nought and one, no term of zero.
+        /// </summary>
+        [Test]
+        public void TheContractQuotesFiguresThatAreNeverNonsense()
+        {
+            var simulation = Company();
+            var terms = simulation.DistributionEstimate();
+
+            Assert.That(terms.TermDays, Is.EqualTo(
+                RelationOfferCatalog.Get(RelationOffer.DistributionLicence).TermDays));
+
+            Assert.That(terms.PartnerShare,
+                Is.EqualTo(RelationOfferCatalog.DistributionShare).Within(1e-9));
+
+            Assert.That(terms.PartnerShare, Is.GreaterThan(0.0).And.LessThan(1.0));
+            Assert.That(terms.ExtraUsersPerMonth, Is.GreaterThanOrEqualTo(0.0));
+            Assert.That(terms.OurExtraPerMonth, Is.GreaterThanOrEqualTo(0L));
+        }
     }
 }

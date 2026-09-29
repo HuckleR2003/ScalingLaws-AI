@@ -914,6 +914,17 @@ namespace ScalingLaws.Simulation
             RecordModelDay(revenue);
 
             State.PostCash(LedgerLine.Subscriptions, revenue);
+
+            // **The partner's cut, charged on the day the money arrives.** Posted rather than
+            // netted off the takings above: a trade has two sides and a books page that shows only
+            // the bigger audience is a books page that says the channel was free.
+            var partnerCut = DistributionCutUsd(revenue);
+
+            if (partnerCut > 0L)
+            {
+                State.PostCash(LedgerLine.PartnerShare, partnerCut);
+            }
+
             State.PostCash(LedgerLine.CloudRent, rent);
             State.PostCash(LedgerLine.Electricity, power);
             State.PostCash(LedgerLine.Housing, housing);
@@ -5924,7 +5935,11 @@ namespace ScalingLaws.Simulation
                 BuildEntrants(brand, rivals),
                 State.Date,
                 market.TotalDemandBillionTokensPerDay,
-                State.Awareness);
+                State.Awareness,
+
+                // A distribution licence, if one is running. It reaches the market here and
+                // nowhere else, and it had reached it nowhere at all until today.
+                AllianceReachMultiplier());
 
             // Reach from the free tier, then capped: a giveaway widens the funnel, it does not
             // hand over the market.

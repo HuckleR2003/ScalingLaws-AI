@@ -171,6 +171,7 @@ namespace ScalingLaws.Persistence
                     67 => UpgradeV67ToV68(current),
                     68 => UpgradeV68ToV69(current),
                     69 => UpgradeV69ToV70(current),
+                    70 => UpgradeV70ToV71(current),
                     _ => current
                 };
             }
@@ -2343,6 +2344,58 @@ namespace ScalingLaws.Persistence
 
         /// <summary>How many columns a v56 ledger month had. Kept as a number, like the old shapes.</summary>
         private const int LedgerColumnsV56 = 26;
+
+        /// <summary>How many columns a v70 ledger month had. Same reason: the old shape, as a number.</summary>
+        private const int LedgerColumnsV70 = 27;
+
+        /// <summary>
+        /// v70 to v71: the distribution partner's share has a line of its own.
+        ///
+        /// **Nothing was ever charged before this, so nothing is reconstructed.** The licence took
+        /// no cut for the whole of its history because the constant that names the cut was read by
+        /// nothing at all, so every earlier month is correct as recorded and a figure invented into
+        /// it would be a charge nobody paid. The column is added empty and fills from the next day
+        /// played, which is exactly what v56 to v57 did for office rent.
+        ///
+        /// Appended, never inserted. A saved month is a row of totals in catalogue order, so a
+        /// column added anywhere but the end puts last year's electricity under somebody's wages.
+        /// </summary>
+        public static SaveData UpgradeV70ToV71(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 71;
+
+            var months = data.ledgerMonths;
+            var amounts = data.ledgerAmounts;
+
+            if (months != null && amounts != null && months.Count > 0
+                && amounts.Count == months.Count * LedgerColumnsV70)
+            {
+                var widened = new List<long>(months.Count * (LedgerColumnsV70 + 1));
+
+                for (var month = 0; month < months.Count; month++)
+                {
+                    for (var column = 0; column < LedgerColumnsV70; column++)
+                    {
+                        widened.Add(amounts[month * LedgerColumnsV70 + column]);
+                    }
+
+                    widened.Add(0L);
+                }
+
+                data.ledgerAmounts = widened;
+            }
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v70 to v71: a distribution partner's share has its own line in the books from the "
+                + "next day played. Earlier months record none, because none was ever charged.");
+
+            return data;
+        }
 
         public static SaveData UpgradeV54ToV55(SaveData data)
         {

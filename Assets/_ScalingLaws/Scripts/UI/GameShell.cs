@@ -4484,21 +4484,52 @@ namespace ScalingLaws.UI
             var definition = RelationOfferCatalog.Get(renewal.Offer);
             var them = CompetitorCatalog.NameOf(renewal.Lab);
 
-            var rows = new List<(string, string)>
+            // **A distribution licence is a contract and reads like one.** The author asked for it
+            // by name: the company at the top, the kind of arrangement under it, and then the four
+            // things anybody signing one would want before they sign. The other three offers keep
+            // the short form, because their terms are fixed by what they are and there is nothing
+            // to weigh.
+            //
+            // Two of the four are catalogue facts and two are projections off today's trading, and
+            // the rows say which. Quoting an estimate as a promise on the screen where the money is
+            // committed is exactly what the honesty flag is for.
+            var licence = renewal.Offer == RelationOffer.DistributionLicence;
+            var rows = new List<(string, string)>();
+
+            if (licence)
             {
-                (Loc.T("allies.row.gives"), Loc.T(GivesKeyOf(renewal.Offer))),
-                (Loc.T("allies.row.cost"), definition.CashCostUsd > 0
+                var terms = simulation.DistributionEstimate();
+
+                rows.Add((Loc.T("contract.row.term"),
+                    Loc.T("allies.row.days", terms.TermDays.ToString())));
+
+                rows.Add((Loc.T("contract.row.users"),
+                    Loc.T("contract.about", UiFormat.Count(terms.ExtraUsersPerMonth))));
+
+                rows.Add((Loc.T("contract.row.commission"), UiFormat.Percent(terms.PartnerShare)));
+
+                rows.Add((Loc.T("contract.row.ours"),
+                    Loc.T("contract.about", UiFormat.Money(terms.OurExtraPerMonth))));
+            }
+            else
+            {
+                rows.Add((Loc.T("allies.row.gives"), Loc.T(GivesKeyOf(renewal.Offer))));
+
+                rows.Add((Loc.T("allies.row.cost"), definition.CashCostUsd > 0
                     ? UiFormat.Money(definition.CashCostUsd)
-                    : Loc.T("allies.row.points_only", definition.PointCost.ToString())),
-                (Loc.T("allies.row.term"),
-                    Loc.T("allies.row.days", definition.TermDays.ToString()))
-            };
+                    : Loc.T("allies.row.points_only", definition.PointCost.ToString())));
+
+                rows.Add((Loc.T("allies.row.term"),
+                    Loc.T("allies.row.days", definition.TermDays.ToString())));
+            }
 
             GateNotice.Decide(
-                Loc.T("renew.title"),
-                Loc.T("renew.line", them, definition.DisplayName),
+                licence ? them : Loc.T("renew.title"),
+                licence
+                    ? Loc.T("contract.line", definition.DisplayName)
+                    : Loc.T("renew.line", them, definition.DisplayName),
                 rows,
-                Loc.T("renew.yes"),
+                licence ? Loc.T("contract.sign") : Loc.T("renew.yes"),
                 () =>
                 {
                     simulation.TryAcceptRenewal(out var why);
@@ -4510,7 +4541,7 @@ namespace ScalingLaws.UI
 
                     RefreshChrome();
                 },
-                Loc.T("renew.later"),
+                licence ? Loc.T("contract.no") : Loc.T("renew.later"),
                 () => { },
                 LadderFor(renewal.Lab));
         }

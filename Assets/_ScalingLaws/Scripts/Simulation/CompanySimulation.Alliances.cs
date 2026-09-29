@@ -213,14 +213,70 @@ namespace ScalingLaws.Simulation
             State.Relations.Record(pending.Lab, State.Date, definition.RelationGain,
                 ReasonKeyFor(pending.Offer), them);
 
+            State.RaiseEvent(new CompanyEvent(CompanyEventType.OfferAccepted, State.Date,
+                Loc.T("offer.event.accepted", definition.DisplayName, them)));
+
+            // **A distribution licence is agreed to and then signed, which is not the same day.**
+            //
+            // The author's reading and it is the right one: the other three offers are a yes or a
+            // no to a thing whose terms are fixed by what it is, and a licence is somebody selling
+            // your product in their shop on their margin. What they say yes to is talking about
+            // it. So their answer opens a contract rather than starting a term, and the player
+            // reads what it is worth before signing anything.
+            //
+            // It reuses the pending-contract slot the renewals already use, because "they have
+            // agreed and are waiting for your signature" is one state and two would be two places
+            // to get the lapse wrong. The slot is called `Renewal` in the save and in the code; a
+            // first signing is not a renewal and the name is a wart, kept because those three
+            // fields are written into every save from v68 and renaming them buys nothing.
+            if (pending.Offer == RelationOffer.DistributionLicence)
+            {
+                State.Renewal = new PendingRenewal(pending.Lab, pending.Offer, State.Date);
+                return;
+            }
+
             if (definition.TermDays > 0)
             {
                 State.Deals.Add(new StandingDeal(pending.Lab, pending.Offer, State.Date,
                     State.Date.AddDays(definition.TermDays)));
             }
+        }
 
-            State.RaiseEvent(new CompanyEvent(CompanyEventType.OfferAccepted, State.Date,
-                Loc.T("offer.event.accepted", definition.DisplayName, them)));
+        /// <summary>
+        /// What a distribution licence is estimated to be worth, before it is signed.
+        ///
+        /// **Two of these four are facts and two are estimates, and the card says which.** The term
+        /// and the partner's share are catalogue figures and cannot be wrong. The audience and the
+        /// money are today's trading multiplied by a reach the licence has not yet had, which is a
+        /// projection in the sense this project uses the word: honest arithmetic over real numbers,
+        /// labelled rather than dressed up as a promise.
+        ///
+        /// One method because the card quotes it and a test holds it. The same arithmetic written
+        /// on a screen would be a second copy of a rule, which is how this project ended up with
+        /// four sets of heat thresholds.
+        /// </summary>
+        public (int TermDays, double ExtraUsersPerMonth, double PartnerShare, long OurExtraPerMonth)
+            DistributionEstimate()
+        {
+            var definition = RelationOfferCatalog.Get(RelationOffer.DistributionLicence);
+            var reach = 1.0 + RelationOfferCatalog.DistributionReach;
+            var share = RelationOfferCatalog.DistributionShare;
+
+            var users = SimUnits.Finite(UsersServedToday());
+
+            // **A month of takings, because the answer is quoted per month.** The month the company
+            // is in rather than a day scaled up: a day is noisy and a licence runs for nine months.
+            var month = State.Date.Year * 12 + State.Date.Month - 1;
+            var revenue = Math.Max(0L, State.Ledger.MonthTotal(month, LedgerLine.Subscriptions));
+
+            // What the channel would add, and what is left of it after their margin.
+            var extraUsers = Math.Max(0.0, users * (reach - 1.0));
+            var extraRevenue = Math.Max(0.0, revenue * (reach - 1.0) * (1.0 - share));
+
+            return (definition.TermDays,
+                SimUnits.Finite(extraUsers),
+                share,
+                (long)Math.Round(SimUnits.Finite(extraRevenue)));
         }
 
         /// <summary>Why the relation moved, written out so the guard can read it.</summary>
@@ -287,11 +343,57 @@ namespace ScalingLaws.Simulation
         public double AllianceIncidentMultiplier() =>
             HasDeal(RelationOffer.JointEvaluation) ? RelationOfferCatalog.EvaluationSafety : 1.0;
 
-        /// <summary>Extra audience a distribution partner reaches for the company.</summary>
+        /// <summary>
+        /// Extra audience a distribution partner reaches for the company.
+        ///
+        /// **It multiplies awareness, never capability or price.** A partner puts the model in
+        /// front of people who have not heard of the company; it does not make the model better or
+        /// cheaper, which is the same line the marketing system is held to and the reason
+        /// `MarketingNeverImprovesTheProductItself` exists. Consideration saturates at one, so a
+        /// company everybody has already heard of gains nothing from a channel, which is correct
+        /// and makes this an early and middle game instrument rather than a late multiplier.
+        ///
+        /// **This had no caller at all until 2026-09-29**, and neither did the share below: the
+        /// licence charged $1.2M, warmed the relation and did nothing else for its whole 270 day
+        /// term. Fourteenth mechanism in this project finished underneath with nothing reading it.
+        /// </summary>
         public double AllianceReachMultiplier() =>
             HasDeal(RelationOffer.DistributionLicence)
                 ? 1.0 + RelationOfferCatalog.DistributionReach
                 : 1.0;
+
+        /// <summary>
+        /// What the distribution partner keeps out of a day's takings.
+        ///
+        /// **Their channel, their margin, and it is the whole trade.** The reach above is worth
+        /// `reach - 1` extra audience, so of the people being served today `(reach - 1) / reach`
+        /// arrived through them, and they keep `DistributionShare` of what those people paid. At
+        /// the catalogue's own figures that is 18 per cent of the audience and 30 per cent of its
+        /// revenue, which nets the company about twelve per cent rather than twenty-two.
+        ///
+        /// One method because three things read it: the day loop that charges it, the contract
+        /// card that quotes it before signing, and the test that holds the arithmetic. A second
+        /// copy is how this project ended up with four sets of heat thresholds.
+        /// </summary>
+        public long DistributionCutUsd(long revenueUsd)
+        {
+            if (revenueUsd <= 0L)
+            {
+                return 0L;
+            }
+
+            var reach = AllianceReachMultiplier();
+
+            if (reach <= 1.0)
+            {
+                return 0L;
+            }
+
+            var throughThem = (reach - 1.0) / reach;
+            var cut = revenueUsd * throughThem * RelationOfferCatalog.DistributionShare;
+
+            return (long)Math.Round(Math.Max(0.0, SimUnits.Finite(cut)));
+        }
 
         /// <summary>
         /// Petaflops bought from an ally, on top of whatever is rented.

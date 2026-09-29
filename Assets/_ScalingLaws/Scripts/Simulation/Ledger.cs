@@ -87,7 +87,18 @@ namespace ScalingLaws.Simulation
         /// by the rent and had no way to tell which of the two it was paying. Reported by the author
         /// as rent and other costs seeming to merge into Salaries. They did.
         /// </summary>
-        OfficeRent = 31
+        OfficeRent = 31,
+
+        /// <summary>
+        /// What a distribution partner keeps of what they sold for you.
+        ///
+        /// Its own line rather than netted off the takings, because the whole point of the licence
+        /// is a trade and a trade has to be visible from both sides. A player who sees only a
+        /// bigger audience has been handed free money; a player who sees the audience and the cut
+        /// beside it can work out whether the channel was worth thirty per cent of what came
+        /// through it.
+        /// </summary>
+        PartnerShare = 32
     }
 
     /// <summary>What a line is called and which side of the report it sits on.</summary>
@@ -173,7 +184,10 @@ namespace ScalingLaws.Simulation
             // **Appended, never inserted.** A saved month is a row of totals in this order, so a
             // line added anywhere but the end would shift every column after it and put last year's
             // electricity under somebody's wages. v56 to v57 pads each old row with one zero.
-            new(LedgerLine.OfficeRent, "Office rent", "Company", false, true)
+            new(LedgerLine.OfficeRent, "Office rent", "Company", false, true),
+
+            // Appended for the same reason, v70 to v71, one more zero on every old row.
+            new(LedgerLine.PartnerShare, "Distribution partner's share", "Model", false, true)
         };
 
         /// <summary>month index (year * 12 + month - 1) to the totals for that month.</summary>

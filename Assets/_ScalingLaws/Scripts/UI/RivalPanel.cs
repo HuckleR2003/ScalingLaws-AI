@@ -776,7 +776,15 @@ namespace ScalingLaws.UI
                 outcomeNote = why;
                 changed?.Invoke();
             })
-            { text = Loc.T("together.send") };
+            {
+                // **The licence asks to talk, the other three ask for a yes.** Asked for by name,
+                // and it is what the button now does: a distribution partner agreeing means a
+                // contract arrives to be read and signed, not a term starting. A button that says
+                // SEND over a thing that opens a negotiation is the wrong promise.
+                text = definition.Offer == RelationOffer.DistributionLicence
+                    ? Loc.T("offer.settle")
+                    : Loc.T("together.send")
+            };
 
             send.AddToClassList("button");
             send.AddToClassList("tog-tile__send");
