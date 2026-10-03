@@ -36,6 +36,11 @@ sysinfo.txt
 TestResults*.xml
 *.log
 PlayResults*.xml
+# Every probe and test run writes its XML to the repository root under whatever name
+# the command was given, and this file has been chasing them one at a time: Probe,
+# Drift, edit, play, stake, and then Corner, GuideProbe, Note and Quick. One rule
+# instead of a list, the same repair *~/ got for the proof folders.
+/*.xml
 stake.xml
 
 CLAUDE.md
