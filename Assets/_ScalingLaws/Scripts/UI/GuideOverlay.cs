@@ -588,40 +588,59 @@ namespace ScalingLaws.UI
         /// <summary>
         /// The bar under the line, with the words the report asked for in it.
         ///
-        /// It is rebuilt with the strip rather than updated in place, and the strip is rebuilt
-        /// only when the step index changes, so this does **not** animate. That is deliberate and
-        /// it is the smaller of two faults: a bar that crept forward would need the strip rebuilt
-        /// every day, and rebuilding it destroys the button under the player's cursor between the
-        /// press and the release, which is the bug that stopped the first tutorial playtest.
-        /// Saying "let the clock run" is what the player needs; the corner strip already carries
-        /// the live countdown.
+        /// **It moves, and it moves without the strip being rebuilt.** The first version said
+        /// plainly that it did not animate, on the reasoning that a creeping bar would mean
+        /// rebuilding the strip every day and rebuilding it destroys the button under the player's
+        /// cursor between the press and the release. That reasoning is right about the rebuild and
+        /// wrong about the conclusion: the fill is repointed the way every other live word on this
+        /// strip is repointed, in `Retext`, touching no element. A bar that sits at four per cent
+        /// for a year and a half is not evidence that a wait is a wait, which is the one job it
+        /// has, and it was reported as broken because from the outside it is indistinguishable
+        /// from broken.
         /// </summary>
-        private static VisualElement BuildWait(GuideWait waiting)
+        private VisualElement BuildWait(GuideWait waiting)
         {
             var block = new VisualElement();
             block.AddToClassList("guide__wait");
 
-            var label = new Label(waiting.Label);
-            label.AddToClassList("guide__waitlabel");
-            block.Add(label);
+            waitLabel = new Label(waiting.Label);
+            waitLabel.AddToClassList("guide__waitlabel");
+            block.Add(waitLabel);
 
             var track = new VisualElement();
             track.AddToClassList("guide__waittrack");
 
-            var fill = new VisualElement();
-            fill.AddToClassList("guide__waitfill");
-            fill.style.width = Length.Percent((float)(waiting.Progress * 100.0));
-            track.Add(fill);
+            waitFill = new VisualElement();
+            waitFill.AddToClassList("guide__waitfill");
+            waitFill.style.width = Length.Percent((float)(waiting.Progress * 100.0));
+            track.Add(waitFill);
 
             block.Add(track);
             return block;
         }
+
+        /// <summary>The two live parts of the wait block, repointed rather than rebuilt.</summary>
+        private Label waitLabel;
+
+        private VisualElement waitFill;
 
         private void Retext(GuideStep step)
         {
             if (line != null)
             {
                 line.text = step.Line;
+            }
+
+            // The wait, which is the one thing on this strip that changes without the player
+            // doing anything. Repointed, never rebuilt: see BuildWait.
+            if (waitFill != null && waitFor != null && waitFor(step) is { } waiting)
+            {
+                waitFill.style.width = Length.Percent((float)(waiting.Progress * 100.0));
+
+                if (waitLabel != null)
+                {
+                    waitLabel.text = waiting.Label;
+                }
             }
 
             if (counter != null)
@@ -661,6 +680,11 @@ namespace ScalingLaws.UI
         private void Build(GuideStep step)
         {
             strip?.RemoveFromHierarchy();
+
+            // The old strip's pieces go with it, or a Retext against a rebuilt step would write
+            // into elements that have left the tree.
+            waitLabel = null;
+            waitFill = null;
 
             strip = new VisualElement();
 
@@ -887,6 +911,13 @@ namespace ScalingLaws.UI
                 if (lit.Count > 0)
                 {
                     ScrollIntoView(lit[0]);
+
+                    // **And point at it, when it is sitting in a corner.** The ring is enough on
+                    // something the eye is already near and is not enough on the banner in the top
+                    // right, which is what the support walkthrough opens on. `AttentionPull` makes
+                    // its own decision about whether the target is far enough out to be worth it,
+                    // so this stays a rule rather than a list of steps somebody has to maintain.
+                    AttentionPull.Play(lit[0]);
                 }
             }).ExecuteLater(24);
         }

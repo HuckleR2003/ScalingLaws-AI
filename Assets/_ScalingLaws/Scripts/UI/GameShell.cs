@@ -147,7 +147,7 @@ namespace ScalingLaws.UI
         private StartedNotice startedNotice;
 
         // The server load in the top bar. Built once with the bar and refreshed with it.
-        private VisualElement loadBox;
+        private Button loadBox;
         private VisualElement loadFill;
         private Label loadValue;
         private Label loadCaption;
@@ -162,6 +162,9 @@ namespace ScalingLaws.UI
 
         /// <summary>The products on sale: the flagship and one banner per follower.</summary>
         private VisualElement bannerProducts;
+
+        /// <summary>The family being designed. Furthest from the product, because it is furthest from it.</summary>
+        private VisualElement bannerArchitecture;
 
         /// <summary>The node in flight, under the products it is being paid for by.</summary>
         private VisualElement bannerResearch;
@@ -379,6 +382,13 @@ namespace ScalingLaws.UI
         // Research has its own corner now. Same day-count rebuild rule as the regulatory banner.
         private VisualElement researchBanner;
         private int researchBannerDay = -1;
+
+        // **And so does a family programme, which had none at all.** Committing one charged the
+        // money, took the screen back to the architecture page and then said nothing anywhere for
+        // as long as a year and a half. Reported on 2026-09-30 as the programme looking broken,
+        // which is exactly what a four hundred day job with no visible progress looks like.
+        private VisualElement architectureBanner;
+        private int architectureBannerDay = -1;
         private VisualElement runFinished;
 
         /// <summary>
@@ -778,6 +788,7 @@ namespace ScalingLaws.UI
             RefreshRegulatoryBanner();
             RefreshBuyoutBanner();
             RefreshResearchBanner();
+            RefreshArchitectureBanner();
             RefreshApproachBanner();
             RefreshUpgradeBanner();
             tasks.Refresh();
@@ -1093,12 +1104,14 @@ namespace ScalingLaws.UI
                 {
                     families.TakeTheAdvice();
 
-                    // A refusal leaves nothing running, so the waiting step ahead clears itself
-                    // and the tour does not strand the player on it. The panel already carries
-                    // the reason, in the place every other refusal on this screen puts it.
-                    AudioDirector.Play(families.CommitNow(out _)
-                        ? UiSound.Confirm
-                        : UiSound.Deny);
+                    // **Through the card, the same as the button on the page.** A year of calendar
+                    // and most of the bank is not something the tour should be able to spend on the
+                    // player's behalf from a line of dialogue; it sets the sliders and then asks,
+                    // which is what it would do if a person were sitting there explaining it.
+                    //
+                    // Saying no leaves nothing running, so the waiting step ahead clears itself and
+                    // the tour does not strand the player on it.
+                    families.AskThenCommit();
 
                     RefreshChrome();
                 });
@@ -1366,6 +1379,11 @@ namespace ScalingLaws.UI
             // reach the rail.
             //
             // Added left to right, so the order here is the order on screen.
+            bannerArchitecture = new VisualElement();
+            bannerArchitecture.AddToClassList("mb-stack__lane");
+            bannerArchitecture.pickingMode = PickingMode.Ignore;
+            bannerStack.Add(bannerArchitecture);
+
             bannerResearch = new VisualElement();
             bannerResearch.AddToClassList("mb-stack__lane");
             bannerResearch.pickingMode = PickingMode.Ignore;
@@ -1501,7 +1519,11 @@ namespace ScalingLaws.UI
         /// </summary>
         private VisualElement BuildServerLoad()
         {
-            loadBox = new VisualElement();
+            // **It reads as a figure and it is a door.** Asked for on 2026-10-01: the one number on
+            // the bar that tells a player something is wrong had nowhere to send them, so the
+            // reaction to it was to go looking for the screen it is about. It is the fleet, so it
+            // opens the fleet.
+            loadBox = new Button(() => Show(Screen.Fleet));
             loadBox.AddToClassList("topbar__load");
 
             loadCaption = new Label();
@@ -2204,9 +2226,20 @@ namespace ScalingLaws.UI
                 ? guide.MeasuredHeight + GuideOverlay.StripClearance
                 : 0f;
 
+            // **On the content container, never on the scroller itself.** A `ScrollView` lays its
+            // viewport out inside its own padding box, so padding here shortens the window the
+            // page is seen through rather than lengthening the page: measured at 1920x1080, a
+            // 943px scroller kept a 624px viewport and the other 319px of every tab was not drawn
+            // at all. The window's own colour showed through the hole and the page could not be
+            // scrolled into it, because as far as the scroller was concerned there was nothing
+            // there. Reported as "the blue background of the tutorial covers every tab", which is
+            // exactly what it looks like from the outside.
+            //
+            // On the content container the same number is extra page under the last band, which
+            // is what a clearance is supposed to be. `GuidedPageTests` measures the difference.
             if (pageScroller != null)
             {
-                pageScroller.style.paddingBottom = wanted > 0f
+                pageScroller.contentContainer.style.paddingBottom = wanted > 0f
                     ? wanted
                     : new StyleLength(StyleKeyword.Null);
             }
@@ -3066,7 +3099,15 @@ namespace ScalingLaws.UI
                     (Loc.T("allies.row.level"), Loc.T(LevelNameKeyOf(level))),
                     (Loc.T("allies.row.held"), Loc.T("allies.row.days", held.ToString())),
                     (Loc.T("allies.row.paid"), UiFormat.Money(LabAlliances.FeeFor(level))),
-                    (Loc.T("allies.row.next"), waiting)
+                    (Loc.T("allies.row.next"), waiting),
+
+                    // **And what waiting is for.** Reported on 2026-10-01 as the research agreement
+                    // not existing: it does, it opens at the working-group level, and this card
+                    // counted the days to that level without ever naming what the level is or what
+                    // it opens. A countdown to something unnamed is a countdown nobody waits out.
+                    (Loc.T("allies.row.next_opens"), next > LabAlliances.TopLevel
+                        ? Loc.T("alliance.fail.top")
+                        : $"{Loc.T(LevelNameKeyOf(next))}  ·  {Loc.T(LevelGivesKeyOf(next))}")
                 },
                 "ally-card--alliance");
         }
@@ -3082,7 +3123,7 @@ namespace ScalingLaws.UI
                 definition.Description,
                 new[]
                 {
-                    (Loc.T("allies.row.gives"), Loc.T(GivesKeyOf(deal.Offer))),
+                    (Loc.T("allies.row.gives"), GivesOf(deal)),
                     (Loc.T("allies.row.cost"), definition.CashCostUsd > 0
                         ? UiFormat.Money(definition.CashCostUsd)
                         : Loc.T("allies.row.points_only", definition.PointCost.ToString())),
@@ -3145,6 +3186,43 @@ namespace ScalingLaws.UI
         };
 
         /// <summary>What a running deal is actually worth, in one line. See above for the shape.</summary>
+        /// <summary>
+        /// What a running deal is giving the company, as a figure where there is one.
+        ///
+        /// **Reported on 2026-10-01: "zarezerwowana moc ponad to, co wynajmujesz" is a sentence
+        /// where a number belongs.** Compute is the one of the four that lands on a quantity the
+        /// player already reads everywhere else, so the row says how many petaflops and how much
+        /// more that is than the fleet they are renting. Without the second half the first is a
+        /// figure with no sense of scale: forty petaflops is a great deal or a rounding error
+        /// depending on what is already running.
+        ///
+        /// The other three stay as sentences, because what they give is not a quantity: a paper is
+        /// read, an evaluation lowers a risk, and a licence is a share of a market. Putting a
+        /// number on those would mean inventing one.
+        /// </summary>
+        private string GivesOf(StandingDeal deal)
+        {
+            if (deal.Offer != RelationOffer.CapacityPurchase)
+            {
+                return Loc.T(GivesKeyOf(deal.Offer));
+            }
+
+            var allied = simulation.AlliedPetaflops();
+            var rented = simulation.State.Pool.RentedPetaflops;
+
+            if (allied <= 0.0)
+            {
+                return Loc.T(GivesKeyOf(deal.Offer));
+            }
+
+            // Against the rented fleet rather than against the whole of it: this deal is priced as
+            // a share of what is rented, so that is the number it is a share of.
+            return rented > 0.0
+                ? Loc.T("allies.gives.capacity_num", UiFormat.Petaflops(allied),
+                    UiFormat.Percent(allied / rented, 0))
+                : Loc.T("allies.gives.capacity_flat", UiFormat.Petaflops(allied));
+        }
+
         private static string GivesKeyOf(RelationOffer offer) => offer switch
         {
             RelationOffer.PublishFinding => "allies.gives.publish",
@@ -3832,6 +3910,89 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
+        /// The family programme in flight, in the corner, beside the node.
+        ///
+        /// **Thirteen months of work with nothing on any screen saying it was happening.**
+        /// Committing a programme charged the money, closed the page and left the player on a site
+        /// that looked exactly as it had a second earlier, and the only way to find out whether
+        /// anything was running was to walk back to ARCHITECTURE and read the card. Reported on
+        /// 2026-09-30 as the programme being broken, which is a fair reading of a four hundred day
+        /// job that reports nothing.
+        ///
+        /// Built out of the research banner's own classes rather than a second set of its own. The
+        /// two are the same kind of fact and a second stylesheet block is a second thing to keep in
+        /// step; the lit edge is the one difference and it says which of the two this is.
+        /// </summary>
+        private void RefreshArchitectureBanner()
+        {
+            var project = state.ActiveArchitectureProject;
+            var showing = project != null && current == Screen.Site;
+
+            if (!showing)
+            {
+                architectureBanner?.RemoveFromHierarchy();
+                architectureBanner = null;
+                architectureBannerDay = -1;
+
+                return;
+            }
+
+            if (architectureBanner != null && architectureBannerDay == project.DaysCompleted)
+            {
+                return;
+            }
+
+            architectureBannerDay = project.DaysCompleted;
+            architectureBanner?.RemoveFromHierarchy();
+
+            var banner = new Button(() => Show(Screen.Family));
+            banner.AddToClassList("rb");
+            banner.AddToClassList("rb--family");
+
+            var starved = project.IsWaitingForCompute;
+
+            var kicker = new Label(Loc.T(starved ? "arch.waiting" : "arch.designing"));
+            kicker.AddToClassList("rb__kicker");
+            banner.Add(kicker);
+
+            var name = new Label(project.Blueprint.Name);
+            name.AddToClassList("rb__name");
+            banner.Add(name);
+
+            var track = new VisualElement();
+            track.AddToClassList("rb__track");
+
+            // Same two marks as the node: the true progress, and a ghost of how far the calendar
+            // alone has run, so a programme waiting on the cluster reads as waiting rather than as
+            // a bar that has stopped.
+            var calendar = new VisualElement();
+            calendar.AddToClassList("rb__calendar");
+            calendar.style.width = Length.Percent((float)(project.CalendarProgress * 100.0));
+            track.Add(calendar);
+
+            var fill = new VisualElement();
+            fill.AddToClassList("rb__fill");
+            fill.EnableInClassList("rb__fill--starved", starved);
+            fill.style.width = Length.Percent((float)(project.Progress * 100.0));
+            track.Add(fill);
+
+            banner.Add(track);
+
+            var left = Math.Max(0, project.DurationDays - project.DaysCompleted);
+
+            var days = new Label(starved
+                ? Loc.T("research.owed", UiFormat.Number(project.PetaflopDaysRemaining, 0))
+                : Loc.T("research.days_left", Loc.Counted(left, "noun.day"),
+                    UiFormat.Percent(project.Progress, 0)));
+
+            days.AddToClassList("rb__days");
+            banner.Add(days);
+
+            architectureBanner = banner;
+            bannerArchitecture.Add(banner);
+        }
+
+        /// <summary>
         /// Opens COMPUTE and lights the rent control for a moment.
         ///
         /// **Two seconds and then it stops**, which is the whole design of it: a highlight that
@@ -4232,6 +4393,25 @@ namespace ScalingLaws.UI
                     {
                         startedNotice?.Show(Loc.T("notice.research_done"),
                             Loc.T("notice.research_done.note", string.Join(", ", finished)));
+                    }
+
+                    break;
+                }
+
+                // **A year of calendar leaving the company, announced.** It was raised and read by
+                // nothing: the player pressed a button, the screen closed behind them and the site
+                // looked exactly as it had a second earlier. Asked for by name on 2026-09-30, and
+                // it is not the player's own click coming back, because the click is two steps back
+                // by the time this fires: the card asked, and this says it took.
+                case CompanyEventType.ArchitectureResearchStarted:
+                {
+                    var running = state.ActiveArchitectureProject;
+
+                    if (running != null && running.StartedOn == state.Date)
+                    {
+                        startedNotice?.Show(Loc.T("notice.arch_started"),
+                            Loc.T("notice.arch_started.note", running.Blueprint.Name,
+                                Loc.Counted(running.DurationDays, "noun.day")));
                     }
 
                     break;

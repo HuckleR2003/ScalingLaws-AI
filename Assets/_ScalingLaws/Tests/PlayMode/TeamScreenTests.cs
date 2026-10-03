@@ -193,6 +193,16 @@ namespace ScalingLaws.Tests.PlayMode
                 }
             }
 
+            // **And a family programme, which is the fourth lane and was never in this picture.**
+            // The corner grew a lane on 2026-09-30 and no fixture anywhere ran a programme, so the
+            // worst case this test exists to measure had quietly stopped being the worst case. That
+            // is the shape of fault this project keeps finding: every fixture reaches the screen the
+            // same way, and the state nobody sets up is the state nobody measures.
+            simulation.TryStartArchitectureProgramme(
+                new ArchitectureBlueprint("Ardent", ArchitectureId.CustomFamilyA,
+                    ArchitectureId.None, 0.35, 0.35, 0.35, 0.35, 0.35, 40_000_000L, 365),
+                out _);
+
             Assert.That(shell.OpenScreenByName("Site"), Is.True);
 
             yield return null;
@@ -248,7 +258,14 @@ namespace ScalingLaws.Tests.PlayMode
                 .ToList();
 
             var products = Up("mb");
-            var research = Up("rb");
+
+            // The family programme borrows the node's own classes, so the node has to be taken as
+            // the ones that are not the family or a company doing both counts one banner twice.
+            var family = Up("rb--family");
+            var research = Up("rb")
+                .Where(banner => !banner.ClassListContains("rb--family"))
+                .ToList();
+
             var upgrade = Up("ub");
 
             Assert.That(products.Count, Is.GreaterThan(1),
@@ -262,7 +279,11 @@ namespace ScalingLaws.Tests.PlayMode
             Assert.That(upgrade.Count, Is.EqualTo(1),
                 "An upgrade is running and its banner is not on screen, same reading.");
 
-            var panels = products.Concat(research).Concat(upgrade).ToList();
+            Assert.That(family.Count, Is.EqualTo(1),
+                "A family programme is running and its card is not on screen, so the fourth lane "
+                + "is either not drawn or not where the others are.");
+
+            var panels = products.Concat(research).Concat(upgrade).Concat(family).ToList();
 
             // **The products half says when it continues.** It scrolls now, and a list that carries
             // on below the fold with nothing to say so is the reported fault this project already

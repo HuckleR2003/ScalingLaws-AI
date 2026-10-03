@@ -77,15 +77,25 @@ namespace ScalingLaws.Tests
             }
         }
 
+        /// <summary>
+        /// The fund closed on 30 September 2026, so the card informs and asks for nothing.
+        ///
+        /// This replaces a guard that held the opposite (exactly one button, to the sponsors
+        /// page). It is rewritten rather than deleted because the fact worth holding did not
+        /// disappear, it inverted: the card must not carry a call to action it cannot honour.
+        /// </summary>
         [Test]
-        public void ThereIsOneButtonAndItIsTheOnlyWayOut()
+        public void TheClosedCardAsksForNothing()
         {
             var card = SupporterCard.Build();
-            var buttons = card.Query<Button>().ToList();
 
-            Assert.That(buttons, Has.Count.EqualTo(1),
-                "a notice with two calls to action is an advertisement");
-            Assert.That(buttons[0].text, Is.EqualTo(Loc.T("support.open")));
+            Assert.That(card.Query<Button>().ToList(), Is.Empty,
+                "the fund is closed and the card still has something to press");
+
+            var words = card.Query<Label>().ToList().ConvertAll(l => l.text);
+
+            Assert.That(words, Has.Some.EqualTo(Loc.T("support.until")),
+                "the card does not say the fee was covered");
         }
 
         /// <summary>

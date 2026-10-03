@@ -82,6 +82,149 @@ namespace ScalingLaws.UI
         private bool returning;
 
         /// <summary>
+        /// Which run of animation is the live one.
+        ///
+        /// **Every step of every sequence here is a scheduled callback on an element that outlives
+        /// the sequence**, so cancelling one is not a matter of clearing the screen: the steps go
+        /// on firing into whatever is there now. Each sequence takes a number when it starts, every
+        /// step of it checks that its number is still the current one, and skipping or closing is
+        /// one increment.
+        /// </summary>
+        private int sequence;
+
+        /// <summary>
+        /// Everything the running sequence still has left to do, done at once.
+        ///
+        /// Null when there is nothing to hurry, which is what makes a tap on a finished screen do
+        /// nothing rather than replay it.
+        /// </summary>
+        private Action finishNow;
+
+        /// <summary>
+        /// Whether his opening conversation has already been read to the end in this sitting.
+        ///
+        /// **Kept in memory, never saved.** Walking to another tab puts the phone down and a first
+        /// call goes back to waiting, so coming home started the whole thing again from the app
+        /// opening itself: the boot, the four menu rows and eight messages typed out one at a time,
+        /// in front of somebody who had read all of it and was looking for the two buttons.
+        ///
+        /// Which conversation it was matters as well. The opening and the call back say different
+        /// things, so resuming the wrong one would be worse than replaying the right one.
+        /// </summary>
+        private bool playedOut;
+
+        private bool playedOutWasReturning;
+
+        /// <summary>Takes the next sequence number and drops whatever the last one still owed.</summary>
+        private int StartSequence()
+        {
+            finishNow = null;
+
+            return ++sequence;
+        }
+
+        /// <summary>True when the sequence that scheduled this step has been skipped or replaced.</summary>
+        private bool Stale(int token) => token != sequence;
+
+        /// <summary>
+        /// One tap anywhere on the handset puts the running animation at its end.
+        ///
+        /// **The rule is the same wherever it is tapped and whatever is playing**: the display
+        /// coming on, the app opening itself, the loading dots, somebody typing. All of it is
+        /// theatre in front of something the player is waiting to read or press, and a player who
+        /// taps the screen has stopped enjoying it.
+        ///
+        /// Buttons inside the handset get their own press first, because `ClickEvent` bubbles, and
+        /// a sequence that has finished has already dropped its jump, so a tap on a settled screen
+        /// does nothing rather than replaying it.
+        /// </summary>
+        private void SkipTheAnimation()
+        {
+            var jump = finishNow;
+
+            if (jump == null)
+            {
+                return;
+            }
+
+            // Before the jump, not after: it puts every step still in flight out of date, so none
+            // of them can land on top of the end state this is about to build.
+            finishNow = null;
+            sequence++;
+
+            jump();
+        }
+
+        /// <summary>Seconds a message spends being typed, and the pause after it lands.</summary>
+        private const float TypingSeconds = 0.9f;
+
+        private const float BetweenLinesSeconds = 0.6f;
+
+        /// <summary>
+        /// Plays a run of messages at the rhythm every call in this game uses, and remembers how
+        /// to be at the end of it.
+        ///
+        /// Three copies of this existed, one per caller, which is three places for the skip to be
+        /// written and two of them to be forgotten.
+        /// </summary>
+        private void PlayLines(int token, IReadOnlyList<string> lines, Action<string> say,
+            Action ending)
+        {
+            var delay = 0f;
+
+            foreach (var line in lines)
+            {
+                var text = line;
+                var typeAt = delay;
+                var sayAt = delay + TypingSeconds;
+
+                screen.schedule.Execute(() =>
+                {
+                    if (!Stale(token))
+                    {
+                        ShowTyping(true);
+                    }
+                }).ExecuteLater((long)(typeAt * 1000f));
+
+                screen.schedule.Execute(() =>
+                {
+                    if (Stale(token))
+                    {
+                        return;
+                    }
+
+                    ShowTyping(false);
+                    say(text);
+                }).ExecuteLater((long)(sayAt * 1000f));
+
+                delay = sayAt + BetweenLinesSeconds;
+            }
+
+            screen.schedule.Execute(() =>
+            {
+                if (Stale(token))
+                {
+                    return;
+                }
+
+                finishNow = null;
+                ending();
+            }).ExecuteLater((long)(delay * 1000f) + 300);
+
+            finishNow = () =>
+            {
+                ShowTyping(false);
+
+                foreach (var line in lines)
+                {
+                    say(line);
+                }
+
+                ending();
+            };
+        }
+
+        /// <summary>
         /// Puts the phone on screen and starts the sequence.
         ///
         /// Nothing here waits on the player until the two reply buttons appear, which is the point
@@ -98,13 +241,52 @@ namespace ScalingLaws.UI
 
             BuildFrame();
 
+            var token = StartSequence();
+
+            // **Back to where it got to, not back to the beginning.**
+            //
+            // A first call that was walked away from goes back to waiting and rings again the
+            // moment the office is on screen, which is right. What was wrong is that it rang from
+            // the top: the display coming on, the app opening itself, the loading dots, the menu
+            // picking its own row and then eight messages typed out one at a time, all of it in
+            // front of somebody who had already read every word and had walked away from the two
+            // buttons at the end of it.
+            if (playedOut && playedOutWasReturning == returning)
+            {
+                frame.schedule.Execute(() =>
+                {
+                    if (Stale(token))
+                    {
+                        return;
+                    }
+
+                    screen.AddToClassList("phone__screen--on");
+                    ShowChat(immediately: true);
+                }).ExecuteLater(WakeDelay / 2);
+
+                return;
+            }
+
             // On the wake rather than on the call, because the frame is dark until then and a
             // notification that arrives before anything is on screen has nothing to belong to.
             frame.schedule.Execute(() =>
             {
+                if (Stale(token))
+                {
+                    return;
+                }
+
                 AudioDirector.Message();
                 LightUp();
             }).ExecuteLater(WakeDelay);
+
+            // A tap during any of that lands here: the screen on, the whole conversation up, and
+            // the two buttons ready.
+            finishNow = () =>
+            {
+                screen.AddToClassList("phone__screen--on");
+                ShowChat(immediately: true);
+            };
         }
 
         /// <summary>
@@ -121,11 +303,18 @@ namespace ScalingLaws.UI
             AudioDirector.PhoneOpen();
             BuildFrame();
 
+            var token = StartSequence();
+
             // Straight past the app-opening theatre. That sequence exists to make the first call
             // feel like something arriving, and replaying it every time somebody opens the menu
             // would be four seconds of animation in front of a list of two items.
             frame.schedule.Execute(() =>
             {
+                if (Stale(token))
+                {
+                    return;
+                }
+
                 screen.AddToClassList("phone__screen--on");
                 ShowHome();
             }).ExecuteLater(WakeDelay / 2);
@@ -204,35 +393,21 @@ namespace ScalingLaws.UI
 
             BuildFrame();
 
+            var token = StartSequence();
+
             frame.schedule.Execute(() =>
             {
+                if (Stale(token))
+                {
+                    return;
+                }
+
                 screen.AddToClassList("phone__screen--on");
 
                 OpenChat();
                 ReplayThread();
 
-                var delay = 0f;
-
-                foreach (var line in lines)
-                {
-                    // Typing first, then the words, at the same rhythm every other call here uses.
-                    var text = line;
-                    var typeAt = delay;
-                    var sayAt = delay + 0.9f;
-
-                    screen.schedule.Execute(() => ShowTyping(true))
-                        .ExecuteLater((long)(typeAt * 1000f));
-
-                    screen.schedule.Execute(() =>
-                    {
-                        ShowTyping(false);
-                        Send(text, false);
-                    }).ExecuteLater((long)(sayAt * 1000f));
-
-                    delay = sayAt + 0.6f;
-                }
-
-                screen.schedule.Execute(() =>
+                PlayLines(sequence, lines, text => Send(text, false), () =>
                 {
                     if (walkthrough != null)
                     {
@@ -242,8 +417,31 @@ namespace ScalingLaws.UI
                     }
 
                     ShowComposer();
-                }).ExecuteLater((long)(delay * 1000f) + 200);
+                });
             }).ExecuteLater(WakeDelay);
+
+            // Before the screen is even on, a tap goes straight to the whole thing said.
+            finishNow = () =>
+            {
+                screen.AddToClassList("phone__screen--on");
+
+                OpenChat();
+                ReplayThread();
+
+                foreach (var line in lines)
+                {
+                    Send(line, false);
+                }
+
+                if (walkthrough != null)
+                {
+                    OfferWalkthrough(walkthrough);
+
+                    return;
+                }
+
+                ShowComposer();
+            };
         }
 
         /// <summary>The handset and its dark screen. Shared, so the two entry points cannot drift.</summary>
@@ -265,6 +463,11 @@ namespace ScalingLaws.UI
             screen = new VisualElement();
             screen.AddToClassList("phone__screen");
             frame.Add(screen);
+
+            // The universal skip. On the handset rather than on the screen, so the body and the
+            // bezel answer a tap as well: somebody stabbing at a phone to make it hurry up is not
+            // aiming carefully.
+            frame.RegisterCallback<ClickEvent>(_ => SkipTheAnimation());
 
             host.Add(frame);
 
@@ -671,9 +874,20 @@ namespace ScalingLaws.UI
                 {
                     // **Everything he can still teach, not only what is being offered in the corner.**
                     // Waving the chip away is a decision about the corner; the phone is where a
-                    // player goes looking for the thing they dismissed. Finished ones stay on the
-                    // list too, because a walkthrough is worth taking twice.
+                    // player goes looking for the thing they dismissed.
                     if (walkthrough.Id == WalkthroughCatalog.ServerRoomId && !state.HasServerRoom)
+                    {
+                        continue;
+                    }
+
+                    // **A walkthrough that has been taken comes off the list.**
+                    //
+                    // It used to stay, on the reasoning that one is worth taking twice. Reported on
+                    // 2026-10-01 and the report is right: Emil walks the player through the server
+                    // room and then goes on offering to walk them through the server room, which
+                    // reads as the game not having noticed. The list is what he can still show you,
+                    // and the finished ones are not that.
+                    if (guide.HasWalked(walkthrough.Id))
                     {
                         continue;
                     }
@@ -897,8 +1111,17 @@ namespace ScalingLaws.UI
         /// <summary>The display coming on, then the app opening itself.</summary>
         private void LightUp()
         {
+            var token = sequence;
+
             screen.AddToClassList("phone__screen--on");
-            screen.schedule.Execute(ShowApp).ExecuteLater(ScreenFade);
+
+            screen.schedule.Execute(() =>
+            {
+                if (!Stale(token))
+                {
+                    ShowApp();
+                }
+            }).ExecuteLater(ScreenFade);
         }
 
         /// <summary>
@@ -910,6 +1133,8 @@ namespace ScalingLaws.UI
         /// </summary>
         private void ShowApp()
         {
+            var token = sequence;
+
             screen.Clear();
 
             app = new VisualElement();
@@ -927,6 +1152,11 @@ namespace ScalingLaws.UI
 
             app.schedule.Execute(() =>
             {
+                if (Stale(token))
+                {
+                    return;
+                }
+
                 // The square opens out. The label goes first, because three loading circles with a
                 // word across them reads as a bug.
                 name.AddToClassList("dinapp__name--gone");
@@ -934,6 +1164,11 @@ namespace ScalingLaws.UI
 
                 mark.schedule.Execute(() =>
                 {
+                    if (Stale(token))
+                    {
+                        return;
+                    }
+
                     mark.style.display = DisplayStyle.None;
 
                     var dots = new VisualElement();
@@ -952,7 +1187,14 @@ namespace ScalingLaws.UI
                     }
 
                     app.Add(dots);
-                    app.schedule.Execute(ShowWelcome).ExecuteLater(LoadingHold);
+
+                    app.schedule.Execute(() =>
+                    {
+                        if (!Stale(token))
+                        {
+                            ShowWelcome();
+                        }
+                    }).ExecuteLater(LoadingHold);
                 }).ExecuteLater(IconMorph);
             }).ExecuteLater(IconHold);
         }
@@ -960,6 +1202,8 @@ namespace ScalingLaws.UI
         /// <summary>"Welcome back!" and the four things the app does.</summary>
         private void ShowWelcome()
         {
+            var token = sequence;
+
             screen.Clear();
 
             var welcome = new Label(GuideScript.WelcomeLine);
@@ -994,15 +1238,36 @@ namespace ScalingLaws.UI
             // somebody else's phone unlock, which is a nicer way in than a button that says START.
             screen.schedule.Execute(() =>
             {
+                if (Stale(token))
+                {
+                    return;
+                }
+
                 rows[GuideScript.AutoSelectedMenuItem].AddToClassList("dinapp__row--picked");
-                screen.schedule.Execute(ShowChat).ExecuteLater(OpenChatDelay);
+
+                screen.schedule.Execute(() =>
+                {
+                    if (!Stale(token))
+                    {
+                        ShowChat();
+                    }
+                }).ExecuteLater(OpenChatDelay);
             }).ExecuteLater(AutoSelectDelay);
         }
 
         // ---- the conversation ---------------------------------------------------------------------
 
-        private void ShowChat()
+        /// <summary>
+        /// The conversation. Typed out a message at a time, or all of it at once.
+        ///
+        /// <paramref name="immediately"/> is both halves of the same rule: a tap on the handset
+        /// while he is typing, and coming back to a call that was already read to the end. Neither
+        /// is a different conversation, so neither gets a different method.
+        /// </summary>
+        private void ShowChat(bool immediately = false)
         {
+            var token = sequence;
+
             screen.Clear();
 
             var header = new VisualElement();
@@ -1033,10 +1298,25 @@ namespace ScalingLaws.UI
                 chatList.Add(Bubble(line, false));
             }
 
+            var live = returning ? GuideScript.ReturnLive : GuideScript.Live;
+
+            if (immediately)
+            {
+                foreach (var (_, _, text) in live)
+                {
+                    chatList.Add(Bubble(text, false));
+                }
+
+                ScrollDown();
+                ShowChoices();
+
+                return;
+            }
+
             // Then he starts typing, which is what turns a wall of text into a conversation.
             var delay = 0f;
 
-            foreach (var (pause, typing, text) in returning ? GuideScript.ReturnLive : GuideScript.Live)
+            foreach (var (pause, typing, text) in live)
             {
                 delay += pause;
 
@@ -1044,11 +1324,21 @@ namespace ScalingLaws.UI
                 var showTextAt = delay + typing;
                 var message = text;
 
-                screen.schedule.Execute(() => ShowTyping(true))
-                    .ExecuteLater((long)(showTypingAt * 1000f));
+                screen.schedule.Execute(() =>
+                {
+                    if (!Stale(token))
+                    {
+                        ShowTyping(true);
+                    }
+                }).ExecuteLater((long)(showTypingAt * 1000f));
 
                 screen.schedule.Execute(() =>
                 {
+                    if (Stale(token))
+                    {
+                        return;
+                    }
+
                     ShowTyping(false);
                     chatList.Add(Bubble(message, false));
                     ScrollDown();
@@ -1057,7 +1347,13 @@ namespace ScalingLaws.UI
                 delay = showTextAt;
             }
 
-            screen.schedule.Execute(ShowChoices).ExecuteLater((long)(delay * 1000f) + 500);
+            screen.schedule.Execute(() =>
+            {
+                if (!Stale(token))
+                {
+                    ShowChoices();
+                }
+            }).ExecuteLater((long)(delay * 1000f) + 500);
         }
 
         private VisualElement typing;
@@ -1096,6 +1392,13 @@ namespace ScalingLaws.UI
         /// <summary>The two things the player can send back.</summary>
         private void ShowChoices()
         {
+            // The end of the sequence: there is nothing left to hurry, and coming back to this
+            // call should come back to here rather than to the app opening itself.
+            ShowTyping(false);
+            finishNow = null;
+            playedOut = true;
+            playedOutWasReturning = returning;
+
             choices = new VisualElement();
             choices.AddToClassList("chat__choices");
 
@@ -1192,49 +1495,53 @@ namespace ScalingLaws.UI
 
             BuildFrame();
 
+            var token = StartSequence();
+
+            void HangUpButton()
+            {
+                var end = new VisualElement();
+                end.AddToClassList("chat__choices");
+
+                // **One button, and it does not accept anything.** `Collapse(true)` is how the
+                // tour is taken up; a caller from outside the tutorial must never be able to
+                // start it, which is what passing false here guarantees.
+                var hang = new Button(() => Collapse(false)) { text = Loc.T("threat.call.end") };
+                hang.AddToClassList("chat__choice");
+                end.Add(hang);
+
+                screen.Add(end);
+            }
+
             frame.schedule.Execute(() =>
+            {
+                if (Stale(token))
+                {
+                    return;
+                }
+
+                screen.AddToClassList("phone__screen--on");
+                OpenChat(caller);
+
+                PlayLines(sequence, lines, text =>
+                {
+                    chatList.Add(Bubble(text, false));
+                    ScrollDown();
+                }, HangUpButton);
+            }).ExecuteLater(WakeDelay);
+
+            finishNow = () =>
             {
                 screen.AddToClassList("phone__screen--on");
                 OpenChat(caller);
 
-                var delay = 0f;
-
                 foreach (var line in lines)
                 {
-                    // Long enough to read the one before it. Typing first, then the words, which is
-                    // the same rhythm his own calls use.
-                    var text = line;
-                    var typeAt = delay;
-                    var sayAt = delay + 0.9f;
-
-                    screen.schedule.Execute(() => ShowTyping(true))
-                        .ExecuteLater((long)(typeAt * 1000f));
-
-                    screen.schedule.Execute(() =>
-                    {
-                        ShowTyping(false);
-                        chatList.Add(Bubble(text, false));
-                        ScrollDown();
-                    }).ExecuteLater((long)(sayAt * 1000f));
-
-                    delay = sayAt + 0.6f;
+                    chatList.Add(Bubble(line, false));
                 }
 
-                screen.schedule.Execute(() =>
-                {
-                    var end = new VisualElement();
-                    end.AddToClassList("chat__choices");
-
-                    // **One button, and it does not accept anything.** `Collapse(true)` is how the
-                    // tour is taken up; a caller from outside the tutorial must never be able to
-                    // start it, which is what passing false here guarantees.
-                    var hang = new Button(() => Collapse(false)) { text = Loc.T("threat.call.end") };
-                    hang.AddToClassList("chat__choice");
-                    end.Add(hang);
-
-                    screen.Add(end);
-                }).ExecuteLater((long)(delay * 1000f) + 300);
-            }).ExecuteLater(WakeDelay);
+                ScrollDown();
+                HangUpButton();
+            };
         }
 
 
@@ -1329,6 +1636,12 @@ namespace ScalingLaws.UI
             {
                 AudioDirector.PhoneClose();
             }
+
+            // Every scheduled step of whatever was playing is now out of date. Without this they
+            // go on firing against a screen that has been taken down, or worse, against the next
+            // call's.
+            sequence++;
+            finishNow = null;
 
             typing = null;
             choices = null;

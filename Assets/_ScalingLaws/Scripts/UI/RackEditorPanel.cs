@@ -130,7 +130,14 @@ namespace ScalingLaws.UI
 
             // **The equipment window on the left**, as in the author's sketch of 2026-09-18. It was
             // on the right for one build; the sketch settled it.
-            body.Add(BuildStore(simulation, column, row));
+            //
+            // **The fan goes at the head of that window**, asked for there by name on 2026-09-30.
+            // It spent three builds in the right hand column, where it was reported twice as
+            // impossible to reach, and putting it under the inventory instead would have put it
+            // back below a list that grows: a company holding a dozen generations of card pushes
+            // anything following them off the bottom of the column. At the head it cannot move.
+            body.Add(BuildStore(simulation, column, row,
+                BuildActions(simulation, column, row, square)));
 
             // The middle is the cabinet and nothing else, and it stays the drop target: a card
             // dragged out of the store is dropped on the thing it goes into, never on the figures
@@ -146,7 +153,6 @@ namespace ScalingLaws.UI
             desk.AddToClassList("rackmodal__desk");
             desk.Add(BuildStats(simulation, square, definition));
             desk.Add(BuildOverclock(simulation, column, row, roomNow));
-            desk.Add(BuildActions(simulation, column, row, square));
 
             body.Add(desk);
             card.Add(body);
@@ -335,7 +341,17 @@ namespace ScalingLaws.UI
         /// cabinet sends it back here. SELL under a tile sells the whole generation at today's
         /// residual, as the row it replaced did.
         /// </summary>
-        private VisualElement BuildStore(CompanySimulation simulation, int column, int row)
+        /// <summary>
+        /// The inventory column. <paramref name="underHeading"/> is placed directly beneath the
+        /// heading and above the parts.
+        ///
+        /// **The caller hands it in rather than inserting it afterwards**, because a caller that
+        /// has to remember to put something at index 1 is the shape that made every slot in this
+        /// window unclickable for three builds: the class owning its own invariant is the repair
+        /// that sticks. Null is fine and draws the column exactly as it was.
+        /// </summary>
+        private VisualElement BuildStore(CompanySimulation simulation, int column, int row,
+            VisualElement underHeading = null)
         {
             var state = simulation.State;
 
@@ -345,6 +361,11 @@ namespace ScalingLaws.UI
             var heading = new Label(Loc.T("rack.store"));
             heading.AddToClassList("panel__heading");
             store.Add(heading);
+
+            if (underHeading != null)
+            {
+                store.Add(underHeading);
+            }
 
             // One tile per generation rather than per purchase order, because two orders of the
             // same card are the same card. The index of the first batch is kept for the sale.

@@ -52,14 +52,29 @@ namespace ScalingLaws.Tests.EditMode
                 + "carry one.");
         }
 
+        /// <summary>
+        /// Every slider on the architecture screen says what it is for.
+        ///
+        /// **It asserted a count and the count was the wrong fact.** `Is.EqualTo(7)` caught the
+        /// eighth control being added rather than a control being left unexplained, which is the
+        /// opposite of the thing worth holding; adding the head-start slider failed it while the
+        /// screen was more explained than before, not less. Counting the sliders and requiring one
+        /// badge each says what this fixture has always meant.
+        /// </summary>
         [Test]
-        public void TheArchitectureScreenExplainsAllSevenControls()
+        public void EverySliderOnTheArchitectureScreenSaysWhatItIsFor()
         {
             var panel = new UI.ArchitectureCreatorPanel(Company());
             panel.Refresh();
 
-            Assert.That(BadgesIn(panel.Root), Is.EqualTo(7),
-                "Five directions, the budget and the calendar.");
+            var sliders = panel.Root.Query<UnityEngine.UIElements.Slider>().ToList().Count;
+
+            Assert.That(sliders, Is.GreaterThanOrEqualTo(7),
+                "Five directions, the budget and the calendar are the floor for this screen.");
+
+            Assert.That(BadgesIn(panel.Root), Is.EqualTo(sliders),
+                $"{sliders} controls on the screen and a different number of explanations. A "
+                + "slider with nothing saying what it moves is a chore with a handle on it.");
         }
 
         /// <summary>

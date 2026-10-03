@@ -3205,10 +3205,51 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
+        /// How long a family programme would actually run for.
+        ///
+        /// **One reading, and there were two.** The founder's Concept skill, the research staff and
+        /// the home country all move a programme's length, and the screen and the commit each
+        /// scaled the base duration themselves; the event announcing the programme quoted the
+        /// unscaled figure, which was a third answer. Everything asks this now.
+        ///
+        /// <paramref name="priorWorkPoints"/> is research points put in to shorten it. Zero is the
+        /// neutral option and gives exactly the calendar this returned before prior work existed.
+        /// </summary>
+        public int ArchitectureCalendarDays(
+            ArchitectureBlueprint blueprint, double priorWorkPoints = 0.0)
+        {
+            var scaled = Math.Clamp(
+                ScaleResearchDuration(ArchitectureDesigner.DurationDays(blueprint)),
+                1,
+                ArchitectureBlueprint.MaximumDurationDays);
+
+            return PriorWork.CalendarAfter(scaled, priorWorkPoints);
+        }
+
+        /// <summary>
+        /// The most points worth putting into the programme on these sliders. Past this the days
+        /// stop coming off, so the control stops there rather than taking money for nothing.
+        /// </summary>
+        public double MostPriorWorkWorthSpending(ArchitectureBlueprint blueprint) =>
+            PriorWork.MostPointsWorthSpending(ArchitectureCalendarDays(blueprint));
+
+        /// <summary>
         /// Commits to designing a family. Cash goes now; the result is not known until it lands, and
         /// a cheap rushed programme is close to a coin toss.
         /// </summary>
-        public bool TryStartArchitectureProgramme(ArchitectureBlueprint blueprint, out string failureReason)
+        public bool TryStartArchitectureProgramme(ArchitectureBlueprint blueprint, out string failureReason) =>
+            TryStartArchitectureProgramme(blueprint, 0.0, out failureReason);
+
+        /// <summary>
+        /// The same commit with research points put in to shorten the calendar.
+        ///
+        /// **An overload rather than a field on the blueprint.** The blueprint is the design, and
+        /// prior work is not part of the design: it changes when the thing arrives and nothing
+        /// about what arrives. Keeping it out of the blueprint is also what guarantees the research
+        /// power is untouched by it, because that is computed from the blueprint's own duration.
+        /// </summary>
+        public bool TryStartArchitectureProgramme(
+            ArchitectureBlueprint blueprint, double priorWorkPoints, out string failureReason)
         {
             failureReason = string.Empty;
 
@@ -3242,14 +3283,35 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
+            // **Only what actually buys days is charged.** Asking for more points than the cap can
+            // use would take them and hand back nothing, which is the shape of every refund
+            // argument this project has ever had.
+            var spend = Math.Max(0.0, Math.Min(
+                SimUnits.Finite(priorWorkPoints), MostPriorWorkWorthSpending(blueprint)));
+
+            if (spend > State.ResearchPoints)
+            {
+                failureReason = Loc.T("arch.not_enough_points",
+                    Math.Ceiling(spend - State.ResearchPoints).ToString(Invariant));
+
+                return false;
+            }
+
             var cash = ArchitectureDesigner.CashCostUsd(blueprint);
             State.PostCash(LedgerLine.Research, cash);
+
+            if (spend > 0.0)
+            {
+                State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - spend);
+            }
+
+            var calendar = ArchitectureCalendarDays(blueprint, spend);
 
             var generation = blueprint.IsIteration ? State.FamilyGeneration(blueprint.BaseFamily) + 1 : 0;
             State.ActiveArchitectureProject = new ArchitectureProject(
                 blueprint,
                 State.Date,
-                ScaleResearchDuration(ArchitectureDesigner.DurationDays(blueprint)),
+                calendar,
                 projection.PetaflopDaysRequired,
                 cash,
                 projection.ResearchPower,
@@ -3260,8 +3322,7 @@ namespace ScalingLaws.Simulation
             State.RaiseEvent(new CompanyEvent(
                 CompanyEventType.ArchitectureResearchStarted,
                 State.Date,
-                Loc.T("ev.arch.programme", blueprint.Name,
-                    ArchitectureDesigner.DurationDays(blueprint).ToString(Invariant)),
+                Loc.T("ev.arch.programme", blueprint.Name, calendar.ToString(Invariant)),
                 cash));
 
             return true;

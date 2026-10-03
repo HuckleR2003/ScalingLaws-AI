@@ -55,6 +55,18 @@ namespace ScalingLaws.UI
         private readonly Label budgetReading = new();
         private readonly Label durationReading = new();
 
+        /// <summary>
+        /// Research points put into the programme, and the two things that report them.
+        ///
+        /// **Its range is set from the company, not written down.** It runs to the smaller of what
+        /// the company holds and what the cap on this calendar can use, so the handle cannot be
+        /// dragged to a number that would take points and hand back no days.
+        /// </summary>
+        private readonly Slider priorSlider = new(0f, 1f);
+
+        private readonly Label priorReading = new();
+        private readonly Label priorLine = new();
+
         private readonly Dictionary<ResearchDirection, Slider> directions = new();
         private readonly Dictionary<ResearchDirection, VisualElement> locks = new();
         private readonly Dictionary<ResearchDirection, Label> lockLabels = new();
@@ -427,6 +439,20 @@ namespace ScalingLaws.UI
             hint.AddToClassList("arx__hint");
             card.Add(hint);
 
+            // **Under the two it modifies rather than beside them.** The budget and the length are
+            // the programme; this is a head start on the programme, and putting it in the row would
+            // read as a third thing of the same kind.
+            priorSlider.value = 0f;
+            priorSlider.AddToClassList("arx__slider");
+            priorSlider.RegisterValueChangedCallback(_ => Reprice());
+
+            var prior = Money(Loc.T("arch.prior"), TechNotes.PriorWork, priorReading, priorSlider);
+            prior.AddToClassList("arx__prior");
+            card.Add(prior);
+
+            priorLine.AddToClassList("arx__hint");
+            card.Add(priorLine);
+
             return card;
         }
 
@@ -500,6 +526,8 @@ namespace ScalingLaws.UI
                 + (blueprint.IsIteration
                     ? $"  ·  pays {UiFormat.Money(ArchitectureDesigner.CashCostUsd(blueprint))}"
                     : string.Empty);
+
+            SyncPriorWork(blueprint);
 
             durationReading.text = UiFormat.Days(ProgrammeDurationDays());
 
@@ -1013,7 +1041,8 @@ namespace ScalingLaws.UI
         /// </summary>
         public bool CommitNow(out string failureReason)
         {
-            if (!simulation.TryStartArchitectureProgramme(CurrentBlueprint(), out failureReason))
+            if (!simulation.TryStartArchitectureProgramme(
+                    CurrentBlueprint(), PriorWorkPoints, out failureReason))
             {
                 problem = failureReason;
                 Reprice();
@@ -1043,26 +1072,118 @@ namespace ScalingLaws.UI
         /// family, so the offer can quote what it is asking for before it has applied anything.
         /// That is the only order in which a quote means something.
         /// </summary>
-        public int ProgrammeDurationDays()
-        {
-            var scaled = simulation.ScaleResearchDuration(
-                ArchitectureDesigner.DurationDays(CurrentBlueprint()));
+        public int ProgrammeDurationDays() =>
+            simulation.ArchitectureCalendarDays(CurrentBlueprint(), PriorWorkPoints);
 
-            return Math.Clamp(scaled, 1, ArchitectureBlueprint.MaximumDurationDays);
+        /// <summary>
+        /// Points the player has put in, held inside what the company has and what the cap can use.
+        ///
+        /// Read through a property rather than off the slider, because the slider's range is
+        /// rebuilt every time the length changes and a handle left past a range that has shrunk
+        /// would quote days nobody is going to get.
+        /// </summary>
+        public double PriorWorkPoints => Math.Max(0.0, Math.Min(
+            Math.Round(priorSlider.value),
+            Math.Min(simulation.State.ResearchPoints,
+                PriorWork.MostPointsWorthSpending(BareCalendarDays()))));
+
+        /// <summary>The calendar before any points are counted, which is what the cap is a share of.</summary>
+        private int BareCalendarDays() => simulation.ArchitectureCalendarDays(CurrentBlueprint());
+
+        /// <summary>
+        /// Re-ranges the points control against today's company and today's length, and says in a
+        /// sentence what the handle is buying.
+        ///
+        /// **The range is the honest part.** A slider that runs to a number the company cannot pay
+        /// or the cap cannot use is a control that lies about the offer before the player has
+        /// clicked anything.
+        /// </summary>
+        private void SyncPriorWork(ArchitectureBlueprint blueprint)
+        {
+            var bare = BareCalendarDays();
+            var ceiling = Math.Min(
+                simulation.State.ResearchPoints, PriorWork.MostPointsWorthSpending(bare));
+
+            priorSlider.lowValue = 0f;
+            priorSlider.highValue = (float)Math.Max(0.0, ceiling);
+
+            if (priorSlider.value > priorSlider.highValue)
+            {
+                priorSlider.SetValueWithoutNotify(priorSlider.highValue);
+            }
+
+            var points = PriorWorkPoints;
+            var days = PriorWork.DaysOff(bare, points);
+
+            priorReading.text = Loc.T("arch.prior_have",
+                UiFormat.Points(simulation.State.ResearchPoints));
+
+            priorLine.text = days <= 0
+                ? Loc.T("arch.prior_none")
+                : Loc.T("arch.prior_spent", UiFormat.Points(points), UiFormat.Days(days));
         }
 
-        private void Commit()
+        /// <summary>
+        /// Puts the programme to the player before it takes their money.
+        ///
+        /// **The most expensive irreversible click in the game had no confirmation on it.** A
+        /// family programme spends cash and then the better part of a year of calendar, it cannot
+        /// be started twice, and the sliders above the button are easy to nudge; the card says what
+        /// the three numbers will be and what is left in the bank afterwards.
+        ///
+        /// It is `GateNotice.Decide`, the same element a refused control and a lab ringing about a
+        /// renewal already use, rather than a fourth thing with the same lifetime. Three separate
+        /// cards would be three places to get the click-eating wrong, which this project has
+        /// shipped twice.
+        ///
+        /// A run that could not start says so instead of asking: a confirmation card in front of a
+        /// refusal is two clicks to be told no.
+        /// </summary>
+        public void AskThenCommit()
         {
-            if (!simulation.TryStartArchitectureProgramme(CurrentBlueprint(), out var reason))
+            var blueprint = CurrentBlueprint();
+            var projection = simulation.ProjectArchitecture(blueprint);
+
+            if (!projection.IsFeasible)
             {
-                problem = reason;
+                problem = projection.BlockingReason;
                 Reprice();
+                AudioDirector.Play(UiSound.Deny);
+
                 return;
             }
 
-            problem = string.Empty;
-            Refresh();
+            var cost = ArchitectureDesigner.CashCostUsd(blueprint);
+            var after = simulation.State.CashUsd - cost;
+
+            var points = PriorWorkPoints;
+
+            var rows = new List<(string, string)>
+            {
+                (Loc.T("arch.length"), UiFormat.Days(ProgrammeDurationDays())),
+                (Loc.T("confirm.paid_today"), UiFormat.Money(cost))
+            };
+
+            // Only when there is something to say. A row reading "0 points" on a card asking for a
+            // decision is a figure the player has to read and then discard.
+            if (points > 0.0)
+            {
+                rows.Add((Loc.T("arch.prior_row"), UiFormat.Points(points)));
+            }
+
+            rows.Add((Loc.T("confirm.left_in_bank"), UiFormat.Money(after)));
+
+            GateNotice.Decide(
+                Loc.T("confirm.before"),
+                Loc.T("arch.confirm.line", blueprint.Name),
+                rows,
+                Loc.T("arch.confirm.yes"),
+                () => AudioDirector.Play(CommitNow(out _) ? UiSound.Confirm : UiSound.Deny),
+                Loc.T("confirm.not_yet"),
+                () => { });
         }
+
+        private void Commit() => AskThenCommit();
 
         private static string SlotLetter(ArchitectureId slot) => slot switch
         {

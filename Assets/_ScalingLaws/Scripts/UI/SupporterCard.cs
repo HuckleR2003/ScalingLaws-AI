@@ -52,43 +52,24 @@ namespace ScalingLaws.UI
             why.AddToClassList("support-card__why");
             card.Add(why);
 
-            card.Add(Tier(Loc.T("support.tier_name")));
-            card.Add(Tier(Loc.T("support.tier_early")));
+            // **The tiers are gone and the keys behind them are not.** The fund closed on
+            // 30 September 2026, so the card stops offering. What was promised to whoever paid
+            // under those tiers still stands, and the phrases stay in the book for the day this
+            // is reopened rather than being retyped from memory then.
 
             var until = new Label(Loc.T("support.until"));
             until.AddToClassList("support-card__until");
             card.Add(until);
 
-            // **Opens a browser and nothing else.** No payment screen, no field to type into, and
-            // no state in the save: what the player does on that page is between them and GitHub.
-            var open = new Button(() => Application.OpenURL(Url))
-            {
-                text = Loc.T("support.open")
-            };
-            open.AddToClassList("support-card__open");
-            card.Add(open);
+            // **Nothing on this card is clickable any more.** It was one button to the
+            // sponsors page; a closed fund with a live call to action is a card that asks for
+            // something it cannot accept.
 
             var free = new Label(Loc.T("support.free"));
             free.AddToClassList("support-card__free");
             card.Add(free);
 
             return card;
-        }
-
-        private static VisualElement Tier(string text)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("support-card__tier");
-
-            var dot = new VisualElement();
-            dot.AddToClassList("support-card__dot");
-            row.Add(dot);
-
-            var label = new Label(text);
-            label.AddToClassList("support-card__tiertext");
-            row.Add(label);
-
-            return row;
         }
     }
 }

@@ -73,6 +73,9 @@ namespace ScalingLaws.Data
 
         public static Note ProgrammeLength => From("tech.length");
 
+        /// <summary>Research points put in to shorten the calendar. See Simulation/PriorWork.</summary>
+        public static Note PriorWork => From("tech.prior");
+
         public static Note WebCrawl => From("tech.webcrawl");
 
         public static Note CuratedWeb => From("tech.curated");

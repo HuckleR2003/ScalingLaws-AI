@@ -301,25 +301,69 @@ namespace ScalingLaws.UI
             }
 
             var affordable = state.CashUsd >= definition.FacilityCapexUsd;
+            var capex = definition.FacilityCapexUsd;
 
             var order = new Button(() =>
             {
-                simulation.TryOrderDatacenter(out _);
-                Show(Screen.Fleet);
+                // **Shut is a look, not a dead control. Fourth time in this project.**
+                // This was `SetEnabled(false)` until a company could afford eighty million
+                // dollars, which is most of a campaign, so the one button that opens the way past
+                // the colocation power ceiling sat greyed and silent for years and was reported as
+                // switched off. A disabled element in UI Toolkit dispatches no pointer event, so
+                // there was no way to tell it apart from a button that was simply broken.
+                if (!affordable)
+                {
+                    AudioDirector.Deny();
+
+                    GateNotice.Says(Loc.T("fleet.dc_commission", UiFormat.Money(capex)),
+                        Loc.T("fleet.dc_short", UiFormat.Money(capex - state.CashUsd)));
+
+                    return;
+                }
+
+                // Eighty million dollars and a site that takes months to build, on one click with
+                // nothing between the cursor and the money. The same card the architecture
+                // programme asks through.
+                GateNotice.Decide(
+                    Loc.T("confirm.before"),
+                    Loc.T("fleet.dc_confirm.line"),
+                    new[]
+                    {
+                        (Loc.T("confirm.paid_today"), UiFormat.Money(capex)),
+                        (Loc.T("fleet.dc_confirm.power"),
+                            UiFormat.Kilowatts(definition.PowerCapacityKilowatts)),
+                        (Loc.T("confirm.left_in_bank"), UiFormat.Money(state.CashUsd - capex))
+                    },
+                    Loc.T("fleet.dc_confirm.yes"),
+                    () =>
+                    {
+                        if (!simulation.TryOrderDatacenter(out var why))
+                        {
+                            AudioDirector.Deny();
+                            startedNotice?.Show(Loc.T("notice.refused"), why);
+
+                            return;
+                        }
+
+                        AudioDirector.Play(UiSound.Confirm);
+                        Show(Screen.Fleet);
+                    },
+                    Loc.T("confirm.not_yet"),
+                    () => { });
             })
             {
-                text = Loc.T("fleet.dc_commission", UiFormat.Money(definition.FacilityCapexUsd))
+                text = Loc.T("fleet.dc_commission", UiFormat.Money(capex))
             };
 
             order.AddToClassList("chip");
-            order.SetEnabled(affordable);
+            order.EnableInClassList("button--shut", !affordable);
 
             InsightTip.AttachKeyed(order, "fleet.dc_commission_title", "fleet.dc_commission_note");
 
             if (!affordable)
             {
                 var short_ = new Label(Loc.T("fleet.dc_short",
-                    UiFormat.Money(definition.FacilityCapexUsd - state.CashUsd)));
+                    UiFormat.Money(capex - state.CashUsd)));
 
                 short_.AddToClassList("readout__value");
                 short_.AddToClassList("readout__value--warn");

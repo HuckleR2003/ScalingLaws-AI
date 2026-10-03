@@ -89,7 +89,140 @@ namespace ScalingLaws.Tests.PlayMode
         /// the reference resolution are the ones the player gets. Instantiated rather than used
         /// directly because pointing the real asset at a render texture would dirty it.
         /// </summary>
+        /// <summary>
+        /// The note that goes with the build announcement, rendered in the game's own typeface.
+        ///
+        /// **An asset render rather than a test, and it says so.** It is here because this is the
+        /// fixture that already knows how to put a UI Toolkit page through a panel and read the
+        /// pixels back, and a second copy of that forty lines is a second copy to keep in step.
+        /// The only thing it asserts is the one thing a picture cannot be trusted on: that anything
+        /// reached the panel at all.
+        ///
+        /// Every figure on it is measured rather than written: the test counts come off the result
+        /// files, and the save version is the one the format is actually on.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheNoteForTheBuildAnnouncement()
+        {
+            yield return Capture(BuildNote(), "note_build.png");
+        }
+
+        private static VisualElement BuildNote()
+        {
+            var page = new VisualElement();
+            page.style.flexGrow = 1;
+            page.style.paddingLeft = 96;
+            page.style.paddingRight = 96;
+            page.style.paddingTop = 66;
+            page.style.paddingBottom = 60;
+
+            page.Add(NoteLabel("SCALING LAWS", 15, new Color(0.62f, 0.52f, 0.88f), bold: true,
+                spacing: 6f, marginBottom: 18));
+
+            page.Add(NoteLabel("What four extra days bought", 74, new Color(0.89f, 0.91f, 0.96f),
+                bold: true, spacing: -0.5f, marginBottom: 10));
+
+            page.Add(NoteLabel("27 September to 1 October 2026", 21,
+                new Color(0.52f, 0.57f, 0.65f), bold: false, spacing: 0.4f, marginBottom: 58));
+
+            var columns = new VisualElement();
+            columns.style.flexDirection = FlexDirection.Row;
+            columns.style.flexGrow = 1;
+
+            var list = new VisualElement();
+            list.style.width = Length.Percent(63);
+            list.style.paddingRight = 60;
+
+            foreach (var line in new[]
+            {
+                "The tutorial stopped hiding the bottom third of every screen",
+                "Architecture asks before it spends a year of your calendar",
+                "Research points can buy a head start on a family programme",
+                "A programme in flight has a card in the corner, like research",
+                "The own datacentre button explains itself instead of sitting grey",
+                "One tap on the phone skips any animation it is playing",
+                "A distribution licence says what it gives you before you sign it",
+                "The support desk has its own tab, with satisfaction in the name",
+                "Window sizes, and a line saying what the game is drawing"
+            })
+            {
+                list.Add(NoteRow(line));
+            }
+
+            columns.Add(list);
+
+            var figures = new VisualElement();
+            figures.style.width = Length.Percent(37);
+            figures.style.paddingLeft = 40;
+            figures.style.borderLeftWidth = 1;
+            figures.style.borderLeftColor = new Color(1f, 1f, 1f, 0.10f);
+
+            figures.Add(NoteFigure("1,624", "automated tests, all green"));
+            figures.Add(NoteFigure("83", "of them open a real screen and measure it"));
+            figures.Add(NoteFigure("v71", "save format, unchanged. Your campaign still loads"));
+            figures.Add(NoteFigure("4", "days later than I said it would be"));
+
+            columns.Add(figures);
+            page.Add(columns);
+
+            var foot = NoteLabel("Build lands 1 October, before 13:00 CEST. Please try to break it.",
+                21, new Color(0.62f, 0.52f, 0.88f), bold: true, spacing: 0.4f, marginBottom: 0);
+
+            foot.style.marginTop = 40;
+            page.Add(foot);
+
+            return page;
+        }
+
+        private static Label NoteLabel(string text, int size, Color colour, bool bold,
+            float spacing, int marginBottom)
+        {
+            var label = new Label(text);
+            label.style.fontSize = size;
+            label.style.color = colour;
+            label.style.letterSpacing = spacing;
+            label.style.marginBottom = marginBottom;
+            label.style.unityFontStyleAndWeight = bold ? FontStyle.Bold : FontStyle.Normal;
+            label.style.whiteSpace = WhiteSpace.Normal;
+
+            return label;
+        }
+
+        private static VisualElement NoteRow(string text)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.marginBottom = 31;
+
+            var tick = new VisualElement();
+            tick.style.width = 22;
+            tick.style.height = 2;
+            tick.style.marginTop = 17;
+            tick.style.marginRight = 16;
+            tick.style.flexShrink = 0;
+            tick.style.backgroundColor = new Color(0.62f, 0.52f, 0.88f, 0.85f);
+            row.Add(tick);
+
+            var words = NoteLabel(text, 29, new Color(0.83f, 0.86f, 0.92f), false, 0f, 0);
+            words.style.flexShrink = 1;
+            row.Add(words);
+
+            return row;
+        }
+
+        private static VisualElement NoteFigure(string figure, string caption)
+        {
+            var block = new VisualElement();
+            block.style.marginBottom = 52;
+
+            block.Add(NoteLabel(figure, 54, new Color(0.89f, 0.91f, 0.96f), true, -0.5f, 2));
+            block.Add(NoteLabel(caption, 18, new Color(0.52f, 0.57f, 0.65f), false, 0.2f, 0));
+
+            return block;
+        }
+
         private static IEnumerator Capture(VisualElement page, string fileName)
+
         {
             var texture = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
             texture.Create();

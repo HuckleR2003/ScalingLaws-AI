@@ -63,6 +63,24 @@ namespace ScalingLaws.Simulation
             DaysCompleted >= DurationDays
             && (PetaflopDaysRequired <= 0.0 || PetaflopDaysCompleted >= PetaflopDaysRequired);
 
+        /// <summary>How far the calendar alone has run, which is the half that passes on its own.</summary>
+        public double CalendarProgress =>
+            Math.Clamp(DaysCompleted / (double)DurationDays, 0.0, 1.0);
+
+        /// <summary>
+        /// The programme has run out its days and is waiting on the cluster.
+        ///
+        /// **Named, because research has been caught by this exact state twice and a family
+        /// programme can sit in it for longer.** It shares the fleet with training, upgrades and
+        /// research, so a company that commits a family and then starts a big run has a programme
+        /// that reaches the end of its calendar and stops, which from the outside is a hang.
+        /// </summary>
+        public bool IsWaitingForCompute => DaysCompleted >= DurationDays && !IsComplete;
+
+        /// <summary>Petaflop-days still owed, which is what a stall is measured in.</summary>
+        public double PetaflopDaysRemaining =>
+            Math.Max(0.0, PetaflopDaysRequired - PetaflopDaysCompleted);
+
         public void Advance(double petaflopDays)
         {
             DaysCompleted++;

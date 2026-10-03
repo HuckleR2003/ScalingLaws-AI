@@ -36,7 +36,184 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ---
 
-## [Unreleased]
+## [0.6.2] - 2026-10-01
+
+**The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
+drawn down to about two thirds of the window and then stopped, with the window's own colour filling
+the rest, which is what it looked like from the outside: a blue sheet lying over the bottom of the
+screen on every single tab. It was the clearance that keeps a page out from under the tour strip,
+written as padding on the scroller rather than on the page inside it.
+
+**A scroller lays its viewport out inside its own padding.** So the reserve came out of the visible
+half of the page instead of the scrollable half: measured at 1920x1080, a 943px scroller kept a
+624px window and the missing 319px was not being rendered at all, which also meant it could not be
+scrolled to. It is on the content now, where the same number lengthens the page.
+
+**The display readout was also on one settings sheet out of two.** 0.6.1 was cut so a second machine
+could say what it was drawing, and the readout went onto the pause sheet only, not onto the one a
+person opens to look at a display problem. `DisplayReport.Line` had a caller, so a sweep could not
+have found it: fourteenth unreachable mechanism here and the first where the control existed, worked,
+and was simply on the other screen.
+
+### Added
+
+- **The window sizes and the line saying what the game is drawing are on the main menu settings
+  sheet as well.** `UI/DisplaySettings.cs` is one builder with two callers, so a size added to the
+  list appears on both sheets and the two readouts cannot word the same fact differently. The pause
+  sheet lost fifty three lines of the same code written out by hand.
+- **The tour points at things in corners instead of only ringing them.** `UI/AttentionPull.cs` puts
+  the highlighted element in the middle of the window and lets it travel back to where it lives over
+  a second and a half. It was asked for on the support walkthrough, which opens by saying "the
+  official page is here" over the banner in the top right and was reported as impossible to see.
+  **It is a rule rather than a list of steps**: anything rung whose centre is outside the middle
+  half of the window is pulled, and anything already under the player's eye is left alone, so the
+  next walkthrough written gets it without anybody remembering to ask. `ReduceMotion` turns it off,
+  because that setting is accessibility here and the ring and the sentence still arrive without it.
+
+### Added
+
+- **A family programme can be given a head start with research points.** The architecture screen has
+  a third control under the budget and the length: points put in take days off the calendar, up to
+  30% of it and never below the floor the length slider itself stops at. **Points and deliberately
+  not money.** Money buying time is the one thing this game's design refuses, and the budget and
+  length pair already sells quality for money, so a second money lever would be two mechanisms for
+  one subject. Points are different in kind: they are only ever earned by finished work, so spending
+  them says the lab already understands part of what it is about to build. Two points a day, and it
+  buys calendar and nothing else, so the cluster still owes the same petaflop-days and a shortened
+  programme can still end up waiting on it. It also gives research points a second thing to buy,
+  which until now was only the tree.
+- **Starting a family programme says so at the top of the screen.** The event has been raised since
+  the programme existed and was read by nothing, so the card closed behind the player and the site
+  looked exactly as it had a second earlier. It is not the player's own click coming back: by the
+  time it fires the card has already asked and this says it took.
+- **Committing a family programme asks first.**
+
+ The most expensive irreversible click in the game
+  had nothing between the cursor and the money: a card says how long it will run, what leaves the
+  account today and what is left in the bank, and the tour's offer goes through the same card rather
+  than spending a year of calendar on the player's behalf from a line of dialogue.
+- **The own datacentre button answers instead of sitting there greyed.** It was disabled until a
+  company could afford eighty million dollars, which is most of a campaign, and a disabled control
+  in this interface cannot explain itself. It takes the click now: under the price it says how much
+  is missing, and over it the same confirmation card the family programme uses.
+- **One tap on the phone skips whatever it is playing.** The display coming on, the app opening
+  itself, the loading dots, somebody typing: all of it goes to its end. One rule written once, for
+  every call in the game rather than one per caller.
+- **Walking away from the cousin's first call and coming back no longer replays it.** It resumes at
+  the two buttons, which is where the player left it.
+
+### Changed
+
+- **A bought capacity deal says how much compute it is and how much more that is than you rent.**
+  It read "reserved compute on top of what you rent", which is a sentence where a figure belongs:
+  forty petaflops is a great deal or a rounding error depending on what is already running. The
+  other three arrangements keep their sentence, because what they give is not a quantity and
+  putting a number on them would mean inventing one.
+- **An alliance card names the level it is counting down to and what that level opens.** It showed
+  the days to the next level and never what the next level is, so a player waiting a hundred and
+  thirteen days for joint research programmes had no way to know that is what they were waiting
+  for. Reported as the research agreement not existing; it does, at the working-group level.
+- **The SERVERS readout in the top bar opens the fleet.**
+ It is the one number on the bar that tells
+  a player something is wrong and it had nowhere to send them.
+
+- **The Steam fund is closed and the card says so.** It was covered on 30 September 2026 by one
+  person, in a single payment, eleven days after it opened. The two tiers and the button to the
+  sponsors page are gone: a closed fund with a live call to action asks for something it cannot
+  accept. The phrases behind the tiers stay in the book rather than being retyped from memory the
+  day this is reopened, and what was promised to whoever paid under them still stands.
+- `SupporterCardTests.ThereIsOneButtonAndItIsTheOnlyWayOut` is now `TheClosedCardAsksForNothing`.
+  Rewritten rather than deleted, because the fact worth holding did not disappear, it inverted.
+- **The fan is at the head of the inventory, on the left of the cabinet window.** It had been
+  reported three times and moved once: the earlier repair made the window three columns so the
+  button stopped falling off the bottom of the screen, which fixed the symptom and left it among
+  the readings on the right, where it was reported from. **The head rather than the foot, because
+  the inventory grows**: a company holding a dozen generations of card pushes anything under them
+  off the bottom of the column, which is the position it was being moved out of.
+  `BuildStore` takes what goes under its heading rather than the caller inserting it afterwards,
+  which is the repair that stuck when every slot in this same window was unclickable for three
+  builds: the class owns its own invariant.
+
+### Fixed
+
+- **A distribution licence was agreed and then said nothing.** The two-step contract was built as
+  asked: they agree, a card reads out the term, the audience it would reach, their commission and
+  what is left for you, and only then do you sign. The card is opened by one event, the slot that
+  holds a contract waiting for a signature has two fillers, and only the renewal raised it. So a
+  licence agreed with a lab sat in the save with nothing on screen, which is exactly what was
+  reported: signed, and no idea what it gives. Fifteenth mechanism here finished underneath with
+  nothing on top, and the first where the control existed and one of its two callers forgot to
+  knock. The guard holds the invariant rather than the case: no filler may put a contract in front
+  of the player in silence.
+- **A walkthrough that has been taken comes off the phone's list.** It used to stay, on the
+  reasoning that one is worth taking twice. Emil walked the player through the server room and then
+  went on offering to walk them through the server room, which reads as the game not having
+  noticed.
+- **The tutorial was taking the bottom third
+ of every tab off the screen.** The clearance that
+  keeps a page out from under the tour strip was written as padding on the scroller itself, and a
+  scroller lays its viewport out inside its own padding: measured at 1920x1080, a 943px page kept a
+  624px window and the other 319px of every tab was not drawn at all. What showed through was the
+  window's own colour, which is why it was reported as a blue background covering the game, and the
+  page could not be scrolled into it because as far as the scroller was concerned there was nothing
+  there. The clearance is on the page now, where it makes the page longer instead of the window
+  shorter, and a PlayMode test measures the difference.
+- **Typing the founder's name did not un-refuse the page.** The gate was read once when the page
+  was drawn, and nothing on that page is rebuilt by typing, so CONTINUE went on refusing a page that
+  was ready and the only way through was to leave and come back. It asks when the button is pressed.
+- **There was no way back to the main menu from the creator.** WSTECZ on the first page went to the
+  cold open, which is a page of typed text with CONTINUE under it, so the only way out of a campaign
+  you had not started was to start it.
+- **The way out of the opening walked down the screen.** The skip button was laid out inside a
+  column that is centred and grows a line at a time, so it moved every time a line landed. It is
+  pinned to the corner of the window.
+- **The tour's progress bar never moved.** It was built with the strip and the strip is rebuilt only
+  when the step changes, so the one thing that is supposed to be evidence that a wait is a wait sat
+  at the same few per cent for the whole of a family programme. It is repointed daily now, without
+  the strip being rebuilt, which is what every other live word on that strip already does.
+- **A family programme reported nothing anywhere.** Commissioning one charged the money, closed the
+  page and left a year and a half of work with no sign of itself on any screen. It has a card in the
+  corner of SITE beside the research node, with the same two marks: what is really done, and how far
+  the calendar alone has run, so a programme waiting on the cluster reads as waiting.
+- **An unnamed founder
+ could walk three pages forward and then be stopped.** The name was asked for
+  on the last page of the creator, which does not have the field on it, so the only sentence the
+  refusal could offer was "go back a page": a player who left the box empty chose their traits,
+  their lab and their country first and met the wall afterwards. The founder page refuses its own
+  CONTINUE now and marks the empty field in red, and the mark comes down the moment there is a name
+  in it. The check in front of BEGIN stays where it is, because that is the one standing in front of
+  the button that commits.
+- **A tester was credited differently in each language.** The English line said the website, the
+  Polish line said domains, which are two different things about one person, and the Polish
+  sentence mixed genders inside itself. Both now say the same thing.
+
+### Under the hood
+
+- **The corner had never been measured with a family programme in it.** The guard that holds the
+  four banners apart builds the worst case by hand, and the worst case gained a lane the same day
+  without the fixture gaining a programme. It runs one now. Same shape as every fault of this kind
+  here: the state nobody sets up is the state nobody measures.
+- **`EventReachTests` has a hole and it is named rather than quietly patched.** Its search counts
+  the name appearing anywhere under `Scripts/`, and the line that *raises* an event is under
+  `Scripts/`, so an event raised and read by nothing passes it. Measured: **27 of the event types
+  are read nowhere but their own raise site.** Severity per event is unknown, because several of
+  those systems announce themselves through their own state instead (a lawsuit draws a card, an
+  acquisition offer is a screen), so the honest next step is a review rather than wiring
+  twenty-seven cases at once. Written down here so it is a decision somebody made rather than a
+  guard nobody re-read.
+
+- **Save compatibility is untouched by the head start.** It is an argument at the moment a
+  programme is committed rather than a field on the blueprint, which is also what guarantees it
+  cannot reach the research power: that is computed from the blueprint's own length. No version
+  bump, no migration, and a campaign saved before this opens exactly as it did.
+- **The architecture calendar had three answers and now has one.** The screen scaled the base
+  length itself, the commit scaled it again in its own line, and the event announcing the programme
+  quoted the unscaled figure. `ArchitectureCalendarDays` is the one reading.
+
+- **1,541 EditMode and 83 PlayMode**, measured from the result files, both green. The main menu
+  sheet grew by a row of chips and a line; PlayMode was run specifically because sheets in this
+  project have drawn their contents over each other rather than overflowing when something on them
+  grew, and because the fan and the pull are both layout changes that no EditMode test can see.
 
 ---
 

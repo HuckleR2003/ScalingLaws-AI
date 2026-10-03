@@ -232,6 +232,19 @@ namespace ScalingLaws.Simulation
             if (pending.Offer == RelationOffer.DistributionLicence)
             {
                 State.Renewal = new PendingRenewal(pending.Lab, pending.Offer, State.Date);
+
+                // **And it has to say so, or the contract is a thing nobody can see.**
+                //
+                // Reported on 2026-10-01: a licence agreed with E-Solutions and no terms anywhere.
+                // The card was written, the estimate behind it was written and tested, and the only
+                // thing that opens it is this event. The first signing filled the slot in silence,
+                // so the whole contract sat in the save with a badge over it and a player who had
+                // no idea what they had bought. Fifteenth mechanism in this project finished
+                // underneath with nothing on top of it, and the first where the control existed and
+                // one of its two callers forgot to knock.
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.RenewalOffered, State.Date,
+                    Loc.T("renew.event.offered", definition.DisplayName, them)));
+
                 return;
             }
 

@@ -70,6 +70,41 @@ namespace ScalingLaws.UI
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
         private string companyName = "Prometheus AI";
         private string founderName = string.Empty;
+
+        /// <summary>
+        /// Re-asks the open page's footer whether it is ready, and repaints it.
+        ///
+        /// **Set by <see cref="Footer"/>, and only the page on screen has one.** Every creator page
+        /// is rebuilt whole when anything it is made of is clicked, so the last footer built is
+        /// always the live one; what is *not* rebuilt is a page where the player is typing, which
+        /// is exactly the case this exists for.
+        /// </summary>
+        private Action refreshFooter;
+
+        /// <summary>
+        /// Whether the founder has a name. Asked rather than captured, for the reason in
+        /// <see cref="Footer"/>: the field can change without the page being rebuilt.
+        ///
+        /// **The name is gated on the page that carries the field.** It used to be asked for three
+        /// pages later, where the only sentence a refusal can offer is "go back", so a player who
+        /// left the box empty chose their traits, their lab and their country first and met the
+        /// wall afterwards.
+        ///
+        /// The game must not invent one. The field shipped pre-filled with "Anonymous", which
+        /// reads as a placeholder, and a playtester left it alone and found their own product page
+        /// signed by somebody called Anonymous. This person walks around the office for fifteen
+        /// years of game time; there is no honest name for them the player did not choose.
+        /// </summary>
+        private bool Named() => !string.IsNullOrWhiteSpace(founderName);
+
+        /// <summary>
+        /// Whether the company has been put somewhere.
+        ///
+        /// Four of the numbers a campaign runs on come from the country, and the catalog answers
+        /// `Country.None` with whichever row is first rather than refusing, so leaving this ungated
+        /// would make the default silent instead of absent.
+        /// </summary>
+        private bool Placed() => chosenCountry != Country.None;
         private bool showAllTraits;
 
         /// <summary>
@@ -219,18 +254,15 @@ namespace ScalingLaws.UI
         /// broken, and a playtest read the button rather than the caption. Pressing it now says the
         /// sentence in the notice at the foot of the screen and rings whatever is missing.
         /// </summary>
-        private VisualElement Footer(string continueText, Action onContinue, Action onBack, bool ready,
-            string blockedReason, string subject = null, Action nudge = null)
+        private VisualElement Footer(string continueText, Action onContinue, Action onBack,
+            Func<bool> ready, Func<string> blockedReason, string subject = null, Action nudge = null)
         {
             var footer = new VisualElement();
             footer.AddToClassList("creator-footer");
 
-            if (!ready && !string.IsNullOrEmpty(blockedReason))
-            {
-                var reason = new Label(blockedReason);
-                reason.AddToClassList("creator-footer__reason");
-                footer.Add(reason);
-            }
+            var reason = new Label();
+            reason.AddToClassList("creator-footer__reason");
+            footer.Add(reason);
 
             var back = new Button(onBack) { text = Loc.T("common.back") };
             back.AddToClassList("menu-button");
@@ -240,27 +272,48 @@ namespace ScalingLaws.UI
 
             var forward = new Button(() =>
             {
-                if (ready)
+                if (ready())
                 {
                     onContinue?.Invoke();
 
                     return;
                 }
 
-                GateNotice.Says(subject, blockedReason);
+                GateNotice.Says(subject, blockedReason());
                 nudge?.Invoke();
             })
             { text = continueText };
 
             forward.AddToClassList("menu-button");
             forward.AddToClassList("menu-button--primary");
-
-            // Shut is a look, not a dead control: the class draws it as unavailable and the click
-            // still arrives, which is the whole repair.
-            forward.EnableInClassList("menu-button--shut", !ready);
             forward.style.width = 230;
             forward.style.marginLeft = 10;
             footer.Add(forward);
+
+            // **The question is asked when it matters, not when the page was drawn.**
+            //
+            // It used to be a `bool` captured at build time. Typing a name updates the field the
+            // gate reads, and nothing on this page is rebuilt by typing, so the button went on
+            // refusing a page that was ready: the only way through was to leave the page and come
+            // back, which is what a tester had to do. A captured answer to a live question is the
+            // same fault as a catalog storing a display string, one layer up.
+            void Apply()
+            {
+                var ok = ready();
+                var why = ok ? null : blockedReason();
+
+                // Shut is a look, not a dead control: the class draws it as unavailable and the
+                // click still arrives, which is the whole repair.
+                forward.EnableInClassList("menu-button--shut", !ok);
+
+                reason.text = why ?? string.Empty;
+                reason.style.display = string.IsNullOrEmpty(why)
+                    ? DisplayStyle.None
+                    : DisplayStyle.Flex;
+            }
+
+            Apply();
+            refreshFooter = Apply;
 
             return footer;
         }
@@ -283,6 +336,29 @@ namespace ScalingLaws.UI
                 card.EnableInClassList("creator-ring",
                     !card.ClassListContains("trait-card--picked")
                     && !card.ClassListContains("trait-card--locked"));
+            }
+        }
+
+        /// <summary>
+        /// Marks whichever of the two things the founder page needs is missing, and only that one.
+        ///
+        /// The name is answered first because it is the first control on the page: a refusal that
+        /// rings eight trait cards over an empty name field is pointing at the wrong thing.
+        ///
+        /// **The name is marked red rather than ringed in yellow.** The ring means "this is the
+        /// thing you were just told about" on a page made of choices, and this is not a choice, it
+        /// is one empty box that has to be filled in before anything else on the page counts.
+        /// </summary>
+        private static void MarkWhatTheFounderPageNeeds(VisualElement page, bool named)
+        {
+            foreach (var field in page.Query<VisualElement>(className: "creator__name").ToList())
+            {
+                field.EnableInClassList("creator__name--missing", !named);
+            }
+
+            if (named)
+            {
+                RingTheTraits(page);
             }
         }
 
@@ -631,6 +707,10 @@ namespace ScalingLaws.UI
             fullscreenRow.Add(fullscreenToggle);
             sheet.Add(fullscreenRow);
 
+            // The same block the pause sheet carries. This is the screen somebody opens to
+            // look at a display problem, because it is reachable before a campaign exists.
+            sheet.Add(DisplaySettings.Build(() => Show(Stage.Menu)));
+
             var motionRow = new VisualElement();
             motionRow.AddToClassList("setting-row");
             motionRow.Add(SettingCopy(Loc.T("settings.motion"), Loc.T("settings.motion.note")));
@@ -910,7 +990,12 @@ namespace ScalingLaws.UI
             // who cannot see it, and a new profile or a cleared save hides it from everybody.
             skip.style.display = DisplayStyle.Flex;
 
-            column.Add(skip);
+            // **On the window, not in the column, and that is the whole of the second report.**
+            // The column is centred in a black screen and grows a line at a time, so everything
+            // inside it moved every time a line landed: the way out of the opening walked down
+            // the screen while the player was reaching for it. Pinned to a corner it is in the
+            // same place from the first frame to the last.
+            root.Add(skip);
 
             // **On the whole screen, not on the column.** The column is 760 pixels wide in the
             // middle of a black window, so a click anywhere else, which is most of the screen and
@@ -1327,18 +1412,21 @@ namespace ScalingLaws.UI
             page.Add(traits);
 
             var remaining = FounderTraitCatalog.TraitsPerFounder - chosenTraits.Count;
+
             // One sentence where English had two. Polish counts in three forms, not two, so the
             // number goes to the end of the line rather than into the middle of a noun.
             // **The nudge rings every trait that could still be picked**, which is the answer to
             // "which of these does it mean": a sentence saying two are needed, over a grid of eight
             // cards where four are hidden behind SHOW MORE, is a sentence about nothing in view.
-            page.Add(Footer(Loc.T("create.continue"), () => Show(Stage.Company), () => Show(Stage.Intro),
-                remaining == 0,
-                remaining >= FounderTraitCatalog.TraitsPerFounder
-                    ? Loc.T("gate.traits_missing")
-                    : Loc.T("gate.traits_partial"),
+            page.Add(Footer(Loc.T("create.continue"), () => Show(Stage.Company), () => Show(Stage.Menu),
+                () => Named() && remaining == 0,
+                () => !Named()
+                    ? Loc.T("gate.founder_unnamed")
+                    : remaining >= FounderTraitCatalog.TraitsPerFounder
+                        ? Loc.T("gate.traits_missing")
+                        : Loc.T("gate.traits_partial"),
                 null,
-                () => RingTheTraits(page)));
+                () => MarkWhatTheFounderPageNeeds(page, Named())));
 
             return page;
         }
@@ -1356,7 +1444,24 @@ namespace ScalingLaws.UI
 
             var nameField = new TextField { value = founderName };
             nameField.AddToClassList("creator__name");
-            nameField.RegisterValueChangedCallback(evt => founderName = evt.newValue);
+            nameField.RegisterValueChangedCallback(evt =>
+            {
+                founderName = evt.newValue;
+
+                // **Taken down by typing, never put up by it.** The mark is a reply to a refused
+                // CONTINUE, so marking a field the player is still filling in would be the
+                // interface arguing with somebody who is already doing what it asked. Clearing the
+                // box again does not re-mark it; pressing CONTINUE does.
+                if (!string.IsNullOrWhiteSpace(evt.newValue))
+                {
+                    nameField.RemoveFromClassList("creator__name--missing");
+                }
+
+                // And the button has to hear about it. Nothing on this page is rebuilt by typing,
+                // so without this the footer keeps whatever answer it was given when the page was
+                // drawn and goes on refusing a page that is ready.
+                refreshFooter?.Invoke();
+            });
             column.Add(nameField);
 
             column.Add(BuildPortrait());
@@ -1769,24 +1874,13 @@ namespace ScalingLaws.UI
             // page signed by somebody called Anonymous. Emptying the field moved the invention here
             // instead of removing it: `Begin` substituted the same word on the way out.
             //
-            // Gated rather than defaulted. This person walks around the office for fifteen years of
-            // game time and signs the company's public page; there is no honest name for them that
-            // the player did not choose.
-            var named = !string.IsNullOrWhiteSpace(founderName);
-
-            // **And the company has to sit somewhere.** Four of the numbers the campaign runs on
-            // come from the country, and the catalog answers `Country.None` with whichever row is
-            // first rather than refusing, so leaving this ungated would make the default silent
-            // instead of absent. Same reasoning as the name directly above.
-            var placed = chosenCountry != Country.None;
-
             page.Add(Footer(Loc.T("menu.begin_january"), Begin, () => Show(Stage.Founder),
-                CompanyIsChosen && named && placed,
-                !CompanyIsChosen ? Loc.T("menu.pick_a_lab")
-                    : !named ? Loc.T("gate.founder_missing")
+                () => CompanyIsChosen && Named() && Placed(),
+                () => !CompanyIsChosen ? Loc.T("menu.pick_a_lab")
+                    : !Named() ? Loc.T("gate.founder_missing")
                     : Loc.T("gate.region_missing"),
                 null,
-                () => RingWhatIsMissing(page, CompanyIsChosen, named)));
+                () => RingWhatIsMissing(page, CompanyIsChosen, Named())));
 
             return page;
         }

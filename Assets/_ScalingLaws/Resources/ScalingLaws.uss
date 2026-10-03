@@ -840,6 +840,18 @@
     color: rgb(226, 233, 244);
 }
 
+/* A CONTINUE refused because the founder has no name marks the field rather than only greying the
+   button. Red rather than the yellow .creator-ring, because this is not "the thing you were just
+   told about" on a page of choices: it is one empty box that has to be filled in.
+
+   It has to sit later in the sheet than the rule above it and carry the same weight: both are two
+   classes and a child, so at equal specificity the later one wins. Third time that ordering has
+   mattered here, after .rackface.roombuild__face and .family-offers .corpus-row. */
+.creator__name--missing > .unity-text-field__input {
+    border-width: 2px;
+    border-color: rgb(214, 74, 74);
+}
+
 /* Takes every pixel the name field did not, so the card never ends in dead space. */
 
 .portrait {
@@ -8332,6 +8344,35 @@
 .rb:hover {
     border-color: rgba(120, 176, 255, 0.85);
     background-color: rgba(14, 22, 38, 0.96);
+}
+
+/* A family programme, in the same shape as the node beside it. Two facts of the same kind get one
+   widget; the colour is the only difference and it is what says which of the two you are reading.
+   Violet rather than blue, which is the accent the architecture screen already uses. */
+/* The head start under the budget and the length, separated from them by a hairline: those two are
+   the programme, this is a head start on it, and a third row beside them would read as a third
+   setting of the same kind. */
+.arx__prior {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.rb--family {
+    border-color: rgba(158, 130, 224, 0.45);
+}
+
+.rb--family:hover {
+    border-color: rgba(186, 158, 248, 0.85);
+}
+
+.rb--family .rb__kicker {
+    color: rgb(174, 148, 234);
+}
+
+.rb--family .rb__fill {
+    background-color: rgb(158, 130, 224);
 }
 
 .rb__kicker {
@@ -17035,8 +17076,14 @@
 
 /* The tour strip floats at `bottom: 96px` over every page, so a page that runs to the foot of the
    window had its last band underneath it. This is the clearance, applied only while the strip is
-   actually up. */
-.page-scroll--guided {
+   actually up.
+
+   **On the content container, not on the scroller.** A ScrollView lays its viewport out inside its
+   own padding box, so this written on `.page-scroll--guided` itself took 319px out of the part of
+   the page that is drawn rather than out of the part that scrolls: every tab lost its bottom third
+   to the window's own colour. The measured reserve in `GameShell.ReserveForTheStrip` replaces this
+   on the first layout pass; this is only what the first frame gets. */
+.page-scroll--guided .unity-scroll-view__content-container {
     padding-bottom: 168px;
 }
 
@@ -19916,12 +19963,18 @@
     margin-left: 6px;
 }
 
-/* Quiet, top of the column, and only for somebody who has read it once. It is a way out rather
-   than an invitation: a bright button here would read as the game apologising for its own opening. */
+/* Quiet, and in the corner of the window rather than in the column. It is a way out rather than an
+   invitation: a bright button here would read as the game apologising for its own opening.
+
+   **Absolute, because the column moves.** The opening is centred and grows a line at a time, so
+   anything laid out inside it walks down the screen as the text arrives, including the button
+   somebody reaching for the way out is aiming at. Reported on 2026-09-30. */
 .intro-skipall {
-    align-self: flex-start;
+    position: absolute;
+    left: 44px;
+    bottom: 44px;
     height: 24px;
-    margin: 0 0 22px 0;
+    margin: 0;
     padding: 0 12px;
     font-size: 11px;
     letter-spacing: 1.6px;
@@ -21222,15 +21275,27 @@
 
    Asked for by name: the load has to be readable at a glance from any screen, and at 100% the whole
    section goes red, because a full fleet is the moment requests queue and people start leaving. */
+/* **Every margin stated, because this is a Button now.** The runtime theme puts a margin on every
+   button, and inheriting it once made four trait cards overflow a page that fitted. It became a
+   button on 2026-10-01 so the one number on the bar that says something is wrong has somewhere to
+   send the player. */
 .topbar__load {
     flex-direction: row;
     align-items: center;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
     margin-right: 18px;
     padding: 4px 10px 4px 10px;
     border-radius: 6px;
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.08);
     background-color: rgba(255, 255, 255, 0.04);
+}
+
+.topbar__load:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    background-color: rgba(255, 255, 255, 0.09);
 }
 
 .topbar__load-caption {
