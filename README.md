@@ -9,7 +9,7 @@ Rent compute you cannot really afford. Pick a model size you can supervise rathe
 one you can pay for. Decide whether three weeks of safety evaluation is worth delaying a release, and
 find out later that a regulator judges you on what you had switched on the day you shipped.
 
-[![Build](https://img.shields.io/badge/build-v0.6.1-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
+[![Build](https://img.shields.io/badge/build-v0.6.2-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
 [![Tests](https://img.shields.io/badge/tests-1505%20EditMode%20%2B%2074%20PlayMode-brightgreen)](#testing)
 [![Unity](https://img.shields.io/badge/Unity-6000.5.8f1-black)](#running-it)
 [![Languages](https://img.shields.io/badge/languages-EN%20%2F%20PL-lightgrey)](#)
@@ -267,6 +267,18 @@ anything the game invents carries a projection flag, and no individual person is
 
 Built solo by Marcin "HCK" Firmuga ([HCK Labs](https://pcworkman.dev)), who also builds
 [PC Workman](https://github.com/HuckleR2003/PC_Workman_HCK).
+
+## Hiring me
+
+This game is a side project; my trade is Python. I build Windows desktop applications, write
+automated test suites, and write documentation from the code rather than from a brief.
+
+If the thing you noticed here is the test discipline, that is the part I sell: 1,624 tests across
+192 fixtures, green before every build, with a regression test for every bug that has ever shipped.
+
+[**pcworkman.dev/hire**](https://pcworkman.dev/hire/) &middot; [Fiverr](https://www.fiverr.com/huckler_creator)
+
+---
 
 ## Licence
 
