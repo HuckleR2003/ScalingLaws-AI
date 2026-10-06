@@ -55,6 +55,14 @@ The state was saved correctly, restored correctly, and described a screen that n
   `Talking` with no open phone as an interrupted first call rather than a conversation in progress.
   `phone.IsOpen` still prevents a second ring inside one session, so the only behaviour that changed
   is the one that was broken.
+- **The founder stops walking through the floor, and stops breaking when the clock runs fast.**
+  `UI/OfficeActor.cs` queues a task that arrives mid-leg and takes it at the next waypoint instead
+  of immediately. A route taken between two waypoints started from wherever the model physically
+  was, and on the stairs that is halfway up nothing: the walk between waypoints is a straight line
+  with no floor under it, so the new route cut through the mezzanine. **The two reports were one
+  fault.** The shell sends a task every day, a day at x3 is shorter than a walk, so the faster the
+  clock ran the more often a route was replaced mid-stairs. Nothing about the speed control touches
+  the movement maths; `Time.timeScale` is not used anywhere in the project.
 
 ### Save compatibility
 
@@ -63,13 +71,20 @@ phone rings again as a first call, and the tour starts from the beginning becaus
 
 ### Under the hood
 
-1,541 EditMode tests pass, 0 failures. No new test: the fault is a scene reload inside a live session
-and the fixture would be the reload rather than the rule. Noted as a gap rather than hidden.
+1,541 EditMode tests pass, 0 failures. **Neither fix carries a new test and both gaps are real.**
+One fault is a scene reload inside a live session and the other is a frame-by-frame walk in a built
+room, so in both cases the fixture would be the staging rather than the rule. Written down rather
+than hidden.
+
+The stair animation was not built. The character has one Animator parameter, `Walking`, and no climb
+clip exists to switch to, so the founder walks up the stairs and that is a decision rather than a
+bug waiting.
 
 ### Who found what
 
-- **Marcin** found it playing 0.6.2 and changing language on day one, which is the one order nobody
-  builds for.
+- **Marcin** found both, playing 0.6.2. The language change on day one is the one order nobody
+  builds for. The founder walking through the floor was reported as two things, the missing stair
+  animation and the breaking at speed, and only the second half turned out to be a fault.
 
 ## [0.6.2] - 2026-10-01
 

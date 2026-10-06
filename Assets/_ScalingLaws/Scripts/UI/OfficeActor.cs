@@ -56,6 +56,17 @@ namespace ScalingLaws.UI
         private int leg;
         private FounderTask task = FounderTask.Working;
 
+        /// <summary>
+        /// A task that arrived while the founder was between two waypoints, waiting for one.
+        ///
+        /// **A route swapped mid-leg starts from wherever the model physically is**, and on the
+        /// stairs that is halfway up nothing. The walk between two waypoints is a straight line
+        /// with no floor under it, so a new route taken from there cuts through the mezzanine.
+        /// The faster the clock runs the more often it happened, because the shell sends a task
+        /// every day and a day at x3 is shorter than a walk.
+        /// </summary>
+        private FounderTask? pending;
+
         /// <summary>True once the last waypoint of the current route has been reached.</summary>
         public bool HasArrived => leg >= route.Count;
 
@@ -134,9 +145,25 @@ namespace ScalingLaws.UI
         {
             if (next == task && route.Count > 0)
             {
+                // Being told again to do what is already running cancels a queued change.
+                pending = null;
                 return;
             }
 
+            // Between waypoints the only safe answer is "in a moment". Taking the route here is
+            // what walked the founder through the floor.
+            if (!HasArrived)
+            {
+                pending = next;
+                return;
+            }
+
+            StartRoute(next);
+        }
+
+        /// <summary>Clears the route and lays the new one. Only ever called standing on a waypoint.</summary>
+        private void StartRoute(FounderTask next)
+        {
             task = next;
             route.Clear();
             leg = 0;
@@ -203,6 +230,16 @@ namespace ScalingLaws.UI
             if (flat.sqrMagnitude <= ArriveDistance * ArriveDistance)
             {
                 leg++;
+
+                // A waypoint is the one place the founder is standing on something, so it is the
+                // only place a queued task may take over.
+                if (pending.HasValue)
+                {
+                    var queued = pending.Value;
+                    pending = null;
+                    StartRoute(queued);
+                    return;
+                }
 
                 if (!HasArrived)
                 {
