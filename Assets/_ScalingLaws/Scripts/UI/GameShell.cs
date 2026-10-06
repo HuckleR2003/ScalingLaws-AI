@@ -2545,7 +2545,15 @@ namespace ScalingLaws.UI
             // quiet. Both routes end in the same phone.
             var paused = state.Guide.Stage == GuideStage.Paused;
 
-            if ((state.Guide.Stage != GuideStage.Unseen && !paused) || phone.IsOpen)
+            // **`Talking` means the phone is on screen and unanswered, so meeting it here with no
+            // phone open means the call was interrupted rather than answered.** Changing language
+            // saves the campaign and reloads the scene, and the stage survives that while the phone
+            // does not. Nothing except answering moves the guide off `Talking`, so without this the
+            // tutorial was gone for the rest of the campaign and the phone never came back, even
+            // hidden. Found by the author changing language on day one.
+            var interrupted = state.Guide.Stage == GuideStage.Talking;
+
+            if ((state.Guide.Stage != GuideStage.Unseen && !paused && !interrupted) || phone.IsOpen)
             {
                 return;
             }

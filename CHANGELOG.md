@@ -36,6 +36,41 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ---
 
+## [Unreleased]
+
+**Changing the language on day one killed the tutorial for good.** The phone rings, the player opens
+settings to switch language before answering, and the phone never comes back, not even hidden. The
+guide stage is saved as `Talking`, which the enum defines as "the conversation is open and the player
+has not answered yet", so it is a statement about what is on screen. Changing language saves the
+campaign and reloads the scene, the stage survives that and the phone does not, and `Talking` is
+neither of the two stages `RingTheCousinIfThisIsDayOne` will ring for. Nothing except answering moves
+the guide off `Talking`, so the tour was unreachable for the rest of the campaign.
+
+**Seventeenth unreachable mechanism here, and the first caused by persistence rather than wiring.**
+The state was saved correctly, restored correctly, and described a screen that no longer existed.
+
+### Fixed
+
+- **A tutorial call interrupted by a language change rings again.** `UI/GameShell.cs` treats
+  `Talking` with no open phone as an interrupted first call rather than a conversation in progress.
+  `phone.IsOpen` still prevents a second ring inside one session, so the only behaviour that changed
+  is the one that was broken.
+
+### Save compatibility
+
+No save format change. Campaigns stuck mid-`Talking` from an earlier build recover on load: the
+phone rings again as a first call, and the tour starts from the beginning because it never started.
+
+### Under the hood
+
+1,541 EditMode tests pass, 0 failures. No new test: the fault is a scene reload inside a live session
+and the fixture would be the reload rather than the rule. Noted as a gap rather than hidden.
+
+### Who found what
+
+- **Marcin** found it playing 0.6.2 and changing language on day one, which is the one order nobody
+  builds for.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
