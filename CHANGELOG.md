@@ -104,6 +104,28 @@ being refused automatically; it was never offered.
   **Nothing is reconstructed**: a second offer was never raised while that field was occupied, so
   no record of one exists and inventing it would be writing a conversation into somebody's save.
 
+**Four questions a tester asked, and four screens that had the answer and never said it.** None
+of these was a missing mechanism. In every case the number or the sentence already existed in the
+catalogue and no screen drew it.
+
+### Explained
+
+- **An upgrade tile says what a level of it buys.** `UI/UpgradeGridPanel.cs` draws the trait
+  description, which no screen on that page had ever shown, and then what one level moves. The
+  second half is derived from the trait rather than written beside it, for the reason the research
+  board builds its reward row the same way: eleven hand-written sentences go stale the first time
+  a number moves and nothing can check them. Speed turns out to be no capability, brand and
+  optimisation. It goes in the card because the tile is 158px and will not take another line.
+- **The three upgrade figures say they are read against the market.** A model ships level with par
+  and then stands still while par keeps rising, so brand drifts negative and optimisation settles
+  back toward where it started. A tester watched both and asked which was broken. Neither: doing
+  nothing is a slow slide, and that is the spine rather than a fault.
+- **The serving card says what inference is before it prices it.** Training is paid once, inference
+  is paid per token for as long as the model is live. The card has always used the word.
+- **A skill row says what one click buys.** A click is ten of the eighty levels between the
+  baseline and the top, so it is an eighth of whatever that skill is worth at 100, and it says the
+  baseline is 20 and that going under it works against you. Read off the limits rather than typed.
+
 ### Guarded
 
 - `ComputeTierGateTests` gains three. The first forces the company under the cash gate before it
