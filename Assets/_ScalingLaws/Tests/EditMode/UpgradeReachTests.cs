@@ -139,5 +139,51 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(field.choices.Any(choice => choice.Contains("Pebble")), Is.True,
                 "The model waiting to ship is not on the picker.");
         }
+
+        /// <summary>
+        /// **Every trait has to buy something, and the screen has to say what.**
+        ///
+        /// A tester asked what upgrading Speed does and there was no answer anywhere: the trait
+        /// carried a description the whole time and no screen on the upgrade page drew it, and
+        /// nothing at all said which of the three figures a level of it moves. Speed moves brand
+        /// and optimisation and no capability, which the catalogue has always known.
+        ///
+        /// This is a design check wearing a test as well. A trait that moves none of the three is
+        /// a chore with a price on it rather than a decision.
+        /// </summary>
+        [Test]
+        public void EveryTraitSaysWhatALevelOfItBuys()
+        {
+            var nothing = Loc.T("upgrade.moves.nothing");
+
+            foreach (var definition in ModelTraitCatalog.All)
+            {
+                var moves = UpgradeGridPanel.MovesPerLevel(definition);
+
+                Assert.That(moves, Is.Not.Empty, definition.DisplayName);
+                Assert.That(moves, Is.Not.EqualTo(nothing),
+                    $"{definition.DisplayName} moves none of capability, brand or optimisation, "
+                    + "so paying for a level of it buys nothing a player can read.");
+
+                Assert.That(definition.Description, Is.Not.Empty,
+                    $"{definition.DisplayName} has no description, and the tile card draws it.");
+            }
+        }
+
+        /// <summary>The line is read off the trait, so it cannot drift from the numbers it quotes.</summary>
+        [Test]
+        public void TheEffectLineQuotesTheTraitsOwnNumbers()
+        {
+            var speed = ModelTraitCatalog.Get(ModelTrait.Latency);
+            var moves = UpgradeGridPanel.MovesPerLevel(speed);
+
+            Assert.That(moves, Does.Not.Contain(Loc.T("upgrade.moves.capability", string.Empty).Trim()),
+                "Speed buys no capability, so the line must not offer any.");
+
+            Assert.That(speed.BrandPerLevel, Is.GreaterThan(0.0));
+            Assert.That(speed.EfficiencyPerLevel, Is.GreaterThan(0.0));
+            Assert.That(moves, Does.Contain("%"),
+                "brand and optimisation are shares, so the line has to carry the sign of one");
+        }
     }
 }

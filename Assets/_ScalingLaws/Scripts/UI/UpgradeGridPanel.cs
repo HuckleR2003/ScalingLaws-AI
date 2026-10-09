@@ -42,6 +42,43 @@ namespace ScalingLaws.UI
         /// number, the held bar is what is already there (nothing, when the reading is negative,
         /// which is the truth), and the gain is the change measured against the same ruler.
         /// </summary>
+        /// <summary>
+        /// What one level of a trait actually buys, read off the trait rather than written beside it.
+        ///
+        /// **Derived on purpose.** Eleven hand-written sentences go stale the first time a number
+        /// moves and nothing can check them, which is the reason the research board builds its
+        /// reward row the same way. A tester asked what upgrading Speed does; the catalogue has
+        /// always known (no capability, brand and optimisation) and no screen had ever said it.
+        /// </summary>
+        public static string MovesPerLevel(ModelTraitDefinition definition)
+        {
+            var parts = new List<string>();
+
+            if (definition.CapabilityPerLevel > 0.0)
+            {
+                parts.Add(Loc.T("upgrade.moves.capability",
+                    "+" + UiFormat.Number(definition.CapabilityPerLevel, 2)));
+            }
+
+            if (definition.BrandPerLevel > 0.0)
+            {
+                parts.Add(Loc.T("upgrade.moves.brand",
+                    "+" + UiFormat.Number(definition.BrandPerLevel * 100.0, 1) + "%"));
+            }
+
+            if (definition.EfficiencyPerLevel > 0.0)
+            {
+                parts.Add(Loc.T("upgrade.moves.efficiency",
+                    "+" + UiFormat.Number(definition.EfficiencyPerLevel * 100.0, 1) + "%"));
+            }
+
+            // A trait that moves nothing is not a decision, so the card says so rather than
+            // drawing an empty line and letting the player assume they misread it.
+            return parts.Count == 0
+                ? Loc.T("upgrade.moves.nothing")
+                : Loc.T("upgrade.moves.lead") + " " + string.Join("  ·  ", parts);
+        }
+
         public static (double Held, double Gained) BarWidths(double before, double after)
         {
             var scale = Math.Max(Math.Max(Math.Abs(before), Math.Abs(after)), 1e-6);
@@ -294,6 +331,12 @@ namespace ScalingLaws.UI
             var name = new Label(definition.DisplayName.ToUpperInvariant());
             name.AddToClassList("utile__name");
             words.Add(name);
+
+            // **The trait had a description all along and no screen drew it.** The tile is 158px
+            // and will not take another line, so it goes in the card: what the trait is, then what
+            // a level of it buys. A tester asked exactly this about Speed.
+            InsightTip.Attach(words, definition.DisplayName,
+                definition.Description + "\n\n" + MovesPerLevel(definition));
 
             // **Three reasons a tile can be shut and they are not the same sentence.** The
             // date has not arrived, or the research has not been done, or it is already at the
