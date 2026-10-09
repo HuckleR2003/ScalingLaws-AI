@@ -192,6 +192,23 @@ bug waiting.
   them away one at a time from the same operator and read the day it goes under. With nothing set the
   probe is unchanged to the day, which was checked before anything was measured with it.
 
+- **The probe's own operators could not ship a second version of a product line, and every balance
+  figure measured on them was a figure about a company with no product.** Joining a line the company
+  already sells has needed `ModelSeries` since 27 September; the scripted operator in
+  `PlayabilityTests` was taught that in the same commit and **the campaign probe was not**. So the
+  five disciplined operators asked to join Aurora every day from their second release onwards and
+  were refused about 4,950 times each: **two models shipped in fourteen years**, peak capability
+  29.9 against a frontier that reaches 100. They now start a line named after the model until the
+  node lands, and an operator that aims its research reaches for the node that gates its own
+  strategy, which nothing else in `AimedAt` would ever have picked up because it opens no corpus and
+  no family. The only refusal left on any operator is the thirty opening days with no fleet.
+
+  What it was worth, one seed: trained models went 2 to 299 and 2 to 221 on the two renting
+  operators, peak capability 29.9 to 76.3 and 54.8, and the first of them is now solvent for all
+  fourteen years. **The ordering this was meant to explain survives in direction and in no number:**
+  ambitious dies on day 1961, smart on 1523, scaling on 1144, against 968 and 955 before. The
+  gradient is real and it is not the thing that was measured last week.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

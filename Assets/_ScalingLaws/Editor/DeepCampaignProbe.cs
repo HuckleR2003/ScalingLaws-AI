@@ -732,7 +732,15 @@ namespace ScalingLaws.Editor
                 // One line means each release replaces the one before it on the market, which is
                 // what a product is. Without it every release is a separate product competing
                 // with the company's own back catalogue.
-                if (oneLine)
+                //
+                // **Joining a line the company already sells needs `ModelSeries`**, and until it
+                // lands a model that joins nothing starts a line named after itself. Without this
+                // the disciplined operators asked to join Aurora every day from their second
+                // release to the end of the campaign and were refused roughly five thousand times:
+                // two models shipped in fourteen years, against a frontier that reaches 100. Every
+                // figure measured on those operators was a figure about a company with no product.
+                // Same repair the scripted operator in `PlayabilityTests` already carries.
+                if (oneLine && state.HasResearch(ResearchNodeId.ModelSeries))
                 {
                     blueprint = blueprint.WithFamily("Aurora");
                 }
@@ -919,6 +927,12 @@ namespace ScalingLaws.Editor
                     targets.Push(node.Id);
                 }
             }
+
+            // **The gate on the operator's own strategy.** A company that means to ship versions
+            // of one product cannot do it until `ModelSeries` lands, and the node opens no corpus
+            // and no family, so nothing else here would ever reach for it. It is pushed last and
+            // therefore popped first, which is also the order a player would take it in.
+            targets.Push(ResearchNodeId.ModelSeries);
 
             aimedAt = new HashSet<ResearchNodeId>();
 
