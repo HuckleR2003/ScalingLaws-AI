@@ -1679,7 +1679,20 @@ namespace ScalingLaws.UI
             controls.Add(buttons);
             row.Add(controls);
 
-            row.tooltip = Loc.T("create.skill_at_full", definition.Description, definition.EffectAtFull);
+            // **A tester asked what a point actually buys and the answer was nowhere.** The row
+            // said what the skill moves in three words and the tooltip said where it lands at 100,
+            // and nothing anywhere connected one click to either. The share is the same for every
+            // skill, because a click is ten of the eighty levels between the baseline and the top;
+            // what differs is how much the skill is worth at the top, which the line above says.
+            var share = UiFormat.Number(
+                100.0 * PlayerSkillLimits.PointsPerClick
+                / (PlayerSkillLimits.MaximumLevel - PlayerSkillLimits.StartingLevel), 1) + "%";
+
+            row.tooltip = Loc.T("create.skill_at_full", definition.Description, definition.EffectAtFull)
+                + "\n\n"
+                + Loc.T("create.skill_per_click",
+                    PlayerSkillLimits.PointsPerClick.ToString(), share,
+                    PlayerSkillLimits.StartingLevel.ToString());
             return row;
         }
 
