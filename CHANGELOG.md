@@ -254,15 +254,32 @@ claimed on 100 days and served on all of it.
 
 ### Changed
 
-- What a company gets for it, one seed, fourteen years, insolvency day before and after: one
-  product line 3773 to **4200**, ambitious 1961 to **2683**, scaling 1144 to **2044**, owning its
-  silicon 2594 to **2724**. Models trained over a campaign went 221 to 307 and 12 to 29, and peak
-  capability 54.8 to 64.9 on the disciplined operator. **The operator that ships one model and then
-  stops is unchanged to the dollar**, which is the check that this only touches a company doing
-  work.
-- It does not reverse the ordering, it flattens it. The two operators that gained most are the two
-  that do most, which is the right direction, and a company that is genuinely training all the time
-  still has the fleet claimed 99% of the time because a training run genuinely wants it.
+- **What a company gets for it, three seeds, and the first reading of this was wrong.** On seed
+  4242 alone every operator improved and the insolvency day moved a long way, which is what was
+  written here first. On three seeds that does not hold: the day a company goes under is mixed,
+  and on the ambitious operator the middle seed moved the wrong way.
+
+  | operator | insolvency, before | after |
+  |---|---|---|
+  | a new line every time | solvent, **1188**, solvent | solvent, solvent, solvent |
+  | one product line | 3773, 3830, **1190** | **4200, 4347, 4116** |
+  | one line, owns its silicon | 2594, 2671, 2855 | 2724, 2464, 2677 |
+  | ambitious | 1961, 2320, 1104 | 2683, **1464, 1432** |
+  | smart | 1523, 1975, 1871 | 1554, 2435, 1782 |
+  | scaling | 1144, 1848, 2016 | 2044, 1984, 1690 |
+  | ships one model and stops | solvent x3 | solvent x3, identical to the decimal |
+
+- **Where it is unambiguous is how high the company gets, and there it is large and on every
+  seed.** Peak capability on the disciplined operator went 54.8 / 54.5 / 50.5 to 64.9 / 65.0 /
+  64.4, ten points on all three with the spread gone. The operator that opens a new line every
+  time went 76.3 / 43.0 / 77.4 to 77.8 / 77.8 / 78.3, so the seed that collapsed to 43 no longer
+  does. Peak cash passed a billion on all three seeds of three different operators. Models trained
+  over a campaign went 221 to 307 and 12 to 29.
+- **What it does not do is stop an ambitious company going under.** It makes the company bigger,
+  and a bigger company on these operators spends proportionally more and still falls over, from a
+  greater height. The ordering is flatter and it is still there. A company genuinely training all
+  the time still has the fleet claimed 99% of the time, because a training run genuinely wants it,
+  and that is correct rather than a remaining fault.
 
 ### Save
 
