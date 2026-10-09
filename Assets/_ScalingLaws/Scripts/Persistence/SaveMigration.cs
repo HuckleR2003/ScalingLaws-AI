@@ -172,6 +172,7 @@ namespace ScalingLaws.Persistence
                     68 => UpgradeV68ToV69(current),
                     69 => UpgradeV69ToV70(current),
                     70 => UpgradeV70ToV71(current),
+                    71 => UpgradeV71ToV72(current),
                     _ => current
                 };
             }
@@ -2360,6 +2361,53 @@ namespace ScalingLaws.Persistence
         /// Appended, never inserted. A saved month is a row of totals in catalogue order, so a
         /// column added anywhere but the end puts last year's electricity under somebody's wages.
         /// </summary>
+        /// <summary>
+        /// v71 to v72: renewals become a list, one per lab.
+        ///
+        /// **Nothing is invented and nothing is lost.** v71 held exactly one renewal, so whatever
+        /// was in it becomes a list of one and the file plays on from there. There is no second
+        /// offer to reconstruct, because the simulation refused to raise one while that field was
+        /// occupied: a lab whose term ran out inside somebody else's fortnight never rang, and no
+        /// record of it was ever written. Those calls are gone and pretending otherwise would be
+        /// inventing a conversation.
+        ///
+        /// The v71 fields are read here and then left alone rather than cleared, which is the same
+        /// rule every earlier step follows: an old shape stays readable so this step can be run
+        /// against a real historical file instead of a guess at one.
+        /// </summary>
+        public static SaveData UpgradeV71ToV72(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 72;
+
+            data.renewalLabs ??= new List<int>();
+            data.renewalKinds ??= new List<int>();
+            data.renewalDays ??= new List<int>();
+
+            if (data.renewalLabs.Count == 0 && data.renewalLab >= 0)
+            {
+                data.renewalLabs.Add(data.renewalLab);
+                data.renewalKinds.Add(data.renewalKind);
+                data.renewalDays.Add(data.renewalDay);
+
+                LastMigrationNotes = Append(LastMigrationNotes,
+                    "v71 to v72: the renewal that was on the table is carried over as the first "
+                    + "entry of the new list.");
+            }
+            else
+            {
+                LastMigrationNotes = Append(LastMigrationNotes,
+                    "v71 to v72: renewals are a list now. Nothing was on the table, so it starts "
+                    + "empty.");
+            }
+
+            return data;
+        }
+
         public static SaveData UpgradeV70ToV71(SaveData data)
         {
             if (data == null)

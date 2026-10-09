@@ -230,12 +230,17 @@ namespace ScalingLaws.Persistence
                 data.dealPastOutcomes.Add((int)past.Outcome);
             }
 
-            data.renewalLab = state.Renewal.HasValue ? (int)state.Renewal.Value.Lab : -1;
+            // The v71 fields are left at their defaults on purpose. They are the old shape and the
+            // migration reads them; writing them as well would be two records of one fact.
+            data.renewalLabs.Clear();
+            data.renewalKinds.Clear();
+            data.renewalDays.Clear();
 
-            if (state.Renewal.HasValue)
+            foreach (var renewal in state.Renewals)
             {
-                data.renewalKind = (int)state.Renewal.Value.Offer;
-                data.renewalDay = state.Renewal.Value.OpenedOn.DayIndex;
+                data.renewalLabs.Add((int)renewal.Lab);
+                data.renewalKinds.Add((int)renewal.Offer);
+                data.renewalDays.Add(renewal.OpenedOn.DayIndex);
             }
 
             data.campaignTerm = state.Campaign == null ? -1 : (int)state.Campaign.Term;
@@ -1137,13 +1142,28 @@ namespace ScalingLaws.Persistence
                     outcome));
             }
 
-            state.Renewal = null;
+            state.Renewals.Clear();
 
-            if (Enum.IsDefined(typeof(CompetitorId), safe.renewalLab)
-                && Enum.IsDefined(typeof(RelationOffer), safe.renewalKind))
+            // Read in step, and only as far as the shortest of the three. A file edited by hand
+            // could hold a lab with no offer behind it, and half a renewal is not a renewal.
+            if (safe.renewalLabs != null && safe.renewalKinds != null && safe.renewalDays != null)
             {
-                state.Renewal = new PendingRenewal((CompetitorId)safe.renewalLab,
-                    (RelationOffer)safe.renewalKind, new GameDate(Math.Max(0, safe.renewalDay)));
+                var count = Math.Min(safe.renewalLabs.Count,
+                    Math.Min(safe.renewalKinds.Count, safe.renewalDays.Count));
+
+                for (var index = 0; index < count; index++)
+                {
+                    if (!Enum.IsDefined(typeof(CompetitorId), safe.renewalLabs[index])
+                        || !Enum.IsDefined(typeof(RelationOffer), safe.renewalKinds[index]))
+                    {
+                        continue;
+                    }
+
+                    state.Renewals.Add(new PendingRenewal(
+                        (CompetitorId)safe.renewalLabs[index],
+                        (RelationOffer)safe.renewalKinds[index],
+                        new GameDate(Math.Max(0, safe.renewalDays[index]))));
+                }
             }
 
             state.Campaign = null;

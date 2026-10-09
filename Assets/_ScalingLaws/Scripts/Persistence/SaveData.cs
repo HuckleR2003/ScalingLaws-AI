@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 71;
+        public const int CurrentVersion = 72;
 
         public int version = CurrentVersion;
 
@@ -760,6 +760,21 @@ namespace ScalingLaws.Persistence
 
         /// <summary>See <see cref="renewalLab"/>.</summary>
         public int renewalDay;
+
+        /// <summary>
+        /// v72. Every renewal on the table, one per lab, read in step across the three lists.
+        ///
+        /// **The three fields above are the v71 shape and stay for the migration to read.** They
+        /// held one offer, and the simulation refused to raise a second while anything was in them,
+        /// so a lab whose term ran out during somebody else's fortnight never rang at all.
+        /// </summary>
+        public List<int> renewalLabs = new();
+
+        /// <summary>See <see cref="renewalLabs"/>.</summary>
+        public List<int> renewalKinds = new();
+
+        /// <summary>See <see cref="renewalLabs"/>.</summary>
+        public List<int> renewalDays = new();
 
         public bool hasResearchProject;
         public int researchNode;
