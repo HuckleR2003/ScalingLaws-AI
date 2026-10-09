@@ -10315,6 +10315,13 @@
     margin-bottom: 4px;
 }
 
+.udet__ruler {
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: rgb(139, 152, 171);
+    white-space: normal;
+}
+
 .udrow {
     margin-bottom: 13px;
 }

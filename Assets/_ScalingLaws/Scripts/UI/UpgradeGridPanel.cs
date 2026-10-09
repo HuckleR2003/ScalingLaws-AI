@@ -491,6 +491,16 @@ namespace ScalingLaws.UI
             changes.Add(Row(Loc.T("upgrade.efficiency"), subject.Efficiency * 100.0,
                 (subject.Efficiency + efficiency) * 100.0, 1, "%"));
 
+            // **The three of them are read against the market and nothing said so.** A model
+            // ships level with par on every trait and its levels then stay put while par keeps
+            // rising, so brand drifts negative and optimisation settles back toward where it
+            // started. A tester watched both happen and asked which of them was broken. Neither
+            // is: doing nothing is a slow slide rather than a stable position, and that is the
+            // spine of this game rather than a fault in it.
+            var ruler = new Label(Loc.T("upgrade.against_market"));
+            ruler.AddToClassList("udet__ruler");
+            changes.Add(ruler);
+
             panel.Add(changes);
 
             var list = new VisualElement();
