@@ -202,9 +202,29 @@ namespace ScalingLaws.Editor
             var incidents = 0;
             var bankrupt = -1;
 
+            // **Days the building half of the cluster was claimed by something.** Serving gets
+            // whatever is left of the fleet on those days, and the claim is the whole share
+            // however small the job is: a research node wanting 127 petaflops a day takes the
+            // same seventy per cent a training run does, for its whole duration. This counter is
+            // what turns that from a reading of the code into a number.
+            var buildingDays = 0;
+
             var peakCash = state.CashUsd;
             var peakUsers = 0.0;
             var peakCapability = 0.0;
+
+            // **How much of the fleet a queue of work takes, which is the whole of serving.**
+            // `ClusterIsBuildingSomething` is true for a research node, an upgrade programme or
+            // an architecture programme as well as a training run, and serving then gets whatever
+            // is left. At the default 0.70 a company that is always researching always serves on
+            // a third of its cluster, and no operator here has ever touched the slider that sets
+            // it. `PROBE_SHARE=0.3` is the measurement of what that costs.
+            var shareKnob = Environment.GetEnvironmentVariable("PROBE_SHARE");
+            if (!string.IsNullOrEmpty(shareKnob) && shareKnob != "auto")
+            {
+                state.TrainingComputeShare =
+                    double.Parse(shareKnob, CultureInfo.InvariantCulture);
+            }
 
             var yearly = new List<string>();
             var watch = (Environment.GetEnvironmentVariable("PROBE_WATCH") ?? string.Empty).Split('-');
@@ -293,6 +313,21 @@ namespace ScalingLaws.Editor
                         yearly.Add($"      BOOKS {state.Date.Year - 1} OUT: {string.Join(", ", costs)}");
                         yearBooks.Clear();
                     }
+                }
+
+                // **What somebody watching the dial would do.** A training run genuinely
+                // wants the cluster; a research node wants about 127 petaflops a day and claims
+                // the same seventy per cent for its whole duration. `PROBE_SHARE=auto` hands the
+                // slice over only while a run is in flight and gives it back otherwise, which
+                // separates "the rule is wrong" from "nobody touches the slider".
+                if (shareKnob == "auto")
+                {
+                    state.TrainingComputeShare = state.ActiveRun != null ? 0.70 : 0.10;
+                }
+
+                if (simulation.ClusterIsBuildingSomething())
+                {
+                    buildingDays++;
                 }
 
                 if (state.CashUsd < 0 && bankrupt < 0)
@@ -437,6 +472,14 @@ namespace ScalingLaws.Editor
             report.AppendLine($"      offices: " + (offices.Count == 0 ? "never moved" : string.Join(" -> ", offices)));
             report.AppendLine($"      smears {smears} ({backfires} traced), threats {threats} days, "
                 + $"lawsuits {lawsuits}, incidents {incidents}, scandals about us {scandalsAgainstUs}");
+            // **Against the whole campaign, not against the day it went under.** The run carries
+            // on past insolvency, so the counter reaches the end either way and dividing by the
+            // bankruptcy day printed 444%. Measured once at 99.3% and once at 2%, which is the
+            // whole finding: an operator that is always doing something always serves on what is
+            // left, and the one that does nothing serves on the whole fleet.
+            report.AppendLine($"      cluster building on {buildingDays} of {Days} days "
+                + $"({100.0 * buildingDays / Days:0.0}%), so serving had "
+                + $"{100.0 * (1.0 - state.TrainingComputeShare):0} % of the fleet on those days");
             report.AppendLine($"      peak cash {Money(peakCash)}, peak users {peakUsers:N0}, "
                 + $"peak capability {peakCapability:0.0}");
             report.AppendLine($"      finished rank {final.Position} of {simulation.Ranking().Count}"

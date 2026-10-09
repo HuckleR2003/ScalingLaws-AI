@@ -209,6 +209,20 @@ bug waiting.
   ambitious dies on day 1961, smart on 1523, scaling on 1144, against 968 and 955 before. The
   gradient is real and it is not the thing that was measured last week.
 
+- **The probe counts the days the cluster was claimed, and sets the share that decides it.**
+  `PROBE_SHARE=<fraction>` sets `TrainingComputeShare` for the campaign and `PROBE_SHARE=auto` hands
+  it over only while a training run is in flight, which is what somebody watching the dial would do.
+  Every operator except LAZY has the building half of the cluster claimed on **5,079 of 5,110 days**,
+  so it serves customers on thirty per cent of its fleet for fourteen years; LAZY, which does nothing
+  after its one model, is claimed on 100 days and serves on the whole fleet. `ClusterIsBuildingSomething`
+  is true for a research node and an upgrade programme as well as a run, and the claim is the whole
+  share however small the job is: the average node in the tree wants about 127 petaflop-days a day.
+
+  Measured on SMART, one seed, against day 1523: managing the slider by hand is worth **+504 days**
+  with the same sixteen nodes, the same ten upgrade programmes and the same peak cash, so a third of
+  the gap is the default sitting at 0.70 and nobody moving it. Setting it *lower* is worse in both
+  directions, 0.50 is day 1147 and 0.30 is day 264, because then nothing finishes training either.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
