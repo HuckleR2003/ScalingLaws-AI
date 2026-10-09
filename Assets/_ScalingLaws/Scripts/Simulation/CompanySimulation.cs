@@ -4950,6 +4950,77 @@ namespace ScalingLaws.Simulation
             return wanting;
         }
 
+        /// <summary>
+        /// Petaflop-days everything in flight could actually absorb today, added up.
+        ///
+        /// Nothing can spend more than it still owes, so this is the ceiling on what the building
+        /// half of the cluster can use however large the fleet is.
+        /// </summary>
+        private double AbsorbablePetaflopDaysToday()
+        {
+            var absorbable = 0.0;
+
+            if (State.ActiveRun != null && State.ActiveRun.WantsCompute)
+            {
+                absorbable += State.ActiveRun.PetaflopDaysRequired
+                              - State.ActiveRun.PetaflopDaysCompleted;
+            }
+
+            foreach (var project in State.UpgradeProjects)
+            {
+                if (project.WantsCompute)
+                {
+                    absorbable += project.PetaflopDaysRequired - project.PetaflopDaysCompleted;
+                }
+            }
+
+            var family = State.ActiveArchitectureProject;
+            if (family != null && family.WantsCompute)
+            {
+                absorbable += family.PetaflopDaysRequired - family.PetaflopDaysCompleted;
+            }
+
+            var node = State.ActiveResearch;
+            if (node != null && node.WantsCompute)
+            {
+                absorbable += node.PetaflopDaysRemaining;
+            }
+
+            return Math.Max(0.0, SimUnits.Finite(absorbable));
+        }
+
+        /// <summary>
+        /// The share of the fleet the building half will actually use today, 0 to 1.
+        ///
+        /// **The share is a ceiling, not a reservation.** `TrainingComputeShare` says at most how
+        /// much of the cluster may be pointed at building, and the whole of it used to be taken
+        /// whenever anything was in flight. A research node wanting 127 petaflop-days a day took
+        /// seventy per cent of a five thousand petaflop fleet, spent two and a half per cent of
+        /// it, and the other sixty-seven were charged to the company and sold to nobody. A real
+        /// cluster does not work that way and neither does a real bill.
+        ///
+        /// A training run owes thousands and still takes the whole share, which is correct: it
+        /// genuinely wants the fleet. That is the difference this is drawing.
+        /// </summary>
+        public double BuildingShareOfFleet()
+        {
+            if (!TrySliceCluster(out _, out _, out _, out _))
+            {
+                return 0.0;
+            }
+
+            var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
+            var atFullShare = Profile.EffectivePetaflops * share * TrainingThroughputMultiplier();
+
+            if (atFullShare <= 0.0)
+            {
+                return 0.0;
+            }
+
+            return share * Math.Clamp(
+                AbsorbablePetaflopDaysToday() / atFullShare, 0.0, 1.0);
+        }
+
         private bool TrySliceCluster(out double run, out double upgrades, out double architecture,
             out double node)
         {
@@ -5009,8 +5080,12 @@ namespace ScalingLaws.Simulation
         private double AdvanceResearch(ComputeProfile profile)
         {
             var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
-            var researchPetaflops =
-                profile.EffectivePetaflops * share * TrainingThroughputMultiplier();
+            // Capped at what everything in flight can actually spend. Without this the two
+            // halves stop adding to one: serving would be handed back capacity that building was
+            // still charging itself for.
+            var researchPetaflops = Math.Min(
+                profile.EffectivePetaflops * share * TrainingThroughputMultiplier(),
+                AbsorbablePetaflopDaysToday());
             var researchCash = profile.DailyOperatingCostUsd * share;
 
             var run = State.ActiveRun;
@@ -5749,7 +5824,7 @@ namespace ScalingLaws.Simulation
                 return 0.0;
             }
 
-            var servingShare = ClusterIsBuildingSomething() ? 1.0 - State.TrainingComputeShare : 1.0;
+            var servingShare = 1.0 - BuildingShareOfFleet();
             var servingPetaflops = Profile.RawPetaflops * InferenceUtilization
                                    * Math.Clamp(servingShare, 0.0, 1.0);
 
@@ -6081,9 +6156,7 @@ namespace ScalingLaws.Simulation
             // `TrySliceCluster` is already the one place that knows whether anything is claiming
             // that slice, and it answers false when nothing is. Reading it here is what makes the
             // two halves add to one.
-            var servingShare = ClusterIsBuildingSomething()
-                ? 1.0 - State.TrainingComputeShare
-                : 1.0;
+            var servingShare = 1.0 - BuildingShareOfFleet();
             var servingPetaflops = profile.RawPetaflops * InferenceUtilization * Math.Clamp(servingShare, 0.0, 1.0);
 
             // Optimisation levels above market par make every token cheaper to produce, which turns

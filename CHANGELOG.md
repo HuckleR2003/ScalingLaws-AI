@@ -299,6 +299,48 @@ claimed on 100 days and served on all of it.
   comes back once it is paid. Taught the distinction rather than loosened, which is the third time
   that has been the repair here.
 
+**The compute share is a ceiling, not a reservation.** `TrainingComputeShare` says at most how much
+of the cluster may be pointed at building, and the whole of it was taken whenever anything was in
+flight. A research node wanting 127 petaflop-days a day took seventy per cent of a five thousand
+petaflop fleet, spent two and a half per cent of it, and the other sixty-seven were charged to the
+company and sold to nobody. `AbsorbablePetaflopDaysToday` adds up what everything in flight still
+owes, and `BuildingShareOfFleet` is the fraction that actually gets used; customers are served on
+the rest. A training run owes thousands and still takes the whole share, which is correct, and that
+is the difference being drawn.
+
+**It is a correctness fix and not a balance win, and the measurement says so.** Three seeds, the
+insolvency day barely moves: one product line 4200/4347/4116 to 4268/3842/4210, scaling
+2044/1984/1690 to 2042/1996/1703. The two that gain are the ambitious operator, median 1464 to
+1871, and smart, median 1782 to 2035. 1553 EditMode tests green, no save change.
+
+### Still open, and now stated precisely
+
+- **Serving revenue does not cover the fleet at any scale.** At its peak the smart operator held
+  $1.097bn, paid **$6.14M a day** for the cluster and took **$6.44M a day**, so the fleet alone ate
+  the revenue before a single salary. The operator that runs all fourteen years does it by keeping
+  a fleet of $38k to $386k a day with the serving load at nought per cent, and even there the
+  takings are 0.65 to 0.86 of the bill. The loss is **capacity paid for and not sold**, not a
+  negative margin per token.
+- **A company can keep its customers or keep its money, not both.** Five cluster rules were
+  measured on three seeds each. Sizing from revenue alone (`prudent`) strangles the company in its
+  cradle: peak capability 41.6 against 57.3 and four million users against sixty-three, because a
+  company with no revenue gets no cluster and so never earns one. Holding the cluster up so the
+  customers stay (`ratchet`) climbs to **rank 2, 2 and 1 of fifteen** and is bankrupt by day
+  ~1020 at every strength tried, 0.85 through 0.97, with or without market pricing.
+- **Rank in the probe is rank on the day the company died.** `AdvanceDay` returns immediately once
+  the credit line is exhausted, so the whole world freezes, rivals included, and the campaign
+  repeats its last line to the end. A run that reaches rank 2 in year three and stops is not
+  beating one that reaches rank 11 in year seven. **An earlier note here read a rank 7 at day 882
+  as the best market position measured; it was the best position at the moment of death.** Only the
+  two operators that run the full 5,110 days have a rank worth comparing, and they finish 12th and
+  13th of fifteen.
+- **The one consistent win is managing the compute slider, and nothing in the game asks the player
+  to.** `PROBE_SHARE=auto` hands the fleet to training while a run is in flight and gives it back
+  otherwise: 2299 / 2204 / 2405 against a baseline of 1554 / 2435 / 1782, so the median moves 517
+  days **and the spread collapses**. The control exists on the COMPUTE screen and the default sits
+  at 0.70 for the whole campaign. That is a teaching problem rather than an economy one, and it is
+  worth more than any of the five cluster rules.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

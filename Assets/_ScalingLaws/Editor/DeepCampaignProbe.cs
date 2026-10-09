@@ -545,6 +545,21 @@ namespace ScalingLaws.Editor
         private static bool Off(string lever) => SwitchedOff.Contains(lever);
 
         /// <summary>
+        /// A numeric knob, or its default when nothing set it. Invariant parsing on purpose: this
+        /// machine is Polish and `0.55` read under its own culture is fifty-five.
+        /// </summary>
+        private static double Knob(string name, double fallback)
+        {
+            var raw = Environment.GetEnvironmentVariable(name);
+
+            return string.IsNullOrEmpty(raw)
+                   || !double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture,
+                       out var value)
+                ? fallback
+                : value;
+        }
+
+        /// <summary>
         /// Offers the next office up and takes whatever the game says.
         ///
         /// **It carries no copy of the gates.** Premises research, cash, desks and the fit-out are
@@ -1157,6 +1172,66 @@ namespace ScalingLaws.Editor
             // anybody runs a service. The old version only moved past 85% load and never caught up,
             // so it served a full queue at 100% for years and read as a company with no customers.
             var wanted = load > 0.70 ? rented * 1.5 : load < 0.35 ? rented * 0.85 : rented;
+
+            // **The operator that reads the cluster as a bill, not as somewhere to put the bank.**
+            //
+            // Every other rule here sizes the fleet from the balance, and the balance is the wrong
+            // number. A funding round and one good quarter are both one-offs, while the rent is a
+            // charge every day forever against a price per token that halves every year. Measured
+            // on the smart operator: at the end of 2023 it held $1.097bn, paid $6.14M a day for the
+            // fleet and took $6.44M a day, so the cluster alone ate the revenue before a single
+            // salary, and everything after that was one direction. Cash fell, the rule shrank the
+            // cluster, capacity fell, the queue hit a hundred per cent, customers left, and the
+            // takings went from $6.44M a day to $45k in four quarters.
+            //
+            // So the budget comes out of **what the product earned over the last thirty days**,
+            // plus a slow draw on the bank above a reserve. Trailing revenue is the stable number:
+            // a cluster sized from it does not shrink the week a tax bill lands and take the
+            // customers with it.
+            // **The cash rule, plus a floor under it, and the floor is the whole idea.**
+            //
+            // `prudent` above sizes the cluster from revenue alone and is measurably worse: a
+            // company with no revenue gets no cluster, so it trains nothing anybody wants, so it
+            // never earns. Peak capability 41.6 against 57.3 and four million users against
+            // sixty-three. Growing out of the bank is not the fault.
+            //
+            // What is, is that the same rule runs *backwards*. Cash falls, the cluster is handed
+            // back, capacity goes with it, the queue hits a hundred per cent and the customers
+            // who were paying for the cluster leave, which takes the cash down again. These two
+            // keep a floor under that: `steady` will not give back capacity that the last thirty
+            // days of revenue still pay for, and `ratchet` will not give back more than a few per
+            // cent of it at a time whatever the balance says.
+            if (rentKnob == "steady" || rentKnob == "ratchet")
+            {
+                var cashWanted = state.CashUsd / 40_000.0;
+
+                var floor = rentKnob == "steady"
+                    ? takings / 30.0 * Knob("PROBE_RENTSHARE", 0.55) / rentPerPetaflopDay
+                    : rented * Knob("PROBE_KEEP", 0.97);
+
+                simulation.SetRentedPetaflops(
+                    Math.Clamp(Math.Max(cashWanted, floor), 120.0, 60_000.0));
+                return;
+            }
+
+            if (rentKnob == "prudent")
+            {
+                var revenueShare = Knob("PROBE_RENTSHARE", 0.55);
+                var runwayDays = Math.Max(1.0, Knob("PROBE_RUNWAY", 270.0));
+                var reserveUsd = Knob("PROBE_RESERVE", 2_000_000.0);
+
+                // A quarter at a time into a queue, and it gives capacity back slowly and only
+                // when the cluster is genuinely idle. Capacity handed back is customers handed
+                // back, and this economy charges far more to win a customer than to keep one.
+                var step = load > 0.70 ? rented * 1.25 : load < 0.30 ? rented * 0.95 : rented;
+
+                var budgetPerDay = takings / 30.0 * revenueShare
+                                   + Math.Max(0.0, state.CashUsd - reserveUsd) / runwayDays;
+
+                simulation.SetRentedPetaflops(Math.Clamp(
+                    Math.Min(step, budgetPerDay / rentPerPetaflopDay), 120.0, 400_000.0));
+                return;
+            }
 
             // Most of what it takes in, plus a slice of the bank that keeps three months of runway.
             // A lab that will not spend its round on compute is a lab that raised for nothing.
