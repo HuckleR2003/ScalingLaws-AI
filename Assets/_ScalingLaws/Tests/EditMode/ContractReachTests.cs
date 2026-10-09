@@ -83,7 +83,7 @@ namespace ScalingLaws.Tests.EditMode
                         }
                     }
 
-                    if (state.Renewal.HasValue)
+                    if (state.Renewals.Count > 0)
                     {
                         waiting = true;
 
@@ -114,7 +114,7 @@ namespace ScalingLaws.Tests.EditMode
                 "CompanySimulation.Alliances.cs"));
 
             var fills = System.Text.RegularExpressions.Regex.Matches(
-                source, @"State\.Renewal\s*=\s*new PendingRenewal").Count;
+                source, @"State\.Renewals\.Add\(new PendingRenewal").Count;
 
             var knocks = System.Text.RegularExpressions.Regex.Matches(
                 source, @"CompanyEventType\.RenewalOffered").Count;

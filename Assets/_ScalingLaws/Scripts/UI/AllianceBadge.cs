@@ -130,9 +130,11 @@ namespace ScalingLaws.UI
                     state.Campaign.DaysLeft(state.Date).ToString()));
             }
 
-            if (simulation.RenewalIsOnTheTable)
+            // Every lab waiting for an answer, not only the one the card is about. Two companies
+            // can be waiting at once now, and a corner that shows one of them is the old bug in a
+            // smaller place.
+            foreach (var renewal in simulation.OpenRenewals)
             {
-                var renewal = state.Renewal.Value;
                 var left = Math.Max(0, renewal.OpenedOn.DayIndex
                     + CompanySimulation.RenewalOpenDays - state.Date.DayIndex);
 

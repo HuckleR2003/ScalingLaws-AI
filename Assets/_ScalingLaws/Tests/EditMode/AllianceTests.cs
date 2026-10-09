@@ -652,7 +652,7 @@ namespace ScalingLaws.Tests.EditMode
                     simulation.AdvanceDay();
                 }
 
-                if (simulation.State.Renewal.HasValue)
+                if (simulation.RenewalIsOnTheTable)
                 {
                     rang++;
                 }
@@ -681,7 +681,7 @@ namespace ScalingLaws.Tests.EditMode
 
             Warm(simulation, lab, RivalRelations.Best);
 
-            simulation.State.Renewal = new PendingRenewal(lab, offer, simulation.State.Date);
+            simulation.State.Renewals.Add(new PendingRenewal(lab, offer, simulation.State.Date));
 
             var before = simulation.State.CashUsd;
 
@@ -694,7 +694,8 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(simulation.State.Deals, Has.Count.EqualTo(1),
                 "and it is running today rather than waiting on an answer");
 
-            Assert.IsNull(simulation.State.Renewal);
+            Assert.IsEmpty(simulation.State.Renewals,
+                "an accepted renewal leaves the table rather than sitting there answered");
         }
 
         [Test]
@@ -705,8 +706,8 @@ namespace ScalingLaws.Tests.EditMode
 
             Warm(simulation, lab, RivalRelations.Best);
 
-            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.CapacityPurchase,
-                simulation.State.Date);
+            simulation.State.Renewals.Add(new PendingRenewal(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date));
 
             Assert.IsTrue(simulation.RenewalIsOnTheTable);
 
@@ -751,7 +752,7 @@ namespace ScalingLaws.Tests.EditMode
                     simulation.AdvanceDay();
                 }
 
-                Assert.IsNull(simulation.State.Renewal,
+                Assert.IsFalse(simulation.RenewalIsOnTheTable,
                     "a lab that is hostile telephoned to ask about carrying on");
             }
         }
@@ -762,17 +763,17 @@ namespace ScalingLaws.Tests.EditMode
             var simulation = Company();
             var lab = CompetitorId.Cohere;
 
-            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.DistributionLicence,
-                simulation.State.Date);
+            simulation.State.Renewals.Add(new PendingRenewal(lab, RelationOffer.DistributionLicence,
+                simulation.State.Date));
 
             var back = SaveStore.Restore(SaveStore.Parse(
                 UnityEngine.JsonUtility.ToJson(SaveStore.Capture(simulation.State))));
 
-            Assert.IsTrue(back.Renewal.HasValue,
+            Assert.That(back.Renewals, Is.Not.Empty,
                 "the roll for whether they rang has happened, so a reload must not get a second go");
 
-            Assert.That(back.Renewal.Value.Lab, Is.EqualTo(lab));
-            Assert.That(back.Renewal.Value.Offer, Is.EqualTo(RelationOffer.DistributionLicence));
+            Assert.That(back.Renewals[0].Lab, Is.EqualTo(lab));
+            Assert.That(back.Renewals[0].Offer, Is.EqualTo(RelationOffer.DistributionLicence));
         }
 
         /// <summary>v67 to v68: nobody has offered to renew anything, because nothing could.</summary>
@@ -1092,7 +1093,7 @@ namespace ScalingLaws.Tests.EditMode
                 simulation.Advance(1);
             }
 
-            if (simulation.State.Renewal == null)
+            if (!simulation.RenewalIsOnTheTable)
             {
                 // They said no, which is a legal answer and not what this test is about.
                 Assert.That(simulation.HasDeal(RelationOffer.DistributionLicence), Is.False,
@@ -1101,7 +1102,7 @@ namespace ScalingLaws.Tests.EditMode
                 return;
             }
 
-            Assert.That(simulation.State.Renewal.Value.Offer,
+            Assert.That(simulation.NextRenewal.Value.Offer,
                 Is.EqualTo(RelationOffer.DistributionLicence));
 
             Assert.That(simulation.HasDeal(RelationOffer.DistributionLicence), Is.False,
@@ -1167,8 +1168,8 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsFalse(badge.WaitingOnAnAnswer,
                 "nothing has been offered yet, so there is nothing to answer");
 
-            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.CapacityPurchase,
-                simulation.State.Date);
+            simulation.State.Renewals.Add(new PendingRenewal(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date));
 
             badge.Refresh(simulation);
 
@@ -1191,8 +1192,8 @@ namespace ScalingLaws.Tests.EditMode
 
             Warm(simulation, lab, RivalRelations.Best);
 
-            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.CapacityPurchase,
-                simulation.State.Date);
+            simulation.State.Renewals.Add(new PendingRenewal(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date));
 
             var badge = new ScalingLaws.UI.AllianceBadge(() => { });
             badge.Refresh(simulation);
@@ -1208,6 +1209,81 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsFalse(simulation.RenewalIsOnTheTable);
             Assert.IsFalse(badge.WaitingOnAnAnswer,
                 "an expired offer must stop being advertised in the corner");
+        }
+
+        /// <summary>
+        /// v71 to v72: the one renewal a v71 file could hold becomes the first entry of the list.
+        ///
+        /// **There is no second offer to reconstruct and inventing one would be a lie.** v71
+        /// refused to raise a renewal while that field was occupied, so a lab whose term ran out
+        /// inside somebody else's fortnight never rang and no record of the call was ever written.
+        /// </summary>
+        [Test]
+        public void TheRenewalOnTheTableSurvivesBecomingAList()
+        {
+            var data = SaveStore.Capture(new CompanyState("Prometheus AI", 4242u));
+            data.version = 71;
+            data.renewalLabs.Clear();
+            data.renewalKinds.Clear();
+            data.renewalDays.Clear();
+            data.renewalLab = (int)CompetitorId.Cohere;
+            data.renewalKind = (int)RelationOffer.DistributionLicence;
+            data.renewalDay = 900;
+
+            var upgraded = SaveMigration.UpgradeV71ToV72(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(72));
+            Assert.That(upgraded.renewalLabs.Count, Is.EqualTo(1),
+                "the offer that was on the table has to still be on it after the upgrade");
+            Assert.That(upgraded.renewalLabs[0], Is.EqualTo((int)CompetitorId.Cohere));
+            Assert.That(upgraded.renewalKinds[0], Is.EqualTo((int)RelationOffer.DistributionLicence));
+            Assert.That(upgraded.renewalDays[0], Is.EqualTo(900));
+            StringAssert.Contains("v71 to v72", SaveMigration.LastMigrationNotes);
+        }
+
+        /// <summary>A v71 file with nothing on the table starts v72 with an empty list, not a ghost.</summary>
+        [Test]
+        public void AV71FileWithNoRenewalStartsV72Empty()
+        {
+            var data = SaveStore.Capture(new CompanyState("Quiet lab", 77u));
+            data.version = 71;
+            data.renewalLabs.Clear();
+            data.renewalKinds.Clear();
+            data.renewalDays.Clear();
+            data.renewalLab = -1;
+
+            var upgraded = SaveMigration.UpgradeV71ToV72(data);
+
+            Assert.That(upgraded.version, Is.EqualTo(72));
+            Assert.IsEmpty(upgraded.renewalLabs);
+        }
+
+        /// <summary>
+        /// The fault Francisco found: a second lab never rang at all while somebody else was
+        /// waiting, so one offer the player had walked away from silenced everyone for a fortnight.
+        /// </summary>
+        [Test]
+        public void ASecondLabCanAskWhileAnotherRenewalIsStillWaiting()
+        {
+            var simulation = Company();
+
+            simulation.State.Renewals.Add(new PendingRenewal(CompetitorId.Cohere,
+                RelationOffer.CapacityPurchase, simulation.State.Date));
+            simulation.State.Renewals.Add(new PendingRenewal(CompetitorId.AlephAlpha,
+                RelationOffer.DistributionLicence, simulation.State.Date));
+
+            Assert.That(simulation.OpenRenewals.Count, Is.EqualTo(2),
+                "two labs can be waiting on an answer at the same time");
+
+            Assert.IsTrue(simulation.RenewalIsOnTheTable);
+            Assert.That(simulation.NextRenewal.Value.Lab, Is.EqualTo(CompetitorId.Cohere),
+                "the card is about the oldest one waiting");
+
+            simulation.DeclineRenewal();
+
+            Assert.That(simulation.OpenRenewals.Count, Is.EqualTo(1),
+                "putting one down must not put the other one down with it");
+            Assert.That(simulation.NextRenewal.Value.Lab, Is.EqualTo(CompetitorId.AlephAlpha));
         }
     }
 }

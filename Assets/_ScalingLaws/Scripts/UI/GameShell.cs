@@ -4656,7 +4656,7 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            var renewal = simulation.State.Renewal.Value;
+            var renewal = simulation.NextRenewal.Value;
 
             if (phone != null && !phone.IsOpen)
             {
@@ -4683,7 +4683,7 @@ namespace ScalingLaws.UI
                 return;
             }
 
-            var renewal = simulation.State.Renewal.Value;
+            var renewal = simulation.NextRenewal.Value;
             var definition = RelationOfferCatalog.Get(renewal.Offer);
             var them = CompetitorCatalog.NameOf(renewal.Lab);
 
