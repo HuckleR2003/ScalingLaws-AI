@@ -116,6 +116,15 @@ namespace ScalingLaws.Data
         /// </summary>
         public static Note SitePower => From("tech.sitepower");
 
+        /// <summary>
+        /// What the three rungs of the compute ladder actually are.
+        ///
+        /// **The heading above them used to open the petaflop-day card**, which explains the unit
+        /// training is measured in and says nothing about whose hardware it is. A tester asked what
+        /// colocated servers do and there was no answer anywhere on the screen.
+        /// </summary>
+        public static Note ComputeTiers => From("tech.tiers");
+
         public static Note RentOrOwn => From("tech.rentbuy");
 
         public static Note ReservedCapacity => From("tech.reserved");

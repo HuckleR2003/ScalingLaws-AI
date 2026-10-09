@@ -131,7 +131,7 @@ namespace ScalingLaws.UI
             ladder.AddToClassList("fleet-panel");
             var ladderHeading = new Label(Loc.T("panel.compute_tiers"));
             ladderHeading.AddToClassList("panel__heading");
-            UiParts.ExplainHeading(ladderHeading, TechNotes.PetaflopDay);
+            UiParts.ExplainHeading(ladderHeading, TechNotes.ComputeTiers);
             ladder.Add(ladderHeading);
 
             // **The ceiling is not printed here.** It was, for about an hour, and it was a second
