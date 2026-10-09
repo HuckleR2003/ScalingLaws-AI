@@ -1654,7 +1654,22 @@ namespace ScalingLaws.UI
             // about the company and mostly happened to it; this is permanent until somebody ends it,
             // it was agreed rather than suffered, and it belongs to two companies. Two kinds of
             // fact sharing a corner would teach the player that the corner means nothing.
-            allianceBadge = new AllianceBadge(() => Show(Screen.Ranking));
+
+            // **A renewal waiting for an answer takes the click.** The offer stays open for a
+            // fortnight and until now the only control that could accept it was the card on the
+            // day it arrived, so "not yet" threw the answer away while the offer sat in the save.
+            // Everything else about the badge is unchanged: with nothing pending it still opens
+            // the board, which is where the terms and the dates are.
+            allianceBadge = new AllianceBadge(() =>
+            {
+                if (simulation != null && simulation.RenewalIsOnTheTable)
+                {
+                    ShowRenewalCard();
+                    return;
+                }
+
+                Show(Screen.Ranking);
+            });
             right.Add(allianceBadge.Root);
 
             right.Add(BuildServerLoad());

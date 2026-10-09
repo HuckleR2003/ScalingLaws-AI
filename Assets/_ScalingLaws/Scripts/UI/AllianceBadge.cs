@@ -36,6 +36,9 @@ namespace ScalingLaws.UI
         /// <summary>What the card lists, as of the last refresh.</summary>
         private IReadOnlyList<string> carried = System.Array.Empty<string>();
 
+        /// <summary>Whether one of those lines is a renewal still waiting for an answer.</summary>
+        private bool waiting;
+
         public AllianceBadge(Action opened)
         {
             Root = new Button(() => opened?.Invoke());
@@ -68,13 +71,23 @@ namespace ScalingLaws.UI
             // **Attached once, and the words are read when the cursor arrives.** Calling the plain
             // `Attach` from `Refresh` would register another handler every tick, and after a
             // minute of play one hover would open the card forty times.
-            InsightTip.AttachLive(Root, () => Loc.T("ally.card.title"), () => Body(carried));
+            InsightTip.AttachLive(Root, () => Loc.T("ally.card.title"), () => Body(carried, waiting));
         }
 
         public Button Root { get; }
 
         /// <summary>How many things are being carried. For the tests, which have no panel.</summary>
         public int Carrying { get; private set; }
+
+        /// <summary>
+        /// Whether the badge is carrying a renewal nobody has answered yet.
+        ///
+        /// **It had to start carrying one.** The offer stays on the table for a fortnight, and the
+        /// only control that could accept it existed for the length of one card on the day it
+        /// arrived: pressing "not yet" threw away the answer while the offer went on sitting in the
+        /// save. The doc comment on the card said this badge already carried it. It did not.
+        /// </summary>
+        public bool WaitingOnAnAnswer { get; private set; }
 
         /// <summary>
         /// Repoints the badge at whatever the company has going today.
@@ -117,6 +130,20 @@ namespace ScalingLaws.UI
                     state.Campaign.DaysLeft(state.Date).ToString()));
             }
 
+            if (simulation.RenewalIsOnTheTable)
+            {
+                var renewal = state.Renewal.Value;
+                var left = Math.Max(0, renewal.OpenedOn.DayIndex
+                    + CompanySimulation.RenewalOpenDays - state.Date.DayIndex);
+
+                lines.Add(Loc.T("ally.line.renewal",
+                    CompetitorCatalog.NameOf(renewal.Lab),
+                    RelationOfferCatalog.Get(renewal.Offer).DisplayName,
+                    left.ToString()));
+            }
+
+            WaitingOnAnAnswer = simulation.RenewalIsOnTheTable;
+            waiting = WaitingOnAnAnswer;
             Carrying = lines.Count;
             carried = lines;
 
@@ -136,7 +163,7 @@ namespace ScalingLaws.UI
         /// running and stops is a card the player reads once; one that says where the terms, the
         /// costs and the dates are is a card that gets used.
         /// </summary>
-        private static string Body(IReadOnlyList<string> lines)
+        private static string Body(IReadOnlyList<string> lines, bool waiting)
         {
             var text = new StringBuilder();
 
@@ -151,7 +178,7 @@ namespace ScalingLaws.UI
                     .Append('\n');
             }
 
-            text.Append('\n').Append(Loc.T("ally.card.open"));
+            text.Append('\n').Append(Loc.T(waiting ? "ally.card.renewal" : "ally.card.open"));
 
             return text.ToString();
         }

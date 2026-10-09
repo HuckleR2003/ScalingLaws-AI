@@ -1144,5 +1144,70 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(terms.ExtraUsersPerMonth, Is.GreaterThanOrEqualTo(0.0));
             Assert.That(terms.OurExtraPerMonth, Is.GreaterThanOrEqualTo(0L));
         }
+
+        /// <summary>
+        /// **The offer lives for a fortnight and the only way to accept it lived for one card.**
+        /// `ShowRenewalCard` is raised from the `RenewalOffered` event and from nowhere else, so
+        /// pressing "not yet" threw the answer away while the offer went on sitting in the save,
+        /// blocking every other lab from ringing for the rest of the fortnight. The doc comment on
+        /// that card claimed this badge already carried it. It did not, and Francisco found out.
+        /// </summary>
+        [Test]
+        public void TheBadgeCarriesARenewalSoItCanBeAnsweredAfterTheDayItArrives()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            var badge = new ScalingLaws.UI.AllianceBadge(() => { });
+            badge.Refresh(simulation);
+            var before = badge.Carrying;
+
+            Assert.IsFalse(badge.WaitingOnAnAnswer,
+                "nothing has been offered yet, so there is nothing to answer");
+
+            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date);
+
+            badge.Refresh(simulation);
+
+            Assert.IsTrue(simulation.RenewalIsOnTheTable);
+            Assert.IsTrue(badge.WaitingOnAnAnswer,
+                "a renewal on the table has to be reachable from the corner, not only on the day it rang");
+            Assert.That(badge.Carrying, Is.EqualTo(before + 1),
+                "and it has to be a line the player can see, not only a flag");
+        }
+
+        /// <summary>
+        /// The other half: the badge must let go when the fortnight runs out, or the corner goes on
+        /// offering an answer the simulation will refuse.
+        /// </summary>
+        [Test]
+        public void TheBadgeStopsCarryingARenewalOnceTheFortnightHasRunOut()
+        {
+            var simulation = Company();
+            var lab = CompetitorId.Cohere;
+
+            Warm(simulation, lab, RivalRelations.Best);
+
+            simulation.State.Renewal = new PendingRenewal(lab, RelationOffer.CapacityPurchase,
+                simulation.State.Date);
+
+            var badge = new ScalingLaws.UI.AllianceBadge(() => { });
+            badge.Refresh(simulation);
+            Assert.IsTrue(badge.WaitingOnAnAnswer);
+
+            for (var day = 0; day < CompanySimulation.RenewalOpenDays + 1; day++)
+            {
+                simulation.AdvanceDay();
+            }
+
+            badge.Refresh(simulation);
+
+            Assert.IsFalse(simulation.RenewalIsOnTheTable);
+            Assert.IsFalse(badge.WaitingOnAnAnswer,
+                "an expired offer must stop being advertised in the corner");
+        }
     }
 }
