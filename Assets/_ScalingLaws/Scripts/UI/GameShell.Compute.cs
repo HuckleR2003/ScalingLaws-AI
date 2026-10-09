@@ -148,10 +148,39 @@ namespace ScalingLaws.UI
 
             // What the split is doing right now, which is not always what it says. Read from the
             // simulation rather than worked out here, so the two cannot disagree.
+            //
+            // **And `1 - share` stopped being that number.** The share is a ceiling rather than a
+            // reservation: building takes only what the work in flight can actually spend, so a
+            // research node owing sixty petaflop-days leaves the customers almost the whole fleet
+            // while the dial above still reads seventy. This row said thirty anyway for a day,
+            // which is the two-readings-of-one-state fault in a method whose own comment forbids
+            // it. Asking the simulation is the only honest reading.
+            var building = simulation.BuildingShareOfFleet();
+
             panel.Add(Row(Loc.T("fleet.split_today"),
-                simulation.ClusterIsBuildingSomething()
-                    ? Loc.T("fleet.split_claimed", UiFormat.Percent(1.0 - share, 0))
+                building > 0.0
+                    ? Loc.T("fleet.split_using",
+                        UiFormat.Percent(building, 0), UiFormat.Percent(1.0 - building, 0))
                     : Loc.T("fleet.split_idle")));
+
+            // **The line that closes the loop, and it was never there.** This dial is paid for in
+            // queueing customers, and nothing connected the two: the control is on this panel and
+            // the queue was a figure on the one below it. Measured over a fourteen year campaign,
+            // every operator that did anything at all served on what was left of the fleet for
+            // 5,079 days out of 5,110 and never had a word of warning. It speaks only while the
+            // trap is actually shut, and it quotes what the customers are living with rather than
+            // telling the player which way to move the slider: both ways cost something.
+            var quality = state.LastQuality;
+
+            if (building > 0.0 && quality.Utilisation >= ServiceQuality.UnstableAbove)
+            {
+                var squeeze = Hint(Loc.T("fleet.split_squeeze",
+                    UiFormat.Milliseconds(quality.ResponseMilliseconds),
+                    UiFormat.Percent(building, 0)));
+
+                squeeze.AddToClassList("create-note--warn");
+                panel.Add(squeeze);
+            }
 
             panel.Add(Hint(Loc.T("fleet.split_hint")));
             return panel;

@@ -208,6 +208,7 @@ namespace ScalingLaws.Editor
             // same seventy per cent a training run does, for its whole duration. This counter is
             // what turns that from a reading of the code into a number.
             var buildingDays = 0;
+            var buildingShareSum = 0.0;
 
             var peakCash = state.CashUsd;
             var peakUsers = 0.0;
@@ -325,9 +326,16 @@ namespace ScalingLaws.Editor
                     state.TrainingComputeShare = state.ActiveRun != null ? 0.70 : 0.10;
                 }
 
-                if (simulation.ClusterIsBuildingSomething())
+                // **What it actually took, not what the dial says it may take.** Reporting
+                // `1 - TrainingComputeShare` stopped being true the day the share became a
+                // ceiling: a node owing sixty petaflop-days claims almost nothing. The line used
+                // to print "serving had 30 %" against runs where it was nearer ninety-eight.
+                var buildingNow = simulation.BuildingShareOfFleet();
+
+                if (buildingNow > 0.0)
                 {
                     buildingDays++;
+                    buildingShareSum += buildingNow;
                 }
 
                 if (state.CashUsd < 0 && bankrupt < 0)
@@ -477,9 +485,10 @@ namespace ScalingLaws.Editor
             // bankruptcy day printed 444%. Measured once at 99.3% and once at 2%, which is the
             // whole finding: an operator that is always doing something always serves on what is
             // left, and the one that does nothing serves on the whole fleet.
+            var tookOnThose = buildingDays > 0 ? buildingShareSum / buildingDays : 0.0;
             report.AppendLine($"      cluster building on {buildingDays} of {Days} days "
-                + $"({100.0 * buildingDays / Days:0.0}%), so serving had "
-                + $"{100.0 * (1.0 - state.TrainingComputeShare):0} % of the fleet on those days");
+                + $"({100.0 * buildingDays / Days:0.0}%), taking {100.0 * tookOnThose:0.0}% of the "
+                + $"fleet on those days, so serving had {100.0 * (1.0 - tookOnThose):0.0}%");
             report.AppendLine($"      peak cash {Money(peakCash)}, peak users {peakUsers:N0}, "
                 + $"peak capability {peakCapability:0.0}");
             report.AppendLine($"      finished rank {final.Position} of {simulation.Ranking().Count}"

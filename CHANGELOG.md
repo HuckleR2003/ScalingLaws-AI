@@ -341,6 +341,48 @@ insolvency day barely moves: one product line 4200/4347/4116 to 4268/3842/4210, 
   at 0.70 for the whole campaign. That is a teaching problem rather than an economy one, and it is
   worth more than any of the five cluster rules.
 
+**The COMPUTE screen spent a day telling the player the wrong number, and it was this changelog's
+own fault.** Making the share a ceiling rather than a reservation changed what the split actually
+is, and the row under the slider went on working it out by hand as `1 - share`. It said customers
+had thirty per cent of the fleet on days they had ninety-eight. The method it sits in has carried a
+comment since the day it was written saying to read this from the simulation so the two cannot
+disagree, and for one day the code underneath that comment did the opposite.
+
+### Fixed
+
+- **The cluster split row asks the simulation what the fleet is doing.** `BuildingShareOfFleet` is
+  the one reading, on the screen, in the probe and in the test. The figure beside the slider still
+  reports where the dial is set, because that is a different fact and it is the one the player is
+  moving.
+
+### Added
+
+- **A line that fires while the trap is shut.** When the queue is at or past the point where the
+  service stops being comfortably fast and the fleet is building, the panel says what the customers
+  are waiting and how much of the fleet is not serving them. Nothing in the game had ever connected
+  the dial to the queue: the control is on one panel and the wait was a figure on the one below it,
+  and a fourteen year campaign went by with the customers on what was left and not a word about it.
+  It quotes both numbers and recommends nothing, because both ways of moving the slider cost
+  something.
+- The compute tier card says the share is a ceiling rather than a reservation, in both languages.
+
+### Measured
+
+- **An automatic mode was considered and is not worth building.** `PROBE_SHARE=auto`, which hands
+  the fleet to training while a run is in flight and gives it back otherwise, was worth 517 days of
+  median survival before the ceiling change and is worth **85 days after it**, inside the seed
+  noise and worse on one of the three. The simulation now does by itself most of what the hand
+  would have done, so what is left is telling the player, not deciding for them.
+- **What each operator actually takes, now that the probe reports it rather than assuming.** A new
+  line every time takes 38.1% of the fleet on its building days and a single product line 45.0%,
+  because both have gaps and small jobs. The four operators that train continuously take **69.6% to
+  69.8%**, which is the whole ceiling: the cap almost never binds on them, and that is why it moved
+  their insolvency day so little. A training run genuinely wants the cluster.
+- **So the open question is sharper than it was.** A company training all the time serves its
+  customers on thirty per cent of a fleet it pays for in full, for fourteen years, and that is the
+  design working rather than a fault. Whether one cluster should have to be both is the decision
+  still outstanding.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

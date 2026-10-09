@@ -1,6 +1,8 @@
+using System.IO;
 using NUnit.Framework;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
+using UnityEngine;
 
 namespace ScalingLaws.Tests.EditMode
 {
@@ -312,6 +314,67 @@ namespace ScalingLaws.Tests.EditMode
             Assert.IsTrue(simulation.State.HasResearch(node),
                 "The node never landed, so the calendar stopped turning the moment the cluster "
                 + "owed it nothing.");
+        }
+
+        [Test]
+        public void TheSameNodeTakesLessOfABiggerFleet()
+        {
+            // **The property, rather than a number.** An earlier version of this asserted the
+            // share was under half the ceiling on one fleet size and was simply wrong about the
+            // arithmetic twice. What the repair actually guarantees is a ratio: the node owes a
+            // fixed quantity of petaflop-days, so the larger the cluster the smaller the part of
+            // it that quantity represents. Against the version that took the whole share
+            // whenever anything was in flight, both readings below are 0.70 and this fails.
+            static double ShareWithFleet(int accelerators)
+            {
+                var simulation = Funded(accelerators);
+                var node = FirstOpenNodeNeedingCompute(simulation);
+
+                Assert.IsTrue(simulation.TryStartResearch(node, out var why), why);
+
+                // Read before the clock turns: a large fleet settles a sixty petaflop-day node
+                // inside its first day and there is nothing left to measure afterwards.
+                return simulation.BuildingShareOfFleet();
+            }
+
+            var onASmallFleet = ShareWithFleet(1_000);
+            var onALargeFleet = ShareWithFleet(16_000);
+
+            Assert.Greater(onASmallFleet, 0.0,
+                "A node that still owes petaflop-days is using some of the cluster.");
+
+            Assert.Less(onALargeFleet, onASmallFleet,
+                "The share is a ceiling, not a reservation. The same node owes the same sixty "
+                + "petaflop-days whatever it is standing on, so sixteen times the fleet has to "
+                + "mean a smaller part of it claimed and the rest left serving customers.");
+
+            Assert.LessOrEqual(onASmallFleet, 0.7000001,
+                "Nothing may ever claim more than the ceiling the player set.");
+        }
+
+        [Test]
+        public void TheComputeScreenReadsTheShareFromTheSimulation()
+        {
+            // **A source guard, because an EditMode test has no panel to build the screen in.**
+            // The row under the slider worked `1 - share` out by hand, which was the same number
+            // until the share became a ceiling and then was not: it printed thirty per cent for
+            // customers on days they had ninety-eight. The method it lives in has carried a
+            // comment saying to read this from the simulation since the day it was written.
+            var path = Path.Combine(
+                Application.dataPath, "_ScalingLaws", "Scripts", "UI", "GameShell.Compute.cs");
+
+            Assert.IsTrue(File.Exists(path), path);
+            var source = File.ReadAllText(path);
+
+            Assert.IsTrue(source.Contains("simulation.BuildingShareOfFleet()"),
+                "The cluster split panel has to ask the simulation what the fleet is doing.");
+
+            // Narrowed on purpose: the reading beside the slider is legitimately `1 - share`,
+            // because that one is reporting where the dial is set. What may not come back is the
+            // row saying what the fleet is doing today, which is why the key it used is named.
+            Assert.IsFalse(source.Contains("fleet.split_claimed"),
+                "That row worked the split out by hand and printed thirty per cent for customers "
+                + "on days they had ninety-eight.");
         }
     }
 }
