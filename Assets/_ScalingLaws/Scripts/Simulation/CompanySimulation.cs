@@ -2018,7 +2018,11 @@ namespace ScalingLaws.Simulation
             }
 
             var definition = ComputeTierCatalog.Get(ComputeTier.OwnDatacenter);
-            var status = definition.Evaluate(State.Date, State.CashUsd, State.ReleasedModelCount, State.LifetimeRevenueUsd);
+
+            // Through the same gate the ladder draws, research included. Reading the catalog
+            // straight meant the research requirement existed only on the screen, so anything
+            // else that ever calls this would have commissioned a site the company cannot run.
+            var status = State.StatusOf(ComputeTier.OwnDatacenter);
             if (!status.IsUnlocked)
             {
                 failureReason = status.LockReason;

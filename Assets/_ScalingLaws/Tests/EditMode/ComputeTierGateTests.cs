@@ -187,5 +187,100 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(balancedProfile.BalanceFactor, Is.EqualTo(1.0));
             Assert.That(balancedProfile.EffectivePetaflops, Is.GreaterThan(starvedProfile.EffectivePetaflops * 3.0));
         }
+
+        /// <summary>Builds a company that has cleared every gate on the datacenter except paying for it.</summary>
+        private static CompanySimulation ReadyForADatacenter()
+        {
+            var state = new CompanyState("Site owner")
+            {
+                Date = GameDate.FromCalendar(2025, 1, 1),
+                CashUsd = 85_000_000,
+                LifetimeRevenueUsd = 1_000_000_000
+            };
+
+            state.AddDeployedModel(new DeployedModel(
+                "First", ArchitectureId.DenseTransformer, 20, GameDate.Start, 1e10, 1.0));
+            state.AddDeployedModel(new DeployedModel(
+                "Second", ArchitectureId.DenseTransformer, 20, GameDate.Start, 1e10, 1.0));
+
+            var simulation = new CompanySimulation(state);
+            simulation.UnlockResearchNode(ResearchNodeId.DatacenterProgramme);
+            return simulation;
+        }
+
+        /// <summary>
+        /// **The tier asked for eighty million in the bank and cost eighty million to commission.**
+        /// Paying for it therefore dropped the company under its own gate in the same tick, so the
+        /// ladder went back to demanding the money that had just left and a site already under
+        /// construction reported itself shut. Francisco paid for one and the game never admitted it.
+        /// </summary>
+        [Test]
+        public void ACommissionedDatacenterStaysOpenAfterItsOwnPriceLeavesTheBank()
+        {
+            var simulation = ReadyForADatacenter();
+            var state = simulation.State;
+
+            Assert.That(simulation.TryOrderDatacenter(out var why), Is.True, why);
+            Assert.That(state.CashUsd, Is.LessThan(
+                ComputeTierCatalog.Get(ComputeTier.OwnDatacenter).RequiredCashUsd),
+                "The commission has to leave the company under the cash gate, or this proves nothing.");
+
+            var row = state.ComputeTierLadder()
+                .Find(status => status.Tier == ComputeTier.OwnDatacenter);
+
+            Assert.That(row.IsUnlocked, Is.True,
+                "A datacenter that has been paid for must not report itself locked.");
+            Assert.That(row.LockReason, Is.Empty);
+        }
+
+        /// <summary>
+        /// The second half of the same fault, and the one that cost the money. The compute page
+        /// picks which tier its hardware cards buy into by asking <see cref="CompanyState.IsTierUnlocked"/>,
+        /// so once the cash gate shut again every purchase went quietly into colocation instead,
+        /// where the site provides 2,500 kW rather than 40,000. From the player chair the button
+        /// simply did nothing.
+        /// </summary>
+        [Test]
+        public void TheComputePageStillBuysIntoADatacenterThatHasBeenPaidFor()
+        {
+            var simulation = ReadyForADatacenter();
+            var state = simulation.State;
+
+            Assert.That(simulation.TryOrderDatacenter(out var why), Is.True, why);
+            state.CashUsd = 1_000_000;
+
+            Assert.That(state.IsTierUnlocked(ComputeTier.OwnDatacenter), Is.True,
+                "The purchase page reads this to choose a tier, so a false here sells into colocation.");
+        }
+
+        /// <summary>
+        /// The research requirement used to live only on the screen: <c>TryOrderDatacenter</c> read
+        /// the catalog straight and never asked the tree. A gate that one caller can walk around is
+        /// a suggestion, which is the shape this project has already shipped more than once.
+        /// </summary>
+        [Test]
+        public void CommissioningADatacenterNeedsTheResearchAndNotOnlyTheMoney()
+        {
+            var state = new CompanyState("Rich and unread")
+            {
+                Date = GameDate.FromCalendar(2025, 1, 1),
+                CashUsd = 500_000_000,
+                LifetimeRevenueUsd = 1_000_000_000
+            };
+
+            state.AddDeployedModel(new DeployedModel(
+                "First", ArchitectureId.DenseTransformer, 20, GameDate.Start, 1e10, 1.0));
+            state.AddDeployedModel(new DeployedModel(
+                "Second", ArchitectureId.DenseTransformer, 20, GameDate.Start, 1e10, 1.0));
+
+            var simulation = new CompanySimulation(state);
+
+            Assert.That(simulation.TryOrderDatacenter(out var why), Is.False,
+                "Money alone must not commission a site the company has not worked out how to run.");
+            Assert.That(why, Is.Not.Empty);
+            Assert.That(state.CashUsd, Is.EqualTo(500_000_000),
+                "A refused commission must not move money.");
+            Assert.That(state.DatacenterOrdered, Is.False);
+        }
     }
 }

@@ -1084,11 +1084,47 @@ namespace ScalingLaws.Simulation
             var ladder = ComputeTierCatalog.EvaluateAll(Date, CashUsd, ReleasedModelCount, LifetimeRevenueUsd);
             for (var index = 0; index < ladder.Count; index++)
             {
-                ladder[index] = ApplyResearchGate(ladder[index]);
+                ladder[index] = ApplyOwnership(ApplyResearchGate(ladder[index]));
             }
 
             return ladder;
         }
+
+        /// <summary>
+        /// Every gate on one tier, in one reading: what the catalog asks for, then the research,
+        /// then anything the company has already paid for.
+        ///
+        /// **One method, because the ladder, the purchase page and the till each used to ask their
+        /// own way and the three could disagree.** `TryOrderDatacenter` read the catalog alone and
+        /// so never checked the research at all, which is the shape this project already records:
+        /// a cap that lives only in the interface is a suggestion the moment a second way to
+        /// commit exists.
+        /// </summary>
+        public ComputeTierStatus StatusOf(ComputeTier tier)
+        {
+            if (!ComputeTierCatalog.TryGet(tier, out var definition))
+            {
+                return new ComputeTierStatus(tier, false, "Unknown compute tier.");
+            }
+
+            return ApplyOwnership(ApplyResearchGate(
+                definition.Evaluate(Date, CashUsd, ReleasedModelCount, LifetimeRevenueUsd)));
+        }
+
+        /// <summary>
+        /// A site that has been paid for is open, whatever the bank says afterwards.
+        ///
+        /// **`OwnDatacenter` asks for eighty million in the bank and costs eighty million to
+        /// commission, and those are the same number.** So paying for it dropped the company under
+        /// its own gate in the same tick: the ladder went back to asking for the money that had
+        /// just left, the compute page quietly sold hardware into colocation instead, and a site
+        /// already under construction reported itself shut for the rest of the campaign. The cash
+        /// requirement is the price of starting one, not a condition of having one.
+        /// </summary>
+        private ComputeTierStatus ApplyOwnership(ComputeTierStatus status) =>
+            status.Tier == ComputeTier.OwnDatacenter && DatacenterOrdered
+                ? ComputeTierStatus.Unlocked(status.Tier)
+                : status;
 
         /// <summary>
         /// A tier can be affordable and still shut. Owning hardware needs the scaling laws worked
@@ -1118,9 +1154,7 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            var status = ApplyResearchGate(
-                definition.Evaluate(Date, CashUsd, ReleasedModelCount, LifetimeRevenueUsd));
-            return status.IsUnlocked;
+            return StatusOf(tier).IsUnlocked;
         }
 
         public bool HasDataSource(DatasetSource source) => (OwnedDataSources & source) == source;
