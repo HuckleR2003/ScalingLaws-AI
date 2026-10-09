@@ -93,6 +93,22 @@ namespace ScalingLaws.Editor
         /// </summary>
         private static bool lazy;
 
+        /// <summary>
+        /// Whether the operator staffs the company and occupies a building, rather than sitting
+        /// in a loft for fourteen years.
+        ///
+        /// **Every operator before this one topped out at ten people.** It hired one a quarter and
+        /// only while a desk was free, and the rule that moved office wanted $400M in cash, which
+        /// the campaign crosses once on the way down. So the Floor and everything above it were
+        /// never occupied, the support desk was never staffed, and no run ever commissioned a
+        /// datacenter. Every balance finding in this project was measured on that company.
+        ///
+        /// It asks the game rather than reimplementing the gates: it offers the next tier up and
+        /// takes whatever answer comes back. A probe that carries its own copy of the rules is a
+        /// probe that measures the copy.
+        /// </summary>
+        private static bool scaling;
+
         [MenuItem("Scaling Laws/Play a deep campaign")]
         public static void Play()
         {
@@ -108,7 +124,8 @@ namespace ScalingLaws.Editor
                 (true, true, false, false, "ONE PRODUCT LINE, and it owns its own silicon and a server room"),
                 (true, false, true, false, "AMBITIOUS: one line, research aimed and funded, advertising, renting"),
                 (true, false, true, true, "SMART: ambitious, and it reprices, sizes the cluster to the load and raises rounds"),
-                (true, false, false, false, "LAZY: one model, shipped, and then nothing at all")
+                (true, false, false, false, "LAZY: one model, shipped, and then nothing at all"),
+                (true, false, true, true, "SCALING: smart, and it staffs up and moves building")
             })
             {
                 // `PROBE_ONLY=ambitious` runs the last operator on one seed, for iterating on it
@@ -125,6 +142,7 @@ namespace ScalingLaws.Editor
                 ambitious = aims;
                 smart = runs;
                 lazy = heading.StartsWith("LAZY", StringComparison.Ordinal);
+                scaling = heading.StartsWith("SCALING", StringComparison.Ordinal);
 
                 report.AppendLine();
                 report.AppendLine("================ " + heading);
@@ -464,6 +482,40 @@ namespace ScalingLaws.Editor
         /// decision, and hardware is the one purchase in this game that cannot be undone at
         /// anything like its price.
         /// </summary>
+        /// <summary>
+        /// Offers the next office up and takes whatever the game says.
+        ///
+        /// **It carries no copy of the gates.** Premises research, cash, desks and the fit-out are
+        /// all decided inside `TryMoveOffice`, and a probe that re-states any of them measures its
+        /// own restatement. It climbs one rung a quarter at most, because a company that teleports
+        /// from a garage to a campus is not a company anybody is playing.
+        /// </summary>
+        private static void ClimbTheBuilding(CompanySimulation simulation, CompanyState state,
+            List<string> offices)
+        {
+            if (state.Staff.Headcount < state.Staff.Desks)
+            {
+                return;
+            }
+
+            foreach (OfficeTier tier in Enum.GetValues(typeof(OfficeTier)))
+            {
+                if (tier <= state.Staff.Office)
+                {
+                    continue;
+                }
+
+                if (simulation.TryMoveOffice(tier, out _))
+                {
+                    offices.Add(tier.ToString());
+                }
+
+                // One rung a quarter whether it worked or not: a refusal means the next one up is
+                // refused too, and a success is enough change for one quarter.
+                return;
+            }
+        }
+
         private static void OwnSomething(CompanySimulation simulation, Action<string, string> refused)
         {
             var state = simulation.State;
@@ -744,7 +796,37 @@ namespace ScalingLaws.Editor
                 upgrades++;
             }
 
-            if (state.Staff.Headcount < state.Staff.Desks)
+            if (scaling)
+            {
+                // **Staff up, but at the pace a company can pay for.**
+                //
+                // The first version filled every desk the quarter it could and died on day 759.
+                // That was the operator rather than the economy: it tested cash against the
+                // payroll it had *before* hiring, and on day one that is 131 a day, so twelve
+                // million dollars cleared the test ten times over and bought ten salaries worth
+                // $10.2M a year against $12M in the bank.
+                //
+                // A year of runway on the payroll it would have afterwards, and at most two a
+                // quarter, which is a company growing rather than one teleporting.
+                var roomToGrow = 2;
+
+                while (state.Staff.Headcount < state.Staff.Desks && roomToGrow > 0
+                       && state.CashUsd > state.Staff.DailyCostUsd * 365)
+                {
+                    state.Staff.Add(new Hire(StaffRole.ResearchScientist, 3, state.Date));
+                    hires++;
+                    roomToGrow--;
+                }
+
+                ClimbTheBuilding(simulation, state, offices);
+
+                // A site is the way past the colocation ceiling, and no run had ever ordered one.
+                if (!state.DatacenterOrdered && simulation.TryOrderDatacenter(out _))
+                {
+                    offices.Add("Datacenter");
+                }
+            }
+            else if (state.Staff.Headcount < state.Staff.Desks)
             {
                 state.Staff.Add(new Hire(StaffRole.ResearchScientist, 3, state.Date));
                 hires++;
