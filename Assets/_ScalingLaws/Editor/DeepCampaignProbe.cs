@@ -483,6 +483,25 @@ namespace ScalingLaws.Editor
         /// anything like its price.
         /// </summary>
         /// <summary>
+        /// Which spends are switched off for this run, from `PROBE_OFF=ads,research,staff`.
+        ///
+        /// **One list rather than a variable each**, because the question is never about one
+        /// lever: the ordering says every competence added to the operator shortens its life, and
+        /// the only way to find which spend carries that is to remove them one at a time from the
+        /// same operator and read the day it goes under.
+        ///
+        /// Price, cluster size and funding rounds already had knobs of their own and keep them.
+        /// </summary>
+        private static readonly HashSet<string> SwitchedOff = new(
+            (Environment.GetEnvironmentVariable("PROBE_OFF") ?? string.Empty)
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(part => part.Trim().ToLowerInvariant()),
+            StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Whether one named spend is off for this run.</summary>
+        private static bool Off(string lever) => SwitchedOff.Contains(lever);
+
+        /// <summary>
         /// Offers the next office up and takes whatever the game says.
         ///
         /// **It carries no copy of the gates.** Premises research, cash, desks and the fit-out are
@@ -751,7 +770,8 @@ namespace ScalingLaws.Editor
             {
                 foreach (var node in simulation.ResearchBoard())
                 {
-                    if (node.CanStart && simulation.TryStartResearch(node.Node.Id, out _))
+                    if (!Off("research") && node.CanStart
+                        && simulation.TryStartResearch(node.Node.Id, out _))
                     {
                         researched++;
                         break;
@@ -790,13 +810,17 @@ namespace ScalingLaws.Editor
                 return;
             }
 
-            if (state.DeployedModels.Count > 0
+            if (!Off("upgrades") && state.DeployedModels.Count > 0
                 && simulation.TryStartUpgrades(0, new[] { ModelTrait.Reasoning }, out _))
             {
                 upgrades++;
             }
 
-            if (scaling)
+            if (Off("staff"))
+            {
+                // nothing
+            }
+            else if (scaling)
             {
                 // **Staff up, but at the pace a company can pay for.**
                 //
@@ -854,7 +878,7 @@ namespace ScalingLaws.Editor
             {
                 var target = state.Rivals.Agents.FirstOrDefault();
 
-                if (target != null
+                if (!Off("smear") && target != null
                     && simulation.TrySmear(target.Competitor, SmearTier.Whisper, out _, out _))
                 {
                     smears++;
@@ -962,7 +986,8 @@ namespace ScalingLaws.Editor
                 }
             }
 
-            if (pick != null && simulation.TryStartResearch(pick.Value.Node.Id, out _))
+            if (!Off("research") && pick != null
+                && simulation.TryStartResearch(pick.Value.Node.Id, out _))
             {
                 researched++;
             }
@@ -987,6 +1012,11 @@ namespace ScalingLaws.Editor
                 {
                     return;
                 }
+            }
+
+            if (Off("ads"))
+            {
+                return;
             }
 
             state.ClearCampaigns();

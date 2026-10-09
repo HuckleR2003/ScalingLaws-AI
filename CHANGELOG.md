@@ -182,6 +182,16 @@ bug waiting.
   builds for. The founder walking through the floor was reported as two things, the missing stair
   animation and the breaking at speed, and only the second half turned out to be a fault.
 
+### Under the hood
+
+- **The campaign probe can switch one spend off at a time.** `PROBE_OFF=ads,research,upgrades,smear,staff`
+  gates each of those where the operator spends, beside the three knobs the probe already had for
+  price, cluster size and funding rounds. One list rather than a variable each, because the question
+  was never about one lever: the seven operators sort into an ordering where **every competence added
+  to the operator shortens its life**, and the only way to find which spend carries that is to take
+  them away one at a time from the same operator and read the day it goes under. With nothing set the
+  probe is unchanged to the day, which was checked before anything was measured with it.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
