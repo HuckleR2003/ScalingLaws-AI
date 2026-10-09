@@ -158,8 +158,16 @@ namespace ScalingLaws.Simulation
         /// <summary>The joint research programme running, or null. One at a time. Saved from v66.</summary>
         public ResearchCampaign Campaign { get; set; }
 
-        /// <summary>A renewal another lab has put on the table, or null. One at a time. Saved from v68.</summary>
-        public PendingRenewal? Renewal { get; set; }
+        /// <summary>
+        /// Renewals other labs have put on the table, one per lab. Saved from v72.
+        ///
+        /// **One field until v71, and that quietly cost the player every other offer.** A term that
+        /// runs out is brought up by the other side half the time, and the field was refused while
+        /// anything was already in it, so a second lab did not ring at all: no event, no card,
+        /// nothing in the interface. The slot stays occupied for a fortnight, so one offer the
+        /// player had already walked away from silenced every other lab for two weeks.
+        /// </summary>
+        public List<PendingRenewal> Renewals { get; } = new();
 
         /// <summary>
         /// Cabinets and fans the company has paid for and not stood up.

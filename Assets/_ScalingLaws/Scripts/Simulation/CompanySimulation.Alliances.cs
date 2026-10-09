@@ -120,6 +120,7 @@ namespace ScalingLaws.Simulation
 
             AdvanceAlliances();
             AdvanceCampaign();
+            ForgetExpiredRenewals();
 
             for (var index = State.Deals.Count - 1; index >= 0; index--)
             {
@@ -231,7 +232,7 @@ namespace ScalingLaws.Simulation
             // fields are written into every save from v68 and renaming them buys nothing.
             if (pending.Offer == RelationOffer.DistributionLicence)
             {
-                State.Renewal = new PendingRenewal(pending.Lab, pending.Offer, State.Date);
+                State.Renewals.Add(new PendingRenewal(pending.Lab, pending.Offer, State.Date));
 
                 // **And it has to say so, or the contract is a thing nobody can see.**
                 //
@@ -543,9 +544,81 @@ namespace ScalingLaws.Simulation
         /// Whether they proposed it themselves, which is what an accepted renewal costs nothing to
         /// find out: no letter, no waiting, no roll. That is the whole value of being called.
         /// </summary>
-        public bool RenewalIsOnTheTable =>
-            State.Renewal.HasValue
-            && State.Renewal.Value.OpenedOn.DayIndex + RenewalOpenDays > State.Date.DayIndex;
+        public bool RenewalIsOnTheTable => NextRenewal.HasValue;
+
+        /// <summary>Whether that one is still inside its fortnight.</summary>
+        private bool StillOpen(PendingRenewal renewal) =>
+            renewal.OpenedOn.DayIndex + RenewalOpenDays > State.Date.DayIndex;
+
+        /// <summary>
+        /// Every renewal still waiting for an answer, oldest first.
+        ///
+        /// Built rather than stored, so an offer that has run out of days stops being listed the
+        /// day it does rather than on whatever tick happens to prune the list next.
+        /// </summary>
+        public IReadOnlyList<PendingRenewal> OpenRenewals
+        {
+            get
+            {
+                var open = new List<PendingRenewal>();
+
+                foreach (var renewal in State.Renewals)
+                {
+                    if (StillOpen(renewal))
+                    {
+                        open.Add(renewal);
+                    }
+                }
+
+                return open;
+            }
+        }
+
+        /// <summary>
+        /// The one the card is about: the oldest still open, because the lab that has been waiting
+        /// longest is the one whose answer is most overdue.
+        /// </summary>
+        public PendingRenewal? NextRenewal
+        {
+            get
+            {
+                PendingRenewal? oldest = null;
+
+                foreach (var renewal in State.Renewals)
+                {
+                    if (!StillOpen(renewal))
+                    {
+                        continue;
+                    }
+
+                    if (!oldest.HasValue
+                        || renewal.OpenedOn.DayIndex < oldest.Value.OpenedOn.DayIndex)
+                    {
+                        oldest = renewal;
+                    }
+                }
+
+                return oldest;
+            }
+        }
+
+        /// <summary>
+        /// Drops the ones nobody answered in time.
+        ///
+        /// **Called from the daily tick rather than from the readers**, because the readers are
+        /// built fresh every time and a list that only shrinks when somebody looks at it would
+        /// grow for the whole campaign in a save nobody opened that screen in.
+        /// </summary>
+        private void ForgetExpiredRenewals()
+        {
+            for (var index = State.Renewals.Count - 1; index >= 0; index--)
+            {
+                if (!StillOpen(State.Renewals[index]))
+                {
+                    State.Renewals.RemoveAt(index);
+                }
+            }
+        }
 
         /// <summary>
         /// Takes a renewal the other side offered. Charged, and it starts today.
@@ -557,13 +630,13 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public bool TryAcceptRenewal(out string why)
         {
-            if (!RenewalIsOnTheTable)
+            if (!NextRenewal.HasValue)
             {
                 why = Loc.T("renew.fail.gone");
                 return false;
             }
 
-            var renewal = State.Renewal.Value;
+            var renewal = NextRenewal.Value;
             var definition = RelationOfferCatalog.Get(renewal.Offer);
 
             if (State.ResearchPoints < definition.PointCost)
@@ -591,7 +664,7 @@ namespace ScalingLaws.Simulation
             State.Relations.Record(renewal.Lab, State.Date, definition.RelationGain * 0.5,
                 ReasonKeyFor(renewal.Offer), CompetitorCatalog.NameOf(renewal.Lab));
 
-            State.Renewal = null;
+            State.Renewals.Remove(renewal);
 
             State.RaiseEvent(new CompanyEvent(CompanyEventType.OfferAccepted, State.Date,
                 Loc.T("renew.event.taken", definition.DisplayName,
@@ -602,8 +675,19 @@ namespace ScalingLaws.Simulation
             return true;
         }
 
-        /// <summary>Puts it down. Nothing is charged and the relation is not touched.</summary>
-        public void DeclineRenewal() => State.Renewal = null;
+        /// <summary>
+        /// Puts down the one that is on the table. Nothing is charged and the relation is untouched.
+        ///
+        /// Only that one, because another lab may be waiting behind it and refusing one company is
+        /// not refusing all of them.
+        /// </summary>
+        public void DeclineRenewal()
+        {
+            if (NextRenewal.HasValue)
+            {
+                State.Renewals.Remove(NextRenewal.Value);
+            }
+        }
 
         /// <summary>
         /// Rolls for whether they ring about a term that has just run out.
@@ -614,9 +698,19 @@ namespace ScalingLaws.Simulation
         /// </summary>
         private void MaybeOfferRenewal(CompetitorId lab, RelationOffer offer)
         {
-            if (RelationOfferCatalog.Get(offer).TermDays <= 0 || State.Renewal.HasValue)
+            if (RelationOfferCatalog.Get(offer).TermDays <= 0)
             {
                 return;
+            }
+
+            // **One per lab, not one in total.** A company that already has a question waiting with
+            // you does not ring again about a second term; every other lab still can.
+            foreach (var waiting in State.Renewals)
+            {
+                if (waiting.Lab == lab && StillOpen(waiting))
+                {
+                    return;
+                }
             }
 
             // They do not ring somebody they have fallen out with in the meantime.
@@ -633,7 +727,7 @@ namespace ScalingLaws.Simulation
                 return;
             }
 
-            State.Renewal = new PendingRenewal(lab, offer, State.Date);
+            State.Renewals.Add(new PendingRenewal(lab, offer, State.Date));
 
             State.RaiseEvent(new CompanyEvent(CompanyEventType.RenewalOffered, State.Date,
                 Loc.T("renew.event.offered", RelationOfferCatalog.Get(offer).DisplayName,
