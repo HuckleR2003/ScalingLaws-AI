@@ -75,6 +75,35 @@ that called the simulation directly. Found while reading the surrounding code ra
   nothing about whose hardware it is. It now answers the question a tester asked twice: whose
   machines, whose building, 2,500 kW against 40,000, and $0.14 a kWh against $0.055.
 
+**One pending renewal silenced every other lab for a fortnight.** A term that runs out is brought
+up by the other side half the time, and there was one field for the whole company. `MaybeOfferRenewal`
+returned early while anything was in it, so a lab whose term ran out inside somebody else's fortnight
+did not ring at all: no roll, no event, no card. The term simply ended. Reported as the second deal
+being refused automatically; it was never offered.
+
+### Changed
+
+- **Renewals are a list, one per lab, and the block is per lab rather than global.**
+  `Simulation/CompanyState.cs` and `Simulation/CompanySimulation.Alliances.cs`. `OpenRenewals` is
+  built fresh rather than stored, so an offer stops being listed the day its fortnight runs out;
+  `NextRenewal` is the oldest still open, because the lab that has waited longest is the most
+  overdue; and expired ones are pruned from the daily tick rather than from a reader, since a list
+  that only shrinks when somebody opens that screen would grow all campaign in a save nobody did.
+  Declining puts down the one on the table and only that one.
+- **The corner lists every lab waiting**, each with its own days left, rather than only the one the
+  card is about.
+- **README: four test figures measured rather than remembered.** 1,505 and 74 and 1,624 were all
+  stale. 1,549 EditMode across 176 fixtures, 83 PlayMode across 16, 1,632 in all.
+
+### Save
+
+- **Save v72.** Three lists read in step and only as far as the shortest of them, because a file
+  edited by hand could hold a lab with no offer behind it and half a renewal is not a renewal. The
+  v71 fields stay and are left at their defaults rather than written, so the step that upgrades them
+  reads a real historical shape. A v71 file carries its one renewal over as the first entry.
+  **Nothing is reconstructed**: a second offer was never raised while that field was occupied, so
+  no record of one exists and inventing it would be writing a conversation into somebody's save.
+
 ### Guarded
 
 - `ComputeTierGateTests` gains three. The first forces the company under the cash gate before it

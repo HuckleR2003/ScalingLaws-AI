@@ -195,8 +195,8 @@ clicking.
 |---|---|
 | `Assets/_ScalingLaws/Scripts/` | 305 C# files across the five layers above |
 | `Assets/_ScalingLaws/Editor/` | Scene generation, rig setup, the city flyover |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1505 tests across 171 fixtures. None load a scene. |
-| `Assets/_ScalingLaws/Tests/PlayMode/` | 74 tests that do load a scene, and render pages to PNG |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1549 tests across 176 fixtures. None load a scene. |
+| `Assets/_ScalingLaws/Tests/PlayMode/` | 83 tests that do load a scene, and render pages to PNG |
 | `Docs/` | The mechanism map, the art brief, the world map plan |
 
 [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) is the mechanism map. Read it before adding anything,
@@ -273,7 +273,7 @@ Built solo by Marcin "HCK" Firmuga ([HCK Labs](https://pcworkman.dev)), who also
 This game is a side project; my trade is Python. I build Windows desktop applications, write
 automated test suites, and write documentation from the code rather than from a brief.
 
-If the thing you noticed here is the test discipline, that is the part I sell: 1,624 tests across
+If the thing you noticed here is the test discipline, that is the part I sell: 1,632 tests across
 192 fixtures, green before every build, with a regression test for every bug that has ever shipped.
 
 [**pcworkman.dev/hire**](https://pcworkman.dev/hire/) &middot; [Fiverr](https://www.fiverr.com/huckler_creator)
