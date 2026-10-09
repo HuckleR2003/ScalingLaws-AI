@@ -38,6 +38,51 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+**A player paid eighty million dollars and the game never admitted it.** The own-datacenter tier
+asks for $80,000,000 in the bank and costs exactly $80,000,000 to commission, so paying for it
+dropped the company under its own gate in the same tick. The ladder went back to demanding the money
+that had just left, and the compute page, which picks the tier its hardware cards buy into by asking
+the same question, quietly sold everything into colocation instead. Colocation stops at 2,500 kW
+against the datacenter's 40,000, so a player already near that ceiling saw every purchase refused.
+From their chair the button simply did nothing. Francisco reported it twice before the second
+description made the second half findable.
+
+**And the research requirement existed only on the screen.** `TryOrderDatacenter` read the catalog
+straight and never asked the research tree, so the gate the ladder draws was a suggestion to anything
+that called the simulation directly. Found while reading the surrounding code rather than reported.
+
+### Fixed
+
+- **A commissioned datacenter stays open after its own price leaves the bank.**
+  `Simulation/CompanyState.cs` gains `StatusOf(tier)`: one reading of a tier gate for everybody, in
+  one order, catalog then research then anything already paid for. The ladder, the purchase page and
+  the till each used to ask their own way and the three could disagree. The cash requirement is the
+  price of starting a site, not a condition of having one.
+- **Commissioning a datacenter needs the research as well as the money.**
+  `Simulation/CompanySimulation.cs` routes `TryOrderDatacenter` through the same gate the ladder
+  draws. A cap that lives only in the interface is a suggestion the moment a second way to commit
+  exists, which is already written down here twice.
+- **The corner badge carries a renewal that is still open, and answers it.** `UI/AllianceBadge.cs`
+  lists a pending renewal with the days left on it and `UI/GameShell.cs` routes the badge click to
+  the card when one is waiting. The offer stays on the table for a fortnight and the only control
+  that could accept it existed for the length of one card on the day it arrived: pressing "not yet"
+  threw the answer away while the offer went on sitting in the save, blocking every other lab from
+  ringing for the rest of those fourteen days. **The doc comment on that card claimed the badge
+  already carried it.** It did not.
+- **The compute ladder explains compute tiers rather than the petaflop-day.** `Data/TechNotes.cs`
+  gains `ComputeTiers` and the heading above the three rungs opens it. The card that opened before
+  explained the unit training is measured in, which is correct on the research board and says
+  nothing about whose hardware it is. It now answers the question a tester asked twice: whose
+  machines, whose building, 2,500 kW against 40,000, and $0.14 a kWh against $0.055.
+
+### Guarded
+
+- `ComputeTierGateTests` gains three. The first forces the company under the cash gate before it
+  asserts anything, because a version that still had the money would have passed while proving
+  nothing; it failed on the first run for exactly that reason and the test was wrong, not the fix.
+- `AllianceTests` gains two: the badge carries an open renewal as a line the player can see, and
+  lets go of it when the fortnight runs out.
+
 **Changing the language on day one killed the tutorial for good.** The phone rings, the player opens
 settings to switch language before answering, and the phone never comes back, not even hidden. The
 guide stage is saved as `Talking`, which the enum defines as "the conversation is open and the player
