@@ -345,7 +345,8 @@ namespace ScalingLaws.Editor
                         + "rate {24:0.000}/M, market {25:0.000}/M, free {26:P0}, training share {27:P0}, "
                         + "cluster cost {28:0.000}/M, awareness {29:0.00}, our brand {30:0.00}, "
                         + "leader {31} cap {32:0.0} brand {33:0.00}, age {34:0.0}y, active {35:N0}B, "
-                        + "burden {36:0.00}, reliability {37:0.00}, kind {38}",
+                        + "burden {36:0.00}, reliability {37:0.00}, kind {38}, "
+                        + "staff {39,3}/{40,3} desks, office {41}, payroll {42,12}/day",
                         state.Date, Money(state.CashUsd), state.BestCapability,
                         rank.Position, standing.Subscribers, state.Reputation,
                         state.UnlockedResearch.Count, state.DeployedModels.Count,
@@ -391,7 +392,14 @@ namespace ScalingLaws.Editor
                             ? 1.0
                             : MarketShareModel.SizeBurden(flagship.ActiveParameterCount),
                         state.LastQuality.Reliability,
-                        flagship == null ? "none" : flagship.Type.ToString()));
+                        flagship == null ? "none" : flagship.Type.ToString(),
+
+                        // **Who is in the building, because nobody could say.** The operator
+                        // hires one person a quarter and only while a desk is free, so the whole
+                        // question of whether a company that staffs up survives differently was
+                        // invisible: every line above was measured on a company of about a dozen.
+                        state.Staff.Headcount, state.Staff.Desks, state.Staff.Office,
+                        Money((long)state.Staff.DailyCostUsd)));
                 }
             }
 
