@@ -178,6 +178,15 @@ namespace ScalingLaws.Simulation
             DaysCompleted >= DurationDays
             && (PetaflopDaysRequired <= 0.0 || PetaflopDaysCompleted >= PetaflopDaysRequired);
 
+        /// <summary>
+        /// Does this still need the cluster, or is it only waiting for the calendar? Work that has
+        /// banked its petaflop-days reserves nothing, so customers get the fleet back. The reasoning
+        /// is written out on <see cref="ResearchProject.WantsCompute"/>.
+        /// </summary>
+        public bool WantsCompute =>
+            !IsComplete && PetaflopDaysCompleted < PetaflopDaysRequired;
+
+
         /// <summary>Advances one day with whatever compute was allocated to it.</summary>
         public void Advance(double petaflopDays)
         {

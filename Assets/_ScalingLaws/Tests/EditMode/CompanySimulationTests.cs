@@ -289,7 +289,7 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void ResearchAndServingCannotBothHaveTheWholeCluster()
         {
-            static CompanySimulation Serving(bool researching)
+            static CompanySimulation Serving(bool researching, int days)
             {
                 var simulation = NewCompany(600, 4242);
 
@@ -307,25 +307,53 @@ namespace ScalingLaws.Tests.EditMode
                         Is.True, why);
                 }
 
-                simulation.Advance(30);
+                simulation.Advance(days);
                 return simulation;
             }
 
-            var quiet = Serving(false);
-            var busy = Serving(true);
+            // **The day this is measured on is the whole test, and it used to be the wrong one.**
+            // Corpus curation wants 60 petaflop-days over a 60 day calendar, one a day, and a six
+            // hundred accelerator fleet settles the entire bill inside the first day. Measured at
+            // day thirty, the node had been owed nothing for twenty-nine of them and was holding
+            // seventy per cent of the cluster anyway, which is exactly the waste this fixture
+            // thought it was guarding against. Both days are measured now.
+            var quietEarly = Serving(false, 1);
+            var busyEarly = Serving(true, 1);
 
-            Assert.That(busy.State.ActiveRun, Is.Null,
+            Assert.That(busyEarly.State.ActiveRun, Is.Null,
                 "The point of this case is that nothing is training. With a run in flight it was "
                 + "already correct.");
 
-            Assert.That(busy.State.ActiveResearch, Is.Not.Null,
+            Assert.That(busyEarly.State.ActiveResearch, Is.Not.Null,
                 "The node never started, so both arms are the same company.");
 
-            Assert.That(busy.State.LastQuality.Capacity,
-                Is.LessThan(quiet.State.LastQuality.Capacity),
-                "A node is running on the same cluster the customers are served from, so serving "
-                + "capacity has to fall. Equal capacity means the fleet is doing the research for "
-                + "free.");
+            Assert.That(busyEarly.State.ActiveResearch.WantsCompute, Is.True,
+                "The node had already settled its bill by the time this was read, so the arm is "
+                + "measuring a free fleet rather than a busy one and proves nothing.");
+
+            Assert.That(busyEarly.State.LastQuality.Capacity,
+                Is.LessThan(quietEarly.State.LastQuality.Capacity),
+                "A node that still owes petaflop-days runs on the same cluster the customers are "
+                + "served from, so serving capacity has to fall. Equal capacity means the fleet "
+                + "is doing the research for free.");
+
+            // And the other half, which is the repair of 10 October: once the cluster has paid
+            // the bill the node can spend nothing more, so the capacity comes back rather than
+            // staying reserved for the two months of calendar still to run.
+            var quietLater = Serving(false, 30);
+            var busyLater = Serving(true, 30);
+
+            Assert.That(busyLater.State.ActiveResearch, Is.Not.Null,
+                "The node finished inside thirty days, so there is no waiting period to measure.");
+
+            Assert.That(busyLater.State.ActiveResearch.WantsCompute, Is.False,
+                "The cluster has not finished paying yet, so this is the same case as above.");
+
+            Assert.That(busyLater.State.LastQuality.Capacity,
+                Is.EqualTo(quietLater.State.LastQuality.Capacity),
+                "A node waiting out its calendar can spend nothing, so it must reserve nothing. "
+                + "Holding the slice anyway served every customer on a third of the fleet for "
+                + "5,079 days out of 5,110 in the campaign probe.");
         }
 
         [Test]

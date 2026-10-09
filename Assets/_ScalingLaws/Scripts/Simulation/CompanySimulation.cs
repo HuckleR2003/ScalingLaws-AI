@@ -4915,17 +4915,58 @@ namespace ScalingLaws.Simulation
         /// panel that insists on thirty per cent for customers while the service dial above it
         /// reads a hundred is exactly the kind of two-readings-of-one-state this codebase keeps
         /// getting caught by.
+        ///
+        /// **Claiming, not merely running.** This used to answer yes for anything in flight, so a
+        /// research node wanting 120 petaflop-days in total reserved seventy per cent of the
+        /// whole fleet for each of its seventy-five days and spent almost none of it. Measured on
+        /// the campaign probe: every operator that did anything at all had the fleet claimed on
+        /// 5,079 days out of 5,110 and served its customers on a third of what it was paying for,
+        /// while the operator that shipped one model and then stopped served on all of it. That
+        /// was the whole of "the better you play, the sooner you go under". It now answers for
+        /// work that still has petaflop-days owing, and `WantsCompute` is the one reading of it.
         /// </summary>
         public bool ClusterIsBuildingSomething() =>
             TrySliceCluster(out _, out _, out _, out _);
 
+        /// <summary>
+        /// How many upgrade programmes still want the cluster.
+        ///
+        /// **Not the same as how many are running.** The slice is divided between the programmes
+        /// that can spend it, so a finished-on-compute programme waiting out its calendar does not
+        /// take a share and hand it back unused, which would be the same waste one level down.
+        /// </summary>
+        private int UpgradesWantingCompute()
+        {
+            var wanting = 0;
+
+            foreach (var project in State.UpgradeProjects)
+            {
+                if (project.WantsCompute)
+                {
+                    wanting++;
+                }
+            }
+
+            return wanting;
+        }
+
         private bool TrySliceCluster(out double run, out double upgrades, out double architecture,
             out double node)
         {
-            var runWeight = State.ActiveRun != null ? RunComputeWeight : 0.0;
-            var upgradeWeight = State.UpgradeProjects.Count > 0 ? UpgradeComputeWeight : 0.0;
-            var familyWeight = State.ActiveArchitectureProject != null ? ArchitectureComputeWeight : 0.0;
-            var nodeWeight = State.ActiveResearch != null ? ResearchComputeWeight : 0.0;
+            // **Weighed by what still wants the cluster, not by what exists.** A job that has
+            // banked its petaflop-days is waiting for its calendar and can use nothing, so it
+            // claims nothing and the capacity goes back to serving customers.
+            var runWeight = State.ActiveRun != null && State.ActiveRun.WantsCompute
+                ? RunComputeWeight
+                : 0.0;
+            var upgradeWeight = UpgradesWantingCompute() > 0 ? UpgradeComputeWeight : 0.0;
+            var familyWeight = State.ActiveArchitectureProject != null
+                                && State.ActiveArchitectureProject.WantsCompute
+                ? ArchitectureComputeWeight
+                : 0.0;
+            var nodeWeight = State.ActiveResearch != null && State.ActiveResearch.WantsCompute
+                ? ResearchComputeWeight
+                : 0.0;
 
             var total = runWeight + upgradeWeight + familyWeight + nodeWeight;
 
@@ -4973,18 +5014,19 @@ namespace ScalingLaws.Simulation
             var researchCash = profile.DailyOperatingCostUsd * share;
 
             var run = State.ActiveRun;
-            var upgradeCount = State.UpgradeProjects.Count;
 
-            if (!TrySliceCluster(out var runSlice, out var upgradeSlice, out var familySlice,
-                    out var nodeSlice))
-            {
-                return 0.0;
-            }
+            // **Nothing wanting the cluster is not the same as nothing running.** Every slice is
+            // already zeroed when `TrySliceCluster` answers false, and the calendars below still
+            // have to turn on a day the fleet owes them nothing. Returning here is what would
+            // leave a job that has banked its petaflop-days sitting forever on a day counter
+            // nobody advanced, which is why the claim could not simply be dropped.
+            TrySliceCluster(out var runSlice, out var upgradeSlice, out var familySlice,
+                out var nodeSlice);
 
             var family = State.ActiveArchitectureProject;
             var node = State.ActiveResearch;
 
-            AdvanceUpgrades(researchPetaflops * upgradeSlice, upgradeCount);
+            AdvanceUpgrades(researchPetaflops * upgradeSlice, UpgradesWantingCompute());
             AdvanceArchitecture(researchPetaflops * familySlice);
             AdvanceResearchNode(researchPetaflops * nodeSlice);
 
@@ -5014,19 +5056,21 @@ namespace ScalingLaws.Simulation
             return 1.0;
         }
 
-        private void AdvanceUpgrades(double petaflopDays, int upgradeCount)
+        private void AdvanceUpgrades(double petaflopDays, int wantingCount)
         {
-            if (upgradeCount <= 0)
+            if (State.UpgradeProjects.Count == 0)
             {
                 return;
             }
 
-            var perProject = petaflopDays / upgradeCount;
+            // Split between the programmes that can spend it; the rest are only waiting out a
+            // calendar and still have their day counted below.
+            var perProject = wantingCount > 0 ? petaflopDays / wantingCount : 0.0;
             var finished = new List<ModelUpgradeProject>();
 
             foreach (var project in State.UpgradeProjects)
             {
-                project.Advance(perProject);
+                project.Advance(project.WantsCompute ? perProject : 0.0);
                 if (project.IsComplete)
                 {
                     finished.Add(project);

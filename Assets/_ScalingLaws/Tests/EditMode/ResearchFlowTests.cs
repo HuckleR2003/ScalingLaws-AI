@@ -241,5 +241,77 @@ namespace ScalingLaws.Tests.EditMode
             simulation.SetRentedAccelerators(2000);
             Assert.IsTrue(simulation.TryStartResearch(FirstOpenNode(simulation), out var why), why);
         }
+
+        // ---- what it reserves while it waits ----------------------------------------------------
+
+        private static ResearchNodeId FirstOpenNodeNeedingCompute(CompanySimulation simulation)
+        {
+            foreach (var standing in simulation.ResearchBoard())
+            {
+                if (standing.CanStart && standing.Node.PetaflopDaysRequired > 0.0)
+                {
+                    return standing.Node.Id;
+                }
+            }
+
+            Assert.Fail("No node on day one asks for any compute, so there is nothing to measure.");
+            return ResearchNodeId.None;
+        }
+
+        [Test]
+        public void ANodeThatHasPaidItsComputeStopsClaimingTheFleet()
+        {
+            var simulation = Funded(accelerators: 4000);
+            var node = FirstOpenNodeNeedingCompute(simulation);
+
+            Assert.IsTrue(simulation.TryStartResearch(node, out var why), why);
+
+            var project = simulation.State.ActiveResearch;
+
+            Assert.IsTrue(simulation.ClusterIsBuildingSomething(),
+                "A node that has just begun owes its whole petaflop-day bill and genuinely wants "
+                + "the cluster.");
+
+            // A fleet this size pays a node's bill in days, against a calendar asking for months.
+            for (var day = 0; day < project.DurationDays && project.WantsCompute; day++)
+            {
+                simulation.Advance(1);
+            }
+
+            Assert.IsFalse(project.WantsCompute,
+                "The cluster never finished paying, so this measures nothing.");
+            Assert.IsFalse(project.IsComplete,
+                "The calendar was supposed to still have months left on it.");
+
+            Assert.IsFalse(simulation.ClusterIsBuildingSomething(),
+                "A node waiting out its calendar can spend nothing, so it must reserve nothing. "
+                + "While it did, customers were served on what was left of the fleet: the probe "
+                + "measured 5,079 days out of 5,110 claimed, on every operator that did anything.");
+        }
+
+        [Test]
+        public void AndTheCalendarStillTurnsWhileNothingIsClaimingTheCluster()
+        {
+            var simulation = Funded(accelerators: 4000);
+            var node = FirstOpenNodeNeedingCompute(simulation);
+
+            Assert.IsTrue(simulation.TryStartResearch(node, out var why), why);
+
+            var project = simulation.State.ActiveResearch;
+            var calendar = project.DurationDays;
+
+            // **The half that cannot be left out.** Dropping the claim is one line; the day count
+            // is advanced by the same pass that hands out the compute, so a slice of zero used to
+            // mean the pass returned early and the node sat on an unchanging day counter for the
+            // rest of the campaign. Without that repair this loop never ends.
+            for (var day = 0; day < calendar + 30 && !simulation.State.HasResearch(node); day++)
+            {
+                simulation.Advance(1);
+            }
+
+            Assert.IsTrue(simulation.State.HasResearch(node),
+                "The node never landed, so the calendar stopped turning the moment the cluster "
+                + "owed it nothing.");
+        }
     }
 }

@@ -68,6 +68,25 @@ namespace ScalingLaws.Simulation
             && (PetaflopDaysRequired <= 0.0 || PetaflopDaysCompleted >= PetaflopDaysRequired);
 
         /// <summary>
+        /// Does this still need the cluster, or is it only waiting for the calendar?
+        ///
+        /// **Work that has banked its petaflop-days reserves nothing.** Customers are served on
+        /// whatever the building half of the fleet is not using, and the claim used to be made by
+        /// anything that merely existed: a node wanting 120 petaflop-days in total held seventy per
+        /// cent of a five thousand petaflop cluster for every one of its seventy-five days. The
+        /// campaign probe measured 5,079 days out of 5,110 with the fleet claimed, so every
+        /// operator that did anything at all served its customers on a third of what it was paying
+        /// for, and the one operator that did nothing served on all of it.
+        ///
+        /// Separate from <see cref="IsComplete"/> on purpose. The calendar still has to turn, so
+        /// the day counter is advanced whether or not any compute arrives, and a job with no
+        /// compute requirement at all never claims the cluster for a single day.
+        /// </summary>
+        public bool WantsCompute =>
+            !IsComplete && PetaflopDaysCompleted < PetaflopDaysRequired;
+
+
+        /// <summary>
         /// The calendar is done and the cluster is not.
         ///
         /// **A node needs both days and compute, and only the days pass on their own.** A company

@@ -223,6 +223,65 @@ bug waiting.
   the gap is the default sitting at 0.70 and nobody moving it. Setting it *lower* is worse in both
   directions, 0.50 is day 1147 and 0.30 is day 264, because then nothing finishes training either.
 
+**Work that had already paid for itself went on reserving seventy per cent of the cluster.** A
+research node, an upgrade programme and a training run each need a calendar and a quantity of
+compute, and the two finish at different times. Anything still in flight claimed the whole building
+share of the fleet, so corpus curation, which wants 60 petaflop-days spread over a 60 day calendar,
+settled its entire bill on the first day and then held most of the company's hardware for the other
+fifty-nine while being able to spend none of it. Customers were served on what was left.
+
+**This is why a company that did anything went under before one that did nothing.** Measured across
+a fourteen year campaign: every operator the probe plays except the one that ships a single model
+and stops had the fleet claimed on **5,079 days out of 5,110**, and served its customers on a third
+of the hardware it was paying for the whole time. The one that stops after a single model was
+claimed on 100 days and served on all of it.
+
+### Fixed
+
+- **A job only claims the cluster while it still has petaflop-days owing.** `WantsCompute` on
+  `ResearchProject`, `ModelUpgradeProject`, `ArchitectureProject` and `TrainingRun`, read by
+  `CompanySimulation.TrySliceCluster`, and `ClusterIsBuildingSomething` now answers for work that
+  can actually spend the fleet rather than for work that merely exists. Capacity a job cannot use
+  goes back to serving customers, which is where it was going before anybody researched anything.
+- **The calendar still turns on a day the fleet owes nothing.** This is the half that could not be
+  left out: the day counter is advanced by the same pass that hands out the compute, so dropping
+  the claim on its own would have left a node sitting on an unchanging day count for the rest of
+  the campaign. The pass no longer returns early, and `AndTheCalendarStillTurnsWhileNothingIsClaimingTheCluster`
+  never finishes against the version without that repair.
+- **An upgrade programme waiting out its calendar no longer takes a share and hands it back.**
+  The slice is divided between the programmes that can spend it; the others still have their day
+  counted.
+
+### Changed
+
+- What a company gets for it, one seed, fourteen years, insolvency day before and after: one
+  product line 3773 to **4200**, ambitious 1961 to **2683**, scaling 1144 to **2044**, owning its
+  silicon 2594 to **2724**. Models trained over a campaign went 221 to 307 and 12 to 29, and peak
+  capability 54.8 to 64.9 on the disciplined operator. **The operator that ships one model and then
+  stops is unchanged to the dollar**, which is the check that this only touches a company doing
+  work.
+- It does not reverse the ordering, it flattens it. The two operators that gained most are the two
+  that do most, which is the right direction, and a company that is genuinely training all the time
+  still has the fleet claimed 99% of the time because a training run genuinely wants it.
+
+### Save
+
+- **No version change, and none is possible.** `WantsCompute` is read from `PetaflopDaysCompleted`
+  against `PetaflopDaysRequired`, both of which every one of these projects has always written to
+  the file. A campaign saved in 0.6.2 opens and carries on with the fleet it should have had.
+
+### Guarded
+
+- `ResearchFlowTests` gains two: a node that has paid its bill stops claiming the fleet, and the
+  calendar keeps turning while nothing claims it.
+- **`CompanySimulationTests.ResearchAndServingCannotBothHaveTheWholeCluster` was measuring the
+  wrong day and passing because of the fault it was written to catch.** It started corpus curation
+  and read the capacity thirty days later, by which point the node had been owed nothing for
+  twenty-nine of them. It reads both days now, asserts `WantsCompute` at each so it can never again
+  silently measure a free fleet, and holds that capacity falls while the bill is outstanding and
+  comes back once it is paid. Taught the distinction rather than loosened, which is the third time
+  that has been the repair here.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
