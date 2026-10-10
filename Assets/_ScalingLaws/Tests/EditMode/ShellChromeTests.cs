@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using ScalingLaws.Core;
+using ScalingLaws.Data;
 using ScalingLaws.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -473,6 +474,55 @@ namespace ScalingLaws.Tests.EditMode
             var match = Regex.Match(uss, pattern, RegexOptions.Singleline);
             Assert.IsTrue(match.Success, $"No match for {pattern}. The rule was renamed or removed.");
             return int.Parse(match.Groups[1].Value);
+        }
+
+        [Test]
+        public void EveryBottomBarCaptionFitsItsOwnSlot()
+        {
+            // **A caption wider than its slot is clipped at both ends and reads as a different
+            // word.** `.hud-slot` is 88px with `overflow: hidden`, and `.hud-slot__label` is 11px
+            // with 0.6px of letter spacing, which the stylesheet floor will not let us shrink.
+            //
+            // Measured rather than guessed: ARCHITECTURE at twelve characters renders in full,
+            // and BANK & DONATIONS at sixteen lost its first two letters and its last one, so the
+            // bar read "NK & DONATION" on every screen in the game for as long as that caption
+            // existed. Polish was worse off still at fourteen. Thirteen is the longest nobody has
+            // seen fail, so that is where the line goes.
+            //
+            // The page behind a slot keeps its full title. This is the word under an icon.
+            const int longestThatFits = 13;
+
+            var keys = Regex.Matches(Source("GameShell.cs"), @"AddSlot\(""([a-z.]+)""")
+                .Select(match => match.Groups[1].Value)
+                .Distinct()
+                .ToList();
+
+            Assert.Greater(keys.Count, 10,
+                "The slot captions are no longer declared as literals here, so this guard has "
+                + "quietly stopped reading anything.");
+
+            var before = Loc.Current;
+
+            try
+            {
+                foreach (var language in new[] { Language.English, Language.Polish })
+                {
+                    Loc.Current = language;
+
+                    foreach (var key in keys)
+                    {
+                        var caption = Loc.T(key);
+
+                        Assert.LessOrEqual(caption.Length, longestThatFits,
+                            $"\"{caption}\" ({key}, {language}) is wider than the 88px slot it "
+                            + "is drawn in, so both of its ends are cut off.");
+                    }
+                }
+            }
+            finally
+            {
+                Loc.Current = before;
+            }
         }
     }
 }

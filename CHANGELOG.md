@@ -423,6 +423,15 @@ by the operating cost it charges, so they cannot add to more or less than one.
 - **No version change.** The floor is derived from yesterday's demand and capacity, both of which
   the file already carries, and the share itself is unchanged. A 0.6.2 campaign opens and plays on.
 
+- **The bottom bar was clipping a caption on every screen in the game.** `BANK & DONATIONS` is
+  sixteen characters against a slot 88px wide with `overflow: hidden`, and the label is 11px with
+  0.6px of letter spacing, which the stylesheet floor will not let anybody shrink. Both ends were
+  cut and the bar read `NK & DONATION`. Polish was in the same state at fourteen characters. The
+  caption under the icon is `CAPITAL` / `KAPITAŁ`; the page keeps its full title, because one is a
+  word under an icon and the other is a heading. `ShellChromeTests.EveryBottomBarCaptionFitsItsOwnSlot`
+  reads every key out of the `AddSlot` calls and checks both languages against thirteen characters,
+  which is measured rather than chosen: `ARCHITECTURE` renders in full at twelve.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
