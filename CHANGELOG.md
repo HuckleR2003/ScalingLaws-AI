@@ -383,6 +383,46 @@ disagree, and for one day the code underneath that comment did the opposite.
   design working rather than a fault. Whether one cluster should have to be both is the decision
   still outstanding.
 
+**One cluster, two jobs, and the second one now keeps what its customers need.** The compute share
+said how much of the fleet may be pointed at building. Nothing said what may not be taken away, so
+training was served first and customers got whatever was left. That is what started the spiral the
+probe kept measuring: the queue pins at a hundred per cent, a request takes four and a half
+seconds, people leave over a slow product, the revenue leaves with them, and the cluster shrinks
+with the cash, which takes the next customers.
+
+Building now takes the slack. When yesterday's demand already needs the fleet, it waits, and the
+player can still overrule that by lowering the ceiling. The two halves are one reading
+(`BuildingShareOfFleet`), used by serving, by the day's building pass, by the banner countdown and
+by the operating cost it charges, so they cannot add to more or less than one.
+
+### Changed
+
+- **What it is worth, three seeds, insolvency day and peak capability.** The two operators that do
+  most are the two that gain most, which is the first time that has been true in this project.
+
+  | operator | before | after |
+  |---|---|---|
+  | smart | 1434 / 2588 / 2035, capability 57.6 | **2760 / 3900 / 4289, capability 71.7** |
+  | scaling | 2042 / 1996 / 1703, capability 57.3 | **3680 / 3754 / 2497, capability 69.9** |
+  | one product line | 4268 / 3842 / 4210 | 4259 / 4047 / 3761 |
+  | one line, owns silicon | 2724 / 2463 / 2678 | 2508 / 2773 / 2516 |
+  | ambitious | 2699 / 1871 / 1090, capability 54.3 | 1315 / 1076 / 1178, capability 45.6 |
+  | a new line every time | solvent x3 | solvent x3 |
+  | ships one model and stops | solvent x3 | solvent x3, identical |
+
+  Median survival on smart moves 2035 to 3900 and on scaling 1996 to 3680, and both gain twelve to
+  fourteen points of capability. **The ambitious operator is the one that gets worse**, and that is
+  the mechanism rather than an accident: it never reprices and never sizes its cluster, so it has
+  nothing spare, and a floor under serving charges it for not managing the thing it was ignoring.
+  Competence is paid for here and inattention is not, which is the way round it was meant to be.
+- The banner countdown and the operating cost charged to a run read the share the fleet is actually
+  giving building, not the ceiling the dial allows.
+
+### Save
+
+- **No version change.** The floor is derived from yesterday's demand and capacity, both of which
+  the file already carries, and the share itself is unchanged. A 0.6.2 campaign opens and plays on.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

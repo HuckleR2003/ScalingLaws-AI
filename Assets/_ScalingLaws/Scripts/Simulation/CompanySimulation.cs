@@ -5017,8 +5017,36 @@ namespace ScalingLaws.Simulation
                 return 0.0;
             }
 
-            return share * Math.Clamp(
+            var wanted = share * Math.Clamp(
                 AbsorbablePetaflopDaysToday() / atFullShare, 0.0, 1.0);
+
+            // **And serving keeps the capacity its customers already need.** The ceiling says how
+            // much may be pointed at building; this says what may not be taken away. One cluster
+            // is meant to do both jobs, and it cannot if the second job is served out of whatever
+            // the first one happens to leave.
+            //
+            // Taking it anyway is what started the spiral the probe kept measuring: the queue
+            // pins at a hundred per cent, a request takes four and a half seconds, people leave
+            // over a slow product, the revenue goes with them, and the cluster shrinks with the
+            // cash, which takes the next customers. Training now takes the slack, and when there
+            // is no slack it waits. That is the trade a single cluster doing two jobs has to
+            // make, and it is a decision the player can still overrule by lowering the ceiling.
+            //
+            // Yesterday's demand against yesterday's capacity, unclamped, because
+            // `ServiceQuality.Utilisation` stops at one and the number worth knowing here is how
+            // far past one a queue has gone.
+            var quality = State.LastQuality;
+
+            if (quality.Capacity <= 0.0)
+            {
+                return wanted;
+            }
+
+            var servingAtTheCeiling = 1.0 - wanted;
+            var hunger = SimUnits.Finite(quality.Demanded / quality.Capacity);
+            var servingNeeds = Math.Clamp(servingAtTheCeiling * hunger, 0.0, 1.0);
+
+            return Math.Clamp(Math.Min(wanted, 1.0 - servingNeeds), 0.0, 1.0);
         }
 
         private bool TrySliceCluster(out double run, out double upgrades, out double architecture,
@@ -5069,24 +5097,28 @@ namespace ScalingLaws.Simulation
                 return 0.0;
             }
 
-            var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
+            // The share the fleet is actually giving building today, not the ceiling the dial
+            // allows. A countdown quoted on capacity the run is not receiving is the fault this
+            // method was extracted to fix, one layer further in.
             var architecture = State.ResolveArchitecture(run.Blueprint.Architecture);
             var precision = TrainingChoiceCatalog.Get(run.Blueprint.Precision);
 
-            return Profile.EffectivePetaflops * share * TrainingThroughputMultiplier()
+            return Profile.EffectivePetaflops * BuildingShareOfFleet()
+                * TrainingThroughputMultiplier()
                 * runSlice * architecture.TrainingEfficiency * precision.Throughput;
         }
 
         private double AdvanceResearch(ComputeProfile profile)
         {
-            var share = Math.Clamp(State.TrainingComputeShare, 0.0, 1.0);
-            // Capped at what everything in flight can actually spend. Without this the two
-            // halves stop adding to one: serving would be handed back capacity that building was
-            // still charging itself for.
-            var researchPetaflops = Math.Min(
-                profile.EffectivePetaflops * share * TrainingThroughputMultiplier(),
-                AbsorbablePetaflopDaysToday());
-            var researchCash = profile.DailyOperatingCostUsd * share;
+            // **One reading of the split, for both halves.** `BuildingShareOfFleet` already
+            // carries the absorbable cap and the floor under serving, and the serving side reads
+            // the same method, so the two cannot add to more or less than one. Charging the
+            // operating cost on the full ceiling while spending a fraction of it would bill the
+            // company for a cluster it was not using.
+            var buildingShare = BuildingShareOfFleet();
+            var researchPetaflops =
+                profile.EffectivePetaflops * buildingShare * TrainingThroughputMultiplier();
+            var researchCash = profile.DailyOperatingCostUsd * buildingShare;
 
             var run = State.ActiveRun;
 
