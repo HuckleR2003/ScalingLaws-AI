@@ -439,6 +439,18 @@ by the operating cost it charges, so they cannot add to more or less than one.
   and the render said so: the row was shrink-to-fit, so there was nothing for `flex-grow` to grow
   into, and `align-self: stretch` on the container is what actually does the work.
 
+- **The cabinets in the basement are drawn about twice the volume they were.** They read as small
+  boxes on a large floor rather than as server racks. A single multiplier does not work here and
+  the grid is why: a square is 1.6m and a cabinet was already 1.25m deep, so the forty five per
+  cent that was asked for puts it at 1.81m and two neighbours stand through each other, while
+  1.95m by 1.45 is 2.83m under a 2.35m ceiling. Height takes the multiplier and is capped 0.15m
+  under the ceiling; the footprint grows to as much of its square as it can have with the aisles
+  still walkable. Width is up 39%, depth 15%, the tallest cabinet 13% and the shortest 45%, and
+  the whole is 1.81 times the volume. **The cost is that the height range compresses**, 1.10-1.95m
+  to 1.59-2.20m, so the four kinds of cabinet are less distinguishable by height alone and lean
+  harder on their materials. `BasementBuilder` draws its snapshot from the same `RackScale`, so
+  the preview cannot disagree with the room.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

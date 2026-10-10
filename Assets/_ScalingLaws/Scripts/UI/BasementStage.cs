@@ -525,12 +525,34 @@ namespace ScalingLaws.UI
         /// preview with its own idea of the shape is a preview that stops being evidence.
         /// </summary>
         public static float RackHeight(ServerRack rack) =>
-            Mathf.Lerp(1.1f, 1.95f, Mathf.InverseLerp(4f, 28f, ServerRackCatalog.Get(rack).Slots));
+            Mathf.Min(
+                TallestRackMetres,
+                Mathf.Lerp(1.1f, 1.95f, Mathf.InverseLerp(4f, 28f, ServerRackCatalog.Get(rack).Slots))
+                * BiggerBy);
+
+        /// <summary>
+        /// How much larger a cabinet is drawn than the first pass made it.
+        ///
+        /// **The grid is what stops this being a single multiplier.** The author asked for forty
+        /// five per cent more and in plan that does not fit: a square is 1.6m and a cabinet was
+        /// already 1.25m deep, so 1.45 of that is 1.81m and two neighbours would stand through
+        /// each other. In elevation it does not fit either, because 1.95m by 1.45 is 2.83m under
+        /// a 2.35m ceiling.
+        ///
+        /// So height takes the full multiplier and is capped under the ceiling, and the footprint
+        /// grows to as much of its square as it can have while the aisles between cabinets stay
+        /// walkable. A cabinet ends up about twice the volume it was, which is the part that
+        /// reads from an orthographic camera looking down at a floor.
+        /// </summary>
+        public const float BiggerBy = 1.45f;
+
+        /// <summary>Headroom kept under <see cref="BasementFloor.CeilingHeight"/>.</summary>
+        public const float TallestRackMetres = BasementFloor.CeilingHeight - 0.15f;
 
         /// <inheritdoc cref="RackHeight"/>
         public static Vector3 RackScale(ServerRack rack) =>
-            new(BasementFloor.SquareSize * 0.56f, RackHeight(rack),
-                BasementFloor.SquareSize * 0.78f);
+            new(BasementFloor.SquareSize * 0.78f, RackHeight(rack),
+                BasementFloor.SquareSize * 0.90f);
 
         /// <summary>
         /// Takes every cabinet off the floor.
