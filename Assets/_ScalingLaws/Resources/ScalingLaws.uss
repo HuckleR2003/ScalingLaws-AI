@@ -12735,6 +12735,7 @@
    ============================================================================================ */
 
 .hchoose {
+    align-self: stretch;
     flex-shrink: 0;
 }
 
@@ -12756,17 +12757,27 @@
 
 .hchoose__row {
     flex-direction: row;
+    align-self: stretch;
 }
 
+/* **The three places to look are the whole of this screen, so they are the whole of the page.**
+ * Three cards fixed at 320x190 left about five hundred pixels of empty page under them and
+ * eight hundred beside them, on a screen that never has anything else on it. They share the row
+ * now and the figures sit at the foot of each card rather than bunched under the tagline. */
 .hcard {
-    width: 320px;
-    height: 190px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    width: auto;
+    max-width: 600px;
+    height: 196px;
     margin-left: 0;
     margin-top: 0;
     margin-right: 16px;
     margin-bottom: 0;
     padding: 18px 20px;
     align-items: flex-start;
+    justify-content: space-between;
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.08);
     border-left-width: 4px;

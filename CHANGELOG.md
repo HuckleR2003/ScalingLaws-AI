@@ -432,6 +432,13 @@ by the operating cost it charges, so they cannot add to more or less than one.
   reads every key out of the `AddSlot` calls and checks both languages against thirteen characters,
   which is measured rather than chosen: `ARCHITECTURE` renders in full at twelve.
 
+- **The three places to look were a strip in the corner of an empty page.** Hiring is a chooser and
+  the three channels are the whole of the screen, but they were fixed at 320x190, which left about
+  five hundred pixels of empty page under them and eight hundred beside them on a screen that never
+  has anything else on it. They share the row now. The first attempt at this changed nothing at all
+  and the render said so: the row was shrink-to-fit, so there was nothing for `flex-grow` to grow
+  into, and `align-self: stretch` on the container is what actually does the work.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
