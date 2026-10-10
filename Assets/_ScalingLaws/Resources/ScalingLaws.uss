@@ -6874,7 +6874,9 @@
 
 .offices__head {
     flex-direction: row;
-    align-items: flex-end;
+    /* The close button belongs beside the title, not level with the bottom of a header
+     * that grew a furnishings panel under it and left CLOSE floating on its own. */
+    align-items: flex-start;
     justify-content: space-between;
     flex-shrink: 0;
     padding-bottom: 12px;
@@ -17542,8 +17544,8 @@
 .started {
     position: absolute;
     top: 64px;
-    left: 12%;
-    right: 12%;
+    left: 27%;
+    right: 27%;
     padding: 18px 26px 20px 26px;
     border-radius: 12px;
     border-width: 1px;

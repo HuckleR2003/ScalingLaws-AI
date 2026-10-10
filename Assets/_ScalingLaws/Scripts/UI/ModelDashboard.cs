@@ -369,7 +369,10 @@ namespace ScalingLaws.UI
 
             var under = new Label(
                 Loc.T("model.row_line", ModelTypeCatalog.Get(model.Type).DisplayName,
-                UiFormat.Number(model.Capability, 1), model.DaysOnSale));
+                UiFormat.Number(model.Capability, 1),
+                // `Loc.Plural` answers with the noun alone, so the count goes in front of it.
+                // Three models on the hub all read "1 days on sale" before this.
+                model.DaysOnSale + " " + Loc.Plural(model.DaysOnSale, "noun.day")));
 
             under.AddToClassList("mrow__under");
             name.Add(under);
