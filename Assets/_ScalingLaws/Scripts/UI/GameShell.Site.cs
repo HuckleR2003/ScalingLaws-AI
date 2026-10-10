@@ -168,6 +168,11 @@ namespace ScalingLaws.UI
             InsightTip.Attach(map, Loc.T("site.map.title"), Loc.T("site.map.note"),
                 InsightTip.Placement.LeftOf);
 
+            // **The city loads and nothing on it is a decision yet.** The scene is built and can
+            // be opened, so the ribbon says PREVIEW rather than NOT IN THIS BUILD, which would be
+            // untrue of a door that does open. The note under it says what is missing.
+            map.Add(UiParts.UnfinishedRibbon("wip.preview"));
+
             rail.Add(map);
 
             // The basement. Below the map on the same rail, because it is a place in the building

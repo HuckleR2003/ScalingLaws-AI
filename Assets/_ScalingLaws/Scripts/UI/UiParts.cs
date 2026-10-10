@@ -96,6 +96,30 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>A caption, a slim proportion bar, and the figure it represents.</summary>
+        /// <summary>
+        /// A ribbon across a control saying this part of the game is not finished.
+        ///
+        /// **One component, because there will be more than one of these.** The last free build
+        /// before Steam ships with parts that were not reached, and a player who clicks into one
+        /// and finds nothing has been lied to by the absence of a label. The badge says so before
+        /// the click and the control keeps working, because several of these open something that
+        /// is real and merely unfinished.
+        ///
+        /// The word is a parameter rather than a constant. `NOT IN THIS BUILD` is honest about a
+        /// door that opens on nothing; it is a lie about a city that loads and can be flown over
+        /// and simply has no decisions wired into it yet. Say the true one each time.
+        ///
+        /// `PickingMode.Ignore` on purpose: the ribbon sits over the control it describes and
+        /// must never eat the click meant for it.
+        /// </summary>
+        public static Label UnfinishedRibbon(string phraseKey)
+        {
+            var ribbon = new Label(Loc.T(phraseKey));
+            ribbon.AddToClassList("wip-ribbon");
+            ribbon.pickingMode = PickingMode.Ignore;
+            return ribbon;
+        }
+
         public static VisualElement ThinBarRow(string label, string value, double fraction,
             Color? fill = null)
         {

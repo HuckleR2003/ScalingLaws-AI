@@ -11809,6 +11809,25 @@
     border-width: 2px;
 }
 
+/* The ribbon that says a part of the game is not finished. Gold, because the sheet already
+ * says gold for "read this before you decide" on .create-note--warn, and a second alarm
+ * colour would make the screen argue with itself. Sits across the foot of the control. */
+.wip-ribbon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    color: rgb(22, 18, 6);
+    background-color: rgb(230, 186, 96);
+}
+
 .site-icon__hint {
     position: absolute;
     right: 92px;

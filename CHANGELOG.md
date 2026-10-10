@@ -451,6 +451,17 @@ by the operating cost it charges, so they cannot add to more or less than one.
   harder on their materials. `BasementBuilder` draws its snapshot from the same `RackScale`, so
   the preview cannot disagree with the room.
 
+- **A ribbon that says a part of the game is not finished.** `UiParts.UnfinishedRibbon` plus
+  `.wip-ribbon`, gold because the sheet already uses gold for "read this before you decide" and a
+  second alarm colour would make the screen argue with itself. `PickingMode.Ignore`, so it never
+  eats the click meant for the control it sits on. The word is a parameter and both are in the
+  book: `NOT IN THIS BUILD` for a door that opens on nothing, `PREVIEW` for something real and
+  unfinished. **The map gets `PREVIEW`**, because `City.unity` is built, loads and can be flown
+  over; what it has no scenes, offices or events on it, so nothing standing there is a decision
+  yet. Calling that "not in this build" would be the game lying about itself one click before the
+  player finds out. The insight card under it says what is missing and that the map gets its
+  decisions after Steam.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
