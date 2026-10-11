@@ -2351,18 +2351,6 @@ namespace ScalingLaws.Persistence
         private const int LedgerColumnsV70 = 27;
 
         /// <summary>
-        /// v70 to v71: the distribution partner's share has a line of its own.
-        ///
-        /// **Nothing was ever charged before this, so nothing is reconstructed.** The licence took
-        /// no cut for the whole of its history because the constant that names the cut was read by
-        /// nothing at all, so every earlier month is correct as recorded and a figure invented into
-        /// it would be a charge nobody paid. The column is added empty and fills from the next day
-        /// played, which is exactly what v56 to v57 did for office rent.
-        ///
-        /// Appended, never inserted. A saved month is a row of totals in catalogue order, so a
-        /// column added anywhere but the end puts last year's electricity under somebody's wages.
-        /// </summary>
-        /// <summary>
         /// v71 to v72: renewals become a list, one per lab.
         ///
         /// **Nothing is invented and nothing is lost.** v71 held exactly one renewal, so whatever
@@ -2376,6 +2364,39 @@ namespace ScalingLaws.Persistence
         /// rule every earlier step follows: an old shape stays readable so this step can be run
         /// against a real historical file instead of a guess at one.
         /// </summary>
+        public static SaveData UpgradeV71ToV72(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 72;
+
+            data.renewalLabs ??= new List<int>();
+            data.renewalKinds ??= new List<int>();
+            data.renewalDays ??= new List<int>();
+
+            if (data.renewalLabs.Count == 0 && data.renewalLab >= 0)
+            {
+                data.renewalLabs.Add(data.renewalLab);
+                data.renewalKinds.Add(data.renewalKind);
+                data.renewalDays.Add(data.renewalDay);
+
+                LastMigrationNotes = Append(LastMigrationNotes,
+                    "v71 to v72: the renewal that was on the table is carried over as the first "
+                    + "entry of the new list.");
+            }
+            else
+            {
+                LastMigrationNotes = Append(LastMigrationNotes,
+                    "v71 to v72: renewals are a list now. Nothing was on the table, so it starts "
+                    + "empty.");
+            }
+
+            return data;
+        }
+
         /// <summary>
         /// v72 to v73: duplicate accounts.
         ///
@@ -2412,39 +2433,19 @@ namespace ScalingLaws.Persistence
             return data;
         }
 
-        public static SaveData UpgradeV71ToV72(SaveData data)
-        {
-            if (data == null)
-            {
-                return null;
-            }
 
-            data.version = 72;
-
-            data.renewalLabs ??= new List<int>();
-            data.renewalKinds ??= new List<int>();
-            data.renewalDays ??= new List<int>();
-
-            if (data.renewalLabs.Count == 0 && data.renewalLab >= 0)
-            {
-                data.renewalLabs.Add(data.renewalLab);
-                data.renewalKinds.Add(data.renewalKind);
-                data.renewalDays.Add(data.renewalDay);
-
-                LastMigrationNotes = Append(LastMigrationNotes,
-                    "v71 to v72: the renewal that was on the table is carried over as the first "
-                    + "entry of the new list.");
-            }
-            else
-            {
-                LastMigrationNotes = Append(LastMigrationNotes,
-                    "v71 to v72: renewals are a list now. Nothing was on the table, so it starts "
-                    + "empty.");
-            }
-
-            return data;
-        }
-
+        /// <summary>
+        /// v70 to v71: the distribution partner's share has a line of its own.
+        ///
+        /// **Nothing was ever charged before this, so nothing is reconstructed.** The licence took
+        /// no cut for the whole of its history because the constant that names the cut was read by
+        /// nothing at all, so every earlier month is correct as recorded and a figure invented into
+        /// it would be a charge nobody paid. The column is added empty and fills from the next day
+        /// played, which is exactly what v56 to v57 did for office rent.
+        ///
+        /// Appended, never inserted. A saved month is a row of totals in catalogue order, so a
+        /// column added anywhere but the end puts last year's electricity under somebody's wages.
+        /// </summary>
         public static SaveData UpgradeV70ToV71(SaveData data)
         {
             if (data == null)
