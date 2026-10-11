@@ -489,6 +489,14 @@ was holding it in place instead.
   never drift apart again. **Taught rather than deleted**, which is the fourth time that has been
   the repair here.
 
+- **Five awareness bars reading the same number, and they were right.** Awareness is held per
+  segment, but each falls back to the same floor the company's reputation alone puts under it, so
+  a company holding nobody anywhere reads identically across all five. **That is the rule working
+  and it looked exactly like a screen that had never been wired up.** The panel now says so, in a
+  line that appears only while every segment is on the floor and names the figure the reputation
+  is worth. `Awareness.FloorFromStanding` is the one definition, so the screen cannot work out
+  that floor a second way and disagree with the simulation about it.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

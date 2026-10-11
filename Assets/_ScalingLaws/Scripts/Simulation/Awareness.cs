@@ -88,6 +88,19 @@ namespace ScalingLaws.Simulation
         /// <summary>What a completely unknown company still gets from word of mouth.</summary>
         public const double Floor = 0.15;
 
+        /// <summary>How much of a company's standing alone counts as being known.</summary>
+        public const double StandingShare = 0.55;
+
+        /// <summary>
+        /// The floor a company's reputation alone puts under awareness in every segment.
+        ///
+        /// Public and static because the marketing panel has to be able to say *why* five
+        /// segments are reading the same number. Working it out there as well would be two
+        /// copies of one rule, and this codebase has been caught by that more than once.
+        /// </summary>
+        public static double FloorFromStanding(double reputation) =>
+            Math.Clamp(SimUnits.Finite(reputation), 0.0, 1.0) * StandingShare;
+
         /// <summary>Awareness lost each day with nothing running, before the standing floor.</summary>
         public const double DecayPerDay = 0.010;
 
@@ -128,7 +141,7 @@ namespace ScalingLaws.Simulation
 
             // Standing keeps you known even with nothing running. A famous lab does not become
             // anonymous the month it stops advertising.
-            var floorFromStanding = Math.Clamp(SimUnits.Finite(reputation), 0.0, 1.0) * 0.55;
+            var floorFromStanding = FloorFromStanding(reputation);
 
             foreach (var definition in AudienceCatalog.All)
             {

@@ -133,14 +133,30 @@ UiParts.ExplainPage(page, TechNotes.CampaignLength);
             head.Add(overall);
             panel.Add(head);
 
+            // **Five bars reading the same number look like a stub, and they are not one.**
+            // Awareness is held per segment, but each one falls back to the same floor that the
+            // company's reputation alone puts under it, so a company holding nobody anywhere
+            // reads identically across all five. That is the rule working. It still has to say
+            // so, because a tester reading five identical bars concludes the game is not
+            // computing them, and they would be right to.
+            var floor = Awareness.FloorFromStanding(simulation.State.Reputation);
+            var allOnTheFloor = true;
+
             foreach (var audience in AudienceCatalog.All)
             {
                 var known = simulation.State.Awareness.In(audience.Segment);
                 panel.Add(UiParts.ThinBarRow(audience.DisplayName, UiFormat.Percent(known, 0), known));
+
+                if (known > floor + 0.005)
+                {
+                    allOnTheFloor = false;
+                }
             }
 
             var note = new Label(
-                Loc.T("marketing.floor_note"));
+                allOnTheFloor
+                    ? Loc.T("marketing.all_on_floor", UiFormat.Percent(floor, 0))
+                    : Loc.T("marketing.floor_note"));
 
             note.AddToClassList("field__hint");
             panel.Add(note);
