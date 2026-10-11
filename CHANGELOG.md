@@ -556,6 +556,34 @@ squeezes every company in it, which is the period the probe says is unwinnable.
   chose**, so it is at-or-under now, and a second assertion was added at twice the ceiling in
   demand, a figure a late campaign genuinely reaches, where there still has to be room above.
 
+**The market is bigger than the real one on purpose, and the author's call.** Scaling Laws is
+shaped against real history and this is the one place it now deliberately is not: the author asked
+for roughly six and a half billion people served around 2033, which is more than the real world
+is likely to reach, on the reasoning that games in this genre run larger pools and a market that
+stops growing is not interesting to play in.
+
+### Changed
+
+- **People ceilings raised**, total 5.545bn to **8.76bn**: consumer 4.0 to 6.4bn, enterprise 0.9
+  to 1.2bn, agentic 0.25 to 0.6bn, creative 0.35 to 0.5bn, developer 45 to 60 million. The
+  agentic one is the least strained by this, because that segment was never people: it counts the
+  organisations running agents.
+- **Per-head consumption grows more slowly**, each segment's `intensityGrowthPerYear` down by
+  0.05. **This was the finding that explained the flat seven years.** Demand grew 25% a year from
+  2029 while per-head intensity grew 18 to 32% a year, and users are demand divided by intensity,
+  so the headcount stood still from 2029 to 2035 at 4.24 to 4.28bn while the token market kept
+  climbing.
+- Served, measured: **4.74bn in 2026, 6.24bn in 2028, 6.54bn in 2030, 6.75bn in 2033, 6.82bn in
+  2034**, and still rising rather than flat.
+- **What it costs, stated plainly: 2026 is now roughly double the real world.** 4.74bn against a
+  real 2 to 2.5bn. The early years are driven by `MarketModel.DemandOn` rather than by anything
+  changed here, so that is the lever if it ever matters more than the late game does.
+- Balance, one seed, against the state before this: one product line 4266 to 4337 days, smart 2765
+  to 3286, scaling unchanged, ambitious 1483 to 1332, owning its own silicon 3009 to 2429.
+  **Mixed on survival and clearly better on position: owning silicon finishes seventh of fifteen**,
+  which is the best any operator has managed, against tenth to fourteenth everywhere else.
+  A bigger market pays the company that owns the machines to serve it.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

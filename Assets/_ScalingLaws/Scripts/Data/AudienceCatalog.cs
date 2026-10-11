@@ -286,10 +286,10 @@ namespace ScalingLaws.Data
                     (2022, 30), (2023, 62), (2024, 74), (2026, 82),
                     (2029, 88), (2032, 92), (2036, 95)
                 },
-                reservationCapability: 6.0, intensityGrowthPerYear: 1.28,
+                reservationCapability: 6.0, intensityGrowthPerYear: 1.23,
                 // Most of the connected world. About 5.5 billion people are on the
                 // internet at all, and not all of them will ever touch this.
-                peopleCeiling: 4_000_000_000,
+                peopleCeiling: 6_400_000_000,
 
                 // A few per cent of a consumer assistant's users ever pay for it, and the rest are
                 // the reason it is known at all. Set above what the real conversion is, because a
@@ -303,9 +303,9 @@ namespace ScalingLaws.Data
                     (2022, 4), (2023, 14), (2024, 26), (2025, 34), (2027, 40),
                     (2030, 42), (2036, 44)
                 },
-                reservationCapability: 11.0, intensityGrowthPerYear: 1.32,
+                reservationCapability: 11.0, intensityGrowthPerYear: 1.27,
                 // The industry surveys count developers in the tens of millions.
-                peopleCeiling: 45_000_000,
+                peopleCeiling: 60_000_000,
 
                 // An API key is billed for every token it spends.
                 payingShare: 0.95),
@@ -316,9 +316,9 @@ namespace ScalingLaws.Data
                 {
                     (2022, 3), (2024, 9), (2026, 20), (2028, 30), (2031, 38), (2036, 44)
                 },
-                reservationCapability: 26.0, intensityGrowthPerYear: 1.24,
+                reservationCapability: 26.0, intensityGrowthPerYear: 1.19,
                 // Seats rather than companies, so this is knowledge workers.
-                peopleCeiling: 900_000_000,
+                peopleCeiling: 1_200_000_000,
 
                 // A contract is a contract, and enterprises pay for seats nobody uses.
                 payingShare: 1.0),
@@ -329,9 +329,9 @@ namespace ScalingLaws.Data
                 {
                     (2022, 6), (2023, 12), (2025, 16), (2028, 17), (2036, 18)
                 },
-                reservationCapability: 9.0, intensityGrowthPerYear: 1.26,
+                reservationCapability: 9.0, intensityGrowthPerYear: 1.21,
                 // Professionals and the people who work like them.
-                peopleCeiling: 350_000_000,
+                peopleCeiling: 500_000_000,
 
                 // Creative tools sell subscriptions to the people who finish things, and the rest
                 // try them and leave.
@@ -343,10 +343,10 @@ namespace ScalingLaws.Data
                 {
                     (2022, 0), (2024, 1), (2026, 6), (2028, 18), (2030, 34), (2033, 52), (2036, 64)
                 },
-                reservationCapability: 44.0, intensityGrowthPerYear: 1.18,
+                reservationCapability: 44.0, intensityGrowthPerYear: 1.13,
                 // Not people at all: the organisations running agents, which is why this is
                 // the smallest population and by far the heaviest per head.
-                peopleCeiling: 250_000_000,
+                peopleCeiling: 600_000_000,
 
                 // Nobody runs an agent for free: the work it does is the reason it is running.
                 payingShare: 1.0)
