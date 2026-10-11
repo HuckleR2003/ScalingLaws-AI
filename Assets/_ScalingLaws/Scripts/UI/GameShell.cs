@@ -983,6 +983,10 @@ namespace ScalingLaws.UI
             root.Clear();
 
             UiBootstrap.Prepare(root, theme);
+
+            // The panel shrinks everything below the reference resolution, type included,
+            // so the floor the stylesheet guards is only the floor at 1920. This holds it.
+            UiBootstrap.HoldTheTypeFloor(document);
             root.AddToClassList("root");
 
             root.Add(BuildTopBar());

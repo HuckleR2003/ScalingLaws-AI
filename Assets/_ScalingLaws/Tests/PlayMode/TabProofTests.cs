@@ -867,6 +867,75 @@ namespace ScalingLaws.Tests.PlayMode
                     }
                 }
 
+                // **What the bottom bar has to work with, and whether a word is being cut.**
+                //
+                // `worldBound` cannot answer the second one. A label inside a slot that clips
+                // is laid out to the slot, so its box is never wider than its parent and the
+                // overflow always measures zero: the first version of this probe reported no
+                // truncation on a frame that plainly showed RCHITECTUR. `MeasureTextSize` asks
+                // how wide the text wants to be, which is the question.
+                var slots = root.Q(className: "hud__slots");
+                var bar = root.Q(className: "hud");
+
+                if (slots != null)
+                {
+                    var cutWord = string.Empty;
+                    var worst = 0.0f;
+
+                    foreach (var slot in slots.Children())
+                    {
+                    var label = slot.Q<Label>();
+                    if (label == null || string.IsNullOrEmpty(label.text))
+                    {
+                        continue;
+                    }
+
+                    var wanted = label.MeasureTextSize(
+                        label.text, 0, VisualElement.MeasureMode.Undefined,
+                        0, VisualElement.MeasureMode.Undefined).x;
+
+                    Debug.Log($"LABEL {size.y} \"{label.text}\" "
+                        + $"wants={wanted:F1} has={slot.worldBound.width:F1}");
+
+                    var over = wanted - slot.worldBound.width;
+                    if (over > worst)
+                    {
+                        worst = over;
+                        cutWord = label.text;
+                    }
+                    }
+
+                    // Everything on the bar that is not a slot, so the 29% the left half takes
+                    // is a list of named pieces rather than one number nobody can act on.
+                    if (bar != null)
+                    {
+                    foreach (var piece in (slots.parent ?? bar).Children())
+                    {
+                        if (piece.ClassListContains("hud__slots"))
+                        {
+                            continue;
+                        }
+
+                        var names = string.Join(".", piece.GetClasses());
+                        Debug.Log($"LEFT {size.y} {names} w={piece.worldBound.width:F0}");
+
+                        foreach (var inner in piece.Children())
+                        {
+                            var innerNames = string.Join(".", inner.GetClasses());
+                            var text = inner is TextElement words ? words.text : string.Empty;
+
+                            Debug.Log($"LEFT   {size.y} {innerNames} "
+                                + $"w={inner.worldBound.width:F0} \"{text}\"");
+                        }
+                    }
+                    }
+
+                    Debug.Log($"BAR {size.x}x{size.y} bar={bar?.worldBound.width:F0} "
+                    + $"slots={slots.worldBound.width:F0} count={slots.childCount} "
+                    + $"each={(slots.childCount > 0 ? slots.worldBound.width / slots.childCount : 0):F1} "
+                    + $"cutBy={worst:F1}px word={cutWord}");
+                }
+
                 // **And the same window with a floor under the scale.** Below the reference the
                 // panel shrinks everything, type included, so the 11px floor the stylesheet
                 // guards is only 11px at 1920. A floor stops the shrinking and gives the layout

@@ -152,8 +152,13 @@ namespace ScalingLaws.UI
 
         private void OnEnable()
         {
-            root = GetComponent<UIDocument>().rootVisualElement;
+            var document = GetComponent<UIDocument>();
+            root = document.rootVisualElement;
             UiBootstrap.Prepare(root, theme);
+
+            // The panel shrinks everything below the reference resolution, type included,
+            // so the floor the stylesheet guards is only the floor at 1920. This holds it.
+            UiBootstrap.HoldTheTypeFloor(document);
 
             try
             {

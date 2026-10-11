@@ -227,12 +227,80 @@ namespace ScalingLaws.UI
         ///
         /// The insight cards need no pass of their own: they hold keys and resolve on hover.
         /// </summary>
-        public void Retext()
+        /// <summary>
+        /// The short name for a slot whose own name will not fit, or null when there is no need.
+        ///
+        /// **Written out rather than built from the key**, because a key made by concatenation is
+        /// invisible to `LocalisationTests.EveryKeyTheInterfaceAsksForExists`, and this project has
+        /// shipped a screen of raw keys that way once already.
+        ///
+        /// One entry, and the measurement is why there is exactly one. On a 1366x768 window the
+        /// slot row has 1134px for fifteen slots, so each gets 75.6. ARCHITECTURE wants 87.1 and
+        /// every other label fits with between 8 and 49 pixels to spare; the next longest,
+        /// MARKETING, wants 65.9. So this is not a bar that needs shortening, it is one word.
+        /// </summary>
+        private static string ShortKeyFor(string key) => key switch
+        {
+            "hud.architecture" => "hud.architecture.short",
+            _ => null
+        };
+
+        /// <summary>
+        /// Gives each slot the longest version of its name that fits.
+        ///
+        /// **Fewer characters rather than smaller ones.** The alternative was shrinking the type on
+        /// a narrow window, which is the thing the scale floor exists to stop: at 10px the word
+        /// fits and draws at 8.5 real pixels, which is worse than the problem. A player on a 1920
+        /// screen never sees a short name, because the long one fits.
+        ///
+        /// Run on geometry rather than on a breakpoint. The row's width is the only thing that
+        /// decides this and it is exactly what the event reports, so there is no window size
+        /// written down here to go stale.
+        /// </summary>
+        private void FitSlotNames()
         {
             foreach (var (caption, key) in captions)
             {
-                caption.text = Loc.T(key);
+                var room = caption.parent?.worldBound.width ?? 0f;
+                if (room <= 1f)
+                {
+                    continue;
+                }
+
+                var longName = Loc.T(key);
+                var shortKey = ShortKeyFor(key);
+
+                if (shortKey == null)
+                {
+                    caption.text = longName;
+                    continue;
+                }
+
+                // A small gutter, so a name that only just fits is not touching its neighbour.
+                var wanted = caption.MeasureTextSize(
+                    longName, 0, VisualElement.MeasureMode.Undefined,
+                    0, VisualElement.MeasureMode.Undefined).x;
+
+                caption.text = wanted + SlotNameGutter <= room ? longName : Loc.T(shortKey);
             }
+        }
+
+        /// <summary>
+        /// Slack a slot name is allowed before it gives up its long form. None.
+        ///
+        /// **Measured, and the margin is under a pixel.** At the reference resolution a slot
+        /// is 88px and ARCHITECTURE wants 87.1, so the longest name in the bar has always
+        /// filled its slot exactly. Any breathing room written in here takes the full word off
+        /// a 1920 screen as well, which is not what this is for: a first attempt at 4px did
+        /// precisely that. The question is whether it fits, and nothing more.
+        /// </summary>
+        private const float SlotNameGutter = 0f;
+
+        public void Retext()
+        {
+            // Through the fitting pass, or a language change puts the long name back on a
+            // slot too narrow to hold it.
+            FitSlotNames();
 
             if (skipButton != null)
             {
@@ -303,6 +371,10 @@ namespace ScalingLaws.UI
 
             SlotHost = new VisualElement();
             SlotHost.AddToClassList("hud__slots");
+
+            // The row's width is what decides whether a name fits, so the answer is recomputed
+            // whenever that width changes and never guessed from a window size.
+            SlotHost.RegisterCallback<GeometryChangedEvent>(_ => FitSlotNames());
             bar.Add(SlotHost);
 
             // One line, edge to edge, carrying the whole gradient. It is the signature of the

@@ -1670,7 +1670,11 @@
 
 .hud-slot__label {
     font-size: 11px;
-    letter-spacing: 0.6px;
+
+    /* 0.6 until the bar was measured on a 1366 window. The longest label is allowed out of
+       its slot now rather than being cut, and at 0.6 it came out touching the one beside it:
+       tracking is decoration at 11px and a gap between two words is not. */
+    letter-spacing: 0.4px;
     color: rgb(118, 130, 150);
     margin-bottom: 7px;
 }
@@ -1755,7 +1759,16 @@
     flex-shrink: 1;
     height: 76px;
     margin: 0;
-    overflow: hidden;
+
+    /* **The label is allowed out of the slot, and that is what stops a word being cut.**
+       On a 1366x768 window the row has 1134px for fifteen slots, so each gets 75.6 and
+       ARCHITECTURE wants 87.1. Measured, the other fourteen labels have 378px of slack
+       between them: MARKETING, the next longest, leaves 21px. So the long word borrows the
+       empty space either side of it rather than being truncated, shrunk or abbreviated, and
+       the slot it is centred in does not move. The clip was defending nothing: the only
+       thing that could reach the edge is the icon's 1.06 hover, which is 1.3px on a 44px
+       icon inside a slot at least 62px wide. */
+    overflow: visible;
     margin-left: 1px;
     padding: 0;
     background-color: rgba(0, 0, 0, 0);
