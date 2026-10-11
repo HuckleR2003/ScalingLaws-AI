@@ -22,6 +22,14 @@ namespace ScalingLaws.UI
     public sealed class ModelCreatorPanel
     {
         private readonly CompanySimulation simulation;
+
+        /// <summary>Green when there is nothing left to catch, the interface accent otherwise.</summary>
+        private static readonly Color RaceAhead = new(0.29f, 0.87f, 0.50f);
+        private static readonly Color RaceBehind = new(0.95f, 0.45f, 0.13f);
+
+        private readonly SegmentBar raceBar = new();
+        private readonly Label raceYou = new();
+        private readonly Label raceLeader = new();
         private readonly VisualElement root;
 
         private readonly TextField nameField = new();
@@ -505,6 +513,7 @@ namespace ScalingLaws.UI
             versusButton.clicked += () => ShowVersus(!versus);
 
             footer.Add(versusButton);
+            footer.Add(BuildRace());
 
             backButton.text = Loc.T("common.back");
             backButton.AddToClassList("menu-button");
@@ -528,6 +537,67 @@ namespace ScalingLaws.UI
             abandonButton.clicked += AbandonTraining;
 
             ShowStage();
+        }
+
+        /// <summary>
+        /// Where this model would stand against the strongest thing anybody is selling.
+        ///
+        /// **It is on screen the whole time rather than behind the VS TOP MODEL button.** That
+        /// button reframes the figures on request; this is the one comparison a player needs
+        /// while they are still moving the sliders, and a comparison you have to ask for is one
+        /// most players never see. It also fills the middle of a footer that was empty.
+        ///
+        /// Full when the player is ahead, which is the honest reading: there is nothing left to
+        /// catch.
+        /// </summary>
+        private VisualElement BuildRace()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("race");
+
+            var head = new VisualElement();
+            head.AddToClassList("race__head");
+
+            raceYou.AddToClassList("race__you");
+            head.Add(raceYou);
+
+            raceLeader.AddToClassList("race__leader");
+            head.Add(raceLeader);
+
+            block.Add(head);
+
+            raceBar.AddToClassList("race__bar");
+            block.Add(raceBar);
+
+            return block;
+        }
+
+        /// <summary>Redraws the race from the projection the rest of the screen is reading.</summary>
+        private void RefreshRace(TrainingProjection projection)
+        {
+            var mine = projection.ProjectedCapability;
+            var theirs = 0.0;
+            string who = null;
+
+            foreach (var entry in simulation.Ranking())
+            {
+                if (entry.IsPlayer || entry.Capability <= theirs)
+                {
+                    continue;
+                }
+
+                theirs = entry.Capability;
+                who = entry.LabName;
+            }
+
+            var ahead = theirs <= 0.0 || mine >= theirs;
+
+            raceBar.Set(ahead ? 1.0 : mine / theirs, ahead ? RaceAhead : RaceBehind);
+            raceYou.text = Loc.T("create.race_you", UiFormat.Number(mine));
+
+            raceLeader.text = who == null
+                ? Loc.T("create.race_nobody")
+                : Loc.T("create.race_leader", who, UiFormat.Number(theirs));
         }
 
         private void OnNext()
@@ -3230,6 +3300,7 @@ namespace ScalingLaws.UI
                 UiFormat.Money(SimUnitsToDaily(profile)));
 
             RefreshSpend(SimUnitsToDaily(profile));
+            RefreshRace(projection);
 
             SyncRentCeiling();
 

@@ -508,6 +508,23 @@ was holding it in place instead.
   alarm. The documented decision that the whole strip is the bar, with the words on top of the
   fill rather than beside it, is untouched.
 
+- **Where this model stands against the strongest thing anybody is selling, on screen the whole
+  time.** A segmented bar across the foot of the model creator: `YOU 32.3` on the left, the leading
+  lab and its number on the right, filled by the ratio between them and full when the player is
+  ahead, because at that point there is nothing left to catch. The leader is read out of
+  `Ranking()`, so it names the same lab the ranking board does rather than quoting a bare frontier
+  figure nobody can attribute.
+  **It is not behind the VS TOP MODEL button.** That button reframes the figures on request; this
+  is the comparison a player needs while they are still moving the sliders, and one you have to
+  ask for is one most players never see. It also fills the middle of a footer that was empty,
+  which was a good part of why that stage read as a dreary one.
+
+  Two layout faults found by rendering it: the versus button has no `flex-shrink: 0` and collapsed
+  to nothing beside something that grows, and the block stretched to the footer's full height and
+  landed on the sheet counter in the corner. **Both edits silently did nothing on the first pass**
+  because the pattern used `\n` against a CRLF stylesheet, which is the third time that file has
+  caught me out.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

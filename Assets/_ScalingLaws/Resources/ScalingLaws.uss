@@ -20819,6 +20819,9 @@
    changes what the figures say rather than where the player is. `margin-right: auto` is what
    keeps BACK and NEXT on the right without a spacer element. */
 .stage-versus {
+    /* Explicitly, because the race beside it grows and a button with no floor collapses to
+       nothing: it did, and the footer rendered without it at all. */
+    flex-shrink: 0;
     height: 34px;
     margin: 0 auto 0 0;
     padding: 0 18px;
@@ -23515,4 +23518,43 @@
     white-space: normal;
     margin-top: 8px;
     -unity-font-style: normal;
+}
+
+/* Where this model stands against the strongest thing on sale, in the footer of the creator,
+   on screen the whole time rather than behind the VS TOP MODEL button. It fills the middle of
+   a footer that was empty, which is also why that stage read as a dreary one. */
+.race {
+    flex-grow: 1;
+    /* Lifted off the sheet counter that sits in the very bottom corner of the stage. */
+    margin-bottom: 8px;
+    flex-shrink: 1;
+    /* Centred rather than stretched, or the block takes the footer's full height and the
+       bar lands on the sheet counter underneath it. */
+    align-self: center;
+    margin-left: 24px;
+    margin-right: 24px;
+    justify-content: center;
+}
+
+.race__head {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.race__you {
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+}
+
+.race__leader {
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    color: rgb(140, 152, 172);
+}
+
+.race__bar {
+    height: 14px;
 }
