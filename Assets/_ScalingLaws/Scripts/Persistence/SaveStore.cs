@@ -552,6 +552,10 @@ namespace ScalingLaws.Persistence
             data.supportAgentsWorking = state.Support.AgentsWorking;
             data.supportResolved = state.Support.TicketsResolved;
             data.supportAnnounced = state.SupportAnnounced;
+            data.accountDetection = state.AccountDetectionLevel;
+            data.multiAccountBanOn = state.MultiAccountBanOn;
+            data.multiAccountBanBuilt = state.MultiAccountBanBuilt;
+            data.duplicateServing = new List<long>(state.DuplicateServingUsd);
             state.Warehouse.Capture(data.storeRackKinds, data.storeRackCounts, out data.storeFans);
             state.Power.Capture(data.powerPlantSites, data.powerPlantReadyDays);
 
@@ -1450,6 +1454,32 @@ namespace ScalingLaws.Persistence
                 safe.supportDeflection, safe.supportTraining, safe.supportAgentLevel,
                 safe.supportAgentsWorking, safe.supportResolved);
             state.SupportAnnounced = safe.supportAnnounced;
+
+            // Clamped on the way in, like every other field here. A level past the top of the
+            // ladder would hand out a cut `AccountIntegrity` never offered, and a negative one
+            // would read as a company that is worse at this than one which has done nothing.
+            state.AccountDetectionLevel = Math.Clamp(
+                safe.accountDetection, 0, AccountIntegrity.MostDetectionLevels);
+
+            // **The switch cannot be on unless the integration was paid for.** An edited file
+            // saying otherwise would be a company running a policy it never bought, which is the
+            // one combination of these two flags that nothing in the game can produce.
+            state.MultiAccountBanBuilt = safe.multiAccountBanBuilt;
+            state.MultiAccountBanOn = safe.multiAccountBanOn && safe.multiAccountBanBuilt;
+
+            state.DuplicateServingUsd.Clear();
+            if (safe.duplicateServing != null)
+            {
+                foreach (var day in safe.duplicateServing)
+                {
+                    state.DuplicateServingUsd.Add(Math.Max(0L, day));
+                }
+
+                while (state.DuplicateServingUsd.Count > DeployedModel.RecentDays)
+                {
+                    state.DuplicateServingUsd.RemoveAt(0);
+                }
+            }
             state.Warehouse.Restore(safe.storeRackKinds, safe.storeRackCounts, safe.storeFans);
             state.Power.Restore(safe.powerPlantSites, safe.powerPlantReadyDays);
             state.Staff.Owned.Clear();

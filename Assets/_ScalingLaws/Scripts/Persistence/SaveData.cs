@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 72;
+        public const int CurrentVersion = 73;
 
         public int version = CurrentVersion;
 
@@ -1185,6 +1185,37 @@ namespace ScalingLaws.Persistence
         /// reading of a file written before anybody was counting.
         /// </summary>
         public double supportResolved;
+
+        /// <summary>
+        /// v73. Levels bought on the duplicate-account recognition ladder.
+        /// </summary>
+        public int accountDetection;
+
+        /// <summary>
+        /// v73. Whether the hard ban on duplicate accounts is switched on.
+        ///
+        /// A standing policy, so it is a fact about today rather than a record of a day. Switching
+        /// it off brings the duplicates back the same tick.
+        /// </summary>
+        public bool multiAccountBanOn;
+
+        /// <summary>
+        /// v73. Whether the firm that implements the ban has already been paid.
+        ///
+        /// Kept apart from the flag above so a player who switches the policy off and on again is
+        /// not charged $1.4M twice for an integration that was built once.
+        /// </summary>
+        public bool multiAccountBanBuilt;
+
+        /// <summary>
+        /// v73. What duplicate free accounts cost to serve on each of the last 31 days.
+        ///
+        /// **Saved because it is a record rather than a reading.** Each day's figure is a share of
+        /// that day's serving bill, taken against that day's free-tier setting and that day's
+        /// detection level, and none of the three survives the day. The operations panel reports a
+        /// month and a month cannot be rebuilt from a snapshot of today.
+        /// </summary>
+        public List<long> duplicateServing = new();
 
         /// <summary>
         /// v64. Whether the campaign has already been told about its first ticket.

@@ -173,6 +173,7 @@ namespace ScalingLaws.Persistence
                     69 => UpgradeV69ToV70(current),
                     70 => UpgradeV70ToV71(current),
                     71 => UpgradeV71ToV72(current),
+                    72 => UpgradeV72ToV73(current),
                     _ => current
                 };
             }
@@ -2375,6 +2376,42 @@ namespace ScalingLaws.Persistence
         /// rule every earlier step follows: an old shape stays readable so this step can be run
         /// against a real historical file instead of a guess at one.
         /// </summary>
+        /// <summary>
+        /// v72 to v73: duplicate accounts.
+        ///
+        /// **A v72 campaign was played in a game where nobody was counting**, so the honest reading
+        /// is a company that has done nothing about a problem it could not see: no detection levels,
+        /// no ban, and nothing paid for one. That is also the least flattering reading, which is the
+        /// rule this chain follows, and here the two agree.
+        ///
+        /// The month of duplicate spending starts empty rather than being reconstructed. It could
+        /// be estimated from the free-tier setting and the serving bill, and that estimate would be
+        /// a confident figure nobody could check, on the one panel whose whole job is to be
+        /// checkable. An empty month says plainly that nobody was measuring yet.
+        /// </summary>
+        public static SaveData UpgradeV72ToV73(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 73;
+
+            data.accountDetection = 0;
+            data.multiAccountBanOn = false;
+            data.multiAccountBanBuilt = false;
+            data.duplicateServing ??= new List<long>();
+            data.duplicateServing.Clear();
+
+            LastMigrationNotes = Append(LastMigrationNotes,
+                "v72 to v73: duplicate accounts are counted now. The campaign starts with no "
+                + "recognition researched, no ban, and an empty month of duplicate spending, "
+                + "because nothing was measuring it before this version.");
+
+            return data;
+        }
+
         public static SaveData UpgradeV71ToV72(SaveData data)
         {
             if (data == null)

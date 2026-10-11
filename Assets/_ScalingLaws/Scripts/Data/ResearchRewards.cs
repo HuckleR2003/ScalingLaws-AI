@@ -80,6 +80,11 @@ namespace ScalingLaws.Data
             { ResearchNodeId.LiquidLoops, "unlock.liquid" },
             { ResearchNodeId.OwnSubstation, "unlock.substation" },
 
+            // The fifth Operations node, and the only one that is not about the room. It opens the
+            // duplicate-account figures and the recognition ladder on top of them; the rule itself
+            // is `AccountIntegrity.Serving`, read through `CompanySimulation.AccountsPerPerson`.
+            { ResearchNodeId.AccountRecognition, "unlock.accounts" },
+
             // Statecraft. Each is one `HasResearch` in `CompanySimulation.Statecraft.cs`.
             { ResearchNodeId.SovereignLiaison, "unlock.liaison" },
             { ResearchNodeId.ContinuousOversight, "unlock.oversight" },

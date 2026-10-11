@@ -28,12 +28,33 @@ namespace ScalingLaws.Tests.EditMode
     /// </summary>
     public sealed class OperationsTrackTests
     {
+        /// <summary>
+        /// The four whose whole subject is the room, and which `RoomUpgrades` reads.
+        /// </summary>
         private static readonly ResearchNodeId[] TheFour =
         {
             ResearchNodeId.RackTelemetry,
             ResearchNodeId.AirflowModelling,
             ResearchNodeId.LiquidLoops,
             ResearchNodeId.OwnSubstation
+        };
+
+        /// <summary>
+        /// Everything on the track, which is the four above plus the one that is not about the room.
+        ///
+        /// **Two lists rather than one, and the difference is the point.** `TheFour` are read by
+        /// `RoomUpgrades` and every test below that touches cooling, tariffs or telemetry means
+        /// exactly those. `AccountRecognition` is on the same track because it is also research
+        /// about the company rather than the model, and it moves something else entirely, so it is
+        /// measured on its own further down rather than being swept into a room fixture.
+        /// </summary>
+        private static readonly ResearchNodeId[] OnTheTrack =
+        {
+            ResearchNodeId.RackTelemetry,
+            ResearchNodeId.AirflowModelling,
+            ResearchNodeId.LiquidLoops,
+            ResearchNodeId.OwnSubstation,
+            ResearchNodeId.AccountRecognition
         };
 
         private static RoomUpgrades With(params ResearchNodeId[] held) =>
@@ -44,7 +65,7 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void TheFourNodesAreOnTheOperationsTrackAndNothingElseIs()
         {
-            foreach (var id in TheFour)
+            foreach (var id in OnTheTrack)
             {
                 Assert.IsTrue(ResearchTree.TryGet(id, out var node), $"{id} is not in the tree.");
 
@@ -58,7 +79,7 @@ namespace ScalingLaws.Tests.EditMode
                 .Select(node => node.Id)
                 .ToList();
 
-            CollectionAssert.AreEquivalent(TheFour, onTrack,
+            CollectionAssert.AreEquivalent(OnTheTrack, onTrack,
                 "A node joined the Operations track without joining this fixture, so whatever it "
                 + "moves is unmeasured.");
         }

@@ -83,6 +83,46 @@ being refused automatically; it was never offered.
 
 ### Changed
 
+- **Not every account is a person, and the game now says so.** Every audience curve in this
+  simulation is sized in human beings and so is every user figure on every screen, so there was no
+  way to state the thing every real service states: a lot of those accounts are the same person
+  twice. `Data/AccountIntegrity.cs` holds it at 1.74 free accounts and 1.11 subscriptions per head,
+  coarse on purpose, and `ResearchNodeId.AccountRecognition` is one early Operations node that opens
+  the figures and a six level ladder on top of them.
+- **The two halves cost completely different things and that is the mechanic.** A duplicate free
+  account takes a free allowance again, takes capacity off the fleet, lengthens the queue for
+  everybody and is invoiced to nobody. A duplicate subscription is one person with a work login and
+  a personal one: their usage does not double, so it brings no demand and no serving cost, and it
+  shows up as an account count higher than the number of human beings behind it.
+- **So the research ladder and the hard ban are not a weak lever and a strong one.** Recognition
+  finds the duplicates that are costing money and leaves the ones that are paying, up to 60%, for
+  1,050 research points and $140,000 across the whole ladder. The ban is $1,400,000, no research at
+  all, catches 80% of both because linking payment cards cannot tell them apart, and therefore turns
+  paying customers away and charges the company's standing every day it is switched on. The two cuts
+  stack on what is left rather than adding, so everything together still leaves 8% of the duplicates
+  in place and nothing reaches certainty.
+- A seventh named driver on `Standing`, so the desk can say the policy is doing it rather than
+  leaving a company wondering why it is sliding.
+
+### Measured
+
+- **The first version of this made multi-accounting a bonus, and the probe is the only reason that
+  is not in the build.** Billing the duplicate subscriptions outright paid the seven scripted
+  operators between 9% and 83% more than before duplicate accounts existed in the game at all: peak
+  cash on the first operator went $1,435,376,320 to $1,736,849,627. A surplus fleet serves extra
+  subscriptions for nothing, so adding paying customers to an over-provisioned company is free
+  money. Five of the seven are poorer now, and the one that falls hardest, by 52.7%, is the operator
+  that sizes its cluster to its load, because it is the only one with no surplus to absorb them.
+- **The seats are billed from the untouched world, so a company that has done nothing scores exactly
+  1.0.** Same neutral-option rule the safety effort slider and the specialist audiences are held to.
+  With it, all seven operators came back on the figures they had with no seat billing at all, to the
+  dollar; without it, the baseline every campaign was balanced against had quietly moved.
+- **Duplicates are expensive exactly when capacity is tight and nearly free when it is not**, which
+  is the same finding as the idle-fleet one from the other end. A rented cluster is paid for by the
+  petaflop and not by the token, so the figure the panel reports is a share of a bill that was
+  already being paid. Measured on a busy company it is real money: 97% utilisation against 95%, and
+  the company that did something about it ends six months richer.
+
 - **Four things that actually happened to this market are on the wire, on their own dates.** Seven
   hundred million people a week in August 2025, nine hundred million published by the lab itself in
   February 2026, a billion in a month in May 2026, and a billion a week in July 2026. Every figure

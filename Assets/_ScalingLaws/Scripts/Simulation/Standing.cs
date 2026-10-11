@@ -1,4 +1,5 @@
 using System;
+using ScalingLaws.Data;
 using ScalingLaws.Core;
 
 namespace ScalingLaws.Simulation
@@ -16,7 +17,7 @@ namespace ScalingLaws.Simulation
     public readonly struct StandingChange
     {
         public StandingChange(double service, double freeTier, double modelAge, double price,
-            double marketing, double drift)
+            double marketing, double drift, double identityChecks = 0.0)
         {
             Service = SimUnits.Finite(service);
             FreeTier = SimUnits.Finite(freeTier);
@@ -24,6 +25,7 @@ namespace ScalingLaws.Simulation
             Price = SimUnits.Finite(price);
             Marketing = SimUnits.Finite(marketing);
             Drift = SimUnits.Finite(drift);
+            IdentityChecks = SimUnits.Finite(identityChecks);
         }
 
         /// <summary>Serving people well. The only driver that needs users to exist.</summary>
@@ -44,7 +46,21 @@ namespace ScalingLaws.Simulation
         /// <summary>The pull back toward obscurity that applies to everyone every day.</summary>
         public double Drift { get; }
 
-        public double Total => Service + FreeTier + ModelAge + Price + Marketing + Drift;
+        /// <summary>
+        /// What the hard ban on duplicate accounts costs while it is switched on. Never positive.
+        ///
+        /// **Its own driver rather than folded into drift**, because it is the only one here the
+        /// player can switch off, and a cost nobody can attribute is a cost nobody can decide
+        /// about. The management desk writes a sentence per driver, so this one can say the policy
+        /// is doing it rather than leaving a company wondering why it is sliding.
+        ///
+        /// Defaulted to nothing, so every caller written before the policy existed, and every
+        /// test that only wants to look at one driver, reads exactly what it read before.
+        /// </summary>
+        public double IdentityChecks { get; }
+
+        public double Total =>
+            Service + FreeTier + ModelAge + Price + Marketing + Drift + IdentityChecks;
 
         /// <summary>The single largest mover, for a one line explanation in the interface.</summary>
         public string Headline
@@ -157,7 +173,13 @@ namespace ScalingLaws.Simulation
             // Defaulted to the middle of the range so a caller that only wants to look at one driver
             // does not have to state a standing it is not testing. The simulation always passes the
             // real one.
-            double currentReputation = 0.4)
+            double currentReputation = 0.4,
+
+            // **Appended rather than slotted in beside the other policy terms**, because every
+            // caller above passes `currentReputation` positionally and a parameter inserted in
+            // front of it would silently rebind a reputation to a boolean. Last is the only safe
+            // place for a new defaulted argument on a method that already has one.
+            bool identityChecksOn = false)
         {
             var service = servedBillions > 0.0
                 ? ServiceGain * Math.Clamp(
@@ -183,8 +205,13 @@ namespace ScalingLaws.Simulation
             // is good with people does not make an ageing product line age more slowly.
             var lift = Math.Max(0.0, SimUnits.Finite(reputationGainMultiplier, 1.0));
 
+            // Not lifted by the founder multiplier, for the reason the staleness above is not: a
+            // founder who is good with people does not make being asked for your papers pleasant.
+            var checks = identityChecksOn ? -AccountIntegrity.BanReputationDragPerDay : 0.0;
+
             return new StandingChange(service * lift, free * lift, age, price,
-                marketing * lift, -DailyDriftRate * Math.Clamp(currentReputation, 0.0, 1.0));
+                marketing * lift, -DailyDriftRate * Math.Clamp(currentReputation, 0.0, 1.0),
+                checks);
         }
 
         /// <summary>

@@ -191,6 +191,13 @@ namespace ScalingLaws.Data
         // 11xx is the tokenizer ladder on the Model Improvement track. Its own block for the same
         // reason 8xx and 10xx have one: a ladder that is read as a ladder is easier to keep whole
         // than three numbers wedged into an era's range, and 11xx was free.
+        // 12xx is the duplicate-account work, on the Operations track. Its own block for the same
+        // reason 8xx, 10xx and 11xx have one, and **not 9xx, 8xx or 10xx**: those are era five,
+        // the server room and the offices, and `ResearchNodeId` numbers have now been sat on twice
+        // four separate times. One node, because the levels above it are bought rather than
+        // researched, the way the support desk's three ladders are.
+        AccountRecognition = 1201,
+
         SubwordTokenizer = 1101,
         ByteLevelTokenizer = 1102,
         LearnedVocabulary = 1103,
@@ -365,6 +372,7 @@ namespace ScalingLaws.Data
             ResearchNodeId.AirflowModelling => "node.airflow",
             ResearchNodeId.OwnSubstation => "node.substation",
             ResearchNodeId.RackTelemetry => "node.racktelemetry",
+            ResearchNodeId.AccountRecognition => "node.accounts",
 
             // The Premises track. Where the company works.
             ResearchNodeId.LeaseASmallHub => "node.smallhub",
@@ -1137,6 +1145,35 @@ namespace ScalingLaws.Data
                 requires: new[] { ResearchNodeId.RackTelemetry },
                 warning: "The power bill is the one cost that grows with the thing the player is "
                     + "proudest of. This does nothing at all for a company that owns no room.",
+                optionalTechnology: true,
+                track: ResearchTrack.Operations),
+
+            // **The one Operations node that is not about the room.** It is here rather than on
+            // Model Improvement because it changes a number the company already lives with, the
+            // serving bill, and changes nothing whatsoever about a model.
+            //
+            // Early on purpose. Duplicate accounts cost money from the first day of the campaign
+            // whether or not anybody has researched how to count them, which is how it works for a
+            // real service: the bill arrives long before the dashboard does. A node a player
+            // cannot reach until 2024 would be a node that explains a loss they already took.
+            //
+            // `optionalTechnology` for the same reason the four above it are, and the reason is
+            // worth stating because it is not obvious here: this one is worth something to every
+            // company rather than only to one with a basement, so a scripted operator that took it
+            // would fold its saving into every balance figure the suite reports. It is measured
+            // with the probe instead, against an operator that does not take it.
+            new(ResearchNodeId.AccountRecognition, ResearchEra.Foundations,
+                "Duplicate account recognition",
+                "Device fingerprints, address clustering and the timing of how a batch of accounts "
+                + "was made. Most of the people holding six free accounts did not hide carefully, "
+                + "because nothing was asking. What this buys first is the number itself: how many "
+                + "accounts the company is serving per human being, which nothing here can "
+                + "currently answer.",
+                GameDate.FromCalendar(2022, 9, 1), costUsd: 450_000, durationDays: 40,
+                petaflopDaysRequired: 20,
+                warning: "It finds the duplicates that are costing you and leaves the ones that are "
+                    + "paying, which is the whole of what it can honestly do. Turning paying "
+                    + "customers away is a policy decision and it is priced like one.",
                 optionalTechnology: true,
                 track: ResearchTrack.Operations),
 

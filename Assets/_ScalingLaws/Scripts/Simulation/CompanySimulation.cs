@@ -902,6 +902,13 @@ namespace ScalingLaws.Simulation
 
             var freeServing = (long)Math.Round(servingCost * freeShare);
 
+            // **The part of that giveaway that went to people who already have an account.** A
+            // slice of the same serving bill rather than a cost of its own, so it can never claim
+            // the company spent more on duplicates than it spent on serving. Thirty one days of
+            // it are kept because the panel reports a month and a month cannot be rebuilt from
+            // today: the share, the bill and the free-tier setting all change daily.
+            RecordDuplicateDay((long)Math.Round(servingCost * DuplicateFreeShareOfTokens()));
+
             // The four bills, scaled by the same multipliers the charged total already carries, and
             // the last one taken as the remainder so the parts add up to the whole exactly. Rounding
             // four numbers independently and hoping they match the fifth is how a report drifts a few
@@ -5713,6 +5720,249 @@ namespace ScalingLaws.Simulation
         }
 
         /// <summary>
+        /// Keeps today's duplicate serving bill and drops anything older than a month.
+        ///
+        /// `DeployedModel.RecentDays` rather than a 31 of its own, so the two windows the interface
+        /// draws side by side cannot come to mean different lengths of month.
+        /// </summary>
+        private void RecordDuplicateDay(long spent)
+        {
+            State.DuplicateServingUsd.Add(Math.Max(0L, spent));
+
+            while (State.DuplicateServingUsd.Count > DeployedModel.RecentDays)
+            {
+                State.DuplicateServingUsd.RemoveAt(0);
+            }
+        }
+
+        /// <summary>What duplicate free accounts have cost to serve over the last month.</summary>
+        public long DuplicateServingLastMonthUsd()
+        {
+            var total = 0L;
+
+            foreach (var day in State.DuplicateServingUsd)
+            {
+                total += day;
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// Accounts per real person, after whatever the company has done about duplicates.
+        ///
+        /// One reading for everybody. The three methods under this and the operations panel all
+        /// ask the same question, and a second call to `AccountIntegrity.Serving` somewhere else
+        /// is a second chance to pass the wrong level or forget the ban.
+        /// </summary>
+        public AccountLoad AccountsPerPerson() =>
+            AccountIntegrity.Serving(State.AccountDetectionLevel, State.MultiAccountBanOn);
+
+        /// <summary>
+        /// How much more demand arrives than there are people to make it. One or more, never less.
+        ///
+        /// The two halves inflate by different amounts, which is the whole reason this is a
+        /// weighted sum rather than one multiplier: a duplicate free account takes the free
+        /// allowance again and a duplicate subscription pays again, so the company's own free-tier
+        /// setting decides how much of its duplicate problem is a bill and how much is revenue.
+        ///
+        /// **A generous free tier therefore costs more than the slider says it does.** That is not
+        /// a side effect, it is the point: handing out more per person hands out more per fake
+        /// person too, and nothing in the game said so before this.
+        /// </summary>
+        public double AccountInflation()
+        {
+            var accounts = AccountsPerPerson();
+            var free = Math.Clamp(State.Monetization.FreeShareOfTokens, 0.0, 1.0);
+
+            // **Only the free duplicates bring demand with them, and the asymmetry is the whole
+            // reason this mechanic is a cost rather than a windfall.**
+            //
+            // A second free account exists in order to collect a second free allowance. That is
+            // what it is for, so it genuinely arrives as more tokens to serve and nobody is
+            // invoiced for any of them.
+            //
+            // A second subscription is not somebody using twice as much. It is one person with a
+            // work login and a personal one, or a card that should not have been accepted, and
+            // their actual usage does not double. So it adds no demand, costs no capacity, and
+            // shows up as an account count that is higher than the number of human beings behind
+            // it. That distortion is what the panel is for; it is not a bill.
+            //
+            // **Measured, because the first version had the paid duplicates adding demand too.**
+            // They then paid for tokens that the surplus fleet served for nothing, and the probe
+            // came back with every operator between 9% and 83% richer than before duplicate
+            // accounts existed at all. Multi-accounting was a bonus.
+            return Math.Max(1.0, 1.0 + free * accounts.FreeExcess);
+        }
+
+        /// <summary>
+        /// The share of what actually arrived that nobody will be invoiced for.
+        ///
+        /// Not `MonetizationPolicy.FreeShareOfTokens`, which is the company's decision about a
+        /// person. This is what that decision turns into once the duplicates are included, and the
+        /// two differ by however bad the duplicate problem is.
+        /// </summary>
+        public double EffectiveFreeShareOfTokens()
+        {
+            var accounts = AccountsPerPerson();
+            var free = Math.Clamp(State.Monetization.FreeShareOfTokens, 0.0, 1.0);
+            var weight = free * accounts.Free;
+            var total = weight + 1.0 - free;
+
+            return total <= 0.0 ? free : Math.Clamp(weight / total, 0.0, 1.0);
+        }
+
+        /// <summary>
+        /// How many times over the company is paid for one person's usage.
+        ///
+        /// **Only under a subscription, and that asymmetry is the whole of it.** A per token price
+        /// invoices the tokens, and a duplicate account that gets through no extra tokens is
+        /// invoiced for nothing extra; a monthly fee is charged per account whether or not the
+        /// person behind it is the same one. So duplicate subscriptions are revenue to a company
+        /// billing monthly and nothing at all to one billing by the token.
+        ///
+        /// The free tier is not in here. It is free.
+        /// </summary>
+        public double SubscriptionSeatMultiplier()
+        {
+            if (State.Monetization.Model != PricingModel.Subscription)
+            {
+                return 1.0;
+            }
+
+            // **Measured against the untouched world, so a company that has done nothing scores
+            // exactly 1.0.** That is the neutral-option rule this project holds the safety effort
+            // slider and the specialist audiences to, and it was learned here the expensive way:
+            // billing the seats outright paid every scripted operator between 7% and 107% more
+            // than before duplicate accounts existed, because a surplus fleet served the extra
+            // subscriptions for nothing. The duplicates were already in the baseline the whole
+            // economy was tuned against; what is new is the ability to turn them away.
+            //
+            // So this only ever falls below one, and only because the player decided it should.
+            return Math.Clamp(
+                AccountsPerPerson().Paid / AccountIntegrity.PaidAccountsPerPerson, 0.0, 1.0);
+        }
+
+        /// <summary>
+        /// The share of what the company served that was a duplicate free account.
+        ///
+        /// **This is the figure the operations panel is about**: tokens produced, paid for out of
+        /// the serving bill, and invoiced to nobody, for people who are already customers under
+        /// another address. Derived rather than recorded because every term in it is a fact about
+        /// today that the state already holds, and a figure like this kept in a field is a figure
+        /// that can be a day stale without anything saying so.
+        /// </summary>
+        public double DuplicateFreeShareOfTokens()
+        {
+            var accounts = AccountsPerPerson();
+            var free = Math.Clamp(State.Monetization.FreeShareOfTokens, 0.0, 1.0);
+            var total = free * accounts.Free + 1.0 - free;
+
+            return total <= 0.0
+                ? 0.0
+                : Math.Clamp(free * accounts.FreeExcess / total, 0.0, 1.0);
+        }
+
+        /// <summary>
+        /// Whether the company can see its own duplicate-account problem at all.
+        ///
+        /// **The figures are gated rather than the mechanic.** Duplicates cost money from the first
+        /// day of the campaign whether or not anybody has researched how to count them, which is
+        /// how it works for a real service: the bill arrives long before the dashboard does. What
+        /// the node buys is the ability to read the number and then to do something about it.
+        /// </summary>
+        public bool UnderstandsAccounts() => State.HasResearch(ResearchNodeId.AccountRecognition);
+
+        /// <summary>
+        /// Buys one level of duplicate recognition. Points are the real price, same as the desk.
+        ///
+        /// It only ever reaches the free duplicates, and `AccountIntegrity` says why: a duplicate
+        /// subscription is paying, so there is nothing here for a fraud system to recover.
+        /// </summary>
+        public bool TryUpgradeAccountDetection(out string why)
+        {
+            if (!UnderstandsAccounts())
+            {
+                why = Loc.T("accounts.needs_research");
+                return false;
+            }
+
+            var level = State.AccountDetectionLevel;
+            if (level >= AccountIntegrity.MostDetectionLevels)
+            {
+                why = Loc.T("accounts.at_the_top");
+                return false;
+            }
+
+            var points = AccountIntegrity.PointsFor(level + 1);
+            var cash = AccountIntegrity.CashFor(level + 1);
+
+            if (State.ResearchPoints < points)
+            {
+                why = Loc.T("accounts.needs_points", points.ToString(CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            if (State.CashUsd < cash)
+            {
+                why = Loc.T("accounts.needs_cash", cash.ToString("N0", CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - points);
+            State.PostCash(LedgerLine.Research, cash);
+            State.AccountDetectionLevel = level + 1;
+
+            why = null;
+            return true;
+        }
+
+        /// <summary>
+        /// Switches the hard ban on duplicate accounts on or off.
+        ///
+        /// **Charged once and never again.** The firm that links the payment cards builds the
+        /// integration one time; switching the policy off afterwards does not unbuild it and
+        /// switching it back on does not buy it twice. `MultiAccountBanBuilt` is that fact and it
+        /// is why the flag and the purchase are two fields rather than one.
+        ///
+        /// Turning it on costs customers the same day, and not as a penalty written beside it: the
+        /// duplicates simply stop being served, so the user count falls by exactly the duplicates
+        /// there were. Some of those were paying, which is the price of the blunt instrument.
+        /// </summary>
+        public bool TrySetMultiAccountBan(bool on, out string why)
+        {
+            if (!UnderstandsAccounts())
+            {
+                why = Loc.T("accounts.needs_research");
+                return false;
+            }
+
+            if (on == State.MultiAccountBanOn)
+            {
+                why = null;
+                return true;
+            }
+
+            if (on && !State.MultiAccountBanBuilt)
+            {
+                if (State.CashUsd < AccountIntegrity.BanCostUsd)
+                {
+                    why = Loc.T("accounts.needs_cash",
+                        AccountIntegrity.BanCostUsd.ToString("N0", CultureInfo.InvariantCulture));
+                    return false;
+                }
+
+                State.PostCash(LedgerLine.Research, AccountIntegrity.BanCostUsd);
+                State.MultiAccountBanBuilt = true;
+            }
+
+            State.MultiAccountBanOn = on;
+
+            why = null;
+            return true;
+        }
+
+        /// <summary>
         /// The share of what this company serves that anybody is invoiced for, from the mix of
         /// audiences it is actually serving today.
         ///
@@ -6167,7 +6417,12 @@ namespace ScalingLaws.Simulation
                 share * State.Monetization.ReachMultiplier * State.Effects.DemandMultiplier(State.Date),
                 0.0,
                 1.0);
-            var demanded = market.TotalDemandBillionTokensPerDay * share;
+            // **What the market hands back is a crowd of people. What turns up is accounts.**
+            // The audience curves are sized in human beings and so is every user figure on every
+            // screen, so until this line the game had no way to say that a lot of those accounts
+            // are the same person twice. `AccountInflation` is how much more demand arrives than
+            // there are people to make it, and it is the only place that multiplication happens.
+            var demanded = market.TotalDemandBillionTokensPerDay * share * AccountInflation();
 
             var best = MarketShareModel.BestLiveModel(State.DeployedModels, State.Date);
             if (best == null || demanded <= 0.0)
@@ -6216,7 +6471,13 @@ namespace ScalingLaws.Simulation
 
             // The split that makes a free tier a strategy rather than a giveaway. Every token costs
             // the same to produce; only some of them are invoiced.
-            var freeShare = State.Monetization.FreeShareOfTokens;
+            // **Not the policy figure, and this is the one place that distinction bites.** The
+            // slider says what share of a person's tokens the company gives away. Duplicate free
+            // accounts each take that allowance again while a duplicate subscription pays again,
+            // so the two halves of the demand above were inflated by different amounts and the
+            // share of what arrived that nobody is invoiced for is no longer what the slider says.
+            // Reading the slider here would charge the free tier for volume it did not hand out.
+            var freeShare = EffectiveFreeShareOfTokens();
 
             // **Who the tokens belong to decides whether anybody is invoiced for them.** Two
             // different facts, kept apart: the free tier is the company's own decision, and the
@@ -6234,7 +6495,15 @@ namespace ScalingLaws.Simulation
             State.LifetimeFreeTokensBillions += freeTokens;
 
             var rate = State.Monetization.RatePerMillionTokensUsd(market.PricePerMillionTokensUsd, State.Date);
-            var revenue = SimUnits.ToDollars(paidTokens * 1000.0 * rate);
+            // **A subscription is billed per account and metered pricing is billed per token**, so
+            // a duplicate subscription is the one kind of duplicate that pays. One person with a
+            // work login and a personal one gets through one person's tokens and is invoiced
+            // twice, which is a real and well known part of how these businesses earn.
+            //
+            // It is also what makes the hard ban a decision instead of a purchase: switching it on
+            // turns those second subscriptions away and the revenue goes with them.
+            var revenue = SimUnits.ToDollars(
+                paidTokens * 1000.0 * rate * SubscriptionSeatMultiplier());
 
             if (demanded - served > demanded * 0.15 && demanded > 0.0)
             {
@@ -7368,7 +7637,11 @@ namespace ScalingLaws.Simulation
                 State.Monetization.RelativePrice(Market.PricePerMillionTokensUsd, State.Date),
                 marketing,
                 State.Founder.ReputationGainMultiplier,
-                State.Reputation);
+                State.Reputation,
+
+                // The policy charges standing every day it is on, which is what makes switching it
+                // on a decision rather than a purchase.
+                State.MultiAccountBanOn);
 
             State.LastStandingChange = change;
             State.Reputation += change.Total;

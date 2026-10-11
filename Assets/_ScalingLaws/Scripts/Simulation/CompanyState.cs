@@ -501,6 +501,41 @@ namespace ScalingLaws.Simulation
         /// <summary>Lifetime tokens served to accounts that never paid anything.</summary>
         public double LifetimeFreeTokensBillions { get; set; }
 
+        /// <summary>
+        /// Levels bought on the duplicate-account recognition ladder.
+        ///
+        /// Bought rather than derived, unlike the room upgrades, because the ladder is money and
+        /// points spent on top of the node that opens it rather than the node itself.
+        /// </summary>
+        public int AccountDetectionLevel { get; set; }
+
+        /// <summary>
+        /// Whether the hard ban on duplicate accounts is switched on.
+        ///
+        /// A standing policy rather than a purchase, which is why it is a flag and not a date: it
+        /// charges the company's standing every day it is true, and the duplicates come straight
+        /// back the day it is turned off.
+        /// </summary>
+        public bool MultiAccountBanOn { get; set; }
+
+        /// <summary>
+        /// Whether the firm that implements the ban has already been paid.
+        ///
+        /// Separate from the flag above so switching the policy off and on again does not charge
+        /// $1.4M twice. The integration exists once it has been built, whatever the switch says.
+        /// </summary>
+        public bool MultiAccountBanBuilt { get; set; }
+
+        /// <summary>
+        /// What duplicate free accounts cost to serve on each of the last 31 days.
+        ///
+        /// A record of days that happened, so it is saved for the same reason
+        /// `DeployedModel.RecentRevenueUsd` is: the day's figure is a share of that day's serving
+        /// bill and none of the three numbers behind it survive the day. The operations panel
+        /// reports a month, and a month cannot be rebuilt from a snapshot of today.
+        /// </summary>
+        public List<long> DuplicateServingUsd { get; } = new();
+
         /// <summary>Public safety incidents, newest last. History, not a counter.</summary>
         public List<SafetyIncident> Incidents { get; } = new();
 
