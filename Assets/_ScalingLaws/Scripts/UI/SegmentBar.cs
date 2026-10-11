@@ -33,6 +33,7 @@ namespace ScalingLaws.UI
 
         private static readonly Color Unlit = new(0.11f, 0.15f, 0.21f);
 
+        private int segments;
         private double filled;
         private Color accent = new(0.95f, 0.45f, 0.13f);
 
@@ -48,6 +49,25 @@ namespace ScalingLaws.UI
             filled = double.IsNaN(fraction) ? 0.0 : Math.Clamp(fraction, 0.0, 1.0);
             accent = colour;
             MarkDirtyRepaint();
+        }
+
+        /// <summary>
+        /// How many segments to draw, or zero to fit as many as the width takes.
+        ///
+        /// **A bar standing for a ladder has to draw one block per rung.** Fitted by width it
+        /// drew twenty five blocks for a ladder of six, so a player counting the lit ones got
+        /// a number that was not their level. Found by rendering it and looking: the bar was
+        /// correct as a fraction and wrong as a count, and only one of those is what a ladder
+        /// means. Zero is still right for the boot screen, where it stands for a fraction.
+        /// </summary>
+        public int Segments
+        {
+            get => segments;
+            set
+            {
+                segments = Math.Max(0, value);
+                MarkDirtyRepaint();
+            }
         }
 
         /// <summary>How much of the bar is lit, in the default colour.</summary>
@@ -67,8 +87,13 @@ namespace ScalingLaws.UI
             // already has room for it. Without this the last segment is clipped at the tip and
             // reads as a different shape from the rest.
             var usable = Mathf.Max(0f, width - Slant);
-            var step = SegmentWidth + Gap;
-            var count = Mathf.Max(1, Mathf.FloorToInt((usable + Gap) / step));
+            // A stated count divides the row; otherwise the row takes as many as it fits.
+            var count = segments > 0
+                ? segments
+                : Mathf.Max(1, Mathf.FloorToInt((usable + Gap) / (SegmentWidth + Gap)));
+
+            var step = (usable + Gap) / count;
+            var blockWidth = Mathf.Max(2f, step - Gap);
 
             var painter = context.painter2D;
 
@@ -78,14 +103,14 @@ namespace ScalingLaws.UI
 
                 // A segment counts as lit once the fill has passed its middle, so a bar at exactly
                 // half reads as half rather than as one block more or less depending on rounding.
-                var middle = (left + SegmentWidth * 0.5f) / Mathf.Max(1f, usable);
+                var middle = (left + blockWidth * 0.5f) / Mathf.Max(1f, usable);
                 var lit = middle <= filled;
 
                 painter.fillColor = lit ? accent : Unlit;
                 painter.BeginPath();
                 painter.MoveTo(new Vector2(left, height));
-                painter.LineTo(new Vector2(left + SegmentWidth, height));
-                painter.LineTo(new Vector2(left + SegmentWidth + Slant, 0f));
+                painter.LineTo(new Vector2(left + blockWidth, height));
+                painter.LineTo(new Vector2(left + blockWidth + Slant, 0f));
                 painter.LineTo(new Vector2(left + Slant, 0f));
                 painter.ClosePath();
                 painter.Fill();

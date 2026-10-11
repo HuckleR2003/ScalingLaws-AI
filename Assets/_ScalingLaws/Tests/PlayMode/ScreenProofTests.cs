@@ -1685,5 +1685,62 @@ namespace ScalingLaws.Tests.PlayMode
             desk.ShowSupport();
             yield return Capture(desk.Root, "official_support.png");
         }
+
+        /// <summary>
+        /// The operations band, in all three of the states a player can meet it in.
+        ///
+        /// **Rendered because there is no other way to know whether it reads.** Both tiles were
+        /// asked for as something that should look clean and modern, and a stylesheet is a claim
+        /// about that rather than evidence. Three frames: nothing researched, both open, and the
+        /// ladder folded out, because the locked state is the one a new company lives in for the
+        /// whole first year and is the easiest one to leave looking broken.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOperationsBandDrawsLockedAndOpen()
+        {
+            var fresh = Campaign();
+            OpsPanel.Forget();
+
+            var locked = new ManagementScreen(fresh, () => { }, () => { }, () => { },
+                () => { }, () => { });
+
+            locked.ShowOperations();
+            yield return Capture(locked.Root, "ops_locked.png");
+
+            // A company that has done the research and climbed part of both ladders, which is
+            // what the band looks like for most of a campaign.
+            var running = Campaign();
+            running.State.UnlockedResearch.Add(ResearchNodeId.AccountRecognition);
+            running.State.UnlockedResearch.Add(ResearchNodeId.SpotCapacityDesk);
+            running.State.AccountDetectionLevel = 2;
+            running.State.CapacityResaleLevel = 3;
+
+            for (var day = 0; day < 40; day++)
+            {
+                running.AdvanceDay();
+            }
+
+            var open = new ManagementScreen(running, () => { }, () => { }, () => { },
+                () => { }, () => { });
+
+            open.ShowOperations();
+            yield return Capture(open.Root, "ops_open.png");
+
+            // And with a ladder folded out, which is the tallest the band ever gets.
+            OpsPanel.Forget();
+            var panel = new OpsPanel(running, () => { }, _ => { });
+            var band = panel.Build();
+
+            foreach (var tile in band.Children())
+            {
+                if (tile is OpsTile card)
+                {
+                    card.DrawerOpen = true;
+                }
+            }
+
+            yield return Capture(band, "ops_drawer.png");
+            OpsPanel.Forget();
+        }
     }
 }

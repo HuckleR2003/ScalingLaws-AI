@@ -23558,3 +23558,378 @@
 .race__bar {
     height: 14px;
 }
+
+/* ---- the operations band ---------------------------------------------------------------
+   Cards for the readings a company lives with day to day. The language is the one the support
+   desk already set: a translucent plate on the dark page, a slightly brighter strip over it for
+   the heading, eight pixel corners, and one accent only where a number is actually wrong. */
+
+.opsband {
+    flex-direction: row;
+    align-items: stretch;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.opstile {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 0;
+    margin-right: 14px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.07);
+    border-right-color: rgba(255, 255, 255, 0.07);
+    border-top-color: rgba(255, 255, 255, 0.07);
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+/* The last tile in the row must not hold a gutter it has nothing to separate from. UI
+   Toolkit has no positional pseudo classes, so the panel marks the tile rather than the sheet
+   finding it: a rule like that parses, warns in every log and styles nothing. */
+.opstile--last {
+    margin-right: 0;
+}
+
+.opstile__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    height: 36px;
+    padding-left: 16px;
+    padding-right: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.opstile__name {
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    -unity-font-style: bold;
+    color: rgb(214, 226, 242);
+}
+
+/* The state chip. Quiet by default, because most of the time it says nothing is switched on
+   and a bright pill saying "off" is an alarm about a decision nobody has made yet. */
+.opstile__state {
+    font-size: 11px;
+    letter-spacing: 1.1px;
+    -unity-font-style: bold;
+    color: rgb(126, 138, 158);
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.opstile__state--on {
+    color: rgb(126, 214, 164);
+    background-color: rgba(126, 214, 164, 0.12);
+}
+
+.opstile__body {
+    flex-shrink: 0;
+
+    /* The cards are stretched to the tallest, so the shorter one has slack. Absorbed here
+       rather than left under the button, where it reads as a card that failed to finish. */
+    flex-grow: 1;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 14px;
+    padding-bottom: 6px;
+}
+
+.opstile__figblock {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.opstile__fig {
+    font-size: 40px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.opstile__fig--bad {
+    color: rgb(226, 78, 62);
+}
+
+.opstile__figcap {
+    font-size: 11.5px;
+    letter-spacing: 0.6px;
+    color: rgb(140, 152, 172);
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.opstile__line {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    min-height: 24px;
+}
+
+.opstile__linecap {
+    font-size: 12.5px;
+    color: rgb(150, 162, 182);
+    flex-shrink: 1;
+    white-space: normal;
+    margin-right: 10px;
+}
+
+.opstile__linefig {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(226, 236, 250);
+    flex-shrink: 0;
+}
+
+.opstile__linefig--bad {
+    color: rgb(226, 78, 62);
+}
+
+.opstile__linefig--on {
+    color: rgb(126, 214, 164);
+}
+
+.opstile__rule {
+    height: 1px;
+    flex-shrink: 0;
+    margin-top: 10px;
+    margin-bottom: 12px;
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+/* The dial, centred, with the reading under it. Same element the compute page draws, because
+   a second gauge would be a second set of thresholds to disagree about the same fleet. */
+.opstile__dial {
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.opstile__dialfig {
+    font-size: 34px;
+    -unity-font-style: bold;
+    color: rgb(232, 238, 250);
+    margin-top: -14px;
+    -unity-font-definition: url("project:///Assets/_ScalingLaws/Resources/Fonts/Montserrat-SemiBold.ttf");
+}
+
+.opstile__dialcap {
+    font-size: 11.5px;
+    letter-spacing: 1.2px;
+    color: rgb(126, 138, 158);
+    margin-top: 2px;
+}
+
+/* ---- nothing to show yet ---- */
+
+.opstile__blank {
+    align-items: flex-start;
+    flex-shrink: 0;
+    padding-top: 6px;
+}
+
+.opstile__glyph {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.opstile__nodata {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(190, 202, 220);
+    letter-spacing: 0.4px;
+}
+
+.opstile__why {
+    font-size: 12px;
+    color: rgb(126, 138, 158);
+    white-space: normal;
+    margin-top: 4px;
+    margin-bottom: 12px;
+}
+
+.opstile__promise {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+    margin-bottom: 7px;
+}
+
+.opstile__dot {
+    width: 4px;
+    height: 4px;
+    flex-shrink: 0;
+    margin-top: 7px;
+    margin-right: 9px;
+    background-color: rgb(226, 190, 44);
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+}
+
+.opstile__promisetext {
+    font-size: 12.5px;
+    color: rgb(170, 182, 200);
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+/* ---- the one thing to do ---- */
+
+.opstile__foot {
+    flex-shrink: 0;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 4px;
+    padding-bottom: 14px;
+}
+
+.opstile__act {
+    height: 36px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 12px;
+    letter-spacing: 1.3px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(232, 238, 250);
+    background-color: rgba(255, 255, 255, 0.07);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.10);
+    border-right-color: rgba(255, 255, 255, 0.10);
+    border-top-color: rgba(255, 255, 255, 0.10);
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+    border-bottom-right-radius: 7px;
+}
+
+.opstile__act:hover {
+    background-color: rgba(255, 255, 255, 0.11);
+}
+
+/* The ladder, folded into the tile rather than into a third overlay. Set apart from the body by
+   a tone rather than a border, so opening it reads as the card deepening instead of a second card
+   appearing underneath the first. */
+.opstile__drawer {
+    flex-shrink: 0;
+    margin-left: 12px;
+    margin-right: 12px;
+    margin-top: 2px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 12px;
+    padding-bottom: 14px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.opsladder {
+    flex-shrink: 0;
+}
+
+.opsladder__strap {
+    font-size: 12px;
+    color: rgb(150, 162, 182);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.opsladder__bar {
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.opsladder__count {
+    font-size: 11.5px;
+    letter-spacing: 1.1px;
+    -unity-font-style: bold;
+    color: rgb(126, 138, 158);
+    margin-top: 7px;
+}
+
+.opsladder__done {
+    font-size: 12.5px;
+    -unity-font-style: bold;
+    color: rgb(126, 214, 164);
+    margin-top: 8px;
+}
+
+.opsladder__price {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* Points first and larger, because points are the gate. A player with the cash and no research
+   reads the dollar figure, presses the button and gets a refusal they could have predicted. */
+.opsladder__points {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(226, 190, 44);
+}
+
+.opsladder__cash {
+    font-size: 12.5px;
+    color: rgb(150, 162, 182);
+}
+
+.opsladder__buy {
+    height: 34px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(18, 24, 20);
+    background-color: rgb(126, 214, 164);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+    border-bottom-right-radius: 7px;
+}
+
+.opsladder__buy:hover {
+    background-color: rgb(146, 226, 180);
+}

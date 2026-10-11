@@ -14,7 +14,16 @@ namespace ScalingLaws.UI
     /// </summary>
     public sealed class ServiceGauge : VisualElement
     {
-        private static readonly Color Track = new(0.90f, 0.90f, 0.91f);
+        /// <summary>
+        /// The unlit part of the arc: a groove, not a surface.
+        ///
+        /// **It was 0.90 grey, which is a near-white shape on a near-black page.** At low
+        /// load that makes the loudest thing on the screen the part of the dial that means
+        /// nothing, with the reading itself a sliver along the bottom. It is the same leftover
+        /// the dark pass went looking for when it took out the last light cards, and the only
+        /// reason it survived is that nobody had framed this dial and looked at it.
+        /// </summary>
+        private static readonly Color Track = new(0.13f, 0.14f, 0.17f);
         private static readonly Color Stable = new(0.24f, 0.72f, 0.20f);
         private static readonly Color Unstable = new(0.83f, 0.72f, 0.12f);
         private static readonly Color Critical = new(0.80f, 0.24f, 0.16f);

@@ -78,7 +78,18 @@ namespace ScalingLaws.UI
             /// failure is invisible until the market has already moved, so burying it was the
             /// worst possible place for it.
             /// </summary>
-            Support
+            Support,
+
+            /// <summary>
+            /// What the company is quietly paying for, and the levers against it.
+            ///
+            /// **Its own tab because neither reading belongs to a product.** Every other
+            /// tab here answers a question about the thing on sale; duplicate accounts and
+            /// an idle cluster are facts about the company, and they were going to end up
+            /// as two more strips at the bottom of the desk, which is where the support
+            /// desk already had to be rescued from.
+            /// </summary>
+            Operations
         }
 
         public ManagementScreen(CompanySimulation simulation, Action openRelease,
@@ -112,6 +123,9 @@ namespace ScalingLaws.UI
 
         /// <summary>Opens the support desk. Tooling and the tab reach it the same way.</summary>
         public void ShowSupport() => Open(Tab.Support);
+
+        /// <summary>Opens the operations band. Tooling and the tab reach it the same way.</summary>
+        public void ShowOperations() => Open(Tab.Operations);
 
         private void Open(Tab tab)
         {
@@ -147,6 +161,7 @@ namespace ScalingLaws.UI
                 Tab.Archive => Loc.T("mg.archive"),
                 Tab.Versions => Loc.T("mg.versions"),
                 Tab.Support => Loc.T("mg.support"),
+                Tab.Operations => Loc.T("mg.ops"),
                 _ => Loc.T("mg.official_page")
             });
 
@@ -159,6 +174,7 @@ namespace ScalingLaws.UI
                 Tab.Versions => Loc.T("mg.versions.strap"),
                 Tab.Archive => Loc.T("mg.archive.strap"),
                 Tab.Support => Loc.T("mg.support.strap"),
+                Tab.Operations => Loc.T("mg.ops.strap"),
                 _ => Loc.T("mg.stranger_sees")
             });
 
@@ -188,6 +204,16 @@ namespace ScalingLaws.UI
             // **Before the "nothing on sale" guard, deliberately.** The post arrives from people
             // being served, which outlives any one product: a company between releases still has a
             // queue, still has people on the desk, and is exactly when a backlog goes unnoticed.
+            // **Before the "nothing on sale" guard as well, and for the same reason.** An
+            // idle cluster and a crowd of duplicate accounts are facts about the company
+            // rather than about a product, and a company between releases is exactly when
+            // the fleet is sitting there costing money with nothing to serve.
+            if (showing == Tab.Operations)
+            {
+                Root.Add(new OpsPanel(simulation, Refresh, why => lastFailure = why ?? string.Empty).Build());
+                return;
+            }
+
             if (showing == Tab.Support)
             {
                 Root.Add(new SupportPanel(
@@ -238,6 +264,7 @@ namespace ScalingLaws.UI
             tabs.Add(TabButton(Loc.T("mg.management"), showing == Tab.Desk, () => Open(Tab.Desk)));
             tabs.Add(TabButton(Loc.T("mg.versions"), showing == Tab.Versions, () => Open(Tab.Versions)));
             tabs.Add(TabButton(Loc.T("mg.archive"), showing == Tab.Archive, () => Open(Tab.Archive)));
+            tabs.Add(TabButton(Loc.T("mg.ops"), showing == Tab.Operations, () => Open(Tab.Operations)));
 
             // **The figure is in the name of the tab and that is the point of the tab existing.**
             // Satisfaction is the one number on this screen that decides whether the audience below
