@@ -85,6 +85,10 @@ namespace ScalingLaws.Data
             // is `AccountIntegrity.Serving`, read through `CompanySimulation.AccountsPerPerson`.
             { ResearchNodeId.AccountRecognition, "unlock.accounts" },
 
+            // The sixth, and the one the idle-fleet measurement asked for. The rule is
+            // `CapacityResale`, read through `CompanySimulation.CapacitySoldShareToday`.
+            { ResearchNodeId.SpotCapacityDesk, "unlock.resale" },
+
             // Statecraft. Each is one `HasResearch` in `CompanySimulation.Statecraft.cs`.
             { ResearchNodeId.SovereignLiaison, "unlock.liaison" },
             { ResearchNodeId.ContinuousOversight, "unlock.oversight" },

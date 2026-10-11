@@ -51,6 +51,45 @@ description made the second half findable.
 straight and never asked the research tree, so the gate the ladder draws was a suggestion to anything
 that called the simulation directly. Found while reading the surrounding code rather than reported.
 
+### Added
+
+- **The cluster can be let out when nothing is using it.** `ResearchNodeId.SpotCapacityDesk` opens
+  a desk, and eight bought levels say how much of the fleet an outside buyer will take in a day,
+  from 1-3% at the first level to 15-30% at the top. The whole ladder is 4,320 research points and
+  $2,640,000, which makes it the dearest ladder in the game and is meant to.
+- **Why it exists is a measurement rather than an idea.** The campaign probe reports serving load at
+  0% for eight consecutive years with capacity between 200 and 3,082 times demand, while the fleet
+  bill ran at $5,806,735 a day in January 2024 against 4% utilisation. Nothing in the game showed
+  the player that number and nothing let them act on it.
+- **What is sold is gone for the day.** Capacity placed with a buyer is capacity the company cannot
+  serve with, so a company living off the desk has no headroom when demand jumps. Without that the
+  ladder would be a discount with no downside, and it is what makes the desk a decision.
+- **Where in the band today lands comes from how short of accelerators the world is**, read off the
+  same scarcity figure the rental price already uses. So it pays best in the 2023 to 2026 shortages
+  and worst in a late-game glut, which makes it a question of timing rather than a rebate.
+- `LedgerLine.CapacitySales`, in the Fleet group beside the rent it offsets, because the only
+  question anybody asks about this figure is how much of the fleet bill came back.
+
+### Measured, and two of these changed the design
+
+- **Renting twice what you need is still much worse than renting what you need**, with the ladder
+  finished on both: $269,977,787 against $139,535,969 over six months. Capacity resells at half what
+  it costs to hold, so a company recovers half of what it overspent when the idle cap binds and less
+  when the ladder cap does. There is no fleet size at which over-renting comes out ahead, and that
+  is arithmetic rather than tuning.
+- **The finished desk takes 14.7% off what the company spends**, inside the 4% to 20% the brief
+  asked for: a 29.4% share of the fleet at today's scarcity, resold at half price. Measured end to
+  end, $247,046,582 without the desk against $269,977,787 with it.
+- **The cap is a share of the whole fleet and never of the surplus**, which is the property that
+  bounds the whole thing. A percentage of surplus is unbounded: 30% of a 3,082x surplus is a second
+  business. 30% of the fleet at half price returns 15% of the bill and can never return more.
+- **The seven probe operators came back on their previous figures to the dollar**, because the node
+  is optional technology and nothing researches it. The feature is inert until a player buys it.
+- **The first version of the spine test was wrong and said so.** It compared a quarter of a petaflop
+  against a half, where the company cannot serve all its demand, so the bigger fleet won on revenue
+  for reasons that have nothing to do with the desk. Renting more genuinely helps a company short of
+  capacity; the claim is about one that already serves everybody it can.
+
 ### Fixed
 
 - **A commissioned datacenter stays open after its own price leaves the bank.**

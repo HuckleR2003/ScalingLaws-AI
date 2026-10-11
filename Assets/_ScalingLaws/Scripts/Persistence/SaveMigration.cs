@@ -174,6 +174,7 @@ namespace ScalingLaws.Persistence
                     70 => UpgradeV70ToV71(current),
                     71 => UpgradeV71ToV72(current),
                     72 => UpgradeV72ToV73(current),
+                    73 => UpgradeV73ToV74(current),
                     _ => current
                 };
             }
@@ -2350,6 +2351,9 @@ namespace ScalingLaws.Persistence
         /// <summary>How many columns a v70 ledger month had. Same reason: the old shape, as a number.</summary>
         private const int LedgerColumnsV70 = 27;
 
+        /// <summary>How many columns a v73 ledger month had: 28, counted rather than copied.</summary>
+        private const int LedgerColumnsV73 = 28;
+
         /// <summary>
         /// v71 to v72: renewals become a list, one per lab.
         ///
@@ -2410,6 +2414,65 @@ namespace ScalingLaws.Persistence
         /// a confident figure nobody could check, on the one panel whose whole job is to be
         /// checkable. An empty month says plainly that nobody was measuring yet.
         /// </summary>
+        /// <summary>
+        /// v73 to v74: the spare-capacity desk, and a column for what it takes.
+        ///
+        /// **Nothing was ever sold before this, so nothing is reconstructed.** The desk did not
+        /// exist, the node that opens it did not exist, and a figure invented into an earlier month
+        /// would be income nobody received. The column is added empty and fills from the next day
+        /// played, which is what v56 to v57 did for office rent and v70 to v71 for the partner's
+        /// share.
+        ///
+        /// **Appended, never inserted.** A saved month is a row of totals in catalogue order, so a
+        /// column added anywhere but the end puts last year's electricity under somebody's wages.
+        /// And a row of the wrong width is dropped whole by `Ledger.Restore` rather than stretched,
+        /// so a file that misses this step loses every month it ever recorded.
+        /// </summary>
+        public static SaveData UpgradeV73ToV74(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 74;
+
+            data.capacityResale = 0;
+            data.capacitySales ??= new List<long>();
+            data.capacitySales.Clear();
+
+            if (data.ledgerMonths != null && data.ledgerAmounts != null
+                && data.ledgerAmounts.Count == data.ledgerMonths.Count * LedgerColumnsV73)
+            {
+                var widened = new List<long>(data.ledgerMonths.Count * (LedgerColumnsV73 + 1));
+
+                for (var month = 0; month < data.ledgerMonths.Count; month++)
+                {
+                    for (var column = 0; column < LedgerColumnsV73; column++)
+                    {
+                        widened.Add(data.ledgerAmounts[month * LedgerColumnsV73 + column]);
+                    }
+
+                    widened.Add(0L);
+                }
+
+                data.ledgerAmounts = widened;
+
+                LastMigrationNotes = Append(LastMigrationNotes,
+                    "v73 to v74: the books gained a line for spare capacity sold. Every recorded "
+                    + "month keeps its totals and gets a zero in the new column, because the desk "
+                    + "that earns it did not exist yet.");
+            }
+            else
+            {
+                LastMigrationNotes = Append(LastMigrationNotes,
+                    "v73 to v74: the books gained a line for spare capacity sold. There was no "
+                    + "recorded month to widen.");
+            }
+
+            return data;
+        }
+
         public static SaveData UpgradeV72ToV73(SaveData data)
         {
             if (data == null)

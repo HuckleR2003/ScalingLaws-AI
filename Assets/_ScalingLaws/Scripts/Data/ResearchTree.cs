@@ -198,6 +198,13 @@ namespace ScalingLaws.Data
         // researched, the way the support desk's three ladders are.
         AccountRecognition = 1201,
 
+        // 13xx is the spare-capacity desk, also Operations. Its own block rather than a second
+        // number in 12xx, because 12xx is the duplicate-account work and a block that holds two
+        // unrelated subjects is a block nobody can read. **Not 32, 27 or 28**: those are ledger
+        // lines, which is a different enum, and the one lesson these numbers keep teaching is to
+        // look before choosing. One node, because the eight levels above it are bought.
+        SpotCapacityDesk = 1301,
+
         SubwordTokenizer = 1101,
         ByteLevelTokenizer = 1102,
         LearnedVocabulary = 1103,
@@ -373,6 +380,7 @@ namespace ScalingLaws.Data
             ResearchNodeId.OwnSubstation => "node.substation",
             ResearchNodeId.RackTelemetry => "node.racktelemetry",
             ResearchNodeId.AccountRecognition => "node.accounts",
+            ResearchNodeId.SpotCapacityDesk => "node.resale",
 
             // The Premises track. Where the company works.
             ResearchNodeId.LeaseASmallHub => "node.smallhub",
@@ -1174,6 +1182,29 @@ namespace ScalingLaws.Data
                 warning: "It finds the duplicates that are costing you and leaves the ones that are "
                     + "paying, which is the whole of what it can honestly do. Turning paying "
                     + "customers away is a policy decision and it is priced like one.",
+                optionalTechnology: true,
+                track: ResearchTrack.Operations),
+
+            // **The node that exists because of a measurement rather than an idea.** The campaign
+            // probe reports serving load at 0% for eight consecutive years, with capacity between
+            // 200 and 3,082 times demand, while the fleet bill ran at $5,806,735 a day in January
+            // 2024 against 4% utilisation. Nothing in the game showed the player that number and
+            // nothing let them do anything about it.
+            //
+            // Later than the recognition node and much dearer, because this is not a thing a young
+            // lab can arrange: it needs somebody who knows who wants a cluster this afternoon. The
+            // eight levels on top of it are bought rather than researched, like the support desk's.
+            new(ResearchNodeId.SpotCapacityDesk, ResearchEra.Scaling,
+                "Spare capacity desk",
+                "Somebody whose whole job is knowing which lab is short of accelerators this week "
+                + "and what they will pay for a few days of yours. The cluster is already rented "
+                + "and most of it is doing nothing most of the time; this is the difference between "
+                + "that being a fact and that being a trade.",
+                GameDate.FromCalendar(2023, 7, 1), costUsd: 2_100_000, durationDays: 70,
+                petaflopDaysRequired: 60,
+                warning: "What you sell is gone for the day. A company living off the desk has no "
+                    + "headroom when demand jumps, and capacity resells at half what it costs to "
+                    + "hold, so renting more than you need still loses money.",
                 optionalTechnology: true,
                 track: ResearchTrack.Operations),
 

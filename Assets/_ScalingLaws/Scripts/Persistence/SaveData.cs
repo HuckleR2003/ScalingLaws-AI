@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 73;
+        public const int CurrentVersion = 74;
 
         public int version = CurrentVersion;
 
@@ -1216,6 +1216,18 @@ namespace ScalingLaws.Persistence
         /// month and a month cannot be rebuilt from a snapshot of today.
         /// </summary>
         public List<long> duplicateServing = new();
+
+        /// <summary>v74. Levels bought on the spare-capacity desk.</summary>
+        public int capacityResale;
+
+        /// <summary>
+        /// v74. What outside buyers paid for idle capacity on each of the last 31 days.
+        ///
+        /// A record. The day's figure is a share of that day's fleet bill taken against that day's
+        /// idle capacity and that day's accelerator scarcity, and none of the three survives the
+        /// day, so a month cannot be rebuilt from a snapshot of today.
+        /// </summary>
+        public List<long> capacitySales = new();
 
         /// <summary>
         /// v64. Whether the campaign has already been told about its first ticket.

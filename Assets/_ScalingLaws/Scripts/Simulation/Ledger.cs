@@ -90,6 +90,16 @@ namespace ScalingLaws.Simulation
         OfficeRent = 31,
 
         /// <summary>
+        /// What an outside buyer paid for capacity the company was not using.
+        ///
+        /// **Income, in the Fleet group, beside the rent it is offsetting.** It belongs next to
+        /// what the cluster cost rather than under Trading with the state contract, because the
+        /// only question a player asks about this figure is how much of the fleet bill it came
+        /// back. Netting it into `CloudRent` would answer that question by deleting it.
+        /// </summary>
+        CapacitySales = 33,
+
+        /// <summary>
         /// What a distribution partner keeps of what they sold for you.
         ///
         /// Its own line rather than netted off the takings, because the whole point of the licence
@@ -187,7 +197,10 @@ namespace ScalingLaws.Simulation
             new(LedgerLine.OfficeRent, "Office rent", "Company", false, true),
 
             // Appended for the same reason, v70 to v71, one more zero on every old row.
-            new(LedgerLine.PartnerShare, "Distribution partner's share", "Model", false, true)
+            new(LedgerLine.PartnerShare, "Distribution partner's share", "Model", false, true),
+
+            // Appended for the same reason again, v73 to v74, one more zero on every old row.
+            new(LedgerLine.CapacitySales, "Spare capacity sold", "Fleet", true, true)
         };
 
         /// <summary>month index (year * 12 + month - 1) to the totals for that month.</summary>

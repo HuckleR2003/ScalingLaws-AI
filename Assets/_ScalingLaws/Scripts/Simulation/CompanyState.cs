@@ -536,6 +536,24 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public List<long> DuplicateServingUsd { get; } = new();
 
+        /// <summary>
+        /// Levels bought on the spare-capacity desk.
+        ///
+        /// Bought rather than derived, like the recognition ladder: the node opens the desk and the
+        /// levels are money and points spent on top of it.
+        /// </summary>
+        public int CapacityResaleLevel { get; set; }
+
+        /// <summary>
+        /// What outside buyers paid for idle capacity on each of the last 31 days.
+        ///
+        /// A record, and it has to be. The day's figure is a share of that day's fleet bill taken
+        /// against that day's idle capacity and that day's accelerator scarcity, and none of those
+        /// three survives the day. The panel reports yesterday and the month, which is exactly the
+        /// pair a month cannot be rebuilt from.
+        /// </summary>
+        public List<long> CapacitySalesUsd { get; } = new();
+
         /// <summary>Public safety incidents, newest last. History, not a counter.</summary>
         public List<SafetyIncident> Incidents { get; } = new();
 

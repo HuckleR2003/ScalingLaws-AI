@@ -556,6 +556,8 @@ namespace ScalingLaws.Persistence
             data.multiAccountBanOn = state.MultiAccountBanOn;
             data.multiAccountBanBuilt = state.MultiAccountBanBuilt;
             data.duplicateServing = new List<long>(state.DuplicateServingUsd);
+            data.capacityResale = state.CapacityResaleLevel;
+            data.capacitySales = new List<long>(state.CapacitySalesUsd);
             state.Warehouse.Capture(data.storeRackKinds, data.storeRackCounts, out data.storeFans);
             state.Power.Capture(data.powerPlantSites, data.powerPlantReadyDays);
 
@@ -1466,6 +1468,23 @@ namespace ScalingLaws.Persistence
             // one combination of these two flags that nothing in the game can produce.
             state.MultiAccountBanBuilt = safe.multiAccountBanBuilt;
             state.MultiAccountBanOn = safe.multiAccountBanOn && safe.multiAccountBanBuilt;
+
+            state.CapacityResaleLevel = Math.Clamp(
+                safe.capacityResale, 0, CapacityResale.MostLevels);
+
+            state.CapacitySalesUsd.Clear();
+            if (safe.capacitySales != null)
+            {
+                foreach (var day in safe.capacitySales)
+                {
+                    state.CapacitySalesUsd.Add(Math.Max(0L, day));
+                }
+
+                while (state.CapacitySalesUsd.Count > DeployedModel.RecentDays)
+                {
+                    state.CapacitySalesUsd.RemoveAt(0);
+                }
+            }
 
             state.DuplicateServingUsd.Clear();
             if (safe.duplicateServing != null)

@@ -54,7 +54,8 @@ namespace ScalingLaws.Tests.EditMode
             ResearchNodeId.AirflowModelling,
             ResearchNodeId.LiquidLoops,
             ResearchNodeId.OwnSubstation,
-            ResearchNodeId.AccountRecognition
+            ResearchNodeId.AccountRecognition,
+            ResearchNodeId.SpotCapacityDesk
         };
 
         private static RoomUpgrades With(params ResearchNodeId[] held) =>

@@ -909,6 +909,21 @@ namespace ScalingLaws.Simulation
             // today: the share, the bill and the free-tier setting all change daily.
             RecordDuplicateDay((long)Math.Round(servingCost * DuplicateFreeShareOfTokens()));
 
+            // **What somebody else paid for the part of the fleet nothing was using.** A share of
+            // the same bill rather than a figure of its own, so the takings can never exceed what
+            // the cluster cost, and at half price the company recovers exactly half of whatever it
+            // overspent. There is no fleet size at which renting more than you need comes out
+            // ahead, and that is arithmetic rather than tuning.
+            var resold = (long)Math.Round(
+                servingCost * CapacitySoldShareToday() * CapacityResale.ResalePriceFraction);
+
+            RecordCapacitySale(resold);
+
+            if (resold > 0L)
+            {
+                State.PostCash(LedgerLine.CapacitySales, resold);
+            }
+
             // The four bills, scaled by the same multipliers the charged total already carries, and
             // the last one taken as the remainder so the parts add up to the whole exactly. Rounding
             // four numbers independently and hoping they match the fifth is how a report drifts a few
@@ -5748,6 +5763,123 @@ namespace ScalingLaws.Simulation
             return total;
         }
 
+        /// <summary>Whether the company has a desk that can place spare capacity at all.</summary>
+        public bool RunsAResaleDesk() => State.HasResearch(ResearchNodeId.SpotCapacityDesk);
+
+        /// <summary>
+        /// The share of the whole fleet that did nothing yesterday.
+        ///
+        /// **Two different kinds of spare, and conflating them would be the fault this project
+        /// keeps finding.** `TrainingComputeShare` is a reservation rather than a consumption, and
+        /// `LastQuality.Utilisation` is the load on the serving slice alone. So a panel drawing
+        /// `1 - utilisation` would read "you are wasting 99%" on a day the cluster is flat out
+        /// training. What is genuinely idle is the serving slice nothing asked for, and
+        /// `BuildingShareOfFleet` already answers how much of the fleet building work can absorb.
+        ///
+        /// Yesterday's load, not today's, for the reason `ServiceQuality` reads yesterday's: today
+        /// is not known until the market has been served, and selling against it would make the
+        /// calculation eat its own tail.
+        /// </summary>
+        public double IdleShareOfFleet()
+        {
+            var serving = Math.Clamp(1.0 - BuildingShareOfFleet(), 0.0, 1.0);
+            var load = Math.Clamp(SimUnits.Finite(State.LastQuality.Utilisation), 0.0, 1.0);
+
+            return Math.Clamp(serving * (1.0 - load), 0.0, 1.0);
+        }
+
+        /// <summary>
+        /// The share of the fleet going to an outside buyer today.
+        ///
+        /// Capped twice and both caps matter. The ladder says the most anybody will take, which is
+        /// a share of the whole fleet rather than of the surplus, and the idle reading says the
+        /// most the company actually has free. A busy company sells nothing however many levels it
+        /// has bought, which is the honest answer: there is nothing spare to sell.
+        /// </summary>
+        public double CapacitySoldShareToday()
+        {
+            if (!RunsAResaleDesk() || State.CapacityResaleLevel <= 0)
+            {
+                return 0.0;
+            }
+
+            var offered = CapacityResale.ShareOn(
+                State.CapacityResaleLevel, MarketModel.ScarcityOn(State.Date));
+
+            return Math.Clamp(Math.Min(offered, IdleShareOfFleet()), 0.0, 1.0);
+        }
+
+        /// <summary>What outside buyers paid over the last month.</summary>
+        public long CapacitySalesLastMonthUsd()
+        {
+            var total = 0L;
+
+            foreach (var day in State.CapacitySalesUsd)
+            {
+                total += day;
+            }
+
+            return total;
+        }
+
+        /// <summary>What they paid yesterday, which is the other figure the panel draws.</summary>
+        public long CapacitySalesYesterdayUsd() =>
+            State.CapacitySalesUsd.Count == 0
+                ? 0L
+                : State.CapacitySalesUsd[State.CapacitySalesUsd.Count - 1];
+
+        /// <summary>
+        /// Buys one level of the resale desk. Points are the real price, same as every ladder here.
+        /// </summary>
+        public bool TryUpgradeCapacityResale(out string why)
+        {
+            if (!RunsAResaleDesk())
+            {
+                why = Loc.T("resale.needs_research");
+                return false;
+            }
+
+            var level = State.CapacityResaleLevel;
+            if (level >= CapacityResale.MostLevels)
+            {
+                why = Loc.T("resale.at_the_top");
+                return false;
+            }
+
+            var points = CapacityResale.PointsFor(level + 1);
+            var cash = CapacityResale.CashFor(level + 1);
+
+            if (State.ResearchPoints < points)
+            {
+                why = Loc.T("resale.needs_points", points.ToString(CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            if (State.CashUsd < cash)
+            {
+                why = Loc.T("resale.needs_cash", cash.ToString("N0", CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            State.ResearchPoints = Math.Max(0.0, State.ResearchPoints - points);
+            State.PostCash(LedgerLine.Research, cash);
+            State.CapacityResaleLevel = level + 1;
+
+            why = null;
+            return true;
+        }
+
+        /// <summary>Keeps today's resale takings and drops anything older than a month.</summary>
+        private void RecordCapacitySale(long earned)
+        {
+            State.CapacitySalesUsd.Add(Math.Max(0L, earned));
+
+            while (State.CapacitySalesUsd.Count > DeployedModel.RecentDays)
+            {
+                State.CapacitySalesUsd.RemoveAt(0);
+            }
+        }
+
         /// <summary>
         /// Accounts per real person, after whatever the company has done about duplicates.
         ///
@@ -6106,7 +6238,16 @@ namespace ScalingLaws.Simulation
                 return 0.0;
             }
 
-            var servingShare = 1.0 - BuildingShareOfFleet();
+            // **Capacity sold is capacity this company cannot serve with today.** That is the
+            // whole of what makes the resale desk a decision rather than a discount: a company
+            // living off it has no headroom when demand jumps, and unserved demand costs market.
+            //
+            // Subtracted at both readings of this slice, here and in the other one, because they
+            // are the same fleet answered twice: the user count a player is shown and the serving
+            // that actually happens. Reaching one and not the other would print a figure the
+            // cluster cannot stand behind.
+            var servingShare = Math.Max(
+                0.0, 1.0 - BuildingShareOfFleet() - CapacitySoldShareToday());
             var servingPetaflops = Profile.RawPetaflops * InferenceUtilization
                                    * Math.Clamp(servingShare, 0.0, 1.0);
 
@@ -6443,7 +6584,16 @@ namespace ScalingLaws.Simulation
             // `TrySliceCluster` is already the one place that knows whether anything is claiming
             // that slice, and it answers false when nothing is. Reading it here is what makes the
             // two halves add to one.
-            var servingShare = 1.0 - BuildingShareOfFleet();
+            // **Capacity sold is capacity this company cannot serve with today.** That is the
+            // whole of what makes the resale desk a decision rather than a discount: a company
+            // living off it has no headroom when demand jumps, and unserved demand costs market.
+            //
+            // Subtracted at both readings of this slice, here and in the other one, because they
+            // are the same fleet answered twice: the user count a player is shown and the serving
+            // that actually happens. Reaching one and not the other would print a figure the
+            // cluster cannot stand behind.
+            var servingShare = Math.Max(
+                0.0, 1.0 - BuildingShareOfFleet() - CapacitySoldShareToday());
             var servingPetaflops = profile.RawPetaflops * InferenceUtilization * Math.Clamp(servingShare, 0.0, 1.0);
 
             // Optimisation levels above market par make every token cheaper to produce, which turns
