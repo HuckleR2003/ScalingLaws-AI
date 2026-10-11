@@ -146,6 +146,22 @@ namespace ScalingLaws.Data
         /// </summary>
         public const double MostAnyLeverMoves = 0.60;
 
+        /// <summary>
+        /// How far the entries above have been checked against sources, and therefore the first day
+        /// nothing in this table is allowed to claim it happened.
+        ///
+        /// **This is a date somebody checked, not a date somebody chose.** It read the first of
+        /// January 2026, under a comment saying everything from 2026 on was the game's guess, and
+        /// that stopped being true the moment three documented 2026 milestones went into the table:
+        /// a published nine hundred million weekly, a billion in a month, and a billion a week
+        /// arriving seven months behind its own forecast. Checking those is what moved this line,
+        /// and the stretch between the last of them and today is unswept, which is why it is August
+        /// rather than October.
+        ///
+        /// Moving it means checking the entries in the stretch it opens up, not editing the number.
+        /// </summary>
+        public static GameDate RecordCheckedTo => GameDate.FromCalendar(2026, 8, 1);
+
         private static readonly WorldEvent[] Entries =
         {
             // ---- 2022: the supply chain, then the earthquake ---------------------------------
@@ -267,7 +283,33 @@ namespace ScalingLaws.Data
             // General-purpose model obligations start to bite.
             new(GameDate.FromCalendar(2025, 8, 2), 620, WorldLever.Efficiency, -0.07, "world.gpai"),
 
-            // ---- 2026 and beyond: the game's guesses, and they say so -------------------------
+            // **Four milestones the market actually hit, and the last one is the point.**
+            // Verified against the companies' own announcements and the reporting on them. They
+            // are demand events because that is what they were: each one moved what every other
+            // company in this market thought was possible.
+
+            // Seven hundred million a week, four times the year before.
+            new(GameDate.FromCalendar(2025, 8, 4), 420, WorldLever.Demand, 0.08, "world.sevenhundred"),
+
+            // Nine hundred million, published by the lab rather than estimated by an analyst.
+            new(GameDate.FromCalendar(2026, 2, 27), 400, WorldLever.Demand, 0.06, "world.ninehundred"),
+
+            // A billion in a month, faster than any application before it.
+            new(GameDate.FromCalendar(2026, 5, 15), 420, WorldLever.Demand, 0.07, "world.billionmonthly"),
+
+            // **And the one that is worth more to this game than the other three together.** The
+            // leader reached a billion a week seven months after it planned to. Negative, because
+            // the news here is not the billion, it is that the best informed forecast in the
+            // industry was wrong by more than half a year in a market everybody calls explosive.
+            new(GameDate.FromCalendar(2026, 7, 29), 500, WorldLever.Demand, -0.05, "world.sevenmonthslate"),
+
+            // ---- past `RecordCheckedTo` the game is guessing, and every entry says so -----------
+            //
+            // **The line moved and it is a named thing now.** It used to read "2026 and beyond",
+            // which stopped being where the record stops: three of the four events above are from
+            // 2026 and all three are documented. `world.datawall` is dated inside that stretch and
+            // is still a guess, so the flag is per entry rather than per year, and `WorldEventTests`
+            // makes a guess inside the checked window name its reason.
 
             // High quality public text runs out and corpora have to be made rather than found.
             new(GameDate.FromCalendar(2026, 6, 1), 900, WorldLever.Efficiency, -0.12, "world.datawall",

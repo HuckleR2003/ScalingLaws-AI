@@ -125,6 +125,9 @@ namespace ScalingLaws.Data
         /// </summary>
         public static Note ComputeTiers => From("tech.tiers");
 
+        /// <summary>What the headline number on the demographics panel is counting.</summary>
+        public static Note MonthlyUsers => From("tech.mau");
+
         public static Note RentOrOwn => From("tech.rentbuy");
 
         public static Note ReservedCapacity => From("tech.reserved");

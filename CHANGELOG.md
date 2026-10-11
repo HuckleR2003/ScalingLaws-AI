@@ -83,6 +83,17 @@ being refused automatically; it was never offered.
 
 ### Changed
 
+- **Four things that actually happened to this market are on the wire, on their own dates.** Seven
+  hundred million people a week in August 2025, nine hundred million published by the lab itself in
+  February 2026, a billion in a month in May 2026, and a billion a week in July 2026. Every figure
+  is from the company's own announcement or the reporting on it, and each is a demand event because
+  that is what it was: the number moved what everybody else in the market thought was possible.
+- **The last of the four is the one worth having and it moves demand the other way.** The leader
+  reached a billion a week seven months after it had said it would. Nothing went wrong and nobody
+  was in trouble: the best informed forecast in this industry was simply late by more than half a year.
+  A player whose own plan has slipped is reading the normal condition of the business rather than
+  their own failure, and that is cheaper to teach this way than with a tooltip.
+
 - **Renewals are a list, one per lab, and the block is per lab rather than global.**
   `Simulation/CompanyState.cs` and `Simulation/CompanySimulation.Alliances.cs`. `OpenRenewals` is
   built fresh rather than stored, so an offer stops being listed the day its fortnight runs out;
@@ -110,6 +121,14 @@ catalogue and no screen drew it.
 
 ### Explained
 
+- **The biggest number in the game says what it is counting.** The demographics panel leads on a
+  nine-figure headline and nothing anywhere said whether that was accounts, visits or people, which
+  differ from each other by an order of magnitude. `TechNotes.MonthlyUsers` says it is different
+  people in a month, that one person coming back a hundred times is still one, and that everything
+  else on the page is a slice of it, which is why a company can gain users in a year its share
+  falls. The high and low bands are about the market rather than the player: a large market lets you
+  be the fourth thing somebody tries and still be paid, a small one is decided by whoever was first.
+
 - **An upgrade tile says what a level of it buys.** `UI/UpgradeGridPanel.cs` draws the trait
   description, which no screen on that page had ever shown, and then what one level moves. The
   second half is derived from the trait rather than written beside it, for the reason the research
@@ -127,6 +146,16 @@ catalogue and no screen drew it.
   baseline is 20 and that going under it works against you. Read off the limits rather than typed.
 
 ### Guarded
+
+- **The honesty flag stopped being a date and went back to being per entry.** One cut-off, the first
+  of January 2026, answered both halves of the question while the record stopped before anything the
+  game guessed about. It does not any more: three documented 2026 milestones went into the roster and
+  an invented one is dated June 2026, between them. `WorldEventCatalog.RecordCheckedTo` is now how far
+  somebody has checked, August 2026, because the stretch from there to today is unswept and claiming
+  otherwise is the stale-number fault this repository keeps recording. Nothing past it may say it
+  happened. A guess inside it is legal and has to name its reason, the way `EventReachTests.Quiet`
+  names an event nothing announces, and a second test fails if an excuse outlives what it excepted.
+  Both directions were run against the broken arrangement first and both failed there.
 
 - `ComputeTierGateTests` gains three. The first forces the company under the cash gate before it
   asserts anything, because a version that still had the money would have passed while proving

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
@@ -73,33 +74,101 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
-        /// Anything dated past the record says it is a projection.
+        /// Guesses inside the checked window, each with the reason it is dated where it is.
+        ///
+        /// **A date cannot tell a record from an invention, and for a while it could.** While the
+        /// record stopped before anything this table guessed about, one cut-off answered both
+        /// questions at once. It does not any more: there are documented 2026 milestones in the
+        /// roster and an invented one dated June 2026 sitting between them.
+        ///
+        /// So the flag is per entry, and an entry that is a guess about a stretch somebody has
+        /// already checked has to be a decision rather than an oversight. Naming it here is that
+        /// decision, the same way `EventReachTests.Quiet` names an event nothing announces.
+        /// </summary>
+        private static readonly Dictionary<string, string> GuessesInsideTheRecord = new()
+        {
+            ["world.datawall"] =
+                "Running out of high quality public text is a slope rather than a day, so there is "
+                + "no announcement to date it by. June 2026 is where the game puts the step, and it "
+                + "is a guess about a month that has already been and gone.",
+        };
+
+        /// <summary>
+        /// Nothing dated past what anybody checked claims to have happened.
         ///
         /// **The honesty flag, applied to history rather than to hardware.** This roster is real
         /// events on real dates, so the line between what is on the record and what the game is
-        /// guessing has to survive a player who was there for it. The cut-off is deliberately
-        /// conservative: everything from 2026 on is the game's guess.
+        /// guessing has to survive a player who was there for it.
+        ///
+        /// Both directions are held. Past `RecordCheckedTo` an entry must say it is a guess, which
+        /// is the direction that matters and can never be excused. Inside it an entry may still be
+        /// a guess, and then it is named above with its reason, so the list cannot quietly grow.
         /// </summary>
         [Test]
         public void EverythingPastTheRecordIsMarkedAsAGuess()
         {
-            var record = GameDate.FromCalendar(2026, 1, 1);
+            var record = WorldEventCatalog.RecordCheckedTo;
             var unmarked = new List<string>();
 
             foreach (var world in WorldEventCatalog.All)
             {
                 if (world.On.IsOnOrAfter(record) && !world.IsProjection)
                 {
-                    unmarked.Add($"{world.On} {world.Key} claims to be on the record");
+                    unmarked.Add($"{world.On} {world.Key} claims to be on the record, which is "
+                        + $"checked only to {record}");
                 }
 
-                if (!world.On.IsOnOrAfter(record) && world.IsProjection)
+                if (!world.On.IsOnOrAfter(record) && world.IsProjection
+                    && !GuessesInsideTheRecord.ContainsKey(world.Key))
                 {
-                    unmarked.Add($"{world.On} {world.Key} is marked a guess and is inside the record");
+                    unmarked.Add($"{world.On} {world.Key} is a guess about a stretch somebody has "
+                        + "checked, and no reason for that is written down");
                 }
             }
 
             Assert.IsEmpty(unmarked, string.Join("\n  ", unmarked));
+        }
+
+        /// <summary>
+        /// The excuse list only names entries that are still in the table and still guesses.
+        ///
+        /// A list of exceptions that outlives what it excepted is how a guard stops guarding. The
+        /// same fixture exists for the silent events, and it is here for the same reason: a key
+        /// left behind after an entry is dated properly would excuse the next one to take its name.
+        /// </summary>
+        [Test]
+        public void TheExcusedGuessesAreAllStillGuessesInsideTheRecord()
+        {
+            var record = WorldEventCatalog.RecordCheckedTo;
+            var stale = new List<string>();
+
+            foreach (var excused in GuessesInsideTheRecord.Keys)
+            {
+                var entries = WorldEventCatalog.All
+                    .Where(world => world.Key == excused)
+                    .ToList();
+
+                if (entries.Count == 0)
+                {
+                    stale.Add($"{excused} is excused and is not in the table");
+                    continue;
+                }
+
+                foreach (var world in entries)
+                {
+                    if (!world.IsProjection)
+                    {
+                        stale.Add($"{excused} is excused as a guess and is not marked as one");
+                    }
+                    else if (world.On.IsOnOrAfter(record))
+                    {
+                        stale.Add($"{excused} is excused for sitting inside the record and is dated "
+                            + $"{world.On}, past {record}");
+                    }
+                }
+            }
+
+            Assert.IsEmpty(stale, string.Join("\n  ", stale));
         }
 
         /// <summary>

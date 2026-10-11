@@ -147,6 +147,12 @@ namespace ScalingLaws.UI
             chart.Add(pie);
 
             headline.AddToClassList("demographics__headline");
+
+            // **The biggest number on the screen and nothing said what it counted.** A player
+            // reading nine figures here cannot tell whether it is accounts, visits or people,
+            // and those differ by an order of magnitude from each other.
+            UiParts.ExplainHeading(headline, TechNotes.MonthlyUsers);
+
             chart.Add(headline);
 
             caption.AddToClassList("demographics__caption");
