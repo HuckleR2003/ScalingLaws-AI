@@ -165,8 +165,22 @@ namespace ScalingLaws.Data
         ///
         /// **Asymptotic rather than clamped**, because a hard stop makes every further point of
         /// demand worth exactly nothing and the last stretch of a market should get harder rather
-        /// than end. Below about half the ceiling this changes almost nothing; above it, each
-        /// further person costs more demand than the one before.
+        /// than end.
+        ///
+        /// **The shape was wrong and the sentence describing it was wrong too.** It used to be
+        /// `people / (1 + people / ceiling)`, with a note saying that below about half the ceiling
+        /// it changed almost nothing. At half the ceiling that form cuts a third off, it reaches
+        /// only half the ceiling when raw demand equals the whole of it, and ninety per cent needs
+        /// nine times the ceiling in demand, which nothing in this game ever produces.
+        ///
+        /// Measured: the market settled at 61% of the ceiling in 2030 and sat there for the rest
+        /// of the campaign. The real figure the game is shaped against is most of the connected
+        /// world by the middle thirties, not three fifths of it, and a market that stops growing
+        /// while the frontier keeps climbing squeezes every company in it.
+        ///
+        /// `ceiling * (1 - e^(-people / ceiling))` keeps the asymptote and the rising cost of the
+        /// last stretch, and puts the same demand that was reading 61% at **79%**. It is also
+        /// honestly gentle early: a tenth of the ceiling in demand reads 9.5% rather than 9.1%.
         /// </summary>
         private double Hold(double people)
         {
@@ -175,9 +189,9 @@ namespace ScalingLaws.Data
                 return Math.Max(0.0, people);
             }
 
-            // people / (1 + people / ceiling): equals `people` when people is small against the
-            // ceiling and approaches the ceiling from below however large it gets.
-            return people / (1.0 + people / PeopleCeiling);
+            // Equals `people` when people is small against the ceiling, and approaches the
+            // ceiling from below however large it gets.
+            return PeopleCeiling * (1.0 - Math.Exp(-people / PeopleCeiling));
         }
 
         /// <summary>Raw size at each anchor year. Read through <see cref="AudienceCatalog"/>.</summary>

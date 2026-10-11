@@ -167,10 +167,25 @@ namespace ScalingLaws.Tests.EditMode
             Assert.AreEqual(0.0, consumer.UsersFor(-5.0), 1e-9, "Negative demand is not negative people.");
 
             // And the other half of it: no amount of demand buys more people than exist.
-            Assert.That(consumer.UsersFor(1e12), Is.LessThan(consumer.PeopleCeiling),
+            //
+            // **At or under, rather than strictly under, and the difference is floating point
+            // rather than design.** The curve is `ceiling * (1 - e^(-people / ceiling))`, which
+            // is below the ceiling for every demand a campaign can produce and lands on it
+            // exactly once the exponent underflows, which needs demand some seven hundred times
+            // the ceiling. Saturating at the ceiling there is the right answer; the old strict
+            // reading was a property of the algebra this replaced, not a rule anybody chose.
+            // What this is actually guarding is the word *more*, and that still holds.
+            Assert.That(consumer.UsersFor(1e12), Is.LessThanOrEqualTo(consumer.PeopleCeiling),
                 "A thousand billion tokens a day bought more consumers than the segment can hold. "
                 + "Measured before this existed, the game's whole market reached twelve billion "
                 + "people in 2028, which is half again the human population.");
+
+            // The asymptote where it matters: at twice the ceiling in demand, which is a number a
+            // late campaign genuinely reaches, there has to be room left above. This is the half
+            // the loosened assertion above would otherwise stop checking.
+            Assert.That(consumer.UsersFor(96_000.0), Is.LessThan(consumer.PeopleCeiling * 0.95),
+                "Twice the ceiling in demand should leave the market visibly short of everybody, "
+                + "or the last stretch has stopped costing anything.");
 
             Assert.That(consumer.UsersFor(1e12), Is.GreaterThan(consumer.PeopleCeiling * 0.9),
                 "The ceiling is approached, not merely never reached: a market that saturates has "

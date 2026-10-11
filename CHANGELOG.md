@@ -525,6 +525,37 @@ was holding it in place instead.
   because the pattern used `\n` against a CRLF stylesheet, which is the third time that file has
   caught me out.
 
+**The market stopped growing at three fifths of the world and sat there for four years.** The
+curve that bends a headcount towards its ceiling was `people / (1 + people / ceiling)`, which
+reaches only half the ceiling when raw demand equals the whole of it and needs nine times the
+ceiling in demand to reach ninety per cent. Nothing in this game ever produces that, so the market
+settled at 61% in 2030 and stopped. A market that stops growing while the frontier keeps climbing
+squeezes every company in it, which is the period the probe says is unwinnable.
+
+### Changed
+
+- **`ceiling * (1 - e^(-people / ceiling))`**, which keeps the asymptote and the rising cost of the
+  last stretch and puts the same demand that was reading 61% at 79%. Measured over a campaign: the
+  served market reaches **62% in 2026, 75% in 2028 and 77% in 2030**, against 48% / 55% / 61%
+  before. **The note above it was also wrong**, and said that below half the ceiling the bend
+  changed almost nothing; at half the ceiling the old form cut a third off.
+- What it does to the balance, one seed: nobody is worse and the two weakest operators gain.
+  Owning its own silicon 2508 to **3009** days, ambitious 1315 to **1483**. A new line every time
+  and the one that ships once are untouched, smart and scaling move by single days.
+- **The cost, and it is real: 2026 overshoots.** The game now serves 3.46bn that year against a
+  real world figure of 2 to 2.5bn, where before it served 2.68bn. The late years are much closer
+  to reality and the one year we can actually check is further from it. The lever for that is the
+  demand curve rather than this one, and it has not been touched.
+
+### Guarded
+
+- `MarketByTypeTests.UsersAreDerivedFromTokensRatherThanInvented` asserted the count was strictly
+  under the ceiling at absurd demand. The new curve lands on it exactly once the exponent
+  underflows, which needs demand some seven hundred times the ceiling, and saturating there is the
+  right answer. **The strict reading was a property of the old algebra rather than a rule anybody
+  chose**, so it is at-or-under now, and a second assertion was added at twice the ceiling in
+  demand, a figure a late campaign genuinely reaches, where there still has to be room above.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was
