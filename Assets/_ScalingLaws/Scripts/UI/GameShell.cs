@@ -138,6 +138,16 @@ namespace ScalingLaws.UI
         private ReleasePlanPanel releasePlan;
         private ArchitectureCreatorPanel families;
         private ManagementScreen management;
+
+        /// <summary>
+        /// The management screen, for tooling. Fifth member here that the game does not use.
+        ///
+        /// Same reason as `ScreenNames`, `OpenScreenByName`, `Simulation` and `Creator`: this
+        /// screen is reached from one button on one banner, so until it could be asked for by
+        /// name there was no way to frame one of its tabs at a window size and look at it.
+        /// Null until the screen has been opened once.
+        /// </summary>
+        public ManagementScreen Management => management;
         private NewsScreen news;
         private NewsBanner newsBanner;
         private GrantBanner grantBanner;

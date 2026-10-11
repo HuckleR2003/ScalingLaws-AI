@@ -27,6 +27,9 @@ namespace ScalingLaws.Tests.PlayMode
     /// </summary>
     public sealed class TabProofTests
     {
+        /// <summary>How far the panel may shrink before the type stops being readable.</summary>
+        private const float ScaleFloor = 0.85f;
+
         private const int Width = 1920;
         private const int Height = 1080;
 
@@ -767,6 +770,159 @@ namespace ScalingLaws.Tests.PlayMode
             texture.Release();
             Object.DestroyImmediate(texture);
             Object.DestroyImmediate(settings);
+        }
+    
+        /// <summary>
+        /// How small the type actually gets on the two windows most people have.
+        ///
+        /// **A font size in the stylesheet is not a font size on the screen.** The panel is
+        /// `ScaleWithScreenSize` against a 1920x1080 reference with the match at a half, so
+        /// everything is multiplied by the square root of the width ratio times the square root of
+        /// the height ratio. The floor the stylesheet guards is 11px at the reference and nowhere
+        /// else, which this project already learned once on the research board, where a 0.85 zoom
+        /// took an 11px title to 9.4 and no stylesheet test could see it.
+        ///
+        /// 340 rules sit on exactly 11px and 703 of 1088 are under 13, so the question is not
+        /// academic. This renders the operations band at both sizes and logs the measured scale
+        /// and the smallest type on the page, so the answer is a number rather than an opinion.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOperationsTypeIsReadableOnASmallerWindow()
+        {
+            SceneFlow.ResumeSavedCampaign = false;
+            SceneManager.LoadScene(SceneFlow.GameScene);
+
+            yield return null;
+            yield return null;
+
+            var shell = Object.FindFirstObjectByType<GameShell>();
+            var document = Object.FindFirstObjectByType<UIDocument>();
+
+            Assert.That(shell, Is.Not.Null);
+            Assert.That(document, Is.Not.Null);
+
+            foreach (var ringing in document.rootVisualElement.Query(className: "phone").ToList())
+            {
+                ringing.RemoveFromHierarchy();
+            }
+
+            shell.Simulation.State.UnlockedResearch.Add(ResearchNodeId.AccountRecognition);
+            shell.Simulation.State.UnlockedResearch.Add(ResearchNodeId.SpotCapacityDesk);
+            shell.Simulation.State.AccountDetectionLevel = 2;
+            shell.Simulation.State.CapacityResaleLevel = 3;
+
+            var spent = new List<Object>();
+
+            foreach (var size in new[]
+                { new Vector2Int(1920, 1080), new Vector2Int(1600, 900), new Vector2Int(1366, 768) })
+            {
+                var settings = Object.Instantiate(document.panelSettings);
+                var texture = new RenderTexture(size.x, size.y, 24, RenderTextureFormat.ARGB32);
+                texture.Create();
+
+                settings.targetTexture = texture;
+                settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+                settings.referenceResolution = new Vector2Int(Width, Height);
+
+                document.panelSettings = settings;
+
+                yield return null;
+
+                shell.OpenScreenByName("Management");
+
+                // The screen defaults to the official page, so asking for the screen is not asking
+                // for the tab: the first frame of this came back showing a company with nothing on
+                // sale and none of the band in it.
+                shell.Management?.ShowOperations();
+
+                for (var pass = 0; pass < 30; pass++)
+                {
+                    yield return null;
+                }
+
+                yield return Capture(null, settings, texture, $"ops_{size.y}.png");
+
+                // The scale the panel is actually applying, measured rather than assumed: a known
+                // element's width on screen against the width the layout gave it.
+                var root = document.rootVisualElement;
+                var scale = root.worldBound.width <= 0.0f
+                    ? 1.0f
+                    : size.x / root.worldBound.width;
+
+                var smallest = float.MaxValue;
+                var smallestText = string.Empty;
+
+                foreach (var part in root.Query<TextElement>().ToList())
+                {
+                    if (string.IsNullOrWhiteSpace(part.text) || part.worldBound.width <= 0.0f)
+                    {
+                        continue;
+                    }
+
+                    var drawn = part.resolvedStyle.fontSize * scale;
+                    if (drawn > 0.0f && drawn < smallest)
+                    {
+                        smallest = drawn;
+                        smallestText = part.text;
+                    }
+                }
+
+                // **And the same window with a floor under the scale.** Below the reference the
+                // panel shrinks everything, type included, so the 11px floor the stylesheet
+                // guards is only 11px at 1920. A floor stops the shrinking and gives the layout
+                // more virtual room instead, which it can use: the bottom bar is sized for 1920
+                // and already copes with about 1820 on a 16:10 window.
+                //
+                // Rendered rather than argued, because the question a floor raises is not whether
+                // the type gets bigger, it is whether anything runs off the edge when it does.
+                if (scale < ScaleFloor)
+                {
+                    settings.scale = ScaleFloor / scale;
+
+                    for (var pass = 0; pass < 30; pass++)
+                    {
+                        yield return null;
+                    }
+
+                    yield return Capture(null, settings, texture, $"ops_{size.y}_floored.png");
+
+                    var widest = 0.0f;
+                    foreach (var part in root.Query<VisualElement>().ToList())
+                    {
+                        if (part.worldBound.width > 0.0f && part.worldBound.xMax > widest)
+                        {
+                            widest = part.worldBound.xMax;
+                        }
+                    }
+
+                    Debug.Log($"FLOOR {size.x}x{size.y} scale={ScaleFloor:F2} "
+                        + $"smallest={11.0f * ScaleFloor:F1}px widest={widest:F0} of {size.x}");
+
+                    settings.scale = 1.0f;
+                }
+
+                Debug.Log($"TYPE {size.x}x{size.y} scale={scale:F3} "
+                    + $"smallest={smallest:F1}px on \"{smallestText}\"");
+
+                // **The one thing here that is a claim rather than a measurement.** At the
+                // reference resolution the floor the stylesheet guards has to be the floor on
+                // the screen, or the guard is measuring a number nobody ever sees. Below the
+                // reference it is not, and by how much is what the log above is for.
+                if (size.x == Width && size.y == Height)
+                {
+                    Assert.That(smallest, Is.GreaterThanOrEqualTo(10.9f),
+                        $"At the reference resolution the smallest type on the page is "
+                        + $"{smallest:F1}px, under the 11px floor the stylesheet is held to.");
+                }
+
+                spent.Add(settings);
+                spent.Add(texture);
+            }
+
+            foreach (var thing in spent)
+            {
+                Object.DestroyImmediate(thing);
+            }
         }
     }
 }
