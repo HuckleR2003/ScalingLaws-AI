@@ -462,6 +462,33 @@ by the operating cost it charges, so they cannot add to more or less than one.
   player finds out. The insight card under it says what is missing and that the map gets its
   decisions after Steam.
 
+**The product page rated a model two out of five and said something nice about it in the same
+row.** Three reviews above it read five, four and five. A tester photographed it and asked whether
+he had misunderstood the rating system. He had not, and the guard that was supposed to catch this
+was holding it in place instead.
+
+### Fixed
+
+- **The last review reads one number, not two.** Its stars came from satisfaction and its sentence
+  from `LastStandingChange.Headline`, which is a different quantity, so the two could say opposite
+  things and routinely did. The sentence is now drawn from the same satisfaction the stars are, in
+  three bands, the way the speed, price and topicality rows already worked.
+- **It is not called "Overall" any more.** Satisfaction is measured against the alternatives each
+  audience has, including buying nothing, so a product can be fast, fairly priced and current and
+  still score low here because somebody else is all of those and better. That is a real and useful
+  thing to tell a player, and it is not the average of the three rows above it, so it may not sit
+  under them claiming to be. The row is **On staying with it**.
+- `LastStandingChange.Headline` keeps its two honest readers, the top bar and the biggest-mover
+  line on the desk. It was only ever borrowed into the review row.
+
+### Guarded
+
+- `ManagementScreenTests.EveryReviewIsAboutSomethingTheSimulationKnows` asserted the old coupling
+  in so many words: *the overall review is the standing's own largest mover*. It now reads the
+  satisfaction out of the simulation and requires the sentence to match the band, so the two can
+  never drift apart again. **Taught rather than deleted**, which is the fourth time that has been
+  the repair here.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

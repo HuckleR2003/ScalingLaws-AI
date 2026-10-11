@@ -751,8 +751,22 @@ namespace ScalingLaws.UI
                             UiFormat.Number(product.Frontier)),
                 product.Topicality));
 
-            panel.Add(Review(Loc.T("mg.overall"),
-                Loc.T("mg.overall_line", simulation.State.LastStandingChange.Headline),
+            // **The sentence and the stars have to be the same number, and here they were not.**
+            // The three rows above each read their own rating out of the thing they describe.
+            // This one took its stars from satisfaction and its sentence from
+            // `LastStandingChange.Headline`, which is a different quantity entirely, so a
+            // positive line sat beside two stars out of five. A tester sent a photograph of it
+            // and asked whether he had misunderstood the rating system. He had not.
+            //
+            // The row is also no longer called Overall. Satisfaction is measured against the
+            // alternatives each audience has, including buying nothing, so it is not the average
+            // of speed, price and topicality and must not sit under them claiming to be.
+            panel.Add(Review(Loc.T("mg.staying"),
+                product.Happiness >= 0.7
+                    ? Loc.T("mg.staying_best")
+                    : product.Happiness >= 0.4
+                        ? Loc.T("mg.staying_fine")
+                        : Loc.T("mg.staying_looking"),
                 product.Happiness));
 
             return panel;

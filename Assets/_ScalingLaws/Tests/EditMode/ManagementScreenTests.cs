@@ -180,15 +180,34 @@ namespace ScalingLaws.Tests.EditMode
             var screen = Screen(simulation);
             screen.Refresh();
 
-            foreach (var heading in new[] { "On the speed", "On the price", "On how current it is" })
+            foreach (var heading in new[]
+                     { "On the speed", "On the price", "On how current it is", "On staying with it" })
             {
                 Assert.IsTrue(Says(screen.Root, heading),
                     $"'{heading}' is missing. Each review answers 'why is my satisfaction that "
                     + "number', so dropping one takes an explanation away rather than a decoration.");
             }
 
-            Assert.IsTrue(Says(screen.Root, simulation.State.LastStandingChange.Headline),
-                "The overall review is the standing's own largest mover, in its own words.");
+            // **The sentence has to come from the same number as the stars beside it.**
+            //
+            // This used to assert the opposite: that the last row quoted
+            // `LastStandingChange.Headline`, which is a different quantity from the satisfaction
+            // its stars were drawn from. A product could read five, four and five on the rows
+            // above and two out of five here with a cheerful sentence next to it, and a tester
+            // sent a photograph of exactly that and asked whether he had misunderstood the
+            // rating system. He had not. The guard was holding the fault in place.
+            var happiness = simulation.Product().Happiness;
+
+            var expected = happiness >= 0.7
+                ? "There is nothing I would move to."
+                : happiness >= 0.4
+                    ? "It does what I need."
+                    : "There are better things on the market now";
+
+            Assert.IsTrue(Says(screen.Root, expected),
+                $"Satisfaction is {happiness:0.00}, so the last review has to read like that. "
+                + "A sentence drawn from one quantity beside stars drawn from another is the "
+                + "thing this row was caught doing.");
         }
 
         // ---- the desk ------------------------------------------------------------------------------
