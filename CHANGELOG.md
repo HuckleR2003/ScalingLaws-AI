@@ -497,6 +497,17 @@ was holding it in place instead.
   is worth. `Awareness.FloorFromStanding` is the one definition, so the screen cannot work out
   that floor a second way and disagree with the simulation about it.
 
+- **The slanted segment bar is a component, and the training strip wears it.** `UI/SegmentBar.cs`,
+  drawn with Painter2D because UI Toolkit has no skew and the one workaround already in this sheet
+  draws a single diagonal cut rather than a row of parallelograms. It was the shape on the boot
+  screen and nowhere else, which is a shape nobody sees. A segment lights once the fill passes its
+  middle, so a bar at half reads as half; four per cent of a growing rectangle is a sliver nobody
+  notices and four per cent of this is one lit block, which matters at the start of a run that
+  takes weeks. **The strip keeps its own wine colour.** The shape changed, not the palette: this
+  interface runs on one accent and a fourth hue on a banner that already has two would be a second
+  alarm. The documented decision that the whole strip is the bar, with the words on top of the
+  fill rather than beside it, is untouched.
+
 ## [0.6.2] - 2026-10-01
 
 **The tutorial was hiding a third of the game.** Every tab a new player opened during the tour was

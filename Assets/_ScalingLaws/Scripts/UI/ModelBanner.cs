@@ -132,7 +132,11 @@ namespace ScalingLaws.UI
         private readonly Label net = new();
         private readonly Label earnings = new();
 
-        private readonly VisualElement trainingFill = new();
+        /// <summary>The wine the strip has always been, moved here because Painter2D fills
+        /// are set in code rather than in the sheet.</summary>
+        private static readonly Color TrainingColour = new(0.494f, 0.063f, 0.204f);
+
+        private readonly SegmentBar trainingFill = new();
         private readonly Label trainingDays = new();
         private readonly Label trainingCaption = new(Loc.T("banner.training"));
         private readonly Label chevron = new();
@@ -329,6 +333,11 @@ namespace ScalingLaws.UI
             // The fill sits behind the words rather than beside them, so the whole strip is the
             // progress bar. A run is weeks long and this is the only thing happening; it should read
             // as one object filling up, not as a label with a bar under it.
+            //
+            // **Slanted segments rather than one growing rectangle**, which is the shape the boot
+            // screen used and the only piece of this interface the author asked to see again. It
+            // also reads better at the start of a run: four per cent of a rectangle is a sliver
+            // nobody notices and four per cent of this is one lit block.
             trainingFill.AddToClassList("mb__training-fill");
             training.Add(trainingFill);
 
@@ -449,7 +458,10 @@ namespace ScalingLaws.UI
         private void FillWork(WorkInFlight work)
         {
             trainingCaption.text = work.Caption;
-            trainingFill.style.width = Length.Percent((float)(work.Progress * 100.0));
+            // The strip keeps its own colour. The shape is the thing that changed, not the
+            // palette: this interface runs on one accent and a fourth hue here would be a
+            // second alarm colour on a banner that already has two.
+            trainingFill.Set(work.Progress, TrainingColour);
 
             // Days left, which is the number a player actually plans around. The percentage is there
             // to make the bar readable, not to be the answer.

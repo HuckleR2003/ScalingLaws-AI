@@ -4222,12 +4222,20 @@
     border-top-color: rgb(252, 214, 58);
 }
 
+/* The whole strip is the bar, so the segments span it and the words sit on top. The colour
+   lives in C# now because Painter2D fills are set there, not in the sheet. */
 .mb__training-fill {
     position: absolute;
     left: 0;
+    right: 0;
     top: 0;
     bottom: 0;
-    background-color: rgb(126, 16, 52);
+}
+
+/* The segmented bar itself. Height comes from whatever it is put inside. */
+.segbar {
+    flex-grow: 1;
+    flex-shrink: 1;
 }
 
 .mb__training-caption {
