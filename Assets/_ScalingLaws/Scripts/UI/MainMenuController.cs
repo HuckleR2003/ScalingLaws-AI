@@ -148,6 +148,9 @@ namespace ScalingLaws.UI
         /// </summary>
         private bool introHookDone;
         private VideoPlayer introFilm;
+
+        /// <summary>Where the film's sound goes, so that the volume sliders can reach it.</summary>
+        private AudioSource introFilmAudio;
         private bool introFilmPlayed;
 
         private void OnEnable()
@@ -1218,6 +1221,13 @@ namespace ScalingLaws.UI
             var watchdog = (long)(introFilm.clip.length * 1000d) + 2000L;
             root.schedule.Execute(FinishIntroFilm).ExecuteLater(watchdog);
 
+            // Read as it starts rather than once at build time, because the player may have
+            // moved the slider on the settings sheet between the menu opening and pressing play.
+            if (introFilmAudio != null)
+            {
+                introFilmAudio.volume = GameSettings.MusicVolume;
+            }
+
             introFilm.Play();
         }
 
@@ -1304,7 +1314,25 @@ namespace ScalingLaws.UI
             introFilm.isLooping = false;
             introFilm.renderMode = VideoRenderMode.CameraNearPlane;
             introFilm.targetCamera = Camera.main;
-            introFilm.audioOutputMode = VideoAudioOutputMode.Direct;
+            // **The film's sound went straight past both volume sliders, and a player reported it.**
+            //
+            // `VideoAudioOutputMode.Direct` hands the audio to the platform's output and skips
+            // Unity's audio system on the way, so neither `AudioListener.volume`, which is what the
+            // master slider sets, nor anything the music slider touches applies to it. The film is
+            // the first sound a new campaign makes, so the report read "can not mute music and
+            // changing the volume doesnt do anything" on day 0, which is exactly right.
+            //
+            // Through an `AudioSource` instead: the listener then applies the master for free, and
+            // the music level is set on the source when the film starts. The track has to be
+            // enabled before `Prepare`, or the player prepares without one and there is nothing to
+            // route.
+            introFilmAudio = gameObject.AddComponent<AudioSource>();
+            introFilmAudio.playOnAwake = false;
+
+            introFilm.audioOutputMode = VideoAudioOutputMode.AudioSource;
+            introFilm.EnableAudioTrack(0, true);
+            introFilm.SetTargetAudioSource(0, introFilmAudio);
+
 
             // **Fill the width, letterbox only what has to be.** FitInside was safe and looked it:
             // on a wide window it left black down both sides and the film read as a video playing
