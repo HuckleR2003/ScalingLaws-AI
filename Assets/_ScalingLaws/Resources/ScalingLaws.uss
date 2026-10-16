@@ -23946,3 +23946,35 @@
 .opsladder__buy:hover {
     background-color: rgb(146, 226, 180);
 }
+
+/* The policy switch, and it is deliberately quieter than the rung above it. Buying a level is a
+   routine $20k purchase and this one spends $1.4M and turns paying customers away the same day.
+   An expensive, two sided action drawn as the bright one on the card gets pressed by reflex; the
+   support desk already learned that about its remote hire. Outline rather than fill, and the
+   armed state is the only place in this band that goes warm. */
+.opsladder__buy--risk {
+    color: rgb(226, 190, 150);
+    background-color: rgba(0, 0, 0, 0);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(226, 190, 150, 0.45);
+    border-right-color: rgba(226, 190, 150, 0.45);
+    border-top-color: rgba(226, 190, 150, 0.45);
+    border-bottom-color: rgba(226, 190, 150, 0.45);
+}
+
+.opsladder__buy--risk:hover {
+    background-color: rgba(226, 190, 150, 0.12);
+}
+
+/* Armed. The second press is the one that spends, so the button stops looking like an outline. */
+.opsladder__buy--armed {
+    color: rgb(26, 18, 14);
+    background-color: rgb(226, 160, 110);
+}
+
+.opsladder__buy--armed:hover {
+    background-color: rgb(238, 176, 128);
+}

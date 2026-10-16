@@ -547,6 +547,13 @@ namespace ScalingLaws.UI
             var block = new VisualElement();
             block.AddToClassList("opsladder");
 
+            // **A rule, because the render showed two shopping decisions running into each
+            // other.** The $20k rung and the $1.4M policy sat in one unbroken column with
+            // nothing between them, so the price under the strap read as the next level up.
+            var rule = new VisualElement();
+            rule.AddToClassList("opstile__rule");
+            block.Add(rule);
+
             var on = simulation.State.MultiAccountBanOn;
             var built = simulation.State.MultiAccountBanBuilt;
 
@@ -611,6 +618,13 @@ namespace ScalingLaws.UI
             };
 
             button.AddToClassList("opsladder__buy");
+
+            // Quieter than the rung above it, and warm only once it is armed. Drawn the same as
+            // the routine purchase, a $1.4M switch that turns paying customers away gets pressed
+            // by reflex, which is the lesson the support desk already paid for.
+            button.AddToClassList("opsladder__buy--risk");
+            button.EnableInClassList("opsladder__buy--armed", !on && banArmed);
+
             block.Add(button);
 
             return block;
