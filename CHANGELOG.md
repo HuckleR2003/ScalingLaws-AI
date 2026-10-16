@@ -38,6 +38,8 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-16
+
 **A player paid eighty million dollars and the game never admitted it.** The own-datacenter tier
 asks for $80,000,000 in the bank and costs exactly $80,000,000 to commission, so paying for it
 dropped the company under its own gate in the same tick. The ladder went back to demanding the money
