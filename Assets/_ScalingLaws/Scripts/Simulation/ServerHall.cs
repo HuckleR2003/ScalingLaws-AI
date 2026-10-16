@@ -799,18 +799,71 @@ namespace ScalingLaws.Simulation
                 return 0.0;
             }
 
-            var definition = ServerRackCatalog.Get(racks[index]);
+            return CabinetHeatKilowatts(column, row, kilowattsPerAccelerator, upgrades)
+                   / Math.Max(0.1, CabinetCoolingKilowatts(column, row, kilowattsPerAccelerator,
+                       upgrades));
+        }
+
+        /// <summary>
+        /// What one cabinet puts into the air, with its overclock counted.
+        ///
+        /// **This exists because the cabinet panel was computing it as `cards * the fleet average`
+        /// while everything else in the room computed it per generation.** An accelerator draws
+        /// between 0.30 kW and 2.20 kW depending on which one it is, so a cabinet filled by hand
+        /// with one generation reads nothing like the fleet it belongs to, and the floor tile and
+        /// the opened cabinet disagreed about the same box. That is the fault the doc comment on
+        /// <see cref="HeatRatio"/> was written to prevent and the panel never adopted it.
+        ///
+        /// Zero for an empty square and for a cabinet with nothing in it.
+        /// </summary>
+        public double CabinetHeatKilowatts(int column, int row, double kilowattsPerAccelerator,
+            RoomUpgrades? upgrades = null)
+        {
+            if (!Contains(column, row))
+            {
+                return 0.0;
+            }
+
+            var index = IndexOf(column, row);
+
+            if (racks[index] == ServerRack.None || accelerators[index] <= 0)
+            {
+                return 0.0;
+            }
+
             var climate = Climate(kilowattsPerAccelerator, upgrades);
             var level = climate.OverclocksRunning ? overclock[index] : 0;
 
-            var heat = Load(index, 0.0, kilowattsPerAccelerator).Kilowatts
-                       * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
+            return Load(index, 0.0, kilowattsPerAccelerator).Kilowatts
+                   * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
+        }
 
-            // The room's own heat reaches every cabinet in it: the air going in is already warm.
-            var cooling = (upgrades ?? RoomUpgrades.None).CoolingFor(definition, fans[index])
-                          * climate.CabinetFactor;
+        /// <summary>
+        /// What one cabinet can shed, after the room has had its say.
+        ///
+        /// The room's own heat reaches every cabinet in it: the air going in is already warm, so
+        /// the same fans move less of it. One reading, for the same reason as the one above.
+        /// </summary>
+        public double CabinetCoolingKilowatts(int column, int row, double kilowattsPerAccelerator,
+            RoomUpgrades? upgrades = null)
+        {
+            if (!Contains(column, row))
+            {
+                return 0.0;
+            }
 
-            return heat / Math.Max(0.1, cooling);
+            var index = IndexOf(column, row);
+
+            if (racks[index] == ServerRack.None)
+            {
+                return 0.0;
+            }
+
+            var climate = Climate(kilowattsPerAccelerator, upgrades);
+
+            return (upgrades ?? RoomUpgrades.None)
+                       .CoolingFor(ServerRackCatalog.Get(racks[index]), fans[index])
+                   * climate.CabinetFactor;
         }
 
         /// <summary>The same reading as a colour. See <see cref="ServerRackCatalog.HeatOf"/>.</summary>

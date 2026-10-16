@@ -92,7 +92,24 @@ that called the simulation directly. Found while reading the surrounding code ra
 
 ### Fixed
 
+- **The opened cabinet and the floor tile described the same box with two different numbers.**
+  `UI/RackEditorPanel.cs` worked a cabinet's heat out as `cards * the fleet average`, while
+  `ServerHall.HeatAt`, which colours the tile under it, counts the cards in that cabinet by
+  generation. An accelerator draws between 0.30 kW and 2.20 kW depending on which one it is, so
+  from the day cards went into cabinets by hand the two readings could part company: a cabinet
+  filled with one generation showed a comfortable bar over a box the simulation was throttling,
+  or the reverse. The throttle percentage in the verdict was worse, a ratio of the hall's own
+  figure to the panel's, so the two bases never agreed. `Simulation/ServerHall.cs` gains
+  `CabinetHeatKilowatts` and `CabinetCoolingKilowatts`, `HeatRatio` is now the division of those
+  two, and the panel asks for all three readings instead of keeping its own.
+  **The doc comment on `HeatRatio` already said that two formulas for one quantity "would show as
+  a green cabinet next to a panel saying it is throttling".** It was written to stop exactly this
+  and the panel had never adopted it, which is the fifth copy of this arithmetic found in the
+  server room and the sixth comment in this project found asserting a boundary nothing held.
+  `CabinetPanelReadsTheHallTests` is the ratchet, and its source guard fails on the old line.
+  Found while checking a tester's report that turned out not to be a bug.
 - **A commissioned datacenter stays open after its own price leaves the bank.**
+
   `Simulation/CompanyState.cs` gains `StatusOf(tier)`: one reading of a tier gate for everybody, in
   one order, catalog then research then anything already paid for. The ladder, the purchase page and
   the till each used to ask their own way and the three could disagree. The cash requirement is the

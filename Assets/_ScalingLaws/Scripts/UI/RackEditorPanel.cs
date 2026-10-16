@@ -1015,13 +1015,20 @@ namespace ScalingLaws.UI
             // be worked out inline, which was right until the room and the overclock arrived and
             // then quoted a cabinet that ignored both.
             var level = climate.OverclocksRunning ? hall.OverclockAt(square.Column, square.Row) : 0;
-            var heat = square.Accelerators * perCardKw
-                       * (1.0 + ServerRackCatalog.OverclockHeatPerLevel * level);
-            var cooling = room.CoolingFor(definition, square.Fans) * climate.CabinetFactor;
+
+            // **Every figure below is the hall's own reading, and that is not tidiness.** Heat,
+            // cooling and the throttle used to be worked out here from `cards * the fleet
+            // average`. That is a different number from the one the room actually runs on the
+            // moment a cabinet is filled by hand with a single generation, because an
+            // accelerator draws anywhere between 0.30 kW and 2.20 kW depending on which one it
+            // is. The floor tile reads `HeatAt`, which counts per generation, so the tile and
+            // this panel could describe the same box in two different colours. The doc comment
+            // on `ServerHall.HeatRatio` was written to stop exactly that and this panel had
+            // never adopted it.
+            var heat = hall.CabinetHeatKilowatts(square.Column, square.Row, perCardKw, room);
+            var cooling = hall.CabinetCoolingKilowatts(square.Column, square.Row, perCardKw, room);
             var delivered = hall.CabinetPetaflops(square.Column, square.Row, perCardPf, perCardKw, room);
-            var ideal = square.Accelerators * perCardPf
-                        * (1.0 + ServerRackCatalog.OverclockThroughputPerLevel * level);
-            var factor = ideal > 0.0 ? Math.Min(1.0, delivered / ideal) : 1.0;
+            var factor = ServerRackCatalog.ThrottleFactor(heat, cooling, room.PenaltyFor(definition.Id));
             var draw = heat + square.Fans * ServerRackCatalog.FanDrawKilowatts;
 
             block.Add(UiParts.StatLine(Loc.T("rack.accelerators"),
