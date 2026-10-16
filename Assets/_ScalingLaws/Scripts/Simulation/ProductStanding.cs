@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using ScalingLaws.Core;
 using ScalingLaws.Data;
 
@@ -110,19 +111,74 @@ namespace ScalingLaws.Simulation
         /// does not read as fresh on one screen and stale on another. The frontier gap is measured in
         /// capability points, where ten points is a full generation of compute.
         /// </summary>
-        public static double TopicalityOf(int daysOld, double capability, double frontier)
-        {
-            var byAge = 1.0 - Math.Clamp(
-                (daysOld - (double)Standing.FreshDays) / (Standing.StaleDays - Standing.FreshDays),
-                0.0, 1.0);
-
-            var gap = Math.Max(0.0, SimUnits.Finite(frontier) - SimUnits.Finite(capability));
-            var byFrontier = 1.0 - Math.Clamp(gap / 10.0, 0.0, 1.0);
-
+        public static double TopicalityOf(int daysOld, double capability, double frontier) =>
             // The worse of the two, not the average. Being current means being current in both
             // senses, and averaging would let a brand new model that is already ten points behind
             // read as half fresh.
-            return Math.Min(byAge, byFrontier);
+            Math.Min(FreshnessByAge(daysOld), FreshnessByFrontier(capability, frontier));
+
+        /// <summary>
+        /// How current the calendar alone says this is. Flat at 1.0 until <see cref="Standing.FreshDays"/>
+        /// and nought at <see cref="Standing.StaleDays"/>.
+        /// </summary>
+        public static double FreshnessByAge(int daysOld) =>
+            1.0 - Math.Clamp(
+                (daysOld - (double)Standing.FreshDays) / (Standing.StaleDays - Standing.FreshDays),
+                0.0, 1.0);
+
+        /// <summary>
+        /// How current the rest of the world alone says this is. One while level with the frontier
+        /// or ahead of it, falling by a tenth for each capability point behind, nought at ten.
+        /// </summary>
+        public static double FreshnessByFrontier(double capability, double frontier) =>
+            1.0 - Math.Clamp(
+                Math.Max(0.0, SimUnits.Finite(frontier) - SimUnits.Finite(capability)) / 10.0,
+                0.0, 1.0);
+
+        /// <summary>
+        /// Which of the two halves is holding this product back, in a sentence. Empty while it is
+        /// current in both senses.
+        ///
+        /// **Asked for by a tester, and his reading of it was half right.** He had watched the bar
+        /// fall on a model he believed was ahead of the frontier and read it as the clock always
+        /// winning. The clock is flat for the first 240 days, so what he was almost certainly
+        /// watching was the frontier moving under him at about a point a month through 2024 and
+        /// 2025. The bar could not tell him that: a reading falling because the world moved looks
+        /// exactly like one falling because the product got old.
+        /// </summary>
+        public string WhyNotCurrent
+        {
+            get
+            {
+                if (!Exists)
+                {
+                    return string.Empty;
+                }
+
+                var byAge = FreshnessByAge(DaysOld);
+                var byFrontier = FreshnessByFrontier(Capability, Frontier);
+
+                if (byAge >= 1.0 && byFrontier >= 1.0)
+                {
+                    return Loc.T("banner.fresh.both");
+                }
+
+                if (byFrontier < byAge)
+                {
+                    var gap = Math.Max(0.0, SimUnits.Finite(Frontier) - SimUnits.Finite(Capability));
+                    return Loc.T("banner.fresh.by_frontier", UiFormatPoints(gap));
+                }
+
+                return Loc.T("banner.fresh.by_age", DaysOld.ToString(CultureInfo.InvariantCulture));
+            }
         }
+
+        /// <summary>
+        /// One decimal, invariant. `Simulation/` may not read `UI/`, so it cannot ask `UiFormat`,
+        /// and a raw format string follows the machine culture, which on this one is Polish. That
+        /// fault has shipped five times in this project.
+        /// </summary>
+        private static string UiFormatPoints(double points) =>
+            points.ToString("0.0", CultureInfo.InvariantCulture);
     }
 }

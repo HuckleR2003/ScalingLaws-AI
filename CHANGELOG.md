@@ -92,7 +92,20 @@ that called the simulation directly. Found while reading the surrounding code ra
 
 ### Fixed
 
-- **The hard ban on duplicate accounts can be switched on by a player.** `TrySetMultiAccountBan`
+- **The topicality bar says which of its two halves is holding it down.** A tester watched it fall
+  on a model he believed was ahead of the frontier and read it as the clock always winning. The
+  clock is flat for the first 240 days, so what he was almost certainly watching was the frontier
+  moving under him, about a capability point a month through 2024 and 2025, each point taking a
+  tenth off the reading. A bar cannot say that: a reading falling because the world moved looks
+  exactly like one falling because the product got old. `TopicalityOf` is now the smaller of
+  `FreshnessByAge` and `FreshnessByFrontier`, both public, and `ProductStanding.WhyNotCurrent`
+  names the one that is dragging with its own number. **The rule has not changed and is not going
+  to**: being current is a property of the distance between your model and everybody else's.
+  `WhyTopicalityFallsTests` pins both halves and the sentence, including that the gap prints
+  invariantly, because `Simulation/` cannot ask `UiFormat` and a raw format string follows the
+  machine culture.
+- **The hard ban on duplicate accounts can be switched on by a player.**
+ `TrySetMultiAccountBan`
   was written on 11 October with its cost, its research gate and seven tests, and nothing in
   `Scripts/UI` ever called it. The duplicates tile had been printing the policy as ON or OFF the
   whole time, so the game was showing a switch nothing could throw, which is the same fault as the

@@ -412,6 +412,12 @@ namespace ScalingLaws.UI
 
             topicalityFill.EnableInClassList("mb-meter__fill--bad", standing.Topicality < 0.3);
 
+            // **Which of the two halves is dragging, because the bar alone cannot say.** A
+            // reading falling because the frontier moved under you looks exactly like one
+            // falling because the product got old, and a tester read the second when it was the
+            // first. The sentence comes off the standing rather than being worked out here.
+            topicalityWord.tooltip = standing.WhyNotCurrent;
+
             subscribers.text = standing.Exists
                 ? Loc.T("banner.current_subs", UiFormat.Count(standing.Subscribers))
                 : Loc.T("banner.nothing_on_sale");

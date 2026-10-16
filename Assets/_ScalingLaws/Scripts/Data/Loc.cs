@@ -3885,6 +3885,9 @@ namespace ScalingLaws.Data
             ["menu.tip.8"] = "There is no winning move that works twice. Token prices fall by more than half every year.",
 
             // ---- shell screens, from Samanta 2026-09-06 ----------------------------------------
+            ["banner.fresh.both"] = "Level with the frontier and still inside its first 240 days.",
+            ["banner.fresh.by_age"] = "Held back by the calendar: {0} days since release.",
+            ["banner.fresh.by_frontier"] = "Held back by the rest of the world: {0} capability points behind the frontier.",
             ["banner.fresh.current"] = "CURRENT",
             ["banner.fresh.holding"] = "HOLDING",
             ["banner.fresh.outdated"] = "OUTDATED",
@@ -7732,6 +7735,9 @@ namespace ScalingLaws.Data
             ["menu.tip.8"] = "Nie ma zagrania, które wygrywa dwa razy. Ceny tokenów spadają o ponad połowę co rok.",
 
             // ---- shell screens, from Samanta 2026-09-06 ----------------------------------------
+            ["banner.fresh.both"] = "Na poziomie frontu i wciąż w pierwszych 240 dniach.",
+            ["banner.fresh.by_age"] = "Ciągnie go kalendarz: {0} dni od premiery.",
+            ["banner.fresh.by_frontier"] = "Ciągnie go reszta świata: {0} punktów zdolności za frontem.",
             ["banner.fresh.current"] = "NA CZASIE",
             ["banner.fresh.holding"] = "TRZYMA SIĘ",
             ["banner.fresh.outdated"] = "PRZESTARZAŁY",
