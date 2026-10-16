@@ -169,17 +169,36 @@ namespace ScalingLaws.UI
                     // years ago.** Deferred a frame because nothing has been laid out when this
                     // returns, so the card it is asked to centre on still has no position; the
                     // page scroller learned the same lesson the same way.
-                    var lookFor = active?.Node ?? selectedResearch;
+                    // **A node the player just asked for beats the one already running.** The
+                    // order used to be the other way round, so pressing GO TO RESEARCH on a
+                    // control that had refused them opened the board looking at whatever was in
+                    // progress. The yellow mark was on the right node and the view was on a
+                    // different one, which is the same screen telling two stories.
+                    var asked = state.WantedResearch.Count > 0 && selectedResearch != ResearchNodeId.None
+                               && state.WantedResearch.Contains(selectedResearch);
+
+                    var lookFor = asked ? selectedResearch : active?.Node ?? selectedResearch;
 
                     if (lookFor != ResearchNodeId.None && nodes.Any(s => s.Node.Id == lookFor))
                     {
                         var target = lookFor;
+                        var band = section;
+
                         map.schedule.Execute(() =>
                         {
-                            if (treePips.TryGetValue(target, out var card))
+                            if (!treePips.TryGetValue(target, out var card))
                             {
-                                map.LookAt(card);
+                                return;
                             }
+
+                            map.LookAt(card);
+
+                            // **And the page itself, which is the half that was missing.**
+                            // `LookAt` moves the era band under its own frame; it cannot move
+                            // the page down to the band. A node three eras below the fold was
+                            // perfectly centred inside a strip the player could not see, so the
+                            // report was simply that nothing happened.
+                            BringBandIntoView(band);
                         }).ExecuteLater(1);
                     }
                 }
@@ -1228,6 +1247,49 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>Every pip currently on the board, so a selection can light one without a redraw.</summary>
+        /// <summary>
+        /// Scrolls the page so an era band is on screen, once it has a position.
+        ///
+        /// **The board has two scrollers and only one of them was ever moved.** `ResearchMap`
+        /// slides an era under its own frame, which is the horizontal half. The page it sits on
+        /// is the shell's own `ScrollView`, and a node in era four opened centred inside a band
+        /// a thousand pixels below the fold.
+        ///
+        /// Deferred to a geometry event for the reason this project has learned three times: a
+        /// scroller whose content has not been laid out has no range, so an offset set against it
+        /// does nothing at all.
+        /// </summary>
+        private void BringBandIntoView(VisualElement band)
+        {
+            if (band?.panel == null || pageScroller == null)
+            {
+                return;
+            }
+
+            if (band.layout.height > 0f)
+            {
+                pageScroller.ScrollTo(band);
+                return;
+            }
+
+            band.RegisterCallback<GeometryChangedEvent>(OnBandPlaced);
+        }
+
+        private void OnBandPlaced(GeometryChangedEvent placed)
+        {
+            if (placed.target is not VisualElement band)
+            {
+                return;
+            }
+
+            band.UnregisterCallback<GeometryChangedEvent>(OnBandPlaced);
+
+            if (band.panel != null && pageScroller != null)
+            {
+                pageScroller.ScrollTo(band);
+            }
+        }
+
         private readonly Dictionary<ResearchNodeId, Button> treePips = new();
 
         /// <summary>
