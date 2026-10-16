@@ -945,8 +945,14 @@ namespace ScalingLaws.UI
 
             var card = new Button(() =>
             {
-                if (!simulation.TryBuyRack(definition.Id, out _))
+                // **The reason used to be thrown away with `out _`.** A cabinet refused for
+                // money looked exactly like a cabinet that had been clicked and ignored, and the
+                // card was disabled on top of that, so the click never arrived at all.
+                if (!simulation.TryBuyRack(definition.Id, out var why))
                 {
+                    AudioDirector.Deny();
+                    announce?.Invoke(definition.DisplayName, why);
+
                     return;
                 }
 
@@ -967,7 +973,10 @@ namespace ScalingLaws.UI
             });
 
             card.AddToClassList("roombuild__card");
-            card.SetEnabled(affordable);
+
+            // Shut is a look, not a dead control. Fifth time in this project: the click lands,
+            // the till refuses out loud, and the card is greyed so the rail still reads.
+            card.EnableInClassList("button--shut", !affordable);
 
             var face = new RackFace();
             face.AddToClassList("roombuild__face");
@@ -989,8 +998,27 @@ namespace ScalingLaws.UI
 
             card.Add(UiParts.StatLine(Loc.T("rack.price"), UiFormat.Money(definition.PriceUsd)));
 
+            // **A cabinet costs the room something before it holds anything.** Pumps and loops
+            // run empty, and an immersion tank draws 2.2 kW doing nothing at all against a bare
+            // cellar that sheds 30. Fourteen empty tanks overheat a room with no silicon in it,
+            // and a tester found that out after paying. This is not a fourth datasheet figure on
+            // a 306px rail: it is a refusal-shaped warning that appears only when this cabinet,
+            // on its own, would take the room past what it can shed.
+            var (_, perCardKw) = simulation.HallPerAccelerator();
+            var standing = simulation.State.Hall.Climate(perCardKw, simulation.Room);
+
+            if (standing.HeatKilowatts + definition.IdleDrawKilowatts > standing.CoolingKilowatts)
+            {
+                var tips = new Label(Loc.T("room.rack.tips"));
+                tips.AddToClassList("readout__value--warn");
+                tips.style.whiteSpace = WhiteSpace.Normal;
+                card.Add(tips);
+            }
+
             card.tooltip = Loc.T("rack.upkeep") + ": "
-                + UiFormat.Money(definition.MonthlyUpkeepUsd) + "\n" + definition.Note;
+                + UiFormat.Money(definition.MonthlyUpkeepUsd) + "\n"
+                + Loc.T("room.rack.idle") + ": "
+                + UiFormat.Kilowatts(definition.IdleDrawKilowatts) + "\n" + definition.Note;
 
             return card;
         }

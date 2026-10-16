@@ -1220,7 +1220,12 @@ namespace ScalingLaws.UI
             // Shut is a look, not a dead control. The class greys it so the row still reads at a
             // glance, and the click still lands and still says why.
             add.EnableInClassList("button--shut", !canAfford || !hasRoom);
-            add.tooltip = hasRoom ? string.Empty : Loc.T("rack.full");
+
+            // **A fan has two sides and only one of them was ever on screen.** It cools this
+            // cabinet and its own draw goes into the room, which reaches back into every cabinet
+            // standing in it. Thirty fans on a full floor is 5.4 kW, which is eighteen per cent
+            // of what a bare cellar can shed. An empty tooltip here was a wasted place to say so.
+            add.tooltip = hasRoom ? Loc.T("rack.fan.trade") : Loc.T("rack.full");
             row_.Add(add);
 
             if (square.Fans > 0)

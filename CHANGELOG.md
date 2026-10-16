@@ -92,7 +92,22 @@ that called the simulation directly. Found while reading the surrounding code ra
 
 ### Fixed
 
-- **The compute tier a player is already paying for now says so.** A tester played a whole
+- **A cabinet costs the room something before it holds anything, and now it says so.** An
+  immersion tank draws 2.2 kW doing nothing at all, against a bare cellar that sheds 30, so
+  fourteen empty tanks overheat a room with no silicon in it. A tester found that out after
+  paying. `UI/ServerRoomScreen.cs` puts the idle draw in the shop card's tooltip and shows a
+  warning on the card itself when that one cabinet would take the room past its cooling on its
+  own. It is a warning rather than a fourth datasheet figure, because the rail is 306px and the
+  card is a decision.
+- **The fan's second side is on screen.** It cools its cabinet and its own 0.18 kW goes into the
+  room, which every cabinet in there breathes; thirty fans on a full floor is eighteen per cent of
+  what a bare cellar can shed. `rack.fan.trade` says both halves in the tooltip that was empty.
+- **The cabinet shop refused in silence.** `TryBuyRack`'s reason was thrown away with `out _` and
+  the card was `SetEnabled(affordable)` on top of it, so an unaffordable cabinet took the click
+  and answered nothing. The card stays clickable, greys through `button--shut`, and the till
+  speaks. **Fifth silent disabled control in this project.**
+- **The compute tier a player is already paying for now says so.**
+ A tester played a whole
   campaign and reported that colocation was nowhere in the game: "I haven't seen it anywhere, and
   so only have access to renting compute and using the basement". He had been paying its rack fee
   and its $0.14 per kWh since his first accelerator. The player never picks a tier, the purchase
