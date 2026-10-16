@@ -210,6 +210,13 @@ namespace ScalingLaws.UI
         private Label cashLabel;
         private Label valuationLabel;
         private Label companyLabel;
+
+        /// <summary>
+        /// Set by the company name in the bar, consumed the moment the management screen is
+        /// mounted. A flag rather than a call because the screen does not exist yet when the
+        /// click happens: `Show` builds it.
+        /// </summary>
+        private bool openOperationsOnManagement;
         private Label dateLabel;
         private Label rankLabel;
         private GameHud hud;
@@ -1659,8 +1666,25 @@ namespace ScalingLaws.UI
             rankLabel = new Label();
             rankLabel.AddToClassList("topbar__stat");
             rankLabel.AddToClassList("topbar__stat--muted");
+            // **The company name is the way into the company's own standing decisions.**
+            // Nothing in the game pointed at them: the duplicate-account policy and the
+            // spare-capacity desk live on the OPERATIONS tab of the management screen, which is
+            // itself reached from one button on one banner. A player who wanted to know what
+            // rules their lab runs under had nowhere obvious to click, and the name of their own
+            // company sitting inert in the bar is the most obvious place there is.
+            //
+            // This opens a tab for the player, which the support walkthrough deliberately stopped
+            // doing. The two are not the same: the walkthrough was skipping the lesson of finding
+            // the tab, and this is answering a click that asked for it by name.
             companyLabel = new Label();
             companyLabel.AddToClassList("topbar__stat");
+            companyLabel.AddToClassList("topbar__stat--link");
+            companyLabel.tooltip = Loc.T("topbar.company.note");
+            companyLabel.RegisterCallback<ClickEvent>(_ =>
+            {
+                openOperationsOnManagement = true;
+                Show(Screen.Management);
+            });
             dateLabel = new Label();
             dateLabel.AddToClassList("topbar__stat");
             dateLabel.AddToClassList("topbar__stat--muted");
@@ -2316,6 +2340,13 @@ namespace ScalingLaws.UI
                     // steps that follow still ring something.
                     management.Refresh();
                     host.Add(management.Root);
+
+                    // Asked for by name from the top bar, so it is answered rather than guessed.
+                    if (openOperationsOnManagement)
+                    {
+                        openOperationsOnManagement = false;
+                        management.ShowOperations();
+                    }
 
                     // The walkthrough step that says to open the desk is satisfied by the desk
                     // opening, never by a button on the strip. The id is a literal here and in the

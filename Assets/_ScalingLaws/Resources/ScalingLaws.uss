@@ -418,6 +418,13 @@
     -unity-font-style: normal;
 }
 
+/* The company name is a way in rather than a readout, and until it lit up on hover there was no
+   sign of that. An underline would make it a web link on a screen that has none; a lift in
+   brightness is the same signal the bottom bar slots already use. */
+.topbar__stat--link:hover {
+    color: rgb(236, 142, 122);
+}
+
 /* ---- left rail -------------------------------------------------------- */
 
 .shell {
