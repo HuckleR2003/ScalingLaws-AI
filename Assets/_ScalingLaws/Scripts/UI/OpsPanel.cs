@@ -390,9 +390,13 @@ namespace ScalingLaws.UI
                 Loc.T("ops.dupes.free_cap"),
                 accounts.FreeExcess > 0.45 ? "opstile__fig--bad" : null);
 
+            // Red was unconditional here, so a company that had served nobody was told in the
+            // alarm colour that it had spent $0 on them. Nothing spent is not a problem.
+            var onDuplicates = simulation.DuplicateServingLastMonthUsd();
+
             tile.Line(Loc.T("ops.dupes.spent"),
-                UiFormat.Money(simulation.DuplicateServingLastMonthUsd()),
-                "opstile__linefig--bad");
+                UiFormat.Money(onDuplicates),
+                onDuplicates > 0L ? "opstile__linefig--bad" : null);
 
             tile.Rule();
 
@@ -475,12 +479,23 @@ namespace ScalingLaws.UI
 
             tile.Fill(dial);
 
-            tile.Line(Loc.T("ops.idle.spare"), UiFormat.Percent(idle, 0),
-                idle > 0.5 ? "opstile__linefig--bad" : null);
+            // **A company with no servers is not wasting servers.** The idle share of nothing is
+            // 1.0 and the bill on it is nought, so on 1 January 2022 this tile told a company
+            // that had never bought anything, in red, that its whole fleet was doing nothing and
+            // that this was costing it $0 a day. The corner banner shipped exactly this in
+            // August, reading LEAVING in red over a market of nobody, and the rule that came out
+            // of it holds here: a company that has not started is not a company failing.
+            var fleet = simulation.Profile.Bill.TotalUsd > 0.0;
+            var wasteful = fleet && idle > 0.5;
+
+            tile.Line(Loc.T("ops.idle.spare"),
+                fleet ? UiFormat.Percent(idle, 0) : Loc.T("ops.dash"),
+                wasteful ? "opstile__linefig--bad" : null);
 
             tile.Line(Loc.T("ops.idle.burning"),
-                Loc.T("release.per_day", UiFormat.Money(IdleCostPerDayUsd())),
-                idle > 0.5 ? "opstile__linefig--bad" : null);
+                fleet ? Loc.T("release.per_day", UiFormat.Money(IdleCostPerDayUsd()))
+                      : Loc.T("ops.dash"),
+                wasteful ? "opstile__linefig--bad" : null);
 
             tile.Rule();
 
