@@ -92,7 +92,16 @@ that called the simulation directly. Found while reading the surrounding code ra
 
 ### Fixed
 
-- **The topicality bar says which of its two halves is holding it down.** A tester watched it fall
+- **A notice no longer lands on the page it is announcing over.** `StartedNotice` sat at
+  `top: 64px` across the middle 46% of the window, which is where every page in this game puts its
+  own identity: a title, a photograph, a row of tabs, or in the model creator a rail of eight
+  stages. The proof frame of that creator showed an alert covering stages three through six, which
+  is the navigation of the screen. The tutorial phone taught this once already by covering a
+  quarter of twenty proof frames. It is bottom left now, above the HUD bar, 460px rather than a
+  share of the window: a headline and one sentence read better short, and the corner column on
+  SITE grows sideways from the right and must never be reached.
+- **The topicality bar says which of its two halves is holding it down.**
+ A tester watched it fall
   on a model he believed was ahead of the frontier and read it as the clock always winning. The
   clock is flat for the first 240 days, so what he was almost certainly watching was the frontier
   moving under him, about a capability point a month through 2024 and 2025, each point taking a

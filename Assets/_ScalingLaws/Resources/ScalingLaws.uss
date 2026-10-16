@@ -17592,18 +17592,30 @@
 
 /* Across the top, over whatever screen the player was moved to. It ignores the mouse, because a
    notice that eats a click is worse than no notice at all. */
+/* Bottom left, above the bar, and it used to be top centre.
+
+   The top band of this game belongs to whatever page is open: a title, a rail of stages, a row of
+   tabs. A notice parked at top 64px across the middle 46% lands on all of them, and the proof
+   frame of the model creator showed an alert covering stages three through six, which is the
+   navigation of that screen. The tutorial phone taught this once already by covering a quarter of
+   twenty frames.
+
+   The bottom is the one strip nothing owns except the HUD bar, which is fixed. 460px rather than
+   46% of the window, because a headline and one sentence read better short, and because the
+   corner column on SITE grows sideways from the right and must never be reached. */
 .started {
     position: absolute;
-    top: 64px;
-    left: 27%;
-    right: 27%;
+    bottom: 84px;
+    left: 24px;
+    width: 460px;
+    max-width: 38%;
     padding: 18px 26px 20px 26px;
     border-radius: 12px;
     border-width: 1px;
     border-color: rgba(150, 130, 255, 0.45);
     background-color: rgba(10, 12, 22, 0.96);
     opacity: 0;
-    translate: 0 -14px;
+    translate: 0 14px;
     transition-property: opacity, translate;
     transition-duration: 0.28s;
 }
