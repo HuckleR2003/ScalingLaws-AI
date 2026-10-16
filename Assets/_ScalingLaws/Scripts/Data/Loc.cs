@@ -216,7 +216,11 @@ namespace ScalingLaws.Data
             ["common.per_hour"] = "an hour",
 
             // ---- settings ----------------------------------------------------------------------------
-            ["settings.title"] = "SETTINGS",
+            ["settings.title"] = "SETTINGS",
+            ["settings.tab.main"] = "GENERAL",
+            ["settings.tab.sound"] = "SOUND",
+            ["settings.tab.display"] = "DISPLAY",
+            ["settings.tab.labs"] = "HCK LABS",
             ["settings.note"] = "These are kept separately from a campaign and survive deleting one.",
             ["settings.language"] = "LANGUAGE",
             ["settings.language.note"] = "The interface, the phone and every explanation card.",
@@ -4074,7 +4078,11 @@ namespace ScalingLaws.Data
             ["common.per_hour"] = "za godzinę",
 
             // ---- settings ----------------------------------------------------------------------------
-            ["settings.title"] = "USTAWIENIA",
+            ["settings.title"] = "USTAWIENIA",
+            ["settings.tab.main"] = "OGÓLNE",
+            ["settings.tab.sound"] = "DŹWIĘKI",
+            ["settings.tab.display"] = "GRAFIKA",
+            ["settings.tab.labs"] = "HCK LABS",
             ["settings.note"] = "Zapisywane osobno od kampanii. Skasowanie zapisu ich nie ruszy.",
             ["settings.language"] = "JĘZYK",
             ["settings.language.note"] = "Interfejs, telefon i wszystkie karty z objaśnieniami.",

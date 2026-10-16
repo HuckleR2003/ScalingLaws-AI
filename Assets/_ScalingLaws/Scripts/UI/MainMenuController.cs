@@ -62,6 +62,9 @@ namespace ScalingLaws.UI
         private bool awaitingOverwriteConfirmation;
         private bool settingsOpen;
 
+        /// <summary>Which settings category is open. Kept across the rebuild a language change causes.</summary>
+        private string settingsTab = "main";
+
         /// <summary>The CREDITS sheet is open over the menu. Same shape as <see cref="settingsOpen"/>.</summary>
         private bool creditsOpen;
 
@@ -644,6 +647,22 @@ namespace ScalingLaws.UI
             return row;
         }
 
+        /// <summary>
+        /// The settings sheet, in four categories down the left.
+        ///
+        /// **It was one column and it had outgrown itself.** Language, two volume sliders, full
+        /// screen, the whole display block, reduced motion, the debug switch, the studio, the
+        /// testers and a back button, stacked. On a short window the rows ran into each other and
+        /// the author sent a photograph of labels sitting on top of sliders.
+        ///
+        /// Categories rather than a scroller, because the fault is not that the page is long: it
+        /// is that four unrelated subjects were sharing one page. Sound has nothing to say to the
+        /// window size, and who made the game has nothing to say to either.
+        ///
+        /// **Language stays at the top of the first tab and nowhere else.** Everything on every
+        /// tab is written in whatever it says, so it has to be the first thing the eye lands on,
+        /// and changing it rebuilds the sheet with the tab still open.
+        /// </summary>
         private VisualElement BuildSettingsPanel()
         {
             var panel = new VisualElement();
@@ -661,11 +680,78 @@ namespace ScalingLaws.UI
             sub.AddToClassList("page-subtitle");
             sheet.Add(sub);
 
-            // First on the page, and it rebuilds the page.
-            //
-            // **Everything below this row is written in whatever it is set to**, so changing it and
-            // then having to find the back button in a language you do not read would be a trap.
-            // The rebuild is why it is at the top: the eye is already there.
+            var body = new VisualElement();
+            body.AddToClassList("settings-body");
+            sheet.Add(body);
+
+            var tabs = new VisualElement();
+            tabs.AddToClassList("settings-tabs");
+            body.Add(tabs);
+
+            var pane = new VisualElement();
+            pane.AddToClassList("settings-pane");
+            body.Add(pane);
+
+            foreach (var (key, caption) in SettingsTabs)
+            {
+                var pick = key;
+
+                var tab = new Button(() =>
+                {
+                    settingsTab = pick;
+                    Show(Stage.Menu);
+                })
+                { text = Loc.T(caption) };
+
+                tab.AddToClassList("settings-tab");
+                tab.EnableInClassList("settings-tab--on", settingsTab == pick);
+                tabs.Add(tab);
+            }
+
+            switch (settingsTab)
+            {
+                case "sound":
+                    BuildSoundSettings(pane);
+                    break;
+                case "display":
+                    BuildDisplaySettings(pane);
+                    break;
+                case "labs":
+                    BuildLabsSettings(pane);
+                    break;
+                default:
+                    BuildGeneralSettings(pane);
+                    break;
+            }
+
+            var back = new Button(() =>
+            {
+                settingsOpen = false;
+                Show(Stage.Menu);
+            })
+            { text = Loc.T("common.back") };
+            back.AddToClassList("menu-button");
+            back.style.marginTop = 18;
+            sheet.Add(back);
+
+            return panel;
+        }
+
+        /// <summary>The four categories, in the order they are read.</summary>
+        private static readonly (string Key, string Caption)[] SettingsTabs =
+        {
+            ("main", "settings.tab.main"),
+            ("sound", "settings.tab.sound"),
+            ("display", "settings.tab.display"),
+            ("labs", "settings.tab.labs")
+        };
+
+        /// <summary>Language, full screen, reduced motion and how often the game saves itself.</summary>
+        private void BuildGeneralSettings(VisualElement pane)
+        {
+            // First, and it rebuilds the sheet. Everything below is written in whatever it says,
+            // so changing it and then hunting for the back button in a language you do not read
+            // would be a trap. The rebuild keeps the tab, so the eye does not lose its place.
             var languageRow = new VisualElement();
             languageRow.AddToClassList("setting-row");
             languageRow.Add(SettingCopy(Loc.T("settings.language"), Loc.T("settings.language.note")));
@@ -680,19 +766,73 @@ namespace ScalingLaws.UI
             languageField.RegisterValueChangedCallback(evt =>
             {
                 GameSettings.SetLanguage(evt.newValue == "Polski" ? Language.Polish : Language.English);
-
-                // The sheet is a mode on the menu rather than a stage of its own, so redrawing the
-                // menu with settingsOpen still set is what puts the page back in the new language.
                 Show(Stage.Menu);
             });
 
             languageRow.Add(languageField);
-            sheet.Add(languageRow);
+            pane.Add(languageRow);
 
-            // **Two controls on one line, neither inside the other.** Sound is the clicks and the
-            // rest of the feedback; music is the menu, the office and the creator. Stacked, with one
-            // scaling the other, the second slider needs a sentence explaining that the first also
-            // moves it, and a control that needs that footnote is two controls doing one job.
+            var fullscreenRow = new VisualElement();
+            fullscreenRow.AddToClassList("setting-row");
+            fullscreenRow.Add(SettingCopy(Loc.T("settings.fullscreen"), Loc.T("settings.fullscreen.note")));
+            var fullscreenToggle = new Toggle { value = GameSettings.Fullscreen };
+            fullscreenToggle.RegisterValueChangedCallback(evt => GameSettings.SetFullscreen(evt.newValue));
+            fullscreenRow.Add(fullscreenToggle);
+            pane.Add(fullscreenRow);
+
+            var motionRow = new VisualElement();
+            motionRow.AddToClassList("setting-row");
+            motionRow.Add(SettingCopy(Loc.T("settings.motion"), Loc.T("settings.motion.note")));
+            var motionToggle = new Toggle { value = GameSettings.ReduceMotion };
+            motionToggle.RegisterValueChangedCallback(evt => GameSettings.SetReduceMotion(evt.newValue));
+            motionRow.Add(motionToggle);
+            pane.Add(motionRow);
+
+            // **The same control the pause sheet carries, and the same phrases.** It was only
+            // reachable from inside a campaign, which is the one place a player is least likely
+            // to go looking for it: the question "does this game save itself" is asked before
+            // starting, not during.
+            var autosaveRow = new VisualElement();
+            autosaveRow.AddToClassList("setting-row");
+            autosaveRow.AddToClassList("setting-row--stack");
+            autosaveRow.Add(SettingCopy(Loc.T("pause.autosave"), Loc.T("pause.autosave.note")));
+
+            var choices = new VisualElement();
+            choices.AddToClassList("setting-choices");
+
+            foreach (var minutes in GameSettings.AutosaveChoices)
+            {
+                var pick = minutes;
+
+                var chip = new Button(() =>
+                {
+                    GameSettings.SetAutosaveMinutes(pick);
+                    Show(Stage.Menu);
+                })
+                {
+                    text = pick == 0
+                        ? Loc.T("pause.autosave.off")
+                        : Loc.T("pause.autosave.every", pick)
+                };
+
+                chip.AddToClassList("setting-chip");
+                chip.EnableInClassList("setting-chip--on", GameSettings.AutosaveMinutes == pick);
+                choices.Add(chip);
+            }
+
+            autosaveRow.Add(choices);
+            pane.Add(autosaveRow);
+        }
+
+        /// <summary>
+        /// Two sliders, neither inside the other.
+        ///
+        /// Sound is the clicks and the rest of the feedback; music is the menu, the office and the
+        /// creator. Stacked with one scaling the other, the second needs a sentence explaining that
+        /// the first also moves it, and a control that needs that footnote is two doing one job.
+        /// </summary>
+        private void BuildSoundSettings(VisualElement pane)
+        {
             var volumeRow = new VisualElement();
             volumeRow.AddToClassList("setting-row");
             volumeRow.AddToClassList("setting-row--pair");
@@ -705,30 +845,42 @@ namespace ScalingLaws.UI
                 Loc.T("settings.music"), Loc.T("settings.music.note"),
                 GameSettings.MusicVolume, GameSettings.SetMusicVolume));
 
-            sheet.Add(volumeRow);
+            pane.Add(volumeRow);
+        }
 
-            var fullscreenRow = new VisualElement();
-            fullscreenRow.AddToClassList("setting-row");
-            fullscreenRow.Add(SettingCopy(Loc.T("settings.fullscreen"), Loc.T("settings.fullscreen.note")));
-            var fullscreenToggle = new Toggle { value = GameSettings.Fullscreen };
-            fullscreenToggle.RegisterValueChangedCallback(evt => GameSettings.SetFullscreen(evt.newValue));
-            fullscreenRow.Add(fullscreenToggle);
-            sheet.Add(fullscreenRow);
+        /// <summary>
+        /// The window block the pause sheet carries, on its own page.
+        ///
+        /// This is the screen somebody opens to look at a display problem, and it is reachable
+        /// before a campaign exists, which is the whole reason it is duplicated here at all.
+        /// </summary>
+        private void BuildDisplaySettings(VisualElement pane) =>
+            pane.Add(DisplaySettings.Build(() => Show(Stage.Menu)));
 
-            // The same block the pause sheet carries. This is the screen somebody opens to
-            // look at a display problem, because it is reachable before a campaign exists.
-            sheet.Add(DisplaySettings.Build(() => Show(Stage.Menu)));
+        /// <summary>
+        /// Who made it, who tested it, and the one switch that is not about playing.
+        ///
+        /// **The debug switch lives here now.** It reveals a button in the founder creator and
+        /// does nothing else, so sitting it between full screen and reduced motion read as a
+        /// setting about the game. It is a fact about the workshop, and this is the workshop tab.
+        /// </summary>
+        private void BuildLabsSettings(VisualElement pane)
+        {
+            var about = new VisualElement();
+            about.AddToClassList("panel");
+            var studio = new Label("HCK LABS");
+            studio.AddToClassList("signature-studio");
+            var author = new Label("Marcin 'HCK' Firmuga");
+            author.AddToClassList("signature-author");
+            var discipline = new Label(Loc.T("menu.software_and_games"));
+            discipline.AddToClassList("console-caption");
+            about.Add(studio);
+            about.Add(author);
+            about.Add(discipline);
+            pane.Add(about);
 
-            var motionRow = new VisualElement();
-            motionRow.AddToClassList("setting-row");
-            motionRow.Add(SettingCopy(Loc.T("settings.motion"), Loc.T("settings.motion.note")));
-            var motionToggle = new Toggle { value = GameSettings.ReduceMotion };
-            motionToggle.RegisterValueChangedCallback(evt => GameSettings.SetReduceMotion(evt.newValue));
-            motionRow.Add(motionToggle);
-            sheet.Add(motionRow);
+            pane.Add(TesterList.Build());
 
-            // Half the size of the settings above it and last on the sheet, because it is not a
-            // setting about playing the game. It reveals a button in the creator and nothing else.
             var debugRow = new VisualElement();
             debugRow.AddToClassList("setting-row");
             debugRow.AddToClassList("setting-row--small");
@@ -746,36 +898,7 @@ namespace ScalingLaws.UI
                 }
             });
             debugRow.Add(debugToggle);
-            sheet.Add(debugRow);
-
-            var about = new VisualElement();
-            about.AddToClassList("panel");
-            about.style.marginTop = 18;
-            var studio = new Label("HCK LABS");
-            studio.AddToClassList("signature-studio");
-            var author = new Label("Marcin 'HCK' Firmuga");
-            author.AddToClassList("signature-author");
-            var discipline = new Label(Loc.T("menu.software_and_games"));
-            discipline.AddToClassList("console-caption");
-            about.Add(studio);
-            about.Add(author);
-            about.Add(discipline);
-            sheet.Add(about);
-
-            // The people who tested the game, straight under who made it.
-            sheet.Add(TesterList.Build());
-
-            var back = new Button(() =>
-            {
-                settingsOpen = false;
-                Show(Stage.Menu);
-            })
-            { text = Loc.T("common.back") };
-            back.AddToClassList("menu-button");
-            back.style.marginTop = 18;
-            sheet.Add(back);
-
-            return panel;
+            pane.Add(debugRow);
         }
 
         /// <summary>

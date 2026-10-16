@@ -299,6 +299,101 @@
     align-items: center;
 }
 
+/* ---- the settings sheet, in categories ------------------------------------------------------ */
+
+/* One column held language, two sliders, full screen, the whole display block, reduced motion,
+   the debug switch, the studio, the testers and a back button. On a short window the rows ran
+   into each other. Four unrelated subjects were sharing one page; the fault was never the
+   length. */
+.settings-body {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-top: 14px;
+}
+
+.settings-tabs {
+    width: 182px;
+    flex-shrink: 0;
+    margin-right: 22px;
+}
+
+/* Stated in full because the runtime theme puts a margin on every button, and four of these in a
+   column inherit four of them. This project has shipped that fault once already, on the trait
+   cards, where it silently turned a row of four into a row of three. */
+.settings-tab {
+    height: 40px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 6px;
+    padding-left: 14px;
+    padding-right: 14px;
+    font-size: 13px;
+    letter-spacing: 1.1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    color: var(--ink-dim);
+    background-color: rgba(255, 255, 255, 0.03);
+    border-left-width: 2px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.settings-tab:hover {
+    color: var(--ink);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* The lit left edge, the same mark the premises list uses for the office you are in. */
+.settings-tab--on {
+    color: var(--ink);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-left-color: rgb(226, 112, 96);
+}
+
+.settings-pane {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+/* The autosave chips. Same shape as the pause sheet carries, restated here because that one is
+   styled for a narrower column. */
+/* Stacked, because the autosave note is three sentences and the chips do not shrink. Side by side
+   the copy was squeezed into a column about a hundred pixels wide and wrapped to ten lines, which
+   the render showed and no test could. */
+.setting-row.setting-row--stack {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.setting-choices {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-top: 10px;
+}
+
+.setting-chip {
+    height: 30px;
+    margin-left: 0;
+    margin-right: 6px;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+    color: var(--ink-dim);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 0;
+}
+
+.setting-chip--on {
+    color: rgb(18, 24, 20);
+    background-color: rgb(126, 214, 164);
+}
+
 .settings-sheet {
     width: 620px;
     background-color: var(--blue-800);
