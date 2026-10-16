@@ -92,7 +92,21 @@ that called the simulation directly. Found while reading the surrounding code ra
 
 ### Fixed
 
-- **The opened cabinet and the floor tile described the same box with two different numbers.**
+- **The compute tier a player is already paying for now says so.** A tester played a whole
+  campaign and reported that colocation was nowhere in the game: "I haven't seen it anywhere, and
+  so only have access to renting compute and using the basement". He had been paying its rack fee
+  and its $0.14 per kWh since his first accelerator. The player never picks a tier, the purchase
+  page picks it, and nothing said which one: the card did not name where it was buying into, the
+  ladder said OPEN rather than in use, and while colocation was still locked every card in the
+  grid was `SetEnabled(false)`, so the whole page took clicks and answered nothing. A tier that
+  engages silently is indistinguishable from a tier that does not exist. `Simulation/CompanyState.cs`
+  gains `HousingTier`, one answer for the grid and the ladder alike rather than the expression
+  being written out twice; the card carries `money.card.housed`; the ladder marks the rung in
+  force with `fleet.tier_in_force`; and a shut card stays clickable so `TryBuyHardware` can hand
+  back the tier's own lock reason. **Fourth silent disabled control this project has shipped.**
+  `WhereTheHardwareGoesTests` is the ratchet.
+- **The opened cabinet and the floor tile described the same box
+ with two different numbers.**
   `UI/RackEditorPanel.cs` worked a cabinet's heat out as `cards * the fleet average`, while
   `ServerHall.HeatAt`, which colours the tile under it, counts the cards in that cabinet by
   generation. An accelerator draws between 0.30 kW and 2.20 kW depending on which one it is, so

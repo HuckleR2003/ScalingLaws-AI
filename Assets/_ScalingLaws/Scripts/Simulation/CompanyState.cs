@@ -1208,6 +1208,25 @@ namespace ScalingLaws.Simulation
                     : status.LockReason.TrimEnd('.') + $", and {requirement}.");
         }
 
+        /// <summary>
+        /// Where an accelerator bought today would be housed.
+        ///
+        /// **The player never picks this and that is the whole trouble with it.** Colocation is
+        /// not a thing to switch on: it is where every card goes from the first one, unless a
+        /// datacenter has been commissioned and has finished building. A tester played a full
+        /// campaign without ever finding the tier he had been paying for since his first
+        /// purchase, because nothing anywhere said which one was in force.
+        ///
+        /// It lives here rather than on the purchase page because it is a rule about the company,
+        /// and because the page and the ladder both have to answer it the same way. The expression
+        /// was written out inline on the buy grid and would have been written out a second time on
+        /// the ladder, which is how this project keeps acquiring two formulas for one quantity.
+        /// </summary>
+        public ComputeTier HousingTier =>
+            IsTierUnlocked(ComputeTier.OwnDatacenter) && IsDatacenterOnline
+                ? ComputeTier.OwnDatacenter
+                : ComputeTier.ColocatedServers;
+
         public bool IsTierUnlocked(ComputeTier tier)
         {
             if (!ComputeTierCatalog.TryGet(tier, out var definition))

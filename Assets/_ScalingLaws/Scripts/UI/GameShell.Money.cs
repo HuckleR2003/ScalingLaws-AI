@@ -159,7 +159,13 @@ namespace ScalingLaws.UI
                     continue;
                 }
 
-                var value = new Label(status.IsUnlocked ? Loc.T("fleet.tier_open") : status.LockReason);
+                // **Which rung is actually carrying the company.** Open and in force are two
+                // different facts and the ladder only ever stated the first, so colocation read as
+                // something still to be won by a player who had been buying into it for years.
+                var inForce = status.IsUnlocked && status.Tier == state.HousingTier;
+                var value = new Label(status.IsUnlocked
+                    ? (inForce ? Loc.T("fleet.tier_in_force") : Loc.T("fleet.tier_open"))
+                    : status.LockReason);
                 value.AddToClassList("readout__value");
                 value.style.whiteSpace = WhiteSpace.Normal;
                 value.style.maxWidth = 620;
@@ -246,9 +252,7 @@ namespace ScalingLaws.UI
             buyGrid.AddToClassList("grid");
             buy.Add(buyGrid);
 
-            var tier = state.IsTierUnlocked(ComputeTier.OwnDatacenter) && state.IsDatacenterOnline
-                ? ComputeTier.OwnDatacenter
-                : ComputeTier.ColocatedServers;
+            var tier = state.HousingTier;
 
             foreach (var generation in HardwareCatalog.AvailableOn(state.Date, HardwareClass.Accelerator))
             {
@@ -413,6 +417,18 @@ namespace ScalingLaws.UI
             price.AddToClassList("card__line");
             card.Add(price);
 
+            // **Where this card goes, before it is paid for.** The tier is picked for the player
+            // by the page rather than chosen, so colocation was engaging silently from the first
+            // accelerator anybody bought and the ladder above read as something still to be won.
+            // A tier that engages silently is indistinguishable from one that does not exist, and
+            // a tester played a whole campaign without ever finding it.
+            if (ComputeTierCatalog.TryGet(tier, out var housing))
+            {
+                var where = new Label(Loc.T("money.card.housed", housing.DisplayName));
+                where.AddToClassList("card__line");
+                card.Add(where);
+            }
+
             var power = simulation.PowerAfterOrder(generation, batch, tier);
             if (unlocked)
             {
@@ -426,7 +442,11 @@ namespace ScalingLaws.UI
                 card.Add(badge);
             }
 
-            card.SetEnabled(unlocked);
+            // **Shut is a look, not a dead control.** `SetEnabled(false)` dispatches no pointer
+            // event, so with colocation still locked every card in this grid took a click and
+            // answered nothing, which reads as the page being broken. The click now runs and
+            // `TryBuyHardware` hands back the tier's own lock reason through the refusal notice.
+            // Fourth time this project has shipped a silent disabled control.
             card.tooltip = generation.IsProjection
                 ? Loc.T("money.card.projection")
                 : Loc.T("money.card.shipped", generation.ReleaseDate);
