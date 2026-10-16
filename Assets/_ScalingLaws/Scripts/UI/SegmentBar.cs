@@ -43,6 +43,16 @@ namespace ScalingLaws.UI
             generateVisualContent += Draw;
         }
 
+        /// <summary>
+        /// How much of the bar is lit, 0 to 1.
+        ///
+        /// Readable because a bar is a claim and a test has to be able to check it. The creator
+        /// drew this full and green on a company with no model, in a field where nobody had
+        /// released anything, and nothing could catch that until the fill could be read back.
+        /// Same seam as `OpsPanel.BanIsArmed` and `ManagementScreen.ShowDesk`.
+        /// </summary>
+        public double Fill => filled;
+
         /// <summary>How much of the bar is lit, 0 to 1, and in what colour.</summary>
         public void Set(double fraction, Color colour)
         {

@@ -590,9 +590,20 @@ namespace ScalingLaws.UI
                 who = entry.LabName;
             }
 
-            var ahead = theirs <= 0.0 || mine >= theirs;
+            // **A race nobody has entered is not a race you are winning.** With no rival release
+            // on the board `theirs` is nought, and the bar was filled green whatever the player
+            // had shaped, so the opening day of a campaign drew a full, triumphant bar over a
+            // projected capability of 0.0 and the words "nobody has released anything yet". Same
+            // family as the corner banner reading LEAVING in red on day one over a market of
+            // nobody: a readout asserting an outcome for a contest that has not started.
+            //
+            // Being first is still being ahead. The guard is on having something to be first
+            // with, not on anybody else having shipped.
+            var running = mine > 0.0;
+            var ahead = running && (theirs <= 0.0 || mine >= theirs);
+            var fill = !running ? 0.0 : ahead ? 1.0 : mine / theirs;
 
-            raceBar.Set(ahead ? 1.0 : mine / theirs, ahead ? RaceAhead : RaceBehind);
+            raceBar.Set(fill, ahead ? RaceAhead : RaceBehind);
             raceYou.text = Loc.T("create.race_you", UiFormat.Number(mine));
 
             raceLeader.text = who == null

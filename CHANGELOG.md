@@ -92,7 +92,16 @@ that called the simulation directly. Found while reading the surrounding code ra
 
 ### Fixed
 
-- **A notice no longer lands on the page it is announcing over.** `StartedNotice` sat at
+- **The creator no longer declares you the winner of a race nobody has entered.** With no rival
+  release on the board the leader's capability is nought, and the bar read that as "ahead", filled
+  itself green across the whole width, and sat directly under the words "nobody has released
+  anything yet" beside a projected capability of 0.0. Being first is still being ahead, so the
+  guard is on having something to be first with, not on somebody else having shipped. Same family
+  as the corner banner that read LEAVING in red on day one over a market of nobody.
+  `SegmentBar.Fill` is readable now, because a bar is a claim and nothing could check this one
+  until it could be read back. Found by rendering the creator at 1366x768 and looking at it.
+- **A notice no longer lands on the page it is announcing over.**
+ `StartedNotice` sat at
   `top: 64px` across the middle 46% of the window, which is where every page in this game puts its
   own identity: a title, a photograph, a row of tabs, or in the model creator a rail of eight
   stages. The proof frame of that creator showed an alert covering stages three through six, which
