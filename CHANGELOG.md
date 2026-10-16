@@ -92,7 +92,20 @@ that called the simulation directly. Found while reading the surrounding code ra
 
 ### Fixed
 
-- **A cabinet costs the room something before it holds anything, and now it says so.** An
+- **The hard ban on duplicate accounts can be switched on by a player.** `TrySetMultiAccountBan`
+  was written on 11 October with its cost, its research gate and seven tests, and nothing in
+  `Scripts/UI` ever called it. The duplicates tile had been printing the policy as ON or OFF the
+  whole time, so the game was showing a switch nothing could throw, which is the same fault as the
+  announced offices: a row that reads as an option and refuses every click reads as a bug.
+  **Eighteenth mechanism in this project finished underneath with no control on top of it, and the
+  first one that advertised itself while being unreachable.** The switch sits in the duplicates
+  drawer under the recognition ladder, because the two are answers to one problem and seeing them
+  together is what makes it a decision rather than a shop. Switching it on takes two presses,
+  the shape this project already uses for cancelling a run: it spends $1,400,000 that instant and
+  the user count falls the same day. Switching it off takes one, and the integration stays bought.
+  Found by the mutator sweep. `MultiAccountBanIsReachableTests` is the ratchet.
+- **A cabinet costs the room something before it holds anything
+, and now it says so.** An
   immersion tank draws 2.2 kW doing nothing at all, against a bare cellar that sheds 30, so
   fourteen empty tanks overheat a room with no silicon in it. A tester found that out after
   paying. `UI/ServerRoomScreen.cs` puts the idle draw in the shop card's tooltip and shows a

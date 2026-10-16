@@ -272,6 +272,13 @@ namespace ScalingLaws.UI
     {
         private static readonly string[] OpenDrawers = new string[2];
 
+        /// <summary>
+        /// Whether the ban button is armed, and it has to be static for the same reason the open
+        /// drawers are: `refresh` rebuilds this whole band, so anything held on the instance is
+        /// gone between the press that arms and the press that fires.
+        /// </summary>
+        private static bool banArmed;
+
         private readonly CompanySimulation simulation;
         private readonly Action refresh;
         private readonly Action<string> failed;
@@ -311,7 +318,18 @@ namespace ScalingLaws.UI
         {
             OpenDrawers[0] = null;
             OpenDrawers[1] = null;
+            banArmed = false;
         }
+
+        /// <summary>
+        /// Arms or disarms the ban button without a click, for the same reason `Show` exists: an
+        /// EditMode element has no panel, so a click sent to a button is never dispatched and a
+        /// state reachable only through a closure is a state no test can reach.
+        /// </summary>
+        public static void ArmTheBan(bool armed) => banArmed = armed;
+
+        /// <summary>Whether the ban button is currently asking for a second press.</summary>
+        public static bool BanIsArmed => banArmed;
 
         /// <summary>
         /// Folds a ladder out or away, the same way the button does.
@@ -384,13 +402,28 @@ namespace ScalingLaws.UI
                 Loc.T(simulation.State.MultiAccountBanOn ? "ops.on" : "ops.off"),
                 simulation.State.MultiAccountBanOn ? "opstile__linefig--on" : null);
 
-            tile.Drawer(Ladder(
+            // **The drawer holds both answers to the same problem, and that is the point.** The
+            // ladder finds the duplicates that cost money and leaves the ones that pay; the ban
+            // catches 80% of both because card linking cannot tell them apart. Putting them one
+            // under the other is what makes it a decision rather than a shop.
+            //
+            // **The ban had no control at all until 16 October 2026.** The policy line above has
+            // been printing ON or OFF since the tile was built, so the game was showing a switch
+            // nothing could throw: the eighteenth mechanism in this project finished underneath
+            // with nothing on top of it, and the only one that was advertising itself while
+            // being unreachable.
+            var inside = new VisualElement();
+
+            inside.Add(Ladder(
                 level,
                 AccountIntegrity.MostDetectionLevels,
                 Loc.T("ops.dupes.ladder"),
                 AccountIntegrity.PointsFor(level + 1),
                 AccountIntegrity.CashFor(level + 1),
                 () => simulation.TryUpgradeAccountDetection(out var why) ? null : why));
+
+            inside.Add(BanSwitch());
+            tile.Drawer(inside);
 
             tile.DrawerOpen = IsOpen(0, "accounts");
             tile.Act(Loc.T(tile.DrawerOpen ? "ops.hide_action" : "ops.take_action"), () =>
@@ -497,6 +530,92 @@ namespace ScalingLaws.UI
         /// continuous fill at one level of eight is a sliver nobody can see, and a row of segments
         /// is one lit block. Both ladders wear the same one so the two tiles read as one screen.
         /// </summary>
+        /// <summary>
+        /// The hard ban on duplicate accounts: what it costs, what it takes away, and the switch.
+        ///
+        /// **Arming rather than a confirmation card.** Switching it on spends $1,400,000 the same
+        /// instant and the user count falls that day, because the duplicates simply stop being
+        /// served and some of them were paying. That is too expensive for a stray click and too
+        /// ordinary for a modal. Two presses is the shape this project already uses for
+        /// cancelling a training run, and it costs no new element.
+        ///
+        /// Switching it off is one press. Nothing is lost by it and the integration stays bought,
+        /// which is why `MultiAccountBanBuilt` is a separate field from the flag.
+        /// </summary>
+        private VisualElement BanSwitch()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("opsladder");
+
+            var on = simulation.State.MultiAccountBanOn;
+            var built = simulation.State.MultiAccountBanBuilt;
+
+            var strap = new Label(Loc.T("ops.dupes.ban_strap"));
+            strap.AddToClassList("opsladder__strap");
+            block.Add(strap);
+
+            if (!on)
+            {
+                var price = new VisualElement();
+                price.AddToClassList("opsladder__price");
+
+                var what = new Label(Loc.T(built ? "ops.dupes.ban_built" : "ops.dupes.ban_once"));
+                what.AddToClassList("opsladder__points");
+                price.Add(what);
+
+                if (!built)
+                {
+                    var cost = new Label(UiFormat.Money(AccountIntegrity.BanCostUsd));
+                    cost.AddToClassList("opsladder__cash");
+                    price.Add(cost);
+                }
+
+                block.Add(price);
+            }
+
+            var button = new Button(() =>
+            {
+                if (on)
+                {
+                    banArmed = false;
+
+                    if (!simulation.TrySetMultiAccountBan(false, out var stopping))
+                    {
+                        failed?.Invoke(stopping);
+                    }
+
+                    refresh?.Invoke();
+                    return;
+                }
+
+                if (!banArmed)
+                {
+                    banArmed = true;
+                    refresh?.Invoke();
+                    return;
+                }
+
+                banArmed = false;
+
+                if (!simulation.TrySetMultiAccountBan(true, out var why))
+                {
+                    failed?.Invoke(why);
+                }
+
+                refresh?.Invoke();
+            })
+            {
+                text = on
+                    ? Loc.T("ops.dupes.ban_lift")
+                    : Loc.T(banArmed ? "ops.dupes.ban_sure" : "ops.dupes.ban_set")
+            };
+
+            button.AddToClassList("opsladder__buy");
+            block.Add(button);
+
+            return block;
+        }
+
         private VisualElement Ladder(int level, int mostLevels, string strap,
             int points, long cash, Func<string> buy)
         {
