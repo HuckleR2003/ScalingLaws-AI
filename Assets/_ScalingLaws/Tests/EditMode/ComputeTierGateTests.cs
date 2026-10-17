@@ -29,8 +29,20 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(ComputeTierCatalog.Get(ComputeTier.RentedCloud).LeadTimeDays, Is.Zero);
         }
 
+        /// <summary>
+        /// **Cash, and deliberately nothing else, since 17 October 2026.**
+        ///
+        /// It used to want a shipped model as well, and that is what the test above this one was
+        /// called. Two testers in one week pressed BUY in the parts shop on a company the tutorial
+        /// had just handed a cellar to, and were refused with a sentence about releasing a model,
+        /// which is a different subject from buying four accelerators.
+        ///
+        /// The assertion is kept rather than deleted and turned round: a company with the money
+        /// and no product **is** unlocked. That way putting the model gate back is a failure here
+        /// rather than a quiet return of the thing two people tripped on.
+        /// </summary>
         [Test]
-        public void ColocationNeedsCashAndAShippedModel()
+        public void ColocationNeedsCashAndNothingElse()
         {
             var definition = ComputeTierCatalog.Get(ComputeTier.ColocatedServers);
 
@@ -40,8 +52,11 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.That(broke.IsUnlocked, Is.False);
             Assert.That(broke.LockReason, Does.Contain("cash"));
-            Assert.That(noModel.IsUnlocked, Is.False);
-            Assert.That(noModel.LockReason, Does.Contain("released model"));
+
+            Assert.That(noModel.IsUnlocked, Is.True,
+                "A company with the money and no product on sale is shut out of owning silicon "
+                + "again, which is the refusal two testers read as the shop being broken.");
+
             Assert.That(ready.IsUnlocked, Is.True);
         }
 
@@ -64,18 +79,34 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(ready.IsUnlocked, Is.True);
         }
 
+        /// <summary>
+        /// The reason string must never tell the player to do something already done.
+        ///
+        /// Measured on the datacenter rather than on colocation, because colocation has one
+        /// requirement left and a sentence listing one thing cannot list the wrong one. The
+        /// claim needs a gate with several, and this one has three.
+        /// </summary>
         [Test]
         public void ALockReasonOnlyNamesWhatIsActuallyMissing()
         {
-            // The reason string must never tell the player to do something already done.
-            var reason = ComputeTierCatalog.Get(ComputeTier.ColocatedServers)
-                .Evaluate(GameDate.Start, 50_000_000, 0, 0)
+            // Five models and a billion earned, and only the money is short.
+            var reason = ComputeTierCatalog.Get(ComputeTier.OwnDatacenter)
+                .Evaluate(GameDate.FromCalendar(2025, 1, 1), 1_000_000, 5, 1_000_000_000)
                 .LockReason;
 
-            Assert.That(reason, Does.Contain("released model"));
-            Assert.That(reason, Does.Not.Contain("cash"));
+            Assert.That(reason, Does.Contain("cash"));
+            Assert.That(reason, Does.Not.Contain("released model"));
+            Assert.That(reason, Does.Not.Contain("lifetime revenue"));
+            Assert.That(reason, Does.Not.Contain("not before"));
         }
 
+        /// <summary>
+        /// A shut tier refuses at the till and the money stays where it was.
+        ///
+        /// On the datacenter, which a fresh company misses on all three counts. It used to be
+        /// written against colocation, and a fresh company now clears that gate on its opening
+        /// twelve million, so the test was measuring an open door.
+        /// </summary>
         [Test]
         public void BuyingIntoALockedTierIsRefusedWithTheGateReason()
         {
@@ -83,10 +114,10 @@ namespace ScalingLaws.Tests.EditMode
             var simulation = new CompanySimulation(state);
 
             var bought = simulation.TryBuyHardware(
-                HardwareGenerationId.AcceleratorA100, 8, ComputeTier.ColocatedServers, out var reason);
+                HardwareGenerationId.AcceleratorA100, 8, ComputeTier.OwnDatacenter, out var reason);
 
             Assert.That(bought, Is.False);
-            Assert.That(reason, Does.Contain("released model"));
+            Assert.That(reason, Does.Contain("cash"));
             Assert.That(state.CashUsd, Is.EqualTo(CompanyState.StartingCashUsd), "A refused purchase must not move money.");
         }
 

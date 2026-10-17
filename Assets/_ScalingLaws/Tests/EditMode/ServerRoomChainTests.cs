@@ -111,13 +111,18 @@ namespace ScalingLaws.Tests.EditMode
         [Test]
         public void TheShopSaysWhyItCannotSellRatherThanRefusingAtTheTill()
         {
-            // No shipped model, so the colocated tier is shut. The player must be able to read that
-            // from the shop rather than by pressing BUY and watching nothing happen.
-            var state = new CompanyState("Nobody yet") { CashUsd = 400_000_000 };
+            // **Short of the five million, which is the whole of the colocated gate since the
+            // shipped-model half of it was dropped on 17 October 2026.** The company a tester
+            // actually met, handed a cellar by the tutorial, now passes this gate on its opening
+            // cash, so a company with four hundred million no longer measures anything here.
+            //
+            // The claim is unchanged and it is the one worth keeping: whatever shuts the shop,
+            // the player reads it on the shelf rather than by pressing BUY and watching nothing.
+            var state = new CompanyState("Nobody yet") { CashUsd = 1_000_000 };
             var shop = new PartsShop(new CompanySimulation(state), null);
 
             Assert.That(shop.CanBuy, Is.False);
-            Assert.That(shop.LockReason, Does.Contain("released model"));
+            Assert.That(shop.LockReason, Does.Contain("cash"));
         }
 
         // ---- the cabinets --------------------------------------------------------------------

@@ -93,17 +93,23 @@ namespace ScalingLaws.Tests.EditMode
         ///
         /// **Measured, not imagined.** The campaign probe's frugal style opened a basement, stood
         /// twelve cabinets in it and bought not one accelerator in fourteen years, because owning
-        /// hardware needs a released model and five million dollars. Seventy thousand for a room
-        /// that can never hold anything is a trap, and a new player is exactly who walks into it.
+        /// hardware needs five million dollars. Seventy thousand for a room that can never hold
+        /// anything is a trap, and a new player is exactly who walks into it.
+        ///
+        /// **The gate it reads moved on 17 October 2026** and this test moved with it rather than
+        /// being loosened: owning silicon used to want a shipped model as well, so the company
+        /// here used to be a rich one with no product. It is a poor one now. A million is fifteen
+        /// times the price of the room, so the only thing refusing this is the tier, which is what
+        /// the test is about.
         /// </summary>
         [Test]
         public void ItCannotBeBoughtBeforeTheCompanyCanOwnHardware()
         {
-            var simulation = Company(cash: 30_000_000);
+            var simulation = Company(cash: 1_000_000);
             var before = simulation.State.CashUsd;
 
             Assert.IsFalse(simulation.TryOpenServerRoom(false, out var why),
-                "A company that has shipped nothing was sold a room it can never fill.");
+                "A company that cannot afford a single accelerator was sold a room to put them in.");
 
             Assert.That(why, Is.Not.Empty, "Refused without saying why.");
             Assert.That(simulation.State.CashUsd, Is.EqualTo(before), "Refused and charged anyway.");
@@ -553,12 +559,24 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(ComputeTierCatalog.TryGet(ComputeTier.ColocatedServers, out var tier), Is.True);
 
             var state = simulation.State;
+
+            // **Rewritten rather than deleted, which is what the assumption below asked for.**
+            // It used to be a brand new company, because colocation wanted a shipped model and a
+            // new company has none. The model half of that gate was dropped on 17 October 2026,
+            // so a company on its opening twelve million now walks straight through and this
+            // fixture reported inconclusive: it was measuring an open door.
+            //
+            // Short of the five million instead, which is the whole of the gate now. The claim is
+            // untouched and it is the one worth keeping.
+            state.CashUsd = 1_000_000;
+
             var status = tier.Evaluate(
                 state.Date, state.CashUsd, state.ReleasedModelCount, state.LifetimeRevenueUsd);
 
             Assume.That(status.IsUnlocked, Is.False,
-                "a brand new company is the case this test is about; if colocation now opens on "
-                + "day one the gate has moved and this fixture needs rewriting rather than deleting");
+                "a company short of the gate is the case this test is about; if colocation now "
+                + "opens on a million the gate has moved and this fixture needs rewriting rather "
+                + "than deleting");
 
             var newest = HardwareCatalog.All
                 .Where(generation => generation.Class == HardwareClass.Accelerator

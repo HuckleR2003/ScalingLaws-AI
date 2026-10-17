@@ -43,7 +43,18 @@ namespace ScalingLaws.Data
                 facilityCapexUsd: 0,
                 powerCapacityKilowatts: 2_500.0,
                 requiredCashUsd: 5_000_000,
-                requiredReleasedModels: 1,
+
+                // **No shipped model required, at the author's call, 17 October 2026.** It used
+                // to ask for one, which meant a player who wanted to buy a few cards for the
+                // cellar and find out whether they could serve anybody was refused with a reason
+                // about something else entirely. Two testers tripped on it in a week.
+                //
+                // The five million stays and it is the real gate: a company starts with twelve.
+                // What this opens is the chance to spend capital before there is anything to
+                // serve, which is the mistake this whole game is about, and the probe already
+                // says owning is worse than renting. Letting a player make it early is more
+                // faithful than protecting them from the spine.
+                requiredReleasedModels: 0,
                 requiredLifetimeRevenueUsd: 0,
                 earliestDate: GameDate.Start),
 
