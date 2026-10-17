@@ -33,6 +33,29 @@ namespace ScalingLaws.UI
 
         private static readonly Color Unlit = new(0.11f, 0.15f, 0.21f);
 
+        /// <summary>How much of itself an unlit segment keeps when it is only a ghost of a track.</summary>
+        private const float GhostAlpha = 0.22f;
+
+        /// <summary>
+        /// Whether an unlit segment is a solid block or a ghost of one.
+        ///
+        /// **Solid everywhere it stands for a ladder, and that is most places.** On the operations
+        /// tiles the dark blocks are the rungs still to buy, so a player counts them, and a rung
+        /// you have to squint at is a rung that is not on the ladder.
+        ///
+        /// A ghost where the bar is a comparison rather than a ladder. In the model creator it runs
+        /// the width of the page under the stage, and solid it read as a slab of furniture along
+        /// the bottom of the screen; the author asked for it to be transparent and he is right,
+        /// because nobody counts how far behind the frontier they are in blocks.
+        ///
+        /// **Faint rather than gone, and that distinction was settled by rendering it.** Dropping
+        /// the unlit segments entirely looked right on a page where the player was ahead and left
+        /// the REVIEW page with no bar at all, because a company at 0.0 against a rival at 53.1
+        /// lights nothing. A control that vanishes at one end of its own range is indistinguishable
+        /// from one that failed to draw, and this project has shipped that reading twice.
+        /// </summary>
+        public bool SolidUnlit { get; set; } = true;
+
         private int segments;
         private double filled;
         private Color accent = new(0.95f, 0.45f, 0.13f);
@@ -115,8 +138,11 @@ namespace ScalingLaws.UI
                 // half reads as half rather than as one block more or less depending on rounding.
                 var middle = (left + blockWidth * 0.5f) / Mathf.Max(1f, usable);
                 var lit = middle <= filled;
+                var unlit = SolidUnlit
+                    ? Unlit
+                    : new Color(Unlit.r, Unlit.g, Unlit.b, GhostAlpha);
 
-                painter.fillColor = lit ? accent : Unlit;
+                painter.fillColor = lit ? accent : unlit;
                 painter.BeginPath();
                 painter.MoveTo(new Vector2(left, height));
                 painter.LineTo(new Vector2(left + blockWidth, height));

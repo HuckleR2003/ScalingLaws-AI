@@ -555,6 +555,11 @@ namespace ScalingLaws.UI
             var block = new VisualElement();
             block.AddToClassList("race");
 
+            // The unlit half of this bar is not a count of anything, so solid it was a slab of
+            // furniture across the foot of the page. A ghost of the track instead, which still
+            // says where the bar ends on a company that has lit none of it.
+            raceBar.SolidUnlit = false;
+
             var head = new VisualElement();
             head.AddToClassList("race__head");
 

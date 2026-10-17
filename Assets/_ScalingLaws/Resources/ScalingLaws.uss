@@ -133,8 +133,14 @@
 
 /* In the creator the two are the last row of a page rather than a stack in a menu, and the stack's
    spacing under them was leaving a band of nothing below the page it belongs to. */
+/* **The footer is the shortest row on the page, because it decides nothing.** The two buttons
+   move the player through a form and the bar beside them is a reading; at the full 50px they were
+   the heaviest band on the screen, which is what the author objected to. 40px still clears the
+   11px type with room, and the ten pixels go back to the stage. */
+
 .stage-footer .menu-button {
     margin-bottom: 0;
+    height: 40px;
 }
 
 .menu-button:hover {
@@ -2073,9 +2079,12 @@
 
 .stage-footer {
     flex-direction: row;
+    /* Aligned on the bottom, so the race bar can sit on the page edge while the buttons keep
+       their own height. Stretching would make the bar as tall as a button. */
+    align-items: flex-end;
     justify-content: flex-end;
     flex-shrink: 0;
-    margin-top: 10px;
+    margin-top: 6px;
 }
 
 /* ---- title and stage rail share one line ---- */
@@ -23702,12 +23711,13 @@
    a footer that was empty, which is also why that stage read as a dreary one. */
 .race {
     flex-grow: 1;
-    /* Lifted off the sheet counter that sits in the very bottom corner of the stage. */
-    margin-bottom: 8px;
+    /* **Sat on the bottom edge rather than floating in the middle of the footer.** The author
+       asked for the bar to touch the bar below it, and it is the lowest thing on the page, so
+       there is nothing under it to be lifted off: the blueprint sheet number the old comment
+       here was dodging sits 18px up, which is above the bar rather than behind it. */
+    margin-bottom: 0;
     flex-shrink: 1;
-    /* Centred rather than stretched, or the block takes the footer's full height and the
-       bar lands on the sheet counter underneath it. */
-    align-self: center;
+    align-self: flex-end;
     margin-left: 24px;
     margin-right: 24px;
     justify-content: center;

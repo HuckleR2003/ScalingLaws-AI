@@ -223,6 +223,22 @@ namespace ScalingLaws.UI
     /// </summary>
     public static class BlueprintNotes
     {
+        /// <summary>
+        /// How far up the sheet the bottom row of annotations sits, measured from the drawing.
+        ///
+        /// **It has to clear the footer, because the drawing runs underneath it.** The creator's
+        /// back and forward buttons and the race bar beside them sit in a band at the foot of the
+        /// page, and the sheet number is in that corner. At 44 it was behind the bar: readable
+        /// while the bar floated in the middle of a 50px footer and cut in half the moment the
+        /// bar was moved onto the page edge, which is what the author asked for on 17 October.
+        /// Raised clear of the whole band rather than of the bar alone: at 68 it cleared the bar
+        /// and landed on the two labels above it, which is the same collision one line up.
+        ///
+        /// Named rather than repeated forty three times, so the next person who moves the footer
+        /// has one number to move and a sentence saying what it is measured against.
+        /// </summary>
+        private const float BottomRow = 92f;
+
         public readonly struct Note
         {
             public Note(string text, float x, float y, bool fromRight = false, bool fromBottom = false)
@@ -269,108 +285,108 @@ namespace ScalingLaws.UI
             // 0 BRANDING: the page where the player decides who they are, so it carries the names.
             new(new[]
                 {
-                    new Note("bp.sheet1", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet1.note", 240f, 44f, fromBottom: true)
+                    new Note("bp.sheet1", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet1.note", 240f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("HuckleR", 700f, 44f, fromBottom: true),
-                    new Note("MarcinPF", 860f, 44f, fromBottom: true),
-                    new Note("Kematex", 1030f, 44f, fromBottom: true),
-                    new Note("OpenSource", 1190f, 44f, fromBottom: true)
+                    new Note("HuckleR", 700f, BottomRow, fromBottom: true),
+                    new Note("MarcinPF", 860f, BottomRow, fromBottom: true),
+                    new Note("Kematex", 1030f, BottomRow, fromBottom: true),
+                    new Note("OpenSource", 1190f, BottomRow, fromBottom: true)
                 }),
 
             // 1 FOUNDATION
             new(new[]
                 {
-                    new Note("bp.sheet2", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet2.note", 260f, 44f, fromBottom: true)
+                    new Note("bp.sheet2", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet2.note", 260f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("Radom", 700f, 44f, fromBottom: true),
-                    new Note("HuckHub", 830f, 44f, fromBottom: true),
-                    new Note("build-in-public", 1000f, 44f, fromBottom: true)
+                    new Note("Radom", 700f, BottomRow, fromBottom: true),
+                    new Note("HuckHub", 830f, BottomRow, fromBottom: true),
+                    new Note("build-in-public", 1000f, BottomRow, fromBottom: true)
                 }),
 
             // 2 SCALE
             new(new[]
                 {
-                    new Note("bp.sheet3", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet3.note", 240f, 44f, fromBottom: true)
+                    new Note("bp.sheet3", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet3.note", 240f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("Krakow", 700f, 44f, fromBottom: true),
-                    new Note("Zakopane", 830f, 44f, fromBottom: true),
-                    new Note("Nowy Sacz", 990f, 44f, fromBottom: true),
-                    new Note("never git --force", 1150f, 44f, fromBottom: true)
+                    new Note("Krakow", 700f, BottomRow, fromBottom: true),
+                    new Note("Zakopane", 830f, BottomRow, fromBottom: true),
+                    new Note("Nowy Sacz", 990f, BottomRow, fromBottom: true),
+                    new Note("never git --force", 1150f, BottomRow, fromBottom: true)
                 }),
 
             // 3 DATA
             new(new[]
                 {
-                    new Note("bp.sheet4", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet4.note", 240f, 44f, fromBottom: true)
+                    new Note("bp.sheet4", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet4.note", 240f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("Venlo", 780f, 44f, fromBottom: true),
-                    new Note("Raalte", 890f, 44f, fromBottom: true),
-                    new Note("Kacia & Lusia <3", 1010f, 44f, fromBottom: true),
-                    new Note("doggos", 1200f, 44f, fromBottom: true)
+                    new Note("Venlo", 780f, BottomRow, fromBottom: true),
+                    new Note("Raalte", 890f, BottomRow, fromBottom: true),
+                    new Note("Kacia & Lusia <3", 1010f, BottomRow, fromBottom: true),
+                    new Note("doggos", 1200f, BottomRow, fromBottom: true)
                 }),
 
             // 4 COMPUTE
             new(new[]
                 {
-                    new Note("bp.sheet5", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet5.note", 240f, 44f, fromBottom: true)
+                    new Note("bp.sheet5", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet5.note", 240f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("Oss", 760f, 44f, fromBottom: true),
-                    new Note("Almelo", 850f, 44f, fromBottom: true),
-                    new Note("Schijndel", 970f, 44f, fromBottom: true),
-                    new Note("Hertogenbosch", 1110f, 44f, fromBottom: true)
+                    new Note("Oss", 760f, BottomRow, fromBottom: true),
+                    new Note("Almelo", 850f, BottomRow, fromBottom: true),
+                    new Note("Schijndel", 970f, BottomRow, fromBottom: true),
+                    new Note("Hertogenbosch", 1110f, BottomRow, fromBottom: true)
                 }),
 
             // 5 SAFETY
             new(new[]
                 {
-                    new Note("bp.sheet6", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet6.note", 280f, 44f, fromBottom: true)
+                    new Note("bp.sheet6", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet6.note", 280f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("Anglia", 760f, 44f, fromBottom: true),
-                    new Note("Limanowa", 970f, 44f, fromBottom: true)
+                    new Note("Anglia", 760f, BottomRow, fromBottom: true),
+                    new Note("Limanowa", 970f, BottomRow, fromBottom: true)
                 }),
 
             // 6 REVIEW
             new(new[]
                 {
-                    new Note("bp.sheet7", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet7.note", 250f, 44f, fromBottom: true)
+                    new Note("bp.sheet7", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet7.note", 250f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("Amsterdam", 700f, 44f, fromBottom: true),
-                    new Note("Nowy Targ", 860f, 44f, fromBottom: true),
-                    new Note("Kematex", 1010f, 44f, fromBottom: true)
+                    new Note("Amsterdam", 700f, BottomRow, fromBottom: true),
+                    new Note("Nowy Targ", 860f, BottomRow, fromBottom: true),
+                    new Note("Kematex", 1010f, BottomRow, fromBottom: true)
                 }),
 
             // 7 AFTER THE RUN
             new(new[]
                 {
-                    new Note("bp.sheet8", 26f, 44f, fromBottom: true),
-                    new Note("bp.sheet8.note", 270f, 44f, fromBottom: true)
+                    new Note("bp.sheet8", 26f, BottomRow, fromBottom: true),
+                    new Note("bp.sheet8.note", 270f, BottomRow, fromBottom: true)
                 },
                 new[]
                 {
-                    new Note("HCK Labs", 720f, 44f, fromBottom: true),
-                    new Note("PC Workman", 860f, 44f, fromBottom: true),
-                    new Note("Baka Bake Bakery", 1020f, 44f, fromBottom: true)
+                    new Note("HCK Labs", 720f, BottomRow, fromBottom: true),
+                    new Note("PC Workman", 860f, BottomRow, fromBottom: true),
+                    new Note("Baka Bake Bakery", 1020f, BottomRow, fromBottom: true)
                 })
         };
 
