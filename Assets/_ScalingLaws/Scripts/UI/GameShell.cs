@@ -489,30 +489,36 @@ namespace ScalingLaws.UI
             return WorkInFlight.Idle;
         }
 
-        private IReadOnlyList<long> DailyNetSeries()
+        /// <summary>
+        /// The month behind the flagship, as the flagship earned it.
+        ///
+        /// **This used to be the company's daily net, inside a card headed by one model's name.**
+        /// It summed every cash line in the ledger, so a grant, a loan drawdown, a tax demand and
+        /// the payroll were all drawn as columns of one product's chart: a company that took state
+        /// money on Tuesday showed its model having an extraordinary Tuesday. Reported by Francisco
+        /// on 2026-10-17, and he is right that a product has no business reporting the books.
+        ///
+        /// The same fault was repaired on the figures beside it on 2026-09-13 and the chart was
+        /// left behind, and the follower banners were given their own model's month on 2026-09-05
+        /// for this exact reason, which left the lead the only banner still drawing the company.
+        /// **Three corrections of one card, each of them fixing the part that had been looked at.**
+        ///
+        /// Read through `Flagship()`, which is the call `simulation.Product()` reads as well, so
+        /// the chart and the figures above it cannot end up describing two different models. The
+        /// marketed list is sorted separately and indexing it would be a second answer to "which
+        /// product is this card about".
+        ///
+        /// **It is revenue, not profit**, which is what Francisco asked for and is as far as this
+        /// can honestly go: the fleet bill is not attributed per model, so a per-product profit
+        /// would be a real cost split by a rule nobody can check. Stated on the card instead.
+        /// </summary>
+        private IReadOnlyList<long> FlagshipRevenueSeries()
         {
-            var ledger = simulation.State.Ledger;
-            var today = simulation.State.Date.Day;
-            var series = new List<long>(today);
+            var model = simulation.Flagship();
 
-            for (var day = 1; day <= today; day++)
-            {
-                var net = 0L;
-                foreach (var info in Ledger.Lines)
-                {
-                    if (!info.IsCash)
-                    {
-                        continue;
-                    }
-
-                    var amount = ledger.DayTotal(day, info.Line);
-                    net += info.IsIncome ? amount : -amount;
-                }
-
-                series.Add(net);
-            }
-
-            return series;
+            return model == null
+                ? Array.Empty<long>()
+                : model.RecentRevenueUsd;
         }
         private Label cashArrows;
         private FinanceReport financeReport;
@@ -1270,7 +1276,7 @@ namespace ScalingLaws.UI
             modelBanner = new ModelBanner(
                 () => simulation.Product(),
                 WorkInFlightNow,
-                DailyNetSeries,
+                FlagshipRevenueSeries,
                 () => Show(Screen.Management));
 
             management = new ManagementScreen(simulation,
@@ -4233,9 +4239,12 @@ namespace ScalingLaws.UI
             Screen.Mail => "background_mail",
             Screen.Hiring => "background_hiring",
 
-            // The file has been in `Resources/Banners` all along and the table never named it, so
-            // the one screen about the fleet was the one screen with a bare heading.
-            Screen.Fleet => "background_compute",
+            // **No strip on the fleet page, and this is the second time that decision has been
+            // made.** The bill was moved up into the header slot because this is the one screen
+            // entirely about money going out, and then a photograph was added back above it, so
+            // the page opened with 230px of server racks before the first number. The two tier
+            // doors already carry artwork and they are a decision rather than decoration, so they
+            // take that space instead. Asked for four times before it was done.
 
             _ => null
         };

@@ -29,6 +29,15 @@ namespace ScalingLaws.UI
             generateVisualContent += Draw;
         }
 
+        /// <summary>
+        /// What the columns are drawn from, so a test can check the claim.
+        ///
+        /// Same seam and the same reason as `SegmentBar.Fill`: this chart stood under one product's
+        /// name drawing the whole company's daily net, grants and loan drawdowns included, and
+        /// nothing could catch that while the only way to read it was to look at the picture.
+        /// </summary>
+        public IReadOnlyList<long> Values => values;
+
         public void Set(IReadOnlyList<long> series)
         {
             values = new long[series?.Count ?? 0];
@@ -50,9 +59,21 @@ namespace ScalingLaws.UI
 
             var painter = context.painter2D;
 
-            // Two thirds down, not at the very bottom. A losing month is drawn below the line and at
-            // six pixels of clearance those bars ran out of the chart and over the money underneath.
-            var baseline = rect.height * 0.66f;
+            var losses = false;
+            foreach (var value in values)
+            {
+                losses |= value < 0L;
+            }
+
+            // **Two thirds down only when something is drawn below the line.** A losing month hangs
+            // under the baseline and at six pixels of clearance those bars ran out of the chart and
+            // over the money underneath, which is why the line sat there.
+            //
+            // Both banners draw a model's revenue now rather than the company's net, and revenue
+            // has no losing day, so the room below was being reserved for bars that cannot exist:
+            // every column was scaled into the lower third and a good month and a flat one looked
+            // much the same. The line only leaves the floor if the series actually goes negative.
+            var baseline = losses ? rect.height * 0.66f : rect.height - 2f;
 
             painter.strokeColor = Rule;
             painter.lineWidth = 1f;
@@ -78,7 +99,10 @@ namespace ScalingLaws.UI
             for (var index = 0; index < values.Length; index++)
             {
                 // Scaled to whichever side has less room, so neither direction can escape the box.
-                var room = Math.Min(baseline - 3f, rect.height - baseline - 3f);
+                // With nothing below the line there is no second side to balance against.
+                var room = losses
+                    ? Math.Min(baseline - 3f, rect.height - baseline - 3f)
+                    : baseline - 3f;
                 var height = (float)(Math.Abs(values[index]) / (double)extent) * room;
                 if (height < 2f)
                 {
