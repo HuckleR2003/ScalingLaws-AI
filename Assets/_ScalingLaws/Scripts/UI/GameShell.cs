@@ -1214,7 +1214,7 @@ namespace ScalingLaws.UI
             };
 
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome,
-                () => current == Screen.Site);
+                () => current == Screen.Site, () => Show(Screen.Research));
 
             // **Above the task strip and separate from it.** The chip that offers a walkthrough is
             // not one of the five opening tasks, and hanging it off that list would have made its

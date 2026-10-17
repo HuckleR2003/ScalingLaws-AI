@@ -633,6 +633,11 @@ namespace ScalingLaws.UI
             stage = clamped;
             ShowStage();
 
+            // **The tour follows the page the player is on.** Unconditional and ignored when no
+            // tour is running, so this screen never has to ask whether a tutorial is up, which is
+            // the same rule the walkthrough signals already follow.
+            GuideOverlay.TurnedCreatorPage?.Invoke(clamped);
+
             // The same diagonal arrival the screens use, so moving through the creator belongs to
             // the rest of the interface rather than reading as a form redrawing itself.
             stageHost.AddToClassList("stage-host--entering");

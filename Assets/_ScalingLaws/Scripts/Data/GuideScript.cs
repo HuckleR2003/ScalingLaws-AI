@@ -407,7 +407,7 @@ namespace ScalingLaws.Data
             // not know a finished run has to be put on sale from there. Asked for by name after a
             // playtest. Forward only: the tour has been caught once walking back two pages without
             // saying why, and it read as the tutorial losing its place.
-            new("create_after", "guide.step.create_after", GuideTarget.Create, null,
+            new("create_after", "guide.step.create_after", GuideTarget.Create, "deploy-tile",
                 null, false, 7),
 
             // **The step the playtest asked for by name.** The tour finished the creator and never

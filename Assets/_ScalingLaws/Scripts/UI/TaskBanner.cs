@@ -33,7 +33,27 @@ namespace ScalingLaws.UI
         /// </summary>
         private readonly Func<bool> atHeadquarters;
 
+        /// <summary>
+        /// Opens the research board, for the chip that says a free node is waiting.
+        ///
+        /// **A gift nobody is told about is not a gift.** Emil pays for the first research node
+        /// in full, points and cash, and the only place that is ever said is one line of his
+        /// dialogue. A player who clicked through the tour, or came back the next evening, owned
+        /// a free node and had no way to find out. Reported by the author after a full pass.
+        /// </summary>
+        private readonly Action openResearch;
+
         private VisualElement strip;
+
+        /// <summary>
+        /// The gift chip, held so it can be taken down with the strip.
+        ///
+        /// It is a sibling of the strip rather than a child, because the strip rolls up into a
+        /// counter away from home and the gift must not roll up with it: a chip that hides itself
+        /// is the fault it exists to fix. Siblings have to be removed by hand, and the first
+        /// version of this added one per rebuild, which is every simulated day.
+        /// </summary>
+        private VisualElement gift;
 
         /// <summary>What was drawn last, so the strip is not rebuilt on every frame.</summary>
         private string shownTask;
@@ -50,13 +70,15 @@ namespace ScalingLaws.UI
         private bool openedByHand;
 
         public TaskBanner(VisualElement host, Func<CompanyState> state,
-            Func<GuideProgress> progress, Action changed, Func<bool> atHeadquarters = null)
+            Func<GuideProgress> progress, Action changed, Func<bool> atHeadquarters = null,
+            Action openResearch = null)
         {
             this.host = host;
             this.state = state;
             this.progress = progress;
             this.changed = changed;
             this.atHeadquarters = atHeadquarters;
+            this.openResearch = openResearch;
         }
 
         /// <summary>
@@ -138,10 +160,22 @@ namespace ScalingLaws.UI
             bool rolledUp)
         {
             strip?.RemoveFromHierarchy();
+            gift?.RemoveFromHierarchy();
+            gift = null;
 
             strip = new VisualElement();
             strip.AddToClassList("taskbar");
             strip.EnableInClassList("taskbar--rolled", rolledUp);
+
+            // **Where it stands depends on what is already standing there.** At 580px from the
+            // top it sat in the middle of whatever page was open and covered rows of it; the
+            // author photographed it over the ranking board. Every page in this game leaves the
+            // title line clear on the right, under SAVE and MENU, so that is where it goes.
+            //
+            // Except at home, where the right of that line belongs to the product banners and the
+            // left has the wire and the grants above it. It goes under the grants there.
+            strip.EnableInClassList("taskbar--home",
+                atHeadquarters == null || atHeadquarters());
 
             var head = new VisualElement();
             head.AddToClassList("taskbar__head");
@@ -224,6 +258,24 @@ namespace ScalingLaws.UI
             }
 
             host.Add(strip);
+
+            // **Under the counter, and gone the moment it is spent.** It is not a task: the five
+            // tasks are things the player has to do, and this is something they already have and
+            // do not know about. Blue rather than the tasks' amber for the same reason.
+            if (guide.FreeResearchOwed)
+            {
+                gift = new Button(() => openResearch?.Invoke())
+                {
+                    text = Data.Loc.T("guide.gift.research")
+                };
+
+                gift.AddToClassList("taskgift");
+                gift.EnableInClassList("taskgift--home",
+                    atHeadquarters == null || atHeadquarters());
+
+                host.Add(gift);
+            }
+
             Arrive();
         }
 
@@ -242,6 +294,8 @@ namespace ScalingLaws.UI
         public void Hide()
         {
             strip?.RemoveFromHierarchy();
+            gift?.RemoveFromHierarchy();
+            gift = null;
             strip = null;
             shownTask = null;
             shownDone = -1;

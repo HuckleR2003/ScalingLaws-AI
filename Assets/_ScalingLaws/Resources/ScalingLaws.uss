@@ -12080,10 +12080,13 @@
    What the phone rolls up into. Under the four corner banners, and the quietest thing there.
    ============================================================================================ */
 
+/* **On the title line, not in the middle of the page.** It used to sit 580px down whatever screen
+   was open, which on most of them is a row of content: the author sent a photograph of it over the
+   ranking board. Every page here leaves the right of its title line clear, under SAVE and MENU. */
 .taskbar {
     position: absolute;
     right: 22px;
-    top: 580px;
+    top: 76px;
     width: 268px;
     padding: 10px 12px 11px 12px;
     border-radius: 6px;
@@ -12103,6 +12106,53 @@
 .taskbar--rolled {
     width: 132px;
     opacity: 0.65;
+}
+
+/* At home the right of the title line belongs to the product banners, and the left column already
+   holds the wire and the grants. Under the grants, which is where the eye finishes that column. */
+/* The gift chip. Blue rather than the tasks amber, because it is not a task: the five tasks are
+   things the player still has to do and this is something they already own and do not know about.
+   Narrower than the counter and sitting under it. */
+.taskgift {
+    position: absolute;
+    right: 22px;
+    top: 142px;
+    width: 268px;
+    height: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 9px 12px 10px 12px;
+    white-space: normal;
+    font-size: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    color: rgb(188, 220, 255);
+    background-color: rgba(10, 18, 34, 0.55);
+    border-radius: 6px;
+    border-left-width: 3px;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-left-color: rgba(96, 170, 255, 0.85);
+}
+
+.taskgift:hover {
+    color: rgb(226, 240, 255);
+    background-color: rgba(16, 28, 52, 0.75);
+}
+
+.taskgift--home {
+    left: 22px;
+    right: auto;
+    top: 462px;
+}
+
+.taskbar--home {
+    left: 22px;
+    right: auto;
+    top: 396px;
 }
 
 .taskbar--rolled .taskbar__head {

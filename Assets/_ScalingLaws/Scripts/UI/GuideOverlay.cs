@@ -172,6 +172,7 @@ namespace ScalingLaws.UI
 
             // The screens report through the static; there is one shell and this is the one overlay.
             Reached = WalkthroughDid;
+            TurnedCreatorPage = PlayerTurnedCreatorPage;
             KeepClear = KeepClearOfTheBottom;
         }
 
@@ -298,6 +299,12 @@ namespace ScalingLaws.UI
         /// business with one. There is exactly one shell.
         /// </summary>
         public static Action<string> Reached;
+
+        /// <summary>
+        /// The model creator turned a page. Static for the same reason `Reached` is: the screen
+        /// that turns the page does not know whether a tour exists, and should not have to.
+        /// </summary>
+        public static Action<int> TurnedCreatorPage;
 
         /// <summary>
         /// Which walkthrough step is on screen, or null. Static for the same reason `Reached` is:
@@ -1197,6 +1204,47 @@ namespace ScalingLaws.UI
             if (!step.WaitForClick && NextStepWaitsFor(target))
             {
                 Advance();
+                Advance();
+            }
+        }
+
+        /// <summary>
+        /// The player turned a page of the model creator themselves, so the tour catches up.
+        ///
+        /// **There were two NEXT buttons on that screen and only one of them moved Emil.** The
+        /// creator has its own DALEJ, which is the one a player presses because it is the one the
+        /// page is about; the tour sat behind on the stage they had just left, describing a
+        /// control that was no longer on screen. Reported after a full pass: "gdy gracz klika
+        /// DALEJ, by sie samouczek kontynuowal, w koncu gracz jest w etapie FUNDAMENT".
+        ///
+        /// **What it will never do is carry the player past a step that is waiting on the game.**
+        /// A step with a `Signal` stops the unwind dead, which is what keeps the run from being
+        /// skipped: `create_start` waits for a training run to begin and no amount of page turning
+        /// can get past it. Same for a step waiting on a click.
+        /// </summary>
+        public void PlayerTurnedCreatorPage(int stage)
+        {
+            var progressNow = progress();
+
+            if (running != null || progressNow.Stage != GuideStage.Touring)
+            {
+                return;
+            }
+
+            // Bounded by the number of steps, so a malformed script cannot spin here.
+            for (var guard = 0; guard < GuideScript.Steps.Count; guard++)
+            {
+                var step = Current;
+
+                if (step == null
+                    || step.CreatorStage < 0
+                    || step.CreatorStage >= stage
+                    || !string.IsNullOrEmpty(step.Signal)
+                    || step.WaitForClick)
+                {
+                    return;
+                }
+
                 Advance();
             }
         }
