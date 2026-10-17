@@ -32,11 +32,16 @@ namespace ScalingLaws.UI
             // one screen that is entirely about money going out, and the figure a player opens this
             // tab to read was four panels down. It carries its own darker ground so it reads as the
             // page's header rather than as the first of six identical cards.
+            // **The doors first, then the bill they explain.** Where the company keeps its silicon
+            // is the decision this page exists for, and the bill underneath is the consequence of
+            // it. The other way round the player read a number before knowing which arrangement
+            // produced it.
+            page.Add(BuildHostingSwitch());
+
             var bill = BuildFleetBill(profile);
             bill.AddToClassList("panel--header");
             page.Add(bill);
 
-            page.Add(BuildHostingSwitch());
             page.Add(BuildServicePanel());
 
             var rental = new VisualElement();

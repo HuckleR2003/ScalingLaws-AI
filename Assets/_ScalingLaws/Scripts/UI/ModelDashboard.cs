@@ -68,15 +68,17 @@ namespace ScalingLaws.UI
             page.AddToClassList("content");
             page.AddToClassList("modelhub");
 
-            // This screen builds its own page rather than going through GameShell.NewPage, so it has
-            // to ask for its own strip. Without this it was the only main screen with no picture on
-            // it, which reads as a screen that failed to finish loading rather than as a choice.
-            var strip = PageArt.BannerFor("background_model");
-
-            if (strip != null)
-            {
-                page.Add(strip);
-            }
+            // **The blueprint the creator sits on, rather than a photograph.** This page is the
+            // door into the creator and nothing else; a stock picture of a server hall above it
+            // said nothing about what is behind the door, and the author asked for the drawing.
+            //
+            // It is the same `BlueprintGround` the creator draws, so the two screens are visibly
+            // one place: you open a hub laid out on graph paper and arrive on graph paper. Drawn
+            // rather than a texture, so there is nothing to license and nothing to keep in step
+            // with the palette, and it is sharp at any window size.
+            var ground = new BlueprintGround();
+            ground.AddToClassList("modelhub__ground");
+            page.Add(ground);
 
             page.Add(BuildTopRow(company, state, product));
             page.Add(BuildTable(company));

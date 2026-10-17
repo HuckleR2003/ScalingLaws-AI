@@ -4382,10 +4382,12 @@
    hidden, because it is a goal and not a secret.
    --------------------------------------------------------------------------- */
 
+/* Taller since it took the banner slot at the top of the fleet page. 168 rather than the 230 a
+   photograph was using, which is the point: the doors are a decision and they say more in less. */
 .hswitch {
     flex-direction: row;
     align-items: stretch;
-    height: 132px;
+    height: 168px;
     flex-shrink: 0;
     margin-bottom: 12px;
     background-color: rgb(16, 20, 27);
@@ -22004,6 +22006,17 @@
    The 26 is `.content`'s padding written a second time, because USS has no calc(). That is two
    statements of one fact, so `StylesheetTests.TheDrawingCoversThePagePaddingAsWell` holds them
    together rather than a comment asking the next reader to remember. */
+/* The same drawing on the model hub, which is the door into the creator. Inset to the page rather
+   than bleeding past it like the creator version, because here it sits inside a scrolling page
+   instead of filling a window. */
+.modelhub__ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
 .bpg {
     position: absolute;
     left: -26px;
