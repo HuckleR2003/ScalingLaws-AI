@@ -1,6 +1,65 @@
-SCALING LAWS 0.6.1  (build testowy / a test build)
+SCALING LAWS 0.7.0  (ostatni darmowy build / the last free build)
 Tycoon o firmie AI / An AI company tycoon
 HCK Labs, Marcin "HCK" Firmuga
+
+
+IN ENGLISH
+
+January 2022. Twelve million dollars. No product. You run an AI lab in a world where the real
+models arrive on the dates they actually arrived.
+
+You train models, sell tokens, buy compute, and try to still be here in 2036. One sentence
+describes the whole game: upgrades are not purchased, they are timed. Hardware ages, the frontier
+moves every month, and money spent a year early sits in an asset losing roughly a quarter of its
+value with every successor launch. There is no guaranteed profit anywhere in it.
+
+The game opens in English. Polish is the first row on the settings sheet, in the pause menu, and
+the choice is remembered.
+
+How to start:
+1. Make a founder and a company. The region and country change tax, hardware prices and how
+   crowded your market is.
+2. Emil, your cousin, walks you through the first hour. He also pays for your first research.
+3. Build your first model under MODEL. The creator shows quality, time and cost before you pay.
+4. Release it under RELEASE, set a price, then watch COMPUTE. With nothing to serve on, the queue
+   grows and people leave.
+5. Go back to RESEARCH. You cannot buy the calendar, and the frontier does not wait.
+
+Controls: space pauses, 1/2/3 set speed, the arrow keys scroll a page. Every shortcut is listed
+on the settings sheet.
+
+Saves: the game saves itself and on SAVE. Older campaigns load and keep their history. The save
+format is v74 and every step up to it is a real migration, not a reset.
+
+
+WHAT IS NEW IN 0.7.0
+
+The last free build. Everything after this one is on Steam and costs money.
+
+- Spare cluster capacity can be let out when nothing is using it. A research desk opens eight
+  levels saying how much of the fleet a buyer will take in a day. Finished, it takes about 15%
+  off what the company spends, and renting more than you need still loses money.
+- Duplicate accounts: a ladder that recognises them and a hard ban you can switch on. The ban
+  catches 80% of them and cannot tell a freeloader from a paying customer, so it costs you.
+- The creator stopped declaring you the winner of a race nobody has entered, and the topicality
+  bar now says which of its two halves is holding it down.
+- Settings have categories down the left. A research notice scrolls the board to the node it is
+  about. Your company name in the top bar is a way in to the management desk.
+- The server room: a cabinet costs the room something before it holds anything, and the cabinet
+  panel and the floor tile read heat from one place instead of five.
+- A model's revenue chart is that model's revenue. It used to be the company's daily net, so
+  grants, loan drawdowns and the payroll were drawn as columns of one product's month. Reported
+  by Francisco.
+
+Parts of the map are not in this build and say so on a yellow badge rather than being hidden.
+
+
+WHAT WOULD HELP MOST
+
+Tell me where you stopped playing and what you were trying to do. Not whether you liked it: the
+moment you put it down. That is the one thing I cannot measure from here.
+
+The feedback form is in the game, under the mail icon, and it reaches me.
 
 
 PO POLSKU
@@ -13,6 +72,9 @@ Jedno zdanie opisuje całą grę: ulepszeń się nie kupuje, ulepszenia się tak
 się starzeje, czołówka przesuwa się co miesiąc, a pieniądze wydane rok za wcześnie leżą w
 aktywach, które tracą po ćwierć wartości z każdą nową generacją.
 
+Gra startuje po angielsku. Polski jest pierwszym wierszem na karcie ustawień, w menu pauzy, i
+wybór jest zapamiętywany.
+
 Jak zacząć:
 1. Stwórz założyciela i firmę. Region i kraj zmieniają podatki, ceny sprzętu i konkurencję.
 2. Emil, twój kuzyn, przeprowadzi cię przez pierwszą godzinę. Zapłaci też za pierwsze badanie.
@@ -21,99 +83,38 @@ Jak zacząć:
    rośnie, a ludzie odchodzą.
 5. Wracaj do BADANIA. Kalendarza nie kupisz, a czołówka nie czeka.
 
-Sterowanie: spacja pauzuje, 1/2/3 to prędkość, strzałki przewijają stronę. Lewy przycisk myszy
-wybiera, prawy cofa albo oddala.
+Sterowanie: spacja pauzuje, 1/2/3 to prędkość, strzałki przewijają stronę. Wszystkie skróty są
+wypisane na karcie ustawień.
 
-Zapisy: gra zapisuje się sama i przez ZAPISZ. Kampanie z 0.5.0 wczytują się i zachowują historię.
-Format zapisu idzie z v62 na v71 i każdy krok to prawdziwa migracja, nie reset.
-
-
-CO JEST NOWEGO W 0.6.1
-
-To jest build testowy. Oficjalny będzie 0.6.2. Ten istnieje po to, żeby otworzyć grę na pełnym
-ekranie na dwóch maszynach, które od trzech dni opisują dwa różne ekrany.
-
-NAJPIERW TO, O CO PROSIMY: w menu pauzy, na dole ustawień, jest teraz jedna linijka z liczbami:
-okno, strona, skala, proporcje i tryb. Zrób jej zrzut. Jest też wybór rozmiaru okna, którego
-wcześniej w tej grze w ogóle nie było.
-
-Kontrakt, który brał pieniądze i nie robił nic. Licencja dystrybucyjna kosztuje 1,2 mln i trwa
-270 dni, i przez cały ten czas nie zmieniała niczego: linijka, która miała poszerzyć twoją
-publiczność, nie miała ani jednego wywołania, a ta, która miała pobierać partnerowi trzydzieści
-procent, była nazwana tylko we własnym katalogu. Teraz obie działają, razem.
-
-Kreator modelu nie gubi już własnego tytułu i własnych przycisków podczas samouczka. Przycisk
-dodania wentylatora jest na ekranie, a nie ucięty dołem okna. Pasek samouczka nie gaśnie pod
-kursorem po kliknięciu DALEJ. W polach tekstowych widać kursor, który zawsze tam był i był
-rysowany prawie na czarno na ciemnym tle. Wsparcie ma własną zakładkę z procentem w nazwie.
-
-Prawie wszystko z tej listy wyszło z kartek, które zapisała Samanta, grając w to na poważnie.
-
-Jeśli coś jest niejasne albo się psuje, napisz. To jest najbardziej użyteczna rzecz, jaką możesz
-z tym buildem zrobić.
+Zapisy: gra zapisuje się sama i przez ZAPISZ. Starsze kampanie wczytują się i zachowują historię.
+Format zapisu to v74 i każdy krok do niego to prawdziwa migracja, nie reset.
 
 
-IN ENGLISH
+CO JEST NOWEGO W 0.7.0
 
-January 2022. Twelve million dollars. No product. You run an AI lab in a world where the real
-models arrive on the dates they actually arrived.
+Ostatni darmowy build. Wszystko po nim jest na Steamie i kosztuje.
 
-You train models, sell tokens, buy compute, and try to still be here in 2036. One sentence
-describes the whole game: upgrades are not purchased, they are timed. Hardware ages, the frontier
-moves every month, and capital spent a year early sits in an asset losing roughly a quarter of its
-value with every successor launch.
+- Wolną moc klastra można wynająć, kiedy nikt jej nie używa. Osobne badanie otwiera osiem
+  poziomów mówiących, ile floty kupujący weźmie w ciągu dnia. Skończone, zdejmuje jakieś 15%
+  tego, co firma wydaje, a wynajmowanie więcej, niż potrzebujesz, nadal się nie opłaca.
+- Zduplikowane konta: drabinka, która je rozpoznaje, i twardy ban, który możesz włączyć. Ban łapie
+  80% z nich i nie odróżnia pasażera na gapę od płacącego klienta, więc coś cię kosztuje.
+- Kreator przestał ogłaszać cię zwycięzcą wyścigu, do którego nikt nie stanął, a pasek aktualności
+  mówi teraz, która z jego dwóch połówek go ciągnie w dół.
+- Ustawienia mają kategorie po lewej. Powiadomienie o badaniu przewija tablicę do właściwego węzła.
+  Nazwa firmy na górnym pasku jest wejściem na biurko zarządu.
+- Serwerownia: szafa kosztuje pokój coś, zanim cokolwiek w niej stanie, a panel szafy i kafelek
+  podłogi czytają ciepło z jednego miejsca zamiast z pięciu.
+- Wykres przychodu modelu jest wykresem tego modelu. Wcześniej był dziennym wynikiem całej firmy,
+  więc granty, transze pożyczek i pensje rysowały się jako słupki jednego produktu. Zgłosił
+  Francisco.
 
-Where to start:
-1. Build a founder and a company. The region and the country change tax, hardware prices and
-   local competition.
-2. Emil, your cousin, walks you through the first hour and pays for your first research node.
-3. Design your first model under MODEL. The creator shows the quality, the time and the bill
-   before you pay for any of it.
-4. Ship it under RELEASE, set a price, then look at COMPUTE. Without capacity the queue grows and
-   people leave.
-5. Go back to RESEARCH. You cannot buy the calendar, and the frontier does not wait.
-
-Controls: space pauses, 1/2/3 set the speed, the arrow keys scroll a page. Left click selects,
-right click goes back or zooms out.
-
-Saves: the game autosaves and saves from SAVE. Campaigns from 0.5.0 load and keep their history.
-The format moves from v62 to v71 and every step is a real migration rather than a reset.
+Część mapy nie jest w tym buildzie i mówi to żółtą plakietką, zamiast być schowana.
 
 
-WHAT IS NEW IN 0.6.1
+CO POMOGŁOBY NAJBARDZIEJ
 
-This is a test build. The official one will be 0.6.2. It exists so the game can be opened in
-fullscreen on two machines that have spent three days describing two different screens.
+Napisz, gdzie przestałeś grać i co wtedy próbowałeś zrobić. Nie czy ci się podobało: moment, w
+którym odłożyłeś grę. Tego jednego nie zmierzę stąd.
 
-THE THING WE ARE ASKING FOR FIRST: in the pause menu, at the foot of the settings, there is now one
-line of numbers: the window, the page, the scale, the shape and the mode. Take a screenshot of it.
-There is also a window size, which this game has never offered before.
-
-A contract that took your money and did nothing. A distribution licence costs $1.2M and runs for
-270 days, and for the whole of that term it changed nothing at all: the line that was meant to widen
-your audience had no caller anywhere in the game, and the line meant to charge the partner their
-thirty per cent was named only inside its own catalogue. Both work now, and they work together.
-
-The model creator keeps its own title and its own buttons while the tutorial is running. The button
-that adds a fan is on the screen rather than cut in half by the bottom of the window. The tour bar
-stays lit under the cursor after NEXT is pressed. There is a cursor in the text fields, which there
-always was, drawn almost black on a dark field. Support has a tab of its own with its satisfaction
-in the name of it.
-
-Almost all of this came off pages Samanta wrote while playing it properly.
-
-If something is unclear or breaks, tell me. That is the most useful thing you can do with this
-build.
-
-
-CO JEST W PACZCE / WHAT IS IN THIS ZIP
-
-Scaling Laws Windows\     gra, uruchom "Scaling Laws.exe"  /  the game, run "Scaling Laws.exe"
-MEET_ME.txt               ten plik  /  this file
-README.md                 czym jest projekt i jak jest zbudowany  /  what the project is
-CHANGELOG.md              co się zmieniło w każdym wydaniu  /  every release, newest first
-WSPARCIE.txt              trwająca zbiórka na Steam  /  the Steam launch fund
-
-
-Strona: https://pcworkman.dev/hck-labs/scaling-laws/
-Kod: https://github.com/HuckleR2003/ScalingLaws-AI
+Formularz zgłoszeń jest w grze, pod ikoną poczty, i trafia do mnie.

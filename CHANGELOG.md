@@ -38,6 +38,67 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+**A product's chart was reporting the company's bank account.** The revenue graph on the lead model
+banner summed every cash line in the ledger, so a state grant, a loan drawdown, the payroll and a
+tax demand were all drawn as columns of one model's month, inside a card with that model's name at
+the top of it. A company that took state money on a Tuesday showed its model having an extraordinary
+Tuesday. Reported by Francisco.
+
+It is the third correction of that one card, and the reason it needed three is that each of the
+first two fixed the part somebody had looked at. The figures beside the chart were moved off the
+company's month in September; the follower banners were given their own model's revenue a fortnight
+before that, for this exact reason. Nothing measured which series a banner was handed, so both
+repairs landed without closing the fault.
+
+### Changed
+
+- **The model creator gives its bottom band back to the page.** The segmented bar under the stage
+  drew its unlit half as solid blocks, which read as a slab of furniture across the foot of the
+  screen; it is a faint ghost of a track now, and it sits on the page edge against the bar below
+  rather than floating in the middle of the footer. The back and forward buttons came down from
+  50px to 40px. Asked for by the author.
+- **Silicon for the cellar no longer asks for a shipped model.** The colocated tier wanted one, so
+  a player handed the server room at the end of the tutorial had every BUY in the parts shop refused
+  with a sentence about releasing a model, which is a different subject from buying four
+  accelerators. Two testers tripped on it in a week. The five million dollars stays and is now the
+  whole of the gate.
+- **The blueprint's bottom row of annotations sits above the footer** instead of behind it. The
+  sheet number is in that corner and the bar was drawn through it.
+
+### Fixed
+
+- **The lead model banner's chart is that model's own revenue**, read through the same `Flagship()`
+  call the figures above it use, so the chart and the figures cannot end up describing two different
+  products. It is revenue rather than profit, which is as far as this can honestly go: the fleet
+  bill is not attributed per model, so a per-product profit would be a real cost split by a rule
+  nobody can check.
+- **A chart with nothing below the line uses its whole height.** The baseline sat two thirds down to
+  leave room for a losing day, and revenue has none, so every column was scaled into the lower third
+  and a good month looked much like a flat one.
+
+### Save compatibility
+
+**Nothing changed.** No new fields, no version bump, and a 0.7.0 campaign opens and plays.
+
+### Under the hood
+
+- `ProductChartTests` is the ratchet, and it was run against the old arrangement first, where both
+  of its cases failed. It does not assert about the lead banner: it reads every chart in the corner
+  and requires each to be some marketed model's own revenue, because a guard written about the lead
+  alone would go quiet the next time that corner grows a third kind of banner. The second case posts
+  $900M of grant money and requires no chart to move.
+- `ProductSparkline.Values` and `SegmentBar.SolidUnlit` exist so a test can read a claim back, the
+  same seam and the same reason as `SegmentBar.Fill`.
+- Six guards moved with the colocation gate rather than being loosened, and two of them are now
+  measured on the datacenter, which still has three requirements: a gate with one requirement cannot
+  demonstrate that a refusal names only what is missing.
+- **1,619 EditMode tests across 186 fixtures, 87 PlayMode across 17.** Measured, both green, no
+  inconclusive cases.
+- **The economy is untouched, measured rather than assumed.** `DeepCampaignProbe` on one seed comes
+  back on its previous peak cash to the dollar on every operator: ¤1,474,598,369, ¤781,971,321 and
+  ¤2,297,024,811 on the three that survive fourteen years. Worth running because the colocation gate
+  is a rule rather than a screen.
+
 ## [0.7.0] - 2026-10-16
 
 **A player paid eighty million dollars and the game never admitted it.** The own-datacenter tier
