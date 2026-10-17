@@ -327,9 +327,19 @@ namespace ScalingLaws.Persistence
             Loc.Current = Language;
         }
 
-        /// <summary>What the machine says it is set to, mapped onto what the game has.</summary>
-        private static Language DetectLanguage() =>
-            Application.systemLanguage == SystemLanguage.Polish ? Language.Polish : Language.English;
+        /// <summary>
+        /// What a player who has never opened the settings sheet gets.
+        ///
+        /// **English, whatever the machine says, at the author's call on 17 October 2026.** It used
+        /// to read `Application.systemLanguage`, so the one build that goes out to the world opened
+        /// in Polish on a Polish machine and in English everywhere else. That is defensible and it
+        /// made the shipped zip impossible to speak about: screenshots, a trailer and a tester's
+        /// report could each be of a different game depending on whose desk it was on.
+        ///
+        /// Polish is not lost and is not buried: language is the first row on the settings sheet,
+        /// above everything written in whatever it says, and the choice is remembered.
+        /// </summary>
+        private static Language DetectLanguage() => Language.English;
 
         /// <summary>
         /// The size of the windowed game on a display of the given size.
