@@ -85,6 +85,25 @@ repairs landed without closing the fault.
   `CompanyState.WantedResearch` says the player asked for that node. The era band still slides
   sideways under its own frame either way, because that half was never the problem and is
   invisible from the top of the page.
+- **A shortlist you paid for comes back when you switch position and switch back.** The
+  dictionary was keyed on the hiring channel alone while `Results` skipped any candidate whose
+  position was not the one being looked at, so pressing another job emptied the page and
+  pressing back left it empty. The draw had already been spent. It is keyed on the pair now,
+  channel and position, and the filter is gone because the key carries it. The list is still
+  kept rather than regenerated, which is the whole reason this class owns it: a shortlist costs
+  draws from the company's random stream and a screen that rerolled on every repaint would let
+  a player fish for a good candidate by pressing a tab twice.
+- **The parts shop says no instead of going quiet.** `buy` was `SetEnabled(affordable &&
+  power.Fits)`, so a row the company could not afford **or could not power** took the click and
+  answered nothing. Two reasons behind one dead control, and the second is the one nobody
+  guesses. It carries `.button--shut` now, stays clickable and makes the sound a refusal makes.
+  Deliberately without a notice: the price is two labels above the button and the site power
+  line is one, so the click points the eye at a sentence that was already on the row.
+
+  **This is the fifth silent disabled control this project has shipped** and eight more are
+  still standing: `PartsShop` 415, `InvestingScreen` 283 and 742, `RivalActionsPanel` 169 and
+  271, `StateBoard` 212 and 329, `GameShell.Grants` 300, and `ReleasePlanPanel` 463, where the
+  release button goes dark because the version name is empty and never says so.
 - **A crowd of remote hires no longer blocks an office.** Reported on 2026-10-18: "I cant buy
   an office if I have more remote people than the office supports." Both gates, the one on
   moving and the one on buying, compared the desks in a place against `Headcount`, which is

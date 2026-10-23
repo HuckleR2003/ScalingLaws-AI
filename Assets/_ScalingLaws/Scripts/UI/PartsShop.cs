@@ -316,13 +316,33 @@ namespace ScalingLaws.UI
 
             row.Add(cost);
 
-            var buy = new Button(() => OpenOrder(generation, price, total))
+            // **Shut is a look, not a dead control.** `SetEnabled(false)` dispatches no
+            // pointer event, so a row the company cannot afford or cannot power took the click
+            // and answered nothing, which reads as the shop being broken rather than as a
+            // refusal. Fifth time this project has shipped a silent disabled control, and the
+            // pattern that fixes it is already in `GameShell.Money`.
+            //
+            // Nothing is announced on the refusal because both reasons are on the row already:
+            // the price is two labels up and `SitePowerLine` is one. The click gives the sound
+            // a refusal makes and the eye is pointed at the sentence that was already there.
+            var canOrder = affordable && power.Fits;
+
+            var buy = new Button(() =>
+            {
+                if (!canOrder)
+                {
+                    AudioDirector.Deny();
+                    return;
+                }
+
+                OpenOrder(generation, price, total);
+            })
             {
                 text = Loc.T("shop.buy")
             };
 
             buy.AddToClassList("shoprow__buy");
-            buy.SetEnabled(affordable && power.Fits);
+            buy.EnableInClassList("button--shut", !canOrder);
             row.Add(buy);
 
             // **Projected silicon says so.** The catalogue knows where the real products stop, and a

@@ -57,7 +57,20 @@ namespace ScalingLaws.UI
         /// </summary>
         private readonly Action<string, string> announce;
 
-        private readonly Dictionary<HireSource, List<Candidate>> shortlists = new();
+        /// <summary>
+        /// One shortlist per channel **and per position**, not per channel alone.
+        ///
+        /// **Keyed on the pair because the results are filtered by the pair.** With the channel
+        /// as the whole key, searching for a developer and then pressing another position left
+        /// the developers in the dictionary where nothing could draw them: `Results` skips a
+        /// candidate whose position is not the one chosen, so the page went blank and stayed
+        /// blank when the player pressed back. They had paid a draw for that list.
+        ///
+        /// The list still costs a draw and is still kept rather than regenerated, which is the
+        /// point of owning it here at all.
+        /// </summary>
+        private readonly Dictionary<(HireSource Source, PlayerSkill Position), List<Candidate>>
+            shortlists = new();
 
         private PlayerSkill chosen = PlayerSkill.Development;
         private int minimumLevel = 55;
@@ -346,7 +359,7 @@ namespace ScalingLaws.UI
                 // Paid whether or not they sign. That is what a retained search is.
                 company.PostCash(LedgerLine.Salaries, fee);
 
-                shortlists[HireSource.Specialist] = new List<Candidate>(
+                shortlists[(HireSource.Specialist, chosen)] = new List<Candidate>(
                     simulation.Shortlist(chosen, HireSource.Specialist, minimumLevel, 1));
 
                 problem = string.Empty;
@@ -442,11 +455,11 @@ namespace ScalingLaws.UI
                         return;
                     }
 
-                    shortlists[source] = new List<Candidate>(paidFor);
+                    shortlists[(source, chosen)] = new List<Candidate>(paidFor);
                 }
                 else
                 {
-                    shortlists[source] = new List<Candidate>(
+                    shortlists[(source, chosen)] = new List<Candidate>(
                         simulation.Shortlist(chosen, source, 48, ShortlistSize));
                 }
 
@@ -464,18 +477,16 @@ namespace ScalingLaws.UI
             var list = new VisualElement();
             list.AddToClassList("portal__results");
 
-            if (!shortlists.TryGetValue(source, out var found) || found.Count == 0)
+            if (!shortlists.TryGetValue((source, chosen), out var found) || found.Count == 0)
             {
                 return list;
             }
 
+            // No filter on the position any more: the key carries it, so anything under this
+            // key is already for the job being looked at. The old filter was what turned a
+            // kept list into a blank page the moment the player changed their mind.
             foreach (var candidate in found)
             {
-                if (candidate.Position != chosen)
-                {
-                    continue;
-                }
-
                 list.Add(Row(candidate));
             }
 
