@@ -17766,12 +17766,22 @@
    The bottom is the one strip nothing owns except the HUD bar, which is fixed. 460px rather than
    46% of the window, because a headline and one sentence read better short, and because the
    corner column on SITE grows sideways from the right and must never be reached. */
+/* **Centred above the bar, not pinned into the left corner.**
+
+   It used to sit at `left: 24px` with a 460px width, which is the one place every screen in
+   this game puts something: the end of the ranking list, the last cards on the state board,
+   the text under the creator mock, the company banner on the site. Four tabs were measured
+   with this card covering content, and on the ranking it hid two rows outright.
+
+   The geometry is `.gate`'s, because that problem was solved once already for the card that
+   answers a refused click: wide, centred, clearing the bottom bar by more than its own height
+   so it can never reach the clock or the speed controls. A notice that times out may overlap
+   a little. It may not sit on top of a list. */
 .started {
     position: absolute;
-    bottom: 84px;
-    left: 24px;
-    width: 460px;
-    max-width: 38%;
+    bottom: 96px;
+    left: 22%;
+    right: 22%;
     padding: 18px 26px 20px 26px;
     border-radius: 12px;
     border-width: 1px;

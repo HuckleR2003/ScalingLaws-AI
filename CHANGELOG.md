@@ -62,11 +62,29 @@ repairs landed without closing the fault.
   with a sentence about releasing a model, which is a different subject from buying four
   accelerators. Two testers tripped on it in a week. The five million dollars stays and is now the
   whole of the gate.
+- **A notice no longer lands in the corner every screen keeps something in.** `.started` sat at
+  `left: 24px` with a 460px width, which is where the ranking list ends, where the last cards on
+  the state board are, where the text under the creator mock sits, and where the company banner
+  is drawn. Measured on four tabs it was covering content, and on the ranking it hid two rows of
+  the board outright. It takes `.gate`'s geometry now, centred and clearing the bottom bar,
+  because that is the same problem solved once already for the card that answers a refused
+  click. A notice that times out may overlap a little. It may not sit on top of a list.
 - **The blueprint's bottom row of annotations sits above the footer** instead of behind it. The
   sheet number is in that corner and the bar was drawn through it.
 
 ### Fixed
 
+- **The research board stopped opening four screens down.** Reported on 2026-10-17 as "research
+  just sometimes opens at the bottom". The board scrolls the page to the era band holding the
+  node it means to show, which is right when the player has just pressed GO TO RESEARCH on a
+  control that refused them, and wrong on every other visit. The node it picked was the one in
+  flight, and a project is in flight for most of a campaign, so the board opened part-way down
+  whenever one was running. **Measured against a project in the deepest era: 4,746 pixels, which
+  is more than four windows below the top of the page.** The "sometimes" in the report is the
+  era: an early node is a small enough jump to look like nothing. The page now moves only when
+  `CompanyState.WantedResearch` says the player asked for that node. The era band still slides
+  sideways under its own frame either way, because that half was never the problem and is
+  invisible from the top of the page.
 - **The lead model banner's chart is that model's own revenue**, read through the same `Flagship()`
   call the figures above it use, so the chart and the figures cannot end up describing two different
   products. It is revenue rather than profit, which is as far as this can honestly go: the fleet
@@ -81,6 +99,16 @@ repairs landed without closing the fault.
 **Nothing changed.** No new fields, no version bump, and a 0.7.0 campaign opens and plays.
 
 ### Under the hood
+
+- **`ResearchBoardTests`**, a PlayMode ratchet that builds a campaign with a project running in
+  the last era and asserts the board opens at the top. **Run against the old arrangement first,
+  where it failed with 4,745.8 against an expected 0**, which is the only thing that makes a
+  ratchet worth writing. Its first version failed for the wrong reason, on the date gate of the
+  deepest node rather than on the scroll, and a test that fails whatever the code does is not a
+  ratchet; the fixture moves the campaign to 2032 so the node is reachable.
+- **`GameShell.PageScrollOffset`**, for tooling, same reason `Simulation` and `Offices` are
+  public: a screen that opens part-way down is invisible to every assertion in this project and
+  obvious to anybody who looks at it, and the scroller is the shell's own.
 
 - `ProductChartTests` is the ratchet, and it was run against the old arrangement first, where both
   of its cases failed. It does not assert about the lead banner: it reads every chart in the corner

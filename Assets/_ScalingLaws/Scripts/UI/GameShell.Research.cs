@@ -198,7 +198,20 @@ namespace ScalingLaws.UI
                             // the page down to the band. A node three eras below the fold was
                             // perfectly centred inside a strip the player could not see, so the
                             // report was simply that nothing happened.
-                            BringBandIntoView(band);
+                            //
+                            // **Only when the player asked for this node, never on a plain
+                            // visit.** Moving the band sideways is invisible from the top of the
+                            // page; moving the page itself is not, and a run in flight is the
+                            // common case rather than the rare one. So every trip to the board
+                            // opened it part-way down, at whatever era the current project sits
+                            // in, which reads as a screen that cannot decide where it starts.
+                            // Reported 2026-10-17 as "research just sometimes opens at the
+                            // bottom", and the "sometimes" is the era: it only shows when the
+                            // project is far enough along to be below the fold.
+                            if (asked)
+                            {
+                                BringBandIntoView(band);
+                            }
                         }).ExecuteLater(1);
                     }
                 }

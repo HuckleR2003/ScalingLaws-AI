@@ -68,6 +68,17 @@ namespace ScalingLaws.UI
         public OfficeChooser Offices => offices;
 
         /// <summary>
+        /// Where the open page is scrolled to, for tooling.
+        ///
+        /// **A screen that opens part-way down is invisible to every assertion in this project**
+        /// and obvious to anybody who looks at it, which is exactly how it shipped: the board
+        /// scrolled itself to whichever era the running project sat in, on every single visit.
+        /// `ResearchBoardTests` reads this to hold the repair, and there is no other way in,
+        /// because the scroller is the shell's own and a test has no eyes.
+        /// </summary>
+        public Vector2 PageScrollOffset => pageScroller?.scrollOffset ?? Vector2.zero;
+
+        /// <summary>
         /// Opens a screen by name. False when there is no such screen, rather than an exception:
         /// the caller is usually iterating <see cref="ScreenNames"/> and a typo should read as a
         /// missing picture, not as a crashed run.
