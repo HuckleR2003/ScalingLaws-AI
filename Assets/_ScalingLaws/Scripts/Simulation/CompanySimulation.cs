@@ -3875,11 +3875,20 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (moving && definition.Desks < State.Staff.Headcount)
+            // **Desks are owed to the people who sit at them, and a remote hire does not.**
+            // This read `Headcount`, which is everybody, so a company with ten people on site
+            // and eight working remotely was refused an office with twelve desks on the grounds
+            // that it had eighteen. Reported 2026-10-18: "I cant buy an office if I have more
+            // remote people than the office supports."
+            //
+            // `SeatedHeadcount` is the reading `StaffRoster.HasFreeSeat` has always used, and
+            // `Add` already refuses a seated hire with no free desk on the same basis. Two
+            // readings of one fact, and this was the one that disagreed.
+            if (moving && definition.Desks < State.Staff.SeatedHeadcount)
             {
                 failureReason = Loc.T("office.too_small",
                     definition.DisplayName, definition.Desks,
-                    Loc.Counted(State.Staff.Headcount, "noun.person"));
+                    Loc.Counted(State.Staff.SeatedHeadcount, "noun.person"));
 
                 return false;
             }
@@ -3958,11 +3967,13 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            if (definition.Desks < State.Staff.Headcount)
+            // Same reading as the purchase above, and for the same reason: a remote
+            // hire is not owed a desk here either.
+            if (definition.Desks < State.Staff.SeatedHeadcount)
             {
                 failureReason = Loc.T("office.too_small",
                     definition.DisplayName, definition.Desks,
-                    Loc.Counted(State.Staff.Headcount, "noun.person"));
+                    Loc.Counted(State.Staff.SeatedHeadcount, "noun.person"));
                 return false;
             }
 

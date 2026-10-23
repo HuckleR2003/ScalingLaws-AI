@@ -85,6 +85,19 @@ repairs landed without closing the fault.
   `CompanyState.WantedResearch` says the player asked for that node. The era band still slides
   sideways under its own frame either way, because that half was never the problem and is
   invisible from the top of the page.
+- **A crowd of remote hires no longer blocks an office.** Reported on 2026-10-18: "I cant buy
+  an office if I have more remote people than the office supports." Both gates, the one on
+  moving and the one on buying, compared the desks in a place against `Headcount`, which is
+  everybody on the payroll. A company with one person on site and seventeen working remotely was
+  told "Small office hub holds 10, the company has 18 people" about a place with nine desks
+  going spare.
+
+  `StaffRoster` has had the right reading since remote hiring was built: `SeatedHeadcount` is
+  what `HasFreeSeat` compares against, and `Add` already refuses a seated hire with no free desk
+  on that basis. So this was two readings of one fact with one of them disagreeing, which is the
+  shape that produced four copies of a heat threshold and the audience split before it. Both
+  gates read `SeatedHeadcount` now, and so do the sentences they refuse with, because a refusal
+  quoting the wrong number is its own small lie.
 - **The lead model banner's chart is that model's own revenue**, read through the same `Flagship()`
   call the figures above it use, so the chart and the figures cannot end up describing two different
   products. It is revenue rather than profit, which is as far as this can honestly go: the fleet
@@ -106,6 +119,14 @@ repairs landed without closing the fault.
   ratchet worth writing. Its first version failed for the wrong reason, on the date gate of the
   deepest node rather than on the scroll, and a test that fails whatever the code does is not a
   ratchet; the fixture moves the campaign to 2032 so the node is reachable.
+- **`OfficeSeatingTests`** holds both halves: a crowd of remote hires does not make a place too
+  small, and a team that does need desks still has to fit in them. Run against the old gates
+  first, where the two about remote hires failed and the one about seated staff passed, which is
+  the shape a ratchet should have. Its own first version was wrong in a way worth recording:
+  `StaffRoster.Add` refuses a seated hire with no free desk, so asking for thirteen people while
+  the company was still in the garage quietly produced two and the move that followed then
+  succeeded for the wrong reason. The fixture moves into the roomiest place before hiring, and
+  asserts the team was actually hired before asserting anything about the move.
 - **`GameShell.PageScrollOffset`**, for tooling, same reason `Simulation` and `Offices` are
   public: a screen that opens part-way down is invisible to every assertion in this project and
   obvious to anybody who looks at it, and the scroller is the shell's own.
