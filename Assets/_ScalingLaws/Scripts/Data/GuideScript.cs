@@ -296,6 +296,17 @@ namespace ScalingLaws.Data
         /// </summary>
         public const string ArchitectureBuiltSignal = "arch_built";
 
+        /// <summary>
+        /// The player started a research node.
+        ///
+        /// **The gift step waited for nothing at all until 2026-10-26.** Emil offers to pay for
+        /// the first node, and the step then drew a NEXT: so picking the node left his offer on
+        /// screen, and pressing NEXT walked past the gift without taking it. Reported as the line
+        /// not going away after a node was chosen, which is exactly what it looks like from the
+        /// chair.
+        /// </summary>
+        public const string ResearchStartedSignal = "research_started";
+
         public static IReadOnlyList<GuideStep> Steps { get; } = new List<GuideStep>
         {
             // ---- the floor, and the thing that bankrupts people ----------------------------
@@ -334,7 +345,10 @@ namespace ScalingLaws.Data
             new("research_cost", "guide.step.research_cost", GuideTarget.Research, "tree-node"),
             new("research_groups", "guide.step.research_groups", GuideTarget.Research, "era"),
             new("launch_trap", "guide.step.launch_trap", GuideTarget.Research),
-            new(GiftStepId, "guide.step.research_gift", GuideTarget.Research, "tree-node"),
+            // **Waits for the node to actually be started**, and says what it is waiting for
+            // on a button that cannot be pressed. The refusal beside it is the way past.
+            new(GiftStepId, "guide.step.research_gift", GuideTarget.Research, "tree-node",
+                "guide.wait.pick_research", false, -1, ResearchStartedSignal),
             new("research_gift_note", "guide.step.research_gift_note", GuideTarget.Research),
 
             // ---- the level above the model ------------------------------------------------
@@ -379,7 +393,18 @@ namespace ScalingLaws.Data
             // Nothing to say about the data page and the compute page beyond what is on them, so he
             // says he is waiting rather than filling the silence. Except for the one control on the
             // compute page that has cost real players real money.
-            new("create_data", "guide.step.create_data", GuideTarget.Create, null, null, false, 3),
+            // **The one creator step that pointed at nothing, on the one page that is too tall.**
+            // The stage keeps 421px of the 687 it needs while the strip is up, so GRANICA WIEDZY
+            // and DEDUPLIKACJA, which are the two things this line is about, sit below the fold.
+            // A highlight is also a scroll: `GuideOverlay` brings the first lit element into its
+            // own scroller, which is exactly the repair a playtest already asked for when he
+            // talked about rented power a section and a half below the fold.
+            //
+            // `choice-row` rather than a new class, because on this page it is only ever those
+            // two rows: the other two in the creator belong to the precision and arrangement
+            // panels, which are on other stages and are therefore not in the tree.
+            new("create_data", "guide.step.create_data", GuideTarget.Create, "choice-row",
+                null, false, 3),
             new("create_spend", "guide.step.create_spend", GuideTarget.Create, "stage-slider",
                 null, false, 4),
             new("create_waiting", "guide.step.create_waiting", GuideTarget.Create, null,
@@ -394,7 +419,7 @@ namespace ScalingLaws.Data
             // **Waits for the run to actually start.** The line says he will not press it for
             // you; before this it offered a NEXT that pressed nothing and moved on anyway.
             new("create_start", "guide.step.create_start", GuideTarget.Create, "verdict",
-                null, false, 6, GuideScript.RunStartedSignal),
+                "guide.wait.start_run", false, 6, GuideScript.RunStartedSignal),
 
             // And then he waits with the player. Four months of calendar is the first time the game
             // asks anybody to wait for anything, and being told what that feels like by somebody who

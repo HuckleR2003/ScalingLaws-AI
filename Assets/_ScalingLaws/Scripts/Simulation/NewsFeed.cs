@@ -26,8 +26,10 @@ namespace ScalingLaws.Simulation
     public readonly struct NewsItem
     {
         public NewsItem(GameDate date, NewsSection section, string headline, string body,
-            string outlet, bool isAboutPlayer, NewsWeight weight)
+            string outlet, bool isAboutPlayer, NewsWeight weight,
+            EventVenueId? venue = null)
         {
+            Venue = venue;
             Date = date;
             Section = section;
             Headline = headline ?? string.Empty;
@@ -54,6 +56,16 @@ namespace ScalingLaws.Simulation
         public bool IsAboutPlayer { get; }
 
         public NewsWeight Weight { get; }
+
+        /// <summary>
+        /// Where the thing this story is about is happening, when it happens anywhere.
+        ///
+        /// Null on almost every story, and that is the point: a tag on a story about a token
+        /// price would be a tag about nothing. The screen draws the place only when the story
+        /// has one, and clicking it is how a player gets from reading about an event to
+        /// standing at it.
+        /// </summary>
+        public EventVenueId? Venue { get; }
 
         public override string ToString() => $"{Date} [{Section}] {Headline}";
     }

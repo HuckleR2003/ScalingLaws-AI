@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ScalingLaws.Data;
 using UnityEngine;
@@ -116,16 +117,30 @@ namespace ScalingLaws.UI
             middle.Add(preview);
 
             action.AddToClassList("site-card__action");
-            action.SetEnabled(false);
+            action.clicked += () => Act?.Invoke(shown);
             Add(action);
 
             footnote.AddToClassList("site-card__footnote");
             Add(footnote);
         }
 
+        /// <summary>
+        /// What to do when the action button is pressed, or null for a card that only reads.
+        ///
+        /// **The button used to be `SetEnabled(false)` for every kind of site, permanently.** That
+        /// is the shape this project has shipped three times: a disabled control dispatches no
+        /// pointer event, so it cannot explain itself and it reads as broken. It is live now
+        /// exactly when there is something behind it, which `MapSiteDefinition.SystemExists` says.
+        /// </summary>
+        public Action<MapSiteDefinition> Act { get; set; }
+
+        /// <summary>The site the card is currently showing, so the button knows what it acts on.</summary>
+        private MapSiteDefinition shown;
+
         /// <summary>Fills the card in for one site.</summary>
         public void Show(MapSiteDefinition site)
         {
+            shown = site;
             title.text = site.DisplayName;
             kindLine.text = Loc.T(KindKey(site.Kind)).ToUpperInvariant();
             blurb.text = site.DecisionBlurb;
@@ -143,6 +158,10 @@ namespace ScalingLaws.UI
             }
 
             action.text = Loc.T(ActionKey(site.Kind));
+
+            // Live only where there is a rule behind it. A button that is bright and refuses
+            // every press is worse than one that was never offered.
+            action.SetEnabled(site.SystemExists && Act != null);
 
             // The rules behind most of these are not written yet, and the card says so rather than
             // letting a greyed button look like a bug.
@@ -215,19 +234,26 @@ namespace ScalingLaws.UI
         {
             ShowPreview(false);
 
+            // **No art, no frame.** The empty slot was a dark rectangle with the word PREVIEW in
+            // it, and a tester read it as something left over from an earlier build rather than as
+            // a promise. The author agreed and asked for it gone on 2026-10-31.
+            //
+            // The mechanism is untouched: drop a still into Resources/Map/Interiors/ named after
+            // the site and the frame comes back by itself. That was the point of building the slot
+            // early, and it survives without the empty box having to be on screen in the meantime.
             var inside = site.Kind is MapSiteKind.OfficeLease or MapSiteKind.ServerFacility;
-            preview.style.display = inside ? DisplayStyle.Flex : DisplayStyle.None;
+            var art = inside ? Resources.Load<Texture2D>($"Map/Interiors/{site.Id}") : null;
 
-            if (!inside)
+            preview.style.display = art != null ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (art == null)
             {
                 return;
             }
 
-            var art = Resources.Load<Texture2D>($"Map/Interiors/{site.Id}");
-
-            preview.style.backgroundImage = art != null ? new StyleBackground(art) : StyleKeyword.Null;
-            preview.EnableInClassList("site-card__preview--empty", art == null);
-            previewNote.text = Loc.T(art == null ? "map.card.inside.soon" : "map.card.inside");
+            preview.style.backgroundImage = new StyleBackground(art);
+            preview.EnableInClassList("site-card__preview--empty", false);
+            previewNote.text = Loc.T("map.card.inside");
         }
 
         /// <summary>One labelled figure.</summary>
@@ -308,6 +334,21 @@ namespace ScalingLaws.UI
                 case MapSiteKind.PowerPlantStake:
                     yield return (Loc.T("map.card.stake"), Pending);
                     yield return (Loc.T("map.card.power"), Pending);
+                    break;
+
+                // **The venue knows both of these and the card printed dashes anyway.** Found on
+                // 2026-11-01 in the three seconds of video attached to a tester's "it doesnt
+                // work": the card for Media Plaza showed a dash for the hire and a dash for the
+                // capacity while `EventVenueCatalog` held 24,000 visitors, prestige 0.68 and four
+                // stands, and derived the hire from the first two.
+                //
+                // Same shape as the power plant case above, including for a venue whose door is
+                // not open yet: real numbers, action disabled, and the footnote saying the rules
+                // are written and the door is not. A place that will not say what it costs is
+                // worse than one that says what it costs and will not let you in.
+                case MapSiteKind.EventVenue when EventVenueCatalog.ForMapSite(site.Id) is { } venue:
+                    yield return (Loc.T("map.card.stand"), UiFormat.Money(venue.SmallStandCostUsd));
+                    yield return (Loc.T("map.card.audience"), UiFormat.Count(venue.AverageVisitors));
                     break;
 
                 case MapSiteKind.EventVenue:

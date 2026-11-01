@@ -123,7 +123,11 @@ namespace ScalingLaws.UI
         private void Start()
         {
             openingTo = transform.position;
-            openingFrom = OpeningFrom(Home, CityLayout.GroundHeightAt(Home), transform.forward);
+
+            // Read once, because it clears the request as it goes.
+            var opensAt = OpeningPoint();
+            openingFrom = OpeningFrom(opensAt, CityLayout.GroundHeightAt(opensAt),
+                transform.forward);
 
             transform.position = openingFrom;
             openingSeconds = 0f;
@@ -204,6 +208,32 @@ namespace ScalingLaws.UI
 
         /// <summary>Where the company is on the map: its office, or the founder's house.</summary>
         private static MapPoint Home => MapSiteCatalog.HomeFor((OfficeTier)SceneFlow.MapHomeOffice);
+
+        /// <summary>
+        /// Where this opening flight ends: a site somebody asked for, or the company address.
+        ///
+        /// **The request is cleared as it is read.** It is a one-shot instruction from the
+        /// story that was clicked, not a setting, and leaving it set would send the player to
+        /// the same venue every time they opened the map afterwards.
+        /// </summary>
+        private static MapPoint OpeningPoint()
+        {
+            var asked = SceneFlow.MapFocusSite;
+            SceneFlow.MapFocusSite = string.Empty;
+
+            if (!string.IsNullOrEmpty(asked))
+            {
+                foreach (var site in MapSiteCatalog.All)
+                {
+                    if (site.Id == asked)
+                    {
+                        return site.Position;
+                    }
+                }
+            }
+
+            return Home;
+        }
 
         /// <summary>
         /// Closes the map by flying back down to the company's building, then loads the office.

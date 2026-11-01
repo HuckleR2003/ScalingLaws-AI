@@ -207,6 +207,64 @@ namespace ScalingLaws.Tests.EditMode
                 "the number survives the friendship, which is the author's own rule");
         }
 
+        /// <summary>
+        /// Capacity bought from an ally actually arrives in the fleet.
+        ///
+        /// **The fixture below proved the arithmetic and nothing else, for months.** It asserted
+        /// that `AlliedPetaflops` returns a number above zero, which it always did; the number was
+        /// printed on the alliance card and read by nothing inside `Simulation/`, so the deal
+        /// charged its fee, sat on the list as live, and added nothing to any run.
+        ///
+        /// Reported by Francisco on 2026-10-27, withdrawn at 14:34 and reinstated at 15:04, which
+        /// reads as indecision and was not: the capacity is a share of what the company rents, and
+        /// he had come off the rent in between.
+        ///
+        /// This asserts the only thing that matters, which is that the fleet is bigger with the
+        /// deal than without it. A test that reads the method it is testing can only ever prove
+        /// the method returns something.
+        /// </summary>
+        [Test]
+        public void CapacityBoughtFromAnAllyReachesTheFleet()
+        {
+            var withoutDeal = Company();
+            var withDeal = Company();
+            var lab = CompetitorId.Cohere;
+
+            foreach (var simulation in new[] { withoutDeal, withDeal })
+            {
+                Warm(simulation, lab, RivalRelations.Best);
+
+                // The deal is a share of what is rented, so a company renting nothing cannot
+                // receive it however good the friendship is. That is the design as it stands and
+                // the author has left it that way on purpose until the late-game economy is
+                // looked at as one piece.
+                simulation.SetRentedPetaflops(400.0);
+            }
+
+            withDeal.State.Deals.Add(new StandingDeal(lab, RelationOffer.CapacityPurchase,
+                withDeal.State.Date, withDeal.State.Date.AddDays(90)));
+
+            Assert.That(withDeal.AlliedPetaflops(), Is.GreaterThan(0.0),
+                "the deal reports no capacity at all, so this test is measuring nothing");
+
+            var plain = withoutDeal.Profile;
+            var allied = withDeal.Profile;
+
+            Assert.That(allied.RawPetaflops, Is.GreaterThan(plain.RawPetaflops),
+                "The capacity bought from the ally never reached the fleet. It is computed, it is "
+                + "printed on the alliance card, and nothing in the rules receives it.");
+
+            Assert.That(allied.EffectivePetaflops, Is.GreaterThan(plain.EffectivePetaflops),
+                "The allied capacity is in the raw figure and delivers nothing, which is worse "
+                + "than not being there: the screen promises compute the planner cannot use.");
+
+            Assert.That(allied.TotalAcceleratorMemoryGigabytes,
+                Is.GreaterThan(plain.TotalAcceleratorMemoryGigabytes),
+                "Capacity arrived without the memory behind it. A fleet with petaflops and no "
+                + "gigabytes refuses every run with \"fleet offers 0 GB\", which this project has "
+                + "already shipped once on reserved packages.");
+        }
+
         [Test]
         public void ADealRunsForItsTermAndThenStopsMattering()
         {

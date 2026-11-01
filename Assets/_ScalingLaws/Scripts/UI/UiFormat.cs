@@ -94,6 +94,9 @@ namespace ScalingLaws.UI
         public static string Percent(double fraction, int decimals = 1) =>
             (fraction * 100.0).ToString("F" + decimals, Culture) + "%";
 
+        /// <summary>A multiple, as in twice the price. Invariant, like everything else here.</summary>
+        public static string Multiple(double value) => Number(value, 2) + "x";
+
         public static string Number(double value, int decimals = 1) =>
             value.ToString("F" + decimals, Culture);
 

@@ -260,6 +260,92 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
+        /// A modifier rule must not try to resize something the code sizes inline.
+        ///
+        /// **An inline style outranks every selector in UI Toolkit, however many classes it
+        /// carries.** `PhonePanel.Avatar(96)` writes `style.width` and `style.height` on the
+        /// element it returns, so `.guide--tight .guide__portrait { width: 52px }` was correct,
+        /// specific, loaded and ignored. Two full measured runs came back reporting the class
+        /// applied and the head unchanged before the cause was spotted on 2026-10-24.
+        ///
+        /// **Only modifier rules, and that restriction is the whole design of this test.** A
+        /// plain rule losing to an inline write is usually somebody deliberately making one
+        /// button taller than `.button`, which is a normal thing to do and not worth a failure.
+        /// The first version of this fixture did not make that distinction, flagged three such
+        /// one-offs, and missed the case it was written for. A modifier is different in kind: it
+        /// exists to change an element that already has the base class, so it has no inline write
+        /// of its own to win with and can only ever lose.
+        ///
+        /// Percent widths are skipped. Every progress bar here fills itself from code, which is
+        /// what a bar is.
+        /// </summary>
+        [Test]
+        public void NoModifierRuleTriesToResizeSomethingSizedFromCode()
+        {
+            // **Comments first, or a banner wins the match.** `/* ---- buttons ---- */` sits
+            // outside any braces, so a selector pattern that allows anything up to the next `{`
+            // swallows the comment and reports it as the rule that collides.
+            var sheet = Regex.Replace(Sheet, @"/\*.*?\*/", " ", RegexOptions.Singleline);
+
+            var trouble = new List<string>();
+
+            var interfaceFolder = Path.Combine(Application.dataPath, "_ScalingLaws", "Scripts", "UI");
+
+            foreach (var file in Directory.GetFiles(interfaceFolder, "*.cs", SearchOption.AllDirectories))
+            {
+                var source = File.ReadAllText(file);
+                var lines = source.Split(NewlineChars, System.StringSplitOptions.RemoveEmptyEntries);
+
+                for (var index = 0; index < lines.Length; index++)
+                {
+                    var written = Regex.Match(lines[index],
+                        @"(\w+)\.style\.(width|height)\s*=\s*(.+)$");
+
+                    if (!written.Success
+                        || written.Groups[3].Value.Contains("Percent")
+                        || written.Groups[3].Value.Contains("StyleKeyword"))
+                    {
+                        continue;
+                    }
+
+                    // **The whole file, not a window around the write.** The case this exists for
+                    // has the element built in one method and resized in another: the portrait is
+                    // classed in `Build` and sized in `MeasureStrip`, four hundred lines apart,
+                    // and a window missed it. Searching the file is safe here only because the
+                    // modifier restriction above throws away the noise that would cause.
+                    foreach (Match classed in Regex.Matches(source,
+                        written.Groups[1].Value + @"\.AddToClassList\(""([^""]+)""\)"))
+                    {
+                        var styleClass = classed.Groups[1].Value;
+
+                        foreach (Match rule in Regex.Matches(sheet,
+                            @"([^{}]*\." + Regex.Escape(styleClass)
+                            + @"(?![\w-])[^{}]*)\{([^}]*)\}"))
+                        {
+                            var selector = rule.Groups[1].Value.Trim();
+
+                            if (!selector.Contains("--")
+                                || !Regex.IsMatch(rule.Groups[2].Value,
+                                    @"^\s*(width|height)\s*:", RegexOptions.Multiline))
+                            {
+                                continue;
+                            }
+
+                            trouble.Add(Path.GetFileName(file) + ":" + (index + 1)
+                                + " sizes ." + styleClass + " from code, and '" + selector
+                                + "' tries to resize it from the sheet, which cannot win");
+                        }
+                    }
+                }
+            }
+
+            Assert.That(trouble, Is.Empty,
+                "A modifier that resizes an element the code sizes inline is a rule that loads, "
+                + "matches and does nothing. Set the two numbers from C# and say in the sheet "
+                + "why the size is not there:\n" + string.Join("\n", trouble));
+        }
+
+        /// <summary>
         /// The creator's drawing has to reach past the page's own padding, by exactly that padding.
         ///
         /// **Two statements of one fact, held together rather than commented.** An absolute child

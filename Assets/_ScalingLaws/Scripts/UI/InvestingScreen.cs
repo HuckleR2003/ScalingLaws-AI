@@ -280,7 +280,7 @@ namespace ScalingLaws.UI
             };
 
             commission.AddToClassList("estate__buy");
-            commission.SetEnabled(state.CashUsd >= plant.CapexUsd);
+            commission.EnableInClassList("button--shut", state.CashUsd < plant.CapexUsd);
             card.Add(commission);
 
             return card;
@@ -731,6 +731,7 @@ namespace ScalingLaws.UI
                 if (!simulation.TryTakeOver(selected, out var failure))
                 {
                     note = failure;
+                    AudioDirector.Deny();
                 }
 
                 changed?.Invoke();
@@ -739,7 +740,7 @@ namespace ScalingLaws.UI
 
             buy.AddToClassList("button");
             buy.AddToClassList("button--armed");
-            buy.SetEnabled(simulation.State.CashUsd >= cost);
+            buy.EnableInClassList("button--shut", simulation.State.CashUsd < cost);
             block.Add(buy);
 
             return block;

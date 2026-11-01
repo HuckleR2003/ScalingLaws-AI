@@ -243,6 +243,13 @@ namespace ScalingLaws.Persistence
                 data.renewalDays.Add(renewal.OpenedOn.DayIndex);
             }
 
+            data.autoRenewLabs.Clear();
+
+            foreach (var lab in state.AutoRenewals)
+            {
+                data.autoRenewLabs.Add((int)lab);
+            }
+
             data.campaignTerm = state.Campaign == null ? -1 : (int)state.Campaign.Term;
 
             if (state.Campaign != null)
@@ -310,6 +317,7 @@ namespace ScalingLaws.Persistence
 
             data.founderLook = state.FounderLook ?? string.Empty;
             data.founderGlasses = state.FounderGlasses;
+            data.companyLogo = state.CompanyLogo ?? string.Empty;
 
             data.skillLevels = new List<int>(state.Skills.LevelsToArray());
 
@@ -533,6 +541,10 @@ namespace ScalingLaws.Persistence
             }
 
             data.isSandbox = state.IsSandbox;
+            data.eventEarlyAccess = state.EventEarlyAccess;
+            data.bookedEventIds = new List<int>(state.BookedEventIds);
+            data.bookedEventYears = new List<int>(state.BookedEventYears);
+            data.bookedEventTiers = new List<int>(state.BookedEventTiers);
             data.refusesApplications = !state.AcceptsApplications;
             data.hasServerRoom = state.HasServerRoom;
             data.serverRoomWasAGift = state.ServerRoomWasAGift;
@@ -1172,6 +1184,21 @@ namespace ScalingLaws.Persistence
                 }
             }
 
+            // Validated like every other enum off disk, and a hand-edited file naming a lab that
+            // does not exist simply does not get one rather than throwing on the first renewal.
+            state.AutoRenewals.Clear();
+
+            if (safe.autoRenewLabs != null)
+            {
+                foreach (var lab in safe.autoRenewLabs)
+                {
+                    if (Enum.IsDefined(typeof(CompetitorId), lab))
+                    {
+                        state.AutoRenewals.Add((CompetitorId)lab);
+                    }
+                }
+            }
+
             state.Campaign = null;
 
             if (Enum.IsDefined(typeof(CampaignTerm), safe.campaignTerm))
@@ -1444,6 +1471,27 @@ namespace ScalingLaws.Persistence
                 safe.effectMagnitudes, safe.effectModelIndices);
 
             state.IsSandbox = safe.isSandbox;
+            state.EventEarlyAccess = safe.eventEarlyAccess;
+
+            // **Only triples that are whole.** Three parallel lists of different lengths is a
+            // booking with no year or no size, and this format drops a malformed row rather
+            // than stretching it, which is the rule the ledger already follows.
+            state.BookedEventIds.Clear();
+            state.BookedEventYears.Clear();
+            state.BookedEventTiers.Clear();
+
+            if (safe.bookedEventIds != null && safe.bookedEventYears != null
+                && safe.bookedEventTiers != null)
+            {
+                var whole = Math.Min(safe.bookedEventIds.Count,
+                    Math.Min(safe.bookedEventYears.Count, safe.bookedEventTiers.Count));
+
+                for (var index = 0; index < whole; index++)
+                {
+                    state.BookStand(safe.bookedEventIds[index], safe.bookedEventYears[index],
+                        safe.bookedEventTiers[index]);
+                }
+            }
             state.AcceptsApplications = !safe.refusesApplications;
             state.HasServerRoom = safe.hasServerRoom;
             state.ServerRoomWasAGift = safe.serverRoomWasAGift;
@@ -1560,6 +1608,12 @@ namespace ScalingLaws.Persistence
 
             state.FounderLook = safe.founderLook ?? string.Empty;
             state.FounderGlasses = Math.Max(0, safe.founderGlasses);
+
+            // Sanitised to a mark this build actually ships, so a file written by a later one with
+            // more marks in it opens on the first rather than on an empty badge.
+            state.CompanyLogo = CompanyLogoCatalog.Knows(safe.companyLogo)
+                ? safe.companyLogo
+                : CompanyLogoCatalog.Default;
 
             state.Skills.Restore(safe.skillLevels, safe.skillExperience);
             state.Region = (WorldRegion)safe.worldRegion;
@@ -2441,6 +2495,7 @@ namespace ScalingLaws.Persistence
             safe.founderName = safe.founderName?.Trim() ?? string.Empty;
             safe.founderLook = safe.founderLook?.Trim() ?? string.Empty;
             safe.founderGlasses = Math.Max(0, safe.founderGlasses);
+            safe.companyLogo = safe.companyLogo?.Trim() ?? string.Empty;
             safe.skillLevels ??= new List<int>();
             safe.skillExperience ??= new List<long>();
 

@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using ScalingLaws.Data;
 using ScalingLaws.UI;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ScalingLaws.Tests.EditMode
@@ -72,6 +73,33 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
+        /// A venue says what a stand costs and how many people will see it.
+        ///
+        /// **Both numbers were dashes until 2026-11-01**, while `EventVenueCatalog` held the
+        /// visitors and the prestige and derived the hire from them. Found in three seconds of
+        /// video a tester sent with the words "it doesnt work", which were about the button
+        /// underneath rather than these two rows. The rows were the second fault on the card.
+        ///
+        /// Asserted against the catalog rather than against 39,648, so changing the venue changes
+        /// the expected figure instead of breaking a test that has memorised one.
+        /// </summary>
+        [Test]
+        public void AVenueShowsWhatAStandCostsAndHowManyWillSeeIt()
+        {
+            var venue = EventVenueCatalog.Get(EventVenueId.MediaPlaza);
+            var values = ValuesOn(Site("event.mediaplaza"));
+
+            Assert.That(values, Contains.Item(UiFormat.Money(venue.SmallStandCostUsd)),
+                $"Media Plaza should print the hire its own catalog derives. Printed: {string.Join(" | ", values)}");
+
+            Assert.That(values, Contains.Item(UiFormat.Count(venue.AverageVisitors)),
+                $"Media Plaza should print its audience. Printed: {string.Join(" | ", values)}");
+
+            Assert.That(values.Any(value => value == "—"), Is.False,
+                $"Nothing on a wired venue should still be a dash. Printed: {string.Join(" | ", values)}");
+        }
+
+        /// <summary>
         /// The five halls to rent in River Works have no prices in any catalog yet — that is the open
         /// question in Fix 24's notes, and until it is answered the card must say nothing instead.
         /// </summary>
@@ -100,15 +128,40 @@ namespace ScalingLaws.Tests.EditMode
         }
 
         /// <summary>
-        /// The little window into the place is for places that have an inside worth showing. A tax
-        /// office is a pin with an errand attached, not a property.
+        /// The little window into the place is drawn only where there is a still to put in it.
+        ///
+        /// **This used to assert the opposite and it was right at the time.** The empty frame was
+        /// built early on purpose, so interior shots could be dropped in as they were rendered.
+        /// A tester read the empty box with the word PREVIEW in it as something left over from an
+        /// earlier build, and the author agreed and asked for it gone on 2026-10-31.
+        ///
+        /// The rule rather than today's emptiness: the frame appears where the kind of place has
+        /// an inside **and** a still exists for it. That is true now, with no stills at all, and
+        /// stays true on the day the first one lands in Resources/Map/Interiors/.
         /// </summary>
         [Test]
-        public void OnlyPlacesWithAnInsideCarryThePreview()
+        public void APreviewIsDrawnOnlyWhereThereIsAStillToShow()
         {
-            Assert.That(PreviewShows(Site("office.loft")), Is.True, "An office should offer its inside.");
-            Assert.That(PreviewShows(Site("server.riverworks.small")), Is.True, "A hall should offer its inside.");
-            Assert.That(PreviewShows(Site("civic.taxoffice")), Is.False, "The tax office has no inside to show.");
+            var drawn = 0;
+
+            foreach (var site in MapSiteCatalog.All)
+            {
+                var hasInside = site.Kind is MapSiteKind.OfficeLease or MapSiteKind.ServerFacility;
+                var still = Resources.Load<Texture2D>($"Map/Interiors/{site.Id}") != null;
+                var expected = hasInside && still;
+
+                Assert.That(PreviewShows(site), Is.EqualTo(expected),
+                    site.Id + " draws its preview frame when it should not, or the other way "
+                    + "round. Kind has an inside: " + hasInside + ". A still exists: " + still + ".");
+
+                if (expected)
+                {
+                    drawn++;
+                }
+            }
+
+            Debug.Log("[preview] " + drawn + " of " + MapSiteCatalog.All.Count
+                      + " places have an interior still to show.");
         }
 
         private static bool PreviewShows(MapSiteDefinition site)

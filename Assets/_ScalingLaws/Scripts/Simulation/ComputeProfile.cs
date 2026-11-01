@@ -1,5 +1,6 @@
 using System;
 using ScalingLaws.Core;
+using ScalingLaws.Data;
 
 namespace ScalingLaws.Simulation
 {
@@ -26,8 +27,12 @@ namespace ScalingLaws.Simulation
             long residualValueUsd,
             FleetBill bill = default,
             double roomDrawKilowatts = 0.0,
-            double roomPetaflops = 0.0)
+            double roomPetaflops = 0.0,
+            HardwareClass? starvingClass = null,
+            double acceleratorsSupported = 0.0)
         {
+            StarvingClass = starvingClass;
+            AcceleratorsSupported = Math.Max(0.0, SimUnits.Finite(acceleratorsSupported));
             Bill = bill;
             RoomDrawKilowatts = Math.Max(0.0, SimUnits.Finite(roomDrawKilowatts));
             RoomPetaflops = Math.Max(0.0, SimUnits.Finite(roomPetaflops));
@@ -72,6 +77,18 @@ namespace ScalingLaws.Simulation
 
         /// <summary>How well fed the owned accelerators are by hosts, memory and fabric. One is balanced.</summary>
         public double BalanceFactor { get; }
+
+        /// <summary>
+        /// Which support class is holding the owned fleet back, or null when nothing is.
+        ///
+        /// Hosts, memory and fabric are bought separately from the cards they feed, and the fleet
+        /// runs at the worst of the three ratios. This says which one, so a screen can name the
+        /// part to buy rather than printing a percentage and leaving the player to guess.
+        /// </summary>
+        public HardwareClass? StarvingClass { get; }
+
+        /// <summary>How many owned accelerators the thinnest support class can actually feed.</summary>
+        public double AcceleratorsSupported { get; }
 
         /// <summary>The tax for spreading one run across a lot of accelerators.</summary>
         public double ScalingEfficiency { get; }

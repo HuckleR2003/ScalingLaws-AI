@@ -209,7 +209,7 @@ namespace ScalingLaws.UI
             { text = Loc.T("state.sign") };
 
             sign.AddToClassList("sboard__sign");
-            sign.SetEnabled(can);
+            sign.EnableInClassList("button--shut", !can);
             row.Add(sign);
 
             if (!can)
@@ -326,7 +326,7 @@ namespace ScalingLaws.UI
 
             action.AddToClassList("stile__action");
             action.EnableInClassList("stile__action--stop", running);
-            action.SetEnabled(running || can);
+            action.EnableInClassList("button--shut", !running && !can);
             tile.Add(action);
 
             if (!running && !can && reason.Length > 0)

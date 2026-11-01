@@ -73,6 +73,26 @@ namespace ScalingLaws.UI
             shortlists = new();
 
         private PlayerSkill chosen = PlayerSkill.Development;
+
+        /// <summary>
+        /// The position the shortlists are for. Set by the shell before it asks for a page.
+        ///
+        /// **Until this existed, the hiring screen always opened on the last position the player
+        /// had pressed a chip for, whichever job card they had come in from.** Reported twice by
+        /// the same tester, the second time with "you still havent fixed this", because the first
+        /// report was never written down. The position was sitting on the card he clicked and was
+        /// dropped on the way here: <c>ShowPositionCard</c> knew it, <c>BuildPositionHiring</c>
+        /// took no argument, and this field kept whatever it had.
+        ///
+        /// Every route into the screen now states the job it is filling, which is also the only
+        /// reading that makes the shortlist key honest: the lists are kept per channel **and**
+        /// per position, so arriving with the wrong position draws somebody else's list.
+        /// </summary>
+        public PlayerSkill Position
+        {
+            get => chosen;
+            set => chosen = value;
+        }
         private int minimumLevel = 55;
         private string problem = string.Empty;
 

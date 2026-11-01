@@ -375,22 +375,22 @@ namespace ScalingLaws.Data
             new("event.park", "Bayview Park", MapSiteKind.EventVenue, MapCategory.Events,
                 "park", new MapPoint(990f, 1450f), 0f, 0,
                 "AI Frontier Expo and Global Model Awards. A lake, lawns and an event ground big "
-                + "enough for the crowds both of them draw.", systemExists: false),
+                + "enough for the crowds both of them draw.", systemExists: true),
 
             new("event.gallery", "Bayview Gallery", MapSiteKind.EventVenue, MapCategory.Events,
                 "park", new MapPoint(790f, 1300f), 0f, 0,
                 "Compute & Infrastructure Expo and Creator Intelligence Festival. The halls are "
-                + "indoors, and the car park behind them takes the marquees.", systemExists: false),
+                + "indoors, and the car park behind them takes the marquees.", systemExists: true),
 
             new("event.civicsquare", "Civic Square", MapSiteKind.EventVenue, MapCategory.Events,
                 "civic", new MapPoint(930f, 690f), 0f, 0,
                 "Responsible AI Forum and the press conferences a scandal calls for. A square sized "
-                + "for a crowd rather than a festival.", systemExists: false),
+                + "for a crowd rather than a festival.", systemExists: true),
 
             new("event.mediaplaza", "Media Plaza", MapSiteKind.EventVenue, MapCategory.Events,
                 "media", new MapPoint(230f, 780f), 60f, 0,
                 "Model Research Summit and Capital & AI Forum. The city's second indoor venue, so "
-                + "the gallery is not hosting every kind of event in the year.", systemExists: false),
+                + "the gallery is not hosting every kind of event in the year.", systemExists: true),
 
             // The two open-air venues the author picked out: the terrace park CityHillPark builds above
             // Innovation, and the plaza CitySiliconValley already built. Events to come will be held
@@ -399,13 +399,13 @@ namespace ScalingLaws.Data
                 "innovation", new MapPoint(1570f, 1675f), 0f, 0,
                 "Three long pools on a terrace cut into the hill above Innovation, a pavilion at one "
                 + "end and the bay behind it. Room for a launch, or a conference held outdoors.",
-                systemExists: false),
+                systemExists: true),
 
             new("event.valleyplaza", "Valley Plaza", MapSiteKind.EventVenue, MapCategory.Events,
                 "silicon", new MapPoint(515f, -690f), 0f, 0,
                 "The long pool between the trophy towers, from the boulevard down to the marina. The "
                 + "most photographed address in the valley, and the one a launch here is remembered by.",
-                systemExists: false),
+                systemExists: true),
 
             // ---- Power plant stakes: PowerPlantCatalog's two sites, positions are new ---------------
 

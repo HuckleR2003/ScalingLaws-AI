@@ -283,7 +283,11 @@ namespace ScalingLaws.UI
 
             var sign = new Button(() =>
             {
-                if (simulation.TryAcceptGrant(definition.Id, out _))
+                if (!simulation.TryAcceptGrant(definition.Id, out _))
+                {
+                    AudioDirector.Deny();
+                }
+                else
                 {
                     startedNotice?.Show(Loc.T("notice.grant_signed"),
                         Loc.T("notice.grant_signed.note", Loc.T(definition.NameKey), definition.TermDays));
@@ -297,7 +301,7 @@ namespace ScalingLaws.UI
             sign.AddToClassList("button--primary");
             sign.style.marginLeft = 0;
             sign.style.marginTop = 0;
-            sign.SetEnabled(canAccept);
+            sign.EnableInClassList("button--shut", !canAccept);
             buttons.Add(sign);
 
             // Asked for by name: a board the player cannot clear is a board they stop reading.

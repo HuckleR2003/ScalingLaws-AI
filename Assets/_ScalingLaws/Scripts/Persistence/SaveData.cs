@@ -461,7 +461,7 @@ namespace ScalingLaws.Persistence
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentVersion = 74;
+        public const int CurrentVersion = 77;
 
         public int version = CurrentVersion;
 
@@ -775,6 +775,15 @@ namespace ScalingLaws.Persistence
 
         /// <summary>See <see cref="renewalLabs"/>.</summary>
         public List<int> renewalDays = new();
+
+        /// <summary>
+        /// v77. Labs whose terms the player asked to roll over on their own.
+        ///
+        /// A switch the player set, so it is a decision rather than a derivation and it has to be
+        /// written down. Reading it back off today's deals would turn "I am happy to keep doing
+        /// this" into "I happen to be doing this today", which are not the same sentence.
+        /// </summary>
+        public List<int> autoRenewLabs = new();
 
         public bool hasResearchProject;
         public int researchNode;
@@ -1118,6 +1127,14 @@ namespace ScalingLaws.Persistence
         /// <summary>A campaign started in DEBUG MODE. It earns no achievements; see CompanyState.IsSandbox.</summary>
         public bool isSandbox;
 
+        /// <summary>Asked National Press for early word about events. See CompanyState.EventEarlyAccess.</summary>
+        public bool eventEarlyAccess;
+
+        /// <summary>Stands paid for and not yet stood at. See CompanyState.BookedEventIds.</summary>
+        public List<int> bookedEventIds = new();
+        public List<int> bookedEventYears = new();
+        public List<int> bookedEventTiers = new();
+
         /// <summary>
         /// Written inverted, v60, so a file that never had the field reads as the default: a v59
         /// campaign did receive unasked letters, because there was no way to stop them.
@@ -1289,6 +1306,18 @@ namespace ScalingLaws.Persistence
 
         /// <inheritdoc cref="founderLook"/>
         public int founderGlasses;
+
+        // ---- added in v76 ----
+
+        /// <summary>
+        /// The mark the player chose for their own company, by name.
+        ///
+        /// **By name, exactly as the founder look is stored, and for the same reason**: dropping
+        /// another file into the folder renumbers every mark after it, and an index would quietly
+        /// turn an existing badge into somebody else's. A name this build does not know falls back
+        /// to the first rather than throwing.
+        /// </summary>
+        public string companyLogo = string.Empty;
 
         public List<int> skillLevels = new();
 

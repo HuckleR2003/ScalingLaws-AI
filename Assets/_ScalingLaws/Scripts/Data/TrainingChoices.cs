@@ -252,7 +252,12 @@ namespace ScalingLaws.Data
 
         private static readonly DeduplicationDefinition[] Passes =
         {
-            new(DeduplicationPass.None, tokensKept: 1.0, quality: 0.92),
+            // **Standard is the reference and stays exactly 1.0 on both axes**, so a player who
+            // never opens this control sees the numbers the rest of the game is balanced against.
+            // The other two are measured from it: the raw crawl is the deduplicated corpus plus
+            // the repeats that were taken out of it, which is why it is above one rather than at
+            // it. Raw at 1.0 made it a strictly worse Standard for as long as this existed.
+            new(DeduplicationPass.None, tokensKept: 1.12, quality: 0.92),
             new(DeduplicationPass.Standard, tokensKept: 1.0, quality: 1.0),
             new(DeduplicationPass.Aggressive, tokensKept: 0.80, quality: 1.14)
         };

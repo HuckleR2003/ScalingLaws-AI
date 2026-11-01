@@ -166,7 +166,7 @@ namespace ScalingLaws.UI
 
             pay.AddToClassList("button");
             pay.AddToClassList("button--armed");
-            pay.SetEnabled(simulation.State.CashUsd >= tier.CostUsd);
+            pay.EnableInClassList("button--shut", simulation.State.CashUsd < tier.CostUsd);
             card.Add(pay);
 
             return card;
@@ -259,6 +259,7 @@ namespace ScalingLaws.UI
                 if (!simulation.TryFileLawsuit(lab, demandUsd, out var why))
                 {
                     outcomeNote = why;
+                    AudioDirector.Deny();
                 }
 
                 courtOpen = false;
@@ -268,7 +269,8 @@ namespace ScalingLaws.UI
 
             file.AddToClassList("button");
             file.AddToClassList("button--primary");
-            file.SetEnabled(simulation.State.CashUsd >= LawsuitBook.CostOf(demandUsd));
+            file.EnableInClassList("button--shut",
+                simulation.State.CashUsd < LawsuitBook.CostOf(demandUsd));
             panel.Add(file);
 
             return panel;

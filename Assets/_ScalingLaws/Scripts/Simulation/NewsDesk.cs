@@ -289,6 +289,39 @@ namespace ScalingLaws.Simulation
                 Loc.T("world.source"), isAboutPlayer: false, NewsWeight.Loud);
         }
 
+        /// <summary>
+        /// Registration has opened at a city venue.
+        ///
+        /// **Free, and on the wire, which is the whole shape of this feature.** Nobody is cut
+        /// off from knowing an event exists. What the cheapest membership buys is the same
+        /// story a month sooner, filed to the desk that is named after events and had never
+        /// carried one.
+        ///
+        /// The desk translates and never decides, as everywhere else here: the calendar has
+        /// already opened, this says so.
+        /// </summary>
+        public static NewsItem EventOpening(CityEventId id, int year, GameDate on, bool early)
+        {
+            var definition = CityEventCatalog.Get(id);
+            var venue = EventVenueCatalog.Get(definition.Venue);
+            var closes = EventSeason.RegistrationClosesOn(id, year);
+            var days = Math.Max(0, closes.DayIndex - on.DayIndex);
+
+            var body = definition.Blurb
+                + "\n\n" + Loc.T("news.event.where", venue.DisplayName, venue.OrganiserName)
+                + "\n" + Loc.T("news.event.closes", days.ToString(Invariant));
+
+            return new NewsItem(on,
+                early ? NewsSection.EventHunter : NewsSection.Wire,
+                Loc.T(early ? "news.event.head_early" : "news.event.head",
+                    definition.DisplayName, venue.DisplayName),
+                body,
+                Loc.T(early ? "news.desk.hunter" : "world.source"),
+                isAboutPlayer: false,
+                early ? NewsWeight.Loud : NewsWeight.Notable,
+                venue.Id);
+        }
+
         public static NewsItem FromSignal(in IntelSignal signal)
         {
             var section = signal.Tier switch

@@ -88,8 +88,17 @@ namespace ScalingLaws.Simulation
         /// <paramref name="offered"/> may be null, which means the caller does not know or does not
         /// care, and then this behaves exactly as it always did.
         /// </summary>
+        /// <param name="founderPoints">
+        /// What the person running the company is worth to this person, plus or minus, from
+        /// <see cref="SkillSet.LoyaltyPoints"/>. Defaults to nothing, which is the neutral-option
+        /// rule: every caller written before this describes exactly the person it always
+        /// described, and the overload that reads a rival's staff cannot reach it at all.
+        /// **That last part is load-bearing.** A player's own Teamwork making other companies'
+        /// people harder to poach is the effect pointing the wrong way.
+        /// </param>
         public static double For(Hire hire, GameDate today, double benefitPoints,
-            long marketSalaryUsd, IReadOnlyCollection<StaffBenefit> offered)
+            long marketSalaryUsd, IReadOnlyCollection<StaffBenefit> offered,
+            double founderPoints = 0.0)
         {
             // A bonus counts as time served. Money buys the settling-in that months would have
             // bought, which is the only shape that lets a payment matter without letting it buy
@@ -122,7 +131,7 @@ namespace ScalingLaws.Simulation
             }
 
             var total = Base + tenure + Math.Clamp(benefitPoints, 0.0, BenefitCatalog.MaximumPoints)
-                + pay;
+                + pay + SimUnits.Finite(founderPoints);
 
             // And what they asked for and did not get, which is a drag rather than an absence.
             if (offered != null)
@@ -150,29 +159,5 @@ namespace ScalingLaws.Simulation
             LoyaltyBand.Open => Loc.T("loyalty.open"),
             _ => Loc.T("loyalty.loose")
         };
-
-        /// <summary>
-        /// Everybody's loyalty, averaged, which is the one figure worth putting on a screen.
-        ///
-        /// An empty payroll returns zero rather than the base: a company with nobody in it does not
-        /// have happy staff, it has no staff.
-        /// </summary>
-        public static double Average(IReadOnlyList<Hire> hires, GameDate today, double benefitPoints)
-        {
-            if (hires == null || hires.Count == 0)
-            {
-                return 0.0;
-            }
-
-            var total = 0.0;
-
-            foreach (var hire in hires)
-            {
-                total += For(hire, today, benefitPoints,
-                    StaffCatalog.Get(hire.Role).SalaryPerYearUsd(hire.Skill));
-            }
-
-            return total / hires.Count;
-        }
     }
 }

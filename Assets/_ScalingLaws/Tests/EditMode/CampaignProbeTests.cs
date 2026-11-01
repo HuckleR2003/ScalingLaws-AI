@@ -173,9 +173,16 @@ namespace ScalingLaws.Tests.EditMode
 
                 lines.Add($"## {style}");
                 lines.Add(string.Empty);
+                // **The horizon, said out loud.** AdvanceDay returns an empty report once the
+                // company is insolvent, so every year after the one it died in is a copy of the
+                // row above it. The table printed those as data and therefore read as a flat,
+                // measured late game, which is exactly the part of the game a tester has asked
+                // about twice. Nine of fourteen years were never simulated for any style that
+                // plays, and nothing on the page said so.
                 lines.Add(probe.Bankrupt >= 0
-                    ? $"- Insolvent in year {probe.Bankrupt}."
-                    : "- Survived the whole campaign.");
+                    ? $"- Insolvent in year {probe.Bankrupt}, so **{probe.Bankrupt - 2021} of "
+                      + $"{Years} years were simulated** and the rest of this run measures nothing."
+                    : $"- Survived the whole campaign, all {Years} years simulated.");
 
                 lines.Add($"- Models released: {probe.Models}");
                 lines.Add($"- Research nodes finished: {probe.Nodes}");
@@ -191,15 +198,27 @@ namespace ScalingLaws.Tests.EditMode
                     lines.Add($"- Refused: {refusal}");
                 }
                 lines.Add(string.Empty);
-                lines.Add("| Year | Cash | Capability | Frontier |");
-                lines.Add("|---|---|---|---|");
+                lines.Add("| Year | Cash | Capability | Frontier | Parity |");
+                lines.Add("|---|---|---|---|---|");
 
                 foreach (var row in probe.Track)
                 {
+                    if (probe.Bankrupt >= 0 && row.Year > probe.Bankrupt)
+                    {
+                        lines.Add($"| {row.Year} | insolvent, not simulated | | |");
+                        continue;
+                    }
+
+                    // Parity with the frontier, because every funding gate in the game is
+                    // expressed as a share of it and no other column answers the question the
+                    // late-game report is about.
+                    var parity = row.Frontier <= 0.0 ? 0.0 : row.Capability / row.Frontier;
+
                     lines.Add(
                         $"| {row.Year} | {Money(row.Cash)} | "
                         + $"{row.Capability.ToString("0.0", CultureInfo.InvariantCulture)} | "
-                        + $"{row.Frontier.ToString("0.0", CultureInfo.InvariantCulture)} |");
+                        + $"{row.Frontier.ToString("0.0", CultureInfo.InvariantCulture)} | "
+                        + $"{parity.ToString("P0", CultureInfo.InvariantCulture)} |");
                 }
 
                 lines.Add(string.Empty);
@@ -241,8 +260,95 @@ namespace ScalingLaws.Tests.EditMode
             lines.Add($"{everySeen.Count} of {Enum.GetValues(typeof(CompanyEventType)).Length} "
                 + "event kinds were raised at least once.");
 
+            // **The world with no company in it**, which is the table report 15 is really about.
+            //
+            // A tester said twice that the late game is unsurvivable and tokens are too cheap, and
+            // nothing anywhere measured the market on its own. Price decays at 0.80 a year from
+            // $20 and floors at four cents, which is a fall of five hundred times; demand grows by
+            // its own curve. Whether the late game can pay for anything is the product of those
+            // two and nobody had multiplied them.
+            //
+            // No company, no operator, no seed: this is the same for every campaign ever played.
+            lines.Add(string.Empty);
+            lines.Add("## The market itself, with nobody trading in it");
+            lines.Add(string.Empty);
+            lines.Add("| Year | $/M tokens | Demand Btok/day | Whole market, $/day | vs 2022 |");
+            lines.Add("|---|---|---|---|---|");
+
+            var openingMarket = MarketModel.Evaluate(GameDate.FromCalendar(2022, 1, 1))
+                .DailyMarketRevenueUsd;
+
+            for (var year = 2022; year <= 2022 + Years; year++)
+            {
+                var world = MarketModel.Evaluate(GameDate.FromCalendar(year, 1, 1));
+                var against = openingMarket <= 0.0 ? 0.0 : world.DailyMarketRevenueUsd / openingMarket;
+
+                lines.Add(string.Format(CultureInfo.InvariantCulture,
+                    "| {0} | {1:0.####} | {2:N0} | {3:N0} | {4:0.00}x |",
+                    year, world.PricePerMillionTokensUsd, world.TotalDemandBillionTokensPerDay,
+                    world.DailyMarketRevenueUsd, against));
+            }
+
             // **The three thresholds nobody had checked.** Written into the report rather than
             // asserted: whether a number is right is a design call, and this fixture measures.
+            // **Report 16, both halves, measured rather than argued about.**
+            //
+            // He asked for two things: that model types carry different market prices, and that a
+            // better model should be able to charge more. One of those is already true and was
+            // never shown to anybody; the other is half true in a way that matters.
+            lines.Add(string.Empty);
+            lines.Add("## What a capability point is worth in price");
+            lines.Add(string.Empty);
+            // **Invariant, because the first version of this printed 0,16 and 1,1.** A raw
+            // interpolation follows the machine culture and this one is Polish, which is the sixth
+            // time that fault has been written in this project, this time into the document that
+            // answers a tester about numbers.
+            lines.Add("Read straight out of `MarketShareModel.Utility`: capability enters as "
+                + $"`{MarketShareModel.CapabilityWeight.ToString(CultureInfo.InvariantCulture)}` a point and price as "
+                + $"`{MarketShareModel.PriceWeight.ToString(CultureInfo.InvariantCulture)}` times the log of it, so the price a model can "
+                + "carry at the same appeal is `exp(capability gain * weight / price weight)`. "
+                + "**Quality already buys price.** Nothing on any screen says so.");
+            lines.Add(string.Empty);
+            lines.Add("| Capability ahead | Can charge |");
+            lines.Add("|---|---|");
+
+            foreach (var ahead in new[] { 1.0, 3.0, 5.0, 10.0, 20.0 })
+            {
+                var multiple = Math.Exp(ahead * MarketShareModel.CapabilityWeight
+                    / MarketShareModel.PriceWeight);
+
+                lines.Add(string.Format(CultureInfo.InvariantCulture,
+                    "| +{0:0} | {1:0.00}x |", ahead, multiple));
+            }
+
+            lines.Add(string.Empty);
+            lines.Add("## What a model type is worth in price");
+            lines.Add(string.Empty);
+            lines.Add("Tolerance is how much less that type's audience minds the price, against a "
+                + "general model on the same date, and it already divides the price in the demand "
+                + "term. **The till does not read it.** Revenue is served tokens times "
+                + "`Monetization.RatePerMillionTokensUsd`, which takes one market price for every "
+                + "type, so a specialist can hold an audience at a higher price and still be paid "
+                + "the general rate per token. That is the half of report 16 that is a real gap, "
+                + "and closing it is a design call rather than a patch.");
+            lines.Add(string.Empty);
+            lines.Add("| Type | Tolerance 2024 | Tolerance 2030 | Reach 2024 | Reach 2030 |");
+            lines.Add("|---|---|---|---|---|");
+
+            var early = GameDate.FromCalendar(2024, 1, 1);
+            var late = GameDate.FromCalendar(2030, 1, 1);
+
+            foreach (var definition in ModelTypeCatalog.All)
+            {
+                lines.Add(string.Format(CultureInfo.InvariantCulture,
+                    "| {0} | {1:0.00} | {2:0.00} | {3:0.00} | {4:0.00} |",
+                    definition.Type,
+                    MarketShareModel.ToleranceFactor(definition.Type, early),
+                    MarketShareModel.ToleranceFactor(definition.Type, late),
+                    MarketShareModel.ReachFactor(definition.Type, early),
+                    MarketShareModel.ReachFactor(definition.Type, late)));
+            }
+
             lines.Add(string.Empty);
             lines.Add("## Achievement thresholds nobody had measured");
             lines.Add(string.Empty);

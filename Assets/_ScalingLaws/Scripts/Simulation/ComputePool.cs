@@ -254,9 +254,20 @@ namespace ScalingLaws.Simulation
         /// rather than subtracted from the draw, because a station does not make the cluster use
         /// less: it makes the cluster allowed to exist. See `PowerEstate`.
         /// </param>
+        /// <param name="rentDiscount">
+        /// What the founder's data engineering is worth on the rented half of the fleet, from
+        /// <see cref="SkillSet.RentedComputeCostMultiplier"/>. One is neutral and is the default.
+        ///
+        /// **It is applied here rather than where the money is charged**, which is the whole point:
+        /// `DailyOperatingCostUsd`, `FleetBill.CloudRentUsd` and the four-way split the books use
+        /// are all read off this profile, so discounting at the charge would leave the compute
+        /// screen quoting a rent the account never paid. This project has shipped a screen and a
+        /// ledger disagreeing about one number more than once.
+        /// </param>
         public ComputeProfile BuildProfile(GameDate date, MarketConditions market,
             ServerHall hall = null, RoomUpgrades? upgrades = null, double? rentedInstead = null,
-            double generatedKilowatts = 0.0)
+            double generatedKilowatts = 0.0, double rentDiscount = 1.0,
+            double alliedPetaflops = 0.0)
         {
             var room = upgrades ?? RoomUpgrades.None;
             var ownedAccelerators = 0;
@@ -454,15 +465,48 @@ namespace ScalingLaws.Simulation
                 }
             }
 
+            // **Capacity bought from an ally, which until 2026-10-31 reached nobody.**
+            // `CompanySimulation.AlliedPetaflops` was computed, printed on the alliance card, and
+            // read by nothing inside this layer, so the deal charged its fee, sat on the list as
+            // live, showed a figure and added nothing to any run. The tenth finished mechanism in
+            // this project with no path into the rules, and it had a passing test of its own:
+            // the fixture proved the arithmetic and never asked whether anybody received it.
+            //
+            // It joins exactly where a reserved package does, for the same reason written there:
+            // memory, utilisation and every downstream reader see one fleet rather than two.
+            //
+            // **No cost is added here and the accelerator count is left alone.** The deal's own
+            // money is charged by the alliance tick, and the count feeds `ScalingEfficiency`,
+            // which would retune every company that ever signed one. This is the wiring, not a
+            // balance change.
+            var allied = Math.Max(0.0, SimUnits.Finite(alliedPetaflops));
+            if (allied > 0.0)
+            {
+                weightedCeiling += allied * 0.92;
+                rentedPetaflops += allied;
+
+                if (HardwareCatalog.TryGet(market.RentableGeneration, out var fromAlly)
+                    && fromAlly.PetaflopsPerUnit > 0.0)
+                {
+                    memoryGigabytes += (double)fromAlly.MemoryGigabytes
+                        * Math.Ceiling(allied / fromAlly.PetaflopsPerUnit);
+                }
+            }
+
             var rawPetaflops = ownedPetaflops + rentedPetaflops;
             var ceiling = rawPetaflops > 0.0 ? weightedCeiling / rawPetaflops : 0.35;
             var totalAccelerators = ownedAccelerators + rentedUnits;
-            var balance = BalanceFactor(ownedAccelerators, supportCapacity);
+            var balance = BalanceFactor(ownedAccelerators, supportCapacity,
+                out var starvingClass, out var acceleratorsSupported);
             var scaling = ScalingEfficiency(totalAccelerators);
 
             // Starving only costs the owned half. Rented capacity arrives with its hosts, memory
             // and fabric already attached, which is part of what the hourly rate pays for.
             var effectivePetaflops = (ownedPetaflops * balance + rentedPetaflops) * ceiling * scaling;
+
+            // The founder's own effect on the rented half, before the bill is assembled, so
+            // every reader of this profile sees one figure.
+            cloudRent *= Math.Clamp(SimUnits.Finite(rentDiscount, 1.0), 0.5, 1.5);
 
             var bill = new FleetBill(cloudRent, electricity, housing, maintenance);
             operatingCost += bill.TotalUsd;
@@ -484,7 +528,9 @@ namespace ScalingLaws.Simulation
                 residualValue,
                 bill,
                 roomDraw,
-                roomPetaflops);
+                roomPetaflops,
+                starvingClass,
+                acceleratorsSupported);
         }
 
         /// <summary>
@@ -507,8 +553,24 @@ namespace ScalingLaws.Simulation
         /// is part of what the hourly rate buys; owned accelerators need hosts, memory and fabric
         /// bought alongside them or they idle.
         /// </summary>
-        private static double BalanceFactor(int ownedAccelerators, IReadOnlyDictionary<HardwareClass, double> supportCapacity)
+        /// <param name="shortest">
+        /// Which support class is holding the fleet back, or null when nothing is.
+        ///
+        /// **Added 2026-10-31 because the number existed and nothing said it.** The factor was on
+        /// the profile from the day this rule was written and was read by exactly one test. A
+        /// player who buys accelerators and no hosts for them watches their own fleet deliver
+        /// fifteen per cent of itself, with no sentence anywhere naming the part that is missing,
+        /// and the only rational conclusion from inside the game is that owning hardware does not
+        /// work. A tester reached exactly that conclusion and reported it.
+        /// </param>
+        /// <param name="supported">How many owned accelerators the thinnest class can actually feed.</param>
+        private static double BalanceFactor(int ownedAccelerators,
+            IReadOnlyDictionary<HardwareClass, double> supportCapacity,
+            out HardwareClass? shortest, out double supported)
         {
+            shortest = null;
+            supported = ownedAccelerators;
+
             if (ownedAccelerators <= 0)
             {
                 return 1.0;
@@ -517,7 +579,16 @@ namespace ScalingLaws.Simulation
             var factor = 1.0;
             foreach (var pair in supportCapacity)
             {
-                factor = Math.Min(factor, pair.Value / ownedAccelerators);
+                var share = pair.Value / ownedAccelerators;
+
+                if (share >= factor)
+                {
+                    continue;
+                }
+
+                factor = share;
+                shortest = pair.Key;
+                supported = pair.Value;
             }
 
             return Math.Clamp(factor, MinimumBalanceFactor, 1.0);

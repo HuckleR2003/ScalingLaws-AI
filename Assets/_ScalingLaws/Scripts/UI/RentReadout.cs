@@ -23,10 +23,16 @@ namespace ScalingLaws.UI
     public static class RentReadout
     {
         /// <summary>
-        /// The largest fleet the interface will ever offer. One billion ordinary accounts.
+        /// The largest fleet the interface will ever *offer*. One billion ordinary accounts.
         ///
         /// This used to be the slider's range on day one as well as its absolute ceiling, which is
         /// the fault this class now exists to fix. It is the cap, not the scale.
+        ///
+        /// **It caps what is offered and never what is already held.** A company can hold more
+        /// than this: the unblock button in the creator walks capacity up to 400,000 petaflops to
+        /// clear a run that cannot start, and whatever it finds is committed. Capping the ceiling
+        /// at this figure regardless therefore produced a range below the company's own fleet, and
+        /// a slider clamps into the range it is given. See the floor in <see cref="CeilingPetaflops"/>.
         /// </summary>
         public const double FullScalePetaflops = 40_000.0;
 
@@ -48,22 +54,37 @@ namespace ScalingLaws.UI
         /// ceiling that dropped when an audience shrank would clamp the player's own setting down
         /// without being asked, change the daily bill they had chosen, and do it on the worst day
         /// they were having. A ceiling that only ever rises cannot surprise anybody.
+        ///
+        /// **The floor used to be thrown away again on the last line**, and that was report 10.
+        /// `Math.Clamp(ceiling, Opening, FullScale)` put a hard roof over the floor, so a company
+        /// renting more than <see cref="FullScalePetaflops"/> was handed a range below its own
+        /// fleet. The creator's rent handle is a shared instance that is re-ranged on every
+        /// reprice, a Slider clamps into the range it is given, and the clamp raises the same
+        /// change event a drag raises. So the fleet was cut to 40,000 by opening a tab, with the
+        /// compute page never shown, which is the report word for word. The hard cap is now the
+        /// larger of the two, because it caps what the interface offers and has no business
+        /// overruling what the company actually has.
+        ///
+        /// `RentCeilingTests` held this promise at 9,000 petaflops and therefore held nothing:
+        /// the only values that can break it are above the cap. It is measured above the cap now.
         /// </summary>
         public static double CeilingPetaflops(double heldUsers, double current)
         {
+            var held = Math.Max(0.0, SimUnits.Finite(current));
+
             var forAudience = Math.Max(0.0, SimUnits.Finite(heldUsers)) * Headroom
                 / 1_000_000.0 * HostingCatalog.PetaflopsPerMillionConsumers;
 
             var ceiling = Math.Max(OpeningCeilingPetaflops, forAudience);
 
-            ceiling = Math.Max(ceiling, Math.Max(0.0, SimUnits.Finite(current)));
+            ceiling = Math.Max(ceiling, held);
 
             // Rounded up to a readable step, so the end of the travel is a number rather than the
             // arithmetic that produced it.
             var step = ceiling <= 5_000.0 ? 250.0 : 1_000.0;
             ceiling = Math.Ceiling(ceiling / step) * step;
 
-            return Math.Clamp(ceiling, OpeningCeilingPetaflops, FullScalePetaflops);
+            return Math.Clamp(ceiling, OpeningCeilingPetaflops, Math.Max(FullScalePetaflops, held));
         }
 
         /// <summary>A day's rent at which the bar is full. Above the point most companies survive.</summary>

@@ -24,6 +24,93 @@ namespace ScalingLaws.Tests.EditMode
             return new CompanySimulation(state);
         }
 
+        /// <summary>
+        /// A run of purchases reaches control, and control reaches the takeover.
+        ///
+        /// **The ratchet for the fourteenth unreachable mechanism in this project, and the first
+        /// one blocked by a condition rather than a missing button.** `SharesAvailableIn`
+        /// subtracted the holding from the tradable float, so the market stopped offering
+        /// anything once the company held 35% of a lab and never offered again. `CanTakeOver`
+        /// wants 50%. `TryTakeOver` was written, tested and impossible to call.
+        ///
+        /// Reported by Francisco on 2026-10-24, as a question about whether he had understood the
+        /// rule. He had understood it better than the code did.
+        ///
+        /// **It buys in a loop on purpose.** Asserting that one purchase is capped at 35% is the
+        /// weak version and it passed the whole time the mechanic was dead. What has to be true
+        /// is that buying again gets you further, which is the sentence the comment on
+        /// `SharesAvailableIn` has always made.
+        /// </summary>
+        [Test]
+        public void BuyingAgainAndAgainReachesControlAndThenTheWholeCompany()
+        {
+            var simulation = Company();
+            const CompetitorId Lab = CompetitorId.Cohere;
+
+            var trades = 0;
+
+            while (simulation.OwnershipOf(Lab) < ShareMarket.ControlThreshold && trades < 40)
+            {
+                var offered = simulation.SharesAvailableIn(Lab);
+
+                Assert.That(offered, Is.GreaterThan(0L),
+                    "The market stopped offering at " + simulation.OwnershipOf(Lab).ToString("P0")
+                    + " after " + trades + " purchases, so control cannot be reached by buying "
+                    + "and the takeover below it is unreachable.");
+
+                Assert.That(simulation.TryBuyShares(Lab, offered, out _, out var why), Is.True,
+                    "Purchase " + (trades + 1) + " was refused: " + why);
+
+                trades++;
+            }
+
+            Assert.That(simulation.OwnershipOf(Lab),
+                Is.GreaterThanOrEqualTo(ShareMarket.ControlThreshold),
+                "Forty purchases and still under control at "
+                + simulation.OwnershipOf(Lab).ToString("P0") + ".");
+
+            // **And it is a run rather than a click.** One purchase reaching control would be the
+            // Tuesday the comment on SharesAvailableIn exists to rule out.
+            Assert.That(trades, Is.GreaterThan(1),
+                "Control was reached in one purchase, so a rival can be taken by surprise in a "
+                + "single click, which is the thing the cap was written to prevent.");
+
+            Assert.That(simulation.CanTakeOver(Lab, out var cost, out var blocked), Is.True,
+                "Control is held and the takeover is still refused: " + blocked);
+
+            Assert.That(cost, Is.GreaterThan(0L), "Buying the rest of a company is free.");
+
+            Assert.That(simulation.TryTakeOver(Lab, out var failed), Is.True, failed);
+
+            Assert.That(simulation.State.AcquiredLabs, Does.Contain(Lab),
+                "The takeover reported success and the lab is not owned.");
+        }
+
+        /// <summary>
+        /// No single purchase hands over more than the float allows.
+        ///
+        /// The other half of the repair: the cap still has to cap something, or fixing the ceiling
+        /// would have turned a run of purchases into one click.
+        /// </summary>
+        [Test]
+        public void NoOnePurchaseTakesMoreThanTheFloatOffers()
+        {
+            var simulation = Company();
+            const CompetitorId Lab = CompetitorId.Cohere;
+
+            var outstanding = ShareMarket.SharesOutstanding(Lab);
+            var offered = simulation.SharesAvailableIn(Lab);
+
+            Assert.That(offered, Is.LessThanOrEqualTo(
+                (long)(outstanding * ShareMarket.TradableShare) + 1L),
+                "One purchase is being offered more than the market parts with at a time.");
+
+            Assert.That(offered / (double)outstanding,
+                Is.LessThan(ShareMarket.ControlThreshold),
+                "A first purchase can take control outright, so there is no run for a rival to "
+                + "watch happen.");
+        }
+
         // ---- the market ---------------------------------------------------------------------------
 
         /// <summary>

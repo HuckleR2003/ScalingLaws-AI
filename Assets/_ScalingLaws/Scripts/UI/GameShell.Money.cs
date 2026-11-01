@@ -42,6 +42,28 @@ namespace ScalingLaws.UI
             bill.AddToClassList("panel--header");
             page.Add(bill);
 
+            // **The sentence that was missing, and its absence cost a tester the whole mechanic.**
+            // Owned accelerators run at the worst of their three support ratios, which is correct
+            // and is the reason hosts, memory and fabric are separate purchases. The factor has
+            // been on the profile since the rule was written and was read by exactly one test, so
+            // a player who bought cards and no hosts watched their own fleet deliver fifteen per
+            // cent of itself with nothing anywhere naming the missing part.
+            //
+            // Reported on 2026-10-27 as "I have to rent compute, even though i have more than
+            // enough parts bought", which is the only conclusion the game left open to him.
+            if (profile.StarvingClass.HasValue && profile.BalanceFactor < 1.0)
+            {
+                var ownedCards = Math.Max(0, profile.AcceleratorCount - profile.RentedAcceleratorCount);
+
+                var starved = new Label(Loc.T("fleet.starved",
+                    UiFormat.Number(profile.AcceleratorsSupported, 0),
+                    ownedCards.ToString(CultureInfo.InvariantCulture),
+                    Loc.T(SupportClassKey(profile.StarvingClass.Value))));
+
+                starved.AddToClassList("fleet-starved");
+                page.Add(starved);
+            }
+
             page.Add(BuildServicePanel());
 
             var rental = new VisualElement();
@@ -68,8 +90,38 @@ namespace ScalingLaws.UI
 
             var ceiling = RentReadout.CeilingPetaflops(heldUsers, state.Pool.RentedPetaflops);
 
-            rental.Add(RentReadout.Meters(
-                profile, market, state.Pool.RentedPetaflops, ceiling));
+            // **Painted in place, because waiting for the release is not what a slider does.**
+            // Reported by the author on 2026-10-31 about this control by name: the handle moved and
+            // the figures above and below it sat still until the mouse came up. The meters and the
+            // band are rebuilt into two slots that are siblings of the handle rather than ancestors
+            // of it, so nothing the pointer is holding ever leaves the tree, which is the whole
+            // fault WhenSettled exists to avoid.
+            //
+            // The rest of the page still catches up on release. The bill, the reserved packages and
+            // the tier ladder all read the pool, and rebuilding those on every pixel of travel is
+            // the expensive half; these three meters and one band are the half worth paying for.
+            //
+            // ProfileWith rather than SetRentedPetaflops: the live paint prices a fleet the player
+            // has not agreed to yet, and renting on their behalf while they are still moving the
+            // handle is the exact fault a tester caught on the model creator.
+            var metersSlot = new VisualElement();
+            var bandSlot = new VisualElement();
+
+            var packagedPetaflops = state.Pool.PackagedPetaflops;
+            var usersPerPetaflop = simulation.UsersPerPetaflop();
+
+            void PaintRent(double petaflops)
+            {
+                metersSlot.Clear();
+                metersSlot.Add(RentReadout.Meters(
+                    simulation.ProfileWith(petaflops), market, petaflops, ceiling));
+
+                bandSlot.Clear();
+                bandSlot.Add(RentReadout.CapacityBand(
+                    petaflops + packagedPetaflops, heldUsers, usersPerPetaflop));
+            }
+
+            rental.Add(metersSlot);
 
             var rentedSlider = new Slider(0f, (float)ceiling)
             {
@@ -77,17 +129,18 @@ namespace ScalingLaws.UI
             };
 
             rentedSlider.AddToClassList("field");
-            rentedSlider.RegisterValueChangedCallback(evt =>
+            UiParts.WhenSettled(rentedSlider, value =>
             {
-                simulation.SetRentedPetaflops(evt.newValue);
+                simulation.SetRentedPetaflops(value);
                 Show(Screen.Fleet);
-            });
+            }, value => PaintRent(value));
 
             rental.Add(rentedSlider);
 
             // And the question the slider is really being asked, in the largest type on the panel.
-            rental.Add(RentReadout.CapacityBand(
-                state.Pool.RentedAndPackagedPetaflops, heldUsers, simulation.UsersPerPetaflop()));
+            rental.Add(bandSlot);
+
+            PaintRent(state.Pool.RentedPetaflops);
 
             rental.Add(Hint(Loc.T("money.reserved.note")));
 
@@ -529,11 +582,14 @@ namespace ScalingLaws.UI
             };
             freeSlider.AddToClassList("field");
             freeSlider.SetEnabled(policy.Model != PricingModel.FreeOnly);
-            freeSlider.RegisterValueChangedCallback(evt =>
+            UiParts.WhenSettled(freeSlider, value =>
             {
-                policy.FreeTierTokensPerUserPerDay = evt.newValue;
+                policy.FreeTierTokensPerUserPerDay = value;
                 Show(Screen.Business);
-            });
+            },
+            // The figure the handle is moving, so it follows the handle. What the policy then does
+            // to a day of revenue is the rest of the page, and that waits for the release.
+            value => freeLabel.text = Loc.T("money.free_tokens", UiFormat.Count(value)));
             free.Add(freeSlider);
 
             free.Add(Row(Loc.T("money.reach"),
@@ -617,24 +673,62 @@ namespace ScalingLaws.UI
             })
             { text = Loc.T("common.stop") };
             stop.AddToClassList("card");
+            stop.AddToClassList("card--off");
             stop.Add(new Label(Loc.T("common.none")));
             grid.Add(stop);
 
             foreach (var campaign in MonetizationCatalog.OfKind(kind))
             {
                 var captured = campaign;
+                var openYet = state.Date.IsOnOrAfter(campaign.EarliestDate);
                 var card = new Button(() =>
                 {
-                    if (kind == CampaignKind.Company)
+                    // **Shut, not dead.** This card was SetEnabled(false) until the calendar
+                    // reached it, and a disabled element in UI Toolkit dispatches no pointer
+                    // event, so it greyed itself and could say neither why nor when. Tenth
+                    // control found in that state, the other nine fixed on 2026-10-24.
+                    if (!openYet)
                     {
-                        policy.CompanyMarketingDailyUsd = captured.DailyBudgetUsd;
-                    }
-                    else
-                    {
-                        policy.ModelMarketingDailyUsd = captured.DailyBudgetUsd;
+                        AudioDirector.Deny();
+
+                        GateNotice.Says(Loc.T("mk.not_yet.kicker"),
+                            Loc.T("mk.not_yet.line", captured.DisplayName,
+                                UiFormat.Days(captured.EarliestDate.DayIndex
+                                    - state.Date.DayIndex)));
+
+                        return;
                     }
 
-                    Show(Screen.Marketing);
+                    // **A spend that starts on the click that picks it is one the player cannot
+                    // compare, cost, or back out of**, which is the rule written for the upgrade
+                    // tiles and already followed by the channel bookings further up this same
+                    // screen. The same card the datacenter commission asks through.
+                    GateNotice.Decide(
+                        Loc.T("confirm.before"),
+                        Loc.T("mk.spend_confirm.line"),
+                        new[]
+                        {
+                            (Loc.T("common.a_day"), UiFormat.Money(captured.DailyBudgetUsd)),
+                            (Loc.T("common.a_month"), UiFormat.Money(captured.MonthlyBudgetUsd)),
+                            (Loc.T("money.spending_now"), UiFormat.Money(current))
+                        },
+                        Loc.T("common.confirm"),
+                        () =>
+                        {
+                            if (kind == CampaignKind.Company)
+                            {
+                                policy.CompanyMarketingDailyUsd = captured.DailyBudgetUsd;
+                            }
+                            else
+                            {
+                                policy.ModelMarketingDailyUsd = captured.DailyBudgetUsd;
+                            }
+
+                            AudioDirector.Play(UiSound.Confirm);
+                            Show(Screen.Marketing);
+                        },
+                        Loc.T("confirm.not_yet"),
+                        () => { });
                 });
                 card.AddToClassList("card");
                 card.EnableInClassList("card--ahead", current == campaign.DailyBudgetUsd);
@@ -649,7 +743,7 @@ namespace ScalingLaws.UI
                 card.Add(cost);
 
                 card.tooltip = campaign.Description;
-                card.SetEnabled(state.Date.IsOnOrAfter(campaign.EarliestDate));
+                card.EnableInClassList("button--shut", !openYet);
                 grid.Add(card);
             }
 

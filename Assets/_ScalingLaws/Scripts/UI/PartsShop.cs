@@ -432,7 +432,10 @@ namespace ScalingLaws.UI
                     : Loc.T("order.rush", UiFormat.Money(terms.SurchargeUsd),
                         UiFormat.Percent(1.0 - terms.LeadTimeDays / (double)Math.Max(1, lead), 0));
 
-                confirm.SetEnabled(simulation.State.CashUsd >= due);
+                // **Shut, not dead.** The click runs TryBuyHardware either way, which denies
+                // and writes its own refusal into the subtitle. A disabled button dispatches no
+                // pointer event, so it could not have done that.
+                confirm.EnableInClassList("button--shut", simulation.State.CashUsd < due);
             }
 
             slider.RegisterValueChangedCallback(change =>

@@ -64,7 +64,20 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public const double TransferShare = 0.75;
 
-        /// <summary>How much of the float the market will actually let go on any one day.</summary>
+        /// <summary>
+        /// How much of a lab's stock the market will part with in **one purchase**.
+        ///
+        /// **This was read as a ceiling on holdings and it is a limit on a trade.** Reported by
+        /// Francisco on 2026-10-24, as a question about whether he had understood it: he could
+        /// never get past 35% of any lab. `SharesAvailableIn` subtracted what he already held
+        /// from the tradable float, so the market offered him nothing once he reached it, for
+        /// ever. Taking a company over wants 50%, so `TryTakeOver` was complete, tested, and
+        /// impossible to reach: the fourteenth mechanism in this project a player could not get
+        /// to, and the first one blocked by a condition rather than by a missing control.
+        ///
+        /// The intent was always a run of purchases the rival can watch happen, which is what
+        /// the comment on `SharesAvailableIn` has said all along. Per trade, that is what it is.
+        /// </summary>
         public const double TradableShare = 0.35;
 
         /// <summary>

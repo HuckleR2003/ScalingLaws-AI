@@ -175,6 +175,9 @@ namespace ScalingLaws.Persistence
                     71 => UpgradeV71ToV72(current),
                     72 => UpgradeV72ToV73(current),
                     73 => UpgradeV73ToV74(current),
+                    74 => UpgradeV74ToV75(current),
+                    76 => UpgradeV76ToV77(current),
+                    75 => UpgradeV75ToV76(current),
                     _ => current
                 };
             }
@@ -2472,6 +2475,84 @@ namespace ScalingLaws.Persistence
 
             return data;
         }
+        /// <summary>
+        /// v74 to v75: early word about city events.
+        ///
+        /// **Off, and that is the least flattering reading that is still defensible.** A v74
+        /// campaign was played in a game where the option did not exist, so the company never
+        /// asked for it. Turning it on would hand an old save a month of head start at every
+        /// event it never chose to pay attention to, which is the same mistake as reconstructing
+        /// a purchase nobody made.
+        ///
+        /// Nothing else moves. The calendar, who registered and what a stand is worth are all
+        /// derived from the seed, so a v74 file reads its own event year identically with or
+        /// without this step.
+        /// </summary>
+        /// <summary>
+        /// v75 to v76: the company mark the player chose.
+        ///
+        /// **The first mark, because a v75 campaign was never asked.** The window that offers the
+        /// seventeen marks did not exist, so every company before this version wore the drawn ring
+        /// derived from its name and nobody picked anything. Writing the default is the only
+        /// reading of a file with no answer in it; deriving one from the name would be a choice the
+        /// player never made, shown back to them as though they had.
+        /// </summary>
+        /// <summary>
+        /// v76 to v77: nothing rolls over on its own.
+        ///
+        /// **Empty is the only true reading.** The switch did not exist in v76, so no campaign
+        /// before this version was ever asked the question, and a company that happens to have
+        /// three live arrangements today has still not said it wants them to continue by
+        /// themselves. Turning it on for anybody would be answering on the player's behalf and
+        /// then charging them for the answer.
+        /// </summary>
+        public static SaveData UpgradeV76ToV77(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 77;
+            data.autoRenewLabs = new List<int>();
+
+            return data;
+        }
+
+        public static SaveData UpgradeV75ToV76(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 76;
+            data.companyLogo = CompanyLogoCatalog.Default;
+
+            return data;
+        }
+
+        public static SaveData UpgradeV74ToV75(SaveData data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            data.version = 75;
+            data.eventEarlyAccess = false;
+
+            // Nothing was bookable before this version, so there is nothing to carry over.
+            data.bookedEventIds ??= new List<int>();
+            data.bookedEventYears ??= new List<int>();
+            data.bookedEventTiers ??= new List<int>();
+            data.bookedEventIds.Clear();
+            data.bookedEventYears.Clear();
+            data.bookedEventTiers.Clear();
+
+            return data;
+        }
+
 
         public static SaveData UpgradeV72ToV73(SaveData data)
         {

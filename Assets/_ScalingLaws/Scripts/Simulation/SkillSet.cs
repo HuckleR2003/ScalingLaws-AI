@@ -135,6 +135,27 @@ namespace ScalingLaws.Simulation
         public double TrainingSpreadMultiplier() =>
             Math.Clamp(1.0 - Effect(PlayerSkill.Development), 0.2, 1.6);
 
+        /// <summary>
+        /// Multiplier on how fast a run goes through the silicon it has.
+        ///
+        /// **Development's second effect, and the reason it needed one.** Its first is the
+        /// spread, which at 0.65 is the second largest number in this file and moves something
+        /// a player cannot see: they get one finished model, not a distribution, so a run
+        /// landing nearer its projection reads as nothing at all. Asked for on 2026-10-25.
+        ///
+        /// **Deliberately a quarter of the skill rather than all of it.** One level already
+        /// buys the spread; letting it buy a full share of the calendar as well would be the
+        /// same point paid out twice. At 100 the multiplier is 1.16, which is a seventh off
+        /// the days rather than a fifth. Measured: the first version of this comment said a
+        /// fifth, and nothing in this file could have caught it.
+        ///
+        /// It is speed and not capability, and that line is not a nicety: the score comes out
+        /// of the scaling law applied to compute and corpus, and a founder skill that moved it
+        /// would break the honesty flag in the one place this game's audience checks.
+        /// </summary>
+        public double TrainingSpeedMultiplier() =>
+            Math.Clamp(1.0 + 0.25 * Effect(PlayerSkill.Development), 0.8, 1.3);
+
         /// <summary>Multiplier on everything the company spends running itself.</summary>
         public double OperatingCostMultiplier() =>
             Math.Clamp(1.0 - Effect(PlayerSkill.Management), 0.6, 1.4);
@@ -143,9 +164,52 @@ namespace ScalingLaws.Simulation
         public double TeamSaturationMultiplier() =>
             Math.Clamp(1.0 + Effect(PlayerSkill.Teamwork), 0.5, 2.0);
 
+        /// <summary>
+        /// Loyalty points the founder is worth to everybody on the payroll, plus or minus.
+        ///
+        /// **Points, not a multiplier, and that is the whole decision here.** Loyalty is an
+        /// absolute score with named bands at 40, 62 and 80, so scaling a figure whose base is 45
+        /// would move a settled veteran further than the person already halfway out of the door,
+        /// which is backwards: being good with people shows most on whoever is wavering. A flat
+        /// term moves everybody by the same amount and can carry somebody across a band, which is
+        /// the only part of this number a player ever reads.
+        ///
+        /// **Ten points at full, against a pay swing of sixteen and a tenure ceiling of thirty.**
+        /// Deliberately never the largest term: a founder who is wonderful with people and pays
+        /// under the going rate should still be losing their staff, or this skill becomes a way
+        /// out of the decision the wage slider exists to pose.
+        ///
+        /// Teamwork's second effect, asked for on 2026-10-25. Its first is the staff saturation
+        /// curve, which is real and is also the most abstract number in this file.
+        /// </summary>
+        public double LoyaltyPoints() =>
+            Math.Clamp(10.0 * Effect(PlayerSkill.Teamwork), -6.0, 6.0);
+
         /// <summary>Multiplier on in-house research depth.</summary>
         public double ResearchDepthMultiplier() =>
             Math.Clamp(1.0 + Effect(PlayerSkill.Concept), 0.6, 1.6);
+
+        /// <summary>
+        /// Multiplier on how fast a following gathers around what the company ships.
+        ///
+        /// **On the speed, never on the size, and that line is the whole of the design.** The fan
+        /// target is users times regard squared, which is earned by serving people well and being
+        /// liked; a founder skill that raised the target would be a way of being admired without
+        /// having done anything. What a compelling founder changes is how quickly people turn up
+        /// once there is something worth turning up for.
+        ///
+        /// Same discipline as the training speed above: time, not ceiling. It is also what makes
+        /// this safe to add to an economy balanced without it, because the long-run figure every
+        /// balance test measures is the target and the target has not moved.
+        ///
+        /// **It raises arrivals and leaves departures alone.** Fans drift away at a third of the
+        /// rate they arrive, and that asymmetry is what makes them a stock rather than a second
+        /// user count. People leave because of the product, not because of who is running it.
+        ///
+        /// Concept's second effect, asked for on 2026-10-25. Its first is research depth.
+        /// </summary>
+        public double FanInterestMultiplier() =>
+            Math.Clamp(1.0 + Effect(PlayerSkill.Concept), 0.7, 1.5);
 
         /// <summary>Multiplier on what a served token costs to produce.</summary>
         public double ServingCostMultiplier() =>
@@ -154,6 +218,26 @@ namespace ScalingLaws.Simulation
         /// <summary>Multiplier on the quality of every token trained on.</summary>
         public double DataQualityMultiplier() =>
             Math.Clamp(1.0 + Effect(PlayerSkill.DataEngineering), 0.7, 1.4);
+
+        /// <summary>
+        /// Multiplier on what rented capacity costs per day.
+        ///
+        /// **Three fifths of the skill, and the reason is that this money is already discounted
+        /// once.** The fleet bill is part of `DailyOperatingCostUsd`, which the day multiplies by
+        /// the founder's trait and by `OperatingCostMultiplier` before charging it, so Management
+        /// at 100 already takes 18% off the rent. The full skill here would be a second multiplier
+        /// on the same dollar and the two together would take a third off the single largest cost
+        /// in the game. At three fifths the pair stays under 30%, which
+        /// `TheSkillsTogetherNeverTakeAThirdOffTheRent` holds.
+        ///
+        /// What it is: a lab that moves less data about, and stages it where it is needed, rents
+        /// fewer petaflop-hours for the same run. It is the rented half only, because owned silicon
+        /// is bought once and the bill for it is electricity and upkeep, which this does not touch.
+        ///
+        /// Data Engineering's second effect, asked for on 2026-10-25. Its first is corpus quality.
+        /// </summary>
+        public double RentedComputeCostMultiplier() =>
+            Math.Clamp(1.0 - 0.6 * Effect(PlayerSkill.DataEngineering), 0.8, 1.2);
 
         /// <summary>Multiplier on the daily chance of a public safety failure.</summary>
         public double IncidentRiskMultiplier() =>

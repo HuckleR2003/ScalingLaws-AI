@@ -472,9 +472,13 @@ namespace ScalingLaws.UI
 
             // Worked out before either slider, because the points now sit on the same line as the
             // money rather than in a paragraph under the slider.
+            // Captured once rather than asked for again inside the live repaint: a month of
+            // revenue is a walk over the fleet and the market, and the repaint runs on every pixel
+            // the handle travels.
+            var monthlyRevenue = simulation.MonthlyRevenueUsd();
+
             var budget = ResearchBudget.MonthlyBudgetUsd(state.ResearchFunding,
-                state.ResearchMonthlyUsd, state.ResearchRevenueShare,
-                simulation.MonthlyRevenueUsd());
+                state.ResearchMonthlyUsd, state.ResearchRevenueShare, monthlyRevenue);
 
             var points = ResearchBudget.PointsFromFunding(budget);
 
@@ -482,7 +486,7 @@ namespace ScalingLaws.UI
             {
                 var label = new Label(Loc.T("research.a_month", UiFormat.Money(state.ResearchMonthlyUsd)));
                 label.AddToClassList("field__label");
-                panel.Add(FundingLine(label, points));
+                panel.Add(FundingLine(label, points, out var earned));
 
                 // Logarithmic, because the range runs from a thousand to five million and a linear
                 // slider would spend nine tenths of its travel on amounts that change nothing.
@@ -495,17 +499,30 @@ namespace ScalingLaws.UI
                 };
 
                 slider.AddToClassList("field");
-                slider.RegisterValueChangedCallback(evt =>
+                UiParts.WhenSettled(slider, value =>
                 {
-                    state.ResearchMonthlyUsd = (long)Math.Round(Math.Pow(10.0, evt.newValue));
+                    state.ResearchMonthlyUsd = (long)Math.Round(Math.Pow(10.0, value));
                     Show(Screen.Research);
+                },
+                value =>
+                {
+                    // Both halves of the line above the handle: the money, and the points it buys.
+                    // Moving the money while the points stand still would be worse than moving
+                    // neither, because the points are the reason this slider is on the page.
+                    var monthly = (long)Math.Round(Math.Pow(10.0, value));
+
+                    label.text = Loc.T("research.a_month", UiFormat.Money(monthly));
+
+                    earned.text = Loc.T("research.points_a_month", UiFormat.Number(
+                        ResearchBudget.PointsFromFunding(ResearchBudget.MonthlyBudgetUsd(
+                            ResearchFundingMode.Fixed, monthly, 0.0, 0L)), 0));
                 });
 
                 panel.Add(slider);
             }
             else
             {
-                var revenue = simulation.MonthlyRevenueUsd();
+                var revenue = monthlyRevenue;
 
                 var label = new Label(
                     Loc.T("research.share_of", UiFormat.Percent(state.ResearchRevenueShare, 0),
@@ -513,14 +530,27 @@ namespace ScalingLaws.UI
                     UiFormat.Money((long)Math.Round(revenue * state.ResearchRevenueShare))));
 
                 label.AddToClassList("field__label");
-                panel.Add(FundingLine(label, points));
+                panel.Add(FundingLine(label, points, out var earned));
 
                 var slider = new Slider(0f, 0.5f) { value = (float)state.ResearchRevenueShare };
                 slider.AddToClassList("field");
-                slider.RegisterValueChangedCallback(evt =>
+                UiParts.WhenSettled(slider, value =>
                 {
-                    state.ResearchRevenueShare = evt.newValue;
+                    state.ResearchRevenueShare = value;
                     Show(Screen.Research);
+                },
+                value =>
+                {
+                    // The share, what it takes out of this month, and the points that buys.
+                    var share = (double)value;
+
+                    label.text = Loc.T("research.share_of", UiFormat.Percent(share, 0),
+                        UiFormat.Money(revenue),
+                        UiFormat.Money((long)Math.Round(revenue * share)));
+
+                    earned.text = Loc.T("research.points_a_month", UiFormat.Number(
+                        ResearchBudget.PointsFromFunding(ResearchBudget.MonthlyBudgetUsd(
+                            ResearchFundingMode.RevenueShare, 0L, share, revenue)), 0));
                 });
 
                 panel.Add(slider);
@@ -536,13 +566,18 @@ namespace ScalingLaws.UI
         /// described sit beside the monthly figure in blue. The paragraph survives as the tooltip,
         /// because "four times the money buys twice the points" is still the rule worth knowing.
         /// </summary>
-        private static VisualElement FundingLine(Label money, double points)
+        /// <param name="earned">
+        /// The points label, handed back so the slider under this line can repaint it while the
+        /// handle is moving. Both halves of the line have to follow the handle together, or the
+        /// money moves against a figure of points that is no longer true.
+        /// </param>
+        private static VisualElement FundingLine(Label money, double points, out Label earned)
         {
             var line = new VisualElement();
             line.AddToClassList("rfund__amount");
             line.Add(money);
 
-            var earned = new Label(Loc.T("research.points_a_month", UiFormat.Number(points, 0)));
+            earned = new Label(Loc.T("research.points_a_month", UiFormat.Number(points, 0)));
             earned.AddToClassList("rfund__points");
             earned.tooltip = Loc.T("research.funding_note", UiFormat.Number(points, 0));
             line.Add(earned);

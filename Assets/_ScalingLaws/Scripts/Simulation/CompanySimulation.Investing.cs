@@ -50,10 +50,20 @@ namespace ScalingLaws.Simulation
             ShareMarket.ProceedsOf(SharesHeldIn(lab), SharePriceOf(lab));
 
         /// <summary>
-        /// How many shares are on offer, and how many the player could sell into the market.
+        /// How many shares are on offer in one purchase.
         ///
         /// The float is capped so a company cannot be bought outright in one click on a Tuesday.
         /// Reaching control is meant to take a run of purchases the rival can watch happen.
+        ///
+        /// **That sentence has been here since this was written and the code did something
+        /// else.** It subtracted the holding from the tradable float, so the market stopped
+        /// offering anything at 35% and never offered again, while taking a lab over wants 50%.
+        /// A run of purchases could never reach control, and `TryTakeOver` was unreachable.
+        /// Reported by Francisco on 2026-10-24.
+        ///
+        /// What is subtracted now is what the company already owns of the **whole** lab, so the
+        /// last purchase before control is a small one and the first is large. The pace the
+        /// comment describes is the behaviour it describes.
         /// </summary>
         public long SharesAvailableIn(CompetitorId lab)
         {
@@ -63,9 +73,11 @@ namespace ScalingLaws.Simulation
             }
 
             var outstanding = ShareMarket.SharesOutstanding(lab);
-            var tradable = (long)(outstanding * ShareMarket.TradableShare);
+            var perTrade = (long)(outstanding * ShareMarket.TradableShare);
 
-            return Math.Max(0L, tradable - SharesHeldIn(lab));
+            // Never more than the rest of the company, or a purchase could hand over more
+            // stock than exists and the takeover would be bought by accident.
+            return Math.Max(0L, Math.Min(perTrade, outstanding - SharesHeldIn(lab)));
         }
 
         // ---- trading ------------------------------------------------------------------------------

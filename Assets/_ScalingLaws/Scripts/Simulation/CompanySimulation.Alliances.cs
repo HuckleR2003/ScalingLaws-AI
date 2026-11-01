@@ -636,7 +636,42 @@ namespace ScalingLaws.Simulation
                 return false;
             }
 
-            var renewal = NextRenewal.Value;
+            return TakeRenewal(NextRenewal.Value, automatic: false, out why);
+        }
+
+        /// <summary>Whether terms with this lab roll over on their own.</summary>
+        public bool AutoRenewsWith(CompetitorId lab) => State.AutoRenewals.Contains(lab);
+
+        /// <summary>
+        /// Turns the roll-over on or off for one lab.
+        ///
+        /// **Per lab rather than one switch for the company.** The arrangements are with people,
+        /// and a player who is happy to keep buying capacity from one lab forever has said nothing
+        /// at all about the licence they signed with another.
+        ///
+        /// Turning it on does not take whatever is on the table right now. That offer was made
+        /// before the player asked for this and it still has its own two buttons; the switch is
+        /// about the next one.
+        /// </summary>
+        public void SetAutoRenew(CompetitorId lab, bool on)
+        {
+            if (on)
+            {
+                State.AutoRenewals.Add(lab);
+                return;
+            }
+
+            State.AutoRenewals.Remove(lab);
+        }
+
+        /// <summary>
+        /// One body, two ways in: the player pressing RENEW IT, and a term rolling over on its own.
+        ///
+        /// **Two bodies would be two places to get the charge wrong**, which is the rule this
+        /// project already applies to opening the server room and to landing a penalty.
+        /// </summary>
+        private bool TakeRenewal(PendingRenewal renewal, bool automatic, out string why)
+        {
             var definition = RelationOfferCatalog.Get(renewal.Offer);
 
             if (State.ResearchPoints < definition.PointCost)
@@ -667,7 +702,7 @@ namespace ScalingLaws.Simulation
             State.Renewals.Remove(renewal);
 
             State.RaiseEvent(new CompanyEvent(CompanyEventType.OfferAccepted, State.Date,
-                Loc.T("renew.event.taken", definition.DisplayName,
+                Loc.T(automatic ? "renew.event.auto" : "renew.event.taken", definition.DisplayName,
                     CompetitorCatalog.NameOf(renewal.Lab)),
                 -definition.CashCostUsd));
 
@@ -727,7 +762,26 @@ namespace ScalingLaws.Simulation
                 return;
             }
 
-            State.Renewals.Add(new PendingRenewal(lab, offer, State.Date));
+            var pending = new PendingRenewal(lab, offer, State.Date);
+            State.Renewals.Add(pending);
+
+            // **The roll-over, and it is deliberately not silent in either direction.** Taking it
+            // says so in the feed with its own sentence, and failing to take it says that too,
+            // because a term the player believed was rolling over and did not is worse than one
+            // they were never promised.
+            if (State.AutoRenewals.Contains(lab))
+            {
+                if (TakeRenewal(pending, automatic: true, out _))
+                {
+                    return;
+                }
+
+                State.RaiseEvent(new CompanyEvent(CompanyEventType.RenewalOffered, State.Date,
+                    Loc.T("renew.event.auto_short", RelationOfferCatalog.Get(offer).DisplayName,
+                        CompetitorCatalog.NameOf(lab))));
+
+                return;
+            }
 
             State.RaiseEvent(new CompanyEvent(CompanyEventType.RenewalOffered, State.Date,
                 Loc.T("renew.event.offered", RelationOfferCatalog.Get(offer).DisplayName,

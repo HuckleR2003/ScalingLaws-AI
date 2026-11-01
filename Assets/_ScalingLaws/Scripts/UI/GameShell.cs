@@ -170,6 +170,9 @@ namespace ScalingLaws.UI
         // The server load in the top bar. Built once with the bar and refreshed with it.
         private Button loadBox;
         private VisualElement loadFill;
+
+        /// <summary>The face beside the load bar, and the box it sits in.</summary>
+        private Button priceBox;
         private Label loadValue;
         private Label loadCaption;
 
@@ -654,7 +657,10 @@ namespace ScalingLaws.UI
                         : SceneFlow.RequestedCompanyName,
                     (CompanyArchetype)SceneFlow.RequestedArchetype,
                     (FounderTrait)SceneFlow.RequestedTraitA,
-                    (FounderTrait)SceneFlow.RequestedTraitB);
+                    (FounderTrait)SceneFlow.RequestedTraitB,
+                    customHouseTrait: (FounderTrait)SceneFlow.RequestedCompanyTrait,
+                    customOpeningCashUsd: SceneFlow.RequestedOpeningCashUsd,
+                    companyLogo: SceneFlow.RequestedCompanyLogo);
 
             // A campaign resumed after it had already folded was counted on the day it folded.
             // Starting the guard from what the save says stops a reload counting it a second time.
@@ -692,6 +698,15 @@ namespace ScalingLaws.UI
                 state.IsSandbox = true;
                 state.CashUsd = SandboxCashUsd;
                 simulation.UnlockEveryResearchNode();
+            }
+
+            // **The tour is finished rather than suppressed.** Finished is the stage both the last
+            // step and "I will take it from here" already land on, so everything downstream of the
+            // guide, the corner task list, the phone and anything waiting for it to be over, sees a
+            // state it has handled since the day it was written.
+            if (!SceneFlow.ResumeSavedCampaign && SceneFlow.RequestedSkipTutorial)
+            {
+                state.Guide.Stage = GuideStage.Finished;
             }
 
             clock = new SimClock(state.Date, SimSpeed.Paused);
@@ -764,6 +779,20 @@ namespace ScalingLaws.UI
             // shows the company as a place instead of as a number, and it is what a new player
             // should be looking at in the first ten seconds.
             Show(Screen.Site);
+
+            // **After the opening screen, never inside the build, and this line is the whole of
+            // report 9.** It used to be called from the middle of `BuildTree`, so pressing BOOK A
+            // STAND on the map ran this, switched to the news desk, and then returned into the
+            // line above, which put the office back. One frame later the stand window mounted
+            // itself into a page the player was no longer looking at.
+            //
+            // From the player's seat: the map closes, the office appears, nothing happens. The
+            // tester sent three seconds of video and wrote "it doesnt work", which is exactly what
+            // it does.
+            //
+            // It has to run after the opening screen rather than before it, because it is allowed
+            // to overrule that screen and nothing else in the build is.
+            AnswerAnyStandRequest();
         }
 
         private void OnDisable()
@@ -1027,6 +1056,14 @@ namespace ScalingLaws.UI
                 root.Add(mark);
             }
 
+            // **Which build this is, where a tester will look for it.** Added after the sandbox
+            // mark on purpose: both can be on screen at once in a test build of a sandbox campaign,
+            // and the stylesheet puts the sandbox line under this one rather than on top of it.
+            if (TesterBadge.Build() is { } tester)
+            {
+                root.Add(tester);
+            }
+
             var shell = new VisualElement();
             shell.AddToClassList("shell");
             root.Add(shell);
@@ -1128,6 +1165,19 @@ namespace ScalingLaws.UI
             // is no second mechanism here and nothing to keep in step.
             guide.offerFor = step =>
             {
+                // **The gift step's way past.** He is offering to pay for the first node and
+                // the step waits for one to be started, so a player who does not want it needs a
+                // door. It asks once before it takes it, because walking away from a free four
+                // months is not a thing to do on a stray click.
+                //
+                // The favour itself is left armed. Leaving the step early has always kept it, and
+                // refusing the conversation is not the same as refusing the money.
+                if (step.Id == GuideScript.GiftStepId)
+                {
+                    return new GuideOverlay.GuideOffer(
+                        Loc.T("guide.gift.refuse"), () => { }, confirms: true);
+                }
+
                 if (step.Id != GuideScript.ArchitectureOfferStepId || families == null)
                 {
                     return null;
@@ -1231,7 +1281,8 @@ namespace ScalingLaws.UI
             };
 
             tasks = new TaskBanner(root, () => state, () => state.Guide, RefreshChrome,
-                () => current == Screen.Site, () => Show(Screen.Research));
+                () => current == Screen.Site, () => Show(Screen.Research),
+                () => current == Screen.Create);
 
             // **Above the task strip and separate from it.** The chip that offers a walkthrough is
             // not one of the five opening tasks, and hanging it off that list would have made its
@@ -1330,6 +1381,18 @@ namespace ScalingLaws.UI
             {
                 simulation.SetIntelSubscription(tier, joined);
                 Show(Screen.News);
+            },
+            wanted =>
+            {
+                simulation.SetEventEarlyAccess(wanted);
+                Show(Screen.News);
+            },
+            venue =>
+            {
+                // Through the one door that already knows how to leave a campaign: it saves
+                // first, which is what stops a trip to the map losing the day.
+                SceneFlow.MapFocusSite = EventVenueCatalog.Get(venue).MapSiteId;
+                OpenTheMap();
             });
 
             // Read through a function rather than captured, same as the finance report: the feed
@@ -1342,6 +1405,7 @@ namespace ScalingLaws.UI
             leftStack.pickingMode = PickingMode.Ignore;
 
             newsBanner = new NewsBanner(() => simulation.State.News, () => Show(Screen.News));
+
             leftStack.Add(newsBanner.Root);
 
             grantBanner = new GrantBanner(() => simulation, () => Show(Screen.Funding));
@@ -1580,7 +1644,129 @@ namespace ScalingLaws.UI
             loadValue.AddToClassList("topbar__load-value");
             loadBox.Add(loadValue);
 
+            // **Its own section inside the banner, as asked for on 2026-10-26.** It sat beside the
+            // banner as a separate box, which made two unrelated-looking things compete at the
+            // busiest end of the bar. Load and price are both "how the service is going", so they
+            // read as one panel with a rule between them.
+            var divider = new VisualElement();
+            divider.AddToClassList("topbar__load-split");
+            loadBox.Add(divider);
+
+            loadBox.Add(BuildPriceMood());
+
             return loadBox;
+        }
+
+        /// <summary>
+        /// How the price is being taken, as a face, next to the load bar.
+        ///
+        /// **Asked for on 2026-10-25, and it answers a measurement rather than a taste.** The
+        /// subscription is a fixed fee and the market rate halves every year, so a company that
+        /// never returns to the pricing screen drifts into charging multiples of the going rate
+        /// and takes the maximum standing penalty every day in between. Two identical campaigns
+        /// over four years, one resetting its fee and one not, ended on 349,336 followers against
+        /// 5,916.
+        ///
+        /// The business screen has said so in words since it was written. What it could not do is
+        /// say it to somebody who never opens it, and this is a face on the bar they are already
+        /// looking at. It is a door as well: pressing it opens the screen that can fix it, the
+        /// same way the load figure beside it opens the fleet.
+        /// </summary>
+        private VisualElement BuildPriceMood()
+        {
+            priceBox = new Button();
+            priceBox.AddToClassList("topbar__price");
+
+            // **A button inside a button, so the click has to be kept.** The banner around it
+            // opens the fleet and this opens the pricing screen; a press that reached both would
+            // open two screens from one click. Registered rather than passed to the constructor,
+            // because only a registered callback can stop the event.
+            priceBox.RegisterCallback<ClickEvent>(click =>
+            {
+                click.StopPropagation();
+                Show(Screen.Business);
+            });
+
+            // **The card the author asked for, and it was reported as missing.** There was a
+            // native tooltip here and it said one thing: the market rate. What a player hovering a
+            // face wants is the comparison, so it is both prices, then a rule, then how the desk
+            // is doing underneath. `AttachLive` because every figure on it changes daily and the
+            // control is built once.
+            InsightTip.AttachLive(priceBox,
+                () => Loc.T("hud.price.card.title"),
+                PriceAndSupportCard);
+
+            return priceBox;
+        }
+
+        /// <summary>
+        /// What the face says when the pointer rests on it.
+        ///
+        /// Four readings and not one of them is worked out here: the subscription rate comes from
+        /// `MonetizationPolicy`, the going rate from the market, and both support figures from the
+        /// desk. A fifth copy of any of them is a fifth chance to quote a number the rest of the
+        /// game disagrees with.
+        /// </summary>
+        private string PriceAndSupportCard()
+        {
+            if (state == null || simulation == null)
+            {
+                return string.Empty;
+            }
+
+            var market = simulation.Market.PricePerMillionTokensUsd;
+            var ours = state.Monetization.RatePerMillionTokensUsd(market, state.Date);
+
+            var people = simulation.SupportPeople();
+            var quality = state.Support.Quality();
+            var waited = state.Support.AverageHours(people);
+
+            return Loc.T("hud.price.card.ours", UiFormat.Money((long)Math.Round(ours)))
+                + "\n"
+                + Loc.T("hud.price.card.market", UiFormat.Money((long)Math.Round(market)))
+                + "\n\n"
+                // A rule, as asked for: the two halves answer different questions and reading them
+                // as one list is how the second half gets skipped.
+                + "────────────"
+                + "\n\n"
+                + Loc.T("hud.price.card.satisfaction", UiFormat.Percent(quality, 0))
+                + "\n"
+                + Loc.T("hud.price.card.waited", UiFormat.Hours(waited));
+        }
+
+        private void RefreshPriceMood()
+        {
+            if (priceBox == null)
+            {
+                return;
+            }
+
+            var market = simulation.Market.PricePerMillionTokensUsd;
+
+            if (market <= 0.0)
+            {
+                priceBox.style.display = DisplayStyle.None;
+
+                return;
+            }
+
+            priceBox.style.display = DisplayStyle.Flex;
+
+            // The same arithmetic the business screen does, rather than a second opinion about
+            // one fee: what a month of this subscription works out at per million tokens.
+            var policy = state.Monetization;
+            var rate = policy.RatePerMillionTokensUsd(market, state.Date);
+            var against = rate <= 0.0 ? 0.0 : rate / market;
+
+            // **Rebuilt rather than repainted.** SupportFace takes its mood in the constructor and
+            // draws from it, so there is nothing to set; and the top bar refreshes on the day
+            // count rather than per frame, so this is once a day.
+            priceBox.Clear();
+            priceBox.Add(new SupportFace(UiParts.PriceMood(against)));
+
+            // The native tooltip is gone: `InsightTip` carries this now, with the support
+            // half the author asked for underneath. Two things explaining one control is how they
+            // drift apart.
         }
 
         private void RefreshServerLoad()
@@ -1593,6 +1779,8 @@ namespace ScalingLaws.UI
             // **The words are set here, not where the bar is built.** The top bar is built once, and
             // the first Polish proof frame came back reading SERVERS beside a Polish date.
             loadCaption.text = Loc.T("hud.load");
+
+            RefreshPriceMood();
             loadBox.tooltip = Loc.T("hud.load.tip");
 
             var load = Mathf.Clamp01((float)state.LastQuality.Utilisation);
@@ -2314,13 +2502,30 @@ namespace ScalingLaws.UI
                     : new StyleLength(StyleKeyword.Null);
             }
 
-            // **The creator is not in that scroller and still has to clear the strip.** It is
-            // mounted straight into the window so it can pin its own heading and buttons, so the
-            // reserve is a margin under the whole page instead of padding inside a scroller. Told
-            // unconditionally rather than only while the creator is open: the page is a kept
-            // element, so a reserve left on it from the last visit would shorten it on the next
-            // one with nothing on screen to explain why.
-            creator?.ReserveAtTheFoot(current == Screen.Create ? wanted : 0f);
+            // **The creator keeps its whole height, and that is a decision rather than an
+            // oversight.** It is the one page in the game that must not scroll, so a reserve comes
+            // straight out of the middle of it: the author read the result as the model screen
+            // being unpleasantly shortened whenever Emil was talking.
+            //
+            // The trade changed on 2026-10-25, when the strip gained a chevron that folds him away
+            // to his portrait. Before that there was no way to get him off the page, so taking the
+            // room was the lesser fault; now the player can put him down in one click, and the
+            // page is worth more than the clearance. Asked for in those words on 2026-10-26.
+            //
+            // **Nothing at all while he is folded away, and the measured strip while he is
+            // not.** Folding is the player saying they want the page; leaving the reserve on would
+            // make the chevron buy them a gap instead of a screen.
+            //
+            // It is not zero in both states, and that is the part worth arguing with. Asked for
+            // unconditionally, but with the strip up the reserve is the only thing keeping the
+            // WSTECZ/DALEJ row out from behind Emil: `TabProofTests.TheCreatorStillFitsWhileTheTourIsUp`
+            // measures exactly that, and it was written after the fault was reported twice on two
+            // different stages. Burying the way forward is a worse page than a shorter one.
+            //
+            // Still told unconditionally: the page is a kept element, so a reserve left on it from
+            // an earlier visit would shorten it later with nothing on screen to explain why.
+            creator?.ReserveAtTheFoot(
+                current == Screen.Create && guide is { Folded: false } ? wanted : 0f);
         }
 
         private void BuildScreenInto(VisualElement host, Screen screen)
@@ -4432,6 +4637,7 @@ namespace ScalingLaws.UI
                 guide?.Reported(companyEvent.Type switch
                 {
                     CompanyEventType.TrainingStarted => GuideScript.RunStartedSignal,
+                    CompanyEventType.ResearchStarted => GuideScript.ResearchStartedSignal,
                     CompanyEventType.TrainingCompleted => GuideScript.RunFinishedSignal,
                     CompanyEventType.ModelReleased => GuideScript.ModelReleasedSignal,
                     CompanyEventType.ArchitectureResearchCompleted =>
@@ -4491,6 +4697,32 @@ namespace ScalingLaws.UI
                 // looked exactly as it had a second earlier. Asked for by name on 2026-09-30, and
                 // it is not the player's own click coming back, because the click is two steps back
                 // by the time this fires: the card asked, and this says it took.
+                // **The stand closed, and this is the one occasion in the feature.** It is
+                // not the player's own click coming back: the click was months ago, at a screen
+                // they have long since left, and this is the city answering it. Gold when it
+                // went round, because that is what the tone is rationed for.
+                // **Only the early one interrupts.** Seven events a year announcing
+                // themselves over whatever the player is doing is noise; a month of warning
+                // that nobody else has is the thing the membership was bought for.
+                case CompanyEventType.EventAnnouncedEarly:
+                {
+                    startedNotice?.Show(Loc.T("upnext.heading"), companyEvent.Message,
+                        NoticeTone.Special);
+
+                    break;
+                }
+
+                case CompanyEventType.EventStandResult:
+                {
+                    var viral = companyEvent.Message.Contains(Loc.T("evsum.viral"),
+                        System.StringComparison.OrdinalIgnoreCase);
+
+                    startedNotice?.Show(Loc.T("evsum.kicker"), companyEvent.Message,
+                        viral ? NoticeTone.Special : NoticeTone.Standard);
+
+                    break;
+                }
+
                 case CompanyEventType.ArchitectureResearchStarted:
                 {
                     var running = state.ActiveArchitectureProject;
@@ -4714,6 +4946,55 @@ namespace ScalingLaws.UI
         /// Skipped while the cousin's own phone is up, the same rule the lawyers' call follows.
         /// The offer stays on the table for a fortnight either way, so nothing is lost by it.
         /// </summary>
+        /// <summary>
+        /// Whether the opening conversation is still somebody's current business.
+        ///
+        /// **Reported on 2026-10-25 and it is the worst fault of that session.** The cousin rang
+        /// about the support desk in the middle of the tour, the call offered a walkthrough, taking
+        /// it replaced the tour, and **the tour never came back**: the player was left somewhere in
+        /// the middle of a conversation that had been talking about naming a version of a model
+        /// they had already released.
+        ///
+        /// The doc comment on `RingAboutTheDesk` already said a call is skipped while his own phone
+        /// is up, for exactly this reason, and the tour is the same conversation by another route.
+        /// Checking the phone and not the tour was the hole.
+        ///
+        /// `Talking` counts: that is the opening call sitting on screen unanswered. `Paused` counts
+        /// too, because "I'll come back later" is a player who still means to finish, and he rings
+        /// back about the tour in three days. Only `Finished`, which is where both "I will take it from here" and the last step land, lets anything else ring.
+        /// </summary>
+        private bool TheOpeningTourIsStillRunning => state?.Guide.IsStillRunning ?? false;
+
+        /// <summary>
+        /// Opens the stand window the player asked for on the map, if they asked for one.
+        ///
+        /// **Read once and cleared, exactly like `MapFocusSite`.** A request that survived would
+        /// re-open the window on every load of the game scene for the rest of the campaign, which
+        /// is the shape a stale flag always takes.
+        ///
+        /// Deferred a frame: the news screen builds its page when it is shown, and a sheet mounted
+        /// before that page exists is a sheet mounted into nothing.
+        /// </summary>
+        private void AnswerAnyStandRequest()
+        {
+            var asked = SceneFlow.StandRequestSite;
+            SceneFlow.StandRequestSite = string.Empty;
+
+            if (string.IsNullOrEmpty(asked)
+                || EventVenueCatalog.ForMapSite(asked) is not { } venue)
+            {
+                return;
+            }
+
+            Show(Screen.News);
+
+            // `document` is a local inside `BuildTree`, so the component is asked for
+            // again rather than a field being invented for one deferred call.
+            GetComponent<UIDocument>()?.rootVisualElement?.schedule
+                .Execute(() => news?.OpenStandWindowFor(venue.Id))
+                .ExecuteLater(1);
+        }
+
         private void RingAboutRenewal()
         {
             if (!simulation.RenewalIsOnTheTable)
@@ -4851,9 +5132,41 @@ namespace ScalingLaws.UI
         /// He offers the walkthrough rather than starting it, and the walkthrough opens on SITE
         /// rather than on the desk, because the first thing to learn is where the door is.
         /// </summary>
+        /// <summary>
+        /// Real seconds between the tour ending and the cousin ringing about the desk.
+        ///
+        /// The author's number, 2026-10-25. The simulation holds the announcement until the tour
+        /// is finished, so without this the phone can ring on the same frame the player presses the
+        /// last NEXT, which reads as the tutorial refusing to end.
+        /// </summary>
+        public const float DeskCallDelaySeconds = 15f;
+
         private void RingAboutTheDesk()
         {
-            if (phone == null || phone.IsOpen)
+            if (phone == null || TheOpeningTourIsStillRunning)
+            {
+                return;
+            }
+
+            // **Unscaled, so pausing or speeding the clock does not move it.** This is a pause for
+            // the player to finish reading, not a span of company time.
+            GetComponent<UIDocument>()?.rootVisualElement?.schedule
+                .Execute(RingAboutTheDeskNow)
+                .ExecuteLater((long)(DeskCallDelaySeconds * 1000f));
+        }
+
+        /// <summary>
+        /// The call itself, fifteen seconds later.
+        ///
+        /// **Both conditions are checked again here, not only when it was scheduled.** In fifteen
+        /// seconds the player can open his phone, and the walkthrough chip is already offering the
+        /// same thing in the corner; ringing over either is the collision this whole change exists
+        /// to stop.
+        /// </summary>
+        private void RingAboutTheDeskNow()
+        {
+            if (phone == null || phone.IsOpen || TheOpeningTourIsStillRunning
+                || state?.Guide.IsOffering(WalkthroughCatalog.SupportId) != true)
             {
                 return;
             }

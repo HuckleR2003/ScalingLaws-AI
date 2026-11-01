@@ -233,6 +233,30 @@ namespace ScalingLaws.Simulation
         /// </summary>
         public const double MostRelativePrice = 1000.0;
 
+        /// <summary>
+        /// The price a model can carry for being better, at the same appeal to the same audience.
+        ///
+        /// **This mechanism has existed since <see cref="Utility"/> was written and no screen has
+        /// ever said so.** Capability enters the utility additively and price enters as its
+        /// logarithm, so a model that is ahead can raise the price until the two cancel: that is
+        /// exp(ahead * CapabilityWeight / PriceWeight). One point ahead carries 1.16x, five points
+        /// 2.07x, ten points 4.28x.
+        ///
+        /// A tester asked for quality to let you charge more, which is a request for something that
+        /// was already true and invisible. It lives here rather than in the panel that prints it,
+        /// because the two weights are here and a second copy of this arithmetic could disagree
+        /// with the demand term it is describing.
+        ///
+        /// Negative is the honest other half: a model behind the market carries less than the
+        /// market's price, and the figure says how much less rather than staying quiet about it.
+        /// </summary>
+        public static double PriceAModelCanCarry(double capabilityAhead)
+        {
+            var ahead = Math.Clamp(SimUnits.Finite(capabilityAhead), -100.0, 100.0);
+
+            return Math.Exp(ahead * CapabilityWeight / PriceWeight);
+        }
+
         public static double Utility(double capability, double brand, double priceMultiplier, double ageYears)
         {
             var safePrice = Math.Clamp(SimUnits.Finite(priceMultiplier, 1.0), 0.05, MostRelativePrice);

@@ -805,7 +805,7 @@ namespace ScalingLaws.UI
         /// is the only place in the game that remembers a licence ran nine months in 2024 and ended
         /// well. Newest first, because the question is almost always about the last one.
         /// </summary>
-        private static VisualElement BuildWorkList(CompanySimulation simulation, CompetitorId lab)
+        private VisualElement BuildWorkList(CompanySimulation simulation, CompetitorId lab)
         {
             var block = new VisualElement();
             block.AddToClassList("tog-work");
@@ -861,6 +861,41 @@ namespace ScalingLaws.UI
                 empty.AddToClassList("tog-work__empty");
                 block.Add(empty);
             }
+
+            // **The switch lives under the list of what you have going with them**, because that
+            // is the only place in the game where a player is looking at a term and thinking
+            // about the next one. A setting for this on a settings sheet would be a setting
+            // nobody finds, which this project has shipped often enough to name the pattern.
+            var rolling = simulation.AutoRenewsWith(lab);
+
+            var roll = new VisualElement();
+            roll.AddToClassList("tog-work__row");
+            roll.AddToClassList(rolling ? "tog-work__row--live" : "tog-work__row--done");
+
+            var what = new Label(Loc.T("together.autorenew"));
+            what.AddToClassList("tog-work__what");
+            roll.Add(what);
+
+            // A button rather than a label, so the whole row is not a control that only looks
+            // like one. The word on it is the state, and pressing it is the change.
+            var switchButton = new Button(() =>
+            {
+                simulation.SetAutoRenew(lab, !rolling);
+                changed?.Invoke();
+            })
+            {
+                text = Loc.T(rolling ? "together.autorenew.on" : "together.autorenew.off")
+            };
+
+            switchButton.AddToClassList("tog-work__switch");
+            switchButton.EnableInClassList("tog-work__switch--on", rolling);
+
+            InsightTip.AttachLive(switchButton,
+                () => Loc.T("together.autorenew"),
+                () => Loc.T("together.autorenew.note"));
+
+            roll.Add(switchButton);
+            block.Add(roll);
 
             return block;
         }

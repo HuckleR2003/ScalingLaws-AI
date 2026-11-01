@@ -1199,7 +1199,23 @@ namespace ScalingLaws.UI
             }).ExecuteLater(IconHold);
         }
 
-        /// <summary>"Welcome back!" and the four things the app does.</summary>
+        /// <summary>
+        /// "Welcome back!" and the four things the app does.
+        ///
+        /// **The rows are a screen being operated by somebody else, not a menu offered to the
+        /// player**, and until 2026-11-01 they did not read that way. They were numbered one to
+        /// four, which is the universal signal to pick one, and three of the four name features
+        /// this game genuinely has elsewhere. A tap on any of them runs the universal skip and
+        /// opens the conversation, so choosing Achievements and choosing Contact List produced
+        /// the same two buttons, which from the player's seat is the game ignoring the choice.
+        /// Reported by Francisco on 2026-10-27 as four options offered and two given.
+        ///
+        /// **The fix is not to make them work.** This is the boot of somebody else's phone in
+        /// the first minute of the game, and a live Achievements row here would drop a player
+        /// out of the opening into a page of empty trophies. The numbers are gone and the rows
+        /// that were not taken fade when one is, so what is on screen is a selection being made
+        /// rather than a question being asked.
+        /// </summary>
         private void ShowWelcome()
         {
             var token = sequence;
@@ -1220,10 +1236,6 @@ namespace ScalingLaws.UI
                 var row = new VisualElement();
                 row.AddToClassList("dinapp__row");
 
-                var number = new Label($"{index + 1}");
-                number.AddToClassList("dinapp__rownumber");
-                row.Add(number);
-
                 var label = new Label(GuideScript.AppMenu[index]);
                 label.AddToClassList("dinapp__rowlabel");
                 row.Add(label);
@@ -1243,7 +1255,12 @@ namespace ScalingLaws.UI
                     return;
                 }
 
-                rows[GuideScript.AutoSelectedMenuItem].AddToClassList("dinapp__row--picked");
+                for (var index = 0; index < rows.Count; index++)
+                {
+                    rows[index].AddToClassList(index == GuideScript.AutoSelectedMenuItem
+                        ? "dinapp__row--picked"
+                        : "dinapp__row--passed");
+                }
 
                 screen.schedule.Execute(() =>
                 {

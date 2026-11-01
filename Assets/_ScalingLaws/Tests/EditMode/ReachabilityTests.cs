@@ -132,6 +132,82 @@ namespace ScalingLaws.Tests.EditMode
         /// wired to the wrong square would pass this. It is the cheap half of the check, and it is
         /// the half that keeps catching things.
         /// </summary>
+        /// <summary>
+        /// **Every** player-facing mutator, not just the cabinet ones.
+        ///
+        /// CLAUDE.md lists this sweep as step two of the pre-build list, and on 2026-10-25 it was
+        /// not run before 0.7.5 went out. `TryRegisterForStand` had no caller anywhere in `UI/`:
+        /// `EventVenuePanel` was a finished screen with tiles, prices and an auction that nothing
+        /// in the game opened, so the news desk counted down to events a player could never enter.
+        /// A tester found it in an hour.
+        ///
+        /// **A step somebody has to remember is a step that gets skipped, so it is a test now.**
+        /// The cabinet sweep below stays: it is narrower, it names its own subject, and a failure
+        /// there says which mechanic broke rather than handing over a list.
+        ///
+        /// `Excused` is the one route this sweep cannot see, and it is named rather than filtered
+        /// by a pattern: `TryAnswerSmearThreat` is reached as inbox to `TryActOnMail` to itself, so
+        /// the method name genuinely never appears in `UI/`. Anything added to that list is a
+        /// decision somebody wrote down, which is the same rule `EventReachTests.Quiet` follows.
+        /// </summary>
+        [Test]
+        public void EveryPlayerFacingMutatorIsReachableFromTheInterface()
+        {
+            var excused = new Dictionary<string, string>
+            {
+                ["TryAnswerSmearThreat"] =
+                    "reached through TryActOnMail from the inbox, so its own name never appears "
+                    + "in UI/. MailScreenReachTests presses the button that gets there."
+            };
+
+            var ui = UiText();
+
+            var mutators = typeof(Simulation.CompanySimulation)
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Select(method => method.Name)
+                .Where(name => name.StartsWith("Try"))
+                .Distinct()
+                .ToList();
+
+            Assert.That(mutators.Count, Is.GreaterThan(30),
+                "The sweep found only " + mutators.Count + " mutators, which is far fewer than "
+                + "this simulation has. It is measuring nothing.");
+
+            // **Known, recorded, and pinned exactly. These are not excused.** They really
+            // are unreachable, and putting them in `excused` would be the cover-up this test was
+            // written to prevent. Pinning the set instead means the guard fails both when
+            // something new goes dark **and** when one of these is wired or deleted, so the list
+            // has to be kept true rather than quietly grown.
+            //
+            // Found by this test on its first run, 2026-10-25. The build mode moves furniture
+            // through `DecorPlan` directly and asks `WhyFurnitureCannotBeStored` for the rule, so
+            // these two are a second way to do one thing with nothing calling them. That is the
+            // shape `TryPlaceRack` was deleted for. Deleting or wiring them is the author's call;
+            // until it is made the debt is written down rather than tolerated in silence.
+            var known = new[] { "TryPlaceFurniture", "TryStoreFurniture" };
+
+            var unreachable = mutators
+                .Where(name => !excused.ContainsKey(name))
+                .Where(name => !Regex.IsMatch(ui, @"\." + Regex.Escape(name) + @"\s*\("))
+                .ToList();
+
+            Assert.That(unreachable, Is.EquivalentTo(known),
+                "The set of mutators that no screen calls has changed.\n  now:      "
+                + string.Join(", ", unreachable)
+                + "\n  recorded: " + string.Join(", ", known)
+                + "\n\nSomething new in the list is complete in the simulation and unreachable: "
+                + "wire a control to it or delete it. One of the recorded two missing means it was "
+                + "fixed, so take it out of `known` here. A green suite does not prove a player can "
+                + "reach the feature, and this project has shipped that fourteen times.");
+
+            // An excuse that outlives what it excused is how a guard quietly stops guarding.
+            foreach (var name in excused.Keys)
+            {
+                Assert.That(mutators, Does.Contain(name),
+                    name + " is excused from this sweep and no longer exists. Remove the excuse.");
+            }
+        }
+
         [Test]
         public void EveryCabinetOperationIsReachableFromTheInterface()
         {

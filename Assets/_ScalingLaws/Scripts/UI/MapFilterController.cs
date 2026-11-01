@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ScalingLaws.Core;
 using ScalingLaws.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -95,6 +96,15 @@ namespace ScalingLaws.UI
                   ?? mapCamera.gameObject.AddComponent<MapSiteSelection>();
 
             var card = new MapSiteCard(() => selection?.Deselect());
+
+            // **Asking, not buying.** The city scene holds no reference to the company, on
+            // purpose, so the press records which venue was asked about and leaves. The desk opens
+            // the stand window on the way back in, where the money already moves.
+            card.Act = site =>
+            {
+                SceneFlow.StandRequestSite = site.Id;
+                mapView?.Leave();
+            };
             card.style.position = Position.Absolute;
             card.style.right = 16;
             card.style.bottom = 16;

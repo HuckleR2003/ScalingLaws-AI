@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Linq;
+using ScalingLaws.Core;
 using ScalingLaws.Data;
 using ScalingLaws.Simulation;
 using UnityEngine.UIElements;
@@ -16,6 +17,47 @@ namespace ScalingLaws.UI
     /// </summary>
     public static class UiParts
     {
+        /// <summary>
+        /// A price against the going rate, as a face's own 0 to 1 scale.
+        ///
+        /// **The bands are the ones the business screen already prints in words**, so the face on
+        /// the top bar and the sentence under the slider cannot tell different stories about the
+        /// same fee. At or under the going rate is content; past 1.1 it is starting to show; past
+        /// `ModelScandals.PricyAbove` it is high enough to be written about, which is the same
+        /// threshold the press uses.
+        ///
+        /// Why this is worth a face at all: a fixed monthly fee against a market rate that halves
+        /// every year drifts into being expensive without the player doing anything, and measured
+        /// over four years the difference between noticing and not is fifty-nine times the
+        /// following.
+        /// </summary>
+        public static double PriceMood(double againstMarket)
+        {
+            var against = SimUnits.Finite(againstMarket, 1.0);
+
+            if (against <= 1.0)
+            {
+                return 1.0;
+            }
+
+            if (against <= StartsToShowAbove)
+            {
+                // 1.0 down to the top of the content band across the quiet stretch.
+                return 1.0 - 0.15 * ((against - 1.0) / (StartsToShowAbove - 1.0));
+            }
+
+            if (against >= ModelScandals.PricyAbove)
+            {
+                return 0.0;
+            }
+
+            return 0.85 - 0.3 * ((against - StartsToShowAbove)
+                / (ModelScandals.PricyAbove - StartsToShowAbove));
+        }
+
+        /// <summary>Where a fee stops reading as the going rate. The business screen uses it too.</summary>
+        public const double StartsToShowAbove = 1.1;
+
         private static readonly Color DefaultFill = new(0.36f, 0.62f, 0.88f);
 
         /// <summary>The two verdict colours. Public because the screens that draw a figure in
@@ -480,6 +522,69 @@ namespace ScalingLaws.UI
         /// turns its own power line amber; red when the order would be refused, with the button
         /// beside it greyed by the caller.
         /// </summary>
+        /// <summary>
+        /// Runs <paramref name="settled"/> once the handle is let go, not on every pixel of travel.
+        ///
+        /// **This is why no slider in this game could be dragged.** A value-changed callback that
+        /// rebuilds its own page destroys the handle the player is holding, the pointer capture is
+        /// released with it, and the drag ends on its first pixel. Only clicking the groove could
+        /// ever work, which is exactly what was reported on 2026-10-31 about every slider at once.
+        /// Measured by `SliderDragTests`: a plain slider on this stylesheet drags perfectly, and the
+        /// creator cash slider leaves the panel the moment its value changes.
+        ///
+        /// It is the tutorial NEXT button a third time: an element that left the tree between the
+        /// press and the release. The fix there was the same shape, rebuild only when the thing
+        /// being looked at actually changed.
+        ///
+        /// <paramref name="live"/> is for whatever can be updated in place while the handle moves.
+        /// Prefer updating in place and passing no <paramref name="settled"/> at all: a page that
+        /// only catches up on release is better than one that cannot be dragged, and worse than one
+        /// that follows the handle.
+        /// </summary>
+        public static void WhenSettled(Slider slider, Action<float> settled, Action<float> live = null)
+        {
+            var holding = false;
+
+            slider.RegisterValueChangedCallback(evt =>
+            {
+                live?.Invoke(evt.newValue);
+
+                // A value set from code, or a keyboard step: nobody is holding anything, so there
+                // is no capture to lose and the caller gets its rebuild immediately.
+                if (!holding)
+                {
+                    settled?.Invoke(evt.newValue);
+                }
+            });
+
+            // TrickleDown, because the handle is a child and the slider itself never sees a press
+            // that landed on it otherwise.
+            slider.RegisterCallback<PointerDownEvent>(_ => holding = true, TrickleDown.TrickleDown);
+
+            slider.RegisterCallback<PointerUpEvent>(_ =>
+            {
+                if (!holding)
+                {
+                    return;
+                }
+
+                holding = false;
+                settled?.Invoke(slider.value);
+            }, TrickleDown.TrickleDown);
+
+            // A press that leaves the window never gets its release, and the slider would then be
+            // stuck believing it is still held and never rebuild again.
+            slider.RegisterCallback<PointerCaptureOutEvent>(_ =>
+            {
+                if (!holding)
+                {
+                    return;
+                }
+
+                holding = false;
+                settled?.Invoke(slider.value);
+            });
+        }
         public static Label SitePowerLine(SitePowerOutlook outlook)
         {
             var line = new Label(Loc.T(outlook.Fits ? "shop.power_after" : "shop.power_over",

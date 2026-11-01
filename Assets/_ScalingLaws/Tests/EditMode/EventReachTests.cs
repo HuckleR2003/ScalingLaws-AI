@@ -43,6 +43,10 @@ namespace ScalingLaws.Tests.EditMode
             [CompanyEventType.StaffHired] = "the player just pressed it",
             [CompanyEventType.SkillLevelled] = "the corner banner draws it",
             [CompanyEventType.Notice] = "already a sentence somebody chose to show",
+            [CompanyEventType.EventAnnounced] =
+                "it is on the wire, free, and seven a year over the screen would be noise",
+            [CompanyEventType.EventStandBooked] =
+                "the player just pressed it, and the result is the thing worth announcing",
 
             // **Declared and never raised by anything, which this guard found on its first run.**
             // Not silent, unused: the grants system announces itself through the mail and never

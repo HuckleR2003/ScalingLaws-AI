@@ -228,16 +228,30 @@ namespace ScalingLaws.Simulation
             return Math.Max(0.0, SimUnits.Finite(users)) * regard * regard;
         }
 
-        /// <summary>Moves the fan base one day toward what the company has earned.</summary>
-        public static double AdvanceFans(double fans, double target)
+        /// <summary>
+        /// Moves the fan base one day toward what the company has earned.
+        /// </summary>
+        /// <param name="interest">
+        /// How compelling the person running the company is, from
+        /// <see cref="SkillSet.FanInterestMultiplier"/>. One is neutral and is the default, so every
+        /// caller written before this describes exactly the courtship it always described.
+        ///
+        /// **It scales the arrival only.** Applying it to both branches would make a founder with
+        /// vision lose their following faster as well, and applying it to the target would let a
+        /// skill buy admiration that was never earned.
+        /// </param>
+        public static double AdvanceFans(double fans, double target, double interest = 1.0)
         {
             var held = Math.Max(0.0, SimUnits.Finite(fans));
             var wanted = Math.Max(0.0, SimUnits.Finite(target));
 
             // Gaining is a courtship and losing is a slow drift away. Fans arrive faster than they
             // leave, which is what makes them a stock worth building rather than a second user count.
+            var arriving = Math.Clamp(
+                FanAdoptionPerDay * SimUnits.Finite(interest, 1.0), 0.0, 1.0);
+
             var moved = wanted > held
-                ? held + (wanted - held) * FanAdoptionPerDay
+                ? held + (wanted - held) * arriving
                 : held + (wanted - held) * FanDecayPerDay;
 
             return Math.Max(0.0, moved);

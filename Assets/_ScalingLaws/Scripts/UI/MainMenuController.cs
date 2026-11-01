@@ -69,6 +69,35 @@ namespace ScalingLaws.UI
         private bool creditsOpen;
 
         private readonly List<FounderTrait> chosenTraits = new();
+
+        /// <summary>The trait the player gave their own company, standing in for a lab's house trait.</summary>
+        private FounderTrait chosenCompanyTrait = FounderTrait.None;
+
+        /// <summary>The browser mock, kept rather than rebuilt so the mark keeps its own hue.</summary>
+        private BrowserPreview browser;
+
+        /// <summary>Ticked on the last page of the creator. Only ever offered to a returning player.</summary>
+        private bool skipTutorial;
+
+        /// <summary>Where the player left the opening trade. The default is the untouched position.</summary>
+        private long openingCashUsd = FoundingTrade.DefaultCashUsd;
+
+        /// <summary>The company mark, by name.</summary>
+        private string companyLogo = CompanyLogoCatalog.Default;
+
+        /// <summary>
+        /// Which page of the custom company window is open: 0 trait, 1 opening, 2 mark, and
+        /// <see cref="CustomStages"/> meaning the window has been closed.
+        ///
+        /// **Closing hands the rectangle back to the map rather than folding the map into the
+        /// window.** The country carries tax, hardware prices, research speed and local
+        /// competition, and it is chosen by leaning on a drawn map, which does not survive being
+        /// squeezed into a settings sheet. So the sheet finishes and gets out of the way, leaving
+        /// the company's name across the top where it stood.
+        /// </summary>
+        private int customStage;
+
+        private const int CustomStages = 3;
         private readonly SkillSet skills = new();
         private CompanyArchetype chosenArchetype = CompanyArchetype.Custom;
         private string companyName = "Prometheus AI";
@@ -266,7 +295,8 @@ namespace ScalingLaws.UI
         /// sentence in the notice at the foot of the screen and rings whatever is missing.
         /// </summary>
         private VisualElement Footer(string continueText, Action onContinue, Action onBack,
-            Func<bool> ready, Func<string> blockedReason, string subject = null, Action nudge = null)
+            Func<bool> ready, Func<string> blockedReason, string subject = null, Action nudge = null,
+            VisualElement extra = null)
         {
             var footer = new VisualElement();
             footer.AddToClassList("creator-footer");
@@ -274,6 +304,13 @@ namespace ScalingLaws.UI
             var reason = new Label();
             reason.AddToClassList("creator-footer__reason");
             footer.Add(reason);
+
+            // Anything the page wants standing with the two buttons, left of BACK. One page uses
+            // it; it is a parameter rather than a second footer shape for that reason.
+            if (extra != null)
+            {
+                footer.Add(extra);
+            }
 
             var back = new Button(onBack) { text = Loc.T("common.back") };
             back.AddToClassList("menu-button");
@@ -435,6 +472,12 @@ namespace ScalingLaws.UI
             var support = SupporterCard.Build();
             support.AddToClassList("support-card--menu");
             page.Add(support);
+
+            // The first screen anybody sees, so it is the first place to say what they are holding.
+            if (TesterBadge.Build() is { } tester)
+            {
+                page.Add(tester);
+            }
 
             if (settingsOpen)
             {
@@ -1774,9 +1817,14 @@ namespace ScalingLaws.UI
             name.AddToClassList("skill-row__name");
             titleRow.Add(name);
 
+            // **The two bands are points now, and the prose is left in the book.** A skill
+            // is a list of things it moves, and the card was asking a player to find that list
+            // inside two paragraphs. The same points appear on both bands with the signs
+            // reversed, because high and low are two directions of one axis.
             var note = SkillNotes.For(definition.Skill);
             titleRow.Add(InsightTip.InfoBadge(note.Title,
-                new InsightTip.Reading(note.What, note.Affects, note.High, note.Low)));
+                new InsightTip.Reading(note.What, note.Affects, note.High, note.Low,
+                    SkillEffectCatalog.For(definition.Skill))));
 
             body.Add(titleRow);
 
@@ -1873,11 +1921,14 @@ namespace ScalingLaws.UI
         private VisualElement BuildTraitCard(FounderTraitDefinition definition)
         {
             var picked = chosenTraits.Contains(definition.Trait);
+            var fromLab = definition.Trait == HouseTrait();
+
             var card = new Button(() => ToggleTrait(definition.Trait));
             card.AddToClassList("trait-card");
             card.EnableInClassList("trait-card--picked", picked);
+            card.EnableInClassList("trait-card--house", fromLab);
             card.EnableInClassList("trait-card--locked",
-                !picked && chosenTraits.Count >= FounderTraitCatalog.TraitsPerFounder);
+                !fromLab && !picked && chosenTraits.Count >= FounderTraitCatalog.TraitsPerFounder);
 
             var title = new Label(definition.DisplayName.ToUpperInvariant());
             title.AddToClassList("trait-card__title");
@@ -1899,7 +1950,18 @@ namespace ScalingLaws.UI
 
             card.Add(effects);
 
-            if (picked)
+            // **A card that refuses every click has to say why.** Shipping one that just does
+            // nothing is a bug three times over in this project, and here the silence was worse
+            // than usual: the click was accepted, the trait was stored, and the founder threw it
+            // away on the way out, leaving two traits where the page had promised three.
+            if (fromLab)
+            {
+                var badge = new Label(Loc.T("create.trait_from_lab",
+                    CompanyIdentityCatalog.Get(chosenArchetype).DisplayName));
+                badge.AddToClassList("trait-card__badge");
+                card.Add(badge);
+            }
+            else if (picked)
             {
                 var badge = new Label(Loc.T("creator.picked"));
                 badge.AddToClassList("trait-card__badge");
@@ -1918,7 +1980,7 @@ namespace ScalingLaws.UI
             yield return EffectLine(Loc.T("create.effect.training"), definition.TrainingThroughputMultiplier, 1.0, true);
             yield return EffectLine(Loc.T("create.effect.hardware"), definition.HardwarePriceMultiplier, 1.0, false);
             yield return EffectLine(Loc.T("create.effect.data"), definition.DataSupplyMultiplier, 1.0, true);
-            yield return EffectLine("Valuation", definition.ValuationMultiplier, 1.0, true);
+            yield return EffectLine(Loc.T("create.effect.valuation"), definition.ValuationMultiplier, 1.0, true);
             yield return EffectLine(Loc.T("create.effect.reputation"), definition.ReputationGainMultiplier, 1.0, true);
         }
 
@@ -1965,8 +2027,52 @@ namespace ScalingLaws.UI
             return 0;
         }
 
+        /// <summary>
+        /// The trait the chosen lab brings with it, or `None` for a company of your own.
+        ///
+        /// **The founder keeps three traits: two picked here and one from the lab.** Picking the
+        /// one the lab already brings does not stack it, because `FounderProfile` discards a
+        /// repeat, so the player silently ends the creator with two traits instead of three.
+        /// Reported as a question on 2026-10-27: "if i have a founder trait and the lab i choose
+        /// has the same trait, do they stack?". They do not, and nothing on the page said so.
+        /// </summary>
+        private FounderTrait HouseTrait()
+        {
+            if (!CompanyIsChosen)
+            {
+                return FounderTrait.None;
+            }
+
+            // **A company of the player's own carries the trait they gave it.** Reading the
+            // archetype here would return `None` for Custom and hand the duplicate trap straight
+            // back to the players most likely to meet it: the ones deliberately configuring a
+            // company. Named by this comment because the bug it prevents was fixed hours earlier
+            // on the preset path and would otherwise have been reintroduced the same evening.
+            return chosenArchetype == CompanyArchetype.Custom
+                ? chosenCompanyTrait
+                : CompanyIdentityCatalog.Get(chosenArchetype).HouseTrait;
+        }
+
+        /// <summary>
+        /// Whether a trait is the player.s to pick, given what their lab already brings.
+        ///
+        /// **Static and pure so a test can drive the rule rather than the page.** Toggling runs
+        /// a full rebuild of the creator, which needs a panel an EditMode test does not have, so
+        /// a rule living only inside the handler could only ever be checked by reading the
+        /// source. Same split as `KeyboardShortcuts.Resolve` against `Poll`.
+        /// </summary>
+        internal static bool TraitIsTheirsToPick(FounderTrait trait, FounderTrait house) =>
+            trait != FounderTrait.None && trait != house;
+
         private void ToggleTrait(FounderTrait trait)
         {
+            // The rule is enforced here and not only on the card, because a card is one way in
+            // and this project has shipped a cap that lived only in the interface six times.
+            if (!TraitIsTheirsToPick(trait, HouseTrait()))
+            {
+                return;
+            }
+
             if (chosenTraits.Contains(trait))
             {
                 chosenTraits.Remove(trait);
@@ -2016,6 +2122,16 @@ namespace ScalingLaws.UI
             custom.EnableInClassList("lab-banner--on",
                 CompanyIsChosen && chosenArchetype == CompanyArchetype.Custom);
             block.Add(custom);
+
+            // **The finished company belongs to the button that made it**, not to the map. It used
+            // to sit between the REGION heading and the map itself, which split a heading from the
+            // thing it names and read as a bar wedged into another panel.
+            if (CompanyIsChosen && chosenArchetype == CompanyArchetype.Custom
+                                && customStage >= CustomStages)
+            {
+                block.Add(BuildCustomNamePlate());
+            }
+
             page.Add(block);
 
             page.Add(BuildRegionSection());
@@ -2029,10 +2145,18 @@ namespace ScalingLaws.UI
                 opening.style.marginTop = 14;
                 opening.Add(Hint(identity.Opening));
 
-                var nameField = new TextField(Loc.T("menu.company_name")) { value = companyName };
-                nameField.AddToClassList("field");
-                nameField.RegisterValueChangedCallback(evt => companyName = evt.newValue);
-                opening.Add(nameField);
+                // **A company of the player's own names itself on the first page of its own sheet**,
+                // where the author asked for it after the field down here kept pushing START below
+                // the fold on a 900px window. The four presets keep it, because they have no sheet
+                // and this is the only box they have.
+                if (chosenArchetype != CompanyArchetype.Custom)
+                {
+                    var nameField = new TextField(Loc.T("menu.company_name")) { value = companyName };
+                    nameField.AddToClassList("field");
+                    nameField.RegisterValueChangedCallback(evt => companyName = evt.newValue);
+                    opening.Add(nameField);
+                }
+
                 page.Add(opening);
             }
 
@@ -2049,7 +2173,8 @@ namespace ScalingLaws.UI
                     : !Named() ? Loc.T("gate.founder_missing")
                     : Loc.T("gate.region_missing"),
                 null,
-                () => RingWhatIsMissing(page, CompanyIsChosen, Named())));
+                () => RingWhatIsMissing(page, CompanyIsChosen, Named()),
+                BuildSkipTutorialButton()));
 
             return page;
         }
@@ -2078,6 +2203,354 @@ namespace ScalingLaws.UI
             return lab == CompetitorId.None ? null : LabLogos.Get(lab);
         }
 
+        /// <summary>
+        /// The custom company window: a product's settings sheet, standing in the rectangle the
+        /// map had, with the map folded in as its last page.
+        ///
+        /// **It borrows the look of the browser mock rather than inventing a second one.** The
+        /// game is dark everywhere; this is light on purpose, because it is a picture of somebody
+        /// else's software, which is exactly what `BrowserPreview` already does on the management
+        /// page. A third dark panel would say nothing about what the player is configuring.
+        /// </summary>
+        private VisualElement BuildCustomWindow()
+        {
+            var window = new VisualElement();
+            window.AddToClassList("cwin");
+
+            // **The fade is a baked texture, because USS has no gradients.** Same answer the HUD
+            // accent and the day line already use, and `PaintRamp` is the part that exists for
+            // ramps outside the bottom bar, so this is not a second mechanism.
+            HudAccent.PaintRamp(window, new Color(0.086f, 0.063f, 0.141f),
+                new Color(0.192f, 0.122f, 0.286f));
+
+            var bar = new VisualElement();
+            bar.AddToClassList("cwin__bar");
+            for (var i = 0; i < 3; i++)
+            {
+                var dot = new VisualElement();
+                dot.AddToClassList("cwin__dot");
+                bar.Add(dot);
+            }
+
+            var barTitle = new Label(Loc.T("custom.window"));
+            barTitle.AddToClassList("cwin__title");
+            bar.Add(barTitle);
+            window.Add(bar);
+
+            var rail = new VisualElement();
+            rail.AddToClassList("cwin__rail");
+            for (var i = 0; i < CustomStages; i++)
+            {
+                var step = i;
+                var pip = new Button(() => GoToCustomStage(step))
+                {
+                    text = Loc.T($"custom.step.{step}")
+                };
+                pip.AddToClassList("cwin__pip");
+                pip.EnableInClassList("cwin__pip--on", customStage == step);
+                rail.Add(pip);
+            }
+
+            window.Add(rail);
+
+            var body = new VisualElement();
+            body.AddToClassList("cwin__body");
+            body.Add(customStage switch
+            {
+                0 => BuildCustomTraitPage(),
+                1 => BuildCustomOpeningPage(),
+                _ => BuildCustomMarkPage()
+            });
+
+            window.Add(body);
+
+            var foot = new VisualElement();
+            foot.AddToClassList("cwin__foot");
+
+            // **On the last page both buttons close the sheet** rather than going grey. A control
+            // that dims on the final step tells the player they are stuck, and the thing they
+            // actually want there is the way out.
+            var last = customStage >= CustomStages - 1;
+
+            var next = new Button(() => GoToCustomStage(customStage + 1))
+            {
+                text = Loc.T(last ? "custom.done" : "custom.next")
+            };
+            next.AddToClassList("cwin__nextword");
+            foot.Add(next);
+
+            // The round chevron the author asked for, doing the same thing as the word beside it.
+            // One handler, so the two can never disagree about where they lead.
+            //
+            // **Typed, not drawn, and that was decided by looking at it.** The first version put a
+            // `GuideFoldArrow` in here and the button came out empty: that element is sized by the
+            // tour strip's own rule, has no size anywhere else, and its paint guard returns early
+            // under six pixels. Which is the chevron fault from four days ago, reappearing in a
+            // new place within the week. A glyph in a circle cannot fail that way.
+            var round = new Button(() => GoToCustomStage(customStage + 1)) { text = ">" };
+            round.AddToClassList("cwin__next");
+            foot.Add(round);
+
+            window.Add(foot);
+            return window;
+        }
+
+        /// <summary>
+        /// Who is setting this company up: a small still of the founder and the name they typed.
+        ///
+        /// **Still, not a second live portrait.** The studio renders the real prefab into a texture
+        /// and the founder page already drives it; this reads the same texture rather than opening
+        /// a second camera, so the face here is the face there and cannot drift from it. Where the
+        /// pack is missing the studio hands back nothing and this falls to the name alone, which is
+        /// the same degradation every loader in this project is held to.
+        /// </summary>
+        private VisualElement BuildFounderStrip()
+        {
+            var strip = new VisualElement();
+            strip.AddToClassList("founder-strip");
+
+            studio ??= new PortraitStudio();
+
+            if (studio.Open(founderLook, founderGlasses) && studio.Texture != null)
+            {
+                founderLook = studio.LookName;
+
+                var face = new VisualElement();
+                face.AddToClassList("founder-strip__face");
+                face.style.backgroundImage = Background.FromRenderTexture(studio.Texture);
+                strip.Add(face);
+            }
+
+            var who = new Label(string.IsNullOrWhiteSpace(founderName)
+                ? Loc.T("creator.portrait")
+                : founderName.Trim());
+            who.AddToClassList("founder-strip__name");
+            strip.Add(who);
+
+            return strip;
+        }
+
+        private void GoToCustomStage(int stage)
+        {
+            customStage = Math.Clamp(stage, 0, CustomStages);
+            Show(Stage.Company);
+        }
+
+        /// <summary>
+        /// The company's name across the top once the sheet has closed, where the sheet stood.
+        ///
+        /// **It opens the sheet again when clicked**, because otherwise finishing is a one way
+        /// door: a player who closed it to look at the map and then wanted a different mark would
+        /// have to start the whole creator over. The name doubles as the way back for the same
+        /// reason the picked trait tile does.
+        /// </summary>
+        private VisualElement BuildCustomNamePlate()
+        {
+            // **A row, not a button with a picture dropped into it.** A Button draws its own
+            // text behind its children, so the first version printed the company name underneath
+            // the mark and the two sat on top of each other. The label is a child like the mark is,
+            // and the row decides where each one goes.
+            var plate = new Button(() => GoToCustomStage(0));
+            plate.AddToClassList("cname");
+            plate.tooltip = Loc.T("custom.reopen");
+
+            plate.Add(CompanyLogos.Mark(companyLogo, 30));
+
+            var name = new Label(string.IsNullOrWhiteSpace(companyName)
+                ? Loc.T("menu.company_name").ToUpperInvariant()
+                : companyName.ToUpperInvariant());
+
+            name.AddToClassList("cname__text");
+            plate.Add(name);
+
+            return plate;
+        }
+
+        /// <summary>
+        /// Page one: what the company is called and the one thing it is known for.
+        ///
+        /// **The name is here rather than at the bottom of the page**, where it pushed START below
+        /// the fold on a 900px window and the only way forward was to scroll for it.
+        ///
+        /// Picking a trait collapses the grid to the one chosen, and clicking that one opens the
+        /// grid again. Asked for in those words, and it is also what keeps this page short enough
+        /// to sit inside a rectangle that used to hold a map.
+        /// </summary>
+        private VisualElement BuildCustomTraitPage()
+        {
+            var page = new VisualElement();
+            page.AddToClassList("cpage");
+
+            var nameField = new TextField(Loc.T("menu.company_name")) { value = companyName };
+            nameField.AddToClassList("cfield");
+            nameField.RegisterValueChangedCallback(evt => companyName = evt.newValue);
+            page.Add(nameField);
+
+            var hint = new Label(Loc.T("custom.trait_hint"));
+            hint.AddToClassList("field__hint");
+            page.Add(hint);
+
+            var grid = new VisualElement();
+            grid.AddToClassList("ctiles");
+
+            foreach (var definition in FounderTraitCatalog.All)
+            {
+                var picked = chosenCompanyTrait == definition.Trait;
+                if (chosenCompanyTrait != FounderTrait.None && !picked)
+                {
+                    continue;
+                }
+
+                var trait = definition.Trait;
+
+                // **The founder picked this one two pages ago and it is theirs.** Until now the
+                // company could take it as well and the founder silently lost it, which spends one
+                // of the two picks the creator promised on nothing. Shown rather than refused: a
+                // tile that simply does not react reads as a dead button.
+                var theirs = !picked && chosenTraits.Contains(trait);
+
+                var tile = new Button(() => PickCompanyTrait(picked ? FounderTrait.None : trait))
+                {
+                    text = definition.DisplayName.ToUpperInvariant()
+                };
+                tile.AddToClassList("ctile");
+                tile.EnableInClassList("ctile--on", picked);
+                tile.EnableInClassList("ctile--taken", theirs);
+                tile.SetEnabled(!theirs);
+                tile.tooltip = theirs
+                    ? Loc.T("custom.trait_taken")
+                    : definition.EffectSummary;
+                grid.Add(tile);
+            }
+
+            page.Add(grid);
+            return page;
+        }
+
+        private void PickCompanyTrait(FounderTrait trait)
+        {
+            chosenCompanyTrait = trait;
+
+            // Nothing is taken from the founder here any more. A trait they already hold is drawn
+            // as theirs on the grid and cannot be clicked, so this can only ever be a free one.
+            Show(Stage.Company);
+        }
+
+        /// <summary>
+        /// Page two: money against what the founder already knows.
+        ///
+        /// One handle and two readings. The second bar is not a control, it is the right hand side
+        /// of the same decision, which is why it is thicker and cannot be dragged.
+        /// </summary>
+        private VisualElement BuildCustomOpeningPage()
+        {
+            var page = new VisualElement();
+            page.AddToClassList("cpage");
+
+            var cash = new Label();
+            cash.AddToClassList("cbig");
+            page.Add(cash);
+
+            var slider = new Slider(FoundingTrade.LeastCashUsd, FoundingTrade.DefaultCashUsd)
+            {
+                value = openingCashUsd
+            };
+            slider.AddToClassList("cslider");
+            page.Add(slider);
+
+            var knownLine = new Label();
+            knownLine.AddToClassList("cbig");
+            page.Add(knownLine);
+
+            // The locked bar: how far along the ladder this position reaches. Drawn rather than
+            // written, because the player is choosing a position and not reading a number.
+            var track = new VisualElement();
+            track.AddToClassList("ctrack");
+
+            var fill = new VisualElement();
+            fill.AddToClassList("ctrack__fill");
+            track.Add(fill);
+            page.Add(track);
+
+            var nodes = new VisualElement();
+            page.Add(nodes);
+
+            // **Painted in place, never rebuilt.** The first version called `Show` from the
+            // value-changed callback, which destroyed the handle the player was holding and ended
+            // the drag on its first pixel: the slider could only be clicked, never dragged, and
+            // the author reported exactly that. Nothing outside this page reads the figure while
+            // the handle is moving, so there is nothing here a rebuild would have been for.
+            void Paint()
+            {
+                var known = FoundingTrade.NodesFor(openingCashUsd);
+
+                cash.text = Loc.T("custom.opening_cash", UiFormat.Money(openingCashUsd));
+                knownLine.text = known.Count == 0
+                    ? Loc.T("custom.knows_nothing")
+                    : Loc.T("custom.knows", known.Count);
+
+                fill.style.width = Length.Percent(
+                    FoundingTrade.Ladder.Count == 0
+                        ? 0f
+                        : 100f * known.Count / FoundingTrade.Ladder.Count);
+
+                nodes.Clear();
+                foreach (var node in known)
+                {
+                    var line = new Label(ResearchTree.Get(node).DisplayName);
+                    line.AddToClassList("cknown");
+                    nodes.Add(line);
+                }
+            }
+
+            slider.RegisterValueChangedCallback(evt =>
+            {
+                openingCashUsd = (long)evt.newValue;
+                Paint();
+            });
+
+            Paint();
+            return page;
+        }
+        /// <summary>
+        /// Page three: the mark, chosen on the browser mock the management page already draws.
+        ///
+        /// **The arrows here are the ones that have been sitting beside that mark since August**,
+        /// drawn and disabled, with a tooltip saying the choice was coming. Building a second,
+        /// plainer chooser beside them would have left the game with two answers to the same
+        /// question and the better looking one still refusing to work.
+        ///
+        /// It is also the only page of this sheet that shows the player what they are choosing
+        /// *for*: a mark is not a tile in a grid, it is the thing on the tab and in the corner of
+        /// their own product.
+        /// </summary>
+        private VisualElement BuildCustomMarkPage()
+        {
+            var page = new VisualElement();
+            page.AddToClassList("cpage");
+
+            browser ??= new BrowserPreview();
+            browser.Show(companyName, Loc.T("wb.first_model"), founderName, companyLogo);
+            browser.OfferMarks(StepLogo);
+
+            browser.Root.AddToClassList("cwb");
+            page.Add(browser.Root);
+
+            var counter = new Label(
+                $"{CompanyLogoCatalog.NumberOf(companyLogo)} / {CompanyLogoCatalog.Count}");
+            counter.AddToClassList("field__hint");
+            counter.AddToClassList("cmarkcount");
+            page.Add(counter);
+
+            return page;
+        }
+
+        private void StepLogo(int by)
+        {
+            companyLogo = CompanyLogoCatalog.Step(companyLogo, by);
+            Show(Stage.Company);
+        }
+
         private VisualElement BuildRegionSection()
         {
             var section = new VisualElement();
@@ -2086,16 +2559,28 @@ namespace ScalingLaws.UI
             var header = new VisualElement();
             header.AddToClassList("region__header");
 
-            var title = new Label(Loc.T("creator.region"));
-            title.AddToClassList("panel__heading");
-            header.Add(title);
+            // **While the sheet is open this strip is not about the region.** The map is put away,
+            // so a REGION heading over it labels something nobody can see, and the line beside it
+            // reports a country the player has no way to choose from here. What belongs over a
+            // company being configured is who is configuring it.
+            if (CompanyIsChosen && chosenArchetype == CompanyArchetype.Custom
+                                && customStage < CustomStages)
+            {
+                section.Add(BuildFounderStrip());
+            }
+            else
+            {
+                var title = new Label(Loc.T("creator.region"));
+                title.AddToClassList("panel__heading");
+                header.Add(title);
 
-            var chosen = new Label(chosenCountry == Country.None
-                ? Loc.T("creator.no_country")
-                : WorldRegionCatalog.Get(chosenCountry).DisplayName.ToUpperInvariant());
-            chosen.AddToClassList("region__chosen");
-            header.Add(chosen);
-            section.Add(header);
+                var chosen = new Label(chosenCountry == Country.None
+                    ? Loc.T("creator.no_country")
+                    : WorldRegionCatalog.Get(chosenCountry).DisplayName.ToUpperInvariant());
+                chosen.AddToClassList("region__chosen");
+                header.Add(chosen);
+                section.Add(header);
+            }
 
             var body = new VisualElement();
             body.AddToClassList("region__body");
@@ -2153,6 +2638,22 @@ namespace ScalingLaws.UI
             }
 
             body.Add(list);
+
+            // **A company of the player's own gets the window; the four presets keep the map.**
+            // The presets have nothing to configure, so a settings sheet over them would be three
+            // empty pages and a map hidden behind them.
+            //
+            // The sheet stands in the map's rectangle while it is open and hands it straight back
+            // when it closes, so the page never grows a second column and never scrolls.
+            var custom = CompanyIsChosen && chosenArchetype == CompanyArchetype.Custom;
+
+            if (custom && customStage < CustomStages)
+            {
+                section.Add(BuildCustomWindow());
+                section.Add(BuildRegionEffects());
+                return section;
+            }
+
             section.Add(body);
             section.Add(BuildRegionEffects());
 
@@ -2333,8 +2834,46 @@ namespace ScalingLaws.UI
         {
             chosenArchetype = archetype;
             CompanyIsChosen = true;
+
+            // **Going back and changing the lab can turn a legal pick into a repeat.** The traits
+            // page is reached after this one, so the player may already hold the trait the new
+            // lab brings. Dropping it here hands the slot back rather than letting it be spent on
+            // a duplicate the founder would discard.
+            chosenTraits.Remove(CompanyIdentityCatalog.Get(archetype).HouseTrait);
             companyName = CompanyIdentityCatalog.Get(archetype).DisplayName;
             Show(Stage.Company);
+        }
+
+        /// <summary>
+        /// SKIP TUTORIAL, or nothing at all on a first campaign.
+        ///
+        /// **Nothing, rather than a greyed button that explains itself.** A disabled control here
+        /// would tell a brand new player that there is something they are missing out on, at the
+        /// exact moment the tour is the thing that will help them most. Returning players find it
+        /// where they already look for the way into the game.
+        /// </summary>
+        private VisualElement BuildSkipTutorialButton()
+        {
+            if (!GameSettings.HasPlayedBefore)
+            {
+                return null;
+            }
+
+            var button = new Button { text = Loc.T("menu.skip_tutorial") };
+            button.AddToClassList("menu-button");
+            button.AddToClassList("menu-button--quiet");
+            button.AddToClassList("skip-tour");
+            button.EnableInClassList("skip-tour--on", skipTutorial);
+            button.tooltip = Loc.T("menu.skip_tutorial_why");
+            button.style.width = 200;
+
+            button.clicked += () =>
+            {
+                skipTutorial = !skipTutorial;
+                Show(Stage.Company);
+            };
+
+            return button;
         }
 
         private void Begin()
@@ -2348,6 +2887,20 @@ namespace ScalingLaws.UI
             SceneFlow.RequestedFounderLook = founderLook ?? string.Empty;
             SceneFlow.RequestedFounderGlasses = founderGlasses;
             SceneFlow.RequestedDebugMode = debugMode;
+            SceneFlow.RequestedSkipTutorial = GameSettings.HasPlayedBefore && skipTutorial;
+
+            // **Recorded on the way out, so the offer appears on the next company and not on this
+            // one.** Marking it when the creator opens would show the button to somebody who has
+            // never played, which is the one case the author wanted it kept away from.
+            GameSettings.MarkPlayed();
+
+            // **Only a company of the player's own carries these**, and sending them for a preset
+            // archetype would quietly give one of the four named labs a second house trait and an
+            // opening position it was never balanced for.
+            var custom = chosenArchetype == CompanyArchetype.Custom;
+            SceneFlow.RequestedCompanyTrait = custom ? (int)chosenCompanyTrait : (int)FounderTrait.None;
+            SceneFlow.RequestedOpeningCashUsd = custom ? openingCashUsd : 0L;
+            SceneFlow.RequestedCompanyLogo = custom ? companyLogo : string.Empty;
 
             SceneFlow.StartNewCampaign(
                 companyName,

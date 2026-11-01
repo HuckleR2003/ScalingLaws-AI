@@ -31,6 +31,31 @@ namespace ScalingLaws.Core
         /// </summary>
         public static int MapHomeOffice { get; set; }
 
+        /// <summary>
+        /// A `MapSiteCatalog` id the map should open on instead of the company's own address.
+        ///
+        /// Set by a news story carrying a venue, cleared by the map on the way in. The same
+        /// hand-off `MapHomeOffice` already uses, rather than a second way to carry a request
+        /// across a scene load.
+        /// </summary>
+        public static string MapFocusSite { get; set; } = string.Empty;
+
+        /// <summary>
+        /// A `MapSiteCatalog` id whose stand window the company should open on the way back.
+        ///
+        /// **The same hand-off as `MapFocusSite`, in the other direction.** A news story carrying
+        /// a venue sends the map somewhere; pressing the book button on the map sends the player
+        /// back to the desk with that venue's stand window open.
+        ///
+        /// It is a request rather than a purchase, and that is deliberate: the city scene has no
+        /// reference to the company at all, by design, because `Core` may not know `Simulation`.
+        /// Carrying the company into the map to sell one stand would be a second place money
+        /// moves. The decision stays on the one screen that already makes it.
+        ///
+        /// A string, like `MapFocusSite`, because `Core` does not know the catalogues.
+        /// </summary>
+        public static string StandRequestSite { get; set; } = string.Empty;
+
         /// <summary>Which opening tile was chosen. Read once by the game scene.</summary>
         public static int RequestedArchetype { get; set; }
 
@@ -75,11 +100,41 @@ namespace ScalingLaws.Core
         /// </summary>
         public static bool RequestedDebugMode { get; set; }
 
+        /// <summary>
+        /// Start the campaign with the tour already behind it.
+        ///
+        /// **Only offered to somebody who has started a campaign on this machine before.** A first
+        /// run has nothing to skip past yet, and a new player who takes the offer is alone in a
+        /// game with fifteen tabs. Set by the creator, read once by the shell, and never written
+        /// into a save: what it does is move the guide to its finished stage, which the save
+        /// already carries.
+        /// </summary>
+        public static bool RequestedSkipTutorial { get; set; }
+
         /// <summary>Where the company registers. Zero means the default, America.</summary>
         public static int RequestedRegion { get; set; }
 
         /// <summary>The country inside that region. Zero means the region's first entry.</summary>
         public static int RequestedCountry { get; set; }
+
+        /// <summary>
+        /// The trait a company of the player's own brings, standing in for a named lab's house
+        /// trait. Zero, meaning `FounderTrait.None`, for every preset archetype.
+        /// </summary>
+        public static int RequestedCompanyTrait { get; set; }
+
+        /// <summary>
+        /// Where the player left the opening trade, in dollars. Zero means they never touched it
+        /// and the company opens on the default, which is the position the whole game is balanced
+        /// against.
+        /// </summary>
+        public static long RequestedOpeningCashUsd { get; set; }
+
+        /// <summary>
+        /// The chosen company mark, by name. Empty falls back to the first, which is also what a
+        /// name this build does not ship falls back to.
+        /// </summary>
+        public static string RequestedCompanyLogo { get; set; } = string.Empty;
 
         /// <summary>Starts a campaign from the opening flow rather than from defaults.</summary>
         public static void StartNewCampaign(string companyName, int archetype, int traitA, int traitB)

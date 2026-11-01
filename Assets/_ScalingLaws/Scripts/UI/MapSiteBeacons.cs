@@ -20,8 +20,28 @@ namespace ScalingLaws.UI
     /// </summary>
     public sealed class MapSiteBeacons : MonoBehaviour
     {
-        /// <summary>How tall a column stands above the building it marks, in metres.</summary>
+        /// <summary>The shortest a column is ever drawn, in metres. What a bungalow gets.</summary>
         private const float ColumnHeight = 90f;
+
+        /// <summary>
+        /// How much of the building's own height the column adds on top of it.
+        ///
+        /// **The column used to be a flat ninety metres whatever it stood on.** On a shop that is
+        /// twice the building and impossible to miss; on a tower it starts two hundred metres up,
+        /// which at the height this map is read at is out of frame. Reported on 2026-10-27 against
+        /// the rival headquarters, which are the tallest things in the city, as "make the circles
+        /// on the rival hq more visible, especially this one".
+        /// </summary>
+        private const float ColumnShareOfBuilding = 0.55f;
+
+        /// <summary>
+        /// The smallest ground ring, in metres.
+        ///
+        /// The ring is sized from the building's own footprint, and a slim tower has almost none,
+        /// so the one marker that stays at eye level was the one that shrank on exactly the
+        /// buildings whose column had gone out of frame. Both halves failed on the same place.
+        /// </summary>
+        private const float MinimumRingReach = 26f;
 
         /// <summary>How wide the column is. Thin, but never thinner than a pixel from map height.</summary>
         private const float ColumnWidth = 5f;
@@ -84,7 +104,11 @@ namespace ScalingLaws.UI
 
                 // Grows from its foot rather than from its middle: a column whose base drifts up and
                 // down looks like it is hovering, which is the one thing a marker must not look like.
-                var height = Mathf.Lerp(ColumnHeight * 0.72f, ColumnHeight, breath);
+                //
+                // Against the beacon's own height, not the constant: since the column is a share of
+                // what it stands on, breathing against the floor value made a tower's marker shrink
+                // to a third of itself on every pulse.
+                var height = Mathf.Lerp(beacon.Height * 0.72f, beacon.Height, breath);
                 var scale = beacon.Column.localScale;
 
                 beacon.Column.localScale = new Vector3(scale.x, height, scale.z);
@@ -115,13 +139,18 @@ namespace ScalingLaws.UI
             var material = MaterialFor(pin.Category);
             var foot = bounds.size.y;
 
+            // A share of the building, floored, so the marker keeps the same relationship to what
+            // it marks whether that is a lock-up garage or a forty storey tower.
+            var columnHeight = Mathf.Max(ColumnHeight, foot * ColumnShareOfBuilding);
+
             var column = Piece(root.transform, material, "Column");
-            column.localPosition = new Vector3(0f, foot + ColumnHeight * 0.5f, 0f);
-            column.localScale = new Vector3(ColumnWidth, ColumnHeight, ColumnWidth);
+            column.localPosition = new Vector3(0f, foot + columnHeight * 0.5f, 0f);
+            column.localScale = new Vector3(ColumnWidth, columnHeight, ColumnWidth);
 
             // The ring is four bars rather than a torus: a square outline reads as a marker, needs
             // no mesh of its own, and cannot be mistaken for part of the building.
-            var reach = Mathf.Max(bounds.extents.x, bounds.extents.z) + 6f;
+            var reach = Mathf.Max(MinimumRingReach,
+                Mathf.Max(bounds.extents.x, bounds.extents.z) + 6f);
 
             foreach (var (dx, dz) in new[] { (1f, 0f), (-1f, 0f), (0f, 1f), (0f, -1f) })
             {
@@ -132,7 +161,7 @@ namespace ScalingLaws.UI
                     : new Vector3(RingThickness, RingThickness, reach * 2f + RingThickness);
             }
 
-            return new Beacon(root, column, pin.Category, foot);
+            return new Beacon(root, column, pin.Category, foot, columnHeight);
         }
 
         private static Transform Piece(Transform parent, Material material, string name)
@@ -189,12 +218,14 @@ namespace ScalingLaws.UI
 
         private sealed class Beacon
         {
-            public Beacon(GameObject root, Transform column, MapCategory category, float foot)
+            public Beacon(GameObject root, Transform column, MapCategory category, float foot,
+                float height)
             {
                 Root = root;
                 Column = column;
                 Category = category;
                 Foot = foot;
+                Height = height;
             }
 
             public GameObject Root { get; }
@@ -203,6 +234,9 @@ namespace ScalingLaws.UI
 
             /// <summary>How high the building is: where the column starts, above its roof.</summary>
             public float Foot { get; }
+
+            /// <summary>How tall this one column is, which is a share of the building under it.</summary>
+            public float Height { get; }
         }
     }
 }

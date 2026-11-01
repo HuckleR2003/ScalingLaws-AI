@@ -216,6 +216,20 @@ namespace ScalingLaws.Tests.EditMode
             Assert.That(starvedProfile.RawPetaflops, Is.EqualTo(balancedProfile.RawPetaflops).Within(0.01));
             Assert.That(starvedProfile.BalanceFactor, Is.EqualTo(ComputePool.MinimumBalanceFactor));
             Assert.That(balancedProfile.BalanceFactor, Is.EqualTo(1.0));
+
+            // **The profile has to say which part is missing, not only that something is.** A
+            // percentage with no cause beside it is what made a tester conclude that owning
+            // hardware does not work in this game, which is the opposite of what the rule means.
+            Assert.That(starvedProfile.StarvingClass, Is.Not.Null,
+                "A fleet of cards with no hosts, memory or fabric does not name what it is short "
+                + "of, so no screen can tell the player what to buy.");
+
+            Assert.That(starvedProfile.AcceleratorsSupported,
+                Is.LessThan(starvedProfile.AcceleratorCount),
+                "The starved fleet claims every card it owns is fed.");
+
+            Assert.That(balancedProfile.StarvingClass, Is.Null,
+                "A fully provisioned fleet is reported as short of something.");
             Assert.That(balancedProfile.EffectivePetaflops, Is.GreaterThan(starvedProfile.EffectivePetaflops * 3.0));
         }
 

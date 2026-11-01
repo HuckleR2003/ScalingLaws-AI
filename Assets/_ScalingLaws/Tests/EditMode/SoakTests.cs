@@ -185,7 +185,7 @@ namespace ScalingLaws.Tests.EditMode
 
                     Assert.DoesNotThrow(() =>
                     {
-                        var news = new NewsScreen(simulation, (_, _) => { });
+                        var news = new NewsScreen(simulation, (_, _) => { }, _ => { });
                         news.Refresh();
                     }, $"{when}: the news screen threw.");
 

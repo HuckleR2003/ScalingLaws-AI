@@ -27,6 +27,15 @@ namespace ScalingLaws.UI
         private readonly CompanySimulation simulation;
         private readonly Action<IntelTier, bool> setMembership;
 
+        /// <summary>Ticking the early-word box, which the shell turns into a refresh.</summary>
+        private readonly Action<bool> setEarlyAccess;
+
+        /// <summary>Open the city map standing at a venue. The shell knows how to leave.</summary>
+        private readonly Action<EventVenueId> showVenue;
+
+        /// <summary>The stand window, while one is open. One at a time, like every sheet here.</summary>
+        private VisualElement standSheet;
+
         /// <summary>
         /// Which desk has its benefits open, or none.
         ///
@@ -36,10 +45,13 @@ namespace ScalingLaws.UI
         /// </summary>
         private IntelTier? benefitsFor;
 
-        public NewsScreen(CompanySimulation simulation, Action<IntelTier, bool> setMembership)
+        public NewsScreen(CompanySimulation simulation, Action<IntelTier, bool> setMembership,
+            Action<bool> setEarlyAccess, Action<EventVenueId> showVenue = null)
         {
             this.simulation = simulation;
             this.setMembership = setMembership;
+            this.setEarlyAccess = setEarlyAccess;
+            this.showVenue = showVenue;
 
             Root = new VisualElement();
             Root.AddToClassList("content");
@@ -134,10 +146,31 @@ namespace ScalingLaws.UI
             return column;
         }
 
-        private static VisualElement WireRow(in NewsItem story)
+        /// <summary>
+        /// One line of the free wire.
+        ///
+        /// **This is the third story builder and the first two got the venue tag.** Reported
+        /// on 2026-10-25 as event stories having no place tag and not being clickable, and
+        /// measured before believing it: the announcements do reach the wire and they do carry
+        /// a venue. They were drawn by a method that knew nothing about either, while
+        /// `LeadStory` and `SmallStory` had both. A feature wired into two of three paths is
+        /// the shape this project keeps finding.
+        ///
+        /// A row with a place is a `Button`, because it goes somewhere; a row without one is a
+        /// `VisualElement`, because a control that reacts to the cursor and does nothing is
+        /// worse than one that never looked clickable.
+        /// </summary>
+        private VisualElement WireRow(in NewsItem story)
         {
-            var row = new VisualElement();
+            var goes = story.Venue != null && showVenue != null;
+            var asked = story.Venue ?? default;
+
+            var row = goes
+                ? new Button(() => showVenue(asked))
+                : new VisualElement();
+
             row.AddToClassList("wire-row");
+            row.EnableInClassList("wire-row--goes", goes);
 
             var rule = new VisualElement();
             rule.AddToClassList("wire-row__rule");
@@ -159,6 +192,8 @@ namespace ScalingLaws.UI
             text.Add(meta);
 
             row.Add(text);
+            AddVenueTag(text, story);
+
             row.tooltip = story.Body;
             return row;
         }
@@ -177,7 +212,59 @@ namespace ScalingLaws.UI
             column.Add(Section(Loc.T("news.premieres"), "rule--premiere", NewsSection.Premieres, 4,
                 Loc.T("news.none.premieres")));
 
+            // **A section of their own, because they were drowning.** Measured on a campaign
+            // in its opening months: two of seven stories on the wire were events, and in a
+            // busy year they are two of twenty-eight lines that look identical to a rival
+            // shipping something. A story that is filed, correct and indistinguishable from
+            // the fourteen above it has not reached anybody.
+            //
+            // Two at most. This is a reminder that something is open, not a second calendar:
+            // the one that lists everything is what the National Press desk sells.
+            column.Add(BuildEventSection());
+
             return column;
+        }
+
+        /// <summary>The two most recent stories that are about a place in the city.</summary>
+        private VisualElement BuildEventSection()
+        {
+            var block = new VisualElement();
+            block.AddToClassList("news-section");
+
+            block.Add(SectionTitle(Loc.T("news.events"), "rule--event"));
+
+            var found = new List<NewsItem>();
+
+            foreach (var story in simulation.State.News.In(NewsSection.Wire, 40))
+            {
+                if (story.Venue == null)
+                {
+                    continue;
+                }
+
+                found.Add(story);
+
+                if (found.Count == 2)
+                {
+                    break;
+                }
+            }
+
+            if (found.Count == 0)
+            {
+                block.Add(Empty(Loc.T("news.none.events")));
+
+                return block;
+            }
+
+            block.Add(LeadStory(found[0]));
+
+            for (var index = 1; index < found.Count; index++)
+            {
+                block.Add(SmallStory(found[index]));
+            }
+
+            return block;
         }
 
         /// <summary>
@@ -212,10 +299,99 @@ namespace ScalingLaws.UI
             return block;
         }
 
-        private static VisualElement LeadStory(in NewsItem story)
+        /// <summary>
+        /// The place a story is about, as a tag under it, in that district's own colour.
+        ///
+        /// **Only when the story has one.** Almost none do, and a tag on a story about a token
+        /// price would be a tag about nothing. Pressing it opens the city map standing at that
+        /// venue, which is how a player gets from reading that an event exists to looking at
+        /// where it is held.
+        /// </summary>
+        /// <summary>
+        /// What pressing a story about a place should do.
+        ///
+        /// **The decision if there is one to make, the place otherwise.** A story about an event
+        /// is about the event, so the useful answer is the stand window rather than a map of the
+        /// city. When registration has closed there is nothing to decide and the map is the honest
+        /// second best, which is also exactly what the tag does.
+        /// </summary>
+        /// <summary>
+        /// Opens the stand window for one venue, from outside this screen.
+        ///
+        /// **The way back from the map.** The city scene has no company to sell a stand with, so
+        /// the book button there records the venue and leaves; the shell calls this once the desk
+        /// is on screen. One window, one place money moves, reached two ways.
+        ///
+        /// Silent when registration has closed, because by then there is nothing to open and a
+        /// window saying so is a window the player has to dismiss for no reason.
+        /// </summary>
+        public void OpenStandWindowFor(EventVenueId venue)
         {
-            var card = new VisualElement();
+            if (simulation.TryUpcomingAt(venue, out var row))
+            {
+                OpenStandSheet(row);
+            }
+        }
+
+        private void OpenTheDecisionAt(EventVenueId venue)
+        {
+            if (simulation.TryUpcomingAt(venue, out var row))
+            {
+                OpenStandSheet(row);
+
+                return;
+            }
+
+            showVenue?.Invoke(venue);
+        }
+
+        private void AddVenueTag(VisualElement card, in NewsItem story)
+        {
+            if (story.Venue == null || showVenue == null)
+            {
+                return;
+            }
+
+            var venue = EventVenueCatalog.Get(story.Venue.Value);
+            var asked = story.Venue.Value;
+
+            // **The tag still goes to the place, and the card around it goes to the
+            // decision.** Two different answers, which is the point of having both.
+            var tag = new Button { text = venue.DisplayName.ToUpperInvariant() };
+
+            // **Registered rather than passed to the constructor, so the event can be stopped.**
+            // The card is a `Button` now as well, and a click that reached both would open the map
+            // and the stand window from one press. A nested control has to keep its own click.
+            tag.RegisterCallback<ClickEvent>(click =>
+            {
+                click.StopPropagation();
+                showVenue(asked);
+            });
+
+            tag.AddToClassList("venuetag");
+            card.Add(tag);
+        }
+
+        /// <summary>
+        /// The large story at the head of a section.
+        ///
+        /// **It goes where its tag goes, when it has one.** Reported on 2026-10-25: an event story
+        /// did not light up and could not be pressed, and only the small place tag underneath it
+        /// could. A headline about a venue that refuses the click while the three words under it
+        /// accept it reads as the headline being broken, and the tag is the smallest target on the
+        /// card.
+        /// </summary>
+        private VisualElement LeadStory(in NewsItem story)
+        {
+            var asked = story.Venue ?? default;
+            var goes = story.Venue != null && showVenue != null;
+
+            var card = goes
+                ? new Button(() => OpenTheDecisionAt(asked))
+                : new VisualElement();
+
             card.AddToClassList("lead");
+            card.EnableInClassList("story--goes", goes);
 
             var kicker = new Label(story.IsAboutPlayer ? "ABOUT YOU" : story.Outlet.ToUpperInvariant());
             kicker.AddToClassList("lead__kicker");
@@ -234,13 +410,23 @@ namespace ScalingLaws.UI
             date.AddToClassList("lead__date");
             card.Add(date);
 
+            AddVenueTag(card, story);
+
             return card;
         }
 
-        private static VisualElement SmallStory(in NewsItem story)
+        /// <summary>The same, one size down. See <see cref="LeadStory"/> for why it is a button.</summary>
+        private VisualElement SmallStory(in NewsItem story)
         {
-            var card = new VisualElement();
+            var asked = story.Venue ?? default;
+            var goes = story.Venue != null && showVenue != null;
+
+            var card = goes
+                ? new Button(() => OpenTheDecisionAt(asked))
+                : new VisualElement();
+
             card.AddToClassList("small");
+            card.EnableInClassList("story--goes", goes);
 
             var head = new Label(story.Headline);
             head.AddToClassList("small__headline");
@@ -250,6 +436,8 @@ namespace ScalingLaws.UI
             var meta = new Label(story.Date.ToString());
             meta.AddToClassList("small__meta");
             card.Add(meta);
+
+            AddVenueTag(card, story);
 
             card.tooltip = story.Body;
             return card;
@@ -315,6 +503,8 @@ namespace ScalingLaws.UI
 
                 panel.Add(MembershipButton(desk.Requires, true));
                 panel.Add(BenefitsBlock(desk.Requires));
+                AddEventsBlock(panel, desk);
+
                 return panel;
             }
 
@@ -347,7 +537,125 @@ namespace ScalingLaws.UI
             }
 
             panel.Add(BenefitsBlock(missing));
+            AddEventsBlock(panel, desk);
+
             return panel;
+        }
+
+
+        /// <summary>
+        /// The early-word box and the list of what is coming, under National Press.
+        ///
+        /// **Only on that desk, and gated on that one membership rather than on the section.**
+        /// EVENT HUNTER needs two memberships to open, which this project has recorded as the
+        /// awkward one: a player who paid National Press and still could not read it was owed an
+        /// explanation. The early look fixes that from the other end. It is what the cheapest
+        /// membership buys on its own, and until now that membership bought nothing a player
+        /// could point at.
+        ///
+        /// Events themselves stay free to read about on the wire. What is sold here is a month of
+        /// head start, which at three of the seven events in the year is the difference between a
+        /// stand and an auction.
+        /// </summary>
+        private void AddEventsBlock(VisualElement panel, NewsDeskDefinition desk)
+        {
+            if (desk.Section != NewsSection.EventHunter)
+            {
+                return;
+            }
+
+            var paid = simulation.State.IsMember(IntelTier.NationalPress);
+
+            if (paid)
+            {
+                var box = new VisualElement();
+                box.AddToClassList("earlytoggle");
+
+                var tick = new Toggle(Loc.T("early.toggle"))
+                {
+                    value = simulation.State.EventEarlyAccess
+                };
+
+                tick.RegisterValueChangedCallback(change => setEarlyAccess(change.newValue));
+                box.Add(tick);
+
+                var note = new Label(Loc.T("early.toggle.note"));
+                note.AddToClassList("earlytoggle__note");
+                box.Add(note);
+
+                panel.Add(box);
+            }
+
+            panel.Add(UpcomingEventsList.Build(
+                paid ? simulation.UpcomingEvents() : null,
+                paid,
+                NewsCatalog.OutletName(IntelTier.NationalPress),
+                paid ? OpenStandSheet : null));
+        }
+
+        /// <summary>
+        /// The stand window for one upcoming event, over the page.
+        ///
+        /// **This is the door that was missing, and it was the whole fault.** `EventVenuePanel` is
+        /// a finished screen with tiles, prices and an auction, and on 2026-10-25 it had no caller
+        /// anywhere in the game; `TryRegisterForStand` had none in `UI/` either. The simulation
+        /// could sell a stand and no player could buy one.
+        ///
+        /// Over the page rather than as a screen of its own, because it is a decision about one
+        /// line the player has just pressed and they are coming straight back to the list.
+        /// </summary>
+        private void OpenStandSheet(UpcomingEventRow row)
+        {
+            CloseStandSheet();
+
+            var happening = CityEventCatalog.Get(row.Id);
+            var venue = EventVenueCatalog.Get(happening.Venue);
+
+            var panel = new EventVenuePanel(
+                venue,
+                happening,
+                // **Asked of the simulation, never worked out here.** `StandsAt` is the one
+                // reading, so the window cannot offer a stand the till will refuse.
+                _ =>
+                {
+                    simulation.StandsAt(row.Id, row.Year, out var free, out var sellable,
+                        out var interested);
+
+                    return new EventStandInfo(free, sellable, interested);
+                },
+                tier => simulation.PriceOfStand(row.Id, row.Year, tier),
+                tier =>
+                {
+                    if (simulation.TryRegisterForStand(row.Id, row.Year, tier, out var why))
+                    {
+                        CloseStandSheet();
+
+                        // The list behind it is now wrong about how many stands are left.
+                        Refresh();
+
+                        return;
+                    }
+
+                    // The refusal is the simulation's own sentence. A second wording here is a
+                    // second thing to keep true.
+                    GateNotice.Says(happening.DisplayName, why);
+                });
+
+            standSheet = new VisualElement();
+            standSheet.AddToClassList("shopsheet");
+            standSheet.Add(panel.Root);
+
+            var close = new Button(CloseStandSheet) { text = Loc.T("common.close") };
+            close.AddToClassList("shopsheet__close");
+            standSheet.Add(close);
+
+            Root.Add(standSheet);
+        }
+
+        private void CloseStandSheet()
+        {
+            standSheet?.RemoveFromHierarchy();
+            standSheet = null;
         }
 
         private Button MembershipButton(IntelTier tier, bool held)

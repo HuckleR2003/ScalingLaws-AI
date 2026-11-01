@@ -29,6 +29,11 @@
     --bad: rgb(233, 96, 96);
     --locked: rgba(10, 24, 44, 0.78);
 
+    /* The venue window: a cyan for the organiser line and an orange for the one button on it. */
+    --cyan: rgb(86, 214, 226);
+    --orange: rgb(242, 138, 48);
+    --orange-dim: rgb(176, 96, 30);
+
     --card-radius: 4px;
     --gutter: 16px;
 }
@@ -491,8 +496,21 @@
    standing, the following and every temporary effect the company is under, and all of it except
    the money was set as grey caption text at 11px or less. Six pixels is what buys the type a
    size a laptop can read and the effect icons the 30% the author asked for. */
+/*
+ * **`flex-shrink: 0`, and leaving it off is why the bar was cut in half on six screens.**
+ *
+ * UI Toolkit shrinks flex children by default, so a page taller than the window takes the
+ * height it needs out of whatever above it will give, and a bar with a stated height and no
+ * refusal gives. Reported on 2026-10-25 as the top bar breaking badly on RESEARCH, COMPUTE,
+ * BUSINESS, CAPITAL and MARKETING and slightly on ARCHITECTURE, which is the tallest five
+ * screens and one middling one: the list was the diagnosis.
+ *
+ * `.hud` at the bottom has carried this since it was written. The two ends of the same
+ * layout disagreed and only one of them was ever squashed.
+ */
 .topbar {
     flex-direction: row;
+    flex-shrink: 0;
     justify-content: space-between;
     align-items: center;
     height: 52px;
@@ -629,6 +647,26 @@
 .card--ahead {
     border-left-width: 4px;
     border-left-color: var(--good);
+}
+
+/*
+ * The off switch, which had to stop looking like the things it switches off.
+ *
+ * It sits in the same grid as the budget tiles and carried `.card` and nothing else, at the
+ * same size, so with a budget selected it was indistinguishable from every unselected one.
+ * Reported on 2026-10-24 as a daily spend that could not be cancelled once it had been set:
+ * the control was there the whole time and read as one more thing to switch on. No fill and a
+ * hairline, so it reads as the way out rather than as another option.
+ */
+.card--off {
+    width: 150px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1px;
+    border-color: var(--ink-faint);
+}
+
+.card--off:hover {
+    background-color: var(--blue-700);
 }
 
 /* ---- card art -------------------------------------------------------- */
@@ -895,10 +933,13 @@
     border-color: rgb(226, 96, 120);
 }
 
-/* On every screen of a sandbox campaign, over the chrome, ignoring the pointer. */
+/* On every screen of a sandbox campaign, over the chrome, ignoring the pointer.
+
+   **Under the tester line rather than beside it.** A test build of a sandbox campaign carries both,
+   and at `top: 6px` each they were one unreadable overlap at the centre of the chrome. */
 .sandbox-mark {
     position: absolute;
-    top: 6px;
+    top: 26px;
     left: 50%;
     font-size: 11px;
     letter-spacing: 3px;
@@ -1225,6 +1266,390 @@
 
 .trait-card--locked {
     opacity: 0.38;
+}
+
+/* The trait the chosen lab brings. Lit rather than dimmed: the player has it, they simply did not
+   spend a pick on it, and dimming it would read as locked. */
+
+.trait-card--house {
+    border-color: rgb(255, 209, 56);
+    background-color: rgb(32, 28, 14);
+}
+
+/* The company's own mark. Scale to fit rather than stretch: the set is square at 200px today and
+   a later one drawn at another ratio must not come out squashed. The size is set by the caller,
+   because the same mark appears on a chooser, a browser tab and a chip. */
+
+.company-mark {
+    -unity-background-scale-mode: scale-to-fit;
+    flex-shrink: 0;
+}
+
+/* ---- the custom company window ---------------------------------------------------------------
+ *
+ * **Dark, with a violet fade across it.** It was light at first, as a picture of a product that
+ * is not this one, and against the rest of the interface it simply glared. The fade is painted
+ * by `HudAccent.PaintRamp` into a baked texture, because USS has no gradients and this project
+ * answered that once already for the time dial and the day line.
+ *
+ * Everything in here still has to state its colour. The runtime theme draws form controls as
+ * light grey slabs, and the first version of this window had its own name field invisible.
+ * --------------------------------------------------------------------------------------------- */
+
+.cwin {
+    flex-grow: 1;
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: rgb(78, 58, 112);
+}
+
+.cwin__bar {
+    flex-direction: row;
+    align-items: center;
+    height: 34px;
+    padding-left: 12px;
+    background-color: rgba(10, 7, 18, 0.55);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(72, 54, 104);
+}
+
+.cwin__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    margin-right: 6px;
+    background-color: rgb(92, 72, 128);
+}
+
+.cwin__title {
+    margin-left: 10px;
+    font-size: 12px;
+    color: rgb(178, 164, 206);
+}
+
+.cwin__rail {
+    flex-direction: row;
+    padding: 10px 12px 0 12px;
+}
+
+.cwin__pip {
+    margin: 0 6px 0 0;
+    padding: 5px 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    border-width: 1px;
+    border-color: rgba(142, 118, 190, 0.35);
+    border-radius: 14px;
+    color: rgb(172, 158, 202);
+    background-color: rgba(18, 13, 30, 0.5);
+}
+
+.cwin__pip--on {
+    border-color: rgb(186, 156, 255);
+    color: rgb(28, 20, 44);
+    background-color: rgb(186, 156, 255);
+}
+
+.cwin__body {
+    flex-grow: 1;
+    padding: 14px 16px;
+}
+
+.cwin__foot {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 14px 12px 14px;
+}
+
+.cwin__nextword {
+    margin: 0 10px 0 0;
+    padding: 7px 16px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-width: 1px;
+    border-color: rgb(186, 156, 255);
+    border-radius: 8px;
+    color: rgb(28, 20, 44);
+    background-color: rgb(186, 156, 255);
+}
+
+/* The round chevron the author asked for, bottom right, doing the same thing as the word. */
+
+.cwin__next {
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+    -unity-font-style: bold;
+    border-width: 2px;
+    border-color: rgb(186, 156, 255);
+    border-radius: 21px;
+    color: rgb(214, 198, 255);
+    background-color: rgba(18, 13, 30, 0.5);
+    -unity-text-align: middle-center;
+}
+
+.cwin__next:hover {
+    color: rgb(28, 20, 44);
+    background-color: rgb(186, 156, 255);
+}
+
+.cwin .field__hint {
+    color: rgb(166, 152, 196);
+    font-size: 12px;
+}
+
+.cfield {
+    margin-bottom: 10px;
+}
+
+.cfield .unity-base-field__label {
+    min-width: 92px;
+    font-size: 12px;
+    color: rgb(166, 152, 196);
+}
+
+.cfield .unity-base-text-field__input {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 14px;
+    border-width: 1px;
+    border-color: rgb(92, 72, 128);
+    border-radius: 8px;
+    color: rgb(238, 232, 252);
+    background-color: rgba(10, 7, 18, 0.55);
+    -unity-text-align: middle-left;
+}
+
+/* Who is setting the company up, over the sheet, where the region heading would be. Small on
+   purpose: it says who you are, it is not a second place to change it. */
+
+.founder-strip {
+    flex-direction: row;
+    align-items: center;
+    height: 44px;
+    padding: 0 14px;
+}
+
+.founder-strip__face {
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    border-width: 2px;
+    border-color: rgb(120, 176, 255);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.founder-strip__name {
+    margin-left: 10px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: rgb(203, 215, 233);
+}
+
+/* The company name across the top once the sheet has closed, standing where the sheet stood. It
+   is a button: clicking it opens the settings again, so finishing is not a one way door. */
+
+.cname {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    height: 46px;
+    margin: 0 0 10px 0;
+    padding: 0 16px;
+    font-size: 17px;
+    letter-spacing: 2px;
+    border-width: 0;
+    border-left-width: 4px;
+    border-left-color: rgb(186, 156, 255);
+    border-radius: 10px;
+    color: rgb(238, 232, 252);
+    background-color: rgb(26, 20, 38);
+    -unity-text-align: middle-left;
+}
+
+.cname:hover {
+    background-color: rgb(38, 28, 56);
+}
+
+/* The mark sits first and the name follows it. The first version put the name on the Button
+   itself, which draws its own text behind its children, so the two were printed on top of each
+   other. */
+
+.cname > .company-mark {
+    margin-right: 14px;
+}
+
+.cname__text {
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: rgb(238, 232, 252);
+}
+
+/* A trait the founder already holds. Amber rather than grey, and the same amber the founder page
+   uses for the trait their company brings, because this is the same fact seen from the other
+   side. */
+
+.ctile--taken {
+    border-color: rgb(255, 209, 56);
+    color: rgb(214, 190, 120);
+    background-color: rgb(32, 28, 14);
+    opacity: 0.75;
+}
+
+/* The browser mock standing in the sheet. It is drawn for a full page and this is a window inside
+   a window, so it is held to the room there is rather than left to find its own height. */
+
+.cwb {
+    margin-top: 4px;
+    max-height: 300px;
+}
+
+.wb__markslot {
+    align-items: center;
+    justify-content: center;
+}
+
+.cmarkcount {
+    -unity-text-align: middle-center;
+    margin-top: 6px;
+}
+
+/* SKIP TUTORIAL, which is a choice rather than an action: it sits with the two buttons and holds
+   its state until START is pressed. The author asked for the picked state to be unmistakable, and
+   an outline is not enough next to a primary button two hundred and thirty pixels wide. */
+
+.skip-tour {
+    margin-right: auto;
+}
+
+.skip-tour--on {
+    border-color: rgb(255, 209, 56);
+    color: rgb(32, 28, 14);
+    background-color: rgb(255, 209, 56);
+}
+
+.cpage {
+    flex-grow: 1;
+}
+
+.ctiles {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.ctile {
+    margin: 0 6px 6px 0;
+    padding: 7px 12px;
+    font-size: 11.5px;
+    letter-spacing: 0.5px;
+    border-width: 1px;
+    border-color: rgba(142, 118, 190, 0.4);
+    border-radius: 8px;
+    color: rgb(222, 213, 244);
+    background-color: rgba(18, 13, 30, 0.45);
+}
+
+.ctile:hover {
+    border-color: rgb(186, 156, 255);
+}
+
+/* Green, and the only green on this window: it is the one thing the player has settled. */
+
+.ctile--on {
+    border-color: rgb(74, 206, 140);
+    color: rgb(12, 32, 22);
+    background-color: rgb(74, 206, 140);
+}
+
+.cbig {
+    font-size: 17px;
+    color: rgb(240, 235, 252);
+    margin-bottom: 6px;
+}
+
+.cslider {
+    margin-bottom: 14px;
+    height: 26px;
+
+    /* **The global rule caps every slider at 560px** and the architecture screen was bitten by
+       exactly this once already: the cover marking the locked part lined up with the groove only
+       by coincidence. Stated here so the control reaches both ends of its own page. */
+    max-width: none;
+}
+
+/* The control stopped half way across the page, because a slider only takes the width it is
+   given and nothing in this column was giving it one. */
+
+.cslider .unity-base-field__input {
+    flex-grow: 1;
+}
+
+/* The runtime theme draws a slider groove that is all but invisible, which is how the first
+   render came out as a handle floating in empty space. */
+
+.cslider .unity-base-slider__tracker {
+    height: 6px;
+    margin-top: 10px;
+    border-width: 0;
+    border-radius: 3px;
+    background-color: rgba(10, 7, 18, 0.6);
+}
+
+.cslider .unity-base-slider__dragger {
+    width: 20px;
+    height: 20px;
+    margin-top: -7px;
+    border-width: 2px;
+    border-color: rgb(186, 156, 255);
+    border-radius: 10px;
+    background-color: rgb(28, 20, 44);
+}
+
+/* The second reading of the same decision. Thicker than the slider and not draggable, because it
+   is the right hand side of one choice rather than a second control. */
+
+.ctrack {
+    height: 14px;
+    border-radius: 7px;
+    margin-bottom: 10px;
+    background-color: rgba(10, 7, 18, 0.6);
+    overflow: hidden;
+}
+
+.ctrack__fill {
+    height: 14px;
+    background-color: rgb(186, 156, 255);
+}
+
+.cknown {
+    font-size: 12px;
+    color: rgb(206, 196, 232);
+    margin-bottom: 2px;
+}
+
+.clogo {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.carrow {
+    width: 38px;
+    height: 38px;
+    margin: 0 14px;
+    padding: 0;
+    font-size: 18px;
+    border-width: 1px;
+    border-color: rgb(142, 118, 190);
+    border-radius: 19px;
+    color: rgb(222, 213, 244);
+    background-color: rgba(18, 13, 30, 0.5);
+    -unity-text-align: middle-center;
 }
 
 .trait-card__title {
@@ -3860,6 +4285,24 @@
 }
 
 /* The site's power after an order, under the price wherever silicon is sold. */
+/* The fleet is starving its own cards. Amber rather than red: nothing is broken, the player
+   has simply bought one part and not the others, and it is fixed by buying. */
+.fleet-starved {
+    font-size: 13px;
+    margin-left: 12px;
+    margin-right: 12px;
+    margin-bottom: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    color: rgb(230, 186, 96);
+    background-color: rgb(32, 27, 16);
+    border-left-width: 3px;
+    border-left-color: rgb(230, 186, 96);
+    white-space: normal;
+}
+
 .power-after {
     font-size: 11px;
     margin-top: 2px;
@@ -10907,6 +11350,19 @@
     background-color: rgba(255, 255, 255, 0.06);
 }
 
+/* The same grey, on a button that is still live. `:disabled` is kept above because nothing is
+   gained by deleting a rule the theme may still reach, but WYDAJ is shut rather than disabled now:
+   a disabled element dispatches no pointer event, so it could not put the cursor in the name box,
+   which is the whole of its answer. */
+.rel__ship--shut {
+    color: rgb(120, 130, 148);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.rel__ship--shut:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
 /* ---- the version list -------------------------------------------------------------------------- */
 
 .vlist {
@@ -11690,10 +12146,10 @@
     scale: 1.04 1.04;
 }
 
-.dinapp__rownumber {
-    width: 22px;
-    font-size: 13px;
-    color: rgb(126, 142, 170);
+/* And the three nobody took step back, so this reads as a choice being made rather than
+   as four things being offered to the player. */
+.dinapp__row--passed {
+    opacity: 0.35;
 }
 
 .dinapp__rowlabel {
@@ -11701,8 +12157,7 @@
     color: rgb(226, 234, 248);
 }
 
-.dinapp__row--picked .dinapp__rowlabel,
-.dinapp__row--picked .dinapp__rownumber {
+.dinapp__row--picked .dinapp__rowlabel {
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
 }
@@ -11990,6 +12445,50 @@
     margin-left: -420px;
 }
 
+/* **The strip on a window that cannot spare it.**
+
+   Measured on the data page of the creator: a 900px window gives the page 922 logical pixels,
+   not the 1080 a reference resolution suggests, and the strip takes 276 of them. The page needs
+   about 750, so 922 minus 276 leaves 646 and the cards come apart. At 1080 the same sum leaves
+   804 and nothing moves. Reported 2026-10-17 as "the display is not adapting very well", and
+   the control frame with the tour put away shows the same page whole in the same window.
+
+   So the strip gets smaller where there is no room for it rather than the creator getting a
+   scroller, which would have broken the rule that a creator page fits one screen. Emil keeps
+   his name and his line; what goes is the size of his head. */
+/* The size is NOT here, and it is not an omission. `PhonePanel.Avatar` writes width and
+   height as inline styles on this element, and inline beats every selector in UI Toolkit, so a
+   width written here is loaded, specific and ignored. Two measured runs came back with the class
+   applied and the head unchanged before that was spotted. `GuideOverlay.MeasureStrip` sets the
+   two numbers; the border is an ordinary property and still belongs in the sheet. */
+.guide--tight .guide__portrait {
+    border-width: 2px;
+}
+
+.guide--tight .guide__bar {
+    padding: 10px 20px 11px 20px;
+}
+
+.guide--tight .guide__line {
+    font-size: 16px;
+    -unity-paragraph-spacing: 2px;
+}
+
+.guide--tight .guide__name {
+    font-size: 20px;
+}
+
+/* `height` and not only `padding`. The base rules give these buttons an explicit 42px, and
+   padding does nothing to the height of an element that has one, so the first version of this
+   block was loaded, applied and worth zero pixels. Same miss as the portrait, one line down. */
+.guide--tight .guide__next,
+.guide--tight .guide__skip,
+.guide--tight .guide__later {
+    height: 30px;
+    padding: 0 14px;
+    font-size: 12px;
+}
+
 .guide__portrait {
     width: 96px;
     height: 96px;
@@ -12021,6 +12520,11 @@
 /* The line he is saying. Twenty-five per cent black behind it, as asked, and fully opaque text —
    which is the combination that stays readable over both the office and a white panel. */
 .guide__bar {
+    /* **The peek animates the bar, not the strip.** `.guide` already transitions, and using that
+       would slide the chevron and his portrait about as well, which are the two things that are
+       supposed to be standing still while the message comes and goes. */
+    transition-property: opacity, translate;
+    transition-duration: 0.22s;
     width: 72%;
     min-width: 720px;
     padding: 16px 26px 18px 26px;
@@ -14236,6 +14740,28 @@
 .wb__arrow:disabled {
     opacity: 1;
     color: rgb(60, 70, 88);
+}
+
+/* **A control the player is meant to press, not a picture of one.** These were drawn to show that
+   choosing a mark was coming, so they were deliberately faint, and the first render with them live
+   still read as two grey smudges beside the logo. That is the chevron fault again: on screen and
+   not findable. Twice the size, lit, and they answer the cursor. */
+
+.wb__arrow--live {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    border-width: 2px;
+    border-color: rgb(186, 156, 255);
+    color: rgb(222, 206, 255);
+    font-size: 18px;
+    -unity-font-style: bold;
+    background-color: rgba(28, 20, 44, 0.65);
+}
+
+.wb__arrow--live:hover {
+    color: rgb(28, 20, 44);
+    background-color: rgb(186, 156, 255);
 }
 
 .wb__product {
@@ -22978,6 +23504,36 @@
     color: rgba(150, 162, 186, 0.9);
 }
 
+/* The roll-over switch, at the foot of the same list.
+
+   **It is a Button and this sheet has no rule for a bare one**, so without a class of its own it
+   falls through to the runtime theme and draws the light grey slab that is right in an editor
+   window and wrong on every screen in this game. Every margin is stated, because the theme puts
+   one on every button and an inherited margin has already broken a grid here once.
+
+   Green when it is on, the same green as a live term two rows above it, so the card has one
+   colour for "this is running" rather than two. */
+.tog-work__switch {
+    height: 24px;
+    min-width: 58px;
+    padding: 0 11px 0 11px;
+    margin: 0 0 0 0;
+    -unity-text-align: middle-center;
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    border-width: 1px;
+    border-radius: 12px;
+    border-color: rgba(255, 255, 255, 0.28);
+    background-color: rgba(0, 0, 0, 0);
+    color: rgba(150, 162, 186, 0.9);
+}
+
+.tog-work__switch--on {
+    border-color: rgb(140, 210, 170);
+    color: rgb(140, 210, 170);
+}
+
 /* ---- where the relationship stands ----------------------------------------------------------- */
 
 /* The first version of this had no card at all: a heading, a stripe floating in the middle of
@@ -24174,4 +24730,914 @@
 
 .opsladder__buy--armed:hover {
     background-color: rgb(238, 176, 128);
+}
+
+/* ---- the event venue window -------------------------------------------------------------
+ *
+ * The author's layout, in his order: a panoramic banner, the name large and heavy, the
+ * organiser in cyan under it, the crowd and the regard side by side, the three stand sizes
+ * side by side, and one button at the foot that is grey until a size is picked.
+ *
+ * `Docs/EVENTS_PLAN.md` is the design. Widths here are stated rather than inherited, because a
+ * per-cent width belongs to the panel it was measured in and reusing one has already deformed
+ * two screens in this project.
+ * --------------------------------------------------------------------------------------- */
+
+.venue {
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 1180px;
+    padding: 0;
+    background-color: var(--blue-900);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+}
+
+/* The panorama. 1180x260 when the photographs exist; until then a plate that says so, because
+ * a hole in a window reads as a bug and a caption reads as unfinished. */
+.venue__banner {
+    height: 260px;
+    flex-shrink: 0;
+    background-color: var(--blue-800);
+    background-size: cover;
+    justify-content: center;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ink-faint);
+}
+
+.venue__banner-waiting {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--ink-faint);
+}
+
+.venue__name {
+    margin-top: 22px;
+    margin-left: 28px;
+    margin-right: 28px;
+    font-size: 46px;
+    -unity-font-style: bold;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+}
+
+.venue__organiser {
+    margin-left: 28px;
+    margin-right: 28px;
+    margin-top: 2px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    color: var(--cyan);
+}
+
+.venue__blurb {
+    margin-left: 28px;
+    margin-right: 28px;
+    margin-top: 14px;
+    max-width: 860px;
+    font-size: 13px;
+    color: var(--ink-dim);
+    white-space: normal;
+}
+
+/* The crowd and the regard, on one line, each saying what it does rather than only what it is. */
+.venue__figures {
+    flex-direction: row;
+    margin-top: 22px;
+    margin-left: 28px;
+    margin-right: 28px;
+}
+
+.venue__figure {
+    flex-direction: column;
+    width: 46%;
+    margin-right: 4%;
+    flex-shrink: 0;
+    padding: 16px;
+    background-color: var(--blue-800);
+    border-radius: var(--card-radius);
+    border-left-width: 3px;
+    border-left-color: var(--cyan);
+}
+
+.venue__figure-caption {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--ink-faint);
+}
+
+.venue__figure-value {
+    margin-top: 4px;
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.venue__bar {
+    height: 8px;
+    margin-top: 10px;
+    background-color: var(--blue-900);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.venue__bar-fill {
+    height: 8px;
+    background-color: var(--cyan);
+}
+
+.venue__figure-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    white-space: normal;
+}
+
+.venue__section {
+    margin-top: 24px;
+    margin-left: 28px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--ink-faint);
+}
+
+/* Three tiles across, from the left edge. */
+.venue__tiles {
+    flex-direction: row;
+    margin-top: 10px;
+    margin-left: 28px;
+    margin-right: 28px;
+}
+
+.venue__tile {
+    flex-direction: column;
+    width: 31.3%;
+    margin-right: 2%;
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    padding: 0;
+    background-color: var(--blue-800);
+    border-radius: var(--card-radius);
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0);
+    overflow: hidden;
+    -unity-text-align: upper-left;
+}
+
+.venue__tile:hover {
+    border-color: var(--ink-faint);
+}
+
+.venue__tile--on {
+    border-color: var(--orange);
+    background-color: var(--blue-700);
+}
+
+/* **208, not 104, because the art is portrait and the slot was not.** The booth renders
+ * are 409x610, so a 3.5:1 slot showed an eighteen per cent band through the middle: no top of
+ * the banner, no floor. At 208 the box is about 1.8:1 and a cover crop keeps the counter and
+ * most of the stand. A properly cropped landscape source would be better than either. */
+.venue__tile-art {
+    height: 208px;
+    flex-shrink: 0;
+    background-color: var(--blue-900);
+    background-size: cover;
+}
+
+.venue__tile-roman {
+    margin-left: 14px;
+    margin-top: 10px;
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: var(--orange);
+}
+
+.venue__tile-title {
+    margin-left: 14px;
+    margin-right: 14px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: var(--ink);
+}
+
+.venue__tile-line {
+    margin-left: 14px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-dim);
+}
+
+.venue__tile-price {
+    margin-left: 14px;
+    margin-top: 2px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.venue__tile-note {
+    margin-left: 14px;
+    margin-right: 14px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    white-space: normal;
+}
+
+/* ---- the one button, and what it answers ---------------------------------------------- */
+
+.venue__footer {
+    margin-top: 22px;
+    margin-left: 28px;
+    margin-right: 28px;
+    margin-bottom: 26px;
+    min-height: 62px;
+    justify-content: center;
+}
+
+.venue__ask {
+    height: 56px;
+    margin: 0;
+    font-size: 16px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    /* A styled Button with an explicit height draws its label in the top left corner unless
+     * it is told otherwise. Recorded twice in this project already. */
+    -unity-text-align: middle-center;
+    border-width: 0;
+    border-radius: var(--card-radius);
+    background-color: var(--blue-700);
+    color: var(--ink-faint);
+}
+
+.venue__ask--ready {
+    background-color: var(--orange);
+    color: rgb(26, 14, 4);
+}
+
+.venue__ask--ready:hover {
+    background-color: rgb(255, 156, 66);
+}
+
+.venue__answer {
+    flex-direction: column;
+    padding: 16px;
+    background-color: var(--blue-800);
+    border-radius: var(--card-radius);
+    border-left-width: 3px;
+    border-left-color: var(--orange);
+}
+
+.venue__answer-head {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.venue__answer-head--auction {
+    color: var(--warn);
+}
+
+.venue__answer-line {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--ink-dim);
+}
+
+/* Three dots, one keyframe, three delays. The delays live here so they cannot drift. */
+.venue__dots {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 56px;
+}
+
+.venue__dot {
+    width: 12px;
+    height: 12px;
+    margin-left: 7px;
+    margin-right: 7px;
+    border-radius: 6px;
+    background-color: var(--orange-dim);
+    animation-name: venuethink;
+    animation-duration: 900ms;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+}
+
+.venue__dot--1 {
+    animation-delay: 0ms;
+}
+
+.venue__dot--2 {
+    animation-delay: 160ms;
+}
+
+.venue__dot--3 {
+    animation-delay: 320ms;
+}
+
+@keyframes venuethink {
+    0% { background-color: var(--orange-dim); scale: 0.75 0.75; }
+    45% { background-color: var(--orange); scale: 1.15 1.15; }
+    100% { background-color: var(--orange-dim); scale: 0.75 0.75; }
+}
+
+/* ---- what the stand did, on the day it closed -------------------------------------------
+ *
+ * The cutscene is a rectangle across the top, which is where the author asked for it. Until the
+ * animation exists the tile says so: an absent file has to read as unfinished rather than as a
+ * hole, which is why every loader in this project falls back to a plate.
+ * --------------------------------------------------------------------------------------- */
+
+.evsum {
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 720px;
+    background-color: var(--blue-900);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+}
+
+.evsum__film {
+    /* Half the card was an empty plate while the animation does not exist. The tile has to
+     * read as a place the film goes, not as the main event. */
+    height: 150px;
+    flex-shrink: 0;
+    background-color: var(--blue-800);
+    background-size: cover;
+    justify-content: center;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--ink-faint);
+}
+
+.evsum__film-waiting {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--ink-faint);
+}
+
+.evsum__kicker {
+    margin-top: 20px;
+    margin-left: 26px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--ink-faint);
+}
+
+.evsum__title {
+    margin-left: 26px;
+    margin-right: 26px;
+    margin-top: 4px;
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: var(--ink);
+    white-space: normal;
+}
+
+.evsum__where {
+    margin-left: 26px;
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--cyan);
+}
+
+/* The one thing on this card that is allowed to shout. */
+.evsum__viral {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 26px;
+    margin-right: 26px;
+    margin-top: 16px;
+    padding: 10px;
+    background-color: rgba(242, 138, 48, 0.14);
+    border-left-width: 3px;
+    border-left-color: var(--orange);
+    border-radius: var(--card-radius);
+}
+
+.evsum__viral-word {
+    font-size: 20px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: var(--orange);
+}
+
+.evsum__viral-odds {
+    margin-left: 10px;
+    font-size: 12px;
+    color: var(--ink-dim);
+}
+
+.evsum__gains {
+    flex-direction: row;
+    margin-left: 26px;
+    margin-right: 26px;
+    margin-top: 18px;
+}
+
+.evsum__gain {
+    flex-direction: column;
+    width: 48%;
+    margin-right: 2%;
+    flex-shrink: 0;
+    padding: 14px;
+    background-color: var(--blue-800);
+    border-radius: var(--card-radius);
+}
+
+.evsum__gain-value {
+    font-size: 30px;
+    -unity-font-style: bold;
+    color: var(--good);
+}
+
+.evsum__gain-caption {
+    margin-top: 2px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--ink-faint);
+}
+
+.evsum__said {
+    margin: 18px 26px 24px 26px;
+    font-size: 13px;
+    -unity-font-style: italic;
+    color: var(--ink-dim);
+    white-space: normal;
+}
+
+/* ---- what is coming, on the National Press desk ---------------------------------------- */
+
+.upnext {
+    flex-direction: column;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: var(--ink-faint);
+}
+
+.upnext__heading {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--ink-faint);
+}
+
+.upnext__locked {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    white-space: normal;
+}
+
+.upnext__none {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--ink-faint);
+    white-space: normal;
+}
+
+.upnext__row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 8px;
+    padding: 8px;
+    background-color: var(--blue-800);
+    border-radius: var(--card-radius);
+}
+
+.upnext__words {
+    flex-direction: column;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.upnext__name {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--ink);
+    white-space: normal;
+}
+
+.upnext__where {
+    font-size: 11px;
+    color: var(--ink-faint);
+}
+
+.upnext__cell {
+    flex-direction: column;
+    width: 104px;
+    flex-shrink: 0;
+    margin-left: 8px;
+    align-items: flex-start;
+}
+
+.upnext__cell--bar {
+    justify-content: center;
+}
+
+.upnext__cell-caption {
+    margin-top: 2px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    white-space: normal;
+}
+
+.upnext__days {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.upnext__days--soon {
+    color: var(--warn);
+}
+
+.upnext__free {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: var(--ink);
+    white-space: normal;
+}
+
+.upnext__free--auction {
+    font-size: 11px;
+    color: var(--warn);
+}
+
+.upnext__bar-value {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.upnext__bar {
+    margin-top: 2px;
+    width: 100px;
+    height: 6px;
+    background-color: var(--blue-900);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.upnext__bar-fill {
+    height: 6px;
+    background-color: var(--cyan);
+}
+
+/* The checkbox under National Press. A row, because the note under it is half the control. */
+.earlytoggle {
+    flex-direction: column;
+    margin-top: 12px;
+    padding: 10px;
+    background-color: var(--blue-800);
+    border-radius: var(--card-radius);
+    border-left-width: 3px;
+    border-left-color: var(--cyan);
+}
+
+.earlytoggle__note {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    white-space: normal;
+}
+
+/* The take-it button, under the answer rather than in place of it. */
+.venue__take {
+    margin-top: 12px;
+}
+
+/* The place a story is about. Flat, rectangular, and it reacts, because it is a way in. */
+.venuetag {
+    align-self: flex-start;
+    margin: 8px 0 0 0;
+    padding: 4px 10px;
+    height: auto;
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: rgb(8, 24, 40);
+    background-color: var(--cyan);
+    border-width: 0;
+    border-radius: 3px;
+}
+
+.venuetag:hover {
+    background-color: rgb(148, 236, 244);
+}
+
+/* The price face, square, sitting against the server load box it is read beside. */
+.topbar__price {
+    width: 18px;
+    height: 18px;
+    margin: 0 0 0 2px;
+    padding: 0;
+    border-width: 0;
+    border-radius: 3px;
+    background-color: var(--blue-800);
+    justify-content: center;
+    align-items: center;
+}
+
+.topbar__price:hover {
+    background-color: var(--blue-700);
+}
+
+/* A wire row that goes somewhere says so under the cursor, and nothing else on the wire does. */
+.wire-row--goes {
+    border-width: 0;
+    background-color: rgba(86, 214, 226, 0.05);
+}
+
+.wire-row--goes:hover {
+    background-color: rgba(86, 214, 226, 0.16);
+}
+
+/* The rule over the events section, in the tag colour so the two read as one subject. */
+.rule--event {
+    background-color: var(--cyan);
+}
+
+/* ---- a skill card, as points rather than paragraphs -------------------------------------
+ *
+ * Asked for on 2026-10-25: the cards were two blocks of prose and nobody was reading them. A
+ * skill is a list of things it moves, so it is drawn as one, with the same points on both
+ * bands and the signs reversed.
+ * --------------------------------------------------------------------------------------- */
+
+.insight__point {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3px;
+}
+
+.insight__point-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--ink-dim);
+    white-space: normal;
+}
+
+/* The marks are the thing the eye lands on, so they are heavy and they are the only colour. */
+.insight__point-marks {
+    flex-shrink: 0;
+    margin-left: 10px;
+    min-width: 34px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    letter-spacing: -1px;
+}
+
+.insight__point-marks--up {
+    color: var(--good);
+}
+
+.insight__point-marks--down {
+    color: var(--bad);
+}
+
+/* Amber, and never hidden: a skill that does not move something a player assumes it moves is
+ * the most useful line on the card. */
+.insight__point-marks--none {
+    color: var(--warn);
+}
+
+/* ---- folding the tour away ---------------------------------------------------------------
+ *
+ * Asked for on 2026-10-25: a thick yellow chevron beside his head that hides him and his
+ * message, leaving the arrow and his portrait just above the bottom bar.
+ *
+ * The strip is already `position: absolute; bottom: 96px`, which is where the folded pill
+ * belongs, so folding hides two children and moves nothing. `.guide--high` still applies on
+ * the screens that own the bottom of the window, and the folded pill inherits it for free.
+ * ------------------------------------------------------------------------------------------ */
+
+.guide__fold {
+    flex-direction: row;
+    align-items: center;
+    height: 46px;
+    margin-left: 10px;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 22px;
+    padding-left: 11px;
+    padding-right: 15px;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 3px;
+    border-color: rgb(255, 209, 56);
+    border-radius: 23px;
+    background-color: rgba(4, 6, 11, 0.94);
+    -unity-text-align: middle-center;
+}
+
+/* **The word, and why a bare chevron was not enough.** The disc alone shipped on 2026-10-26 and
+   the tester who asked for the control could not find it. A proof render said why: beside a 96px
+   portrait a small yellow circle reads as part of the portrait, while every other control in this
+   strip is a labelled rectangle along the bottom edge. Geometry tests had it on screen at five
+   widths the whole time. */
+
+.guide__fold-word {
+    margin-left: 8px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: rgb(255, 209, 56);
+    -unity-font-style: bold;
+}
+
+/* Every margin is stated. The runtime theme puts one on every button, and inheriting it is what
+   once made four trait cards 1352px wide against a 1340px page. */
+
+.guide__fold:hover {
+    border-color: rgb(255, 232, 140);
+    background-color: rgba(34, 26, 4, 0.95);
+}
+
+/* The chevron fills the button, so the drawn shape is sized by the button and not by a second
+   number that has to be kept in step with it. */
+
+/* The chevron is sized, not stretched: it now shares the row with a word, and a flex-grow here
+   would hand it the whole pill and leave the label nowhere to sit. */
+
+.guide__fold > GuideFoldArrow {
+    width: 21px;
+    height: 21px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+/* Folded, the speaker is the whole strip, so the offsets that hold it up and to the left of a
+   720px message bar have nothing left to be offset from. */
+
+.guide--folded .guide__speaker {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* ---- his next line, over a folded strip -----------------------------------------------------
+ *
+ * Asked for on 2026-10-25. Folded, there is no NEXT to press, so a step the player satisfies by
+ * doing the thing moves him on in silence. The line comes out for `PeekMilliseconds`, then goes
+ * back, and the chevron beside it is how to open him up and read it properly.
+ *
+ * The away state is applied first and removed a frame later, because a transition needs a value
+ * to come from and an element has none on the frame it first appears. Same trick as
+ * `.guide--arriving` above.
+ * ------------------------------------------------------------------------------------------- */
+
+.guide--peek-away .guide__bar {
+    opacity: 0;
+    translate: 0 22px;
+}
+
+/* ---- which build this is -------------------------------------------------------------------
+ *
+ * In the menu and on every screen of a campaign, in the place the sandbox mark used to have, so
+ * somebody writing a report can quote the version without being asked for it.
+ *
+ * Amber rather than the sandbox red: a test build is a fact about the file, not a warning that
+ * the numbers on screen were handed out rather than earned.
+ * ------------------------------------------------------------------------------------------- */
+
+.tester-mark {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(255, 226, 150, 0.82);
+    background-color: rgba(92, 64, 10, 0.55);
+    padding: 2px 10px;
+    border-radius: 3px;
+}
+
+/* ---- a story and a listing that go somewhere -----------------------------------------------
+ *
+ * Reported on 2026-10-25: the rows under NADCHODZI counted days and free stands beside a price
+ * and took no clicks at all, and an event story could only be reached by its place tag. Both are
+ * controls now, and both say so before they are pressed.
+ *
+ * Every margin is stated, because a styled Button inherits the runtime theme's own and that once
+ * made four trait cards 1352px wide against a 1340px page.
+ * ------------------------------------------------------------------------------------------- */
+
+.story--goes {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    border-width: 0;
+    -unity-text-align: upper-left;
+    background-color: rgba(86, 214, 226, 0.05);
+}
+
+.story--goes:hover {
+    background-color: rgba(86, 214, 226, 0.14);
+}
+
+.upnext__row--goes {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    -unity-text-align: upper-left;
+}
+
+.upnext__row--goes:hover {
+    background-color: rgba(86, 214, 226, 0.14);
+}
+
+/* ---- asking once before doing it ------------------------------------------------------------
+ *
+ * Red at rest, amber once it has asked. Not green at either end: neither answer is the safe one,
+ * and colouring the resting state green would say that pressing it is the ordinary thing to do.
+ *
+ * Every margin is stated. The runtime theme puts one on every button, and inheriting it once made
+ * four trait cards 1352px wide against a 1340px page.
+ * ------------------------------------------------------------------------------------------- */
+
+.confirm {
+    margin-left: 10px;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 7px 16px;
+    border-width: 1px;
+    border-color: rgba(226, 104, 104, 0.75);
+    border-radius: 4px;
+    font-size: 13px;
+    color: rgb(240, 176, 176);
+    background-color: rgba(58, 16, 16, 0.85);
+    -unity-text-align: middle-center;
+}
+
+.confirm--armed {
+    border-color: rgb(255, 209, 56);
+    color: rgb(24, 20, 6);
+    background-color: rgb(255, 209, 56);
+    -unity-font-style: bold;
+}
+
+/* What a step is waiting for. A label, never a disabled button: a disabled control dispatches no
+   pointer event, so it cannot explain itself, and this project has shipped that three times. */
+
+.guide__waiting {
+    margin-right: 10px;
+    padding: 7px 16px;
+    border-width: 1px;
+    border-color: rgba(150, 170, 200, 0.45);
+    border-radius: 4px;
+    font-size: 13px;
+    color: rgba(190, 206, 230, 0.85);
+    background-color: rgba(28, 36, 52, 0.75);
+    -unity-text-align: middle-center;
+}
+
+/* The one step that hands the player something, so the eye stops on it. Quiet: a bright green bar
+   under a face reads as a reward screen, and this is a sentence with an offer in it. */
+
+.guide--gift .guide__bar {
+    border-left-color: rgb(126, 191, 143);
+    background-color: rgba(10, 30, 18, 0.92);
+}
+
+/* ---- the face inside the servers banner ------------------------------------------------------
+ *
+ * Asked for on 2026-10-26: smaller again, and a section of the banner rather than a box beside
+ * it. Load and price are both "how the service is going", so they read as one panel with a rule
+ * between them instead of two unrelated things competing at the busiest end of the bar.
+ * ------------------------------------------------------------------------------------------ */
+
+.topbar__load-split {
+    width: 1px;
+    height: 16px;
+    margin-left: 10px;
+    margin-right: 8px;
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* The drawing inside the button. Without this the 46px face is simply clipped by an 18px box. */
+
+.topbar__price .sup__face {
+    width: 16px;
+    height: 16px;
+    margin-right: 0;
 }

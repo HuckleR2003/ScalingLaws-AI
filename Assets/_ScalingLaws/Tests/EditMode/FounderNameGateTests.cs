@@ -140,6 +140,7 @@ namespace ScalingLaws.Tests.EditMode
                     (Func<bool>)(() => ready),
                     (Func<string>)(() => "still missing"),
                     null,
+                    null,
                     null
                 });
 

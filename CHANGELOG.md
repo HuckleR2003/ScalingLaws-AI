@@ -38,6 +38,294 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+### The headline
+
+**Two of the three deduplication passes were never worth choosing, and one of them was sold behind
+a research node.** The pass was applied after the corpus had been clamped to what the run asked
+for, and the compute bill was read from the figure before it, so all three options trained the same
+tokens over the same days for the same money and only quality moved. Standard scored 1.000 against
+Raw at 0.920 and Aggressive at 0.912, which made the untouched default the correct answer in every
+run in the game.
+
+Scrubbing a crawl is a fact about how many tokens the mix holds, so it now happens where the corpus
+is measured and it moves the ceiling on what a run can ask for.
+
+### Added
+
+- **A company of your own is the only one you configure yourself.** The map rectangle becomes a
+  settings sheet in three pages: what the company is called and the one thing it is known for,
+  then starting cash traded against what the founder already knows, then its mark. It used to be
+  the one option on that screen that gave nothing at all: no trait, the lowest reputation of
+  anything on the page, and the same money as everybody else.
+- **Starting cash buys knowledge.** The slider runs from $12M down to $5.3M, and every step down
+  the ladder hands over a research node the company would otherwise have to pay for twice, in
+  points it has not earned yet. Sharded optimizer states is on that ladder, so the position also
+  decides whether the scale ceiling opens on day one.
+- **Seventeen marks to choose from**, picked on the browser mock the management page already
+  draws. The two arrows beside that mark have been drawn and disabled since August, with a
+  tooltip saying the choice was coming. It is here.
+- **SKIP TUTORIAL, from your second campaign onwards.** It does not appear on a first run: a new
+  player offered a way past the tour will take it and then be alone in a game with fifteen tabs.
+- **The price control now says what your quality is worth.** One line under it: how many points
+  this product sits above or below the best thing on the market, and the multiple on price that
+  buys at the same appeal. A model one point ahead can carry 1.16x, five points 2.07x, ten points
+  4.28x. **This is not a new rule.** Capability has entered the demand term additively and price as
+  its logarithm since the term was written, so the trade was always there and no screen had ever
+  mentioned it. A tester asked for quality to let you charge more, which turned out to be a request
+  for a sentence rather than for an economy. It reads from the same two weights the audience
+  decides by, so the figure beside the control cannot drift from the rule behind it.
+
+### Changed
+
+- **The deduplication pass decides how much corpus there is.** Keeping the repeats leaves more than
+  a scrubbed mix; a hard scrub leaves less and can now leave too little to feed the run, which is
+  refused with the number it actually holds. The run is sized and billed from what is left.
+- **Raw is the only pass that can feed a run bigger than the scrubbed corpus**, which is what it was
+  always described as being for.
+- **Aggressive now produces a better model than not having it**, with corpus to spare, at the same
+  compute cost. It is gated behind Corpus deduplication and that node previously handed back a
+  worse model than never researching it.
+- Standard is unchanged at exactly 1.0 on both axes, so a campaign that never opens this control
+  plays exactly as it did.
+- The note under the three cards said "fewer tokens, worth more each", which only ever described
+  one of them. It now says the control works in both directions.
+
+### Fixed
+
+- **Emil's fold button could not be found.** It was a 46px yellow disc with no label beside a 96px
+  portrait, while every other control on that strip is a labelled rectangle along the bottom edge.
+  It carries the word HIDE, or SHOW once he is folded, and the outline went from two pixels to
+  three. It was on screen at every window width the whole time, which is why no test caught it.
+- **Terms with a lab can roll over on their own now.** A switch per lab, off by default, under
+  the list of what you have going with them. It signs the next term that runs out on the same
+  terms and says so in the feed. **It can never charge what the company does not have**: when
+  the money or the points are short nothing moves, the offer falls back onto the table for its
+  fortnight, and that is said in the feed as well. Asked for by a tester, who also chose this
+  shape over one that charges whatever the balance is, and gave the reason: the cash on one of
+  these is the fee for setting it up, and a company that has paid it once is continuing
+  something rather than buying it again. Save v77.
+- **BOOK A STAND on the map closed the map and opened nothing.** The city holds no reference to
+  the company on purpose, so the press records which venue was asked about and leaves, and the
+  desk opens the stand window on the way back in. That handover was running from inside the
+  interface build, where it switched to the news desk, and four lines later the startup put the
+  office back over it. One frame after that the window mounted itself into a page the player was
+  no longer looking at. It runs after the opening screen now, because it is the one thing in the
+  build allowed to overrule it. Reported as three words and three seconds of video.
+- **A venue would not say what a stand costs.** The card printed a dash for the hire and a dash
+  for the capacity while the catalog held the visitors and the prestige and derived the hire from
+  them. Media Plaza reads 24,000 visitors and $39,648 a stand, and printed neither. It reads the
+  catalog now, the same way the power plant row beside it already did, including where the door
+  is not open yet: a place that will not say what it costs is worse than one that says what it
+  costs and will not let you in.
+- **Three reasons a training run can be refused were in English in a Polish game.** The
+  architecture not being published yet, the data mix being short of the tokens asked for, and
+  the run going over the day limit, all sitting beside three refusals that were keyed properly.
+  They are joined into one sentence, so a Polish player could be told in two languages at once
+  why their run would not start. They were interpolated literals rather than keys, which is why
+  the test that checks every key exists could not see them. All four numbers in them are
+  formatted invariantly, which is the fifth time that has had to be said in this project.
+- **Two power stations stood in the city and answered a click with nothing.** Both pins carried
+  the right kind and the right category and no place name, so there was no ring at their feet, no
+  card when they were clicked, and nothing for a filter to light up. That is one fault and it was
+  reported three times, as filters that do nothing, as three places needing a circle, and as a
+  lease button that does nothing. The buildings are called Riverside Plant and Coastal Plant and
+  the two catalog places nobody had pinned were the riverside plant and the coastal plant, so
+  there was nothing to choose between. They carry their names now and the guard that was failing
+  on them is green because they were named, not because it was softened.
+- **The phone offered four things and answered every one of them the same way.** The chat app's
+  opening screen listed Contact List, Messages, ToDo list and Achievements, numbered one to four,
+  and three of those name features this game has elsewhere. None had its own press, but the
+  handset carries a universal skip and a click bubbles up to it, so every row opened the
+  conversation. A control that answers each choice identically reads worse than one that does
+  nothing. The numbers are gone and the rows nobody took now fade, so the screen reads as a
+  selection being made rather than a question being asked.
+- **Capacity bought from an ally never reached the fleet.** `AlliedPetaflops` was computed, printed
+  on the alliance card, and read by nothing inside the rules, so the deal charged its fee, sat on
+  the list as live, showed a figure and added nothing to any run. It joins the fleet now, with the
+  memory behind it, at both the read-only accessor and the day that actually runs. The tenth
+  finished mechanism in this project with no path into the rules, and it had a passing test of its
+  own that proved the arithmetic and never asked whether anybody received it.
+- **A fleet starving its own cards said so in a percentage and never in a sentence.** Owned
+  accelerators run at the worst of their host, memory and fabric ratios, down to fifteen per cent,
+  and the figure had been on the profile since the rule was written with one test and no screen
+  reading it. A player who bought cards and no hosts could only conclude that owning hardware does
+  not work, and a tester did. The fleet page names the missing part and how many cards it can feed.
+- **Hiring opened on the last job chosen inside it**, not the one whose card the player pressed, and
+  drew that job's shortlist. Reported twice by the same tester, the second time as "you still
+  havent fixed this", because the first report was never written down. Every route in now states
+  the job it is filling and a test reads the source and fails on a new one that does not.
+- **The skill cards read as more lower and less lower.** The label carried the direction and so did
+  the arrows, so a falling arrow beside "Lower cost of serving a token" was the two multiplying.
+  Thirteen effects have two written phrases now, one per direction in each language, and the arrows
+  carry strength alone. Not a prefix: Polish adjectives agree with the noun in front of them.
+- **Markers on tall buildings were out of frame.** The column above a marked place was a flat ninety
+  metres whatever it stood on, so a shop got one twice its own height and a tower got one starting
+  two hundred metres up, while the ring at its foot shrank to the tower's narrow footprint. Both
+  halves failed on the same buildings, which is why the rival headquarters were the ones reported.
+- **The empty PREVIEW slot is gone from the site card.** No interior still, no frame. Dropping one
+  into `Resources/Map/Interiors/` still brings it back by itself.
+- **No slider in the game could be dragged.** The handle could be pressed and the groove could be
+  clicked, and that was all: fourteen of the twenty five sliders rebuilt their own page on every
+  change, which destroyed the handle under the cursor and ended the drag on its first pixel.
+- **And then the figures stood still while it was dragged.** Holding the page rebuild until the
+  handle is let go is what made dragging possible, and it left seven controls moving against
+  readings that only caught up on release, which is most of what a slider is for. The rent meters
+  and the capacity band, the compute split, the research budget and the points it buys, the
+  revenue share, the free tier and both release price controls are painted in place now, beside
+  the handle rather than around it, so the figure the player is aiming at follows the cursor. The
+  expensive half of each page still waits for the release.
+- **The company trait and the founder's own traits collided.** A trait the founder had already
+  picked could be chosen again for the company two pages later, and the founder quietly lost it,
+  spending one of the two picks the creator promises on nothing. Those tiles are drawn as taken
+  and cannot be pressed.
+- **Opening the model creator cut a large rented fleet down to 40,000 petaflops.** The slider's
+  range takes the fleet the company already has as a floor, so it can never clamp the player's own
+  setting down, and then threw that floor away again on the last line by capping the answer at the
+  largest fleet the control offers. The rent handle is one shared control that every repricing
+  re-ranges, a slider pulls its value into the range it is handed, and the creator writes the
+  handle back to the company. So a company renting more than the cap lost the difference by
+  opening a tab, without ever opening the compute page. It is reached by the button that offers to
+  raise the rent so a blocked run can start, which looks for capacity up to 400,000. Reported
+  twice, measured four ways without reproducing, and found on the fifth try after the tester said
+  he could not remember what he was doing but had been playing for a while, which is what ruled
+  out every path that starts on a fresh screen.
+- **And the interface could agree to rent a fleet on the player's behalf.** Moving the rent handle
+  is how a player says yes to a daily bill, and a slider that is given a narrower range raises
+  exactly the same event as a hand on the handle. Nothing told them apart, so a range that moved
+  for any reason committed whatever the handle happened to be reading and the company started
+  paying for it. A company renting nothing, with the handle parked high while the player thought
+  about it, could be billed for a fleet because its audience shrank.
+
+### Save compatibility
+
+**Save v76.** One new field: the mark the player chose for their own company, stored by name so
+that adding another mark to the folder can never renumber an existing badge into somebody else's.
+A campaign saved in 0.7.6 loads and continues, and gets the first mark, because it was played in a
+game where nobody was ever asked to pick one.
+
+The deduplication change needs no migration of its own: the pass has been on the blueprint since
+it existed, and what moved is how it is read.
+
+### Under the hood
+
+- 1,761 EditMode tests across 216 fixtures and 123 PlayMode across 24, all green. The red flag
+  raised yesterday is down: `MapPinTests` passes because the two nameless pins were named.
+  Measured 2026-11-01.
+- `SliderDragTests` measures the two candidate causes of the undraggable sliders apart: a plain
+  slider on this stylesheet drags perfectly and the creator one leaves the panel on its first
+  change. `SliderWiringTests` is the ratchet, reading every file in `UI/`.
+- `MarkChooserTests` presses the mark arrow after ten rebuilds of the page and asserts the mark
+  moved one place, because subscribing per rebuild would have looked right in every screenshot.
+- `CompanyMarkPersistenceTests` carries the mark through a save and holds the v75 to v76 step.
+- `DeduplicationTests` holds the three regimes: a hard scrub wins with corpus to spare, the
+  untouched pass wins when a scrub would leave too little, and the raw crawl wins when the run is
+  bigger than a scrubbed corpus can feed. The guard is that each pass is the right answer in
+  exactly one of them.
+- `DeduplicationReachTests` drives the cards on the DATA stage and asserts the choice reaches the
+  blueprint, which is the fault that once shipped every released model typed as general with 244
+  tests green.
+- `GuideFoldReachTests` renders the tour strip at five widths and writes proof frames, because the
+  geometry tests passed on the build nobody could find the button in.
+- `NumbersTheRulesNeverReadTests` is the third reachability sweep and it closes the gap that let
+  allied capacity ship as a number on a card that entered no rule. It reads every public
+  computation in the simulation layer and lists the ones nothing inside that layer reads back.
+  Measured: **875 computations, 130 read nowhere in the rules.** Most of those are correct, because
+  a report type exists to be read somewhere else, so the fixture is a ratchet on today's list
+  rather than a demand that it be emptied. A write is not a read, which is the line that makes it
+  work: the first version counted a constructor clamping its own field and therefore missed the one
+  member already known to be dead.
+- `RentCeilingTests` measures the ratchet promise **above** the cap, at four fleet sizes. It held
+  that promise at 9,000 petaflops before today, and above 40,000 is the only place it could ever
+  have broken, so the guard could not reach the fault it was written for.
+- The campaign probe said fourteen years and simulated five. The day loop returns an empty report
+  once a company is insolvent, so every year after the death year was a copy of the row above it
+  and the table printed those as data, which made the late game read as measured and flat. It now
+  states how many years were simulated, marks the rest as not simulated, and carries a column for
+  the player's capability as a share of the frontier, because every funding gate in the game is
+  written as a share of it.
+- The probe also prints the market with nobody trading in it, a token price against demand table
+  across fourteen years, and what a capability point and a model type are each worth in price.
+  Those three answer a tester's balance reports with arithmetic instead of opinion.
+
+---
+## [0.7.6] - 2026-10-26
+
+**A tester played 0.7.5 for an hour and found that the events system could not be entered at all.** The
+news desk announced city events, counted the days to registration and listed how many stands were
+still free, beside a price. None of it could be pressed. `EventVenuePanel` is a finished screen with
+stand sizes, prices and an auction, and on 25 October it had no caller anywhere in the game;
+`TryRegisterForStand` had none in `UI/` either. The simulation could sell a stand and no player
+could buy one.
+
+It is the fourteenth finished mechanism this project has shipped with no control on top of it, and
+the reason this one got out is recorded plainly: the sweep that finds exactly this fault is step two
+of the pre-build checklist in the contributor notes, and it was not run before 0.7.5 was built.
+
+### Added
+
+- **Stands can be bought and bid for, from three places.** The rows under NADCHODZI on the news
+  desk, the event story itself, and the book button on the city map all open the same window. One
+  window, one place the money moves, three ways in.
+- **The sweep is a test now, not a step somebody has to remember.** It reflects over every public
+  `Try*` on the simulation and fails on any that no screen calls. On its first run it found two
+  more: `TryPlaceFurniture` and `TryStoreFurniture`, which the build mode bypasses by moving
+  pieces through `DecorPlan` directly. Those are recorded as a pinned set rather than excused, so
+  the guard fails if anything new goes dark **and** if either of them is fixed or deleted.
+
+### Fixed
+
+- **The cousin rang in the middle of his own tutorial and the tutorial never came back.** Releasing
+  the first model opened the support desk, which telephones with a walkthrough offer; taking it
+  replaced the tour, and the player was left part way through a conversation still explaining how
+  to name a version of a model they had already released. Nothing else telephones now until the
+  opening tour is finished. The rule lives in `GuideProgress` so it can be tested without a scene,
+  and a second guard reads the shell and fails if any future call offers a walkthrough without
+  asking first.
+- **Every skill card said "higher is better" and three of them read as the opposite.** "What the
+  company costs to run" beside a green double arrow says more expensive to anybody who has not read
+  the code. The lines are the saving now rather than the cost, on management, serving, rented
+  compute and safety incidents, and not one number changed. The "score the model comes out at" line
+  is gone from the two cards that carried it: saying out loud that no founder skill bends the
+  scaling law is worth reading once, and on two cards, both as a tilde, it had become the line
+  everybody learns to skip.
+- **An event story could only be reached by the small place tag underneath it.** The whole card is
+  a control now. The tag still goes to the map and the card goes to the stand window, and the tag
+  stops its own click so one press cannot do both.
+
+- **The cousin offered to pay for the first research node and then waited for nothing.** A
+  tutorial step can name something the game has to actually do before it is over, and the step
+  that hands over the free node did not name one: so it drew a NEXT that walked past the gift, and
+  picking a node left his offer sitting on the screen. Reported as the line not going away, which
+  is exactly what it looks like. It waits for the node now, and the two reports were one fault.
+- **Steps that wait for the game say what they are waiting for.** They drew no button at all,
+  which was honest and unreadable: the strip sat there while the player looked for something to
+  press. A label rather than a greyed button, because a disabled control dispatches no pointer
+  event and cannot explain itself, which this project has shipped three times.
+- **The model creator keeps its whole height while the tour is folded away.** The strip used to
+  take a slice out of the one page in the game that must not scroll. It takes nothing now unless
+  Emil is actually on screen, and the chevron beside his head is how to get the page back.
+- **The face on the top bar was a 46px drawing inside a 20px button.** Nothing in the bar ever
+  overrode its size, so shrinking the button would have changed nothing. It is 16px in an 18px
+  box now, in its own section of the servers banner rather than a box beside it, and hovering it
+  gives both prices and then, under a rule, how the support desk is doing. The old tooltip said
+  one thing and the author reported it as saying nothing.
+
+### Added
+
+- **A button that asks before it acts.** `ConfirmButton` turns amber and says "sure?" on the first
+  press, acts on the second, and disarms itself when the pointer leaves so a half-armed control is
+  never left for a later stray click. One element, never two swapped over: replacing a control
+  between the press and the release is the fault that broke the first playtest of the tour. It is
+  on the gift step first, as the way to turn the node down.
+
+### Save compatibility
+
+**Nothing changed.** No new fields, no version bump, and a 0.7.5 campaign opens and plays.
+
+---
+
+## [0.7.5] - 2026-10-25
+
 **A product's chart was reporting the company's bank account.** The revenue graph on the lead model
 banner summed every cash line in the ledger, so a state grant, a loan drawdown, the payroll and a
 tax demand were all drawn as columns of one model's month, inside a card with that model's name at
@@ -49,6 +337,49 @@ first two fixed the part somebody had looked at. The figures beside the chart we
 company's month in September; the follower banners were given their own model's revenue a fortnight
 before that, for this exact reason. Nothing measured which series a banner was handed, so both
 repairs landed without closing the fault.
+
+### Added
+
+- **Four of the seven founder skills do a second thing, and the cards say what.** Each skill used to
+  move exactly one number, and for three of them that number was something a player cannot see at
+  any single moment: Development moved the *spread* of a training run around its projection, which
+  is invisible when you only ever get one finished model; Teamwork moved how late a growing team
+  stops paying off; Concept moved research depth. The seven cards are lists of what the skill moves
+  now, with arrows for how hard, and the four new effects are:
+  - **Development makes a run go faster.** 1.16x at level 100, which is about a seventh off the
+    calendar. Deliberately a quarter of the skill, because its first effect already buys
+    predictability and letting one level buy a full share of the calendar as well would be the same
+    point paid for twice. It does **not** touch the score the model comes out at, and the card says
+    so with a tilde rather than leaving the line out: capability is the scaling law applied to
+    compute and corpus, and no founder is allowed to bend it.
+  - **Teamwork keeps staff.** Six points of loyalty out of a hundred at the top of the skill, never
+    the largest term in the reading: the pay swing is sixteen points and five years of service is
+    thirty, so being good with people does not get a company out of paying the going rate.
+  - **Concept gathers a following sooner.** 1.35x on how fast fans arrive, and nothing at all on how
+    many there are in the end. That ceiling is users times regard squared, earned by serving people
+    well and being liked, and a skill that raised it would be a way of being admired without having
+    done anything.
+  - **Data Engineering rents capacity cheaper.** 12% off the rented half of the fleet at level 100.
+    Three fifths of the skill rather than all of it, because the fleet bill already passes through
+    the operating-cost multiplier that Management moves, so the full skill would be a second
+    discount on the same dollar. A test holds that the two skills together never take 30% off.
+
+  Three of the four are the same discipline: they buy **time, not ceiling**. That is what made them
+  safe to add to an economy balanced without them, because the long-run figures the balance suite
+  measures are the ceilings and no ceiling moved.
+- **Emil folds away.** A thick yellow chevron beside his head hides him and his message, leaving the
+  arrow and his portrait just above the bottom bar, and a second click brings him back. Asked for
+  because the tutorial strip sits over the foot of whatever page is open and there was no way to put
+  it down without ending it. Folding changes nothing about the tour: the step does not advance, a
+  waiting step goes on waiting, and the two buttons that end it still say what they do. Resting the
+  pointer on the chevron gives the line he is on, which is the only way back to it while he is away.
+- **And his next line shows itself for a moment when it arrives.** Folded, there is no NEXT to
+  press, so the only way past a step is doing the thing it asked for, and that used to move him on
+  in complete silence. The line now slides out for 1.2 seconds and goes back. **Nothing on it can
+  be clicked while it does**, which is a departure from what was asked for: that bar carries NEXT,
+  the step offer, LATER and SKIP, and a second of it under the cursor is a second in which a click
+  meant for the page ends the tutorial. It is something to read, and the chevron beside it is how to
+  open him properly.
 
 ### Changed
 
@@ -73,6 +404,64 @@ repairs landed without closing the fault.
   sheet number is in that corner and the bar was drawn through it.
 
 ### Fixed
+
+- **The tour strip no longer takes a head's worth of the creator with it.** Reported on 2026-10-17
+  as "the display is not adapting very well", seen on a laptop. Emil's strip is compact while he
+  is standing over the model creator: the portrait halves to 52px, the bar's padding and the line
+  come down, and the three buttons go from 42px to 30px. Measured through `TabProofTests`, which
+  now prints the creator's stage with the strip up and with it put away in the same run: the stage
+  went from 409px to 421px at 1600x900 and from 254px to 266px at 1366x768.
+
+  **Two of those rules were loaded, specific and worth nothing until today, for two different
+  reasons, and both are worth knowing.** `PhonePanel.Avatar(96)` writes the portrait's width as an
+  inline style, and inline beats every selector in UI Toolkit however many classes it carries, so
+  `.guide--tight .guide__portrait { width: 52px }` could never win; the size is set from
+  `GuideOverlay.MeasureStrip` now and the sheet says why it is not there. The buttons carry an
+  explicit `height: 42px` in their base rule, and the compact block wrote `padding`, which does
+  nothing to the height of an element that has one.
+
+  **What this does not do is make the page fit, and the measurement says so plainly.** The data
+  stage needs 687px and the strip costs 266 of them, so shrinking the strip was never a path to
+  the whole page: there is no size of strip short of none that leaves room for it. The remaining
+  gap is a decision about the tour rather than about the stylesheet, and it is not made here.
+
+  **Three wrong diagnoses were published inside this repository before the right one**, and the
+  cause was the fixture rather than the reading. `TabProofTests` logged the page geometry *after*
+  putting the tour away, so 922 and 787 were the page with no strip on it and were quoted twice as
+  if they were the window; the window is 1059 logical pixels at 900 and 1080 at 1080, twenty one
+  apart, which is nowhere to put a threshold. The first attempt gated the compact strip on exactly
+  that number and therefore never fired on the window it was written for. A measurement taken in a
+  state nobody is asking about is worse than no measurement, because it gets quoted.
+
+- **Nine refusing controls answer instead of going dead.** Every one of them costs money or changes
+  the company, and every one was `SetEnabled(false)`, which dispatches no pointer event, so none of
+  them could say why: the parts shop's order confirmation, commissioning a power plant, buying a
+  rival out, paying for a smear, filing a suit, signing the state programme, starting a sector,
+  accepting a grant, and WYDAJ on the release planner. They carry `.button--shut` now, which greys
+  them and keeps the click.
+
+  **Seven of the nine needed no new sentence at all**, which is the part worth keeping. The click
+  runs the same `Try` method it always would, the simulation refuses it and hands back its own
+  wording, and the panel already had somewhere to print that. So the reason a player reads is the
+  reason the rules actually used, and there is no second copy of it in `UI/` to drift. Two were
+  missing an `AudioDirector.Deny()` on the failing branch and now have one.
+
+  WYDAJ is the exception and the only one given an answer of its own: nothing refuses it, it is
+  simply blank-name validation, and the empty box is two panels further up the page where nobody
+  connects it to a grey green button. It puts the cursor in the name field.
+
+- **The task counter stopped being drawn across PO TRENINGU.** `TaskBanner` parks itself on the
+  title line because, as its own comment says, every page in this game leaves the right of that
+  line clear. The model creator does not: its stage rail runs the full width in eight pills, so the
+  rolled up counter landed on the last one and the two read as a single broken word. The strip
+  stays off that one screen, which already carries a numbered rail and its own way forward.
+
+- **The tour points at the two panels it is talking about on the data page.** `create_data` was the
+  only step in the creator act with no highlight, and a highlight is also a scroll here, so Emil
+  said "pick what you have" over GRANICA WIEDZY and DEDUPLIKACJA while both sat below the fold.
+  Measured: the stage keeps 421px of the 687 that page wants while the strip is up, so the two
+  panels could not have been on screen. It rings `choice-row`, which on that page is only ever
+  those two rows.
 
 - **The research board stopped opening four screens down.** Reported on 2026-10-17 as "research
   just sometimes opens at the bottom". The board scrolls the page to the era band holding the
@@ -125,12 +514,340 @@ repairs landed without closing the fault.
 - **A chart with nothing below the line uses its whole height.** The baseline sat two thirds down to
   leave room for a losing day, and revenue has none, so every column was scaled into the lower third
   and a good month looked much like a flat one.
+- **Staff loyalty had three readers and all three were screens.** The team list, the person card and
+  the benefits panel each assembled the company-wide half of that figure by hand, which was fine
+  until a fourth term arrived and would have reached two of the three. `CompanyState.LoyaltyOf` is
+  the one reading now. Also corrected: a comment on the benefits panel claiming the average there
+  reads the same function the poaching maths reads, so a loyal-looking company is genuinely hard to
+  raid. It reads a different function, and nothing in the game raids the player at all. The
+  sentence is kept in the file marked false, because it is the kind of claim that gets believed
+  twice.
 
 ### Save compatibility
 
 **Nothing changed.** No new fields, no version bump, and a 0.7.0 campaign opens and plays.
 
 ### Under the hood
+
+- **`SENTIS_ANALYTICS_ENABLED` is off the Standalone defines, deliberately rather than by accident.**
+  Every batchmode run stripped it and left the file dirty, so it had been read twice as an unwanted
+  side effect of testing and left uncommitted. It is neither: Sentis is not in `manifest.json`, not
+  in `packages-lock.json`, not in any assembly definition and not named anywhere under `Assets/`,
+  so the symbol is a leftover from a package that is gone and nothing compiles against it. Taking
+  it out on purpose is what stops it turning up as an unexplained change after every test run.
+
+- **A face on the top bar for how the price is being taken.** Asked for on 2026-10-25, beside the
+  server load it is read next to, and it answers the measurement above rather than a taste: the
+  difference between resetting the fee and never touching it was 349,336 followers against 5,916.
+
+  Happy at the going rate, amber once it starts to show, unhappy exactly where the press starts
+  writing about it. **The bands are `UiParts.PriceMood` reading `ModelScandals.PricyAbove`, which
+  is what the business screen's own sentence already uses**, so an amber face can never sit above
+  a line saying the fee is fine. Four copies of one set of heat thresholds once disagreed about
+  the same cabinet in this project, and that is the rule it left behind.
+
+  Drawn with `SupportFace` rather than a glyph, for the reason that class exists: a font emoji is
+  a different shape on every machine and whatever colour the fallback face decides. The tooltip
+  gives the market rate and then the same sentence the business screen prints, and pressing it
+  opens the screen that can fix it, the way the load figure beside it opens the fleet.
+
+- **The thing that actually decides a campaign is one number nobody is told to change.**
+  `StandingDriverProbeTests` prints every driver behind a company's regard, which is how three
+  readings of "the standing system is broken" turned out to be one fixture fault and one real
+  finding underneath it.
+
+  The real one: **the subscription is a fixed monthly fee and the market rate halves every year.**
+  A company that sets $80 in 2022 and never touches the slider is charging many times the going
+  rate by 2026 and takes the **maximum price penalty to its standing every day in between**. That
+  is written down in `CLAUDE.md` as deliberate, with a note that the planner never shows the player
+  the market equivalent, and what it costs had never been measured.
+
+  Two identical companies over four years, one resetting its fee to what a month of tokens is
+  actually worth every six months:
+
+  | | never touches the price | tracks the market |
+  |---|---|---|
+  | reputation at day 1,440 | **0.000** | **0.211** |
+  | following | 5,916 | **349,336** |
+  | price penalty | -0.0006, pinned | -0.0002, moving |
+  | fee by the end | $80 | $4 |
+
+  **Fifty-nine times the following, from one slider.** Nothing about the formulas is wrong and no
+  constant needs moving: serving people pays, the drift is gentle, the following compounds. What is
+  missing is that the player is never told the number has moved under them, so the commonest way to
+  play is the one the game punishes hardest.
+
+- **City events: the venues the map has been pointing at since it was drawn now hold something.**
+  `Docs/EVENTS_PLAN.md` is the design and the argument. Six `MapSiteKind.EventVenue` pins have
+  stood on the map with `systemExists: false` since the sites were laid out, and the seven events
+  their descriptions name turned out to exist **only in those descriptions**: grepped across the
+  whole of `Scripts/`, every one appeared in `MapSiteCatalog.cs` and nowhere else.
+
+  **And a paid desk named after events had never carried one.** `NewsSection.EventHunter` is sold
+  by National Press at $20,000 a month, is gated behind a TrendSearch membership as well, and the
+  only thing that has ever reached it is `IntelSignal`, which is four kinds of hardware and market
+  rumour. A player bought two memberships to open EVENT HUNTER and got told about accelerators.
+
+  `Data/EventVenueCatalog.cs` and `Data/CityEventCatalog.cs` are the tables, joined to the pins by
+  id rather than by a copied coordinate: a second copy of a position is a second chance to mark the
+  wrong spot on a map the author furnished by hand while every test stays green.
+  `CityEventTests.EveryEventIsHeldWhereItsOwnVenueSaysItIs` **reads the map's own prose** and fails
+  if an event is ever moved away from the venue whose blurb claims it, so the assignment is a
+  transcription rather than an allocation.
+
+  **The biggest crowd is deliberately not the best address.** Bayview Park draws seven times Civic
+  Square and ranks below it; Valley Plaza is the best address at half the park's footfall. Visitors
+  build a following and prestige builds regard, and `EventStandTests` holds that the two move in
+  opposite directions at those two venues, because the moment one venue is both the largest and
+  the most highly regarded the other five are decoration.
+
+  **Three stand sizes, and the large one is worse value on purpose.** 1.00 / 1.60 / 2.56 of the
+  effect for 1 / 2 / 4 of the money, which is the same trade the dear marketing channels make. A
+  test holds that effect per dollar **falls** with every tier; if it ever stopped falling the large
+  stand would be strictly correct and the three tiles the author asked for would be one tile.
+
+- **Registering, and the room that opens when the stands are gone.** `Simulation/EventSeason.cs`
+  and `Simulation/EventAuction.cs`, both derived from end to end like `RivalExpansion`,
+  `LabTraits`, `WorldEventCatalog`, `SafetyRecord`, `RoomUpgrades` and `FastFollower` before them:
+  no save field, no migration, and they cannot drift from the news item that announced them.
+
+  **An auction needs bidders and `CLAUDE.md` says rivals carry no economy.** That rule stands. A
+  bidder does not need a bank balance, it needs a willingness, and willingness is read from what
+  the market already says: the brand strength of whatever that lab currently has live. Fatigue is
+  the brake a budget would otherwise have been, and it is applied to the **worth** rather than to
+  the price, because a tired bidder is one who has stopped wanting it rather than one who has run
+  out of money. A tired rival walks away from a bargain, which is what people do.
+
+  A contested stand settles **24% over list**. A field of labs having a good year bids four rounds
+  against a weak field's one and pays 36% more, **and still gives up**, which is the property the
+  whole no-budget argument stands on.
+
+  One stand is always held back from the rivals. An event that sold out before the player heard of
+  it is a screen that can only ever say no.
+
+- **The city gets harder to get into as the industry grows up, and three faults were found proving
+  it.** Asked for in those words: room to spare early, a scramble once the rivals are shipping.
+  `EventPressureTests` walks a decade of campaign and prints the floor year by year.
+
+  **Nothing in the first version produced that curve.** Bayview Park came back with all seven
+  stands free on the public announcement day in nine years out of ten, whatever the field was
+  doing, because the participation bar was a flat share of the venue's prestige and brand strength
+  across the roster sits mostly under 0.4. `EventSeason.BarAtEmptyField` and `BarAtFullField` fall
+  from 0.55 of prestige to 0.08 as `CompanySimulation.FieldMaturity` rises, and `HasteAtFullField`
+  pulls a crowded field's decisions earlier as well. Both are derived from how many labs have
+  anything on sale, so nothing is stored.
+
+  **The second fault would have bent every number in this feature.** The seeds for a lab's stream
+  were built by multiply-and-add on the lab index, so fourteen labs held seeds a few units apart,
+  and a generator seeded with near neighbours gives correlated *first* draws. Each stream here is
+  read exactly once. The floor therefore came back either untouched or completely full, year after
+  year, on identical inputs: not randomness, fourteen copies of one number. `StreamFor` runs
+  murmur3's finalizer before use. **`CLAUDE.md` already says a new mechanism needs its own stream,
+  and this obeyed that and still broke**: the rule is about streams not colliding and says nothing
+  about the quality of a seed inside one.
+
+  **The third was that half the floor could go before anybody was told.** Measured: five of the
+  seven events in the year were sold out on the public announcement day, because at a thirty day
+  window the member's window is sixty and the early holders had taken everything by its midpoint.
+  That turns the cheapest membership from an edge into a requirement, which is a different product
+  from the one that was designed. At most half the sellable stands may now go before the news
+  breaks: being early is worth a real head start and never the whole floor.
+
+  After all three, one seed over a decade: the floor is contested from 2026 on, labs are turned
+  away in grown-up years and never in young ones, and the tightest event in the city keeps a stand
+  open for one day after the news while the two park events keep one for fifteen and twenty-three.
+
+  **Two assertions in this fixture were wrong before the code was**, and both are recorded in it.
+  One compared two averages and passed on a single odd year while the curve was flat for the other
+  nine. The other demanded that something still be free a quarter of the way into every window,
+  which cannot hold at the same time as a late game that reliably pushes a player into the room.
+
+- **Booking a stand, and what going to events is actually worth.** `TryRegisterForStand` is one
+  body for both ways in, because a purchase and an auction differ in exactly one thing, the price.
+  `PriceOfStand` is a separate read: a screen that needed a figure from a `Try` method would buy
+  the thing by looking at it, which is the fault the alliance card shipped. Posted to
+  `LedgerLine.Marketing`, because a stand at a trade expo is marketing and a new ledger column is
+  a migration where a row of the wrong width is dropped whole.
+
+  **Measured over four years, two identical companies, one of which goes and pays:** 33 stands for
+  $4,804,568, and it ends with **12,889 fans against 5** and **43.1 users against 30.0**, a 44%
+  larger audience. Events are a following-building system and they work.
+
+  **Both companies read 0.0000 for reputation, and that was the fixture rather than the feature.**
+  Its company ships one model and never ships again, so by the second year it is fully stale at
+  -0.0016 a day, which is the spine working exactly as written: ship once and coast and the game
+  stops rewarding you. The fan figures above stand, because a following is built from users and
+  those were real. What this probe cannot say anything about is reputation, and the entry that
+  first stood here said a great deal about it.
+
+  Save v75 carries the bookings as three parallel lists, and the load takes only whole triples:
+  three lists of different lengths is a booking with no year or no size, and this format drops a
+  malformed row rather than stretching it.
+
+  `EnumIdentityTests` caught `EventStandBooked` colliding with `RenewalOffered` at 72. The survey
+  that picked the number was `= 7[0-9],` and **the last member of an enum has no trailing comma**,
+  so the one value that mattered was the one the pattern could not see. Fifth time that guard has
+  paid for itself.
+
+- **Early word about events, which is what the cheapest membership now buys.** The author's idea,
+  and it is the best thing about this feature: events stay **free** to read about on the wire, so
+  nobody is cut off from the content, and what $20,000 a month buys is a month of head start. In a
+  game whose spine is that upgrades are timed rather than purchased, that is the same mechanic on
+  a new subject, and it finally gives National Press something a player can point at.
+
+  **Measured per event, because "a month" is one number that does not mean one thing.** The windows
+  run from 30 days to 120, so the head start is +100% of the window at the Responsible AI Forum and
+  +25% at the Global Model Awards. More usefully, at **three of the seven** events it is the
+  difference between a stand and an auction: at the Compute & Infrastructure Expo, the Responsible
+  AI Forum and the Capital & AI Forum there are **zero** stands left by the day everybody else is
+  told, and a member sees them all free. At the other four both arrive to an empty floor and the
+  head start buys only time to decide. **The share of extra time does not predict which**: the
+  Research Summit gives 67% more time and is not decisive, the Capital Forum gives 60% and is.
+
+  Half the rivals get the early look too, rolled per event rather than per campaign, because a lab
+  that always saw everything first would be an opponent nobody could beat to a stand and one that
+  never did would be no opponent at all.
+
+  **Save v75, and the gate is double.** `SetEventEarlyAccess` refuses to write the flag without the
+  membership and `HasEventEarlyAccess` checks both, or a player ticks the box, cancels the
+  subscription, and keeps the advantage for fourteen years. A v74 file starts switched off: that
+  campaign was played in a game where the option did not exist, so the company never asked for it,
+  and turning it on would hand an old save a month of head start it never chose to pay for.
+
+- **The venue window and the closing card.** `UI/EventVenuePanel.cs`, `UI/EventSummaryPanel.cs`,
+  `UI/UpcomingEventsList.cs`, in the author's order: a panoramic banner, the name large and heavy,
+  the organiser in cyan, the crowd and the regard side by side with prestige as a bar, three stand
+  tiles across, and one button at the foot that is grey until a size is picked and then orange.
+
+  **The pause before it answers is not decoration.** Pressing GET INFORMATION runs three dots for a
+  second and then reveals how many stands are free and how many labs are interested, and that is
+  exactly what the membership sells. Revealing it the instant the window opened would make the paid
+  desk worthless again.
+
+  The closing card puts the cutscene tile across the top, where the author asked for it, with a
+  placeholder until the animation exists. It prints the odds beside VIRAL, because going viral at
+  6% and at 38% are two different stories and the word alone tells them identically.
+
+  **None of these screens computes anything.** Every figure is handed in, which is the rule that
+  exists because four copies of one heat threshold once disagreed about the same cabinet.
+
+  Three guards fired on this work and each caught something real: the 11px floor caught three new
+  rules at 9 and 10px, `EveryClassTheInterfaceUsesIsStyled` caught a class name built by
+  concatenation (`"venue__dot--" + index`), which is the stylesheet half of a rule this file
+  already records for phrase-book keys, and the compiler caught `CompanySimulation.UpcomingEvents`
+  returning a type declared in `UI/`. That last one is the layer rule, and the struct moved to
+  `Simulation/` where a snapshot handed to a screen belongs.
+
+- **Found while auditing, not fixed: `IntelligenceService` has no `Loc.T` calls at all.** All four
+  intel signal headlines and bodies are English literals with interpolated numbers, so a Polish
+  player reads `Alibaba Qwen is sitting out this hardware cycle` and a percentage formatted in the
+  machine culture. This is the same fault as the forty-five event messages fixed in
+  `CompanySimulation`, in the file that pass did not reach. It is a separate job and it sits in the
+  system events are being built on.
+
+- **`LineageProbeTests`: eight releases in one product line, measured instead of assumed.** Asked
+  for on 2026-10-24 in four parts: do the figures improve as the models do, does the audience
+  really move onto the newer one, does a successor inherit what its predecessor earned, and does
+  reaching for newer technology pay. Every fixture around this one tests two models, and a long
+  line of successors is what a player who is doing well actually builds.
+
+  **Supersession and inheritance both hold, eight times out of eight.** Exactly one product is on
+  sale after every release and it is always the newest; the predecessor drops to zero. A successor
+  in the same line arrives holding 2,344,927 people rather than earning them again.
+
+  **Starting a new line instead buys almost nothing, and that was not expected.** The same company
+  forked two ways holds 2,348,165 across two products against 2,344,927 on one, a difference of
+  0.14%, with the old model still holding 1,048,640 of them. That is `CatalogueNesting` doing its
+  job and it is worth knowing: the choice changes how many products there are to keep, not how
+  many people the company has.
+
+  Two findings left alone because both are balance rather than faults, and the second is the one
+  worth reading:
+
+  - **The fifth release loses 91% of its users while being better than the fourth**, 15.7M down to
+    1.4M at capability 60 to 65. That is the 2024-25 window this file already describes as where
+    companies die, now with a number against it.
+  - **The first reading of this fixture said reputation dies and the following with it. That was
+    the fixture.** `CompanyState.AddDeployedModel` adds a model to the list and does not touch
+    `LastReleaseDate`, which only the release path sets, so the probe ran a company the game read
+    as having shipped nothing since day zero: fully stale, -0.0016 a day, for ever. Corrected, the
+    same eight releases hold **reputation near 0.17 and a following that grows from 35,340 to
+    576,397**, which is the opposite of what was written here first.
+
+    The diagnosis that went with it was wrong twice over and both halves came from quoting this
+    repository's own balance table rather than opening the file. There is no 10% share gate:
+    `ServiceGain` has a headcount knee at two million users and a square root, and the comment
+    beside it records the share version being removed for making the late game unwinnable. And
+    `DailyDriftRate` is 0.0015 **of what the company has**, not a flat 0.0006, so it cannot drive
+    anything to zero on its own. `CLAUDE.md` says in its own words to treat the code as the source
+    of truth when the two disagree.
+
+  **Both tests failed first and the fixture was wrong both times.** `ModelHistory()` is sorted
+  newest first and says so in its own comment; the probe read `.Last()` as "the one just shipped",
+  which is the oldest, and reported zero users for a successor holding 2.3 million. Releases are
+  looked up by name now, because a name cannot be reordered.
+
+- **The marketing screen asks before it spends, and its off switch looks like one.** Reported on
+  2026-10-24: the two flat-spend panels, company and model, were "ugly tiles" that could not be
+  un-clicked and confirmed nothing, unlike the channel bookings further up the same screen.
+
+  Three faults, and the first is the one that made it read as a missing feature. **The off switch
+  was there the whole time.** It carried `.card` and nothing else, in the same grid, at the same
+  size, so with a budget selected it was indistinguishable from every unselected budget tile.
+  `.card--off` is narrower, has no fill and a hairline border, so it reads as the way out rather
+  than as one more thing to switch on.
+
+  **A click set the daily spend immediately**, with nothing between the cursor and the money. That
+  is the rule written for the upgrade tiles, where work that starts the moment a card is clicked is
+  work the player cannot compare, cost or back out of, and the channel bookings on this same screen
+  already follow it. It asks through `GateNotice.Decide` now, the same card the datacenter
+  commission and the architecture programme use, and the tile of facts carries what is being spent
+  now beside the new figure, because the change is the decision rather than the amount.
+
+  **And a campaign the calendar had not reached was `SetEnabled(false)`.** Tenth control in this
+  game found in that state; the other nine were fixed the same day. It says how many days until it
+  opens. Three keys in both languages.
+
+- **`RoomOffloadTests`: the basement, with five generations in it, measured against a fleet.**
+  Asked for directly: does the server room actually work, and does it take load off the rented
+  cluster. `ServerRoomChainTests` already walks shop to cabinet to capacity, and it fills every
+  slot with one generation and stops at capacity, so neither half of that question was covered.
+
+  **It answers yes, and the second half of the answer is a finding rather than a pass.** Thirty
+  cards of five generations are all housed and the cabinets keep track of which card is which.
+  Against a 400 PF rented fleet the room adds 47 PF, capacity goes 70.7 to 79.0, and load falls
+  from 0.978 to 0.960. The fall is smaller than the capacity gain because demand rose with it,
+  69.1 to 75.9: more capacity is better reliability, which is a more attractive product, which is
+  more people. That loop working is a good sign.
+
+  **What the player reads does not move.** At 0.96 the response time sits on its ceiling, so 4,500
+  ms before and 4,500 ms after. A company buys the room, fills it with five generations, adds 12%
+  more capacity and every figure on screen is the one it was. Left as it stands: the ceiling is
+  right and the missing thing is feedback at the moment a player got a decision right.
+
+  Two earlier versions of this fixture passed while measuring nothing, and **only printing the
+  numbers caught either**. The first gave the control company no compute at all, so it compared a
+  room against nothing: capacity 0.0 against 690.0 and load pinned at 1.000. The second put a
+  frontier model on a 60 PF fleet, five times oversubscribed, where utilisation clamps at 1.000 and
+  the room moved nothing a player could see. The fleet is sized from the measurement now, and the
+  comment says what both wrong values did.
+
+- **`StylesheetTests.NoModifierRuleTriesToResizeSomethingSizedFromCode`**, the ratchet for the
+  fault above. An inline style outranks every selector in UI Toolkit, so a modifier rule that
+  resizes an element the code sizes inline loads, matches and does nothing, with no error and no
+  visible difference from a rule that was never written.
+
+  **It is narrow on purpose, and the first version was not.** Flagging every collision between an
+  inline size and a sheet rule reported three deliberate one-offs, where somebody had made a single
+  button shorter than `.button`, and missed the case it exists for. A modifier is the only shape
+  that can never win: it exists to change an element that already carries the base class, so it has
+  no inline write of its own. It also had to search the whole file rather than a window around the
+  write, because the portrait is classed in `Build` and sized in `MeasureStrip` four hundred lines
+  away, and that is safe only once the modifier restriction has removed the noise.
+
+  Run against the old sheet first, where it failed on `.guide--tight .guide__portrait` and on
+  nothing else. It strips comments before matching, because `/* ---- buttons ---- */` sits outside
+  any braces and was being read as a selector.
 
 - **`ResearchBoardTests`**, a PlayMode ratchet that builds a campaign with a project running in
   the last era and asserts the board opens at the top. **Run against the old arrangement first,
@@ -160,7 +877,9 @@ repairs landed without closing the fault.
 - Six guards moved with the colocation gate rather than being loosened, and two of them are now
   measured on the datacenter, which still has three requirements: a gate with one requirement cannot
   demonstrate that a refusal names only what is missing.
-- **1,619 EditMode tests across 186 fixtures, 87 PlayMode across 17.** Measured, both green, no
+- **1,665 EditMode tests across 195 fixtures, 87 PlayMode across 17.** Re-counted 2026-10-25
+from the run that wrote `TestResults.xml`, not carried forward: the three extra are the office
+seating ratchet, and the fixture is the one it lives in. Measured, both green, no
   inconclusive cases.
 - **The economy is untouched, measured rather than assumed.** `DeepCampaignProbe` on one seed comes
   back on its previous peak cash to the dollar on every operator: ¤1,474,598,369, ¤781,971,321 and

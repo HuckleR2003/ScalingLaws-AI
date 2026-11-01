@@ -44,6 +44,43 @@ namespace ScalingLaws.Simulation
     /// </summary>
     public sealed class GuideProgress
     {
+        /// <summary>
+        /// Whether the opening conversation is still somebody's current business.
+        ///
+        /// **The gate on anything else that would interrupt it.** Reported on 2026-10-25: the
+        /// cousin rang about the support desk in the middle of the tour, the call offered a
+        /// walkthrough, taking it replaced the tour, and the tour never came back. The player was
+        /// left part way through a conversation still talking about naming a version of a model
+        /// they had already released.
+        ///
+        /// `Talking` counts, because that is the opening call on screen unanswered. `Paused`
+        /// counts too: "I will come back later" is somebody who still means to finish, and he
+        /// rings back about the tour in three days. `Finished` is where both the last step and
+        /// "I will take it from here" land, and it is the only stage that lets anything else ring.
+        ///
+        /// It lives here rather than in the shell so it can be asked without a scene.
+        /// </summary>
+        public bool IsStillRunning =>
+            Stage is GuideStage.Unseen or GuideStage.Talking
+                or GuideStage.Touring or GuideStage.Paused;
+
+        /// <summary>
+        /// Whether the player is in the middle of the tutorial right now.
+        ///
+        /// **Narrower than <see cref="IsStillRunning"/> by exactly one stage, and the difference
+        /// is the point.** `Unseen` means the opening call has not been answered and may never be:
+        /// somebody who ignores it sits there for the rest of the campaign. Holding the *phone*
+        /// back during it is right, because that is the moment his opening call is on screen.
+        /// Holding *news* back during it is not, because news waiting on an answer that never
+        /// comes is news nobody ever gets.
+        ///
+        /// Found by `SupportDeskTests.TheFirstTicketIsAnnouncedOnceAndSurvivesASave` going red:
+        /// that fixture never touches the tour, so it sits at `Unseen`, and the first version of
+        /// this gate silenced the support desk in it for ever.
+        /// </summary>
+        public bool IsWalkingTheTour =>
+            Stage is GuideStage.Talking or GuideStage.Touring or GuideStage.Paused;
+
         public GuideStage Stage { get; set; } = GuideStage.Unseen;
 
         /// <summary>How far through Emil's tour they are. Index into GuideScript.Steps.</summary>

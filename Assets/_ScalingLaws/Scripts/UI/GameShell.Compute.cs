@@ -138,11 +138,16 @@ namespace ScalingLaws.UI
 
             var slider = new Slider(10f, 90f) { value = (float)(share * 100.0) };
             slider.AddToClassList("field");
-            slider.RegisterValueChangedCallback(evt =>
+            UiParts.WhenSettled(slider, value =>
             {
-                state.TrainingComputeShare = evt.newValue / 100.0;
+                state.TrainingComputeShare = value / 100.0;
                 Show(Screen.Fleet);
-            });
+            },
+            // The split the handle is setting. The line underneath says what the cluster is doing
+            // today, which is a different number read from the simulation, so it is deliberately
+            // not repainted here: it cannot answer for a share nobody has committed to yet.
+            value => reading.text = Loc.T("fleet.split_reading",
+                UiFormat.Percent(value / 100.0, 0), UiFormat.Percent(1.0 - value / 100.0, 0)));
 
             panel.Add(slider);
 
@@ -510,6 +515,19 @@ namespace ScalingLaws.UI
             simulation.State.Pool.SetPackageCount(id, units);
             Show(Screen.Fleet);
         }
+
+        /// <summary>
+        /// What a support class is called in a sentence, as a switch rather than a built key.
+        ///
+        /// A key assembled by concatenation is invisible to `LocalisationTests`, which can only
+        /// read literals, and that has already shipped one screen of raw keys in this project.
+        /// </summary>
+        private static string SupportClassKey(HardwareClass hardwareClass) => hardwareClass switch
+        {
+            HardwareClass.Cpu => "hwclass.cpu",
+            HardwareClass.Memory => "hwclass.memory",
+            _ => "hwclass.network"
+        };
 
         private VisualElement BuildFleetBill(ComputeProfile profile)
         {

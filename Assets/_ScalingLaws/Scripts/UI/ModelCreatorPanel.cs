@@ -115,6 +115,19 @@ namespace ScalingLaws.UI
         /// </summary>
         private bool rentCommitted;
 
+        /// <summary>
+        /// True while the interface is re-ranging the rent handle rather than the player moving it.
+        ///
+        /// **A clamp is not a click, and nothing else in UI Toolkit tells them apart.** Writing
+        /// `highValue` clamps the handle into the new range, and the clamp raises exactly the
+        /// change event a drag raises. The rent handle's change event is the player agreeing to a
+        /// fleet, so without this flag the interface could agree on their behalf and then bill
+        /// them for it. Reachable without the creator's unblock button: a company renting nothing
+        /// with the handle parked high as a proposal, whose audience then shrinks, gets a lower
+        /// ceiling, a clamped handle, and a fleet it never asked for.
+        /// </summary>
+        private bool rangingRentHandle;
+
         private readonly List<ArchitectureId> architectureOptions = new();
         private readonly Dictionary<DatasetSource, Toggle> dataSourceToggles = new();
 
@@ -460,9 +473,22 @@ namespace ScalingLaws.UI
         /// Read from the pool rather than from the handle, so it is the same answer before and
         /// after the handle is written, and there is no loop between the two.
         /// </summary>
-        private void SyncRentCeiling() =>
-            rentedSlider.highValue = (float)RentReadout.CeilingPetaflops(
-                HeldUsers(), simulation.State.Pool.RentedPetaflops);
+        private void SyncRentCeiling()
+        {
+            rangingRentHandle = true;
+
+            try
+            {
+                rentedSlider.highValue = (float)RentReadout.CeilingPetaflops(
+                    HeldUsers(), simulation.State.Pool.RentedPetaflops);
+            }
+            finally
+            {
+                // In a finally because the alternative is a flag left set after one throw, which
+                // silently stops the player's own drags from committing anything ever again.
+                rangingRentHandle = false;
+            }
+        }
 
         private void Build()
         {
@@ -2381,7 +2407,7 @@ namespace ScalingLaws.UI
                             UiFormat.Percent(definition.TokensKept, 0),
                             UiFormat.Number(definition.Quality, 2))
                         : Loc.T("create.needs", ResearchTree.Get(gate).DisplayName),
-                    () => { blueprintDedup = captured; RepriceAndRebuild(); },
+                    () => ChooseDeduplication(captured),
                     () => Refuse(definition.DisplayName, gate, null)));
             }
 
@@ -2878,9 +2904,19 @@ namespace ScalingLaws.UI
         /// <param name="initial">Where the handle starts, on the first build and never again.</param>
         private void ConfigureSlider(Slider slider, float low, float high, float initial)
         {
-            // The ends move with the company, so they are set every time.
-            slider.lowValue = low;
-            slider.highValue = high;
+            // The ends move with the company, so they are set every time, and for the rent handle
+            // that write is a range sync rather than the player asking for a fleet.
+            rangingRentHandle = slider == rentedSlider;
+
+            try
+            {
+                slider.lowValue = low;
+                slider.highValue = high;
+            }
+            finally
+            {
+                rangingRentHandle = false;
+            }
 
             if (!configured.Add(slider))
             {
@@ -2896,6 +2932,14 @@ namespace ScalingLaws.UI
                 // slider here only describes a plan.
                 if (slider == rentedSlider)
                 {
+                    // **Report 10.** The interface moved this handle itself, by handing it a
+                    // narrower range, so there is nobody to take consent from, and repricing from
+                    // here would recurse straight back through the sync that caused it.
+                    if (rangingRentHandle)
+                    {
+                        return;
+                    }
+
                     rentCommitted = true;
                 }
 
@@ -3108,6 +3152,28 @@ namespace ScalingLaws.UI
 
             return row;
         }
+
+        /// <summary>
+        /// Picks a deduplication pass, exactly as the card on the DATA stage does.
+        ///
+        /// **A seam, for the same reason `GameShell.ShowDesk` is one.** An EditMode test has no
+        /// panel, so a click sent to a button is never dispatched and the only honest way to
+        /// prove the control works is to drive the method the control itself calls.
+        /// </summary>
+        public void ChooseDeduplication(DeduplicationPass pass)
+        {
+            blueprintDedup = pass;
+            RepriceAndRebuild();
+        }
+
+        /// <summary>
+        /// The blueprint this screen would start right now.
+        ///
+        /// Tooling only, and it earns its place: a choice that is drawn, clamped and priced on
+        /// screen and then never reaches the blueprint is the fault that shipped here twice, once
+        /// leaving every model the player ever released typed as general with 244 tests green.
+        /// </summary>
+        public ModelBlueprint PlannedBlueprint() => CurrentBlueprint();
 
         private ModelBlueprint CurrentBlueprint()
         {

@@ -130,6 +130,17 @@ namespace ScalingLaws.Tests.PlayMode
 
             var missed = new System.Collections.Generic.List<string>();
 
+            // **The chrome is measured on every tab while this fixture is already on it.**
+            // Reported on 2026-10-25: the top bar was cut in half on the five tallest screens
+            // and slightly on a sixth, because it stated a height and did not refuse to give
+            // it up. UI Toolkit shrinks flex children by default, so a page taller than the
+            // window takes what it needs from whatever above it will yield.
+            //
+            // Measured on the resolved height, not the stylesheet: the stated height was never
+            // wrong, it was negotiable. And collected across every screen rather than asserted
+            // on the first, because the whole point is that it only fails on the tall ones.
+            var squashed = new System.Collections.Generic.List<string>();
+
             foreach (var name in GameShell.ScreenNames)
             {
                 if (!shell.OpenScreenByName(name))
@@ -139,7 +150,19 @@ namespace ScalingLaws.Tests.PlayMode
                 }
 
                 yield return Capture(null, settings, texture, $"tab_{name.ToLowerInvariant()}.png");
+
+                var bar = document.rootVisualElement.Q(className: "topbar");
+
+                if (bar != null && bar.resolvedStyle.height < 51.5f)
+                {
+                    squashed.Add(name + " at " + bar.resolvedStyle.height.ToString("0.0") + "px");
+                }
             }
+
+            Assert.That(squashed, Is.Empty,
+                "The top bar states 52px and resolved to less on these screens, so the page is "
+                + "taking its height out of the chrome instead of scrolling: "
+                + string.Join(", ", squashed));
 
             // One more frame with an info card open. The card only exists while a pointer is resting
             // on a badge, so it is invisible to every other pass over these screens, and it is the
@@ -407,6 +430,15 @@ namespace ScalingLaws.Tests.PlayMode
                     yield return null;
                 }
 
+                // **A frame per stage, because the assertions below only hold the frame.**
+                // They check the heading is not above the window and the WSTECZ/DALEJ row is
+                // not below it or behind the strip, and all three can be true while everything
+                // between them is clipped to nothing. That is exactly what was reported on
+                // 2026-10-17 as "the display is not adapting very well", and no assertion in
+                // this project could have caught it. These frames can.
+                yield return Capture(null, settings, texture,
+                    $"tour_create_{step.CreatorStage}.png");
+
                 var header = root.Q(className: "stage-header");
                 var footer = root.Q(className: "stage-footer");
                 var page = root.Q(className: "content-host");
@@ -529,6 +561,42 @@ namespace ScalingLaws.Tests.PlayMode
 
                     var name = stop.Item1;
                     yield return Capture(null, settings, texture, $"small_{size.y}_{name}.png");
+
+                    // **The one measurement this fixture was missing, and it cost three wrong
+                    // diagnoses.** Everything below is taken with the tour already put away, so
+                    // the geometry printed at the end of the loop is the page with no strip on
+                    // it. What the bug is about is the page WITH the strip, which is here.
+                    var upHost = document.rootVisualElement.Q(className: "stage-host");
+
+                    Debug.Log($"STRIP-UP {size.x}x{size.y} {name}: "
+                        + $"stageHost={upHost?.resolvedStyle.height:0.0}");
+
+                    // **And the same page with the tour put away, which is the control.**
+                    // The frames above show the data page coming apart at 900 and 768 while
+                    // the same page at 1920 with the same tour step is whole, so either the
+                    // window is to blame or the strip is. Taking the strip away and leaving
+                    // everything else identical is the only way to tell, and until this frame
+                    // existed the answer was a guess. Reported 2026-10-17 as "the display is
+                    // not adapting very well".
+                    var kept = shell.Simulation.State.Guide.Stage;
+                    shell.Simulation.State.Guide.Stage = GuideStage.Finished;
+                    shell.OpenScreenByName("Create");
+                    shell.Creator.Stage = stop.Item2;
+
+                    for (var pass = 0; pass < 30; pass++)
+                    {
+                        yield return null;
+                    }
+
+                    yield return Capture(null, settings, texture,
+                        $"small_{size.y}_{name}_notour.png");
+
+                    shell.Simulation.State.Guide.Stage = kept;
+
+                    var downHost = document.rootVisualElement.Q(className: "stage-host");
+
+                    Debug.Log($"STRIP-DOWN {size.x}x{size.y} {name}: "
+                        + $"stageHost={downHost?.resolvedStyle.height:0.0}");
 
                     var footer = document.rootVisualElement.Q(className: "stage-footer");
                     var header = document.rootVisualElement.Q(className: "stage-header");

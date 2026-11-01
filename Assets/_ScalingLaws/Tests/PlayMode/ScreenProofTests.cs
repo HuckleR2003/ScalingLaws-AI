@@ -101,6 +101,156 @@ namespace ScalingLaws.Tests.PlayMode
         /// Every figure on it is measured rather than written: the test counts come off the result
         /// files, and the save version is the one the format is actually on.
         /// </summary>
+        /// <summary>
+        /// The event venue window, in both of the states it has.
+        ///
+        /// **Two frames, because the button is the feature.** It is grey and refusing until a
+        /// stand size is picked and strongly orange once one is, and a single frame can only ever
+        /// show one of those. The reveal is driven through `RevealNow` rather than by pressing the
+        /// button: the pause is a `schedule.Execute`, which never runs without a real panel, so a
+        /// render that clicked would wait for ever and photograph three dots.
+        /// </summary>
+        /// <summary>
+        /// The day the stand closed, viral and not, plus the list the membership buys.
+        ///
+        /// Three frames because they are three different screens to look at, and the viral one is
+        /// the only place in this feature anything is allowed to shout.
+        /// </summary>
+        /// <summary>
+        /// The news screen as a member sees it: the desks, the early-word box and what is coming.
+        ///
+        /// **The real screen rather than the list on its own.** The list has been looked at in
+        /// isolation and that proves nothing about whether it fits the desk it lives in, which is
+        /// a 306 pixel rail. A panel that reads well at 560 and collapses at 306 is the fault this
+        /// project has shipped twice.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheNewsDeskCarriesWhatIsComing()
+        {
+            yield return Capture(NewsPage(member: true), "news_member.png");
+            yield return Capture(NewsPage(member: false), "news_outsider.png");
+        }
+
+        private static VisualElement NewsPage(bool member)
+        {
+            var simulation = Campaign();
+
+            // Far enough in that several events are open at once and the field has grown up.
+            simulation.Advance(365 * 4);
+
+            if (member)
+            {
+                simulation.SetIntelSubscription(IntelTier.NationalPress, true);
+                simulation.SetEventEarlyAccess(true);
+            }
+
+            var screen = new NewsScreen(simulation, (_, _) => { }, _ => { }, _ => { });
+            screen.Refresh();
+
+            var page = new VisualElement();
+            page.style.flexGrow = 1;
+            page.Add(screen.Root);
+
+            return page;
+        }
+
+        [UnityTest]
+        public IEnumerator TheEventSummaryAndTheUpcomingListDraw()
+        {
+            yield return Capture(SummaryPage(viral: false), "event_summary.png");
+            yield return Capture(SummaryPage(viral: true), "event_summary_viral.png");
+            yield return Capture(UpcomingPage(member: true), "event_upcoming.png");
+            yield return Capture(UpcomingPage(member: false), "event_upcoming_locked.png");
+        }
+
+        private static VisualElement SummaryPage(bool viral)
+        {
+            var page = new VisualElement();
+            page.style.flexGrow = 1;
+            page.style.paddingTop = 40;
+            page.style.alignItems = Align.Center;
+
+            var happening = CityEventCatalog.Get(CityEventId.FrontierExpo);
+            var venue = EventVenueCatalog.Get(happening.Venue);
+
+            // The figures come out of the rules rather than being typed here, so the frame is a
+            // picture of what a player would actually be shown.
+            var fans = EventStand.FansAt(venue.Id, StandTier.Large);
+            var regard = EventStand.ReputationAt(venue.Id, StandTier.Large);
+            var odds = EventStand.ViralChance(venue.Id, StandTier.Large);
+
+            var outcome = viral
+                ? new EventOutcome(fans * EventStand.ViralFansMultiple,
+                    regard * EventStand.ViralReputationMultiple, true, odds)
+                : new EventOutcome(fans, regard, false, odds);
+
+            page.Add(new EventSummaryPanel(happening, venue, StandTier.Large, outcome).Root);
+
+            return page;
+        }
+
+        // **Two frames, because the game only ever draws one of them.** Rendering both states
+        // into one page put the heading on screen twice and read as a fault in the list.
+        private static VisualElement UpcomingPage(bool member)
+        {
+            var page = new VisualElement();
+            page.style.flexGrow = 1;
+            page.style.paddingLeft = 60;
+            page.style.paddingTop = 40;
+            page.style.width = 560;
+
+            // One row of each state the list has: room left, nearly gone, and down to the last
+            // stand, which is the one that reads LAST ONE, AUCTION.
+            var rows = new List<UpcomingEventRow>
+            {
+                new(CityEventId.ResearchSummit, 2025, 38, 3, 3),
+                new(CityEventId.InfrastructureExpo, 2025, 11, 1, 4),
+                new(CityEventId.ResponsibleForum, 2025, 24, 0, 1),
+                new(CityEventId.ModelAwards, 2025, 96, 6, 7)
+            };
+
+            page.Add(UpcomingEventsList.Build(member ? rows : null, member, "National Press"));
+
+            return page;
+        }
+
+        [UnityTest]
+        public IEnumerator TheEventVenueWindowDraws()
+        {
+            yield return Capture(VenuePage(null), "venue_waiting.png");
+            yield return Capture(VenuePage(StandTier.Medium), "venue_picked.png");
+        }
+
+        private static VisualElement VenuePage(StandTier? pick)
+        {
+            var page = new VisualElement();
+            page.style.flexGrow = 1;
+            page.style.paddingLeft = 40;
+            page.style.paddingTop = 30;
+            page.style.alignItems = Align.Center;
+
+            // Bayview Park: the biggest crowd in the city and deliberately not the best address,
+            // holding the AI Frontier Expo. Eight stands, and the figures come out of the
+            // catalogue rather than being written here.
+            var venue = EventVenueCatalog.Get(EventVenueId.BayviewPark);
+            var happening = CityEventCatalog.Get(CityEventId.FrontierExpo);
+
+            var panel = new EventVenuePanel(venue, happening,
+                tier => new EventStandInfo(
+                    tier == StandTier.Large ? 0 : 3, venue.Stands,
+                    tier == StandTier.Large ? 4 : 2));
+
+            if (pick != null)
+            {
+                panel.Pick(pick.Value);
+                panel.RevealNow();
+            }
+
+            page.Add(panel.Root);
+
+            return page;
+        }
+
         [UnityTest]
         public IEnumerator TheNoteForTheBuildAnnouncement()
         {
@@ -437,6 +587,34 @@ namespace ScalingLaws.Tests.PlayMode
                 GateNotice.Hide();
                 GateNotice.Host = null;
             }
+        }
+
+        /// <summary>
+        /// Emil's strip, so somebody can look at the fold control instead of asserting it exists.
+        ///
+        /// **Francisco answered on 2026-10-31: "there isnt anything next to his head".** On this
+        /// side the control is a 46px pill with a 3px yellow border, a drawn chevron and the word
+        /// HIDE, it is added to the speaker block, and it is covered by tests. That is the state
+        /// this project has been in seventeen times, and the standing lesson is that a geometry
+        /// test is not a substitute for a rendered frame.
+        ///
+        /// Note while reading the frame: the fold is added to `speaker` and the torn name plate is
+        /// added to `speaker` immediately after, so it sits **under the portrait and above the
+        /// name**, not beside his head. Every description of it, including the summary on
+        /// `GuideFoldArrow`, says beside his head.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheGuideStripDrawsSomethingToFoldHimAwayWith()
+        {
+            var host = new VisualElement();
+            host.style.flexGrow = 1;
+
+            var state = new GuideProgress { Stage = GuideStage.Touring, Step = 0 };
+            var overlay = new GuideOverlay(host, () => state, _ => { }, () => { });
+
+            overlay.Refresh();
+
+            yield return Capture(host, "guide_strip.png");
         }
 
         [UnityTest]
@@ -873,12 +1051,23 @@ namespace ScalingLaws.Tests.PlayMode
                 DealOutcome.Refused));
 
             panel.ShowTogether();
-            yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_together_en.png");
 
             var previous = Loc.Current;
 
             try
             {
+                // **English has to be asked for, not assumed.** This capture took whatever the
+                // machine was set to, and the machine this project is built on is Polish, so the
+                // frame named _en was a second Polish one: the two files came out byte for byte
+                // identical and the English card had never been looked at. Every other pair in
+                // this fixture sets the language for both halves and this one did not.
+                //
+                // The point of the pair is that the Polish bodies are longer, so a card that will
+                // deform deforms in the second frame and not the first. Two of the same language
+                // cannot show that.
+                Loc.Current = Language.English;
+                yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_together_en.png");
+
                 Loc.Current = Language.Polish;
                 yield return Capture(panel.Build(lab, () => acts.Build(lab)), "rival_together_pl.png");
             }

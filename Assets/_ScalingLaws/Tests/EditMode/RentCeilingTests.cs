@@ -72,6 +72,54 @@ namespace ScalingLaws.Tests.EditMode
                 + "interface, and the first it would know is the bill changing.");
         }
 
+        /// <summary>
+        /// The same promise, above the cap, which is the only place it could ever have broken.
+        ///
+        /// **This is report 10, and the test above it held nothing.** Nine thousand petaflops is
+        /// comfortably under <see cref="RentReadout.FullScalePetaflops"/>, so the floor and the
+        /// roof never disagreed and the fixture passed on a function that threw the floor away on
+        /// its last line. A company can hold more than the cap: the creator's unblock button walks
+        /// capacity to 400,000 petaflops to clear a run that cannot start, and commits what it
+        /// finds. Those companies were handed a slider whose range ended below their own fleet,
+        /// and a Slider clamps into the range it is given.
+        ///
+        /// Measured at four values, because one above the cap can pass by coincidence and four is
+        /// a shape.
+        /// </summary>
+        [Test]
+        public void TheCeilingStillDoesNotFallWhenTheFleetIsLargerThanTheSliderWouldOffer()
+        {
+            foreach (var rented in new[] { 40_001.0, 65_536.0, 160_000.0, 400_000.0 })
+            {
+                var ceiling = RentReadout.CeilingPetaflops(0.0, rented);
+
+                Assert.That(ceiling, Is.GreaterThanOrEqualTo(rented),
+                    $"A company renting {rented:N0} petaflops is offered a slider that stops at "
+                    + $"{ceiling:N0}. The handle clamps into that range, the clamp raises the same "
+                    + "change event a drag raises, and the fleet is cut without anybody asking.");
+            }
+        }
+
+        /// <summary>
+        /// And the cap still caps, which is the half this must not have bought with the other.
+        /// </summary>
+        [Test]
+        public void TheCapStillHoldsForEveryCompanyThatHasNotPassedIt()
+        {
+            foreach (var users in new[] { 0.0, 50_000_000.0, 2_000_000_000.0 })
+            {
+                foreach (var rented in new[] { 0.0, 2_000.0, 39_000.0 })
+                {
+                    var ceiling = RentReadout.CeilingPetaflops(users, rented);
+
+                    Assert.That(ceiling, Is.LessThanOrEqualTo(RentReadout.FullScalePetaflops),
+                        $"{users:N0} users holding {rented:N0} petaflops were offered "
+                        + $"{ceiling:N0}, past the largest fleet the game models. The floor is for "
+                        + "fleets already held, not a way round the cap.");
+                }
+            }
+        }
+
         /// <summary>A garbage reading cannot produce a slider with no range or an infinite one.</summary>
         [Test]
         public void NonsenseReadingsStillProduceAUsableSlider()

@@ -70,15 +70,21 @@ namespace ScalingLaws.Simulation
 
             if (!architecture.IsAvailableOn(market.Date))
             {
-                Append(blocking, $"{architecture.DisplayName} is not published until {architecture.AvailableFrom}");
+                Append(blocking, Loc.T("plan.unpublished",
+                    architecture.DisplayName, architecture.AvailableFrom.ToString()));
             }
+
+            // The pass has to reach the blend, because it decides how many tokens the mix holds
+            // and therefore whether the mix can feed this run at all.
+            var dedup = TrainingChoiceCatalog.Get(blueprint.Deduplication);
 
             var blend = DatasetCatalog.Blend(
                 blueprint.DataSources,
                 blueprint.TrainingTokensBillions,
                 market.Date,
                 bestOwnedCapability,
-                dataSupplyMultiplier);
+                dataSupplyMultiplier,
+                dedup.TokensKept);
 
             if (blend.SourceCount == 0)
             {
@@ -86,7 +92,9 @@ namespace ScalingLaws.Simulation
             }
             else if (!blend.IsSufficient)
             {
-                Append(blocking, $"data mix supplies {blend.AvailableTokensBillions:N0}B of the {blueprint.TrainingTokensBillions:N0}B tokens requested");
+                Append(blocking, Loc.T("plan.data_short",
+                    blend.AvailableTokensBillions.ToString("N0", CultureInfo.InvariantCulture),
+                    blueprint.TrainingTokensBillions.ToString("N0", CultureInfo.InvariantCulture)));
             }
 
             // The run trains on the tokens that exist, not the tokens that were asked for.
@@ -115,13 +123,11 @@ namespace ScalingLaws.Simulation
             var effectiveParameters = parameters * architecture.ParameterEfficiency * recipeBoost;
             // The data team earns its salary here: the same corpora, cleaned better.
             //
-            // The deduplication pass lands in both terms at once and that is the whole trade: it
-            // throws away a fifth of the corpus and makes what is left worth more each. Whether it
-            // pays depends on whether the run was token starved to begin with, which is a question
-            // the belt above already answers for the player.
-            var dedup = TrainingChoiceCatalog.Get(blueprint.Deduplication);
-            var keptTokens = actualTokens * dedup.TokensKept;
-            var effectiveTokens = keptTokens * blend.QualityMultiplier * qualityScale
+            // **How many tokens** the pass leaves is decided above, where the corpus is measured,
+            // and it is therefore already in `actualTokens`, in the compute bill and in the belt.
+            // What is left here is **what each one is worth**, which is the other half of the
+            // trade and the only half that was ever wired up.
+            var effectiveTokens = actualTokens * blend.QualityMultiplier * qualityScale
                                   * recipeBoost * dedup.Quality;
 
             var loss = ScalingLaw.Loss(effectiveParameters, effectiveTokens);
@@ -203,7 +209,9 @@ namespace ScalingLaws.Simulation
 
             if (trainingDays > MaximumTrainingDays)
             {
-                Append(blocking, $"the run would take {trainingDays} days, over the {MaximumTrainingDays} day limit");
+                Append(blocking, Loc.T("plan.too_long",
+                    trainingDays.ToString(CultureInfo.InvariantCulture),
+                    MaximumTrainingDays.ToString(CultureInfo.InvariantCulture)));
             }
 
             // The fleet bills for every day the run occupies the calendar, whichever slice of it the

@@ -435,11 +435,7 @@ namespace ScalingLaws.UI
                 left.Add(badge);
             }
 
-            var offered = simulation.State.Benefits;
-            var points = BenefitCatalog.PointsFor(offered);
-
-            var loyalty = Loyalty.For(hire, simulation.State.Date, points,
-                StaffCatalog.Get(hire.Role).SalaryPerYearUsd(hire.Skill), offered);
+            var loyalty = simulation.State.LoyaltyOf(hire);
 
             var band = Loyalty.BandFor(loyalty);
 

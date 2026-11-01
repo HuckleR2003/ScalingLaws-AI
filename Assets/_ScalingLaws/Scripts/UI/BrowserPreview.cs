@@ -30,6 +30,24 @@ namespace ScalingLaws.UI
         private readonly Label founderText = new();
         private readonly Label companyText = new();
 
+        /// <summary>Where the hero mark sits, so a chosen logo can stand in place of the drawn one.</summary>
+        private readonly VisualElement centreSlot = new();
+
+        private readonly VisualElement cornerSlot = new();
+
+        private Button backArrow;
+        private Button forwardArrow;
+
+        /// <summary>
+        /// Where the arrows send a step, swapped rather than subscribed to.
+        ///
+        /// **The handler is attached once, in the constructor.** OfferMarks is called every time
+        /// the page that owns this mock is rebuilt, and subscribing there would stack: after ten
+        /// rebuilds one press would step the mark ten times. Nothing on screen would show it and
+        /// no render would catch it.
+        /// </summary>
+        private Action<int> markStep;
+
         public BrowserPreview()
         {
             Root = new VisualElement();
@@ -48,7 +66,7 @@ namespace ScalingLaws.UI
         /// creator against a model that does not exist yet as well as on the management screen
         /// against one that does.
         /// </summary>
-        public void Show(string company, string productLabel, string founder)
+        public void Show(string company, string productLabel, string founder, string logo = null)
         {
             var house = string.IsNullOrWhiteSpace(company) ? "Newco" : company.Trim();
             var product = string.IsNullOrWhiteSpace(productLabel)
@@ -57,6 +75,12 @@ namespace ScalingLaws.UI
 
             centreMark.Company = house;
             cornerMark.Company = house;
+
+            // **A chosen mark replaces the drawn one; it never sits beside it.** The ring is what a
+            // company has before it has picked anything, so showing both would say the player has
+            // two badges rather than one they settled on.
+            PaintMark(centreSlot, logo, centreMark, 88);
+            PaintMark(cornerSlot, logo, cornerMark, 34);
 
             productName.text = product;
             companyText.text = house.ToUpperInvariant();
@@ -216,7 +240,8 @@ namespace ScalingLaws.UI
             var badge = new VisualElement();
             badge.AddToClassList("wb__badge");
             cornerMark.AddToClassList("mark--badge");
-            badge.Add(cornerMark);
+            cornerSlot.Add(cornerMark);
+            badge.Add(cornerSlot);
             page.Add(badge);
 
             var centre = new VisualElement();
@@ -225,10 +250,18 @@ namespace ScalingLaws.UI
             var markRow = new VisualElement();
             markRow.AddToClassList("wb__markrow");
 
-            markRow.Add(Arrow("<", Loc.T("wb.locked")));
+            backArrow = Arrow("<", Loc.T("wb.locked"));
+            backArrow.clicked += () => markStep?.Invoke(-1);
+            markRow.Add(backArrow);
+
             centreMark.AddToClassList("mark--hero");
-            markRow.Add(centreMark);
-            markRow.Add(Arrow(">", Loc.T("wb.locked")));
+            centreSlot.AddToClassList("wb__markslot");
+            centreSlot.Add(centreMark);
+            markRow.Add(centreSlot);
+
+            forwardArrow = Arrow(">", Loc.T("wb.locked"));
+            forwardArrow.clicked += () => markStep?.Invoke(1);
+            markRow.Add(forwardArrow);
 
             centre.Add(markRow);
 
@@ -253,7 +286,50 @@ namespace ScalingLaws.UI
         }
 
         /// <summary>
-        /// One of the two arrows beside the mark. Disabled on purpose, and it says why on hover.
+        /// Turns the two arrows on and points them somewhere.
+        ///
+        /// **They were drawn disabled from the day this was written**, with a tooltip saying that
+        /// choosing a mark was a decision the game did not offer yet, so that a player would know
+        /// it was coming rather than never find out. The game offers it now, and this is where that
+        /// promise is kept. Passing null puts them back to being a picture of a control.
+        /// </summary>
+        public void OfferMarks(Action<int> step)
+        {
+            markStep = step;
+
+            foreach (var arrow in new[] { backArrow, forwardArrow })
+            {
+                if (arrow == null)
+                {
+                    continue;
+                }
+
+                arrow.SetEnabled(step != null);
+                arrow.EnableInClassList("wb__arrow--live", step != null);
+                arrow.tooltip = step != null ? Loc.T("wb.step_mark") : Loc.T("wb.locked");
+            }
+        }
+
+        /// <summary>
+        /// Hangs either the chosen mark or the drawn ring in a slot. The drawn one is kept and
+        /// re-parented rather than rebuilt, because it holds the hue derived from the name.
+        /// </summary>
+        private static void PaintMark(VisualElement slot, string logo, BrandMark drawn, int size)
+        {
+            slot.Clear();
+
+            if (string.IsNullOrWhiteSpace(logo))
+            {
+                slot.Add(drawn);
+                return;
+            }
+
+            slot.Add(CompanyLogos.Mark(logo, size));
+        }
+
+        /// <summary>
+        /// One of the two arrows beside the mark. Disabled until <see cref="OfferMarks"/> says
+        /// otherwise, and it says why on hover.
         /// </summary>
         private static Button Arrow(string glyph, string why)
         {

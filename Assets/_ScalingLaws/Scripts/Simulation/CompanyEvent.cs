@@ -183,6 +183,24 @@ namespace ScalingLaws.Simulation
         /// <summary>It ended early, whoever ended it. The break fee is on the event.</summary>
         CampaignLeft = 71,
 
+        /// <summary>A stand booked at a city event. The player's own click coming back.</summary>
+        EventStandBooked = 74,
+
+        /// <summary>The stand closed and this is what it did. Fans, regard, and whether it went round.</summary>
+        EventStandResult = 75,
+
+        /// <summary>Registration opened. Free, and everybody hears it on the same day.</summary>
+        EventAnnounced = 76,
+
+        /// <summary>
+        /// The same event, a month sooner, for a National Press member who asked for it.
+        ///
+        /// Its own type rather than a flag on the one above, because the two are read by
+        /// different things: this one is worth interrupting the player for and the public one
+        /// is not. Seven events a year announcing themselves over the screen would be noise.
+        /// </summary>
+        EventAnnouncedEarly = 77,
+
         /// <summary>Another lab wants to renew something that just ran out.</summary>
         RenewalOffered = 72
     }

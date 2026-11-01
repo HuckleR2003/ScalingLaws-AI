@@ -43,10 +43,15 @@ namespace ScalingLaws.UI
             strap.AddToClassList("field__hint");
             panel.Add(strap);
 
-            // The one figure that says whether any of this is working. It reads the same function
-            // the poaching maths reads, so a company that looks loyal here is genuinely hard to
-            // raid rather than merely well decorated.
-            var average = Loyalty.Average(state.Staff.Hires, state.Date, state.BenefitPoints);
+            // The one figure that says whether any of this is working.
+            //
+            // **The comment that was here claimed this reads the same function the poaching maths
+            // reads, so a loyal-looking company is genuinely hard to raid. That was not true.**
+            // Checked on 2026-10-25: poaching reads `RivalStaffMember.Loyalty`, which is a
+            // different function about somebody else's payroll, and nothing in this game raids the
+            // player at all. This figure is read by three screens and by no rule. The claim is kept
+            // here, marked false, because it is the kind of sentence that gets believed twice.
+            var average = state.AverageLoyalty();
 
             var summary = new VisualElement();
             summary.AddToClassList("benefits__summary");

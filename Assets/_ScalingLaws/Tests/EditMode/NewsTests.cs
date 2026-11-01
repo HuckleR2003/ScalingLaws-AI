@@ -284,7 +284,7 @@ namespace ScalingLaws.Tests.EditMode
         public void TheScreenLaysOutAllSixSections()
         {
             var simulation = Selling();
-            var screen = new NewsScreen(simulation, (_, _) => { });
+            var screen = new NewsScreen(simulation, (_, _) => { }, _ => { });
             screen.Refresh();
 
             foreach (var heading in new[]
@@ -305,7 +305,7 @@ namespace ScalingLaws.Tests.EditMode
             var simulation = Selling();
             simulation.SetIntelSubscription(IntelTier.NationalPress, true);
 
-            var screen = new NewsScreen(simulation, (_, _) => { });
+            var screen = new NewsScreen(simulation, (_, _) => { }, _ => { });
             screen.Refresh();
 
             // **Built from the same phrase the screen builds it from, not typed again here.** That
@@ -336,7 +336,7 @@ namespace ScalingLaws.Tests.EditMode
             simulation.SetIntelSubscription(IntelTier.NationalPress, true);
             simulation.SetIntelSubscription(IntelTier.TrendSearch, true);
 
-            var screen = new NewsScreen(simulation, (_, _) => { });
+            var screen = new NewsScreen(simulation, (_, _) => { }, _ => { });
             screen.Refresh();
 
             // Read from the book for the same reason its opposite number above is.
@@ -407,7 +407,7 @@ namespace ScalingLaws.Tests.EditMode
                 {
                     joined.Add(tier);
                 }
-            });
+            }, _ => { });
 
             screen.Refresh();
             Assert.IsTrue(Says(screen.Root, "JOIN KNOWNWORDS"), "No way in.");
@@ -426,7 +426,7 @@ namespace ScalingLaws.Tests.EditMode
 
             Assert.AreEqual(1, simulation.State.News.Unread);
 
-            new NewsScreen(simulation, (_, _) => { }).Refresh();
+            new NewsScreen(simulation, (_, _) => { }, _ => { }).Refresh();
             Assert.AreEqual(0, simulation.State.News.Unread);
         }
 

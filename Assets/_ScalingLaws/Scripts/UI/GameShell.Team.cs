@@ -267,7 +267,7 @@ namespace ScalingLaws.UI
             // used to be one bar under the grid that said nothing about which discipline it was
             // going to fill, so picking a job and hiring somebody were two unrelated actions on
             // one screen. One door per subject.
-            card.Add(BuildPositionHiring());
+            card.Add(BuildPositionHiring(position));
 
             // What the job is, which is the line that used to be squeezed onto the tile at a
             // size nobody read it at.
@@ -380,14 +380,14 @@ namespace ScalingLaws.UI
         /// sitting there grey: a disabled control with no explanation is the shape this project
         /// has already shipped twice as something a player reads as broken.
         /// </summary>
-        private VisualElement BuildPositionHiring()
+        private VisualElement BuildPositionHiring(PlayerSkill position)
         {
             var row = new VisualElement();
             row.AddToClassList("hirebar");
 
             var free = Math.Max(0, state.Staff.Desks - state.Staff.SeatedHeadcount);
 
-            var onSite = new Button(ShowHiringChoice)
+            var onSite = new Button(() => ShowHiringChoice(position))
             {
                 // The English "workplace" plus an S is exactly the shape Polish cannot copy.
                 text = Loc.T("team.hire_now_free", Loc.Counted(free, "noun.workplace"))
@@ -409,6 +409,10 @@ namespace ScalingLaws.UI
 
             var remote = new Button(() =>
             {
+                // The job this bar belongs to, carried through. Without it the screen opens on
+                // whichever position was last chosen there, which is what a tester reported
+                // twice.
+                portals.Position = position;
                 portals.Open = HiringPortal.Remote;
                 Show(Screen.Hiring);
             })
@@ -593,7 +597,7 @@ namespace ScalingLaws.UI
         /// same moment: the player has committed to something and the game is asking which of two
         /// roads they want. Two very different prices, stated on the buttons.
         /// </summary>
-        private void ShowHiringChoice()
+        private void ShowHiringChoice(PlayerSkill position)
         {
             hiringChoice?.RemoveFromHierarchy();
 
@@ -628,6 +632,7 @@ namespace ScalingLaws.UI
                 () =>
                 {
                     hiringChoice?.RemoveFromHierarchy();
+                    portals.Position = position;
                     portals.Open = HiringPortal.Agency;
                     Show(Screen.Hiring);
                 }));
@@ -637,6 +642,7 @@ namespace ScalingLaws.UI
                 () =>
                 {
                     hiringChoice?.RemoveFromHierarchy();
+                    portals.Position = position;
                     portals.Open = HiringPortal.Specialist;
                     Show(Screen.Hiring);
                 }));
@@ -738,16 +744,12 @@ namespace ScalingLaws.UI
         /// <summary>
         /// One person's loyalty, read the way the person card reads it.
         ///
-        /// The benefits and the market salary are what make the figure mean anything, and both
-        /// are company-wide, so this is the one place that assembles them for a list.
+        /// **This used to assemble the company-wide terms itself and so did two other screens.**
+        /// It asks the state now, which is the only reading: the benefits, the going rate and the
+        /// founder's Teamwork are facts about the company, and three places gathering them by hand
+        /// is three chances for the next term to reach two of them.
         /// </summary>
-        private double LoyaltyOf(Hire hire)
-        {
-            var offered = state.Benefits;
-
-            return Loyalty.For(hire, state.Date, BenefitCatalog.PointsFor(offered),
-                StaffCatalog.Get(hire.Role).SalaryPerYearUsd(hire.Skill), offered);
-        }
+        private double LoyaltyOf(Hire hire) => state.LoyaltyOf(hire);
 
         private VisualElement BuildChoiceTile(HireSource source, string title, string blurb,
             Action go)

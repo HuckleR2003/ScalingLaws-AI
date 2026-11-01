@@ -50,7 +50,7 @@ namespace ScalingLaws.Data
         public static readonly IReadOnlyList<Tester> Testers = new[]
         {
             new Tester("MiNatix", "tester.natalka", "Testers/minatix"),
-            new Tester("Francisco T", "tester.francisco"),
+            new Tester("Francisco T.", "tester.francisco"),
             new Tester("Samanta", "tester.samanta"),
         };
 

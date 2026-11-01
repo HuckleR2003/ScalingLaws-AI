@@ -135,9 +135,21 @@ namespace ScalingLaws.Data
             double requestedTokensBillions,
             GameDate date,
             double bestOwnedCapability,
-            double supplyMultiplier = 1.0)
+            double supplyMultiplier = 1.0,
+            double deduplicationKept = 1.0)
         {
-            var supplyScale = Math.Clamp(SimUnits.Finite(supplyMultiplier, 1.0), 0.5, 3.0);
+            // **Scrubbing the corpus is a fact about how many tokens the mix supplies**, so it
+            // belongs here beside the founder.s supply multiplier rather than downstream of the
+            // clamp in the planner.
+            //
+            // It was downstream until 2026-10-30, where it could do nothing: the planner reads
+            // `AvailableTokensBillions`, which is already `min(requested, totalSupply)`, so a
+            // pass that keeps more than the baseline had nothing to keep and a pass that keeps
+            // less simply took a share off whatever was asked for, with the compute bill still
+            // taken from the figure before it. All three passes trained the same tokens for the
+            // same money and Standard beat both of the others in every run in the game.
+            var keptScale = Math.Clamp(SimUnits.Finite(deduplicationKept, 1.0), 0.4, 1.5);
+            var supplyScale = Math.Clamp(SimUnits.Finite(supplyMultiplier, 1.0), 0.5, 3.0) * keptScale;
             var requested = Math.Max(0.0, SimUnits.Finite(requestedTokensBillions));
             if (mask == DatasetSource.None || requested <= 0.0)
             {

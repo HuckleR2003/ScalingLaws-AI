@@ -95136,7 +95136,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ScalingLaws.Runtime::ScalingLaws.UI.MapSitePin
   category: 5
   kind: 4
-  siteId: 
+  siteId: plant.riverside
 --- !u!1001 &205685862
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -579426,7 +579426,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ScalingLaws.Runtime::ScalingLaws.UI.MapSitePin
   category: 5
   kind: 4
-  siteId: 
+  siteId: plant.coastal
 --- !u!1 &1250455260
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ScalingLaws.Data;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -175,12 +176,29 @@ namespace ScalingLaws.UI
         public readonly struct Reading
         {
             public Reading(string what, string affects, string high, string low)
+                : this(what, affects, high, low, null)
+            {
+            }
+
+            /// <summary>
+            /// The same card, with the two bands drawn as points rather than as paragraphs.
+            ///
+            /// **Optional, so the twenty-six technical notes are untouched.** They are prose
+            /// about a control and they read well as prose. A skill is a list of things it
+            /// moves, and a list written as a paragraph is the thing nobody reads.
+            /// </summary>
+            public Reading(string what, string affects, string high, string low,
+                IReadOnlyList<SkillEffect> points)
             {
                 What = what ?? string.Empty;
                 Affects = affects ?? string.Empty;
                 High = high ?? string.Empty;
                 Low = low ?? string.Empty;
+                Points = points;
             }
+
+            /// <summary>What this moves, one line each, or null for a prose card.</summary>
+            public IReadOnlyList<SkillEffect> Points { get; }
 
             /// <summary>What the technology is, in plain words.</summary>
             public string What { get; }
@@ -355,8 +373,16 @@ namespace ScalingLaws.UI
 
             Section(cardWhat, reading.What);
             Section(cardAffects, reading.Affects);
-            Band(highBand, highBody, reading.High);
-            Band(lowBand, lowBody, reading.Low);
+            if (reading.Points != null && reading.Points.Count > 0)
+            {
+                Points(highBand, highBody, reading.Points, high: true);
+                Points(lowBand, lowBody, reading.Points, high: false);
+            }
+            else
+            {
+                Band(highBand, highBody, reading.High);
+                Band(lowBand, lowBody, reading.Low);
+            }
 
             owner = target;
             subject = Subject(title, body);
@@ -519,6 +545,59 @@ namespace ScalingLaws.UI
         {
             body.text = text;
             band.style.display = string.IsNullOrEmpty(text) ? DisplayStyle.None : DisplayStyle.Flex;
+
+            // A prose card has no rows to clear, but a card reused from a points card does.
+            ClearRows(band);
+        }
+
+        /// <summary>
+        /// One band as a list: the thing on the left, how hard it moves on the right.
+        ///
+        /// **The same points appear on both bands with the signs reversed**, because high and
+        /// low are two directions of one axis. Two different lists would be two things to
+        /// compare, which is the reading problem this replaced.
+        /// </summary>
+        private static void Points(VisualElement band, Label body, IReadOnlyList<SkillEffect> points,
+            bool high)
+        {
+            body.text = string.Empty;
+            body.style.display = DisplayStyle.None;
+            band.style.display = DisplayStyle.Flex;
+
+            ClearRows(band);
+
+            foreach (var point in points)
+            {
+                var strength = high ? point.AtHigh : point.AtLow;
+
+                var row = new VisualElement();
+                row.AddToClassList("insight__point");
+
+                var name = new Label(point.NameFor(strength));
+                name.AddToClassList("insight__point-name");
+                row.Add(name);
+
+                var marks = new Label(SkillEffectCatalog.Marks(strength));
+                marks.AddToClassList("insight__point-marks");
+                marks.EnableInClassList("insight__point-marks--up", strength > 0);
+                marks.EnableInClassList("insight__point-marks--down", strength < 0);
+                marks.EnableInClassList("insight__point-marks--none", strength == 0);
+                row.Add(marks);
+
+                band.Add(row);
+            }
+        }
+
+        /// <summary>Takes the rows off a band, leaving its title and its prose label.</summary>
+        private static void ClearRows(VisualElement band)
+        {
+            for (var index = band.childCount - 1; index >= 0; index--)
+            {
+                if (band[index].ClassListContains("insight__point"))
+                {
+                    band.RemoveAt(index);
+                }
+            }
         }
     }
 }

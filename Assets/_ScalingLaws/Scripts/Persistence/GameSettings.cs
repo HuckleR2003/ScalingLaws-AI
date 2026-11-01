@@ -24,6 +24,7 @@ namespace ScalingLaws.Persistence
         private const string AutosaveKey = Prefix + "AutosaveMinutes";
         private const string SeenOpeningKey = Prefix + "SeenOpening";
         private const string DebugUnlockedKey = Prefix + "DebugUnlocked";
+        private const string PlayedBeforeKey = Prefix + "PlayedBefore";
 
         public const float DefaultMasterVolume = 0.8f;
 
@@ -173,6 +174,30 @@ namespace ScalingLaws.Persistence
         /// </summary>
         public static bool DebugUnlocked { get; private set; }
 
+        /// <summary>
+        /// Whether a campaign has ever been started on this machine.
+        ///
+        /// **What the SKIP TUTORIAL button is gated on, and the author asked for that gate rather
+        /// than for the button.** A first-time player offered a way past the tour will take it and
+        /// then be alone in a game with fifteen tabs; somebody starting their second company has
+        /// already met Emil and should not have to again. Same shape as the opening: a fact about
+        /// the person at this machine, not about any one company.
+        /// </summary>
+        public static bool HasPlayedBefore { get; private set; }
+
+        /// <summary>Remembers that a campaign was begun. Called by the creator on the way out.</summary>
+        public static void MarkPlayed()
+        {
+            if (HasPlayedBefore)
+            {
+                return;
+            }
+
+            HasPlayedBefore = true;
+            PlayerPrefs.SetInt(PlayedBeforeKey, 1);
+            PlayerPrefs.Save();
+        }
+
         public static void SetDebugUnlocked(bool value)
         {
             DebugUnlocked = value;
@@ -206,6 +231,7 @@ namespace ScalingLaws.Persistence
             ReduceMotion = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
             HasSeenOpening = PlayerPrefs.GetInt(SeenOpeningKey, 0) == 1;
             DebugUnlocked = PlayerPrefs.GetInt(DebugUnlockedKey, 0) == 1;
+            HasPlayedBefore = PlayerPrefs.GetInt(PlayedBeforeKey, 0) == 1;
 
             // Defaults to the machine's own language on a first run, so somebody in Poland does not
             // have to find a settings screen written in English in order to say they read Polish.

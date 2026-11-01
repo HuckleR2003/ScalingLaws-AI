@@ -33,6 +33,18 @@ namespace ScalingLaws.UI
         /// <summary>Milliseconds between the strip arriving and the text being readable.</summary>
         public const int ArriveMilliseconds = 16;
 
+        /// <summary>
+        /// How long his next line shows itself while he is folded away.
+        ///
+        /// Asked for on 2026-10-25: while folded, a step the player satisfies by doing the thing
+        /// moves him on silently, so they have no way of knowing anything was said. It comes out,
+        /// waits, and goes back, which is a notice rather than a conversation.
+        /// </summary>
+        public const int PeekMilliseconds = 1200;
+
+        /// <summary>How long the slide out and back takes. Matches `.guide__bar`'s transition.</summary>
+        public const int PeekFadeMilliseconds = 240;
+
         private readonly VisualElement host;
         private readonly Func<GuideProgress> progress;
         private readonly Action<GuideTarget> goTo;
@@ -129,14 +141,23 @@ namespace ScalingLaws.UI
         /// <summary>A thing the cousin will do for you, if you ask him on the right step.</summary>
         public readonly struct GuideOffer
         {
-            public GuideOffer(string label, Action act)
+            public GuideOffer(string label, Action act, bool confirms = false)
             {
+                Confirms = confirms;
                 Label = label;
                 Act = act;
             }
 
             public string Label { get; }
             public Action Act { get; }
+
+            /// <summary>
+            /// Draw it as a <see cref="ConfirmButton"/>, which asks once before it acts.
+            ///
+            /// For an offer the player cannot take back: refusing the free research is four months
+            /// of calendar and a node they will otherwise pay points for.
+            /// </summary>
+            public bool Confirms { get; }
         }
 
         private VisualElement strip;
@@ -148,6 +169,40 @@ namespace ScalingLaws.UI
         private Label speakerName;
         private Label speakerRelation;
         private VisualElement portrait;
+        private Button fold;
+        private GuideFoldArrow foldArrow;
+        private Label foldLabel;
+        private VisualElement messageBar;
+        private VisualElement nameBlock;
+
+        /// <summary>
+        /// Whether he is folded away to the chevron and his portrait.
+        ///
+        /// **A field on the overlay rather than state on the strip, and that is the whole care
+        /// here.** The strip is rebuilt whenever the step index changes, which is the 2026-08-25
+        /// fix: it used to be rebuilt on every day rollover and the button under the cursor was
+        /// destroyed between the press and the release. A player who folded him away on step four
+        /// has not asked for him back on step five, so this has to outlive the strip that carries
+        /// the button.
+        ///
+        /// Not saved. It is a view preference about the next few minutes, like which tab the
+        /// management screen opens on, and nothing in the rules reads it.
+        /// </summary>
+        private bool folded;
+
+        /// <summary>Whether his line is currently showing itself over a folded strip.</summary>
+        private bool peeking;
+
+        /// <summary>
+        /// Which peek is the live one.
+        ///
+        /// **Every scheduled step of a peek is guarded on this.** A peek is three callbacks over
+        /// about a second and a half, and in that time the player can satisfy another step, unfold
+        /// him, or skip the tour entirely. Without the token the callbacks of a peek that is over
+        /// go on firing into whatever state replaced it, which is how a stale timer hides a strip
+        /// the player has just opened on purpose.
+        /// </summary>
+        private int peekToken;
 
         /// <summary>Which step the strip currently shows, or -1 when there is no strip.</summary>
         private int builtFor = -1;
@@ -254,16 +309,286 @@ namespace ScalingLaws.UI
         /// </summary>
         public const float StripClearance = 24f;
 
+        /// <summary>How wide Emil's head is on an ordinary screen, and over the creator.</summary>
+        private const int PortraitPixels = 96;
+
+        private const int TightPortraitPixels = 52;
+
         /// <summary>
-        /// Re-reads the strip's height after a layout pass and tells whoever asked.
+        /// The strip goes compact over the creator, at every window size.
         ///
-        /// It also re-applies the fade, because this is the one callback a rebuilt strip is
-        /// guaranteed to raise. See <see cref="ApplyFade"/> for why that cannot wait for the next
-        /// mouse move.
+        /// **The first version of this gated on the window and the gate was built on a wrong
+        /// reading.** The page geometry logged by `TabProofTests` is taken with the tour already
+        /// put away, so 922 and 787 are the page with no strip on it rather than the window, and
+        /// the window itself is 1059 logical pixels at 900px against 1080 at 1080px. Twenty one
+        /// pixels apart is nowhere to put a threshold.
+        ///
+        /// Then the frames settled it: `tour_create_3.png` at a full 1920x1080 is cut in exactly
+        /// the same place as `small_900_data.png`, losing GRANICA WIEDZY and DEDUPLIKACJA, which
+        /// are the two panels that step is asking the player to decide between. This was never a
+        /// small-screen fault. It is every screen, and the laptop is only where it was noticed.
+        ///
+        /// So the condition is the page underneath rather than the pixels: the creator is pinned
+        /// top and bottom and must not scroll, so whatever the strip takes is taken out of the
+        /// middle of it. Every other screen the tour visits can scroll and keeps the full portrait.
         /// </summary>
+        private bool WantsTightStrip => (Current?.CreatorStage ?? -1) >= 0;
+
+        /// <summary>Whether he is currently folded away. Read by the tests and by nothing else.</summary>
+        public bool Folded => folded;
+
+        /// <summary>
+        /// Folds him away, or brings him back.
+        ///
+        /// **Public because an EditMode element has no panel, so a click sent to the chevron is
+        /// never dispatched.** Same seam, for the same reason, as `ManagementScreen.ShowDesk`,
+        /// `PartsShop.Order`, `GateNotice.TakeTheOffer` and `RivalPanel.ShowTogether`. The button
+        /// calls this and holds no logic of its own, so what a test drives is what a click does.
+        ///
+        /// It changes nothing about the tour. The step does not advance, the highlight stays on
+        /// whatever it was ringing and a waiting step goes on waiting, because folding a
+        /// conversation away is not the same as being finished with it. Skipping already has two
+        /// buttons and they say what they do.
+        /// </summary>
+        public void SetFolded(bool value)
+        {
+            if (folded == value)
+            {
+                return;
+            }
+
+            folded = value;
+
+            // **A peek in flight belongs to the fold that is ending.** Cleared rather than ended,
+            // so the bar is put straight into the state the new fold asks for instead of flicking
+            // through the old one on the way.
+            ClearPeek();
+            ApplyFold();
+        }
+
+        /// <summary>
+        /// Puts the current fold on the strip, whichever way it got there.
+        ///
+        /// Called from `SetFolded` and again at the end of every `Build`, because the strip the
+        /// fold applies to is a new one by then.
+        /// </summary>
+        private void ApplyFold()
+        {
+            strip?.EnableInClassList("guide--folded", folded);
+
+            if (foldArrow != null)
+            {
+                foldArrow.PointsUp = folded;
+            }
+
+            // **The word is what makes it a control.** The chevron alone shipped on 2026-10-26 and
+            // the tester who asked for the button in the first place reported he could not see it.
+            // A proof render showed why: a 46px yellow disc beside a portrait reads as part of the
+            // portrait, and every other control in this strip is a labelled rectangle along the
+            // bottom. It was on the screen at every width measured and still nobody found it, so
+            // "drawn" and "visible" are two claims and only the second one matters here.
+            if (foldLabel != null)
+            {
+                foldLabel.text = Loc.T(folded ? "guide.unfold.short" : "guide.fold.short");
+            }
+
+            var shown = folded ? DisplayStyle.None : DisplayStyle.Flex;
+
+            if (messageBar != null)
+            {
+                messageBar.style.display = shown;
+            }
+
+            if (nameBlock != null)
+            {
+                nameBlock.style.display = shown;
+            }
+
+            // The strip has changed height by a lot, and the page underneath reserves room for it.
+            // `MeasureStrip` is raised by the layout that follows and does the re-reserving, so
+            // nothing is forced here: forcing it would read a height the layout has not computed.
+        }
+
+        /// <summary>Whether his line is showing itself over a folded strip right now.</summary>
+        public bool Peeking => peeking;
+
+        /// <summary>
+        /// Shows his next line for a moment over a folded strip, then puts it away again.
+        ///
+        /// **Public for the reason `SetFolded` is: an EditMode element has no panel, so nothing
+        /// scheduled ever fires there.** The three timers below are the animation; this method and
+        /// `EndPeek` are the state change, and a test drives those.
+        ///
+        /// **Nothing in it can be clicked, and that is a change from what was asked for rather
+        /// than an oversight.** A bar that appears under the cursor for a second with NEXT, the
+        /// offer, LATER and SKIP on it is a second in which a click meant for the page lands on a
+        /// button that ends the tutorial. This project has shipped two invisible click eaters
+        /// already and both were this shape. So the peek is something to read: it says a line went
+        /// by, and the chevron beside it is the way to open him up and read it properly.
+        /// </summary>
+        public void BeginPeek()
+        {
+            if (!folded || messageBar == null)
+            {
+                return;
+            }
+
+            peeking = true;
+            peekToken++;
+
+            var mine = peekToken;
+
+            // Laid out but away, so there is a state for the transition to come *from*. Setting
+            // `display` and the final look in one frame animates nothing: the element has no
+            // previous value on the frame it first exists in. Same trick, and the same 16ms, as
+            // `guide--arriving` at the foot of `Build`.
+            messageBar.style.display = DisplayStyle.Flex;
+            strip?.EnableInClassList("guide--peek-away", true);
+            SetBarClicksOff(true);
+
+            strip?.schedule.Execute(() =>
+                {
+                    if (mine == peekToken)
+                    {
+                        strip?.EnableInClassList("guide--peek-away", false);
+                    }
+                })
+                .ExecuteLater(ArriveMilliseconds);
+
+            strip?.schedule.Execute(() =>
+                {
+                    if (mine == peekToken)
+                    {
+                        FadePeekAway(mine);
+                    }
+                })
+                .ExecuteLater(PeekMilliseconds);
+        }
+
+        /// <summary>Starts the slide back, and takes the bar out of the layout once it is gone.</summary>
+        private void FadePeekAway(int mine)
+        {
+            strip?.EnableInClassList("guide--peek-away", true);
+
+            strip?.schedule.Execute(() =>
+                {
+                    if (mine == peekToken)
+                    {
+                        EndPeek();
+                    }
+                })
+                .ExecuteLater(PeekFadeMilliseconds);
+        }
+
+        /// <summary>
+        /// Puts his line away again, leaving the fold exactly as it was.
+        ///
+        /// Reached three ways: the timer running out, the player unfolding him, and the strip being
+        /// rebuilt under a peek. All three want the same thing, which is why there is one body.
+        /// </summary>
+        public void EndPeek()
+        {
+            if (!peeking)
+            {
+                return;
+            }
+
+            ClearPeek();
+            ApplyFold();
+        }
+
+        /// <summary>
+        /// Drops the peek state without deciding what the bar should look like afterwards.
+        ///
+        /// Separate from `EndPeek` because `SetFolded` has to clear a peek and then apply a fold
+        /// that has just changed. Ending the peek first would put the bar back to the *old* fold
+        /// for a frame.
+        /// </summary>
+        private void ClearPeek()
+        {
+            peeking = false;
+
+            // Anything the old peek still has scheduled belongs to a number nobody holds now.
+            peekToken++;
+
+            strip?.EnableInClassList("guide--peek-away", false);
+            SetBarClicksOff(false);
+        }
+
+        /// <summary>
+        /// Turns the buttons on his message off, or back on.
+        ///
+        /// **Queried rather than listed.** The bar carries NEXT, the step's own offer, LATER and
+        /// SKIP, and which of them exist depends on the step; three of the four are fields here and
+        /// the offer is not. A list would be right today and wrong the first time a step carries
+        /// something new.
+        ///
+        /// `PickingMode` rather than `SetEnabled`, because a greyed button is how this game says a
+        /// control is refusing, and nothing here is refusing anything.
+        /// </summary>
+        private void SetBarClicksOff(bool off)
+        {
+            if (messageBar == null)
+            {
+                return;
+            }
+
+            foreach (var button in messageBar.Query<Button>().ToList())
+            {
+                button.pickingMode = off ? PickingMode.Ignore : PickingMode.Position;
+            }
+        }
+
+        /// <summary>
+        /// What the chevron says when the pointer rests on it.
+        ///
+        /// **It carries the line he is on**, which is the thing a folded tour cannot otherwise
+        /// answer: a player who folded him away and then wonders why the other tabs are shut has
+        /// no way back to the sentence that explains it. Read live rather than captured, because
+        /// the step changes underneath a chevron that is never rebuilt for it.
+        /// </summary>
+        private string FoldNote()
+        {
+            var step = Current;
+
+            if (step == null)
+            {
+                return Loc.T("guide.fold.note");
+            }
+
+            // A waiting step is the case this note exists for. Everything else is simply paused.
+            var why = step.WaitForClick
+                ? Loc.T("guide.fold.waiting")
+                : Loc.T("guide.fold.note");
+
+            return string.IsNullOrEmpty(step.Line) ? why : step.Line + " " + why;
+        }
+
         private void MeasureStrip(GeometryChangedEvent _)
         {
             ApplyFade(true);
+
+            // **The strip shrinks where the page cannot spare it.** Checked here because this is
+            // the one callback a laid-out strip is guaranteed to raise, and because the step can
+            // change without the strip ever being rebuilt from scratch.
+            var tight = WantsTightStrip;
+
+            strip?.EnableInClassList("guide--tight", tight);
+
+            // **The head is sized here because the stylesheet physically cannot do it.**
+            // `PhonePanel.Avatar(96)` writes `style.width` and `style.height` on the element,
+            // and an inline style outranks every USS rule however many classes it carries. So
+            // `.guide--tight .guide__portrait { width: 52px }` was correct, specific, loaded,
+            // and beaten, which is why two measured runs came back with the class applied and
+            // the portrait unchanged. This is the `.rackface.roombuild__face` lesson one level
+            // worse: no selector wins against inline.
+            if (portrait != null)
+            {
+                var head = tight ? TightPortraitPixels : PortraitPixels;
+
+                portrait.style.width = head;
+                portrait.style.height = head;
+            }
 
             var now = strip == null ? 0f : strip.resolvedStyle.height;
 
@@ -506,6 +831,12 @@ namespace ScalingLaws.UI
             // reached the step where he pays for it", which is true however the player got there.
             HandOverAnythingOwed();
 
+            // **A step change, as opposed to the strip having been remounted.** Only the first
+            // is him saying something new; the second is housekeeping and must not announce itself.
+            // `builtFor >= 0` keeps the opening line of a campaign out of it, since there is nothing
+            // for a first strip to have moved on from.
+            var movedOn = builtFor >= 0 && builtFor != state.Step;
+
             if (builtFor != state.Step || strip == null || strip.parent == null)
             {
                 // The basement on arrival, read off the index for the same reason: the step names a
@@ -519,6 +850,15 @@ namespace ScalingLaws.UI
 
                 Build(step);
                 builtFor = state.Step;
+
+                // **He went on while he was folded away.** With the message hidden there is no
+                // NEXT to press, so the only way past a step is the player doing the thing it
+                // asked for, and that moves him on in silence. Asked for on 2026-10-25: the line
+                // comes out for a moment so they know something was said and can open him up.
+                if (movedOn && folded)
+                {
+                    BeginPeek();
+                }
             }
             else
             {
@@ -701,6 +1041,10 @@ namespace ScalingLaws.UI
             strip.style.opacity = RestingOpacity;
             strip.AddToClassList("guide");
 
+            // **The one step that hands the player something.** Asked for on 2026-10-26: a quiet
+            // green so the eye stops on the offer rather than reading it as another line of talk.
+            strip.EnableInClassList("guide--gift", step.Id == GuideScript.GiftStepId);
+
             // Ignores the mouse everywhere except its own buttons, so the player can keep clicking
             // the screens underneath while he talks.
             strip.pickingMode = PickingMode.Ignore;
@@ -725,9 +1069,35 @@ namespace ScalingLaws.UI
             portrait.AddToClassList("guide__portrait");
             speaker.Add(portrait);
 
+            // **Beside his head, as asked for on 2026-10-25.** The strip and the speaker are both
+            // `PickingMode.Ignore` so the player can keep working the screen underneath while he
+            // talks; a child button still receives its own events, which the NEXT and SKIP buttons
+            // in this same strip have proven since the tour was written. Stated anyway, because
+            // the one thing worse than a dead button here is a dead button nobody can explain.
+            foldArrow = new GuideFoldArrow();
+
+            fold = new Button(() => SetFolded(!folded));
+            fold.AddToClassList("guide__fold");
+            fold.pickingMode = PickingMode.Position;
+            fold.Add(foldArrow);
+
+            // `PickingMode.Ignore` on both children, or the label and the chevron each eat the
+            // click meant for the button they sit inside. That has cost this project a dead
+            // control three times.
+            foldLabel = new Label(Loc.T("guide.fold.short"));
+            foldLabel.AddToClassList("guide__fold-word");
+            foldLabel.pickingMode = PickingMode.Ignore;
+            fold.Add(foldLabel);
+
+            InsightTip.AttachLive(fold,
+                () => Loc.T(folded ? "guide.unfold" : "guide.fold"),
+                FoldNote);
+
+            speaker.Add(fold);
+
             // The torn plate, with the names laid over it. Behind rather than around, because a
             // drawn shape cannot be a container that lays its own children out.
-            var nameBlock = new VisualElement();
+            nameBlock = new VisualElement();
             nameBlock.AddToClassList("guide__nameblock");
             nameBlock.pickingMode = PickingMode.Ignore;
             nameBlock.Add(new GuideNamePlate());
@@ -749,6 +1119,7 @@ namespace ScalingLaws.UI
             strip.Add(speaker);
 
             var bar = new VisualElement();
+            messageBar = bar;
             bar.AddToClassList("guide__bar");
 
             // **Where the player is in the tour.** The playtest reported not knowing what stage it
@@ -774,8 +1145,25 @@ namespace ScalingLaws.UI
             var buttons = new VisualElement();
             buttons.AddToClassList("guide__buttons");
 
+            Label buttonsWaiting = null;
+
             if (!string.IsNullOrEmpty(step.Signal))
             {
+                // **It says what it is waiting for, on something that cannot be pressed.**
+                // Drawing nothing at all was honest and unreadable: the strip sat there with no
+                // button while the player looked for one. Asked for on 2026-10-26.
+                //
+                // A `Label` rather than a disabled `Button`, deliberately. A disabled button
+                // dispatches no pointer event, so it cannot explain itself, and this project has
+                // shipped that three times; a label never looked pressable in the first place.
+                if (!string.IsNullOrEmpty(step.Prompt))
+                {
+                    var says = new Label(step.Prompt);
+                    says.AddToClassList("guide__waiting");
+                    says.pickingMode = PickingMode.Ignore;
+                    buttonsWaiting = says;
+                }
+
                 // **A step waiting on the game has no button either**, for the same reason a
                 // waiting walkthrough step has none: the claim is that the thing happened. A NEXT
                 // beside "I am not pressing that for you" is a way to not press it and move on,
@@ -811,6 +1199,11 @@ namespace ScalingLaws.UI
                 next.AddToClassList("guide__next");
             }
 
+            if (buttonsWaiting != null)
+            {
+                buttons.Add(buttonsWaiting);
+            }
+
             if (next != null)
             {
                 buttons.Add(next);
@@ -820,12 +1213,18 @@ namespace ScalingLaws.UI
             // mechanism for it: the shell decides what the offer does, the tour only draws it.
             if (offerFor != null && offerFor(step) is { } offer)
             {
-                var help = new Button(() =>
-                {
-                    offer.Act();
-                    Advance();
-                })
-                { text = offer.Label };
+                var help = offer.Confirms
+                    ? new ConfirmButton(offer.Label, () =>
+                    {
+                        offer.Act();
+                        Advance();
+                    })
+                    : new Button(() =>
+                    {
+                        offer.Act();
+                        Advance();
+                    })
+                    { text = offer.Label };
 
                 help.AddToClassList("guide__offer");
                 buttons.Add(help);
@@ -838,7 +1237,16 @@ namespace ScalingLaws.UI
             // **No "come back later" on a walkthrough.** It is three minutes long and it is on one
             // screen; pausing it would mean saving a half-finished position and a lock, which is the
             // state this deliberately does not keep.
-            if (running == null)
+            // **Neither escape is drawn on a step that is waiting for the game.** Asked for
+            // on 2026-10-26 about the verdict step. "I will come back later" means nothing while
+            // the tour is already waiting, and both buttons sat next to a sentence saying he would
+            // not press the thing for you, which is an invitation to press something else instead.
+            //
+            // It is not a trap: a signal step does not lock the interface, so the player can go
+            // anywhere, and the chevron beside his head folds him away entirely.
+            var waitingOnTheGame = !string.IsNullOrEmpty(step.Signal);
+
+            if (running == null && !waitingOnTheGame)
             {
                 later = new Button(Later) { text = Loc.T("guide.later") };
                 later.AddToClassList("guide__later");
@@ -849,18 +1257,29 @@ namespace ScalingLaws.UI
                 later = null;
             }
 
-            skip = new Button(Skip)
+            if (waitingOnTheGame)
             {
-                text = running != null ? Loc.T("walk.stop") : Loc.T("guide.skip")
-            };
+                skip = null;
+            }
+            else
+            {
+                skip = new Button(Skip)
+                {
+                    text = running != null ? Loc.T("walk.stop") : Loc.T("guide.skip")
+                };
 
-            skip.AddToClassList("guide__skip");
-            buttons.Add(skip);
+                skip.AddToClassList("guide__skip");
+                buttons.Add(skip);
+            }
 
             bar.Add(buttons);
             strip.Add(bar);
 
             host.Add(strip);
+
+            // **The fold outlives the strip.** This is a new strip, built because the step moved,
+            // and the player folded the last one away for a reason that has not stopped applying.
+            ApplyFold();
 
             strip.AddToClassList("guide--arriving");
             strip.schedule.Execute(() => strip.RemoveFromClassList("guide--arriving"))

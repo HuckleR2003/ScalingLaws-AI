@@ -73,10 +73,18 @@ namespace ScalingLaws.Simulation
         /// the alternative is renting on their behalf, which is what it used to do and what a
         /// tester caught: opening that screen changed what the company was paying for.
         /// </summary>
+        /// <remarks>
+        /// **Allied capacity is passed on every call, hypothetical or not.** A deal the company
+        /// has already signed is part of the fleet whatever the creator is pricing, and leaving it
+        /// out of the what-if would make the creator quote a smaller fleet than the one the run
+        /// would actually get.
+        /// </remarks>
         public ComputeProfile ProfileWith(double? rentedInstead) =>
             State.Pool.BuildProfile(
                 State.Date, Market, State.HasServerRoom ? State.Hall : null, Room, rentedInstead,
-                State.Power.CapacityKilowatts(State.Date));
+                State.Power.CapacityKilowatts(State.Date),
+                State.Skills.RentedComputeCostMultiplier(),
+                AlliedPetaflops());
 
         /// <summary>
         /// What the company has learned about running a room full of machines.
@@ -802,7 +810,9 @@ namespace ScalingLaws.Simulation
             // day that actually runs, so the room could show capacity the market never received.
             var profile = State.Pool.BuildProfile(
                 State.Date, market, State.HasServerRoom ? State.Hall : null, Room, null,
-                State.Power.CapacityKilowatts(State.Date));
+                State.Power.CapacityKilowatts(State.Date),
+                State.Skills.RentedComputeCostMultiplier(),
+                AlliedPetaflops());
 
             State.SkillsLevelledToday.Clear();
             State.AchievementMomentsToday.Clear();
@@ -984,6 +994,8 @@ namespace ScalingLaws.Simulation
             AdvanceStateProgramme(profile);
             AdvanceResearchPoints();
             AdvanceMarketing();
+            AnnounceEventsOpeningToday();
+            RunEventsClosingToday();
             AdvanceRegulatoryAction();
             RollSafetyIncident();
             ServiceDebt();
@@ -1107,7 +1119,9 @@ namespace ScalingLaws.Simulation
         /// they had drifted is the whole reason it exists.
         /// </summary>
         public double TrainingThroughputMultiplier() =>
-            State.Founder.TrainingThroughputMultiplier * (1.0 + State.Staff.UtilizationBonus());
+            State.Founder.TrainingThroughputMultiplier
+            * State.Skills.TrainingSpeedMultiplier()
+            * (1.0 + State.Staff.UtilizationBonus());
 
         /// <summary>
         /// The largest run the company currently knows how to hold together, in billions.
@@ -5621,9 +5635,33 @@ namespace ScalingLaws.Simulation
         /// Waiting for an hour of work to be owed is waiting for the first ticket somebody is
         /// actually sitting on.
         /// </summary>
+        /// <summary>
+        /// **Held back while the opening tour is running, rather than skipped.**
+        ///
+        /// Asked for on 2026-10-25, after a tester watched the cousin telephone about the desk in
+        /// the middle of his own tutorial: taking the walkthrough he offers replaced the tour and
+        /// the tour never came back. The first repair made the shell refuse the call, which stopped
+        /// the collision and lost the call, because the flag below was already set by then.
+        ///
+        /// The gate belongs here instead. Nothing is announced, nothing is flagged, and the first
+        /// tick after the tour finishes says it. **`GuideProgress` lives in `Simulation/`**, so
+        /// this asks a question about the campaign rather than about a screen.
+        ///
+        /// `IsOffering` already carried this rule for the chip, in those words: two tutorials
+        /// competing for the same corner is how a player learns to ignore both. The phone was the
+        /// one path that never asked.
+        ///
+        /// **`IsWalkingTheTour` rather than `IsStillRunning`, and the one stage between them
+        /// matters.** Somebody who never answers the opening call stays at `Unseen` for the rest
+        /// of the campaign, so silencing the desk there would mean they are never told the post
+        /// has started arriving. The *call* still waits for `IsOffering`, which needs a finished
+        /// tour; at `Unseen` the news is simply filed and the walkthrough is carried by the chip
+        /// in the corner instead, which is what the chip is for.
+        /// </summary>
         private void AnnounceTheFirstTicket()
         {
-            if (State.SupportAnnounced || State.Support.BacklogHours <= 0.0)
+            if (State.SupportAnnounced || State.Support.BacklogHours <= 0.0
+                || State.Guide.IsWalkingTheTour)
             {
                 return;
             }
@@ -5677,6 +5715,387 @@ namespace ScalingLaws.Simulation
         /// in both directions: the fleet gives the capacity back the moment one is switched off.
         /// </summary>
         public void SetSupportAgents(int agents) => State.Support.SetAgentsWorking(agents);
+
+        /// <summary>
+        /// Ask National Press for early word about city events, or stop asking.
+        ///
+        /// **The membership is the gate and the flag is the choice**, and both have to be true.
+        /// Writing the flag without the membership would let a player tick the box, cancel the
+        /// subscription, and keep the head start for the rest of the campaign.
+        /// </summary>
+        public void SetEventEarlyAccess(bool wanted)
+        {
+            if (wanted && !State.IsMember(IntelTier.NationalPress))
+            {
+                return;
+            }
+
+            State.EventEarlyAccess = wanted;
+        }
+
+        /// <summary>
+        /// Whether the company sees the calendar a month ahead of everybody else.
+        ///
+        /// **The membership alone decides this, and the tick box does not.** The first version
+        /// required both, which made the box a switch that hid events a player was paying to
+        /// see: unticking it made an event that was eighty days out disappear from the list.
+        /// Reported on 2026-10-25, and it is the right reading: what $20,000 a month buys is
+        /// the early view, permanently, for as long as it is paid for.
+        /// </summary>
+        public bool HasEventEarlyAccess => State.IsMember(IntelTier.NationalPress);
+
+        /// <summary>
+        /// Whether to interrupt the player when something opens early, as opposed to simply
+        /// listing it.
+        ///
+        /// This is what the tick box is for: a notice in the corner rather than a thing to go
+        /// and look for. Turning it off costs no information, which is the whole difference
+        /// between a preference and a paywall.
+        /// </summary>
+        public bool WantsEarlyEventNotice
+            => State.EventEarlyAccess && State.IsMember(IntelTier.NationalPress);
+
+        /// <summary>
+        /// How badly each rival wants to be seen at the moment, on a scale of 0 to 1.
+        ///
+        /// **Read, never invented.** A lab that has shipped something people are buying wants a
+        /// stand; one that has not, does not. Brand strength is what the market already uses to
+        /// decide who is chosen, so it is the honest reading of "how are they doing" and it costs
+        /// no new state. A lab with nothing live is not in the room at all.
+        /// </summary>
+        public List<LabAppetite> LabAppetites()
+        {
+            var found = new List<LabAppetite>();
+
+            foreach (var agent in State.Rivals.Agents)
+            {
+                if (!agent.TryGetLiveModel(State.Date, out var live))
+                {
+                    continue;
+                }
+
+                found.Add(new LabAppetite(agent.Competitor, live.BrandStrength));
+            }
+
+            return found;
+        }
+
+        /// <summary>
+        /// What is open for registration today, soonest first, for the National Press list.
+        ///
+        /// The early look widens the window and changes nothing else, which is what keeps the two
+        /// views of one calendar from being two calendars.
+        /// </summary>
+        /// <summary>
+        /// How far along the industry is, as the share of labs with something on sale.
+        ///
+        /// **The city gets harder to get into as this rises**, which is the shape asked for:
+        /// room to spare in the early years and a scramble once everybody is shipping. Read
+        /// rather than stored, like everything else about events.
+        /// </summary>
+        public double FieldMaturity()
+        {
+            var agents = State.Rivals.Agents;
+
+            if (agents.Count == 0)
+            {
+                return 0.0;
+            }
+
+            var live = 0;
+
+            foreach (var agent in agents)
+            {
+                if (agent.TryGetLiveModel(State.Date, out _))
+                {
+                    live++;
+                }
+            }
+
+            return live / (double)agents.Count;
+        }
+
+        /// <summary>
+        /// Take a stand at a city event, at the list price or whatever the room settles on.
+        ///
+        /// **One body for both ways in, because they differ in exactly one thing: the price.**
+        /// While stands are free it is a purchase. Once they are gone the rivals who missed out
+        /// bid for the one that was held back, and the player pays what it took to see them off.
+        /// Two methods would be two places to get the booking, the charge or the refusal wrong.
+        ///
+        /// Posted to <see cref="LedgerLine.Marketing"/> rather than a line of its own. A stand at
+        /// a trade expo **is** marketing, which is how it is accounted for in life, and a new
+        /// ledger column is a migration where a row of the wrong width is dropped whole.
+        /// </summary>
+        public bool TryRegisterForStand(CityEventId id, int year, StandTier tier,
+            out string failureReason)
+        {
+            failureReason = string.Empty;
+
+            var open = false;
+
+            foreach (var (visibleId, visibleYear) in EventSeason.VisibleOn(State.Date,
+                HasEventEarlyAccess))
+            {
+                if (visibleId == id && visibleYear == year)
+                {
+                    open = true;
+                    break;
+                }
+            }
+
+            if (!open)
+            {
+                failureReason = Loc.T("event.not_open");
+
+                return false;
+            }
+
+            if (State.BookedTierFor((int)id, year) != null)
+            {
+                failureReason = Loc.T("event.already_booked");
+
+                return false;
+            }
+
+            var price = PriceOfStand(id, year, tier);
+
+            if (State.CashUsd < price)
+            {
+                failureReason = Loc.T("fail.needs_cash", UiMoney(price), UiMoney(State.CashUsd));
+
+                return false;
+            }
+
+            State.PostCash(LedgerLine.Marketing, price);
+            State.BookStand((int)id, year, (int)tier);
+
+            State.RaiseEvent(new CompanyEvent(
+                CompanyEventType.EventStandBooked,
+                State.Date,
+                Loc.T("ev.event.booked", CityEventCatalog.Get(id).DisplayName,
+                    EventVenueCatalog.TierName(tier)),
+                price));
+
+            return true;
+        }
+
+        /// <summary>
+        /// What a stand would cost today: the list price, or what the room has run it up to.
+        ///
+        /// Read-only, and separate from the booking for the reason the alliance card taught this
+        /// project: a screen that needs a number must not get it by calling a `Try` method, or
+        /// looking at a price buys the thing.
+        /// </summary>
+        public long PriceOfStand(CityEventId id, int year, StandTier tier)
+        {
+            var definition = CityEventCatalog.Get(id);
+            var venue = EventVenueCatalog.Get(definition.Venue);
+            var sellable = Math.Max(1, venue.Stands - 1);
+            var list = EventVenueCatalog.StandCostUsd(venue.Id, tier);
+
+            var taken = EventSeason.StandsTakenBy(id, year, State.Date, State.RosterSeed,
+                LabAppetites(), FieldMaturity());
+
+            if (taken.Taken < sellable)
+            {
+                return list;
+            }
+
+            var rounds = EventAuction.Settle(taken.Unseated, id, definition.Favours, list,
+                State.RosterSeed);
+
+            return EventAuction.PriceToBeat(rounds, list);
+        }
+
+        /// <summary>Whether the room is what the player would be walking into.</summary>
+        /// <summary>
+        /// How a venue stands today: what is left, what there is, and how many labs want one.
+        ///
+        /// **Plain integers, because `EventStandInfo` lives in `UI/` and `Simulation/` may not
+        /// look at it.** The interface assembles the snapshot from these; what it must not do is
+        /// work out how many stands are free, because `StandGoesToAuction` and `UpcomingEvents`
+        /// already answer that and a third copy of the arithmetic is a third chance to tell a
+        /// player a stand is available and then refuse to sell it.
+        ///
+        /// `interested` counts every lab that wanted one, taken and turned away together. A player
+        /// deciding whether to pay for the big stand is asking how contested the room is, and the
+        /// labs that missed out are most of that answer.
+        /// </summary>
+        public void StandsAt(CityEventId id, int year,
+            out int free, out int sellable, out int interested)
+        {
+            var definition = CityEventCatalog.Get(id);
+            var venue = EventVenueCatalog.Get(definition.Venue);
+
+            sellable = Math.Max(1, venue.Stands - 1);
+
+            var draw = EventSeason.StandsTakenBy(id, year, State.Date, State.RosterSeed,
+                LabAppetites(), FieldMaturity());
+
+            free = Math.Clamp(sellable - draw.Taken, 0, sellable);
+            interested = draw.Taken + (draw.Unseated?.Count ?? 0);
+        }
+
+        public bool StandGoesToAuction(CityEventId id, int year)
+        {
+            var definition = CityEventCatalog.Get(id);
+            var venue = EventVenueCatalog.Get(definition.Venue);
+            var sellable = Math.Max(1, venue.Stands - 1);
+
+            return EventSeason.StandsTakenBy(id, year, State.Date, State.RosterSeed,
+                LabAppetites(), FieldMaturity()).Taken >= sellable;
+        }
+
+        /// <summary>
+        /// Stand at anything booked for today, and bank what it did.
+        ///
+        /// Walked backwards because a booking is dropped as it is used, and the result is applied
+        /// through the state's own clamping properties rather than to the backing fields.
+        /// </summary>
+        /// <summary>
+        /// Tell the player what opened today, and tell a member a month sooner.
+        ///
+        /// **Without this the calendar was invisible.** Every piece of the event system existed
+        /// and nothing announced any of it, so the only way to find out an event was happening
+        /// was to open the National Press desk, which is the one thing a player without the
+        /// membership cannot do. Events are meant to be free to read about and the membership is
+        /// meant to buy a head start, and the first half of that was missing entirely.
+        ///
+        /// Filed straight into the feed rather than through `NewsDesk.TryFile`, because the story
+        /// is about an event rather than about something that happened to the company, and
+        /// `TryFile` reads a `CompanyEvent`. The event type is still raised, so the notice and any
+        /// screen that wants it can see it.
+        /// </summary>
+        private void AnnounceEventsOpeningToday()
+        {
+            var early = HasEventEarlyAccess;
+
+            for (var year = State.Date.Year; year <= State.Date.Year + 1; year++)
+            {
+                foreach (var definition in CityEventCatalog.All)
+                {
+                    if (early && EventSeason.EarlyAnnouncedOn(definition.Id, year).DayIndex
+                        == State.Date.DayIndex)
+                    {
+                        // The story is filed for anybody paying for the desk.
+                        State.News.Add(NewsDesk.EventOpening(definition.Id, year, State.Date,
+                            early: true));
+
+                        // The interruption is the tick box, separately, because a player who
+                        // turned it off wanted fewer notices rather than less information.
+                        if (WantsEarlyEventNotice)
+                        {
+                            State.RaiseEvent(new CompanyEvent(
+                                CompanyEventType.EventAnnouncedEarly,
+                                State.Date,
+                                Loc.T("ev.event.early", definition.DisplayName,
+                                    EventVenueCatalog.Get(definition.Venue).DisplayName),
+                                0L));
+                        }
+                    }
+
+                    if (EventSeason.AnnouncedOn(definition.Id, year).DayIndex
+                        == State.Date.DayIndex)
+                    {
+                        State.News.Add(NewsDesk.EventOpening(definition.Id, year, State.Date,
+                            early: false));
+
+                        State.RaiseEvent(new CompanyEvent(
+                            CompanyEventType.EventAnnounced,
+                            State.Date,
+                            Loc.T("ev.event.open", definition.DisplayName,
+                                EventVenueCatalog.Get(definition.Venue).DisplayName),
+                            0L));
+                    }
+                }
+            }
+        }
+
+        private void RunEventsClosingToday()
+        {
+            for (var index = State.BookedEventIds.Count - 1; index >= 0; index--)
+            {
+                var id = (CityEventId)State.BookedEventIds[index];
+                var year = State.BookedEventYears[index];
+                var tier = (StandTier)State.BookedEventTiers[index];
+
+                if (EventSeason.RunsOn(id, year).DayIndex != State.Date.DayIndex)
+                {
+                    continue;
+                }
+
+                var outcome = EventStand.Run(id, year, tier, State.RosterSeed);
+
+                State.Fans += outcome.Fans;
+                State.Reputation += outcome.Reputation;
+
+                State.RaiseEvent(new CompanyEvent(
+                    CompanyEventType.EventStandResult,
+                    State.Date,
+                    outcome.WentViral
+                        ? Loc.T("ev.event.viral", CityEventCatalog.Get(id).DisplayName,
+                            Invariant1(outcome.Fans))
+                        : Loc.T("ev.event.result", CityEventCatalog.Get(id).DisplayName,
+                            Invariant1(outcome.Fans)),
+                    0L));
+
+                State.DropBooking(index);
+            }
+        }
+
+        /// <summary>A whole number for a message, in the one culture this project prints in.</summary>
+        private static string Invariant1(double value)
+            => value.ToString("N0", Invariant);
+
+        /// <summary>
+        /// The next event at one venue whose registration is still open, if there is one.
+        ///
+        /// **One reading, two screens.** A story on the wire carries a venue rather than an event,
+        /// and so does a pin on the city map; both want the same answer, and two lookups would be
+        /// two chances to offer a stand at an event that closed yesterday.
+        ///
+        /// Soonest first, because `UpcomingEvents` is already ordered that way and the one a player
+        /// means by "this place" is the one about to happen.
+        /// </summary>
+        public bool TryUpcomingAt(EventVenueId venue, out UpcomingEventRow found)
+        {
+            foreach (var row in UpcomingEvents())
+            {
+                if (CityEventCatalog.Get(row.Id).Venue == venue)
+                {
+                    found = row;
+
+                    return true;
+                }
+            }
+
+            found = default;
+
+            return false;
+        }
+
+        public List<UpcomingEventRow> UpcomingEvents()
+        {
+            var labs = LabAppetites();
+            var rows = new List<UpcomingEventRow>();
+
+            foreach (var (id, year) in EventSeason.VisibleOn(State.Date, HasEventEarlyAccess))
+            {
+                var definition = CityEventCatalog.Get(id);
+                var venue = EventVenueCatalog.Get(definition.Venue);
+                var sellable = Math.Max(1, venue.Stands - 1);
+
+                var taken = EventSeason.StandsTakenBy(id, year, State.Date, State.RosterSeed,
+                    labs, FieldMaturity());
+
+                rows.Add(new UpcomingEventRow(id, year,
+                    EventSeason.RegistrationClosesOn(id, year).DayIndex - State.Date.DayIndex,
+                    sellable - taken.Taken, sellable));
+            }
+
+            return rows;
+        }
 
         /// <summary>Hours of work arriving today, for the line that says whether the desk keeps up.</summary>
         public double SupportArrivingHoursPerDay()
@@ -7817,7 +8236,8 @@ namespace ScalingLaws.Simulation
             var fanTarget = Standing.FanTarget(servedUsers, State.Reputation)
                 * (1.0 - State.Effects.FanPressure(State.Date));
 
-            State.Fans = Standing.AdvanceFans(State.Fans, fanTarget);
+            State.Fans = Standing.AdvanceFans(State.Fans, fanTarget,
+                State.Skills.FanInterestMultiplier());
 
             // One number a day, written by the code that already worked it out. A chart built from a
             // second calculation would eventually disagree with the counter beside it.

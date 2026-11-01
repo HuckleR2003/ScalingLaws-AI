@@ -56,6 +56,16 @@ namespace ScalingLaws.UI
         private List<ModelTrait> basket = new();
 
         private string versionName = string.Empty;
+
+        /// <summary>
+        /// The box the version is typed into, kept so WYDAJ can point at it.
+        ///
+        /// **The button used to be `SetEnabled(false)` while the name was blank**, which is the
+        /// one refusal on this screen a player cannot work out by looking: every other figure is
+        /// printed beside its control, and an empty text box two panels up does not read as the
+        /// reason the green button is grey. It answers now by putting the cursor in the box.
+        /// </summary>
+        private TextField nameField;
         private float price;
         private float freeTokens;
 
@@ -215,6 +225,7 @@ namespace ScalingLaws.UI
             card.Add(nameLabel);
 
             var field = new TextField { value = versionName };
+            nameField = field;
             field.AddToClassList("relcard__name");
             field.RegisterValueChangedCallback(change => versionName = change.newValue);
             card.Add(field);
@@ -265,11 +276,15 @@ namespace ScalingLaws.UI
             var slider = new Slider(MinimumPriceUsd, MaximumPriceUsd) { value = price };
             slider.AddToClassList("relrow__slider");
             slider.SetEnabled(open);
-            slider.RegisterValueChangedCallback(change =>
+            UiParts.WhenSettled(slider, value =>
             {
-                price = change.newValue;
+                price = value;
                 Refresh();
-            });
+            },
+            // The price in the head of its own row. Everything else on this panel prices a month
+            // of revenue off it, which is the part that waits for the release.
+            value => reading.text =
+                "$" + value.ToString("N2", CultureInfo.InvariantCulture) + " / month");
 
             row.Add(slider);
 
@@ -319,7 +334,51 @@ namespace ScalingLaws.UI
             note.AddToClassList("relrow__note");
             row.Add(note);
 
+            // **What the quality is worth in price, which no screen has ever said.** Asked for by a
+            // tester as a feature; it has been in the demand term since it was written, so this is
+            // the missing sentence rather than a new mechanism. Read from
+            // MarketShareModel.PriceAModelCanCarry, never computed here, so the figure beside the
+            // control cannot disagree with the rule the audience is deciding by.
+            var quality = QualityPremiumLine();
+
+            if (quality != null)
+            {
+                row.Add(quality);
+            }
+
             return row;
+        }
+
+        /// <summary>
+        /// How much more, or less, this product can charge than the market for being what it is.
+        ///
+        /// Against the best thing on the market rather than against an average, because that is the
+        /// comparison a buyer makes and the one the frontier figure already means everywhere else
+        /// in the game. Returns null with nothing on sale, since a product nobody has is not ahead
+        /// of or behind anything.
+        /// </summary>
+        private Label QualityPremiumLine()
+        {
+            var model = Model();
+
+            if (model == null)
+            {
+                return null;
+            }
+
+            var ahead = model.Line.EffectiveCapability() - simulation.Market.FrontierCapability;
+            var carries = MarketShareModel.PriceAModelCanCarry(ahead);
+
+            // Half a point is under the resolution anybody reads off these gauges, and a line
+            // saying a model is 0.1 ahead and can charge 1.01x is noise wearing a number.
+            var text = Math.Abs(ahead) < 0.5
+                ? Loc.T("release.quality_level")
+                : Loc.T(ahead > 0.0 ? "release.quality_ahead" : "release.quality_behind",
+                    UiFormat.Points(Math.Abs(ahead)), UiFormat.Multiple(carries));
+
+            var label = new Label(text);
+            label.AddToClassList("relrow__note");
+            return label;
         }
 
         /// <summary>The free allowance, same lock, same restore-on-back.</summary>
@@ -347,11 +406,12 @@ namespace ScalingLaws.UI
             var slider = new Slider(MinimumFreeTokens, MaximumFreeTokens) { value = freeTokens };
             slider.AddToClassList("relrow__slider");
             slider.SetEnabled(open);
-            slider.RegisterValueChangedCallback(change =>
+            UiParts.WhenSettled(slider, value =>
             {
-                freeTokens = change.newValue;
+                freeTokens = value;
                 Refresh();
-            });
+            },
+            value => reading.text = Loc.T("release.per_day", UiFormat.Count(value)));
 
             row.Add(slider);
 
@@ -458,9 +518,23 @@ namespace ScalingLaws.UI
             back.AddToClassList("rel__back");
             row.Add(back);
 
-            var ship = new Button(() => commit?.Invoke(versionName)) { text = Loc.T("release.ship") };
+            var named = !string.IsNullOrWhiteSpace(versionName);
+
+            var ship = new Button(() =>
+            {
+                if (!named)
+                {
+                    AudioDirector.Deny();
+                    nameField?.Focus();
+                    return;
+                }
+
+                commit?.Invoke(versionName);
+            })
+            { text = Loc.T("release.ship") };
+
             ship.AddToClassList("rel__ship");
-            ship.SetEnabled(!string.IsNullOrWhiteSpace(versionName));
+            ship.EnableInClassList("rel__ship--shut", !named);
             row.Add(ship);
 
             return row;

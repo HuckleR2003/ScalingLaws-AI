@@ -69,9 +69,25 @@ namespace ScalingLaws.UI
         /// </summary>
         private bool openedByHand;
 
+        /// <summary>
+        /// The one screen whose title line is already full, so the strip stays off it.
+        ///
+        /// **Build's own comment says every page in this game leaves the title line clear
+        /// on the right, and the model creator does not.** Its stage rail runs the whole
+        /// width in eight pills, so the rolled up counter was drawn straight across PO
+        /// TRENINGU and the two read as one broken word. Seen in tour_create_3.png.
+        ///
+        /// Hiding rather than moving, because the creator has no free corner: the rail is
+        /// under the top bar, the four figures are under the rail, the stage fills the
+        /// middle and the tour strip owns the foot. It is also where the counter is worth
+        /// least, since the creator carries its own numbered rail and its own way forward.
+        /// One line to reverse if that reads wrong.
+        /// </summary>
+        private readonly Func<bool> titleLineIsTaken;
+
         public TaskBanner(VisualElement host, Func<CompanyState> state,
             Func<GuideProgress> progress, Action changed, Func<bool> atHeadquarters = null,
-            Action openResearch = null)
+            Action openResearch = null, Func<bool> titleLineIsTaken = null)
         {
             this.host = host;
             this.state = state;
@@ -79,6 +95,7 @@ namespace ScalingLaws.UI
             this.changed = changed;
             this.atHeadquarters = atHeadquarters;
             this.openResearch = openResearch;
+            this.titleLineIsTaken = titleLineIsTaken;
         }
 
         /// <summary>
@@ -93,7 +110,8 @@ namespace ScalingLaws.UI
             var guide = progress();
 
             if (company == null || guide == null || guide.BannerDismissed
-                || guide.Stage == GuideStage.Unseen || guide.Stage == GuideStage.Talking)
+                || guide.Stage == GuideStage.Unseen || guide.Stage == GuideStage.Talking
+                || (titleLineIsTaken != null && titleLineIsTaken()))
             {
                 Hide();
                 return;

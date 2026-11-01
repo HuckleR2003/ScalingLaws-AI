@@ -69,7 +69,10 @@ namespace ScalingLaws.Simulation
             CompanyArchetype archetype,
             FounderTrait first,
             FounderTrait second,
-            uint randomSeed = 0x5CA1AB1E)
+            uint randomSeed = 0x5CA1AB1E,
+            FounderTrait customHouseTrait = FounderTrait.None,
+            long customOpeningCashUsd = 0,
+            string companyLogo = null)
         {
             var identity = CompanyIdentityCatalog.Get(archetype);
             var state = new CompanyState(
@@ -80,18 +83,47 @@ namespace ScalingLaws.Simulation
                 CashUsd = identity.StartingCashUsd,
                 Reputation = identity.StartingReputation,
                 OwnedDataSources = identity.StartingData,
-                DefaultPriceMultiplier = identity.PriceMultiplier
+                DefaultPriceMultiplier = identity.PriceMultiplier,
+                CompanyLogo = CompanyLogoCatalog.Knows(companyLogo)
+                    ? companyLogo
+                    : CompanyLogoCatalog.Default
             };
 
-            state.Founder = identity.HouseTrait == FounderTrait.None
+            // **A company of your own configures what the named labs come with.** The four tiles
+            // are presets: they bring a house trait, a bank balance and a price position already
+            // decided. Custom brings none of that and is the only archetype where the player sets
+            // it, which is what makes it the hardest start rather than the emptiest one.
+            var house = archetype == CompanyArchetype.Custom
+                ? customHouseTrait
+                : identity.HouseTrait;
+
+            state.Founder = house == FounderTrait.None
                 ? new FounderProfile(first, second)
-                : new FounderProfile(first, second, identity.HouseTrait);
+                : new FounderProfile(first, second, house);
+
+            // The opening trade is Custom's alone, and only when the player moved the slider off
+            // the default. `FoundingTrade.Open` is the single place the cash and the knowledge are
+            // handed over, so the creator cannot promise a position the campaign does not start on.
+            if (archetype == CompanyArchetype.Custom && customOpeningCashUsd > 0)
+            {
+                FoundingTrade.Open(state, customOpeningCashUsd);
+            }
 
             return state;
         }
 
         /// <summary>Which opening tile this campaign started from.</summary>
         public CompanyArchetype Archetype { get; set; } = CompanyArchetype.Custom;
+
+        /// <summary>
+        /// The mark on the company's own page, chip and browser tab.
+        ///
+        /// **Stored by name rather than by index**, so adding another mark to the folder cannot
+        /// renumber an existing company's badge into somebody else's. A name this build does not
+        /// know falls back to the first rather than throwing, which is what a save from a later
+        /// build has to do.
+        /// </summary>
+        public string CompanyLogo { get; set; } = CompanyLogoCatalog.Default;
 
         /// <summary>The founder's traits, folded into multipliers. Fixed for the campaign.</summary>
         public FounderProfile Founder { get; set; }
@@ -168,6 +200,24 @@ namespace ScalingLaws.Simulation
         /// player had already walked away from silenced every other lab for two weeks.
         /// </summary>
         public List<PendingRenewal> Renewals { get; } = new();
+
+        /// <summary>
+        /// Labs whose terms the player has asked to roll over without being asked. Saved from v77.
+        ///
+        /// **Asked for by the tester who found that every term costs a click on an offer that has
+        /// not changed.** He also chose the shape: it renews on the same terms and it can be turned
+        /// off, rather than a standing commitment that charges whatever the balance is. His reason
+        /// is the better argument. The cash cost of one of these is the fee for setting the
+        /// arrangement up, an advance, and what the other lab is really in it for comes afterwards.
+        /// A company that has already paid that once is continuing something rather than buying it
+        /// again, so rolling it over on the same terms is the honest default and a version that
+        /// could quietly bankrupt you is not.
+        ///
+        /// **It can never charge what the company does not have.** When the money or the points are
+        /// short the roll-over does not happen, the offer stays on the table for its fortnight, and
+        /// the player is told. An automatic payment nobody saw is the thing this was built to avoid.
+        /// </summary>
+        public HashSet<CompetitorId> AutoRenewals { get; } = new();
 
         /// <summary>
         /// Cabinets and fans the company has paid for and not stood up.
@@ -813,6 +863,43 @@ namespace ScalingLaws.Simulation
         /// <summary>Loyalty points the current set of benefits is worth. Read, never stored.</summary>
         public double BenefitPoints => BenefitCatalog.PointsFor(Benefits);
 
+        /// <summary>
+        /// One person's loyalty, with every company-wide term already filled in.
+        ///
+        /// **The one assembly, because there were three of them and they have just gained a fourth
+        /// term.** The benefits, the going rate for the role and now the founder's Teamwork are
+        /// all facts about the company rather than about the person, and three screens were each
+        /// gathering them by hand. One of the three would have been missed, which is the shape this
+        /// project has already shipped with four copies of one heat threshold.
+        /// </summary>
+        public double LoyaltyOf(Hire hire) =>
+            Loyalty.For(hire, Date, BenefitPoints,
+                StaffCatalog.Get(hire.Role).SalaryPerYearUsd(hire.Skill), Benefits,
+                Skills.LoyaltyPoints());
+
+        /// <summary>
+        /// Everybody's loyalty, averaged, which is the one figure worth putting on a screen.
+        ///
+        /// An empty payroll returns zero rather than the base: a company with nobody in it does not
+        /// have happy staff, it has no staff.
+        /// </summary>
+        public double AverageLoyalty()
+        {
+            if (Staff.Headcount == 0)
+            {
+                return 0.0;
+            }
+
+            var total = 0.0;
+
+            foreach (var hire in Staff.Hires)
+            {
+                total += LoyaltyOf(hire);
+            }
+
+            return total / Staff.Headcount;
+        }
+
         /// <summary>What the benefits cost today, across everybody on the payroll.</summary>
         public long DailyBenefitCostUsd =>
             Staff.Headcount <= 0 || Benefits.Count == 0
@@ -952,6 +1039,63 @@ namespace ScalingLaws.Simulation
         /// dollars and unlock the whole cash ladder on the first tick.
         /// </summary>
         public bool IsSandbox { get; set; }
+
+        /// <summary>
+        /// Whether the company has asked National Press for early word about city events.
+        ///
+        /// **Saved, because it is a decision rather than a derivation.** A campaign that turned
+        /// this on in 2023 and has been booking stands a month ahead ever since is in a
+        /// different position from one that never did, and nothing else in the state records
+        /// which. It is also the only thing the cheapest membership buys that the player can
+        /// point at, so losing it on load would read as the subscription silently lapsing.
+        ///
+        /// It does nothing without that membership. The simulation checks both.
+        /// </summary>
+        public bool EventEarlyAccess { get; set; }
+
+        /// <summary>
+        /// Stands the company has paid for and not yet stood at, as three parallel lists.
+        ///
+        /// **Causal and therefore saved.** The money has gone, the event has not happened, and
+        /// nothing else in the state records which. Dropping it on load would lose a booking
+        /// the player paid for, which reads as the money vanishing.
+        ///
+        /// Three lists rather than a type, because that is how this save format already carries
+        /// the warehouse, and a new serialisable type is a new thing to get wrong.
+        /// </summary>
+        public List<int> BookedEventIds { get; } = new();
+
+        public List<int> BookedEventYears { get; } = new();
+
+        public List<int> BookedEventTiers { get; } = new();
+
+        /// <summary>Which size of stand is booked for that event, or null for none.</summary>
+        public int? BookedTierFor(int eventId, int year)
+        {
+            for (var index = 0; index < BookedEventIds.Count; index++)
+            {
+                if (BookedEventIds[index] == eventId && BookedEventYears[index] == year)
+                {
+                    return BookedEventTiers[index];
+                }
+            }
+
+            return null;
+        }
+
+        public void BookStand(int eventId, int year, int tier)
+        {
+            BookedEventIds.Add(eventId);
+            BookedEventYears.Add(year);
+            BookedEventTiers.Add(tier);
+        }
+
+        public void DropBooking(int index)
+        {
+            BookedEventIds.RemoveAt(index);
+            BookedEventYears.RemoveAt(index);
+            BookedEventTiers.RemoveAt(index);
+        }
 
         /// <summary>
         /// Whether people write in unasked. On by default, and a player who is tired of the letters

@@ -14,7 +14,12 @@ namespace ScalingLaws.Tests
         public void NatalkaIsCreditedAsATester()
         {
             Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("MiNatix"));
-            Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("Francisco T"));
+            // **The spelling is his, and it has changed once.** He asked for Francisco T.
+            // with the stop on 2026-10-24, having previously asked for something else. A name
+            // in the credits belongs to the person in them, so this is held exactly rather
+            // than loosely: a test that matched on a prefix would let the next edit quietly
+            // drop it.
+            Assert.That(Credits.Testers.Select(t => t.Name), Does.Contain("Francisco T."));
         }
 
         [Test]

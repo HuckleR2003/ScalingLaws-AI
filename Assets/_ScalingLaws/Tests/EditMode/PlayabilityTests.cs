@@ -437,18 +437,47 @@ namespace ScalingLaws.Tests.EditMode
                     blueprint = blueprint.WithTokens(tokens).WithParameters(Math.Max(0.1, tokens / 20.0));
                 }
 
-                var projection = simulation.Project(blueprint);
-                if (!projection.IsFeasible)
-                {
-                    modelNumber--;
-                    return;
-                }
+                // **Too expensive is a reason to build something smaller, not a reason to build
+                // nothing.** This used to be two refusals and no retry: a shape the company could
+                // not afford made the operator give up for that day, and the next day it proposed
+                // the same shape and gave up again.
+                //
+                // That went unnoticed for as long as the parameter ceiling was low, because the
+                // clamp above was quietly doing the job. A company opening with
+                // `ShardedOptimizerStates` already known has a ceiling of 178B, the clamp stops
+                // firing, the compute-optimal shape stands, and the operator refused every run for
+                // four years and went bankrupt holding five research nodes and no product.
+                // Measured 2026-10-30 while sweeping `FoundingTrade`: the same company given the
+                // same money and **no** nodes shipped thirteen models in its first year.
+                //
+                // So this is the operator being unable to use a control, for the third time in
+                // this fixture, and the control is the one every creator screen has: build it
+                // smaller. A player looks at the bill and moves the slider left.
+                const int mostAttempts = 8;
 
-                // Do not start a run the company cannot pay for.
-                if (projection.ComputeCashCostUsd > state.CashUsd * 0.6)
+                for (var attempt = 0; ; attempt++)
                 {
-                    modelNumber--;
-                    return;
+                    var projection = simulation.Project(blueprint);
+
+                    if (projection.IsFeasible
+                        && projection.ComputeCashCostUsd <= state.CashUsd * 0.6)
+                    {
+                        break;
+                    }
+
+                    if (attempt >= mostAttempts || blueprint.ParameterCountBillions <= 0.2)
+                    {
+                        modelNumber--;
+                        return;
+                    }
+
+                    // Shrink the whole shape rather than the parameters alone, or the run walks off
+                    // the compute-optimal ratio the belt is measured against and the operator ends
+                    // up proposing something no player would.
+                    var smaller = Math.Max(0.1, blueprint.ParameterCountBillions * 0.65);
+                    blueprint = blueprint
+                        .WithParameters(smaller)
+                        .WithTokens(Math.Max(ModelBlueprint.MinimumTokenBillions, smaller * 20.0));
                 }
 
                 if (!simulation.TryStartTraining(blueprint, out _))
@@ -513,6 +542,91 @@ namespace ScalingLaws.Tests.EditMode
         {
             var state = new CompanyState("Prometheus AI", seed);
             return new CompanySimulation(state);
+        }
+
+        /// <summary>Four years from a chosen position on the founding trade.</summary>
+        private static (bool Bankrupt, double Best) OpenedOn(long cashUsd, int days, uint seed = 4242)
+        {
+            var state = new CompanyState("Prometheus AI", seed);
+            FoundingTrade.Open(state, cashUsd);
+
+            var simulation = new CompanySimulation(state);
+            new ScriptedOperator(simulation).Run(days);
+
+            return (state.IsBankrupt, state.BestCapability);
+        }
+
+        /// <summary>
+        /// **The opening has to be felt.** A control that changes nothing in the year a player
+        /// spends forming their opinion of the game is decoration, which is the class of fault
+        /// this project has shipped most often. Measured 2026-10-30: 27.8 untouched against 38.0
+        /// two rungs down, so the bar is set well inside what the sweep actually produced.
+        /// </summary>
+        [Test]
+        public void TheFoundingTradeIsFeltInTheFirstYear()
+        {
+            var untouched = OpenedOn(FoundingTrade.DefaultCashUsd, 365).Best;
+            var traded = OpenedOn(8_900_000L, 365).Best;
+
+            Assert.That(traded - untouched, Is.GreaterThan(5.0),
+                $"Untouched reached {untouched:0.0} and two rungs down reached {traded:0.0}. "
+                + "If the gap closes, the slider is not a decision.");
+        }
+
+        /// <summary>
+        /// **And it must not decide the game.** An opening position that still separates companies
+        /// after fourteen simulated years is a difficulty setting wearing a slider, and the whole
+        /// point of this control is that it changes the shape of the first year rather than who
+        /// wins. Measured spread across the five positions was 0.9 capability.
+        /// </summary>
+        [Test]
+        public void TheFoundingTradeDoesNotDecideTheGame()
+        {
+            var best = double.MinValue;
+            var worst = double.MaxValue;
+
+            foreach (var cash in new[]
+                     {
+                         FoundingTrade.DefaultCashUsd,
+                         8_900_000L,
+                         FoundingTrade.LeastCashUsd
+                     })
+            {
+                var reached = OpenedOn(cash, 1460).Best;
+                best = Math.Max(best, reached);
+                worst = Math.Min(worst, reached);
+            }
+
+            Assert.That(best - worst, Is.LessThan(3.0),
+                $"Four years apart the positions span {worst:0.0} to {best:0.0}. The opening is "
+                + "supposed to converge.");
+        }
+
+        /// <summary>
+        /// Every position on the slider has to be survivable, or part of the control is a trap.
+        ///
+        /// **This failed before the operator was taught to build smaller**, and the failure was
+        /// worth having: opening with a raised parameter ceiling and less cash made the operator
+        /// propose a run it could not pay for, refuse it, and propose the same run again the next
+        /// day, for four years, shipping nothing. The same company with the same money and no
+        /// rungs shipped thirteen models in its first year.
+        /// </summary>
+        [Test]
+        public void NoPositionOnTheFoundingTradeGoesBankrupt()
+        {
+            for (var rungs = 0; rungs <= FoundingTrade.Ladder.Count; rungs++)
+            {
+                var cash = FoundingTrade.DefaultCashUsd;
+                for (var i = 0; i < rungs; i++)
+                {
+                    cash -= FoundingTrade.PriceOf(FoundingTrade.Ladder[i]);
+                }
+
+                var run = OpenedOn(cash, 1460);
+
+                Assert.That(run.Bankrupt, Is.False,
+                    $"Opening on {cash / 1_000_000.0:0.0}M with {rungs} rung(s) went under.");
+            }
         }
 
         [Test]
