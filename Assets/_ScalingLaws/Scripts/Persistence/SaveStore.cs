@@ -1018,7 +1018,6 @@ namespace ScalingLaws.Persistence
                     petaflopDaysRequired = run.PetaflopDaysRequired,
                     petaflopDaysCompleted = run.PetaflopDaysCompleted,
                     projectedCapability = run.ProjectedCapability,
-                    actualTokensBillions = run.ActualTokensBillions,
                     computeCashSpentUsd = run.ComputeCashSpentUsd,
                     dataCostPaidUsd = run.DataCostPaidUsd,
                     modelType = (int)run.Blueprint.Type,
@@ -2280,7 +2279,6 @@ namespace ScalingLaws.Persistence
                     new GameDate(safe.activeRun.startDayIndex),
                     safe.activeRun.petaflopDaysRequired,
                     safe.activeRun.projectedCapability,
-                    safe.activeRun.actualTokensBillions,
                     safe.activeRun.dataCostPaidUsd);
 
                 run.Contribute(safe.activeRun.petaflopDaysCompleted, safe.activeRun.computeCashSpentUsd);
@@ -2784,7 +2782,6 @@ namespace ScalingLaws.Persistence
                     run.petaflopDaysRequired = Math.Clamp(Finite(run.petaflopDaysRequired, 1.0), 1.0, 1e12);
                     run.petaflopDaysCompleted = Math.Clamp(Finite(run.petaflopDaysCompleted), 0.0, run.petaflopDaysRequired);
                     run.projectedCapability = Math.Clamp(Finite(run.projectedCapability), 0.0, 100.0);
-                    run.actualTokensBillions = Math.Max(0.0, Finite(run.actualTokensBillions));
                     run.dataSources = SanitizeDataSources(run.dataSources);
                     run.computeCashSpentUsd = Math.Max(0L, run.computeCashSpentUsd);
                     run.dataCostPaidUsd = Math.Max(0L, run.dataCostPaidUsd);

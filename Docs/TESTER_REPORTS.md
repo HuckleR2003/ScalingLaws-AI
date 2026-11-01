@@ -774,3 +774,104 @@ is two decisions rather than one:
    reason timing matters at all, and the fix must not be "make it gentler" by reflex.
 
 Nothing in either is patched. Both are measured.
+
+---
+
+## Report 15 answered, 2026-11-01: three suspects acquitted and the real one named
+
+Decision one of the two was taken and the parity gate is gone from the funding ladder. Then the
+second decision was measured rather than guessed, and **every candidate offered for it turned out
+to be innocent.** Three tables did that, all in `CampaignProbe~/report.md`.
+
+### Serving a token is profitable in every year of the campaign
+
+A 200B-active dense model, no distillation, neutral skills, on rented compute at the market rate:
+
+| Year | Serving recipes | $/M to serve | $/M to sell | Cost over price |
+|---|---|---|---|---|
+| 2022 | 1.0x | 0.9068 | 20 | 0.05x |
+| 2026 | 20.0x | 0.0193 | 0.6882 | 0.03x |
+| 2030 | 80.0x | 0.0011 | 0.04 | 0.03x |
+| 2036 | 80.0x | 0.0011 | 0.04 | 0.03x |
+
+**Between two and nine per cent of the sale price, every year.** The 5.7x figure in the comment on
+`MarketModel.ServingEfficiencyOn` is from before that curve existed and is fully fixed. So the
+price decay is not the fault, the four cent floor is not the fault, and the demand curve is not the
+fault. All three were on my list and all three are wrong.
+
+### The market does contract, and it is not what kills anybody
+
+The whole world market falls 49 per cent between 2027 and 2030, from $145M a day to $74.6M. True,
+measured, and secondary: **a player holding 0.038 per cent of $145M a day is earning $55 a day.**
+Halving a market you do not hold is not what ends the campaign.
+
+### Share is an exponential, and that is the whole late game
+
+`SegmentMarket` scores every model on `exp(Utility)` and `Utility` carries capability at
+`CapabilityWeight` a point, so a capability gap is multiplied rather than subtracted. Measured off
+the Balanced style's own capability track, everything except capability held equal:
+
+| Year | Player | Frontier | Gap | Frontier model is |
+|---|---|---|---|---|
+| 2022 | 19.3 | 31.1 | 11.9 | 7x more attractive |
+| 2023 | 21.5 | 47.6 | 26.1 | 65x more attractive |
+| 2024 | 25.3 | 60.5 | 35.2 | 281x more attractive |
+| 2025 | 29.4 | 68.7 | 39.3 | 539x more attractive |
+| 2026 | 34.1 | 77.2 | 43.1 | **984x more attractive** |
+| 2027 | 34.7 | 83.8 | 49.1 | **2,592x more attractive** |
+
+That is what 0.038 per cent of a market is, and it is the same number that the fixture comment in
+`PlayabilityTests` had already recorded on 2026-09-13: sixteen thousand users by 2035 while one
+rival holds 84 per cent.
+
+### So the decision is one constant, and it is the author's
+
+`MarketShareModel.CapabilityWeight = 0.16`, inside an exponential. **It does two jobs with one
+number and they pull in opposite directions.** It is why a better model can charge more, which is
+what report 16 asked for and what is now printed on the price control. It is also why a lab forty
+points behind the frontier holds nothing at all.
+
+Four things worth knowing before choosing, none of them a recommendation:
+
+1. The exponential is the correct shape for a demand split. It is a logit and that is what logits
+   do. The question is the weight, not the shape.
+2. Price can offset it. `PriceWeight` is 1.1 against a log, so cutting the price by a factor of a
+   thousand buys about 7.6 of utility, which offsets 47 capability points. A laggard undercutting
+   massively is a strategy the arithmetic allows, and nothing in the game teaches it.
+3. Lowering the weight makes quality cheaper to ignore, which works against the spine directly.
+   Twenty points of lead currently carries 18.34x on price; that is the same constant.
+4. Nothing can be measured about any of it until the operator survives past 2027, which is step 2
+   of the plan in CLAUDE.md and is not written.
+
+**Nothing here is patched.** Report 15 is answered rather than fixed, and that is the honest end of
+it: the fault is one constant in the centre of the economy, and moving it is not a bug fix.
+
+### What was actually changed, and what it cost me to be sure
+
+The parity gate came out of `FundingMarket.Evaluate`, with the refusal enum member, the stage
+requirement and the six catalog arguments that went with it, plus **two parameters of `Evaluate`
+that stopped being read**, which is the dead-code shape the third sweep was written for the same
+day.
+
+`FallingBehindCostsTests` holds both halves. And it caught two errors of mine in one run:
+
+- It measured a company at **90 per cent** of the frontier and called it behind. A model shipped in
+  February 2022 is competitive, because the frontier that year is 31. Falling behind takes years, so
+  the fixture has to let the years pass.
+- **My justification for the change was overstated and the test said so.** I argued the valuation
+  already punishes parity severely, from the story half alone, and forgot the revenue half I had
+  read minutes earlier. Measured, for a $250M round in 2026:
+
+| Annual revenue | Sold behind | Sold at front | Times worse |
+|---|---|---|---|
+| $0 | 79.8% | 12.9% | 6.2x |
+| $20M | 24.3% | 9.4% | 2.6x |
+| $100M | 6.4% | 4.5% | 1.4x |
+| $300M | 2.3% | 2.0% | 1.1x |
+| $1B | 0.7% | 0.7% | **1.0x** |
+
+**The penalty has a shape rather than a value**: severe while a lab is a story, and exactly nothing
+once it is a business on a billion of revenue. That is defensible, because early investors price the
+story and later ones price the company. It is also the second open question for the author, and it
+is recorded here and asserted nowhere, because blessing either answer with a test would be deciding
+it without being asked.

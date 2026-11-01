@@ -13,7 +13,6 @@ namespace ScalingLaws.Data
         public FundingStageDefinition(
             FundingStage stage,
             long targetRaiseUsd,
-            double requiredCapabilityRatio,
             long requiredAnnualRevenueUsd,
             int requiredReleasedModels,
             GameDate earliestDate,
@@ -21,7 +20,6 @@ namespace ScalingLaws.Data
         {
             Stage = stage;
             TargetRaiseUsd = Math.Clamp(targetRaiseUsd, 0L, 500_000_000_000L);
-            RequiredCapabilityRatio = Math.Clamp(SimUnits.Finite(requiredCapabilityRatio), 0.0, 1.5);
             RequiredAnnualRevenueUsd = Math.Max(0L, requiredAnnualRevenueUsd);
             RequiredReleasedModels = Math.Max(0, requiredReleasedModels);
             EarliestDate = earliestDate;
@@ -49,12 +47,6 @@ namespace ScalingLaws.Data
 
         /// <summary>What a round of this size normally writes, before the valuation adjusts it.</summary>
         public long TargetRaiseUsd { get; }
-
-        /// <summary>
-        /// Capability the company must hold as a fraction of the frontier. This is the gate that
-        /// matters: money follows proximity to the frontier, not absolute numbers.
-        /// </summary>
-        public double RequiredCapabilityRatio { get; }
 
         public long RequiredAnnualRevenueUsd { get; }
         public int RequiredReleasedModels { get; }
@@ -89,6 +81,36 @@ namespace ScalingLaws.Data
         /// frontier is worth 41 percent of parity, being half is worth 6 percent.
         /// </summary>
         public const double CapabilityValuationExponent = 4.0;
+
+        /// <summary>
+        /// The least the revenue half of a valuation is ever worth, for a company with no claim on
+        /// the frontier at all.
+        ///
+        /// **Asked for by the author on 2026-11-01: a large company should hurt a little for
+        /// falling behind.** Until then the revenue half read no parity whatsoever, so the fourth
+        /// power on the story half was the only penalty and it was measured to fade to exactly
+        /// nothing: a company at 44 per cent of the frontier with a billion of revenue sold 0.7
+        /// per cent of itself for a $250M round and so did a frontier lab. The parity gate used to
+        /// hide that by refusing the round outright, and removing the gate the same day made it
+        /// visible.
+        ///
+        /// Eight tenths rather than something sharper, because this is a discount on a real
+        /// business rather than on a story. A buyer paying twenty times revenue is paying for
+        /// customers who are already there, and they do not stop existing because a rival shipped
+        /// something better; what changes is how long anybody believes they will stay.
+        /// </summary>
+        public const double RevenueParityFloor = 0.80;
+
+        /// <summary>
+        /// What the revenue half is multiplied by at this parity.
+        ///
+        /// **Exactly 1.0 at parity**, which is the rule every optional axis in this project is held
+        /// to: a company at the frontier is valued precisely as it was before this existed, so
+        /// nothing tuned against the old numbers moves.
+        /// </summary>
+        public static double RevenueParityFactor(double parity) =>
+            RevenueParityFloor
+            + (1.0 - RevenueParityFloor) * Math.Clamp(SimUnits.Finite(parity), 0.0, 1.0);
 
         /// <summary>A round priced below the previous one costs this much extra dilution.</summary>
         public const double DownRoundPenalty = 1.45;
@@ -153,7 +175,6 @@ namespace ScalingLaws.Data
         {
             new(FundingStage.SeriesA,
                 targetRaiseUsd: 25_000_000,
-                requiredCapabilityRatio: 0.55,
                 requiredAnnualRevenueUsd: 0,
                 requiredReleasedModels: 1,
                 earliestDate: GameDate.Start,
@@ -161,7 +182,6 @@ namespace ScalingLaws.Data
 
             new(FundingStage.SeriesB,
                 targetRaiseUsd: 80_000_000,
-                requiredCapabilityRatio: 0.65,
                 requiredAnnualRevenueUsd: 10_000_000,
                 requiredReleasedModels: 1,
                 earliestDate: GameDate.Start,
@@ -169,7 +189,6 @@ namespace ScalingLaws.Data
 
             new(FundingStage.SeriesC,
                 targetRaiseUsd: 250_000_000,
-                requiredCapabilityRatio: 0.75,
                 requiredAnnualRevenueUsd: 80_000_000,
                 requiredReleasedModels: 2,
                 earliestDate: GameDate.Start,
@@ -177,7 +196,6 @@ namespace ScalingLaws.Data
 
             new(FundingStage.SeriesD,
                 targetRaiseUsd: 700_000_000,
-                requiredCapabilityRatio: 0.80,
                 requiredAnnualRevenueUsd: 300_000_000,
                 requiredReleasedModels: 2,
                 earliestDate: GameDate.FromCalendar(2023, 6, 1),
@@ -185,7 +203,6 @@ namespace ScalingLaws.Data
 
             new(FundingStage.Growth,
                 targetRaiseUsd: 2_000_000_000,
-                requiredCapabilityRatio: 0.85,
                 requiredAnnualRevenueUsd: 1_000_000_000,
                 requiredReleasedModels: 3,
                 earliestDate: GameDate.FromCalendar(2024, 1, 1),
@@ -193,7 +210,6 @@ namespace ScalingLaws.Data
 
             new(FundingStage.PublicOffering,
                 targetRaiseUsd: 6_000_000_000,
-                requiredCapabilityRatio: 0.85,
                 requiredAnnualRevenueUsd: 3_000_000_000,
                 requiredReleasedModels: 4,
                 earliestDate: GameDate.FromCalendar(2026, 1, 1),

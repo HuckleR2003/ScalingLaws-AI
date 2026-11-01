@@ -85,8 +85,9 @@ namespace ScalingLaws.Tests.EditMode
         /// </summary>
         private static readonly string[] KnownUnread =
         {
-            // ---- known faults, left on the list until the author says show it or delete it ----
-            "TrainingRun.ActualTokensBillions",
+            // **The one known fault this list carried is gone**, deleted on 2026-11-01 rather
+            // than shown, because it was measured to be a copy of a figure the same record
+            // already held rather than information about anything. The ratchet only tightens.
 
 
             // ---- everything else measured on the day the sweep was written ----
@@ -406,8 +407,22 @@ namespace ScalingLaws.Tests.EditMode
         /// the one member known to be dead as healthy. A sweep with a silent hole in it is worse
         /// than no sweep, because it is quoted as cover.
         /// </summary>
+        /// <summary>
+        /// The sweep still finds things, and the thing it found first is gone because it found it.
+        ///
+        /// **This used to assert that `TrainingRun.ActualTokensBillions` was still in the list**,
+        /// which was right for one day: it was the member this sweep was written to catch and the
+        /// proof the sweep had no hole in it. It was then measured to be a copy rather than a
+        /// fact and deleted, so the assertion had to change with it, and the fixture's own doc
+        /// said so in advance.
+        ///
+        /// What is left is the guard against the sweep passing by finding nothing at all, which is
+        /// how its first version passed: it counted a constructor clamping its own field as a use.
+        /// Two numbers with wide bands, because the point is to catch a pattern that has stopped
+        /// matching rather than to pin a count that moves every time somebody adds a property.
+        /// </summary>
         [Test]
-        public void TheSweepStillCatchesTheOneThatWasFoundByHand()
+        public void TheSweepIsStillLookingAtSomething()
         {
             var unread = Unread(out var declarations);
 
@@ -415,11 +430,10 @@ namespace ScalingLaws.Tests.EditMode
                 $"Only {declarations} public computations were found in the rules, which is too "
                 + "few for this layer. The declaration pattern has stopped matching.");
 
-            Assert.That(unread, Contains.Item("TrainingRun.ActualTokensBillions"),
-                "The sweep no longer finds TrainingRun.ActualTokensBillions, which a tester found "
-                + "by playing and which this fixture exists to have caught first. Either it is "
-                + "wired now, in which case the other test here says so and this line changes "
-                + "with it, or the sweep has a hole in it.");
+            Assert.That(unread.Count, Is.GreaterThan(50),
+                $"The sweep reports only {unread.Count} unread computations against a baseline of "
+                + "about 130. A sweep that suddenly finds almost nothing has broken rather than "
+                + "been satisfied, and a broken one gets quoted as cover.");
         }
     }
 }

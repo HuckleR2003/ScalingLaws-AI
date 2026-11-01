@@ -129,7 +129,15 @@ namespace ScalingLaws.Simulation
                 * Math.Pow(ratio, FundingCatalog.CapabilityValuationExponent)
                 * FundingCatalog.TrustIn(reputation, fans);
 
-            var revenueValue = Math.Max(0L, annualRevenueRunRateUsd) * FundingCatalog.RevenueMultiple;
+            // **The revenue half is discounted for being behind too, lightly.** It used to read no
+            // parity at all, which made the fourth power on the story half fade to nothing as a
+            // company grew: measured on 2026-11-01, a lab at 44 per cent of the frontier with a
+            // billion of revenue sold exactly as little of itself as a frontier lab did. The gate
+            // that used to refuse the round had been hiding that, and removing it the same day is
+            // what made it visible. Asked for by the author: a large company should hurt a little.
+            var revenueValue = Math.Max(0L, annualRevenueRunRateUsd)
+                * FundingCatalog.RevenueMultiple
+                * FundingCatalog.RevenueParityFactor(ratio);
 
             var sentiment = FundingCatalog.SentimentOn(date);
             return SimUnits.ToDollars((storyValue + revenueValue) * sentiment);
@@ -139,8 +147,6 @@ namespace ScalingLaws.Simulation
         public static FundingAvailability Evaluate(
             FundingStage stage,
             GameDate date,
-            double bestCapability,
-            double frontierCapability,
             long annualRevenueRunRateUsd,
             int releasedModels)
         {
@@ -161,13 +167,32 @@ namespace ScalingLaws.Simulation
                     $"Needs {definition.RequiredReleasedModels} released model(s), has {releasedModels}.");
             }
 
-            var frontier = Math.Max(1.0, frontierCapability);
-            var ratio = bestCapability / frontier;
-            if (ratio < definition.RequiredCapabilityRatio)
-            {
-                return new FundingAvailability(stage, false, FundingRefusal.NeedsCapability,
-                    $"Needs {definition.RequiredCapabilityRatio:P0} of the frontier, sits at {Math.Max(0.0, ratio):P0}.");
-            }
+            // **There is no parity gate here any more, and that is deliberate.** Removed
+            // 2026-11-01 after a tester reported the late game as unsurvivable and the probe
+            // measured it: every scripted style that plays the game falls under the Series A
+            // requirement of 55 per cent of the frontier in its second year and is then locked out
+            // of every round for the rest of the campaign. One round raised, ever.
+            //
+            // The frontier is designed to run away, so a gate written as a share of it is the
+            // design arguing with itself. And the cost of falling behind is already charged once,
+            // where it belongs: PreMoneyValuationUsd raises the story half to the fourth power of
+            // parity, so a company at 44 per cent is valued on a $75M story against $2B at parity.
+            // A $25M Series A therefore costs that company a quarter of itself and costs a
+            // frontier lab about one per cent. That is a severe, visible, plannable price.
+            //
+            // Charging a second time by refusing the round is not a price, it is erasure, and this
+            // repository had already settled that principle in those words for reputation and for
+            // valuation. The game's own dossier for Algho Alpha has half a billion arriving while
+            // the frontier triples past it, so the research disagreed with the ladder too.
+            //
+            // Measured both ways before it was changed: with the gate off, Frugal survives to 2030
+            // instead of 2026 and Reckless to 2030 instead of 2027, each taking one more round.
+            // Nobody reaches 2031 either way, because the whole market contracts by 49 per cent
+            // between 2027 and 2030, which is a separate open question in Docs/TESTER_REPORTS.md.
+            //
+            // The calendar, the revenue and the released-model requirements are untouched, so no
+            // capital skips a gate it used to wait for. **The loan ladder still gates on parity**,
+            // at 0.30 to 0.90 by product, and nothing here measured that one.
 
             if (annualRevenueRunRateUsd < definition.RequiredAnnualRevenueUsd)
             {

@@ -372,7 +372,11 @@ namespace ScalingLaws.Persistence
         public double petaflopDaysRequired;
         public double petaflopDaysCompleted;
         public double projectedCapability;
-        public double actualTokensBillions;
+        // **actualTokensBillions was here and is gone, 2026-11-01.** It was a copy of the token
+        // count the blueprint on the same record already carries, and no version bump goes with
+        // removing it: a v77 file still containing the key loads unchanged, because a key nothing
+        // reads is a key nothing misses. See the note in TrainingRun for why it could never
+        // differ from what was asked for.
         public long computeCashSpentUsd;
         public long dataCostPaidUsd;
 

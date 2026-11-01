@@ -20,7 +20,6 @@ namespace ScalingLaws.Data
     {
         None = 0,
         AlreadyRaised = 1,
-        NeedsCapability = 2,
         NeedsRevenue = 3,
         NeedsReleasedModels = 4,
         TooEarly = 5,

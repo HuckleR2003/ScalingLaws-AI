@@ -117,6 +117,13 @@ namespace ScalingLaws.Tests.EditMode
             /// </summary>
             public readonly SortedSet<string> Refusals = new();
 
+            /// <summary>Added 2026-11-01 with the mechanisms the operator had never touched.</summary>
+            public int PriceMoves;
+
+            public int Alliances;
+            public int Packages;
+            public int Offers;
+
             /// <summary>
             /// Files a refusal with the figures taken out.
             ///
@@ -191,7 +198,9 @@ namespace ScalingLaws.Tests.EditMode
                     + $"{probe.Campaigns} campaigns, {probe.Upgrades} upgrades, "
                     + $"{probe.RacksPlaced} racks, {probe.HardwareBought} accelerators, "
                     + $"{probe.Signed} people signed, {probe.GrantsTaken} grants taken, "
-                    + $"{probe.Rounds} rounds raised");
+                    + $"{probe.Rounds} rounds raised, {probe.PriceMoves} price moves, "
+                    + $"{probe.Alliances} alliances, {probe.Packages} reserved packages, "
+                    + $"{probe.Offers} offers sent");
 
                 foreach (var refusal in probe.Refusals)
                 {
@@ -296,6 +305,145 @@ namespace ScalingLaws.Tests.EditMode
             // He asked for two things: that model types carry different market prices, and that a
             // better model should be able to charge more. One of those is already true and was
             // never shown to anybody; the other is half true in a way that matters.
+            // **Report 15, the half the funding gate cannot reach.** The price of a token falls
+            // 500 times across the campaign and the market's serving recipes get 80 times cheaper
+            // and then stop improving in 2030, so whether the late game can pay for anything is
+            // the ratio of those two and nobody had divided them.
+            //
+            // The only measurement of this in the repository is a comment on
+            // MarketModel.ServingEfficiencyOn: a 200B-active model cost 0.22x the market rate in
+            // 2022, 2x in 2025 and 5.7x from 2030. **Those figures are from before that curve
+            // existed**, which is to say before the fix, and nothing has measured it since.
+            //
+            // Assumptions, stated because the figure is meaningless without them: one 200B-active
+            // dense model, no distillation, a founder at the neutral skill baseline, served on
+            // rented compute at the market's own price per petaflop-day. The same 200B the old
+            // measurement used, so the two are comparable.
+            // **What falling behind costs in the price of money, and how fast that fades.**
+            //
+            // Written 2026-11-01 when the parity gate was removed from the funding ladder. The
+            // argument for removing it was that the cost is already charged in the valuation,
+            // where the story half is raised to the fourth power of parity. That is true and it
+            // was overstated: the valuation has a second half, revenue at a multiple of twenty,
+            // which does not read parity at all. A company at 44 per cent of the frontier with
+            // $20M of revenue sells about three times more of itself than a frontier lab, not
+            // twenty times, and the gap closes as revenue grows.
+            //
+            // **Whether a large company should still be punished for falling behind is a design
+            // call**, so this is measured here and not asserted anywhere.
+            // **The late game, and the measurement that found none of the suspects guilty.**
+            //
+            // A tester said the late game is unsurvivable and the tokens are too cheap. Three
+            // candidates were offered and the tables above acquit all three: serving a token costs
+            // between two and nine per cent of what one sells for in every year of the campaign,
+            // so the margin is healthy, and the whole market does contract by 49 per cent between
+            // 2027 and 2030 but a player holding 0.038 per cent of it is not killed by that.
+            //
+            // What is left is share, and share is an exponential. SegmentMarket scores every model
+            // on exp(Utility), and Utility carries capability at CapabilityWeight a point, so a
+            // capability gap is multiplied rather than subtracted. This table is that gap, read off
+            // the same Utility the market uses, with everything except capability held equal.
+            //
+            // **Computed here rather than in a sentence**, because this number has been got wrong
+            // by hand twice in one day.
+            lines.Add(string.Empty);
+            lines.Add("## What a capability gap does to how attractive a model is");
+            lines.Add(string.Empty);
+            lines.Add("Same brand, same price, same age on both sides, so capability is the only "
+                + "difference. Read off `MarketShareModel.Utility`, the one the demand split "
+                + "uses. The player column is the Balanced style's measured capability from the "
+                + "track above.");
+            lines.Add(string.Empty);
+            lines.Add("| Year | Player | Frontier | Gap | Frontier model is |");
+            lines.Add("|---|---|---|---|---|");
+
+            var balanced = probes.FirstOrDefault(entry => entry.Style == Style.Balanced).Probe;
+
+            if (balanced != null)
+            {
+                foreach (var row in balanced.Track)
+                {
+                    if (balanced.Bankrupt >= 0 && row.Year > balanced.Bankrupt)
+                    {
+                        continue;
+                    }
+
+                    var mine = MarketShareModel.Utility(row.Capability, 0.5, 1.0, 0.0);
+                    var theirs = MarketShareModel.Utility(row.Frontier, 0.5, 1.0, 0.0);
+                    var times = Math.Exp(theirs - mine);
+
+                    lines.Add(string.Format(CultureInfo.InvariantCulture,
+                        "| {0} | {1:0.0} | {2:0.0} | {3:0.0} | **{4:N0}x more attractive** |",
+                        row.Year, row.Capability, row.Frontier, row.Frontier - row.Capability,
+                        times));
+                }
+            }
+
+            lines.Add(string.Empty);
+            lines.Add("## What falling behind costs in the price of money");
+            lines.Add(string.Empty);
+            lines.Add("A $250M round in January 2026, same reputation and following on both sides, "
+                + "so parity is the only difference. **The penalty fades as the revenue half of "
+                + "the valuation grows**, because that half does not read parity.");
+            lines.Add(string.Empty);
+            lines.Add("| Annual revenue | Pre-money at 44% | Pre-money at parity | Sold behind | Sold at front | Times worse |");
+            lines.Add("|---|---|---|---|---|---|");
+
+            var priceDate = GameDate.FromCalendar(2026, 1, 1);
+            const double theFrontier = 77.0;
+            const long round = 250_000_000L;
+
+            foreach (var revenue in new[] { 0L, 20_000_000L, 100_000_000L, 300_000_000L, 1_000_000_000L })
+            {
+                var behindValue = FundingMarket.PreMoneyValuationUsd(
+                    priceDate, theFrontier * 0.44, theFrontier, revenue, 0.5, 100_000.0);
+
+                var frontValue = FundingMarket.PreMoneyValuationUsd(
+                    priceDate, theFrontier, theFrontier, revenue, 0.5, 100_000.0);
+
+                var soldBehind = round / (double)(behindValue + round);
+                var soldFront = round / (double)(frontValue + round);
+                var worse = soldFront <= 0.0 ? 0.0 : soldBehind / soldFront;
+
+                lines.Add(string.Format(CultureInfo.InvariantCulture,
+                    "| {0} | {1} | {2} | {3:P1} | {4:P1} | **{5:0.0}x** |",
+                    Money(revenue), Money(behindValue), Money(frontValue),
+                    soldBehind, soldFront, worse));
+            }
+
+            lines.Add(string.Empty);
+            lines.Add("## What it costs to serve a token against what one sells for");
+            lines.Add(string.Empty);
+            lines.Add("A 200B-active dense model, no distillation, neutral skills, on rented "
+                + "compute at the market rate. **Above 1.00 means pricing at the market is a loss "
+                + "on every token served**, whatever else the company does right.");
+            lines.Add(string.Empty);
+            lines.Add("| Year | Serving recipes | $/M to serve | $/M to sell | Cost over price |");
+            lines.Add("|---|---|---|---|---|");
+
+            const double activeParameters = 200e9;
+            const double flopsPerPetaflopDay = 1e15 * 86_400.0;
+
+            for (var year = 2022; year <= 2022 + Years; year++)
+            {
+                var when = GameDate.FromCalendar(year, 1, 1);
+                var world = MarketModel.Evaluate(when);
+
+                var recipes = MarketModel.ServingEfficiencyOn(when);
+                var flopsPerToken = 2.0 * activeParameters / recipes;
+                var tokensPerPetaflopDay = flopsPerPetaflopDay / flopsPerToken;
+
+                var costPerMillion = world.RentPricePerPetaflopDayUsd
+                    / tokensPerPetaflopDay * 1e6;
+
+                var price = world.PricePerMillionTokensUsd;
+                var over = price <= 0.0 ? 0.0 : costPerMillion / price;
+
+                lines.Add(string.Format(CultureInfo.InvariantCulture,
+                    "| {0} | {1:0.0}x | {2:0.####} | {3:0.####} | **{4:0.00}x** |",
+                    year, recipes, costPerMillion, price, over));
+            }
+
             lines.Add(string.Empty);
             lines.Add("## What a capability point is worth in price");
             lines.Add(string.Empty);
@@ -503,6 +651,194 @@ namespace ScalingLaws.Tests.EditMode
             Research(simulation, probe);
             Train(simulation, style);
             Ship(simulation, style, probe);
+
+            // **Three mechanisms this operator had never touched**, added 2026-11-01 as step two of
+            // the plan in CLAUDE.md. Pricing is the important one and the reason is measured rather
+            // than guessed: the market rate falls five hundred times across the campaign and this
+            // operator held the opening subscription price in every one of its fourteen years, so
+            // its price relative to the market climbed the whole way. A relative price of five
+            // hundred costs about 6.8 of utility, which is the same order as the forty point
+            // capability gap that was being blamed for the player holding nothing.
+            SetThePrice(simulation, style, probe);
+            TakeAllies(simulation, probe);
+            ReserveCapacity(simulation, style, probe);
+        }
+
+        /// <summary>
+        /// Keeps the price somewhere near the market, which is what a company watching its own
+        /// dashboard would do and what this operator had never done.
+        ///
+        /// **A subscription is priced in dollars a month and the market is priced per token**, so
+        /// standing still is a decision: as the market rate falls and each subscriber gets through
+        /// more tokens, a fixed monthly fee drifts further above the market every year. The
+        /// conversion is read from MonetizationPolicy rather than repeated here, so the operator
+        /// cannot aim at a figure the simulation computes differently.
+        ///
+        /// The styles differ in what they aim at, which is the whole point: undercutting is a real
+        /// strategy the arithmetic allows and no fixture had ever used it.
+        /// </summary>
+        private static void SetThePrice(CompanySimulation simulation, Style style, Probe probe)
+        {
+            var state = simulation.State;
+
+            if (state.ReleasedModelCount == 0)
+            {
+                return;
+            }
+
+            var target = style switch
+            {
+                Style.Reckless => 0.70,
+                Style.Frugal => 1.30,
+                _ => 1.00
+            };
+
+            var market = simulation.Market.PricePerMillionTokensUsd;
+
+            if (market <= 0.0)
+            {
+                return;
+            }
+
+            var tokensPerSubscriber =
+                MonetizationCatalog.TokensPerSubscriberPerMonthOn(state.Date) / 1_000_000.0;
+
+            if (tokensPerSubscriber <= 0.0)
+            {
+                return;
+            }
+
+            var wanted = target * market * tokensPerSubscriber;
+            var now = state.Monetization.SubscriptionPriceUsdPerMonth;
+
+            // A tenth either way is under the resolution of anything the player would notice, and
+            // a move a month in a fourteen year run would otherwise fill the report with noise.
+            if (now > 0.0 && Math.Abs(wanted - now) / now < 0.10)
+            {
+                return;
+            }
+
+            state.Monetization.SubscriptionPriceUsdPerMonth = wanted;
+            probe.PriceMoves++;
+        }
+
+        /// <summary>
+        /// Signs a term with whichever lab is friendliest, which became worth doing on 2026-10-31.
+        ///
+        /// Allied capacity reached nothing in the rules until that day, so an operator signing
+        /// deals would have been measuring a fee for a number on a card. It joins the fleet now.
+        /// </summary>
+        private static void TakeAllies(CompanySimulation simulation, Probe probe)
+        {
+            var state = simulation.State;
+
+            if (state.IsBankrupt || state.CashUsd < 5_000_000L)
+            {
+                return;
+            }
+
+            // **Not Relations.Known, which was the first version of this and never fired once.**
+            // Known is every lab anything has ever happened with, and nothing had ever happened,
+            // because this operator had never contacted anybody. So the set was empty, the loop
+            // never ran, and the report showed zero alliances and zero refusals, which reads
+            // exactly like a mechanism that was tried and declined. A player clicks a lab card;
+            // the operator has to do the same thing before it can ask for anything.
+            foreach (CompetitorId lab in Enum.GetValues(typeof(CompetitorId)))
+            {
+                if (lab == CompetitorId.None)
+                {
+                    continue;
+                }
+
+                // A struct list, so this is a search for a live term rather than a null check.
+                if (state.Deals.Any(deal => deal.Lab == lab && deal.IsLiveOn(state.Date)))
+                {
+                    continue;
+                }
+
+                if (simulation.TrySignAlliance(lab, out var why))
+                {
+                    probe.Alliances++;
+                    return;
+                }
+
+                probe.Refused("sign alliance", why);
+
+                // **Refused, so build the relationship, and the way in is an offer.**
+                //
+                // The first version of this reached for TryCallLab and found a closed loop: you
+                // need a live deal to have their number, and you need to be Friendly to sign a
+                // deal. Both refusals are in the report above, which is how the loop was found.
+                // The player is not stuck in it, because RivalPanel sends offers, so this is a gap
+                // in every fixture this project has rather than a fault in the game. Publishing a
+                // finding is the cheap, public, small one, which is what somebody with no
+                // relationship and no leverage actually has to offer.
+                if (simulation.TrySendOffer(lab, RelationOffer.PublishFinding, out var offerWhy))
+                {
+                    probe.Offers++;
+                    return;
+                }
+
+                probe.Refused("send offer", offerWhy);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Buys reserved capacity, which is the half of the fleet that does not queue.
+        ///
+        /// Reliability multiplies into how attractive a product is, so a company serving its
+        /// audience badly loses share for a reason that has nothing to do with its model. No
+        /// fixture had ever bought a package in a long run.
+        /// </summary>
+        private static void ReserveCapacity(CompanySimulation simulation, Style style, Probe probe)
+        {
+            var state = simulation.State;
+
+            if (style == Style.Frugal || state.ReleasedModelCount == 0)
+            {
+                return;
+            }
+
+            // **A readonly struct, so FirstOrDefault hands back a zero-cost entry rather than
+            // null when nothing matches.** The price is what separates the two, the same trap the
+            // upgrade grid in Ship is already commented for.
+            var definition = HostingCatalog.All.FirstOrDefault(
+                entry => entry.Id == HostingPackage.Standard);
+
+            if (definition.DailyCostUsd <= 0L)
+            {
+                return;
+            }
+
+            // Only while the fleet is genuinely under pressure, and only out of money the company
+            // can lose without dying. A package is a monthly bill, not a purchase.
+            if (state.LastQuality.Utilisation < 0.80)
+            {
+                return;
+            }
+
+            if (state.CashUsd < definition.DailyCostUsd * 120L)
+            {
+                return;
+            }
+
+            var held = state.Pool.PackageCount(HostingPackage.Standard);
+
+            // **Capped, and the first version of this was not.** Utilisation is measured daily and
+            // this operator acts monthly, so an uncapped rule bought a package every month for as
+            // long as the fleet was busy: Reckless took nineteen of them, about six million a
+            // month of standing bills, and died four years earlier than it had without them. That
+            // is not a model of a player under pressure, it is a model of nobody reading the
+            // invoice. Three is enough to pull a busy fleet off the ceiling and small enough that
+            // the bill stays a decision.
+            if (held >= 3)
+            {
+                return;
+            }
+
+            state.Pool.SetPackageCount(HostingPackage.Standard, held + 1);
+            probe.Packages++;
         }
 
         /// <summary>

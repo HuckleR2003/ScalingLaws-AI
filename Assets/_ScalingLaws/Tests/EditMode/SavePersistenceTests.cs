@@ -51,7 +51,9 @@ namespace ScalingLaws.Tests.EditMode
                 GameDate.FromCalendar(2024, 3, 1),
                 120_000,
                 57.5,
-                8_000,
+                // The token count used to be passed here as well, as 8_000, beside a blueprint
+                // asking for 8_000. The same number written twice, which is what the field it
+                // fed turned out to be everywhere: deleted 2026-11-01, see TrainingRun.
                 0);
             run.Contribute(41_000, 6_200_000);
             state.ActiveRun = run;

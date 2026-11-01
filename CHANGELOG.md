@@ -196,7 +196,29 @@ is measured and it moves the ceiling on what a run can ask for.
   paying for it. A company renting nothing, with the handle parked high while the player thought
   about it, could be billed for a fleet because its audience shrank.
 
+- **A round of funding is no longer refused for being behind the frontier.** Every stage used
+  to require a share of a frontier this game intends to run away, 55 per cent for a Series A
+  rising to 85 for a growth round, so a company fell under the first gate in its second year and
+  was locked out of capital for the rest of the campaign. Measured: one round raised in fourteen
+  years, and with the gate off two of the three scripted styles survive three to four years
+  longer. The price of being behind stays where it belongs, in the valuation, which raises the
+  story half of a company to the fourth power of its parity. The calendar, the revenue and the
+  released-model requirements are untouched, and the loan ladder still gates on parity.
+
+- **Falling behind the frontier costs a large company a little, where it used to cost nothing.**
+  The price of being behind lives in the valuation, and only half of that valuation was reading it:
+  the story half fell away as the fourth power of how close you sit to the frontier, and the
+  revenue half read nothing at all. So the penalty faded as a company grew, to exactly zero on a
+  billion of revenue. The revenue half is now discounted too, down to four fifths at worst, and a
+  company at the frontier is priced precisely as it was before.
+
 ### Save compatibility
+
+**Save v77, and a field removed without a version of its own.** The token count a run in flight
+had been carrying is gone: it was a copy of the figure the blueprint on the same record already
+held, because a data mix too small to feed a run blocks the run rather than shrinking it. A file
+written by the previous build still contains the key and loads unchanged, since a key nothing reads
+is a key nothing misses.
 
 **Save v76.** One new field: the mark the player chose for their own company, stored by name so
 that adding another mark to the folder can never renumber an existing badge into somebody else's.
@@ -208,7 +230,7 @@ it existed, and what moved is how it is read.
 
 ### Under the hood
 
-- 1,761 EditMode tests across 216 fixtures and 123 PlayMode across 24, all green. The red flag
+- 1,768 EditMode tests across 218 fixtures and 123 PlayMode across 24, all green. The red flag
   raised yesterday is down: `MapPinTests` passes because the two nameless pins were named.
   Measured 2026-11-01.
 - `SliderDragTests` measures the two candidate causes of the undraggable sliders apart: a plain

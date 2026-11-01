@@ -1256,7 +1256,6 @@ namespace ScalingLaws.Simulation
                 State.Date,
                 projection.TrainingPetaflopDays,
                 projection.ProjectedCapability,
-                projection.Blend.AvailableTokensBillions,
                 0L);
 
             // **The safety weeks, and only those.**
@@ -3541,8 +3540,6 @@ namespace ScalingLaws.Simulation
             return FundingMarket.Evaluate(
                 stage,
                 State.Date,
-                State.BestCapability,
-                Market.FrontierCapability,
                 State.AnnualRevenueRunRateUsd,
                 State.ReleasedModelCount);
         }

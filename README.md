@@ -10,7 +10,7 @@ one you can pay for. Decide whether three weeks of safety evaluation is worth de
 find out later that a regulator judges you on what you had switched on the day you shipped.
 
 [![Build](https://img.shields.io/badge/build-v0.7.6-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
-[![Tests](https://img.shields.io/badge/tests-1761%20EditMode%20%2B%20123%20PlayMode-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-1768%20EditMode%20%2B%20123%20PlayMode-brightgreen)](#testing)
 [![Unity](https://img.shields.io/badge/Unity-6000.5.8f1-black)](#running-it)
 [![Languages](https://img.shields.io/badge/languages-EN%20%2F%20PL-lightgrey)](#)
 [![Licence](https://img.shields.io/badge/licence-source%20available-orange)](LICENSE.md)
@@ -195,7 +195,7 @@ clicking.
 |---|---|
 | `Assets/_ScalingLaws/Scripts/` | 305 C# files across the five layers above |
 | `Assets/_ScalingLaws/Editor/` | Scene generation, rig setup, the city flyover |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1761 tests across 216 fixtures. None load a scene. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1768 tests across 218 fixtures. None load a scene. |
 | `Assets/_ScalingLaws/Tests/PlayMode/` | 123 tests across 24 fixtures that do load a scene, and render pages to PNG |
 | `Docs/` | The mechanism map, the art brief, the world map plan |
 
@@ -274,7 +274,7 @@ This game is a side project; my trade is Python. I build Windows desktop applica
 automated test suites, and write documentation from the code rather than from a brief.
 
 If the thing you noticed here is the test discipline, that is the part I sell: 1,632 tests across
-240 fixtures, green before every build, with a regression test for every bug that has ever shipped.
+242 fixtures, green before every build, with a regression test for every bug that has ever shipped.
 
 [**pcworkman.dev/hire**](https://pcworkman.dev/hire/) &middot; [Fiverr](https://www.fiverr.com/huckler_creator)
 

@@ -19,14 +19,12 @@ namespace ScalingLaws.Simulation
             GameDate startDate,
             double petaflopDaysRequired,
             double projectedCapability,
-            double actualTokensBillions,
             long dataCostPaidUsd)
         {
             Blueprint = blueprint;
             StartDate = startDate;
             PetaflopDaysRequired = Math.Max(1.0, SimUnits.Finite(petaflopDaysRequired, 1.0));
             ProjectedCapability = Math.Clamp(SimUnits.Finite(projectedCapability), 0.0, 100.0);
-            ActualTokensBillions = Math.Max(0.0, SimUnits.Finite(actualTokensBillions));
             DataCostPaidUsd = Math.Max(0L, dataCostPaidUsd);
         }
 
@@ -38,8 +36,21 @@ namespace ScalingLaws.Simulation
         /// <summary>The estimate made on day one. For comparison only, never a result.</summary>
         public double ProjectedCapability { get; }
 
-        /// <summary>Tokens the data mix could actually supply, which may be under what was requested.</summary>
-        public double ActualTokensBillions { get; }
+        // **ActualTokensBillions used to sit here and it has been deleted, 2026-11-01.**
+        //
+        // "Tokens the data mix could actually supply, which may be under what was requested." It
+        // could not be under what was requested, ever. DatasetCatalog sets IsSufficient to
+        // totalSupply >= requested and AvailableTokensBillions to min(requested, totalSupply), and
+        // TrainingPlanner files a short mix among the **blocking** reasons, so a run whose corpus
+        // cannot feed it never starts. For every run that does start the two figures are the same
+        // number, which makes the field a copy of Blueprint.TrainingTokensBillions that was being
+        // clamped, carried and written into every save.
+        //
+        // Found by NumbersTheRulesNeverReadTests, which exists for exactly this and found it on the
+        // day it was written. The author was asked whether a player should see the figure and said
+        // honestly that he did not know; it is settled by measurement instead, and
+        // ActualTokensCarryNoInformationTests is the measurement, kept so the next person to wonder
+        // finds the answer rather than the question.
 
         public long DataCostPaidUsd { get; }
 
