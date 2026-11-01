@@ -875,3 +875,32 @@ once it is a business on a billion of revenue. That is defensible, because early
 story and later ones price the company. It is also the second open question for the author, and it
 is recorded here and asserted nowhere, because blessing either answer with a test would be deciding
 it without being asked.
+
+---
+
+## A caveat on every survival number on this page, written 2026-11-01 after the fact
+
+**There are two probes in this project and the work above used the weaker one.**
+
+`Editor/DeepCampaignProbe` plays seven operators across three seeds for 5,110 days each and has
+knobs for isolating a single expense. `Tests/EditMode/CampaignProbeTests` plays five styles across
+**one seed** for fourteen years and has none. The second is a reporting fixture; the first is the
+instrument.
+
+Every insolvency year quoted above comes from the fixture. The project already knows better and says
+so in its own notes, after the author was misled by exactly this on 2026-10-10 and corrected it in
+commit 9d199b9: **never report balance from one seed.** On that day a single seed showed every
+operator improving and three seeds showed the middle one going the other way.
+
+So the survival figures here, Balanced 2027 to 2028, Frugal 2026 to 2031, Reckless 2030 to 2027,
+are **directional and not results.** They need repeating on `DeepCampaignProbe` before any of them
+is quoted into a decision.
+
+**What does not depend on seeds**, because it is arithmetic over the calendar rather than a campaign:
+the world market table, the serving cost table, the dilution table, the attractiveness table, and
+the capability and parity columns of any single run. Those stand.
+
+**And one conclusion is corroborated rather than single-seeded.** The serving margin measured here,
+two to nine per cent of the sale price in every year, is the same finding the deep probe recorded on
+2026-10-10 in different words: the loss is unsold capacity, not a negative margin on a token. Two
+instruments, two methods, one answer, which is worth more than either on its own.
