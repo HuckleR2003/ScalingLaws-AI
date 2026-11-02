@@ -9,13 +9,14 @@ Rent compute you cannot really afford. Pick a model size you can supervise rathe
 one you can pay for. Decide whether three weeks of safety evaluation is worth delaying a release, and
 find out later that a regulator judges you on what you had switched on the day you shipped.
 
-[![Build](https://img.shields.io/badge/build-v0.7.6-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
-[![Tests](https://img.shields.io/badge/tests-1768%20EditMode%20%2B%20123%20PlayMode-brightgreen)](#testing)
+[![Build](https://img.shields.io/badge/build-v0.8.0-blue)](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
+[![Tests](https://img.shields.io/badge/tests-1770%20EditMode%20%2B%20123%20PlayMode-brightgreen)](#testing)
 [![Unity](https://img.shields.io/badge/Unity-6000.5.8f1-black)](#running-it)
 [![Languages](https://img.shields.io/badge/languages-EN%20%2F%20PL-lightgrey)](#)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%2F%20macOS%20%2F%20Linux-lightgrey)](#running-it)
 [![Licence](https://img.shields.io/badge/licence-source%20available-orange)](LICENSE.md)
 
-> **Download the first public build:** [Releases](https://github.com/HuckleR2003/ScalingLaws-AI/releases)
+> **Download it:** [itch.io](https://hcklab.itch.io/scaling-laws), free, for Windows, macOS and Linux
 > · What changed in each version: [CHANGELOG.md](CHANGELOG.md)
 
 ---
@@ -193,9 +194,9 @@ clicking.
 
 | Folder | Role |
 |---|---|
-| `Assets/_ScalingLaws/Scripts/` | 305 C# files across the five layers above |
+| `Assets/_ScalingLaws/Scripts/` | 343 C# files across the five layers above |
 | `Assets/_ScalingLaws/Editor/` | Scene generation, rig setup, the city flyover |
-| `Assets/_ScalingLaws/Tests/EditMode/` | 1768 tests across 218 fixtures. None load a scene. |
+| `Assets/_ScalingLaws/Tests/EditMode/` | 1770 tests across 219 fixtures, two of them explicit and skipped unless pointed at a real save. None load a scene. |
 | `Assets/_ScalingLaws/Tests/PlayMode/` | 123 tests across 24 fixtures that do load a scene, and render pages to PNG |
 | `Docs/` | The mechanism map, the art brief, the world map plan |
 
@@ -273,8 +274,8 @@ Built solo by Marcin "HCK" Firmuga ([HCK Labs](https://pcworkman.dev)), who also
 This game is a side project; my trade is Python. I build Windows desktop applications, write
 automated test suites, and write documentation from the code rather than from a brief.
 
-If the thing you noticed here is the test discipline, that is the part I sell: 1,632 tests across
-242 fixtures, green before every build, with a regression test for every bug that has ever shipped.
+If the thing you noticed here is the test discipline, that is the part I sell: 1,893 tests across
+243 fixtures, green before every build, with a regression test for every bug that has ever shipped.
 
 [**pcworkman.dev/hire**](https://pcworkman.dev/hire/) &middot; [Fiverr](https://www.fiverr.com/huckler_creator)
 

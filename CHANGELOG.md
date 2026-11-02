@@ -38,6 +38,12 @@ go in. This file is the draft for the store update post, so anything vague here 
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.8.0] - 2026-11-02
+
 ### The headline
 
 **Two of the three deduplication passes were never worth choosing, and one of them was sold behind
