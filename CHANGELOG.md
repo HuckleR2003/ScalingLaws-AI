@@ -212,6 +212,15 @@ is measured and it moves the ceiling on what a run can ask for.
   billion of revenue. The revenue half is now discounted too, down to four fifths at worst, and a
   company at the frontier is priced precisely as it was before.
 
+- **There is a Mac build.** Two people asked for one on itch a month ago and a third turned up
+  on 2 November having compiled his own from the source, which the licence does not allow him to
+  republish and he did not. Nothing in the game was ever Windows specific: no platform calls, no
+  registry, no backslash paths, and Resources paths are already the separator Unity wants
+  everywhere. The bundle is a universal binary, so one file covers Intel and Apple Silicon.
+  **It has not been run.** It compiled, it has the right shape, and nobody has opened it, because
+  this machine is not a Mac and a virtual one cannot answer the question: Unity on macOS needs
+  Metal and VirtualBox does not provide it, so a good build would fail there and look broken.
+
 ### Save compatibility
 
 **Save v77, and a field removed without a version of its own.** The token count a run in flight
@@ -230,9 +239,35 @@ it existed, and what moved is how it is read.
 
 ### Under the hood
 
-- 1,768 EditMode tests across 218 fixtures and 123 PlayMode across 24, all green. The red flag
-  raised yesterday is down: `MapPinTests` passes because the two nameless pins were named.
-  Measured 2026-11-01.
+- `BuildPlayer` builds the Mac player as well, from Windows, as one command beside the Windows
+  one. Four guards went in with it, each for a failure that looks like success: the build refuses
+  to start when the module is missing or the application identifier is empty, which macOS treats
+  as "this is not an application"; it asks `Directory.Exists` about the bundle rather than
+  `File.Exists`, because a `.app` is a folder and the old check would have called a good build
+  missing; and it opens the bundle to confirm there is an executable inside `Contents/MacOS`.
+- The identifier is written by its own command rather than by the build, for the reason the icon
+  command already stands apart: a build that edits project settings changes the repository every
+  time it runs.
+- **The architecture is chosen by asking the property what it accepts.** The first version named
+  `UnityEditor.OSXStandalone.MacOSArchitecture`, which exists and is the wrong type, so the call
+  threw and was caught. The build came out universal regardless, because that is this editor's
+  default, which is the shape of a fix that appears to work and is doing nothing. It now reads the
+  values off the property itself and logs which one it picked. Reflection rather than a direct
+  reference, so naming a type from a module not everyone installs cannot stop the project
+  compiling on a fresh clone of a public repository.
+
+- 1,770 EditMode tests across 219 fixtures, 1,768 green and 2 skipped, plus 123 PlayMode across
+  24. The two skipped are the real-save fixture below, which is `[Explicit]` on purpose. The red
+  flag raised on 31 October is down: `MapPinTests` passes because the two nameless pins were
+  named. Measured 2026-11-02.
+- **`ARealSaveStillLoadsTests` loads a campaign somebody actually played.** Every other save test
+  here writes a file with today's writer and reads it with today's reader, which proves the two
+  agree and says nothing about a file written by a build that shipped weeks ago. That gap was open
+  on 1 November, when a field left the save shape and the run that carried it. The save never
+  enters this repository, because a real campaign carries the player's own company and founder
+  names and this repository is public: the path comes in through `SCALINGLAWS_REAL_SAVE`. It is
+  `[Explicit]` and inconclusive without a path rather than red, because a guard that fails on
+  every machine that was never handed a save is a guard somebody deletes.
 - `SliderDragTests` measures the two candidate causes of the undraggable sliders apart: a plain
   slider on this stylesheet drags perfectly and the creator one leaves the panel on its first
   change. `SliderWiringTests` is the ratchet, reading every file in `UI/`.

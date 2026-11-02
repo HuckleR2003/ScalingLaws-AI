@@ -35,16 +35,45 @@ namespace ScalingLaws.Editor
         /// </summary>
         public const string OutputFolder = "Build~/Scaling Laws Windows";
 
+        /// <summary>Where the Mac bundle lands. Same reasoning, separate folder.</summary>
+        public const string MacOutputFolder = "Build~/Scaling Laws Mac";
+
+        /// <summary>
+        /// What macOS calls the application, and it is not optional there.
+        ///
+        /// `applicationIdentifier` was empty in ProjectSettings when the first Mac build was
+        /// attempted on 2026-11-02. Windows does not care and macOS does: an empty identifier
+        /// produces a bundle the system will not treat as an application.
+        /// </summary>
+        public const string BundleIdentifier = "com.hcklabs.scalinglaws";
+
         /// <summary>The 1024px source the icon slots are filled from.</summary>
         public const string IconAsset = "Assets/_ScalingLaws/Art/Icon/app_icon.png";
 
         [MenuItem("Scaling Laws/Build the Windows player")]
-        public static void Windows64()
-        {
-            var failure = Run();
+        public static void Windows64() => Finish(Run(BuildTarget.StandaloneWindows64));
 
+        /// <summary>
+        /// The Mac bundle, built from Windows, which Unity is happy to do.
+        ///
+        /// **Two things this cannot do, and both matter before the file goes anywhere.** It cannot
+        /// be run here, so the only thing a green result proves is that it compiled. And a `.app`
+        /// is a folder whose executable needs the Unix permission bit, which a zip written on
+        /// Windows does not carry, so whoever downloads it has to repair that before macOS will
+        /// open it. Neither is a reason not to build; both are reasons the page needs a sentence.
+        /// </summary>
+        [MenuItem("Scaling Laws/Build the Mac player")]
+        public static void MacUniversal() => Finish(Run(BuildTarget.StandaloneOSX));
+
+        private static void Finish(string failure)
+        {
             if (Application.isBatchMode)
             {
+                if (failure != null)
+                {
+                    Debug.LogError(failure);
+                }
+
                 EditorApplication.Exit(failure == null ? 0 : 1);
 
                 return;
@@ -61,8 +90,23 @@ namespace ScalingLaws.Editor
         /// throwing, so the batch path can turn it into an exit code and the menu path into a
         /// console line without the two disagreeing about what went wrong.
         /// </summary>
-        public static string Run()
+        public static string Run(BuildTarget target = BuildTarget.StandaloneWindows64)
         {
+            var mac = target == BuildTarget.StandaloneOSX;
+
+            if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone, target))
+            {
+                return $"{target} is not installed in this editor. Add the build support module "
+                    + "in Unity Hub; nothing in the project needs to change.";
+            }
+
+            if (mac && string.IsNullOrWhiteSpace(
+                PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Standalone)))
+            {
+                return "The application identifier is empty and macOS requires one. Run "
+                    + "Scaling Laws > Set the macOS bundle identifier once, then build again.";
+            }
+
             var scenes = ScenesInOrder();
 
             if (scenes.Length == 0)
@@ -71,27 +115,37 @@ namespace ScalingLaws.Editor
                     + "start on a black screen.";
             }
 
-            var exe = Path.Combine(OutputFolder, PlayerSettings.productName + ".exe");
+            var folder = mac ? MacOutputFolder : OutputFolder;
+
+            // A `.app` is a folder that macOS presents as a file, so the path handed to Unity ends
+            // in the bundle itself rather than in an executable inside it.
+            var output = Path.Combine(folder,
+                PlayerSettings.productName + (mac ? ".app" : ".exe"));
 
             // The folder is emptied first. A rename of the product leaves the previous exe and its
             // data folder sitting beside the new ones, and the uploaded zip then contains two
             // games, one of which does not run.
-            if (Directory.Exists(OutputFolder))
+            if (Directory.Exists(folder))
             {
-                Debug.Log($"Clearing the previous build at {OutputFolder}.");
-                Directory.Delete(OutputFolder, true);
+                Debug.Log($"Clearing the previous build at {folder}.");
+                Directory.Delete(folder, true);
             }
 
-            Directory.CreateDirectory(OutputFolder);
+            Directory.CreateDirectory(folder);
+
+            if (mac)
+            {
+                AimAtBothMacArchitectures();
+            }
 
             Debug.Log($"Building {PlayerSettings.productName} {PlayerSettings.bundleVersion} "
-                + $"from {scenes.Length} scenes into {OutputFolder}.");
+                + $"for {target} from {scenes.Length} scenes into {folder}.");
 
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = scenes,
-                locationPathName = exe,
-                target = BuildTarget.StandaloneWindows64,
+                locationPathName = output,
+                target = target,
                 targetGroup = BuildTargetGroup.Standalone,
 
                 // Not a development build. A development build carries the profiler, reports
@@ -109,16 +163,119 @@ namespace ScalingLaws.Editor
 
             // Read the result off disk rather than trusting the report. A succeeded build that
             // wrote nothing has happened in this project's tooling before, in a different form,
-            // and the check costs one stat call.
-            if (!File.Exists(exe))
+            // and the check costs one stat call. The Mac bundle is a directory, so asking
+            // File.Exists about it would report a good build as missing.
+            var there = mac ? Directory.Exists(output) : File.Exists(output);
+
+            if (!there)
             {
-                return $"The build reported success and there is no {exe} on disk.";
+                return $"The build reported success and there is no {output} on disk.";
             }
 
-            Debug.Log($"Built {exe}, {Megabytes(OutputFolder):N0} MB in "
-                + $"{summary.totalTime.TotalMinutes:N1} minutes. Zip the folder, not the exe.");
+            if (mac)
+            {
+                // The one file that has to be inside a bundle for macOS to open it at all.
+                var binary = Path.Combine(output, "Contents", "MacOS");
+
+                if (!Directory.Exists(binary) || Directory.GetFiles(binary).Length == 0)
+                {
+                    return $"The bundle at {output} has no executable in Contents/MacOS, so macOS "
+                        + "would refuse to open it.";
+                }
+            }
+
+            Debug.Log($"Built {output}, {Megabytes(folder):N0} MB in "
+                + $"{summary.totalTime.TotalMinutes:N1} minutes. Zip the folder, not the "
+                + (mac ? "bundle." : "exe."));
 
             return null;
+        }
+
+        /// <summary>
+        /// Asks for a bundle that runs on both Intel and Apple Silicon.
+        ///
+        /// **Through reflection, on purpose.** The setting lives in `UnityEditor.OSXStandalone`,
+        /// which only exists when the Mac module is installed, and naming it directly would stop
+        /// this file compiling on any machine without it. That includes a fresh clone of a public
+        /// repository and any Windows-only build box. If the type is absent the build still runs
+        /// and Unity picks its own default, which is a worse bundle rather than no bundle.
+        /// </summary>
+        private static void AimAtBothMacArchitectures()
+        {
+            var settings = Type.GetType(
+                "UnityEditor.OSXStandalone.UserBuildSettings, UnityEditor.OSXStandalone.Extensions");
+
+            var property = settings?.GetProperty("architecture");
+
+            if (property == null)
+            {
+                Debug.Log("Could not reach the Mac architecture setting, so Unity's default "
+                    + "stands. On 6000.5.8f1 that default was already both architectures.");
+
+                return;
+            }
+
+            // **The enum belongs to the property, not to the module.** The first version of this
+            // reached for UnityEditor.OSXStandalone.MacOSArchitecture, which exists and is the
+            // wrong type: the setter wants UnityEditor.Build.OSArchitecture and threw. The build
+            // came out universal anyway because that is Unity's default here, which is exactly
+            // the shape of a fix that looks like it worked. Asking the property what it accepts
+            // cannot be wrong in that way.
+            var wanted = Enum.GetValues(property.PropertyType)
+                .Cast<object>()
+                .FirstOrDefault(value =>
+                {
+                    var name = value.ToString();
+
+                    return name.IndexOf("x64", StringComparison.OrdinalIgnoreCase) >= 0
+                        && name.IndexOf("arm64", StringComparison.OrdinalIgnoreCase) >= 0;
+                });
+
+            if (wanted == null)
+            {
+                Debug.Log("No architecture on this editor names both Intel and ARM. Available: "
+                    + string.Join(", ", Enum.GetNames(property.PropertyType)));
+
+                return;
+            }
+
+            try
+            {
+                property.SetValue(null, wanted);
+                Debug.Log($"Mac build aimed at Intel and Apple Silicon ({wanted}).");
+            }
+            catch (Exception problem)
+            {
+                Debug.Log($"Left Unity's default Mac architecture: {problem.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Writes the bundle identifier macOS needs, once, into the project settings.
+        ///
+        /// Separate from the build for the reason the icon command is separate: a build that
+        /// edits project settings changes the repository every time it runs.
+        /// </summary>
+        [MenuItem("Scaling Laws/Set the macOS bundle identifier")]
+        public static void SetBundleIdentifier()
+        {
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Standalone, BundleIdentifier);
+            AssetDatabase.SaveAssets();
+
+            var written = PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Standalone);
+            var ok = written == BundleIdentifier;
+
+            Debug.Log(ok
+                ? $"Bundle identifier set to {written}."
+                : $"Bundle identifier NOT set: it reads {written}.");
+
+            // Exits itself for the reason written at the top of this file: `-quit` beside
+            // `-executeMethod` has already produced a run here that reported success and did
+            // nothing, because Unity left before the method finished.
+            if (Application.isBatchMode)
+            {
+                EditorApplication.Exit(ok ? 0 : 1);
+            }
         }
 
         /// <summary>
