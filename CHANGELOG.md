@@ -220,6 +220,31 @@ is measured and it moves the ceiling on what a run can ask for.
   **It has not been run.** It compiled, it has the right shape, and nobody has opened it, because
   this machine is not a Mac and a virtual one cannot answer the question: Unity on macOS needs
   Metal and VirtualBox does not provide it, so a good build would fail there and look broken.
+- **And a Linux build, which cost one word.** The Mac work had already established the only fact
+  that mattered: nothing in this game touches a platform. Outside `Editor/` there is not one
+  `File.ReadAll`, one `Directory.GetFiles` or one `Application.dataPath` anywhere in
+  `Scripts/`, so every path in the game comes out of `Resources` or `PlayerPrefs` and Linux
+  being case sensitive about filenames has nothing to bite. One ELF for x86-64, 443 MB, and it has
+  not been run either, for the same reason.
+  The one real risk on Linux is the opening film, which is H.264, and Unity's Linux player is
+  unreliable with it. **That failure is already handled and the numbers say how badly.** The film
+  is 4.6 seconds, the watchdog written in August fires at the clip length plus two, so the worst
+  case on a machine that cannot decode it is 6.6 seconds of black with SKIP on screen throughout,
+  rather than a player stuck on a dead screen.
+- **The downloads carry their own Unix permissions now, so nobody has to run `chmod`.** A zip
+  written on Windows records no executable bit, because NTFS has none, which is why the first
+  version of this note told Mac and Linux players to repair the file themselves before their
+  system would start it. Plenty of people would not have.
+  The ZIP format has carried the answer since the 1990s: each entry's central directory header
+  holds four bytes of external attributes whose high sixteen bits are the Unix mode, read when the
+  "version made by" byte says the archive came from Unix. `Tools/zip_unix_modes.js` writes both,
+  0755 on the executable and on directories and 0644 on everything else, and verifies by decoding
+  its own work back off disk, because an edit at a byte offset is exactly the kind of change that
+  looks like it worked. Checked independently afterwards: bsdtar reads `-rwxr-xr-x` on both
+  binaries, both archives still extract, and both binaries come out byte identical.
+  **Quarantine is a separate thing and cannot be fixed from inside the file.** macOS attaches it to
+  anything a browser downloaded, so a Mac player still runs `xattr -dr com.apple.quarantine` once,
+  or right clicks and chooses Open. Linux players now have nothing to do at all.
 
 ### Save compatibility
 
@@ -245,6 +270,10 @@ it existed, and what moved is how it is read.
   as "this is not an application"; it asks `Directory.Exists` about the bundle rather than
   `File.Exists`, because a `.app` is a folder and the old check would have called a good build
   missing; and it opens the bundle to confirm there is an executable inside `Contents/MacOS`.
+- `BuildPlayer` takes a Linux target the same way, and the three differ in exactly two lines: the
+  folder and what the file on disk is called. `.x86_64` rather than no extension, because that is
+  what every Unity game on Linux is called and somebody who has run one knows which of the two
+  files in the folder to start.
 - The identifier is written by its own command rather than by the build, for the reason the icon
   command already stands apart: a build that edits project settings changes the repository every
   time it runs.
@@ -4362,7 +4391,7 @@ otherwise.
   separately from the part the slider controls.
 - **The model creator printed PROJECTED CAPABILITY 0.0 beside FRONTIER TODAY 45.0** before anything
   was chosen, along with a run that would apparently take no time and cost nothing.
-- **The server room's capacity figure was worked out from a card the company does not own** —
+- **The server room's capacity figure was worked out from a card the company does not own**:
   whatever the clouds happened to be renting that month, rather than the fleet actually in the room.
 - **The bottom bar kept whatever language it was built in.**
 - **Eighteen readings printed with a comma on a Polish machine** (`0,70x`, `$20,00`, `1 234`), across

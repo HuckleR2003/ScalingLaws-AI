@@ -38,6 +38,9 @@ namespace ScalingLaws.Editor
         /// <summary>Where the Mac bundle lands. Same reasoning, separate folder.</summary>
         public const string MacOutputFolder = "Build~/Scaling Laws Mac";
 
+        /// <summary>Where the Linux player lands. Same reasoning again.</summary>
+        public const string LinuxOutputFolder = "Build~/Scaling Laws Linux";
+
         /// <summary>
         /// What macOS calls the application, and it is not optional there.
         ///
@@ -64,6 +67,17 @@ namespace ScalingLaws.Editor
         /// </summary>
         [MenuItem("Scaling Laws/Build the Mac player")]
         public static void MacUniversal() => Finish(Run(BuildTarget.StandaloneOSX));
+
+        /// <summary>
+        /// The Linux player, and it is the cheapest of the three to add.
+        ///
+        /// Nothing in this game is platform specific, so the only things that differ from Windows
+        /// are where the file lands and what it is called. The one thing it shares with the Mac
+        /// build is the permission bit: a zip written on Windows carries none, so a Linux player
+        /// has to `chmod +x` the binary before it will start, and the page has to say so.
+        /// </summary>
+        [MenuItem("Scaling Laws/Build the Linux player")]
+        public static void Linux64() => Finish(Run(BuildTarget.StandaloneLinux64));
 
         private static void Finish(string failure)
         {
@@ -93,6 +107,7 @@ namespace ScalingLaws.Editor
         public static string Run(BuildTarget target = BuildTarget.StandaloneWindows64)
         {
             var mac = target == BuildTarget.StandaloneOSX;
+            var linux = target == BuildTarget.StandaloneLinux64;
 
             if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone, target))
             {
@@ -115,12 +130,14 @@ namespace ScalingLaws.Editor
                     + "start on a black screen.";
             }
 
-            var folder = mac ? MacOutputFolder : OutputFolder;
+            var folder = mac ? MacOutputFolder : linux ? LinuxOutputFolder : OutputFolder;
 
             // A `.app` is a folder that macOS presents as a file, so the path handed to Unity ends
-            // in the bundle itself rather than in an executable inside it.
+            // in the bundle itself rather than in an executable inside it. Linux needs no extension
+            // at all, and `.x86_64` is what every Unity game on Linux is called, so somebody who
+            // has run one before knows which of the two files in the folder to start.
             var output = Path.Combine(folder,
-                PlayerSettings.productName + (mac ? ".app" : ".exe"));
+                PlayerSettings.productName + (mac ? ".app" : linux ? ".x86_64" : ".exe"));
 
             // The folder is emptied first. A rename of the product leaves the previous exe and its
             // data folder sitting beside the new ones, and the uploaded zip then contains two
@@ -186,7 +203,7 @@ namespace ScalingLaws.Editor
 
             Debug.Log($"Built {output}, {Megabytes(folder):N0} MB in "
                 + $"{summary.totalTime.TotalMinutes:N1} minutes. Zip the folder, not the "
-                + (mac ? "bundle." : "exe."));
+                + (mac ? "bundle." : linux ? "binary." : "exe."));
 
             return null;
         }
