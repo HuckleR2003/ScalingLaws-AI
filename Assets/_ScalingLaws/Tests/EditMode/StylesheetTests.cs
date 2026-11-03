@@ -64,6 +64,40 @@ namespace ScalingLaws.Tests.EditMode
         /// </summary>
         private static readonly char[] NewlineChars = { '\r', '\n' };
 
+        /// <summary>
+        /// No length in the sheet uses a unit USS does not understand.
+        ///
+        /// **One of these takes the whole stylesheet down, not one rule.** USS reads `px` and `%`
+        /// and nothing else: `em`, `rem`, `pt`, `vh` and friends are a parse failure, and a sheet
+        /// that fails to parse leaves every screen in the game rendering with the runtime theme's
+        /// defaults. The bottom bar stacks into a column, the sliders lose their handles, and it
+        /// reads exactly like the interface having been deleted.
+        ///
+        /// Written on 2026-11-03, after one `letter-spacing: 0.08em` in a caption added that
+        /// afternoon failed twelve PlayMode tests and nothing in EditMode. That is the right
+        /// outcome and it is two minutes of Unity away; this is the same catch in milliseconds.
+        /// </summary>
+        [Test]
+        public void EveryLengthUsesAUnitUssUnderstands()
+        {
+            var offenders = new List<string>();
+
+            foreach (Match rule in Regex.Matches(Sheet, @"([^{}]+)\{([^}]*)\}"))
+            {
+                foreach (Match bad in Regex.Matches(rule.Groups[2].Value,
+                    @"[:\s]-?[0-9.]+(em|rem|pt|pc|vh|vw|vmin|vmax|ex|ch|in|cm|mm)\b"))
+                {
+                    offenders.Add(rule.Groups[1].Value.Trim().Split(NewlineChars)[^1].Trim()
+                        + " uses " + bad.Groups[1].Value);
+                }
+            }
+
+            Assert.IsEmpty(offenders,
+                "USS reads px and % only. Any other unit fails to parse and takes the whole "
+                + "stylesheet with it, which leaves every screen unstyled:\n  "
+                + string.Join("\n  ", offenders));
+        }
+
         [Test]
         public void NothingIsSetSmallerThanTheFloor()
         {

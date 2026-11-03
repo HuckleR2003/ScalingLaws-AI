@@ -42,7 +42,7 @@ Nothing yet.
 
 ---
 
-## [0.8.0] - 2026-11-02
+## [0.8.0] - 2026-11-03
 
 ### The headline
 
@@ -97,6 +97,48 @@ is measured and it moves the ceiling on what a run can ask for.
   one of them. It now says the control works in both directions.
 
 ### Fixed
+
+- **A slider could only be dragged while the game was paused, and that was never the slider.**
+  Every branch of the day rollover rebuilds the open page, and a day rolls over every second and a
+  half at normal speed: the rebuild destroys the element under the pointer, the capture goes with
+  it, and the drag ends on its first pixel. So the control the whole game is built around worked
+  on a stopped clock and refused to move on a running one. The clock now leaves the page alone
+  while the player is holding something on it, asked of the panel rather than of a flag each
+  slider has to remember to set, and the page catches up a second and a half later.
+  This is the half of the report of 31 October that the earlier fix never reached. That fix
+  answered a slider whose own callback rebuilt its page; nothing had answered a clock rebuilding
+  it from outside.
+- **And the free tier control was the last slider still doing it to itself.** Twenty of the
+  twenty two were converted when this was first fixed; the allowance on the pricing stage was not,
+  so it rebuilt the creator on every pixel. The reading beside the handle follows the cursor now
+  and the page waits for the handle to be let go, which is what the two chips above it need.
+- **Every employee cycled between standing up and sitting down, and held a walking pose while the
+  game was paused.** One cause for both. Staff are made from the founder's prefab, which carries
+  his routine, and `Instantiate` runs that routine's `Awake` immediately: it indexes the
+  waypoints and sets the animator walking. The routine is destroyed a line later, and **a
+  destroyed component does not take its parameters with it**, so every seated employee was left
+  with the animator believing it should be walking, which pulled them straight back out of the
+  typing loop. Pausing stops the simulation and not the animator, so a controller stuck in a walk
+  keeps walking on the spot. The parameters are cleared before anybody is seated.
+  And the typing loop is no longer restarted on top of itself. Seating runs from the hour
+  change, and a day is a second and a half at normal speed, so an hour turned over about
+  every sixty milliseconds and the clip was begun again a dozen times a second per person.
+  It is left alone when they are already in it.
+- **Staff stay in the office around the clock.** They used to vanish outside their hours, which
+  was deliberate and is reversed: an office that empties is a room the player looks at and finds
+  nobody in. What that rule protected is kept, because the hours were the first control whose
+  effect you could see: somebody off duty is drawn with the off duty plate rather than not drawn,
+  and they can be clicked on like anybody else in the room.
+- **Three tutorial steps about research rang a spotlight around nothing.** The research screen was
+  rebuilt around `rnode` cards and the tour was never moved with it, so the step explaining the
+  tree, the step explaining what a node costs and the step where the cousin pays for the first one
+  all pointed at a class no screen has carried for months, highlighted nothing and scrolled
+  nowhere.
+- **The price list looked like it chose what the price applies to.** It never did and cannot: the
+  subscription is one company-wide rate, which is deliberate and is why the card before it commits
+  says so every time. But the picker had no caption at all, and a bare list of model names above a
+  price control reads as a target. It says what it is for now. This was reported as a broken
+  control twice, which is twice the screen was right and unreadable.
 
 - **Emil's fold button could not be found.** It was a 46px yellow disc with no label beside a 96px
   portrait, while every other control on that strip is a labelled rectangle along the bottom edge.
@@ -269,6 +311,15 @@ The deduplication change needs no migration of its own: the pass has been on the
 it existed, and what moved is how it is read.
 
 ### Under the hood
+
+- **`GuideWalkTests` gains the guard that would have caught the research steps.** The one that
+  was there checks a highlight class against the stylesheet, and `.tree-node` still has a rule in
+  it, so three steps pointing at a class nothing wears were green for months. The new one reads
+  `Scripts/UI` and fails unless some screen actually puts the class on an element. It found all
+  three on its first run.
+- `UiWiringTests` caught `IsOnShift` going dead the moment the click picker stopped asking it,
+  which is the sixth time that guard has paid for itself. Deleted rather than kept.
+- The 11px type floor refused a 10px caption added in the same pass, which is what it is for.
 
 - `BuildPlayer` builds the Mac player as well, from Windows, as one command beside the Windows
   one. Four guards went in with it, each for a failure that looks like success: the build refuses

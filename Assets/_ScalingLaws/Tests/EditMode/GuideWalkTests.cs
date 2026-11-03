@@ -123,6 +123,40 @@ namespace ScalingLaws.Tests.EditMode
                 + "cut around nothing:\n  " + string.Join("\n  ", unknown));
         }
 
+        /// <summary>
+        /// Every class a step points at must be put on an element by the interface, not merely
+        /// styled.
+        ///
+        /// **The stylesheet test above is not this test and the difference shipped.** A class can
+        /// have a rule and be added to nothing, and the spotlight then finds no element, scrolls
+        /// nowhere and lights nothing, which on screen is a step talking about a control with no
+        /// mark on it. That is what was reported on 2026-11-03 about the loan step: the rule
+        /// existed, so the older guard was green.
+        ///
+        /// Read out of the source the same way `FounderRoutineTests` reads the room builder,
+        /// because what matters is whether a line of C# ever puts the class on anything.
+        /// </summary>
+        [Test]
+        public void EveryHighlightNamesAClassTheInterfaceActuallyPutsOnSomething()
+        {
+            var applied = string.Concat(Directory
+                .EnumerateFiles("Assets/_ScalingLaws/Scripts/UI", "*.cs", SearchOption.AllDirectories)
+                .Select(File.ReadAllText));
+
+            var unused = GuideScript.Steps
+                .Where(step => !string.IsNullOrEmpty(step.Highlight))
+                .Select(step => (step.Id, step.Highlight))
+                .Where(pair => !applied.Contains("\"" + pair.Highlight + "\""))
+                .Select(pair => $"{pair.Id} -> .{pair.Highlight}")
+                .Distinct()
+                .ToList();
+
+            Assert.IsEmpty(unused,
+                "Steps pointing at a class no screen ever adds. The class is styled, so the "
+                + "stylesheet guard passes, and the tour still rings nothing:\n  "
+                + string.Join("\n  ", unused));
+        }
+
         [Test]
         public void EveryStepThatOpensAScreenNamesOne()
         {

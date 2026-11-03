@@ -924,6 +924,25 @@ namespace ScalingLaws.UI
                 Toast.Show(Loc.T("save.auto", state.Date.ToString()));
             }
 
+            // **Nothing is redrawn while the player is holding something on the page.**
+            //
+            // Every branch below rebuilds the open page, and a day rolls over every second and a
+            // half at normal speed. A rebuild destroys the element under the pointer, the capture
+            // goes with it, and a drag ends on its first pixel, so **every slider on every live
+            // screen was undraggable while the clock was running.**
+            //
+            // That is the half of the 2026-10-31 report the 0.8.0 fix never reached.
+            // `UiParts.WhenSettled` answers a slider whose own callback rebuilds its page; it
+            // cannot answer a clock that redraws the page from outside, and nothing had.
+            //
+            // The page catches up on the next rollover a second and a half later, which is the
+            // right trade: the figures beside the handle are painted in place as it moves, and a
+            // page that is a second behind beats a control that cannot be used.
+            if (SomethingOnThePageIsHeld())
+            {
+                return;
+            }
+
             // Only the screen in front needs repricing; the others rebuild when they are opened.
             if (current == Screen.Create)
             {
@@ -2077,6 +2096,37 @@ namespace ScalingLaws.UI
             panel.Add(back);
 
             contentHost.Add(page);
+        }
+
+        /// <summary>
+        /// True while a pointer is holding an element inside the open page.
+        ///
+        /// **Asked of the panel rather than tracked here on purpose.** A flag set by each control
+        /// would cover the sliders somebody remembered to wire and miss the next one, which is how
+        /// the drag fault survived its own fix. The panel already knows which element captured
+        /// which pointer, and every control that can be dragged captures one.
+        ///
+        /// Every pointer, not only the mouse: a touch or a pen drag is the same drag.
+        /// </summary>
+        private bool SomethingOnThePageIsHeld()
+        {
+            var panel = contentHost?.panel;
+
+            if (panel == null)
+            {
+                return false;
+            }
+
+            for (var pointer = 0; pointer < PointerId.maxPointers; pointer++)
+            {
+                if (panel.GetCapturingElement(pointer) is VisualElement held
+                    && (held == contentHost || contentHost.Contains(held)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void Show(Screen screen)

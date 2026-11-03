@@ -338,16 +338,25 @@ namespace ScalingLaws.Data
             new("bank_state", "guide.step.bank_state", GuideTarget.Funding, "ltile--state"),
 
             // ---- research, and the first one is on him ------------------------------------
+            //
+            // **These three pointed at `tree-node` and nothing has carried that class for
+            // months.** The research screen was rebuilt around `rnode` cards and the tour was
+            // never moved with it, so the step that explains the tree, the step that explains
+            // what a node costs and the step where the cousin pays for the first one all rang a
+            // spotlight around nothing and scrolled nowhere. The older guard was green the whole
+            // time because `.tree-node` still has a rule in the stylesheet, which is exactly the
+            // gap `EveryHighlightNamesAClassTheInterfaceActuallyPutsOnSomething` was written for
+            // on 2026-11-03.
             new("research_pitch", "guide.step.research_pitch"),
             new("research_open", "guide.step.research_open",
                 GuideTarget.Research, null, "guide.show_me", true),
-            new("research_tree", "guide.step.research_tree", GuideTarget.Research, "tree-node"),
-            new("research_cost", "guide.step.research_cost", GuideTarget.Research, "tree-node"),
+            new("research_tree", "guide.step.research_tree", GuideTarget.Research, "rnode"),
+            new("research_cost", "guide.step.research_cost", GuideTarget.Research, "rnode"),
             new("research_groups", "guide.step.research_groups", GuideTarget.Research, "era"),
             new("launch_trap", "guide.step.launch_trap", GuideTarget.Research),
             // **Waits for the node to actually be started**, and says what it is waiting for
             // on a button that cannot be pressed. The refusal beside it is the way past.
-            new(GiftStepId, "guide.step.research_gift", GuideTarget.Research, "tree-node",
+            new(GiftStepId, "guide.step.research_gift", GuideTarget.Research, "rnode",
                 "guide.wait.pick_research", false, -1, ResearchStartedSignal),
             new("research_gift_note", "guide.step.research_gift_note", GuideTarget.Research),
 

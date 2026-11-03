@@ -230,6 +230,46 @@ namespace ScalingLaws.UI
                 return;
             }
 
+            // **Clear what the founder's routine left on the animator before playing anything.**
+            //
+            // `Founder.prefab` carries an `OfficeActor`, and `Instantiate` runs its `Awake`
+            // immediately: it indexes the waypoints, builds a route and sets `Walking` true. The
+            // component is destroyed a line later, but a destroyed component does not take its
+            // parameters with it, so the animator was left holding `Walking = true` and the
+            // controller pulled every seated employee straight back out of the typing loop.
+            //
+            // Reported on 2026-11-03 as two separate faults and they are one: staff cycling
+            // between standing and sitting while the clock ran, and holding a walk pose while it
+            // was paused. The animator is not driven by `SimClock`, so a pause stops the game and
+            // not the clip, and a controller stuck in the walk keeps walking on the spot.
+            //
+            // Every bool rather than `Walking` by name: a parameter added to the controller
+            // tomorrow would reintroduce this exactly, and the loop costs nothing.
+            foreach (var parameter in animator.parameters)
+            {
+                if (parameter.type == AnimatorControllerParameterType.Bool)
+                {
+                    animator.SetBool(parameter.nameHash, false);
+                }
+            }
+
+            // **Only start the clip when they are not already in it.**
+            //
+            // This runs from `SetHour`, which fires on every change of the game hour, and a day is
+            // a second and a half at normal speed: an hour turns over about every sixty
+            // milliseconds, so restarting the loop here meant restarting it a dozen times a second
+            // per person. The typing never got anywhere. Together with the animator left believing
+            // it should be walking, that is the whole of what was reported as people standing up
+            // and sitting down again without end.
+            var playing = animator.GetCurrentAnimatorStateInfo(0);
+
+            if (playing.shortNameHash == Animator.StringToHash(WorkingState))
+            {
+                return;
+            }
+
+            // The offset is theirs rather than rolled, so a room of twelve is not twelve people
+            // pressing keys in step and the same room looks the same after a reload.
             animator.Play(WorkingState, 0, index * 0.37f % 1f);
         }
 
@@ -326,9 +366,11 @@ namespace ScalingLaws.UI
             {
                 var person = spawned[index];
 
-                // Somebody off shift is not in the room to be clicked on. Their renderers are off,
-                // and a card opened by clicking an empty patch of floor is worse than no card.
-                if (person == null || !IsOnShift(index))
+                // Everybody in the room can be clicked, including somebody off shift, because
+                // since 2026-11-03 they are drawn around the clock. The shift test here existed
+                // only to stop a click landing on an invisible person, and there are none now;
+                // leaving it in would make a visible employee refuse to open.
+                if (person == null)
                 {
                     continue;
                 }
@@ -392,29 +434,11 @@ namespace ScalingLaws.UI
         /// <summary>Where on a person a click is aimed, in metres up from the floor.</summary>
         private const float AimHeight = 1.0f;
 
-        /// <summary>
-        /// Whether this employee is currently drawn.
-        ///
-        /// Read off the renderers rather than recomputed from the clock, so the answer cannot
-        /// disagree with what is on screen: they are the same fact.
-        /// </summary>
-        private bool IsOnShift(int index)
-        {
-            if (index < 0 || index >= spawned.Count || spawned[index] == null)
-            {
-                return false;
-            }
-
-            foreach (var renderer in spawned[index].GetComponentsInChildren<Renderer>(true))
-            {
-                if (renderer.enabled)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        // `IsOnShift` stood here and is deleted rather than kept. It answered "is this employee
+        // drawn right now" by reading their renderers, and since 2026-11-03 everybody is drawn, so
+        // it would answer true for everybody forever. Its only caller was the click picker, which
+        // no longer has a reason to ask. `UiWiringTests` caught it the moment that caller went,
+        // which is the sixth time that guard has paid for itself.
 
         /// <summary>
         /// Shows the people whose shift it is and hides the rest.
@@ -472,19 +496,25 @@ namespace ScalingLaws.UI
                 // doing it here means there is no order in which a move can leave somebody behind.
                 Stand(person.transform, index);
 
-                // **Gone, name plate and all.** The author's rule of 2026-09-19: somebody outside
-                // their hours is not in the office. The plate used to stay up reading "off duty",
-                // which left rows of floating labels over empty chairs all night.
+                // **They stay in the room around the clock.** This reverses the rule of
+                // 2026-09-19, which took somebody outside their hours out of the office
+                // altogether, at the author's call on 2026-11-03: an office that empties is a room
+                // the player looks at and finds nobody in.
+                //
+                // What that rule was protecting is kept. Hours were built as the first control
+                // whose effect you can see, and a schedule nothing answers is a schedule nobody
+                // sets twice, so an off duty hire is drawn with the off duty plate below rather
+                // than not drawn at all. That plate already existed and already says when they
+                // are back.
                 foreach (var renderer in person.GetComponentsInChildren<Renderer>(true))
                 {
-                    renderer.enabled = onDuty;
+                    renderer.enabled = true;
                 }
 
-                // Back into the loop on arrival, or they reappear frozen where they left off.
-                if (onDuty)
-                {
-                    Sit(person, index);
-                }
+                // Into the typing loop whatever the hour, because the pose is what stops the
+                // controller walking them around the room. Seating is reapplied above every
+                // refresh, so this runs on somebody already on their chair.
+                Sit(person, index);
 
                 var plate = person.GetComponent<NamePlate>();
 

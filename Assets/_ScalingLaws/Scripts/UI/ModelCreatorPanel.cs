@@ -1368,8 +1368,13 @@ namespace ScalingLaws.UI
                         policy.Model = PricingModel.Subscription;
                     }
 
-                    RepriceAndRebuild();
-                }));
+                    Reprice();
+                },
+                // The page is rebuilt once the handle is let go, because the two chips above the
+                // slider read the value that is being dragged: NO FREE ACCESS lights when the
+                // allowance reaches zero. Rebuilding for that while the handle is held is what
+                // made this control impossible to drag.
+                _ => RepriceAndRebuild()));
 
             // What a free account costs the company, in dollars, at today's token price. This is the
             // trap the design wants visible: generosity is bought reach and it is billed daily.
@@ -1471,8 +1476,19 @@ namespace ScalingLaws.UI
         /// <paramref name="format"/> is asked for the text, so the caller decides the units and
         /// there is no second copy of the formatting.
         /// </summary>
+        /// <summary>
+        /// A labelled slider whose reading follows the handle.
+        ///
+        /// <paramref name="onChange"/> runs on every pixel of travel and must be cheap. Anything
+        /// that rebuilds the page goes in <paramref name="onSettled"/>, which runs when the handle
+        /// is let go: a rebuild during a drag destroys the handle the pointer captured and the
+        /// drag ends there. The free tier control on the pricing stage was the last slider in the
+        /// game still doing that, and it was reported as undraggable on 2026-11-03, five days
+        /// after the fix that was supposed to have covered it.
+        /// </summary>
         private static VisualElement BuildSlider(string label, Func<float, string> format,
-            float minimum, float maximum, float value, Action<float> onChange)
+            float minimum, float maximum, float value, Action<float> onChange,
+            Action<float> onSettled = null)
         {
             var block = new VisualElement();
             block.AddToClassList("stage-slider");
@@ -1494,11 +1510,12 @@ namespace ScalingLaws.UI
 
             var slider = new Slider(minimum, maximum) { value = start };
             slider.AddToClassList("stage-slider__control");
-            slider.RegisterValueChangedCallback(evt =>
-            {
-                amount.text = format(evt.newValue);
-                onChange(evt.newValue);
-            });
+
+            // The reading is painted in place, so it follows the cursor whichever half of the pair
+            // the caller used.
+            slider.RegisterValueChangedCallback(evt => amount.text = format(evt.newValue));
+
+            UiParts.WhenSettled(slider, onSettled, onChange);
 
             block.Add(slider);
 

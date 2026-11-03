@@ -402,6 +402,16 @@ namespace ScalingLaws.UI
                 choices.Add(record.Model.Name);
             }
 
+            // **The picker had no caption at all**, and a bare dropdown of model names sitting
+            // above a price control reads as choosing what the price applies to. It does not: the
+            // subscription is one company-wide rate, documented at the top of this file. The
+            // author reported the control as broken on 2026-11-03 for exactly that reason, which
+            // is the second time this screen has been read that way, so the screen was wrong even
+            // though the code was doing what it says. A caption costs one line.
+            var caption = new Label(Loc.T("biz.scope_label"));
+            caption.AddToClassList("bizprice__scope-label");
+            block.Add(caption);
+
             var picker = new DropdownField(choices, ChoiceIndexFor(sold));
             picker.AddToClassList("bizprice__picker");
 

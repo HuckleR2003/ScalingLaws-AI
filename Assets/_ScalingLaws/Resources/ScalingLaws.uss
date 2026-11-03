@@ -20366,6 +20366,16 @@
     flex-shrink: 0;
 }
 
+/* Says what the picker under it does, because without it the list reads as choosing what the
+   price applies to. The subscription is one company-wide rate. */
+.bizprice__scope-label {
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    color: rgb(140, 152, 170);
+    margin-bottom: 5px;
+    -unity-font-style: bold;
+}
+
 .bizprice__picker {
     max-width: 280px;
 }
